@@ -71,29 +71,25 @@ class HttpClientManager {
       );
     }
 
-    // Add logging interceptor
-    _httpClient!.interceptors.add(
-      LogInterceptor(
-        requestBody: false,
-        responseBody: false,
-        // logPrint: (obj) => _logger?.d(obj),
-      ),
-    );
-
     // Add error handling interceptor
     _httpClient!.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
-          _logger?.e('HTTP Error: ${error.message}');
+          final uri = error.requestOptions.uri;
+          final target = _redactedTarget(uri);
+          _logger?.e('HTTP Error: ${error.message} ($target)');
           handler.next(error);
         },
         onRequest: (options, handler) {
-          _logger?.d('HTTP Request: ${options.method} ${options.uri}');
+          _logger?.d(
+            'HTTP Request: ${options.method} ${_redactedTarget(options.uri)}',
+          );
           handler.next(options);
         },
         onResponse: (response, handler) {
           _logger?.d(
-              'HTTP Response: ${response.statusCode} ${response.requestOptions.uri}');
+            'HTTP Response: ${response.statusCode} ${_redactedTarget(response.requestOptions.uri)}',
+          );
           handler.next(response);
         },
       ),
@@ -205,5 +201,23 @@ class HttpClientManager {
     _httpClient?.close(force: true);
     _httpClient = null;
     _instance = null;
+  }
+
+  static String _redactedTarget(Uri uri) {
+    final path = uri.path;
+    if (_isSensitivePath(path)) {
+      return '[redacted-sensitive-endpoint]';
+    }
+
+    return '${uri.origin}$path';
+  }
+
+  static bool _isSensitivePath(String path) {
+    final normalized = path.toLowerCase();
+    return normalized.contains('/auth/') ||
+        normalized.endsWith('/captcha') ||
+        normalized.endsWith('/pow') ||
+        normalized.endsWith('/user') ||
+        normalized.contains('/refresh');
   }
 }

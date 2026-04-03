@@ -1,4 +1,5 @@
 import '../../../domain/entities/entities.dart';
+import '../../../core/utils/tag_blacklist_utils.dart';
 import '../../../services/preferences_service.dart';
 import '../../../services/app_disguise_service.dart';
 import '../../../l10n/app_localizations.dart';
@@ -29,6 +30,8 @@ class SettingsCubit extends BaseCubit<SettingsState> {
       logInfo('Loading user preferences');
 
       final preferences = await _preferencesService.getUserPreferences();
+      logInfo(
+          'Loaded preferences: blur=${preferences.blurThumbnails}, blacklistTags=${preferences.blacklistedTags.length}');
 
       // Check current disguise mode from Android
       try {
@@ -65,14 +68,37 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
       logInfo('Successfully loaded user preferences');
     } catch (e, stackTrace) {
+      logger.e('Error loading settings: $e', error: e, stackTrace: stackTrace);
       handleError(e, stackTrace, 'load settings');
 
-      // Emit default settings on error
-      emit(SettingsLoaded(
-        preferences: _getDefaultPreferences(),
-        lastUpdated: DateTime.now(),
-      ));
+      // Try to recover at least the blur setting on error
+      // This prevents losing user settings when only part of preferences fails to load
+      try {
+        logWarning('Attempting graceful fallback: reading blur directly');
+        final blurValue = _preferencesService.getBlurThumbnailsDirect();
+        final fallbackPrefs =
+            _getDefaultPreferences().copyWith(blurThumbnails: blurValue);
+        logInfo('Fallback preferences loaded: blur=$blurValue');
+        emit(SettingsLoaded(
+          preferences: fallbackPrefs,
+          lastUpdated: DateTime.now(),
+        ));
+      } catch (_) {
+        // If even fallback fails, use full defaults
+        logWarning('Graceful fallback failed, using full defaults');
+        emit(SettingsLoaded(
+          preferences: _getDefaultPreferences(),
+          lastUpdated: DateTime.now(),
+        ));
+      }
     }
+  }
+
+  /// Force reload settings from SharedPreferences
+  /// Use this when returning to Settings screen after hot reload or external changes
+  Future<void> reloadSettings() async {
+    logInfo('Force reloading settings from SharedPreferences');
+    await _loadSettings();
   }
 
   /// Update theme setting
@@ -102,8 +128,53 @@ class SettingsCubit extends BaseCubit<SettingsState> {
 
   /// Update blur thumbnails setting
   Future<void> updateBlurThumbnails(bool blurThumbnails) async {
+    logInfo('updateBlurThumbnails called: $blurThumbnails');
     await _updateSetting(
         (prefs) => prefs.copyWith(blurThumbnails: blurThumbnails));
+    logInfo('updateBlurThumbnails completed: $blurThumbnails');
+  }
+
+  Future<void> updateBlacklistedTags(List<String> blacklistedTags) async {
+    logInfo('updateBlacklistedTags called with ${blacklistedTags.length} tags');
+    final currentState = state;
+    if (currentState is SettingsLoaded) {
+      logInfo(
+          '🔍 Current state snapshot: blur=${currentState.preferences.blurThumbnails}, existing_tags=${currentState.preferences.blacklistedTags.length}');
+    }
+
+    final sanitized = TagBlacklistUtils.sanitizeEntries(blacklistedTags);
+    await _updateSetting(
+      (prefs) {
+        logInfo(
+            '🔍 In updateFunction: prefs.blur=${prefs.blurThumbnails}, will add ${sanitized.length} tags');
+        final updated = prefs.copyWith(blacklistedTags: sanitized);
+        logInfo(
+            '🔍 After copyWith: updated.blur=${updated.blurThumbnails}, updated.tags=${updated.blacklistedTags.length}');
+        return updated;
+      },
+    );
+  }
+
+  Future<void> updateBlacklistedTagsWithMetadata(
+    List<String> blacklistedTags,
+    Map<String, BlacklistedTagMetadata> metadata,
+  ) async {
+    final sanitizedTags = TagBlacklistUtils.sanitizeEntries(blacklistedTags);
+    final sanitizedMetadata = <String, BlacklistedTagMetadata>{};
+    for (final entry in metadata.entries) {
+      final normalizedId = entry.key.trim();
+      if (normalizedId.isEmpty) {
+        continue;
+      }
+      sanitizedMetadata[normalizedId] = entry.value;
+    }
+
+    await _updateSetting(
+      (prefs) => prefs.copyWith(
+        blacklistedTags: sanitizedTags,
+        blacklistedTagMetadata: sanitizedMetadata,
+      ),
+    );
   }
 
   /// Update pagination setting
@@ -226,12 +297,16 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   ) async {
     try {
       final currentState = state;
-      if (currentState is! SettingsLoaded) return;
+      if (currentState is! SettingsLoaded) {
+        logWarning('Cannot update setting: state is not SettingsLoaded');
+        return;
+      }
 
       // Update preferences
       final updatedPreferences = updateFunction(currentState.preferences);
 
-      logInfo('Updating settings via PreferencesService');
+      logInfo(
+          'Before save: blur=${updatedPreferences.blurThumbnails}, tags=${updatedPreferences.blacklistedTags.length}');
 
       // Save to SharedPreferences via PreferencesService
       await _preferencesService.saveUserPreferences(updatedPreferences);
@@ -241,8 +316,10 @@ class SettingsCubit extends BaseCubit<SettingsState> {
         lastUpdated: DateTime.now(),
       ));
 
-      logInfo('Successfully updated settings');
+      logInfo(
+          'Successfully updated and emitted: blur=${updatedPreferences.blurThumbnails}, tags=${updatedPreferences.blacklistedTags.length}');
     } catch (e, stackTrace) {
+      logger.e('_updateSetting failed: $e', error: e, stackTrace: stackTrace);
       handleError(e, stackTrace, 'update setting');
 
       emit(SettingsError(

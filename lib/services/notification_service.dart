@@ -1102,6 +1102,158 @@ class NotificationService {
   /// Fixed notification ID for sync operations
   static const int _syncNotificationId = 888888;
 
+  // ============================================================
+  // ZIP EXTRACTION NOTIFICATIONS
+  // ============================================================
+
+  /// Fixed notification ID for ZIP extraction operations
+  static const int _zipExtractionNotificationId = 999999;
+
+  /// Show ZIP extraction started notification
+  Future<void> showZipExtractionStarted({String? message}) async {
+    // Wait for initialization if needed (handles race condition after permission grant)
+    if (!isEnabled) {
+      _logger.i(
+          'NotificationService: Not initialized, waiting for initialization...');
+      final ready = await waitForInitialization();
+      if (!ready) {
+        _logger.w(
+            'NotificationService: ZIP extraction notification skipped - initialization failed');
+        return;
+      }
+    }
+
+    try {
+      await _notificationsPlugin.show(
+        _zipExtractionNotificationId,
+        _getLocalized('zipExtractionInProgress',
+            fallback: 'Extracting ZIP'),
+        message ??
+            _getLocalized('extractingZipContent',
+                fallback: 'Preparing extraction...'),
+        NotificationDetailsBuilder.progress(
+          progress: 0,
+          highPriority: true,
+          playSound: true,
+          enableVibration: true,
+        ),
+        payload: 'zip_extraction',
+      );
+
+      _logger.d('ZIP extraction started notification shown');
+    } catch (e) {
+      _logger.e('Failed to show ZIP extraction started notification: $e');
+    }
+  }
+
+  /// Update ZIP extraction progress notification
+  Future<void> updateZipExtractionProgress({
+    required int progress,
+    required String message,
+  }) async {
+    // Wait for initialization if needed
+    if (!isEnabled) {
+      final ready = await waitForInitialization();
+      if (!ready) return;
+    }
+
+    try {
+      await _notificationsPlugin.show(
+        _zipExtractionNotificationId,
+        _getLocalized('extractingProgress',
+            args: {'progress': progress},
+            fallback: 'Extracting ($progress%)'),
+        message,
+        NotificationDetailsBuilder.progress(
+          progress: progress,
+          highPriority: false, // Lower priority during extraction to reduce spam
+          playSound: false,
+          enableVibration: false,
+        ),
+        payload: 'zip_extraction',
+      );
+
+      // Log progress every 10% to reduce spam
+      if (progress % 10 == 0) {
+        _logger.d('ZIP extraction progress updated: $progress%');
+      }
+    } catch (e) {
+      _logger.e('Failed to update ZIP extraction progress notification: $e');
+    }
+  }
+
+  /// Show ZIP extraction completed notification
+  Future<void> showZipExtractionCompleted({required int imageCount}) async {
+    // Wait for initialization if needed
+    if (!isEnabled) {
+      final ready = await waitForInitialization();
+      if (!ready) return;
+    }
+
+    try {
+      await _notificationsPlugin.show(
+        _zipExtractionNotificationId,
+        _getLocalized('zipExtractionComplete',
+            fallback: 'ZIP Extraction Complete'),
+        _getLocalized('zipExtractedWithCount',
+            args: {'count': imageCount},
+            fallback: 'Extracted $imageCount images successfully'),
+        NotificationDetailsBuilder.success(),
+        payload: 'zip_extraction',
+      );
+
+      _logger.i(
+          'ZIP extraction completed notification shown: $imageCount images');
+
+      // Auto-dismiss after 3 seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        cancelZipExtractionNotification();
+      });
+    } catch (e) {
+      _logger.e('Failed to show ZIP extraction completed notification: $e');
+    }
+  }
+
+  /// Show ZIP extraction error notification
+  Future<void> showZipExtractionError({required String error}) async {
+    // Wait for initialization if needed
+    if (!isEnabled) {
+      final ready = await waitForInitialization();
+      if (!ready) return;
+    }
+
+    try {
+      await _notificationsPlugin.show(
+        _zipExtractionNotificationId,
+        _getLocalized('zipExtractionFailed', fallback: 'ZIP Extraction Failed'),
+        _getLocalized('zipExtractionFailedWithError',
+            args: {'error': _truncateError(error)},
+            fallback: 'Failed to extract ZIP: ${_truncateError(error)}'),
+        NotificationDetailsBuilder.error(),
+        payload: 'zip_extraction',
+      );
+
+      _logger.w('ZIP extraction error notification shown: $error');
+
+      // Auto-dismiss after 5 seconds
+      Future.delayed(const Duration(seconds: 5), () {
+        cancelZipExtractionNotification();
+      });
+    } catch (e) {
+      _logger.e('Failed to show ZIP extraction error notification: $e');
+    }
+  }
+
+  /// Cancel ZIP extraction notification
+  Future<void> cancelZipExtractionNotification() async {
+    try {
+      await _notificationsPlugin.cancel(_zipExtractionNotificationId);
+      _logger.d('ZIP extraction notification cancelled');
+    } catch (e) {
+      _logger.e('Failed to cancel ZIP extraction notification: $e');
+    }
+  }
+
   /// Show sync started notification
   Future<void> showSyncStarted({String? message}) async {
     // Wait for initialization if needed (handles race condition after permission grant)

@@ -33,6 +33,16 @@ class SourceCubit extends BaseCubit<SourceState> {
   }
 
   void switchSource(String sourceId) {
+    final currentId = state.activeSource?.id ?? _registry.currentSourceId;
+
+    // No-op if user selects the same source again.
+    if (currentId == sourceId) {
+      if (state.isSwitching) {
+        emit(state.copyWith(isSwitching: false));
+      }
+      return;
+    }
+
     // Emit loading state immediately so the UI can show a shimmer.
     emit(state.copyWith(isSwitching: true));
     if (_registry.switchSource(sourceId)) {

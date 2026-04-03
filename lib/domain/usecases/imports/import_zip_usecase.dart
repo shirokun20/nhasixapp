@@ -1,38 +1,40 @@
 import 'dart:io';
-import 'package:archive/archive.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
+import 'package:kuron_native/kuron_native.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/download_storage_utils.dart';
-import '../../../services/native_zip_import_service.dart';
 import '../../../domain/repositories/user_data_repository.dart';
 import '../../../domain/entities/download_status.dart';
 
 /// Parameters for importing a ZIP file
 class ImportZipParams {
-  const ImportZipParams();
+  /// Optional progress callback: (processed, total, imageCount, currentFile)
+  final Function(int processed, int total, int imageCount, String currentFile)? onProgress;
+
+  const ImportZipParams({this.onProgress});
 }
 
 /// UseCase for importing ZIP files containing doujin/manga content
 ///
 /// This handles:
 /// 1. Picking a ZIP file using native file picker
-/// 2. Extracting the ZIP to /nhasix/local/[zip-name]/
+/// 2. Extracting the ZIP natively with progress notifications
 /// 3. Auto-generating metadata.json
 /// 4. Registering the content in the database
 class ImportZipUseCase {
-  final NativeZipImportService _zipImportService;
+  final KuronNative _kuronNative;
   final UserDataRepository _userDataRepository;
   final Logger _logger = Logger();
 
   ImportZipUseCase({
-    required NativeZipImportService zipImportService,
+    required KuronNative kuronNative,
     required UserDataRepository userDataRepository,
-  })  : _zipImportService = zipImportService,
+  })  : _kuronNative = kuronNative,
         _userDataRepository = userDataRepository;
 
-  /// Executes the ZIP import flow
+  /// Executes the ZIP import flow using native extraction with progress notifications
   ///
   /// Returns a map with:
   /// - 'success': bool
@@ -40,10 +42,10 @@ class ImportZipUseCase {
   /// - 'error': String (if failed)
   Future<Map<String, dynamic>> call(ImportZipParams params) async {
     try {
-      _logger.i('Starting ZIP import flow');
+      _logger.i('Starting native ZIP import flow');
 
       // Step 1: Pick ZIP file
-      final zipUri = await _zipImportService.pickZipFile();
+      final zipUri = await _kuronNative.pickZipFile();
       if (zipUri == null) {
         _logger.i('User cancelled ZIP file selection');
         return {'success': false, 'error': 'Cancelled'};
@@ -51,26 +53,13 @@ class ImportZipUseCase {
 
       _logger.i('ZIP file selected: $zipUri');
 
-      // Step 2: Read ZIP bytes
-      final zipBytes = await _zipImportService.readZipBytes(zipUri);
-      if (zipBytes == null || zipBytes.isEmpty) {
-        _logger.e('Failed to read ZIP file bytes');
-        return {'success': false, 'error': 'Failed to read ZIP file'};
-      }
-
-      _logger.i('ZIP file read successfully (${zipBytes.length} bytes)');
-
-      // Step 3: Extract ZIP file name for content ID
+      // Step 2: Extract ZIP file name for content ID
       final zipFileName = _extractFileNameFromUri(zipUri);
       final contentId = _sanitizeContentId(zipFileName);
 
       _logger.i('Content ID: $contentId');
 
-      // Step 4: Decode ZIP archive
-      final archive = ZipDecoder().decodeBytes(zipBytes);
-      _logger.i('ZIP decoded: ${archive.files.length} files found');
-
-      // Step 5: Get destination directory
+      // Step 3: Get destination directory BEFORE extraction
       final destDir = await DownloadStorageUtils.getNewContentDirectory(
         contentId,
         sourceId: 'local',
@@ -78,14 +67,44 @@ class ImportZipUseCase {
 
       _logger.i('Destination directory: $destDir');
 
-      // Step 6: Extract images
+      // Step 4: Create images directory
       final imagesDir =
           Directory(path.join(destDir, AppStorage.imagesSubfolder));
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
       }
 
-      int imageCount = 0;
+      // Step 5: Extract using native implementation with progress
+      _logger.i('Starting native ZIP extraction with progress callbacks');
+
+      final extractionResult = await _kuronNative.extractZipFile(
+        contentUri: zipUri,
+        destinationPath: imagesDir.path,
+        onProgress: (processed, total, imageCount, currentFile) {
+          _logger.d(
+              'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile');
+          // Forward progress to UI callback if provided
+          params.onProgress?.call(processed, total, imageCount, currentFile);
+        },
+      );
+
+      if (extractionResult == null || extractionResult['success'] != true) {
+        _logger.e('Extraction failed: ${extractionResult?['error']}');
+        // Clean up empty directory
+        if (await Directory(destDir).exists()) {
+          await Directory(destDir).delete(recursive: true);
+        }
+        return {
+          'success': false,
+          'error': extractionResult?['error'] ?? 'Extraction failed'
+        };
+      }
+
+      final imageCount = extractionResult['imageCount'] as int;
+      _logger.i('Extracted $imageCount images natively');
+
+      // Step 6: Get first image for cover
+      final imageFiles = await imagesDir.list().toList();
       final imageExtensions = [
         '.jpg',
         '.jpeg',
@@ -96,34 +115,6 @@ class ImportZipUseCase {
         '.bmp'
       ];
 
-      for (final file in archive.files) {
-        if (file.isFile) {
-          final fileName = path.basename(file.name);
-          final extension = path.extension(fileName).toLowerCase();
-
-          // Only extract image files
-          if (imageExtensions.contains(extension)) {
-            final destFile = File(path.join(imagesDir.path, fileName));
-            await destFile.writeAsBytes(file.content as List<int>);
-            imageCount++;
-            _logger.d('Extracted: $fileName');
-          }
-        }
-      }
-
-      if (imageCount == 0) {
-        _logger.e('No images found in ZIP file');
-        // Clean up empty directory
-        if (await Directory(destDir).exists()) {
-          await Directory(destDir).delete(recursive: true);
-        }
-        return {'success': false, 'error': 'No images found in ZIP file'};
-      }
-
-      _logger.i('Extracted $imageCount images');
-
-      // Step 7: Get first image for cover
-      final imageFiles = await imagesDir.list().toList();
       final sortedImages = imageFiles
           .whereType<File>()
           .where((f) =>
@@ -134,7 +125,7 @@ class ImportZipUseCase {
 
       final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
 
-      // Step 7.5: Calculate total file size
+      // Step 7: Calculate total file size
       int totalFileSize = 0;
       for (final file in sortedImages) {
         if (await file.exists()) {
@@ -156,6 +147,7 @@ class ImportZipUseCase {
           'importedAt': DateTime.now().toIso8601String(),
           'importedFrom': 'zip',
           'originalFileName': zipFileName,
+          'extractedNatively': true,
         },
       );
 

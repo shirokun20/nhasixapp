@@ -76,6 +76,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
 
   # WebView for Cloudflare bypass
+  webview_flutter: ^4.10.0
 
   # Utilities
   logger: ^2.6.2

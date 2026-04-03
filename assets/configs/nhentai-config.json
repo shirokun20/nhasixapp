@@ -1,8 +1,7 @@
 {
     "source": "nhentai",
-    "version": "1.0.7",
-    "lastUpdated": "2026-03-29T00:00:00+07:00",
-    "configUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/master/assets/configs/nhentai-config.json",
+    "version": "1.0.9",
+    "lastUpdated": "2026-04-02T00:15:00+07:00",
     "baseUrl": "https://nhentai.net",
     "avatarBaseUrl": "https://i3.nhentai.net",
     "assetHosts": {
@@ -25,13 +24,44 @@
             "tagSearch": "/api/v2/galleries/tagged?tag_id={tagId}&page={page}",
             "related": "/api/v2/galleries/{id}/related",
             "comments": "/api/v2/galleries/{id}?include=comments",
-            "contentUrl": "/g/{id}/"
+            "contentUrl": "/g/{id}/",
+            "random": "/api/v2/galleries/random"
         },
         "mirrors": [
             "https://nhentai.xxx",
             "https://nhentai.to"
         ],
         "useMirrors": false
+    },
+    "auth": {
+        "enabled": true,
+        "mode": "tokenApi",
+        "authorizationScheme": "User",
+        "powAction": "login",
+        "endpoints": {
+            "pow": "/api/v2/pow",
+            "captcha": "/api/v2/captcha",
+            "login": "/api/v2/auth/login",
+            "refresh": "/api/v2/auth/refresh",
+            "logout": "/api/v2/auth/logout",
+            "favorites": "/api/v2/favorites",
+            "galleryFavorite": "/api/v2/galleries/{gallery_id}/favorite",
+            "blacklist": "/api/v2/blacklist",
+            "blacklistIds": "/api/v2/blacklist/ids",
+            "user": "/api/v2/user"
+        },
+        "fields": {
+            "username": "username",
+            "password": "password",
+            "captchaResponse": "captcha_response",
+            "powChallenge": "pow_challenge",
+            "powNonce": "pow_nonce",
+            "powAction": "pow_action",
+            "accessToken": "access_token",
+            "refreshToken": "refresh_token",
+            "expiresIn": "expires_in",
+            "tokenType": "token_type"
+        }
     },
     "selectors": {
         "items": {
@@ -88,6 +118,10 @@
         },
         "pageCount": {
             "selector": "$.num_pages",
+            "type": "jsonpath"
+        },
+        "favorites": {
+            "selector": "$.num_favorites",
             "type": "jsonpath"
         },
         "uploadDate": {
@@ -161,6 +195,16 @@
         "commentPostDate": {
             "selector": "$.post_date",
             "type": "jsonpath"
+        }
+    },
+    "navigation": {
+        "tagQueryMapping": {
+            "default": {
+                "mode": "rawParam",
+                "param": "tag_id",
+                "valueSource": "tagId",
+                "requiredPattern": "^\\d+$"
+            }
         }
     },
     "searchConfig": {
@@ -264,8 +308,11 @@
     "features": {
         "search": true,
         "related": true,
+        "randomGallery": true,
         "download": true,
+        "auth": true,
         "favorite": true,
+        "blacklist": true,
         "chapters": false,
         "bookmark": false,
         "comments": true,

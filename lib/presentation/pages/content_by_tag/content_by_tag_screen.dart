@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +16,8 @@ import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
@@ -39,6 +43,7 @@ class ContentByTagScreen extends StatefulWidget {
 
 class _ContentByTagScreenState extends State<ContentByTagScreen> {
   late final ContentBloc _contentBloc;
+  late final TagBlacklistService _tagBlacklistService;
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
 
@@ -76,7 +81,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       contentRepository: getIt<ContentRepository>(),
       logger: getIt<Logger>(),
     );
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleBlacklistChanged);
     _initializeContent();
+    unawaited(_refreshOnlineBlacklist());
   }
 
   /// Initialize content with tag search
@@ -112,13 +120,34 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleBlacklistChanged);
     // Close the local ContentBloc instance
     _contentBloc.close();
     super.dispose();
   }
 
+  void _handleBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  Future<void> _refreshOnlineBlacklist() async {
+    final sourceId = context.read<SourceCubit>().state.activeSource?.id;
+    if (sourceId == null || sourceId.isEmpty) {
+      return;
+    }
+
+    await _tagBlacklistService.syncOnlineEntries(sourceId);
+  }
+
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsCubit>().state;
+
     return BlocProvider.value(
       value: _contentBloc,
       child: AppScaffoldWithOffline(
@@ -264,51 +293,54 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Determine if content should be blurred (excluded content)
   bool _shouldBlurContent(Content content) {
-    if (_currentSearchFilter == null) return false;
+    if (_currentSearchFilter != null) {
+      final filter = _currentSearchFilter!;
 
-    final filter = _currentSearchFilter!;
+      for (final tagFilter in filter.tags.where((t) => t.isExcluded)) {
+        if (content.tags.any(
+            (tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
+          return true;
+        }
+      }
 
-    // Check excluded tags
-    for (final tagFilter in filter.tags.where((t) => t.isExcluded)) {
-      if (content.tags.any(
-          (tag) => tag.name.toLowerCase() == tagFilter.value.toLowerCase())) {
-        return true;
+      for (final groupFilter in filter.groups.where((g) => g.isExcluded)) {
+        if (content.groups.any((group) =>
+            group.toLowerCase() == groupFilter.value.toLowerCase())) {
+          return true;
+        }
+      }
+
+      for (final charFilter in filter.characters.where((c) => c.isExcluded)) {
+        if (content.characters.any(
+            (char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
+          return true;
+        }
+      }
+
+      for (final parodFilter in filter.parodies.where((p) => p.isExcluded)) {
+        if (content.parodies.any((parod) =>
+            parod.toLowerCase() == parodFilter.value.toLowerCase())) {
+          return true;
+        }
+      }
+
+      for (final artistFilter in filter.artists.where((a) => a.isExcluded)) {
+        if (content.artists.any((artist) =>
+            artist.toLowerCase() == artistFilter.value.toLowerCase())) {
+          return true;
+        }
       }
     }
 
-    // Check excluded groups
-    for (final groupFilter in filter.groups.where((g) => g.isExcluded)) {
-      if (content.groups.any(
-          (group) => group.toLowerCase() == groupFilter.value.toLowerCase())) {
-        return true;
-      }
-    }
+    final settingsState = context.read<SettingsCubit>().state;
+    final localBlacklistEntries = settingsState is SettingsLoaded
+        ? settingsState.preferences.blacklistedTags
+        : const <String>[];
 
-    // Check excluded characters
-    for (final charFilter in filter.characters.where((c) => c.isExcluded)) {
-      if (content.characters.any(
-          (char) => char.toLowerCase() == charFilter.value.toLowerCase())) {
-        return true;
-      }
-    }
-
-    // Check excluded parodies
-    for (final parodFilter in filter.parodies.where((p) => p.isExcluded)) {
-      if (content.parodies.any(
-          (parod) => parod.toLowerCase() == parodFilter.value.toLowerCase())) {
-        return true;
-      }
-    }
-
-    // Check excluded artists
-    for (final artistFilter in filter.artists.where((a) => a.isExcluded)) {
-      if (content.artists.any((artist) =>
-          artist.toLowerCase() == artistFilter.value.toLowerCase())) {
-        return true;
-      }
-    }
-
-    return false;
+    return _tagBlacklistService.isContentBlacklisted(
+      content,
+      localEntries: localBlacklistEntries,
+    );
   }
 
   Widget _buildContentFooter(ContentState state) {

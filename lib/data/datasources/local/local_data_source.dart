@@ -64,22 +64,6 @@ class LocalDataSource {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      // Also save/update history with title for future retrieval
-      if (title != null && title.isNotEmpty) {
-        await db.insert(
-          'history',
-          {
-            'id': id,
-            'source_id': sourceId,
-            'title': title,
-            'cover_url': coverUrl,
-            'last_viewed': DateTime.now().millisecondsSinceEpoch,
-          },
-          conflictAlgorithm:
-              ConflictAlgorithm.ignore, // Don't override existing history
-        );
-      }
-
       _logger.d('Added content $id from $sourceId to favorites');
     } catch (e) {
       _logger.e('Error adding to favorites: $e');

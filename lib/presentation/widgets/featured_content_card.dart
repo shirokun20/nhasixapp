@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shimmer/shimmer.dart';
@@ -17,11 +19,13 @@ class FeaturedContentCard extends StatelessWidget {
     required this.content,
     this.onTap,
     this.showBadge = true,
+    this.isBlurred = false,
   });
 
   final Content content;
   final VoidCallback? onTap;
   final bool showBadge;
+  final bool isBlurred;
 
   @override
   Widget build(BuildContext context) {
@@ -51,16 +55,23 @@ class FeaturedContentCard extends StatelessWidget {
                     children: [
                       // Image
                       content.coverUrl.isNotEmpty
-                          ? ProgressiveThumbnailWidget(
-                              networkUrl: content.coverUrl,
-                              contentId: content.id,
-                              aspectRatio: 0.7,
-                              borderRadius: BorderRadius.zero,
-                              showOfflineIndicator: false,
-                              httpHeaders: getIt<ContentSourceRegistry>()
-                                  .getSource(content.sourceId)
-                                  ?.getImageDownloadHeaders(
-                                      imageUrl: content.coverUrl),
+                          ? Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ProgressiveThumbnailWidget(
+                                  networkUrl: content.coverUrl,
+                                  contentId: content.id,
+                                  aspectRatio: 0.7,
+                                  borderRadius: BorderRadius.zero,
+                                  showOfflineIndicator: false,
+                                  httpHeaders: getIt<ContentSourceRegistry>()
+                                      .getSource(content.sourceId)
+                                      ?.getImageDownloadHeaders(
+                                          imageUrl: content.coverUrl),
+                                ),
+                                if (isBlurred)
+                                  _buildBlacklistedOverlay(context),
+                              ],
                             )
                           : _buildPlaceholder(context),
 
@@ -297,6 +308,50 @@ class FeaturedContentCard extends StatelessWidget {
       highlightColor: Theme.of(context).colorScheme.surfaceContainer,
       child: Container(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
+    );
+  }
+
+  Widget _buildBlacklistedOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.62),
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off_rounded,
+                    size: 16,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'BLACKLISTED',
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

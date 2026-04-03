@@ -9,12 +9,20 @@ part of 'search_filter.dart';
 _FilterItem _$FilterItemFromJson(Map<String, dynamic> json) => _FilterItem(
       value: json['value'] as String,
       isExcluded: json['isExcluded'] as bool,
+      tagId: (json['tagId'] as num?)?.toInt(),
+      tagType: json['tagType'] as String?,
+      tagName: json['tagName'] as String?,
+      tagSlug: json['tagSlug'] as String?,
     );
 
 Map<String, dynamic> _$FilterItemToJson(_FilterItem instance) =>
     <String, dynamic>{
       'value': instance.value,
       'isExcluded': instance.isExcluded,
+      'tagId': instance.tagId,
+      'tagType': instance.tagType,
+      'tagName': instance.tagName,
+      'tagSlug': instance.tagSlug,
     };
 
 _SearchFilter _$SearchFilterFromJson(Map<String, dynamic> json) =>

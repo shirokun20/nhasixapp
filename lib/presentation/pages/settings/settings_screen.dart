@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,23 +6,30 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../../../domain/entities/search_filter.dart' as search_filter;
 import '../../../domain/entities/user_preferences.dart';
+import '../../../core/utils/tag_blacklist_utils.dart';
+import '../../../services/tag_blacklist_service.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';
 import '../../cubits/source/source_state.dart';
+import '../../blocs/download/download_bloc.dart';
 import '../../../core/utils/app_update_test.dart';
+import '../../../core/utils/storage_settings.dart';
 import '../../widgets/app_main_drawer_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -32,6 +40,21 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late final TagBlacklistService _tagBlacklistService;
+
+  @override
+  void initState() {
+    super.initState();
+    _tagBlacklistService = getIt<TagBlacklistService>();
+
+    unawaited(
+      Future.wait([
+        _tagBlacklistService.syncOnlineEntries('nhentai'),
+        _tagBlacklistService.syncOnlineRules('nhentai'),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -155,6 +178,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
               theme: theme,
             ),
           ], theme),
+
+          const SizedBox(height: 24),
+
+          _buildSectionHeader(
+            Icons.visibility_off_outlined,
+            'CONTENT FILTERS',
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            'Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.',
+            Icons.shield_moon_outlined,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildTagBlacklistSection(context, prefs, theme),
+
+          const SizedBox(height: 24),
+
+          // Storage Settings Card
+          _buildSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            l10n.storageDescription,
+            Icons.info_outline,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildStorageSection(context, theme, l10n),
+
+          const SizedBox(height: 24),
+
+          // Download Settings Card
+          _buildSectionHeader(Icons.download_outlined, 'DOWNLOAD', theme),
+          const SizedBox(height: 12),
+          _buildInfoBanner(
+            l10n.imageQualityDescription,
+            Icons.info_outline,
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildDownloadSection(context, theme, l10n),
 
           const SizedBox(height: 24),
 
@@ -510,6 +575,813 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildTagBlacklistSection(
+    BuildContext context,
+    UserPreferences prefs,
+    ThemeData theme,
+  ) {
+    return AnimatedBuilder(
+      animation: _tagBlacklistService,
+      builder: (context, _) {
+        final mergedEntries = _tagBlacklistService.getMergedEntries(
+          sourceId: 'nhentai',
+          localEntries: prefs.blacklistedTags,
+        );
+        final onlineRules = _tagBlacklistService.getCachedOnlineRules(
+          'nhentai',
+        );
+        final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
+        final isSyncingRules = _tagBlacklistService.isSyncingRules('nhentai');
+
+        return _buildSettingsCard([
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.visibility_off_rounded,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tag blacklist',
+                            style: TextStyleConst.bodyLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.',
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () =>
+                          _showTagBlacklistSheet(context, prefs, theme),
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: const Text('Manage'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Local',
+                      value: '${prefs.blacklistedTags.length}',
+                      icon: Icons.sd_storage_rounded,
+                    ),
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Rules',
+                      value: hasSession ? '${onlineRules.length}' : 'Login',
+                      icon: Icons.rule_rounded,
+                      isLoading: isSyncingRules,
+                    ),
+                    _buildBlacklistStatChip(
+                      theme: theme,
+                      label: 'Active',
+                      value: '${mergedEntries.length}',
+                      icon: Icons.layers_rounded,
+                    ),
+                  ],
+                ),
+                if (hasSession) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Online rule details (${onlineRules.length})',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (onlineRules.isEmpty)
+                    _buildSheetHint(
+                      theme,
+                      'No online detailed rules returned yet. Pull refresh to fetch /blacklist data.',
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: onlineRules
+                          .take(12)
+                          .map(
+                            (rule) => _buildBlacklistEntryChip(
+                              theme,
+                              rule.displayLabel,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                ],
+                const SizedBox(height: 16),
+                if (mergedEntries.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      'No blacklist rules yet. Add tag names like romance, artist:foo, or numeric tag IDs.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      'Active coverage is enabled for ${mergedEntries.length} tokens (local + online IDs). Hidden here to keep this view human-readable.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ], theme);
+      },
+    );
+  }
+
+  Widget _buildBlacklistStatChip({
+    required ThemeData theme,
+    required String label,
+    required String value,
+    required IconData icon,
+    bool isLoading = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLoading)
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            )
+          else
+            Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            '$label • $value',
+            style: TextStyleConst.labelMedium.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistEntryChip(ThemeData theme, String entry) {
+    final chipLabel = int.tryParse(entry) != null ? '#$entry' : entry;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        chipLabel,
+        style: TextStyleConst.labelMedium.copyWith(
+          color: theme.colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _buildLocalBlacklistLabel(
+    String entry,
+    List<OnlineBlacklistRule> onlineRules,
+    Map<String, BlacklistedTagMetadata> localMetadata,
+  ) {
+    final normalized = TagBlacklistUtils.normalizeEntry(entry);
+
+    String? idCandidate;
+    if (int.tryParse(normalized) != null) {
+      idCandidate = normalized;
+    } else {
+      final idMatch =
+          RegExp(r'^(?:id|tag_id|tagid|tag):\s*(\d+)$').firstMatch(normalized);
+      idCandidate = idMatch?.group(1);
+    }
+
+    if (idCandidate == null) {
+      return entry;
+    }
+
+    final localMeta = localMetadata[idCandidate];
+    if (localMeta != null && localMeta.name.isNotEmpty) {
+      return '${localMeta.type}:${localMeta.name} (#$idCandidate)';
+    }
+
+    for (final rule in onlineRules) {
+      if (rule.id == idCandidate) {
+        return '${rule.displayLabel} (#$idCandidate)';
+      }
+    }
+
+    return '#$idCandidate';
+  }
+
+  Future<void> _showTagBlacklistSheet(
+    BuildContext context,
+    UserPreferences prefs,
+    ThemeData theme,
+  ) async {
+    final controller = TextEditingController();
+    var localEntries = List<String>.from(prefs.blacklistedTags);
+    var localMetadata =
+        Map<String, BlacklistedTagMetadata>.from(prefs.blacklistedTagMetadata);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            // Initialize: sync from Cubit to ensure fresh data on first open
+            final settingsState = sheetContext.read<SettingsCubit>().state;
+            if (settingsState is SettingsLoaded &&
+                (!listEquals(localEntries,
+                        settingsState.preferences.blacklistedTags) ||
+                    localMetadata.length !=
+                        settingsState
+                            .preferences.blacklistedTagMetadata.length)) {
+              // If Cubit has different data, use that (source of truth)
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                localEntries = List<String>.from(
+                    settingsState.preferences.blacklistedTags);
+                localMetadata = Map<String, BlacklistedTagMetadata>.from(
+                  settingsState.preferences.blacklistedTagMetadata,
+                );
+                if (sheetContext.mounted) {
+                  setSheetState(() {});
+                }
+              });
+            }
+
+            final mediaQuery = MediaQuery.of(sheetContext);
+            final mergedEntries = _tagBlacklistService.getMergedEntries(
+              sourceId: 'nhentai',
+              localEntries: localEntries,
+            );
+            final onlineRules = _tagBlacklistService.getCachedOnlineRules(
+              'nhentai',
+            );
+            final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
+            final isSyncing = _tagBlacklistService.isSyncing('nhentai');
+            final isSyncingRules = _tagBlacklistService.isSyncingRules(
+              'nhentai',
+            );
+
+            /// Sync localEntries from Cubit state to ensure data consistency
+            void syncFromCubit() {
+              final settingsState = context.read<SettingsCubit>().state;
+              if (settingsState is SettingsLoaded) {
+                localEntries = List<String>.from(
+                    settingsState.preferences.blacklistedTags);
+                localMetadata = Map<String, BlacklistedTagMetadata>.from(
+                  settingsState.preferences.blacklistedTagMetadata,
+                );
+              }
+            }
+
+            Future<void> saveState() async {
+              await context
+                  .read<SettingsCubit>()
+                  .updateBlacklistedTagsWithMetadata(
+                    localEntries,
+                    localMetadata,
+                  );
+            }
+
+            Future<void> pickFromTags() async {
+              final selectedFiltersForPicker = localEntries.map((entry) {
+                final normalizedEntry = TagBlacklistUtils.normalizeEntry(entry);
+                final numericId = int.tryParse(normalizedEntry);
+                if (numericId == null) {
+                  return search_filter.FilterItem.include(
+                    entry,
+                    tagName: entry,
+                  );
+                }
+
+                final localMeta = localMetadata[normalizedEntry];
+                if (localMeta != null) {
+                  return search_filter.FilterItem.include(
+                    normalizedEntry,
+                    tagId: numericId,
+                    tagType: localMeta.type,
+                    tagName: localMeta.name,
+                    tagSlug: localMeta.slug,
+                  );
+                }
+
+                final onlineMeta = onlineRules.firstWhere(
+                  (rule) => rule.id == normalizedEntry,
+                  orElse: () => OnlineBlacklistRule(token: normalizedEntry),
+                );
+                return search_filter.FilterItem.include(
+                  normalizedEntry,
+                  tagId: numericId,
+                  tagType: onlineMeta.type,
+                  tagName: onlineMeta.name,
+                );
+              }).toList(growable: false);
+
+              final selected = await AppRouter.goToFilterData(
+                context,
+                filterType: 'tag',
+                sourceId: 'nhentai',
+                hideOtherTabs: false,
+                supportsExclude: false,
+                selectedFilters: selectedFiltersForPicker,
+              );
+
+              if (!context.mounted || selected == null) {
+                return;
+              }
+
+              final backupEntries = List<String>.from(localEntries);
+              final backupMetadata =
+                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
+
+              // FilterData works as a full selector. Apply should replace
+              // current local selections, including the empty state.
+              localEntries = <String>[];
+              localMetadata = <String, BlacklistedTagMetadata>{};
+
+              for (final filter in selected.where((item) => !item.isExcluded)) {
+                final id = filter.tagId;
+                if (id != null && id > 0) {
+                  final idString = id.toString();
+                  localEntries.add(idString);
+                  localMetadata[idString] = BlacklistedTagMetadata(
+                    id: idString,
+                    type: filter.tagType ?? 'tag',
+                    name: filter.tagName ?? filter.value,
+                    slug: filter.tagSlug,
+                  );
+                } else {
+                  localEntries.add(filter.value);
+                }
+              }
+
+              localEntries = TagBlacklistUtils.sanitizeEntries(localEntries);
+
+              try {
+                await saveState();
+                syncFromCubit();
+              } catch (e) {
+                localEntries = backupEntries;
+                localMetadata = backupMetadata;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to save: $e')),
+                  );
+                }
+                return;
+              }
+
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
+
+            Future<void> addEntries() async {
+              final parsedEntries =
+                  TagBlacklistUtils.parseManualEntries(controller.text);
+              if (parsedEntries.isEmpty) {
+                return;
+              }
+
+              // Diagnostic: check Cubit state BEFORE add
+              final cubitBefore = context.read<SettingsCubit>().state;
+              if (cubitBefore is SettingsLoaded) {
+                getIt<Logger>().d(
+                    'SHEET_ADD_BEFORE: blur=${cubitBefore.preferences.blurThumbnails}, tags=${cubitBefore.preferences.blacklistedTags.length}');
+              }
+
+              final backup = List<String>.from(localEntries);
+              localEntries = TagBlacklistUtils.sanitizeEntries([
+                ...localEntries,
+                ...parsedEntries,
+              ]);
+
+              try {
+                await saveState();
+
+                // Diagnostic: check Cubit state AFTER add
+                if (!context.mounted) return;
+                final cubitAfter = context.read<SettingsCubit>().state;
+                if (cubitAfter is SettingsLoaded) {
+                  getIt<Logger>().d(
+                      'SHEET_ADD_AFTER: blur=${cubitAfter.preferences.blurThumbnails}, tags=${cubitAfter.preferences.blacklistedTags.length}');
+                }
+
+                // Sync back from Cubit to ensure data consistency
+                syncFromCubit();
+
+                controller.clear();
+              } catch (e) {
+                // Restore backup if save failed
+                localEntries = backup;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to save: $e')),
+                  );
+                }
+                return;
+              }
+
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
+
+            Future<void> removeEntry(String entry) async {
+              final backup = List<String>.from(localEntries);
+              final backupMetadata =
+                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
+              localEntries = localEntries
+                  .where((current) => current != entry)
+                  .toList(growable: false);
+              final normalized = TagBlacklistUtils.normalizeEntry(entry);
+              localMetadata.remove(normalized);
+
+              try {
+                await saveState();
+
+                // Sync back from Cubit to ensure data consistency
+                syncFromCubit();
+              } catch (e) {
+                // Restore backup if save failed
+                localEntries = backup;
+                localMetadata = backupMetadata;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to delete: $e')),
+                  );
+                }
+                return;
+              }
+
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                Icons.visibility_off_rounded,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Manage tag blacklist',
+                                    style: TextStyleConst.headingSmall.copyWith(
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Add tag names, typed rules like artist:foo, or numeric tag IDs. Separate multiple values with commas or new lines.',
+                                    style: TextStyleConst.bodySmall.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: controller,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'romance, artist:example, 12345',
+                            prefixIcon: const Icon(Icons.tag_rounded),
+                            filled: true,
+                            fillColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                          ),
+                          onSubmitted: (_) => addEntries(),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: isSyncing
+                                    ? null
+                                    : () async {
+                                        await Future.wait([
+                                          _tagBlacklistService
+                                              .syncOnlineEntries(
+                                            'nhentai',
+                                            forceRefresh: true,
+                                          ),
+                                          _tagBlacklistService.syncOnlineRules(
+                                            'nhentai',
+                                            forceRefresh: true,
+                                          ),
+                                        ]);
+                                        if (sheetContext.mounted) {
+                                          setSheetState(() {});
+                                        }
+                                      },
+                                icon: isSyncing
+                                    ? SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      )
+                                    : const Icon(Icons.sync_rounded, size: 18),
+                                label: const Text('Refresh online'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: addEntries,
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Add rules'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: pickFromTags,
+                            icon: const Icon(Icons.playlist_add_rounded),
+                            label: const Text('Pick from tags'),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Local rules (${localEntries.length})',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (localEntries.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Nothing saved locally yet. Local rules are always applied, including offline results.',
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: localEntries
+                                .map(
+                                  (entry) => InputChip(
+                                    label: Text(
+                                      _buildLocalBlacklistLabel(
+                                        entry,
+                                        onlineRules,
+                                        localMetadata,
+                                      ),
+                                    ),
+                                    onDeleted: () => removeEntry(entry),
+                                    deleteIconColor:
+                                        theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(
+                          hasSession
+                              ? 'Online rules metadata (${onlineRules.length})'
+                              : 'Online rules metadata',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (!hasSession)
+                          _buildSheetHint(
+                            theme,
+                            'Login required to fetch detailed rule metadata from /blacklist.',
+                          )
+                        else if (isSyncingRules && onlineRules.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Syncing online rule details...',
+                          )
+                        else if (onlineRules.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'No online rule details returned yet. Tap refresh to fetch /blacklist.',
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: onlineRules
+                                .map(
+                                  (rule) => _buildBlacklistEntryChip(
+                                    theme,
+                                    rule.displayLabel,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Active coverage (${mergedEntries.length})',
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (mergedEntries.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Blacklisted galleries will be blurred here once you add local rules or sync online IDs.',
+                          )
+                        else
+                          _buildSheetHint(
+                            theme,
+                            'Coverage is active for ${mergedEntries.length} tokens. ID tokens are hidden here by request; only named online rules are shown above.',
+                          ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () async {
+                              // Ensure all pending updates are flushed before closing
+                              // This gives time for any lingering async updates to complete
+                              await Future.delayed(
+                                const Duration(milliseconds: 100),
+                              );
+                              if (sheetContext.mounted) {
+                                Navigator.of(sheetContext).pop();
+                              }
+                            },
+                            child: const Text('Done'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSheetHint(ThemeData theme, String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyleConst.bodySmall.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDisguiseModeTile(
     UserPreferences prefs,
     ThemeData theme,
@@ -599,6 +1471,431 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildStorageSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return FutureBuilder<String?>(
+      future: StorageSettings.getCustomRootPath(),
+      builder: (context, snapshot) {
+        final customPath = snapshot.data;
+        final hasCustomPath = customPath != null && customPath.isNotEmpty;
+
+        return _buildSettingsCard([
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            leading: Icon(
+              Icons.folder_open,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(
+              l10n.downloadDirectory,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Text(
+              hasCustomPath ? customPath : l10n.defaultStorage,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              tooltip: l10n.changeDirectory,
+              onPressed: () async {
+                final newPath = await StorageSettings.pickAndSaveCustomRoot(
+                  context,
+                );
+                if (newPath != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        l10n.downloadDirectoryUpdated,
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                    ),
+                  );
+                  setState(() {}); // Refresh UI
+                }
+              },
+            ),
+          ),
+          if (hasCustomPath) ...[
+            _buildDivider(theme),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              leading: Icon(
+                Icons.refresh,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                l10n.resetToDefault,
+                style: TextStyleConst.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              subtitle: Text(
+                l10n.useDefaultInternalStorage,
+                style: TextStyleConst.bodySmall.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.resetToDefault),
+                    content: Text(
+                      l10n.confirmResetStorageDirectory,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        ),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(l10n.reset),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  await StorageSettings.clearCustomRoot();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          l10n.downloadDirectoryReset,
+                        ),
+                      ),
+                    );
+                    setState(() {}); // Refresh UI
+                  }
+                }
+              },
+            ),
+          ],
+        ], theme);
+      },
+    );
+  }
+
+  Widget _buildDownloadSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return BlocBuilder<DownloadBloc, DownloadBlocState>(
+      builder: (context, state) {
+        if (state is! DownloadLoaded) {
+          return _buildSettingsCard([
+            ListTile(
+              title: Text(
+                l10n.loadingDownloads,
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ], theme);
+        }
+
+        final settings = state.settings;
+
+        return _buildSettingsCard([
+          // Max Concurrent Downloads
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.maxConcurrentDownloads,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Slider(
+                  value: settings.maxConcurrentDownloads.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: '${settings.maxConcurrentDownloads}',
+                  onChanged: (value) {
+                    context.read<DownloadBloc>().add(
+                          DownloadSettingsUpdateEvent(
+                            maxConcurrentDownloads: value.toInt(),
+                            imageQuality: settings.imageQuality,
+                            autoRetry: settings.autoRetry,
+                            retryAttempts: settings.retryAttempts,
+                            retryDelay: settings.retryDelay,
+                            timeoutDuration: settings.timeoutDuration,
+                            enableNotifications: settings.enableNotifications,
+                            wifiOnly: settings.wifiOnly,
+                            customStorageRoot: settings.customStorageRoot,
+                          ),
+                        );
+                  },
+                ),
+                Text(
+                  l10n.concurrentDownloadsWarning,
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Image Quality
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.imageQualityLabel,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: DropdownButton<String>(
+              value: settings.imageQuality,
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(
+                  value: 'low',
+                  child: Text(l10n.lowQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'medium',
+                  child: Text(l10n.mediumQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'high',
+                  child: Text(l10n.highQuality),
+                ),
+                DropdownMenuItem(
+                  value: 'original',
+                  child: Text(l10n.originalQuality),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  context.read<DownloadBloc>().add(
+                        DownloadSettingsUpdateEvent(
+                          maxConcurrentDownloads:
+                              settings.maxConcurrentDownloads,
+                          imageQuality: value,
+                          autoRetry: settings.autoRetry,
+                          retryAttempts: settings.retryAttempts,
+                          retryDelay: settings.retryDelay,
+                          timeoutDuration: settings.timeoutDuration,
+                          enableNotifications: settings.enableNotifications,
+                          wifiOnly: settings.wifiOnly,
+                          customStorageRoot: settings.customStorageRoot,
+                        ),
+                      );
+                }
+              },
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Auto Retry
+          _buildSwitchTile(
+            title: l10n.autoRetryFailedDownloads,
+            subtitle: l10n.autoRetryDescription,
+            value: settings.autoRetry,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: value,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: settings.enableNotifications,
+                      wifiOnly: settings.wifiOnly,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
+
+          if (settings.autoRetry) ...[
+            _buildDivider(theme),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              title: Text(
+                l10n.maxRetryAttempts,
+                style: TextStyleConst.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              subtitle: Slider(
+                value: settings.retryAttempts.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                label: '${settings.retryAttempts}',
+                onChanged: (value) {
+                  context.read<DownloadBloc>().add(
+                        DownloadSettingsUpdateEvent(
+                          maxConcurrentDownloads:
+                              settings.maxConcurrentDownloads,
+                          imageQuality: settings.imageQuality,
+                          autoRetry: settings.autoRetry,
+                          retryAttempts: value.toInt(),
+                          retryDelay: settings.retryDelay,
+                          timeoutDuration: settings.timeoutDuration,
+                          enableNotifications: settings.enableNotifications,
+                          wifiOnly: settings.wifiOnly,
+                          customStorageRoot: settings.customStorageRoot,
+                        ),
+                      );
+                },
+              ),
+            ),
+          ],
+          _buildDivider(theme),
+
+          // WiFi Only
+          _buildSwitchTile(
+            title: l10n.wifiOnlyLabel,
+            subtitle: l10n.wifiOnlyDescription,
+            value: settings.wifiOnly,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: settings.autoRetry,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: settings.enableNotifications,
+                      wifiOnly: value,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
+          _buildDivider(theme),
+
+          // Download Timeout
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            title: Text(
+              l10n.downloadTimeoutLabel,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  '${settings.timeoutDuration.inMinutes} ${l10n.minutesUnit}',
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Slider(
+                  value: settings.timeoutDuration.inMinutes.toDouble(),
+                  min: 1,
+                  max: 30,
+                  divisions: 29,
+                  label: '${settings.timeoutDuration.inMinutes} min',
+                  onChanged: (value) {
+                    context.read<DownloadBloc>().add(
+                          DownloadSettingsUpdateEvent(
+                            maxConcurrentDownloads:
+                                settings.maxConcurrentDownloads,
+                            imageQuality: settings.imageQuality,
+                            autoRetry: settings.autoRetry,
+                            retryAttempts: settings.retryAttempts,
+                            retryDelay: settings.retryDelay,
+                            timeoutDuration: Duration(minutes: value.toInt()),
+                            enableNotifications: settings.enableNotifications,
+                            wifiOnly: settings.wifiOnly,
+                            customStorageRoot: settings.customStorageRoot,
+                          ),
+                        );
+                  },
+                ),
+              ],
+            ),
+          ),
+          _buildDivider(theme),
+
+          // Enable Notifications
+          _buildSwitchTile(
+            title: l10n.enableNotificationsLabel,
+            subtitle: l10n.enableNotificationsDescription,
+            value: settings.enableNotifications,
+            onChanged: (value) {
+              context.read<DownloadBloc>().add(
+                    DownloadSettingsUpdateEvent(
+                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
+                      imageQuality: settings.imageQuality,
+                      autoRetry: settings.autoRetry,
+                      retryAttempts: settings.retryAttempts,
+                      retryDelay: settings.retryDelay,
+                      timeoutDuration: settings.timeoutDuration,
+                      enableNotifications: value,
+                      wifiOnly: settings.wifiOnly,
+                      customStorageRoot: settings.customStorageRoot,
+                    ),
+                  );
+            },
+            theme: theme,
+          ),
+        ], theme);
       },
     );
   }

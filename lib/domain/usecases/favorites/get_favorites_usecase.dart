@@ -1,12 +1,18 @@
+import 'package:kuron_core/kuron_core.dart';
+
 import '../base_usecase.dart';
 import '../../repositories/repositories.dart';
 
 /// Use case for getting user's favorite content (simplified)
 class GetFavoritesUseCase
     extends UseCase<List<Map<String, dynamic>>, GetFavoritesParams> {
-  GetFavoritesUseCase(this._userDataRepository);
+  GetFavoritesUseCase(
+    this._userDataRepository,
+    this._contentSourceRegistry,
+  );
 
   final UserDataRepository _userDataRepository;
+  final ContentSourceRegistry _contentSourceRegistry;
 
   @override
   Future<List<Map<String, dynamic>>> call(GetFavoritesParams params) async {
@@ -26,7 +32,14 @@ class GetFavoritesUseCase
         limit: params.limit,
       );
 
-      return result;
+      // Filter out favorites from non-installed sources
+      final installedSourceIds = _contentSourceRegistry.sourceIds.toSet();
+      final filteredResult = result.where((favorite) {
+        final sourceId = favorite['source_id'] as String?;
+        return sourceId != null && installedSourceIds.contains(sourceId);
+      }).toList();
+
+      return filteredResult;
     } on UseCaseException {
       rethrow;
     } catch (e) {

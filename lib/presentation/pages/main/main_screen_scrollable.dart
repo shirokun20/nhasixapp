@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -47,6 +49,7 @@ import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/presentation/widgets/dynamic_sorting_widget.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});
@@ -62,6 +65,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   late final SearchBloc _searchBloc;
   late final OfflineSearchCubit _offlineSearchCubit;
   late final UpdateCubit _updateCubit;
+  late final TagBlacklistService _tagBlacklistService;
 
   bool _isShowingSearchResults = false;
   SearchFilter? _currentSearchFilter;
@@ -85,6 +89,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
     // Initialize UpdateCubit and check for updates
     _updateCubit = getIt<UpdateCubit>()..checkForUpdate();
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleTagBlacklistChanged);
 
     _checkConnectivity();
     Connectivity().onConnectivityChanged.listen((results) {
@@ -96,6 +102,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     });
 
     _initializeContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshBlacklistForActiveSource());
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showMaintenanceSnackbarIfNeeded();
@@ -287,12 +296,22 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleTagBlacklistChanged);
     _homeBloc.close();
     // Don't close ContentBloc - it's a singleton managed by DI container
     // _contentBloc.close();
     _searchBloc.close();
     _updateCubit.close();
     super.dispose();
+  }
+
+  void _handleTagBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -353,6 +372,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   _isShowingSearchResults = false;
                   _currentSearchFilter = null;
                   await _initializeContent();
+                  await _refreshBlacklistForActiveSource(forceRefresh: true);
                   // clearSwitching() is handled by the ContentBloc listener below.
                 }
               },
@@ -742,7 +762,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               final blurThumbnails = settingsState is SettingsLoaded
                   ? settingsState.preferences.blurThumbnails
                   : false;
-              return _buildHybridMasonryGrid(state.contents, blurThumbnails);
+              final localBlacklistEntries = settingsState is SettingsLoaded
+                  ? settingsState.preferences.blacklistedTags
+                  : const <String>[];
+              return _buildHybridMasonryGrid(
+                state.contents,
+                blurThumbnails,
+                localBlacklistEntries,
+              );
             },
           ),
 
@@ -799,7 +826,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build hybrid masonry grid with full-width featured cards at dynamic intervals
   /// For 25 items per page: Featured at positions 0, 8, 17 (3 featured per page)
-  Widget _buildHybridMasonryGrid(List<Content> contents, bool blurThumbnails) {
+  Widget _buildHybridMasonryGrid(
+    List<Content> contents,
+    bool blurThumbnails,
+    List<String> localBlacklistEntries,
+  ) {
     if (contents.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
@@ -837,6 +868,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               content: featuredContent,
               onTap: () => _onContentTap(featuredContent),
               blurThumbnails: blurThumbnails,
+              isBlacklisted: _shouldBlurContent(
+                featuredContent,
+                localBlacklistEntries,
+              ),
             ),
           ),
         );
@@ -876,6 +911,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                         content: singleContent,
                         onTap: () => _onContentTap(singleContent),
                         blurThumbnails: blurThumbnails,
+                        isBlacklisted: _shouldBlurContent(
+                          singleContent,
+                          localBlacklistEntries,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -901,6 +940,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                         content: leftContent,
                         onTap: () => _onContentTap(leftContent),
                         blurThumbnails: blurThumbnails,
+                        isBlacklisted: _shouldBlurContent(
+                          leftContent,
+                          localBlacklistEntries,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -909,6 +952,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                         content: rightContent,
                         onTap: () => _onContentTap(rightContent),
                         blurThumbnails: blurThumbnails,
+                        isBlacklisted: _shouldBlurContent(
+                          rightContent,
+                          localBlacklistEntries,
+                        ),
                       ),
                     ),
                   ],
@@ -926,6 +973,27 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         (context, index) => children[index],
         childCount: children.length,
       ),
+    );
+  }
+
+  Future<void> _refreshBlacklistForActiveSource({
+    bool forceRefresh = false,
+  }) async {
+    final sourceId = _getActiveSource()?.id;
+    if (sourceId == null || sourceId.isEmpty) {
+      return;
+    }
+
+    await _tagBlacklistService.syncOnlineEntries(
+      sourceId,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  bool _shouldBlurContent(Content content, List<String> localBlacklistEntries) {
+    return _tagBlacklistService.isContentBlacklisted(
+      content,
+      localEntries: localBlacklistEntries,
     );
   }
 

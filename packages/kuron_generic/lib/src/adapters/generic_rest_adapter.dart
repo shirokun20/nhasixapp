@@ -150,16 +150,53 @@ class GenericRestAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    // Build URL using the effective query (with embedded filter tokens)
+    // Build URL using the effective query (with embedded filter tokens).
+    // For raw tag_id searches (e.g. from detail tag tap), prefer dedicated
+    // tagSearch endpoint when configured.
     final adjustedFilter = effectiveQuery != filter.query.trim()
         ? filter.copyWith(query: effectiveQuery)
         : filter;
     final sortValue = _resolveSearchSortValue(adjustedFilter, rawConfig);
-    final url = _urlBuilder.buildSearchUrl(
-      searchTemplate,
-      adjustedFilter,
-      sortValue: sortValue,
-    );
+    final rawParams = _extractRawSearchParams(adjustedFilter.query);
+    String url;
+
+    if (rawParams != null && rawParams.isNotEmpty) {
+      final rawMap = _parseRawQueryParams(rawParams);
+      final tagIdValues = rawMap['tag_id'] ?? const <String>[];
+      final tagId = tagIdValues.isNotEmpty ? tagIdValues.first.trim() : '';
+      final tagSearchTemplate = endpoints['tagSearch'] ?? '';
+
+      if (tagId.isNotEmpty && tagSearchTemplate.isNotEmpty) {
+        final page = adjustedFilter.page > 0 ? adjustedFilter.page : 1;
+        final baseTaggedUrl = _urlBuilder.resolve(tagSearchTemplate, {
+          'tagId': tagId,
+          'page': page.toString(),
+          'sort': sortValue,
+          'query': '',
+        });
+
+        final mergedParams = _parseUrlQueryParams(baseTaggedUrl);
+        for (final entry in rawMap.entries) {
+          mergedParams[entry.key] = entry.value;
+        }
+
+        if (sortValue.isNotEmpty &&
+            !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ?? false)) {
+          mergedParams['sort'] = [sortValue];
+        }
+
+        url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
+      } else {
+        url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
+      }
+    } else {
+      url = _urlBuilder.buildSearchUrl(
+        searchTemplate,
+        adjustedFilter,
+        sortValue: sortValue,
+      );
+    }
+
     _logger.d('$_sourceId REST search: Built URL: $url');
 
     try {
@@ -900,6 +937,23 @@ class GenericRestAdapter implements GenericAdapter {
           const FieldSelector(selector: r'$.artists[*].name')),
     );
 
+    final charactersRaw = _parser.extractList(
+      item,
+      _selectorOrDefault(selectors, 'characters',
+          const FieldSelector(selector: r'$.characters[*].name')),
+    );
+
+    final tagIdsRaw = _selectorOrNull(selectors, 'tagIds') != null
+        ? _parser.extractList(item, _selectorOrNull(selectors, 'tagIds')!)
+        : const <String>[];
+    final tagIdTokens = tagIdsRaw
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    final blacklistCharacterTokens = tagIdTokens.isEmpty
+        ? charactersRaw
+        : <String>{...charactersRaw, ...tagIdTokens}.toList(growable: false);
+
     return Content(
       id: id,
       sourceId: _sourceId,
@@ -907,7 +961,7 @@ class GenericRestAdapter implements GenericAdapter {
       coverUrl: coverUrl,
       tags: tags,
       artists: artistsRaw,
-      characters: const [],
+      characters: blacklistCharacterTokens,
       parodies: const [],
       groups: const [],
       language: _extractLanguage(item, selectors, rawConfig: rawConfig),
@@ -1009,6 +1063,12 @@ class GenericRestAdapter implements GenericAdapter {
 
     final pageCountStr = _extract(data, selectors, 'pageCount');
     final pageCount = int.tryParse(pageCountStr ?? '') ?? imageUrls.length;
+    final favoritesFromSelector =
+        int.tryParse(_extract(data, selectors, 'favorites') ?? '');
+    final favoritesFromNhentai = (data is Map)
+        ? int.tryParse(data['num_favorites']?.toString() ?? '')
+        : null;
+    final favorites = favoritesFromSelector ?? favoritesFromNhentai ?? 0;
 
     return Content(
       id: id,
@@ -1020,11 +1080,12 @@ class GenericRestAdapter implements GenericAdapter {
       characters: charactersRaw,
       parodies: parodiesRaw,
       groups: groupsRaw,
-      language:
-          splitLanguage ?? _extractLanguage(data, selectors, rawConfig: rawConfig),
+      language: splitLanguage ??
+          _extractLanguage(data, selectors, rawConfig: rawConfig),
       pageCount: pageCount,
       imageUrls: imageUrls,
       uploadDate: _parseDate(_extract(data, selectors, 'uploadDate')),
+      favorites: favorites,
       englishTitle: _extract(data, selectors, 'detailEnglishTitle') ??
           _extract(data, selectors, 'englishTitle') ??
           _extractNhentaiV2Field(data, 'english'),

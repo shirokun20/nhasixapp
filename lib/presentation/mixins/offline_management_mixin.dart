@@ -284,17 +284,45 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     // Show loading state
     context.read<OfflineSearchCubit>().setLoadingState();
 
+    // Get notification service
+    final notificationService = getIt<NotificationService>();
+
+    // Show ZIP extraction started notification
+    await notificationService.showZipExtractionStarted();
+
     try {
       final importZipUseCase = getIt<ImportZipUseCase>();
 
-      // Execute ZIP import
-      final result = await importZipUseCase(const ImportZipParams());
+      // Execute ZIP import with progress callback
+      final result = await importZipUseCase(
+        ImportZipParams(
+          onProgress: (processed, total, imgCount, currentFile) {
+            // Calculate progress percentage
+            final percentage =
+                total > 0 ? ((processed / total) * 100).toInt() : 0;
+
+            // Update notification with progress
+            notificationService.updateZipExtractionProgress(
+              progress: percentage,
+              message: AppLocalizations.of(context)!
+                  .syncProgressMessage(processed, total),
+            );
+          },
+        ),
+      );
 
       if (!context.mounted) return;
 
       if (result['success'] == true) {
         final contentId = result['contentId'] as String;
         final imageCount = result['imageCount'] as int;
+
+        // Show completion notification
+        await notificationService.showZipExtractionCompleted(
+          imageCount: imageCount,
+        );
+
+        if (!context.mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -321,6 +349,11 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         final error = result['error'] as String? ?? 'Unknown error';
 
         if (error != 'Cancelled') {
+          // Show error notification
+          await notificationService.showZipExtractionError(error: error);
+
+          if (!context.mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Import failed: $error'),
@@ -334,6 +367,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
     } catch (e) {
+      // Show error notification
+      await notificationService.showZipExtractionError(error: e.toString());
+
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(

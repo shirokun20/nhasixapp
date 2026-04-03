@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import '../../core/utils/responsive_grid_delegate.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/pdf_conversion_queue_manager.dart';
+import '../../services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../cubits/offline_search/offline_search_cubit.dart';
 import '../../core/config/remote_config_service.dart';
@@ -35,6 +37,7 @@ class OfflineContentBody extends StatefulWidget {
 class _OfflineContentBodyState extends State<OfflineContentBody>
     with OfflineManagementMixin<OfflineContentBody> {
   late OfflineSearchCubit _offlineSearchCubit;
+  late final TagBlacklistService _tagBlacklistService;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -44,6 +47,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     // Assuming OfflineSearchCubit is provided in the context or via GetIt
     // For safety, we use GetIt here as it's a singleton
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleBlacklistChanged);
 
     // Ensure content is loaded if not already
     if (_offlineSearchCubit.state is OfflineSearchInitial) {
@@ -66,17 +71,31 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         debugPrint('Error syncing offline state with downloads: $e');
       }
     }
+
+    unawaited(_tagBlacklistService.syncAllAvailableSources());
   }
 
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleBlacklistChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
+  void _handleBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsCubit>().state;
+
     return Column(
       children: [
         _buildSearchBar(),
@@ -480,6 +499,10 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           Expanded(
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
+                final localBlacklistEntries = settingsState is SettingsLoaded
+                    ? settingsState.preferences.blacklistedTags
+                    : const <String>[];
+
                 // Wrap GridView with NotificationListener for infinite scroll
                 return NotificationListener<ScrollNotification>(
                   onNotification: (scrollInfo) {
@@ -539,6 +562,10 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             _showContentActions(context, content),
                         showOfflineIndicator: true,
                         isHighlighted: false,
+                        isBlurred: _tagBlacklistService.isContentBlacklisted(
+                          content,
+                          localEntries: localBlacklistEntries,
+                        ),
                         offlineSize: state.offlineSizes[content.id],
                         highlightQuery:
                             state.query, // Pass search query for highlighting

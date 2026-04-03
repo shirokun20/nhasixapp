@@ -112,6 +112,174 @@ abstract class AppLocalizations {
   /// **'Enhanced Reading Experience'**
   String get appSubtitle;
 
+  /// No description provided for @sourceAuthProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile {sourceId}'**
+  String sourceAuthProfileTitle(String sourceId);
+
+  /// No description provided for @sourceAuthLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Login {sourceId}'**
+  String sourceAuthLoginTitle(String sourceId);
+
+  /// No description provided for @sourceAuthConnectedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected Account'**
+  String get sourceAuthConnectedAccount;
+
+  /// No description provided for @sourceAuthSecureLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Login'**
+  String get sourceAuthSecureLogin;
+
+  /// No description provided for @sourceAuthConnectedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is connected and ready.'**
+  String get sourceAuthConnectedDescription;
+
+  /// No description provided for @sourceAuthLoginDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to sync your personalized favorites.'**
+  String get sourceAuthLoginDescription;
+
+  /// No description provided for @sourceAuthUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get sourceAuthUser;
+
+  /// No description provided for @sourceAuthSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'Slug'**
+  String get sourceAuthSlug;
+
+  /// No description provided for @sourceAuthAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticated'**
+  String get sourceAuthAuthenticated;
+
+  /// No description provided for @sourceAuthRefreshProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Profile'**
+  String get sourceAuthRefreshProfile;
+
+  /// No description provided for @sourceAuthLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get sourceAuthLogout;
+
+  /// No description provided for @sourceAuthUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get sourceAuthUsername;
+
+  /// No description provided for @sourceAuthPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get sourceAuthPassword;
+
+  /// No description provided for @sourceAuthCaptchaVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'CAPTCHA verified and stored securely'**
+  String get sourceAuthCaptchaVerified;
+
+  /// No description provided for @sourceAuthCaptchaRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please solve CAPTCHA to continue'**
+  String get sourceAuthCaptchaRequired;
+
+  /// No description provided for @sourceAuthCaptchaSolved.
+  ///
+  /// In en, this message translates to:
+  /// **'CAPTCHA Solved'**
+  String get sourceAuthCaptchaSolved;
+
+  /// No description provided for @sourceAuthSolveCaptcha.
+  ///
+  /// In en, this message translates to:
+  /// **'Solve CAPTCHA'**
+  String get sourceAuthSolveCaptcha;
+
+  /// No description provided for @sourceAuthLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get sourceAuthLoginButton;
+
+  /// No description provided for @sourceAuthLoginSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Login successful'**
+  String get sourceAuthLoginSuccess;
+
+  /// No description provided for @sourceAuthSigningInSecurely.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in securely'**
+  String get sourceAuthSigningInSecurely;
+
+  /// No description provided for @sourceAuthStepValidateRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate request'**
+  String get sourceAuthStepValidateRequest;
+
+  /// No description provided for @sourceAuthStepSecureAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure authentication'**
+  String get sourceAuthStepSecureAuth;
+
+  /// No description provided for @sourceAuthStepFetchProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch profile'**
+  String get sourceAuthStepFetchProfile;
+
+  /// No description provided for @sourceAuthFlowPreparingSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing secure session...'**
+  String get sourceAuthFlowPreparingSession;
+
+  /// No description provided for @sourceAuthFlowSolvingChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Solving security challenge...'**
+  String get sourceAuthFlowSolvingChallenge;
+
+  /// No description provided for @sourceAuthFlowFetchingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Session verified. Fetching profile...'**
+  String get sourceAuthFlowFetchingProfile;
+
+  /// No description provided for @sourceAuthFlowLoginSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Login successful'**
+  String get sourceAuthFlowLoginSuccess;
+
+  /// No description provided for @sourceAuthCaptchaCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'CAPTCHA captured successfully'**
+  String get sourceAuthCaptchaCaptured;
+
   /// No description provided for @home.
   ///
   /// In en, this message translates to:
@@ -147,6 +315,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Random Gallery'**
   String get randomGallery;
+
+  /// No description provided for @randomGalleryLoadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Random Gallery'**
+  String get randomGalleryLoadingTitle;
+
+  /// No description provided for @randomGalleryLoadingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching a random gallery...'**
+  String get randomGalleryLoadingMessage;
+
+  /// No description provided for @randomGalleryFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Found'**
+  String get randomGalleryFoundTitle;
+
+  /// No description provided for @randomGalleryFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening gallery details...'**
+  String get randomGalleryFoundMessage;
+
+  /// No description provided for @randomGalleryNoResult.
+  ///
+  /// In en, this message translates to:
+  /// **'No random gallery found. Try again.'**
+  String get randomGalleryNoResult;
+
+  /// No description provided for @randomGalleryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading random gallery. Please try again.'**
+  String get randomGalleryError;
+
+  /// No description provided for @randomGalleryUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature unavailable'**
+  String get randomGalleryUnavailableTitle;
+
+  /// No description provided for @randomGalleryUnavailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Random Gallery is not available for this source.'**
+  String get randomGalleryUnavailableMessage;
 
   /// No description provided for @offlineContent.
   ///
@@ -5741,6 +5957,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a folder to save downloads'**
   String get storageDescription;
+
+  /// No description provided for @downloadDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Directory'**
+  String get downloadDirectory;
+
+  /// No description provided for @changeDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Directory'**
+  String get changeDirectory;
+
+  /// No description provided for @downloadDirectoryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Download directory updated'**
+  String get downloadDirectoryUpdated;
+
+  /// No description provided for @useDefaultInternalStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Use default internal storage location'**
+  String get useDefaultInternalStorage;
+
+  /// No description provided for @confirmResetStorageDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset download directory to default internal storage?'**
+  String get confirmResetStorageDirectory;
+
+  /// No description provided for @downloadDirectoryReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Download directory reset to default'**
+  String get downloadDirectoryReset;
 
   /// No description provided for @backupNotFound.
   ///

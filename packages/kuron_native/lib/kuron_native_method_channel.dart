@@ -12,6 +12,10 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   /// Progress callback for PDF conversion
   Function(int progress, String message)? _onPdfProgress;
 
+  /// Progress callback for ZIP extraction
+  Function(int processed, int total, int imageCount, String currentFile)?
+  _onZipExtractionProgress;
+
   /// Constructor
   MethodChannelKuronNative() {
     methodChannel.setMethodCallHandler(_handleMethodCall);
@@ -29,6 +33,21 @@ class MethodChannelKuronNative extends KuronNativePlatform {
         } catch (e) {
           // Silently ignore or log if needed
           // print('Error handling onProgress: $e');
+        }
+      }
+    } else if (call.method == 'onZipExtractionProgress') {
+      if (_onZipExtractionProgress != null) {
+        try {
+          final args = call.arguments as Map;
+          final processed = (args['processed'] as num).toInt();
+          final total = (args['total'] as num).toInt();
+          final imageCount = (args['imageCount'] as num).toInt();
+          final currentFile = args['currentFile'] as String;
+
+          _onZipExtractionProgress!(processed, total, imageCount, currentFile);
+        } catch (e) {
+          // Silently ignore or log if needed
+          // print('Error handling onZipExtractionProgress: $e');
         }
       }
     }
@@ -81,11 +100,29 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   @override
   Future<Uint8List?> readZipBytes(String contentUri) async {
-    final bytes = await methodChannel.invokeMethod<Uint8List>(
-      'readZipBytes',
-      {'contentUri': contentUri},
-    );
+    final bytes = await methodChannel.invokeMethod<Uint8List>('readZipBytes', {
+      'contentUri': contentUri,
+    });
     return bytes;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> extractZipFile({
+    required String contentUri,
+    required String destinationPath,
+    Function(int processed, int total, int imageCount, String currentFile)?
+    onProgress,
+  }) async {
+    _onZipExtractionProgress = onProgress;
+    try {
+      final result = await methodChannel.invokeMapMethod<String, dynamic>(
+        'extractZipFile',
+        {'contentUri': contentUri, 'destinationPath': destinationPath},
+      );
+      return result;
+    } finally {
+      _onZipExtractionProgress = null;
+    }
   }
 
   @override
@@ -184,6 +221,19 @@ class MethodChannelKuronNative extends KuronNativePlatform {
           'enableAdBlock': enableAdBlock,
           'clearCookies': clearCookies,
         });
+    return result;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> showCaptchaWebView({
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'showCaptchaWebView',
+      {'provider': provider, 'siteKey': siteKey, 'baseUrl': baseUrl},
+    );
     return result;
   }
 }

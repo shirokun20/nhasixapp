@@ -44,12 +44,14 @@ class KuronNativePlugin :
     private var pendingResult: Result? = null
     private var pendingPickFileMimeType: String? = null
     private var pendingPickFileMode: String? = null
+    private var pendingCaptchaResult: Result? = null
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     private var zipImportHandler: ZipImportHandler? = null
 
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
     private val PICK_FILE_REQUEST_CODE = 1003
+    private val CAPTCHA_WEBVIEW_REQUEST_CODE = 1004
     
     companion object {
         const val TAG = "KuronNativePlugin"
@@ -96,6 +98,9 @@ class KuronNativePlugin :
             "showLoginWebView" -> {
                 handleShowLoginWebView(call, result)
             }
+            "showCaptchaWebView" -> {
+                handleShowCaptchaWebView(call, result)
+            }
             "clearCookies" -> {
                 handleClearCookies(result)
             }
@@ -116,6 +121,9 @@ class KuronNativePlugin :
             }
             "readZipBytes" -> {
                 handleReadZipBytes(call, result)
+            }
+            "extractZipFile" -> {
+                handleExtractZipFile(call, result)
             }
             // Delegate native download methods to handler
             "kuronNativeStartDownload", 
@@ -525,6 +533,43 @@ class KuronNativePlugin :
         }
     }
 
+    private fun handleShowCaptchaWebView(call: MethodCall, result: Result) {
+        val provider = call.argument<String>("provider")?.trim()
+        val siteKey = call.argument<String>("siteKey")?.trim()
+        val baseUrl = call.argument<String>("baseUrl")
+
+        if (provider.isNullOrEmpty() || siteKey.isNullOrEmpty()) {
+            result.error("INVALID_ARGS", "provider and siteKey are required", null)
+            return
+        }
+
+        if (pendingCaptchaResult != null) {
+            result.error("BUSY", "Another captcha operation is in progress", null)
+            return
+        }
+
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        pendingCaptchaResult = result
+
+        try {
+            val intent = CaptchaWebViewActivity.createIntent(
+                context = context,
+                provider = provider,
+                siteKey = siteKey,
+                baseUrl = baseUrl,
+            )
+            activity.startActivityForResult(intent, CAPTCHA_WEBVIEW_REQUEST_CODE)
+        } catch (e: Exception) {
+            pendingCaptchaResult = null
+            result.error("LAUNCH_FAILED", e.message, null)
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         // Handle ZIP import first
         if (zipImportHandler?.onActivityResult(requestCode, resultCode, data) == true) {
@@ -550,6 +595,23 @@ class KuronNativePlugin :
                     pendingResult?.success(resultMap)
                 }
                 pendingResult = null
+            }
+            return true
+        }
+
+        if (requestCode == CAPTCHA_WEBVIEW_REQUEST_CODE) {
+            if (pendingCaptchaResult != null) {
+                val resultMap = HashMap<String, Any?>()
+                if (data != null) {
+                    resultMap["success"] = data.getBooleanExtra(CaptchaWebViewActivity.RESULT_SUCCESS, false)
+                    resultMap["token"] = data.getStringExtra(CaptchaWebViewActivity.RESULT_TOKEN)
+                    resultMap["errorCode"] = data.getStringExtra(CaptchaWebViewActivity.RESULT_ERROR_CODE)
+                    resultMap["errorMessage"] = data.getStringExtra(CaptchaWebViewActivity.RESULT_ERROR_MESSAGE)
+                } else {
+                    resultMap["success"] = false
+                }
+                pendingCaptchaResult?.success(resultMap)
+                pendingCaptchaResult = null
             }
             return true
         }
@@ -796,5 +858,27 @@ class KuronNativePlugin :
         }
 
         zipImportHandler?.readZipBytes(contentUri, result)
+    }
+
+    private fun handleExtractZipFile(call: MethodCall, result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        val contentUri = call.argument<String>("contentUri")
+        val destinationPath = call.argument<String>("destinationPath")
+
+        if (contentUri == null || destinationPath == null) {
+            result.error("INVALID_ARGUMENT", "contentUri and destinationPath are required", null)
+            return
+        }
+
+        if (zipImportHandler == null) {
+            zipImportHandler = ZipImportHandler(activity)
+        }
+
+        zipImportHandler?.extractZipFile(contentUri, destinationPath, channel, result)
     }
 }

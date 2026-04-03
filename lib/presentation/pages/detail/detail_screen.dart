@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +18,9 @@ import 'package:nhasixapp/core/utils/source_url_resolver.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
@@ -43,6 +48,7 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
+  late final TagBlacklistService _tagBlacklistService;
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
@@ -78,10 +84,153 @@ class _DetailScreenState extends State<DetailScreen> {
     return null;
   }
 
+  Future<void> _onFavoritePressed(DetailLoaded detailState) async {
+    final sourceId = detailState.content.sourceId;
+    final remoteConfig = getIt<RemoteConfigService>();
+    final favoriteEnabled = remoteConfig.isFeatureEnabled(
+      sourceId,
+      (f) => f.favorite,
+    );
+
+    if (!favoriteEnabled) {
+      _showFeatureDisabledDialog('favorite');
+      return;
+    }
+
+    final sourceAuthService = getIt<SourceAuthService>();
+    final supportsOnlineFavorite =
+        sourceAuthService.supportsOnlineFavoritesWrite(sourceId);
+
+    if (!supportsOnlineFavorite) {
+      await _detailCubit.toggleFavorite();
+      return;
+    }
+
+    final hasSession = await sourceAuthService.hasSession(sourceId);
+    if (!mounted) return;
+
+    final selection = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.phone_android),
+                title: const Text('Favorite Offline'),
+                onTap: () => Navigator.of(context).pop('offline'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud),
+                enabled: hasSession,
+                title: const Text('Favorite Online'),
+                subtitle: hasSession
+                    ? null
+                    : Text(
+                        AppLocalizations.of(context)!.loginRequiredForAction),
+                onTap: hasSession
+                    ? () => Navigator.of(context).pop('online')
+                    : null,
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud_done),
+                enabled: hasSession,
+                title: const Text('Favorite Both'),
+                subtitle: hasSession
+                    ? null
+                    : Text(
+                        AppLocalizations.of(context)!.loginRequiredForAction),
+                onTap:
+                    hasSession ? () => Navigator.of(context).pop('both') : null,
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selection == null) return;
+
+    switch (selection) {
+      case 'offline':
+        await _detailCubit.toggleFavorite();
+        break;
+      case 'online':
+        await _toggleOnlineFavorite(detailState);
+        break;
+      case 'both':
+        await _detailCubit.toggleFavorite();
+        await _toggleOnlineFavorite(detailState);
+        break;
+    }
+  }
+
+  Future<void> _toggleOnlineFavorite(DetailLoaded detailState) async {
+    final sourceAuthService = getIt<SourceAuthService>();
+    final sourceId = detailState.content.sourceId;
+    final galleryId = int.tryParse(detailState.content.id);
+    if (galleryId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Unsupported gallery ID for online favorite.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final status = await sourceAuthService.checkFavorite(
+        sourceId: sourceId,
+        galleryId: galleryId,
+      );
+
+      if (status.favorited) {
+        await sourceAuthService.removeFavorite(
+          sourceId: sourceId,
+          galleryId: galleryId,
+        );
+      } else {
+        await sourceAuthService.addFavorite(
+          sourceId: sourceId,
+          galleryId: galleryId,
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            status.favorited
+                ? AppLocalizations.of(context)!.removedFromFavorites
+                : AppLocalizations.of(context)!.addToFavorites,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.unableToSyncSettings,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleBlacklistChanged);
 
     // Check if we need to switch source first
     if (widget.sourceId != null) {
@@ -100,6 +249,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // Load content detail first, then load related content separately
     _loadContentAndRelated();
+    unawaited(_refreshOnlineBlacklistForDetail());
 
     // Initialize download manager if not already initialized
     final downloadBloc = context.read<DownloadBloc>();
@@ -153,8 +303,28 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _refreshOnlineBlacklistForDetail() async {
+    final sourceId =
+        widget.sourceId ?? context.read<SourceCubit>().state.activeSource?.id;
+    if (sourceId == null || sourceId.isEmpty) {
+      return;
+    }
+
+    await _tagBlacklistService.syncOnlineEntries(sourceId);
+  }
+
+  void _handleBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleBlacklistChanged);
     _scrollController.dispose();
     _detailCubit.close();
     super.dispose();
@@ -229,7 +399,7 @@ class _DetailScreenState extends State<DetailScreen> {
         var resolvedTagId = tagId?.trim();
         if (resolvedTagId == null ||
             resolvedTagId.isEmpty ||
-            int.tryParse(resolvedTagId) != null) {
+            int.tryParse(resolvedTagId) == null) {
           resolvedTagId =
               _resolveTagIdFromLoadedContent(tagName, candidateTypes);
         }
@@ -303,24 +473,30 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mappedQuery != null && mappedQuery.isNotEmpty) {
         query = mappedQuery;
       } else if (actualSourceId == 'nhentai') {
-        // SPECIAL HANDLING FOR NHENTAI
-        // User requested strict slug format: lowercase + hyphens
-        // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
-
-        // Prioritize explicit slug/tagId if it's text (not numeric ID)
-        String value = tagName.toLowerCase().replaceAll(' ', '-');
-        if (tagId != null && int.tryParse(tagId) == null) {
-          value = tagId;
-        }
-
-        if (tagType != null &&
-            !['tag', 'category'].contains(tagType.toLowerCase())) {
-          // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
-          query = '${tagType.toLowerCase()}:$value';
+        // Prefer API v2 tagged endpoint when a numeric tag ID is available.
+        final numericTagId = (tagId ?? '').trim();
+        if (numericTagId.isNotEmpty && int.tryParse(numericTagId) != null) {
+          query = 'raw:tag_id=$numericTagId';
         } else {
-          // General tags: just the slug (e.g. big-breasts)
-          // This will map to "q=big-breasts" in search
-          query = value;
+          // SPECIAL HANDLING FOR NHENTAI
+          // User requested strict slug format: lowercase + hyphens
+          // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
+
+          // Prioritize explicit slug/tagId if it's text (not numeric ID)
+          String value = tagName.toLowerCase().replaceAll(' ', '-');
+          if (tagId != null && int.tryParse(tagId) == null) {
+            value = tagId;
+          }
+
+          if (tagType != null &&
+              !['tag', 'category'].contains(tagType.toLowerCase())) {
+            // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
+            query = '${tagType.toLowerCase()}:$value';
+          } else {
+            // General tags: just the slug (e.g. big-breasts)
+            // This will map to "q=big-breasts" in search
+            query = value;
+          }
         }
       } else {
         // Config-driven genre route support for generic scraper sources
@@ -621,13 +797,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       onPressed:
                           (detailState.isTogglingFavorite || !favoriteEnabled)
                               ? null
-                              : () {
-                                  if (!favoriteEnabled) {
-                                    _showFeatureDisabledDialog('favorite');
-                                    return;
-                                  }
-                                  _detailCubit.toggleFavorite();
-                                },
+                              : () => _onFavoritePressed(detailState),
                     );
                   },
                 ),
@@ -738,6 +908,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     // Title section
                     _buildTitleSection(content),
+                    const SizedBox(height: 12),
+                    _buildBlacklistMatchBanner(content),
                     const SizedBox(height: 24),
 
                     // Metadata section
@@ -878,6 +1050,55 @@ class _DetailScreenState extends State<DetailScreen> {
                 _formatDate(content.uploadDate), Icons.schedule),
           _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
               _formatNumber(content.favorites), Icons.favorite),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistMatchBanner(Content content) {
+    final settingsState = context.read<SettingsCubit>().state;
+    final localBlacklistEntries = settingsState is SettingsLoaded
+        ? settingsState.preferences.blacklistedTags
+        : const <String>[];
+
+    final isBlacklisted = _tagBlacklistService.isContentBlacklisted(
+      content,
+      localEntries: localBlacklistEntries,
+    );
+
+    if (!isBlacklisted) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.visibility_off_rounded,
+            color: theme.colorScheme.onErrorContainer,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'This gallery matches blacklist rules. Cover/cards can be blurred in list views.',
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
