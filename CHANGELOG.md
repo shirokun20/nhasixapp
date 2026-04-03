@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.15+24] - 2026-04-03
+
+### 🎉 QoL Enhancements — Issue #32
+
+#### 🔐 Nhentai Login & Session Auth
+- **Config-Driven Auth**: Added `SourceAuthService`, `SourceAuthCubit`, and `SourceLoginPage` — fully config-driven, no source hardcoding in UI.
+- **CAPTCHA Solver (Native)**: Migrated CAPTCHA flow from embedded WebView page to `kuron_native` Android WebView activity (`CaptchaWebViewActivity`) with JS bridge token/error callbacks and status-bar-safe insets.
+- **PoW Login Support**: nhentai-config now declares `powAction=login` + full auth endpoint mapping for PoW → CAPTCHA → session persist flow.
+- **Route**: Generic `/source-login?source={id}` route and drawer entry appear automatically for any auth-capable config source.
+
+#### ⭐ Online Favorites
+- **2-Tab Favorites Screen**: New Offline / Online tab layout; online tab is driven by config capabilities (no source hardcode).
+- **Online Favorite Actions**: Add, remove, and check favorite status via config-declared `auth.endpoints.galleryFavorite` template — with paginated online list support (`page` + `q` query).
+- **Detail Screen**: Tap favorite heart to choose target — **Offline / Online / Both** — when source supports online write and user has an active session.
+- **Resilience**: Auto-retry with bounded attempts + localized friendly error messages for transient network failures.
+
+#### 🗂 Tag Blacklist (Offline + Online)
+- **Settings Blacklist Manager**: Modern bottom-sheet editor with chip previews, multi-entry parsing, and nhentai login shortcut.
+- **Persistent Local Rules**: `blacklistedTags` now persisted via `PreferencesService` + `SettingsCubit`; rules survive app restarts and work fully offline.
+- **Online Sync (nhentai)**: Config-driven `TagBlacklistService` fetches nhentai `/api/v2/blacklist/ids` and merges with local rules for blur matching in feeds.
+- **Blur Overlays Applied**: `MainGridCard`, `MainFeaturedCard`, `ContentCard`, `FeaturedContentCard`, offline library cards, and tag-browse result screen.
+- **Detail Screen Banner**: Indicator banner when current gallery matches merged blacklist rules.
+- **Picker Fix**: `Clear All` + `Apply` now correctly persists empty selection; results replace prior entries instead of appending stale metadata.
+
+#### 🎲 Random Gallery
+- **Random Button**: Tapping Random opens a loading dialog, fetches a random gallery from the configured source, and navigates directly to the Detail screen on success.
+- **Unavailability Handling**: Clear localized message when the active source does not support random gallery.
+
+#### 🧭 Gesture Navigation
+- **Drawer Edge Drag**: Configurable edge drag width to open the navigation drawer with a swipe.
+- **Haptic Feedback**: Tactile response on drawer open/close gestures.
+
+#### ⚙️ Centralized Settings
+- **Settings Hub**: All download and storage settings consolidated into the main Settings screen.
+- **Download Settings Removed from Downloads Screen**: Storage path, download limits, and related options now live exclusively in Settings.
+- **ZIP Import Improvements**: Native ZIP extraction with real-time progress dialog and improved large-file handling.
+
+#### 🔍 Native Explorer (Advanced Search)
+- **Dynamic Tag Browsing**: API-driven tag explorer with categorized browsing, search, and inline tag detail cards.
+- **Tag Detail Screen**: Full tag info with gallery count, related gallery list, and tag-scoped navigation.
+- **Tag API v2 Infrastructure**: Clean Architecture tag data source and use case layer for tag queries.
+
+#### ♻️ Refactor
+- **Source Config Auth Block**: `assets/configs/nhentai-config.json` now declares auth + blacklist feature flags and all endpoint templates.
+- **CAPTCHA Solver Page**: Removed direct `webview_flutter` dependency; all CAPTCHA solving goes through `KuronNative.instance.showCaptchaWebView`.
+
+> ⚠️ **Note**: Sources other than nhentai (E-Hentai, HentaiNexus, Hitomi, etc.) are **premium / advanced sources** requiring manual installation via Settings → Sources → Add via Link or Import ZIP.
+
+---
+
 ## [0.9.14+23] - 2026-03-31
 
 ### 🔧 Build Update (Build #23)

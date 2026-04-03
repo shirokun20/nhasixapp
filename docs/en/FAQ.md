@@ -60,6 +60,46 @@ Try these solutions:
 3. Try using a VPN if access is blocked in your region
 4. Pull down to refresh the content
 5. **Crotpedia Only**: Some chapters require login. Navigate to **Drawer → Login** to access full content.
+6. **Nhentai**: Some actions (online favorites, blacklist sync) require login. Go to **Drawer → Login (nhentai)** to sign in.
+
+---
+
+**Q: Can I log in with my nhentai account?**
+
+Yes! Kuron supports nhentai login starting from v0.9.15:
+- Go to **Drawer → Login (nhentai)** and enter your credentials.
+- You may need to solve a CAPTCHA during login — tap **Solve CAPTCHA** and complete the challenge.
+- Once logged in, you can sync your **online favorites** and your nhentai **blacklist** (tags you want to blur in feeds).
+
+---
+
+**Q: What are Online Favorites?**
+
+Online Favorites are synced directly with your nhentai account. When adding a gallery to favorites from the Detail screen, you can choose:
+- **Offline** — saved locally on device only
+- **Online** — synced to your nhentai account (requires login)
+- **Both** — saved locally AND synced to nhentai
+
+View online favorites in **Favorites → Online** tab.
+
+---
+
+**Q: What is the Tag Blacklist?**
+
+The Tag Blacklist lets you hide unwanted content by blurring thumbnails in all feeds.
+- **Local rules**: Manage tags in **Settings → Blacklist**. Works offline, no login required.
+- **Online sync (nhentai)**: When logged in, your nhentai server-side blacklist is automatically merged with local rules for combined blur matching.
+
+---
+
+**Q: What are "Other Sources"? Are they free?**
+
+Kuron supports multiple content providers beyond nhentai:
+- **E-Hentai, HentaiNexus, Hitomi, and others** are **premium / advanced sources**.
+- They are **not bundled** by default and require manual installation via:
+  **Settings → Sources → Add via Link** or **Import ZIP**.
+- These sources may require an account or have their own access requirements.
+- nhentai is the default free source included out of the box.
 
 ---
 
@@ -114,8 +154,8 @@ You can either:
 
 Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
 
-Current latest release: **v0.9.14+23**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23
+Current latest release: **v0.9.15+24**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.15%2B24
 
 ---
 

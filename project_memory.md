@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.14+23 |
+| **Version** | 0.9.15+24 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -86,15 +86,14 @@ lib/
 - unity-ads-fix
 - view_comments
 
-### 🚧 In Progress (0)
-- *(None)*
+### 🚧 In Progress (1)
+- qol_enhancements ✨ **NEAR COMPLETE** (Submit Comments remaining, all other tasks done)
 
-### 📋 Analysis Phase (6)
+### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
-- qol_enhancements ✨ **NEW** (Issue #32: Login, Gesture, Global Sort)
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
@@ -180,6 +179,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-03 | Copilot | Release prep v0.9.15+24 — changelog, docs, README | ✅ Done | Bumped version 0.9.14+23 → 0.9.15+24. Wrote full `[0.9.15+24]` CHANGELOG entry covering: nhentai login + native CAPTCHA solver, online favorites (2-tab, add/remove/check, offline/online/both), tag blacklist (local settings manager + nhentai online sync + blur overlays + picker fix), random gallery, gesture navigation, centralized settings, native explorer, ZIP import. Added premium-source callout (E-Hentai/HentaiNexus/Hitomi require manual install via Link/ZIP). Updated docs/en/FAQ.md + docs/id/FAQ.md with new Q&A sections: nhentai login, online favorites, tag blacklist, other sources premium req. Updated README.md + README_ID.md: version badge v0.9.15, download link +24, new login/sync features block, premium source warning. Updated project_memory.md. |
 | 2026-04-02 | Copilot | Blacklist picker clear-all apply sync fix | ✅ Done | Fixed settings blacklist picker regression: `Clear All` then `Apply` previously kept old tags due to empty-result early return and append behavior. Updated flow so `null` remains cancel-only, empty selection is saved as valid clear state, and picker results replace prior local entries/metadata. |
 | 2026-04-02 | Codex | QoL blacklist offline+online completion | ✅ Done | Finished Sub-Plan P5 for `qol_enhancements`: persisted local `blacklistedTags` through `PreferencesService` + `SettingsCubit`, added a modern blacklist manager in Settings, extended config-driven auth with nhentai `/api/v2/blacklist/ids`, and merged cached online IDs with local rules through `TagBlacklistUtils` / `TagBlacklistService`. Applied blurred blacklist cover overlays across main cards, generic content cards, tag-browse results, and offline library cards. |
 | 2026-04-02 | Copilot | Native CAPTCHA migration + favorites online hardening | ✅ Done | Migrated CAPTCHA solving flow from embedded `webview_flutter` page to `kuron_native` (`showCaptchaWebView`) with a dedicated Android `CaptchaWebViewActivity`, token/error JS bridge, and status-bar-safe toolbar insets. In parallel, stabilized online favorites with auto-retry for transient network failures and localized friendly error messaging to avoid raw DioException output in UI. |
