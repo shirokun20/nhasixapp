@@ -76,9 +76,21 @@ class _DetailScreenState extends State<DetailScreen> {
       }
 
       final slug = tag.slug?.trim();
-      if (slug == null || slug.isEmpty) continue;
-      if (int.tryParse(slug) != null) continue;
-      return slug;
+      if (slug != null && slug.isNotEmpty && slug != '0') {
+        return slug;
+      }
+
+      final url = tag.url.trim();
+      if (url.isEmpty) continue;
+
+      final uri = Uri.tryParse(url);
+      final segments = uri?.pathSegments ?? const <String>[];
+      for (final segment in segments.reversed) {
+        final candidate = segment.trim();
+        if (candidate.isNotEmpty && candidate != '0') {
+          return candidate;
+        }
+      }
     }
 
     return null;
@@ -399,7 +411,7 @@ class _DetailScreenState extends State<DetailScreen> {
         var resolvedTagId = tagId?.trim();
         if (resolvedTagId == null ||
             resolvedTagId.isEmpty ||
-            int.tryParse(resolvedTagId) == null) {
+            resolvedTagId == '0') {
           resolvedTagId =
               _resolveTagIdFromLoadedContent(tagName, candidateTypes);
         }

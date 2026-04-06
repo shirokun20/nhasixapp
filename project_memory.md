@@ -218,6 +218,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 | 2026-03-01 | Copilot | nhentai_test Bug Fixes: Search Filters + Comment Avatar | ✅ Done | [→](projects/sessions/2026-03-01-copilot-nhentai-bugfixes.md) |
 | 2026-03-01 | OpenCode | Phase 2 Bug Fixes: Cover URL & Pagination | ✅ Done | [→](projects/sessions/2026-03-01-opencode-cover-pagination.md) |
 | 2026-03-01 | OpenCode | multi_provider_integration Phase 2 Wiring | ✅ Done | [→](projects/sessions/2026-03-01-opencode-phase2-wiring.md) |
+| 2026-04-06 | Codex | MangaDex author/artist tag fix + EHentai language fallback fix | ✅ Done | Preserved UUID tag navigation in detail screen, switched MangaDex author/artist tag mapping to dedicated `authors[]` / `artists[]` params, and stopped EHentai from defaulting missing language to `english`; regression tests added for both adapters. |
 | 2026-03-01 | OpenCode | multi_provider_integration Phase 0 + 0B + 1 | ✅ Done | [→](projects/sessions/2026-03-01-opencode-phase0-phase1.md) |
 | 2026-03-01 | OpenCode | Phase 2 AntiDetection Integration | ✅ Done | [→](projects/sessions/2026-03-01-opencode-antidetection.md) |
 | 2026-03-01 | Antigravity | Project Memory & Tooling Setup | ✅ Done | — |

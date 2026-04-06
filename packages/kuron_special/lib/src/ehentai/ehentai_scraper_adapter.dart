@@ -754,7 +754,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
       characters: const [],
       parodies: const [],
       groups: const [],
-      language: (rawConfig['defaultLanguage'] as String?) ?? 'unknown',
+      language: 'unknown',
       pageCount: 0,
       imageUrls: const [],
       uploadDate: DateTime.fromMillisecondsSinceEpoch(0),

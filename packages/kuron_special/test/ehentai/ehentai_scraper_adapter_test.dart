@@ -562,6 +562,38 @@ void main() {
       expect(result.items[2].coverUrl, 'https://thumb.example/c.webp');
     });
 
+    test('search home keeps unknown language when row has no language tag',
+        () async {
+      const homeHtmlWithoutLanguageTags = '''
+<html><body>
+  <table class="itg gltc">
+    <tr>
+      <td class="gl2c"><img src="https://thumb.example/a.webp"></td>
+      <td class="gl3c glname">
+          <a href="/g/111/aaa/"><span class="glink">Item A</span></a>
+      </td>
+    </tr>
+  </table>
+</body></html>
+''';
+
+      mock.onGet(
+        'https://e-hentai.org/?page=1',
+        (server) => server.reply(
+          200,
+          homeHtmlWithoutLanguageTags,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(const SearchFilter(page: 1), config);
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.language, 'unknown');
+    });
+
     test('search raw query page 2 follows token pagination and keeps covers',
         () async {
       mock.onGet(
