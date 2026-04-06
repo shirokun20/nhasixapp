@@ -1,0 +1,425 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Front Page" [ref=e4] [cursor=pointer]:
+      - /url: https://e-hentai.org/
+    - link "Watched" [ref=e6] [cursor=pointer]:
+      - /url: https://e-hentai.org/watched
+    - link "Popular" [ref=e8] [cursor=pointer]:
+      - /url: https://e-hentai.org/popular
+    - link "Torrents" [ref=e10] [cursor=pointer]:
+      - /url: https://e-hentai.org/torrents.php
+    - link "Favorites" [ref=e12] [cursor=pointer]:
+      - /url: https://e-hentai.org/favorites.php
+    - link "My Home" [ref=e14] [cursor=pointer]:
+      - /url: https://e-hentai.org/home.php
+    - link "My Uploads" [ref=e16] [cursor=pointer]:
+      - /url: https://upload.e-hentai.org/manage
+    - link "Toplists" [ref=e18] [cursor=pointer]:
+      - /url: https://e-hentai.org/toplist.php
+    - link "Bounties" [ref=e20] [cursor=pointer]:
+      - /url: https://e-hentai.org/bounty.php
+    - link "News" [ref=e22] [cursor=pointer]:
+      - /url: https://e-hentai.org/news.php
+    - link "Forums" [ref=e24] [cursor=pointer]:
+      - /url: https://forums.e-hentai.org/
+    - link "Wiki" [ref=e26] [cursor=pointer]:
+      - /url: https://ehwiki.org/
+    - link "HentaiVerse" [ref=e28] [cursor=pointer]:
+      - /url: https://hentaiverse.org/
+  - iframe [ref=e29]:
+    - generic [active] [ref=f8e1]:
+      - generic [ref=f8e4]:
+        - link "Ad Info & Reporting" [ref=f8e6] [cursor=pointer]:
+          - /url: //ck.juicyads.com/getjuicy_3.php?z=265910&report=1829630.0.0
+          - img "Ad Info & Reporting" [ref=f8e7]
+        - link [ref=f8e9] [cursor=pointer]:
+          - /url: https://ck.juicyads.com/getjuicy.php?jad=1829630&juser=156612&data=81b6b52645e3141f0b6a255bb98e5a53&idty=f81817a6ae66a5e066b4a54d0ddb139e&std2=x243y203y253q2f4b494&pubid=115&zoneid=265910&jurl=p5y5l4i4m4b424n27434e4l5n4z5g5d434k4i4b4t2
+        - generic:
+          - link:
+            - /url: //ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=9
+      - table [ref=f8e12]:
+        - rowgroup [ref=f8e13]:
+          - row [ref=f8e14]:
+            - cell [ref=f8e15]
+          - row [ref=f8e16]:
+            - cell [ref=f8e17]:
+              - link [ref=f8e18] [cursor=pointer]:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=1
+          - row [ref=f8e19]:
+            - cell [ref=f8e20]:
+              - link [ref=f8e21] [cursor=pointer]:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=2
+          - row [ref=f8e22]:
+            - cell [ref=f8e23]:
+              - link [ref=f8e24] [cursor=pointer]:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=3
+          - row [ref=f8e25]:
+            - cell [ref=f8e26]:
+              - link [ref=f8e27] [cursor=pointer]:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=4
+          - row [ref=f8e28]:
+            - cell [ref=f8e29]:
+              - link:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=5
+          - row [ref=f8e30]:
+            - cell [ref=f8e31]:
+              - link [ref=f8e32] [cursor=pointer]:
+                - /url: https://ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=265910&type=6
+  - generic [ref=e31]:
+    - generic [ref=e33]:
+      - heading "[Koko de Chikubi o Hitotsumami (Juurouta)] Nyotaika Dubai Yagi no Doubutsu Nakayoshi Show | 女体化迪拜山羊的动物浓密性交SHOW [Chinese] [白杨汉化组] [Digital]" [level=1] [ref=e34]
+      - heading "[ここで乳首をひとつまみ (十郎太)] 女体化ドバイヤギの動物なかよしショー [中国翻訳] [DL版]" [level=1] [ref=e35]
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e39] [cursor=pointer]: Doujinshi
+        - generic [ref=e40]:
+          - link "杨声器不成器" [ref=e41] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/%E6%9D%A8%E5%A3%B0%E5%99%A8%E4%B8%8D%E6%88%90%E5%99%A8
+          - link "PM" [ref=e42] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=6244357
+            - img "PM" [ref=e43]
+        - table [ref=e45]:
+          - rowgroup [ref=e46]:
+            - 'row "Posted: 2026-04-06 11:22" [ref=e47]':
+              - cell "Posted:" [ref=e48]
+              - cell "2026-04-06 11:22" [ref=e49]
+            - 'row "Parent: None" [ref=e50]':
+              - cell "Parent:" [ref=e51]
+              - cell "None" [ref=e52]
+            - 'row "Visible: Yes" [ref=e53]':
+              - cell "Visible:" [ref=e54]
+              - cell "Yes" [ref=e55]
+            - 'row "Language: Chinese TR" [ref=e56]':
+              - cell "Language:" [ref=e57]
+              - cell "Chinese TR" [ref=e58]
+            - 'row "File Size: 38.79 MiB" [ref=e59]':
+              - cell "File Size:" [ref=e60]
+              - cell "38.79 MiB" [ref=e61]
+            - 'row "Length: 37 pages" [ref=e62]':
+              - cell "Length:" [ref=e63]
+              - cell "37 pages" [ref=e64]
+            - 'row "Favorited: 381 times" [ref=e65]':
+              - cell "Favorited:" [ref=e66]
+              - cell "381 times" [ref=e67]
+        - table [ref=e69]:
+          - rowgroup [ref=e70]:
+            - 'row "Rating: 25" [ref=e71]':
+              - cell "Rating:" [ref=e72]
+              - cell [ref=e73]:
+                - img [ref=e75] [cursor=pointer]
+              - cell "25" [ref=e76]
+            - 'row "Average: 4.20" [ref=e77]':
+              - 'cell "Average: 4.20" [ref=e78]'
+        - link "Add to Favorites" [ref=e81] [cursor=pointer]:
+          - /url: "#"
+          - img [ref=e82]
+          - text: Add to Favorites
+      - generic [ref=e83]:
+        - table [ref=e85]:
+          - rowgroup [ref=e86]:
+            - 'row "language: chinese translated" [ref=e87]':
+              - cell "language:" [ref=e88]
+              - cell "chinese translated" [ref=e89]:
+                - link "chinese" [ref=e91] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/language:chinese
+                - link "translated" [ref=e93] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/language:translated
+            - 'row "group: koko de chikubi o hitotsumami" [ref=e94]':
+              - cell "group:" [ref=e95]
+              - cell "koko de chikubi o hitotsumami" [ref=e96]:
+                - link "koko de chikubi o hitotsumami" [ref=e98] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/group:koko+de+chikubi+o+hitotsumami
+            - 'row "artist: juurouta" [ref=e99]':
+              - cell "artist:" [ref=e100]
+              - cell "juurouta" [ref=e101]:
+                - link "juurouta" [ref=e103] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/artist:juurouta
+            - 'row "female: big breasts bikini blowjob blowjob face dark skin kissing prostitution swimsuit tail thigh high boots twintails" [ref=e104]':
+              - cell "female:" [ref=e105]
+              - cell "big breasts bikini blowjob blowjob face dark skin kissing prostitution swimsuit tail thigh high boots twintails" [ref=e106]:
+                - link "big breasts" [ref=e108] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:big+breasts
+                - link "bikini" [ref=e110] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:bikini
+                - link "blowjob" [ref=e112] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:blowjob
+                - link "blowjob face" [ref=e114] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:blowjob+face
+                - link "dark skin" [ref=e116] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:dark+skin
+                - link "kissing" [ref=e118] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:kissing
+                - link "prostitution" [ref=e120] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:prostitution
+                - link "swimsuit" [ref=e122] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:swimsuit
+                - link "tail" [ref=e124] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:tail
+                - link "thigh high boots" [ref=e126] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:thigh+high+boots
+                - link "twintails" [ref=e128] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/female:twintails
+            - 'row "male: bbm" [ref=e129]':
+              - cell "male:" [ref=e130]
+              - cell "bbm" [ref=e131]:
+                - link "bbm" [ref=e133] [cursor=pointer]:
+                  - /url: https://e-hentai.org/tag/male:bbm
+        - generic [ref=e135]:
+          - textbox "Enter new tags, separated with comma" [ref=e136]
+          - button "Tag" [ref=e137] [cursor=pointer]
+      - generic [ref=e139]:
+        - paragraph [ref=e140]:
+          - img [ref=e141]
+          - link "Report Gallery" [ref=e142] [cursor=pointer]:
+            - /url: https://e-hentai.org/g/3877175/077c20fc5f/?report=select
+        - paragraph [ref=e143]:
+          - img [ref=e144]
+          - link "Archive Download" [ref=e145] [cursor=pointer]:
+            - /url: "#"
+        - paragraph [ref=e146]:
+          - img [ref=e147]
+          - link "Torrent Download (1)" [ref=e148] [cursor=pointer]:
+            - /url: "#"
+        - paragraph [ref=e149]:
+          - img [ref=e150]
+          - link "Petition to Expunge" [ref=e151] [cursor=pointer]:
+            - /url: https://e-hentai.org/g/3877175/077c20fc5f/?act=expunge
+        - paragraph [ref=e152]:
+          - img [ref=e153]
+          - link "Petition to Rename" [ref=e154] [cursor=pointer]:
+            - /url: "#"
+  - iframe [ref=e156]:
+    - generic [ref=f10e4]:
+      - link "Ad Info & Reporting" [ref=f10e6] [cursor=pointer]:
+        - /url: //ck.juicyads.com/getjuicy_3.php?z=671616&report=1482793.0.0
+        - img "Ad Info & Reporting" [ref=f10e7]
+      - link [ref=f10e9] [cursor=pointer]:
+        - /url: https://ck.juicyads.com/getjuicy.php?jad=1482793&juser=201350&data=1cbf39b6ea5421b733713ba0f3a1116d&idty=f81817a6ae66a5e066b4a54d0ddb139e&std2=x243y203y253q2f4b494&pubid=115&zoneid=671616&jurl=p5y5l4i4m4b424n27434e4l5n4z5g5d434k4i4b4t2
+      - generic:
+        - link:
+          - /url: //ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=671616&type=9
+  - generic [ref=e157]:
+    - paragraph [ref=e158]: Showing 1 - 20 of 37 images
+    - table [ref=e159]:
+      - rowgroup [ref=e160]:
+        - row "< 1 2 >" [ref=e161]:
+          - cell "<" [ref=e162] [cursor=pointer]
+          - cell "1" [ref=e163] [cursor=pointer]:
+            - link "1" [ref=e164]:
+              - /url: https://e-hentai.org/g/3877175/077c20fc5f/
+          - cell "2" [ref=e165] [cursor=pointer]:
+            - link "2" [ref=e166]:
+              - /url: https://e-hentai.org/g/3877175/077c20fc5f/?p=1
+          - cell ">" [ref=e167] [cursor=pointer]:
+            - link ">" [ref=e168]:
+              - /url: https://e-hentai.org/g/3877175/077c20fc5f/?p=1
+  - generic [ref=e169]:
+    - 'link "Page 1: page_001.jpg" [ref=e170] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/00e80a3318/3877175-1
+      - 'generic "Page 1: page_001.jpg" [ref=e171]'
+    - 'link "Page 2: page_002.jpg" [ref=e172] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/60d47419d8/3877175-2
+      - 'generic "Page 2: page_002.jpg" [ref=e173]'
+    - 'link "Page 3: page_003.jpg" [ref=e174] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/19daac05d2/3877175-3
+      - 'generic "Page 3: page_003.jpg" [ref=e175]'
+    - 'link "Page 4: page_004.jpg" [ref=e176] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/8dbbc297fb/3877175-4
+      - 'generic "Page 4: page_004.jpg" [ref=e177]'
+    - 'link "Page 5: page_005.jpg" [ref=e178] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/5dc270c31b/3877175-5
+      - 'generic "Page 5: page_005.jpg" [ref=e179]'
+    - 'link "Page 6: page_006.jpg" [ref=e180] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/12efccea53/3877175-6
+      - 'generic "Page 6: page_006.jpg" [ref=e181]'
+    - 'link "Page 7: page_007.jpg" [ref=e182] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/ef461733d6/3877175-7
+      - 'generic "Page 7: page_007.jpg" [ref=e183]'
+    - 'link "Page 8: page_008.jpg" [ref=e184] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/8ce992480c/3877175-8
+      - 'generic "Page 8: page_008.jpg" [ref=e185]'
+    - 'link "Page 9: page_009.jpg" [ref=e186] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/7094864748/3877175-9
+      - 'generic "Page 9: page_009.jpg" [ref=e187]'
+    - 'link "Page 10: page_010.jpg" [ref=e188] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/3ae3a455e3/3877175-10
+      - 'generic "Page 10: page_010.jpg" [ref=e189]'
+    - 'link "Page 11: page_011.jpg" [ref=e190] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/0cf9c13035/3877175-11
+      - 'generic "Page 11: page_011.jpg" [ref=e191]'
+    - 'link "Page 12: page_012.jpg" [ref=e192] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/7195a5c35a/3877175-12
+      - 'generic "Page 12: page_012.jpg" [ref=e193]'
+    - 'link "Page 13: page_013.jpg" [ref=e194] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/29374fb5e9/3877175-13
+      - 'generic "Page 13: page_013.jpg" [ref=e195]'
+    - 'link "Page 14: page_014.jpg" [ref=e196] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/7f824e48f6/3877175-14
+      - 'generic "Page 14: page_014.jpg" [ref=e197]'
+    - 'link "Page 15: page_015.jpg" [ref=e198] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/84cf1d1156/3877175-15
+      - 'generic "Page 15: page_015.jpg" [ref=e199]'
+    - 'link "Page 16: page_016.jpg" [ref=e200] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/b1279a762e/3877175-16
+      - 'generic "Page 16: page_016.jpg" [ref=e201]'
+    - 'link "Page 17: page_017.jpg" [ref=e202] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/d4b6ceebad/3877175-17
+      - 'generic "Page 17: page_017.jpg" [ref=e203]'
+    - 'link "Page 18: page_018.jpg" [ref=e204] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/f4a67b49b6/3877175-18
+      - 'generic "Page 18: page_018.jpg" [ref=e205]'
+    - 'link "Page 19: page_019.jpg" [ref=e206] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/15c2f51804/3877175-19
+      - 'generic "Page 19: page_019.jpg" [ref=e207]'
+    - 'link "Page 20: page_020.jpg" [ref=e208] [cursor=pointer]':
+      - /url: https://e-hentai.org/s/1451546516/3877175-20
+      - 'generic "Page 20: page_020.jpg" [ref=e209]'
+  - table [ref=e211]:
+    - rowgroup [ref=e212]:
+      - row "< 1 2 >" [ref=e213]:
+        - cell "<" [ref=e214] [cursor=pointer]
+        - cell "1" [ref=e215] [cursor=pointer]:
+          - link "1" [ref=e216]:
+            - /url: https://e-hentai.org/g/3877175/077c20fc5f/
+        - cell "2" [ref=e217] [cursor=pointer]:
+          - link "2" [ref=e218]:
+            - /url: https://e-hentai.org/g/3877175/077c20fc5f/?p=1
+        - cell ">" [ref=e219] [cursor=pointer]:
+          - link ">" [ref=e220]:
+            - /url: https://e-hentai.org/g/3877175/077c20fc5f/?p=1
+  - iframe [ref=e221]:
+    - generic [ref=f12e4]:
+      - link "Ad Info & Reporting" [ref=f12e6] [cursor=pointer]:
+        - /url: //ck.juicyads.com/getjuicy_3.php?z=249006&report=791294.0.0
+        - img "Ad Info & Reporting" [ref=f12e7]
+      - link [ref=f12e9] [cursor=pointer]:
+        - /url: https://ck.juicyads.com/getjuicy.php?jad=791294&juser=200904&data=bb4dcf080c6b819d39ba67dfa150f924&idty=f81817a6ae66a5e066b4a54d0ddb139e&std2=x243y203y253q2f4b494&pubid=115&zoneid=249006&jurl=p5y5l4i4m4b424n27434e4l5n4z5g5d434k4i4b4t2
+      - generic:
+        - link:
+          - /url: //ck.juicyads.com/getjuicy_2.php?p=115&s=6666&z=249006&type=9
+  - generic [ref=e222]:
+    - generic [ref=e223]:
+      - generic [ref=e224]:
+        - generic [ref=e225]:
+          - text: "Posted on 06 April 2026, 11:22 by:"
+          - link "杨声器不成器" [ref=e226] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/%E6%9D%A8%E5%A3%B0%E5%99%A8%E4%B8%8D%E6%88%90%E5%99%A8
+          - link "PM" [ref=e227] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=6244357
+            - img "PM" [ref=e228]
+        - generic [ref=e229]: Uploader Comment
+      - generic [ref=e230]:
+        - text: "源:"
+        - link "https://e-hentai.org/g/3860126/ca51d825bd/" [ref=e231] [cursor=pointer]:
+          - /url: https://e-hentai.org/g/3860126/ca51d825bd/
+        - text: 什么叫人兽本中的兽是女方那边的？
+    - generic [ref=e232]:
+      - generic [ref=e233]:
+        - generic [ref=e234]:
+          - text: "Posted on 06 April 2026, 11:33 by:"
+          - link "tyrant-x" [ref=e235] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/tyrant-x
+          - link "PM" [ref=e236] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=3350238
+            - img "PM" [ref=e237]
+        - generic [ref=e238] [cursor=pointer]: Score +22
+      - generic [ref=e239]:
+        - text: 看之前：区区人兽而已，真人的都看过了还怕这个？我倒要看看还能整什么花活
+        - text: 看以后：地铁老人看手机.jpg
+    - generic [ref=e240]:
+      - generic [ref=e241]:
+        - generic [ref=e242]:
+          - text: "Posted on 06 April 2026, 11:33 by:"
+          - link "nobunanami" [ref=e243] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/nobunanami
+          - link "PM" [ref=e244] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=7505611
+            - img "PM" [ref=e245]
+        - generic [ref=e246] [cursor=pointer]: Score +18
+      - generic [ref=e247]: 啊？啊？？
+    - generic [ref=e248]:
+      - generic [ref=e249]:
+        - generic [ref=e250]:
+          - text: "Posted on 06 April 2026, 12:15 by:"
+          - link "gxnnlcl" [ref=e251] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/gxnnlcl
+          - link "PM" [ref=e252] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=1404646
+            - img "PM" [ref=e253]
+        - generic [ref=e254] [cursor=pointer]: Score +20
+      - generic [ref=e255]: 石油佬就是牛b
+    - generic [ref=e256]:
+      - generic [ref=e257]:
+        - generic [ref=e258]:
+          - text: "Posted on 06 April 2026, 12:33 by:"
+          - link "06君" [ref=e259] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/06%E5%90%9B
+          - link "PM" [ref=e260] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=2864263
+            - img "PM" [ref=e261]
+        - generic [ref=e262] [cursor=pointer]: Score +6
+      - generic [ref=e263]: 广东仔第一时间看到拜山
+    - generic [ref=e264]:
+      - generic [ref=e265]:
+        - generic [ref=e266]:
+          - text: "Posted on 06 April 2026, 12:34 by:"
+          - link "RUSTRED1145141919810" [ref=e267] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/RUSTRED1145141919810
+          - link "PM" [ref=e268] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=8964379
+            - img "PM" [ref=e269]
+        - generic [ref=e270] [cursor=pointer]: Score +4
+      - generic [ref=e271]: 山羊也可以这么美丽吗？
+    - generic [ref=e272]:
+      - generic [ref=e273]:
+        - generic [ref=e274]:
+          - text: "Posted on 06 April 2026, 13:14 by:"
+          - link "villy0414" [ref=e275] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/villy0414
+          - link "PM" [ref=e276] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=2746205
+            - img "PM" [ref=e277]
+        - generic [ref=e278] [cursor=pointer]: Score +6
+      - generic [ref=e279]: 所以我說山羊的要素呢(
+    - generic [ref=e280]:
+      - generic [ref=e281]:
+        - generic [ref=e282]:
+          - text: "Posted on 06 April 2026, 13:22 by:"
+          - link "kanatashiki" [ref=e283] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/kanatashiki
+          - link "PM" [ref=e284] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=5417520
+            - img "PM" [ref=e285]
+        - generic [ref=e286] [cursor=pointer]: Score +6
+      - generic [ref=e287]: 还是迪拜人会享受
+    - generic [ref=e288]:
+      - generic [ref=e289]:
+        - generic [ref=e290]:
+          - text: "Posted on 06 April 2026, 13:25 by:"
+          - link "gfro89327" [ref=e291] [cursor=pointer]:
+            - /url: https://e-hentai.org/uploader/gfro89327
+          - link "PM" [ref=e292] [cursor=pointer]:
+            - /url: https://forums.e-hentai.org/index.php?showuser=773131
+            - img "PM" [ref=e293]
+        - generic [ref=e294] [cursor=pointer]: Score +6
+      - generic [ref=e295]: 標題裡的山羊是不是缺了一點存在意義
+    - paragraph [ref=e297]:
+      - text: "["
+      - link "Post New Comment" [ref=e298] [cursor=pointer]:
+        - /url: "#"
+      - text: "]"
+  - generic [ref=e299]:
+    - link "Front" [ref=e300] [cursor=pointer]:
+      - /url: https://e-hentai.org/
+    - link "LoFi" [ref=e301] [cursor=pointer]:
+      - /url: https://e-hentai.org/lofi/
+    - link "Forums" [ref=e302] [cursor=pointer]:
+      - /url: https://forums.e-hentai.org/
+    - link "HentaiVerse" [ref=e303] [cursor=pointer]:
+      - /url: https://hentaiverse.org/
+    - link "Wiki" [ref=e304] [cursor=pointer]:
+      - /url: https://ehwiki.org/
+    - link "ToS" [ref=e305] [cursor=pointer]:
+      - /url: https://e-hentai.org/tos.php
+    - link "Advertise" [ref=e306] [cursor=pointer]:
+      - /url: mailto:sales@juicyads.com

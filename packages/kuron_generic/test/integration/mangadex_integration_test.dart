@@ -501,11 +501,11 @@ void main() {
       expect(result.items.first.title, 'Solo Leveling');
     });
 
-    test('raw search preserves author and artist UUID params', () async {
+    test('raw search preserves authorOrArtist UUID params', () async {
       const expectedAuthorUrl =
-          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&authors[]=11111111-2222-3333-4444-555555555555&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
+          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&authorOrArtist=11111111-2222-3333-4444-555555555555&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
       const expectedArtistUrl =
-          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&artists[]=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
+          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&authorOrArtist=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
 
       dioAdapter.onGet(
         expectedAuthorUrl,
@@ -518,16 +518,14 @@ void main() {
 
       final authorResult = await adapter.search(
         const SearchFilter(
-          query:
-              'raw:authors[]=11111111-2222-3333-4444-555555555555',
+          query: 'raw:authorOrArtist=11111111-2222-3333-4444-555555555555',
           page: 1,
         ),
         _config,
       );
       final artistResult = await adapter.search(
         const SearchFilter(
-          query:
-              'raw:artists[]=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+          query: 'raw:authorOrArtist=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
           page: 1,
         ),
         _config,

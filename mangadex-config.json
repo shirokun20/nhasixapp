@@ -362,13 +362,13 @@
     "tagQueryMapping": {
       "author": {
         "mode": "rawParam",
-        "param": "authors[]",
+        "param": "authorOrArtist",
         "valueSource": "tagId",
         "requiredPattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
       },
       "artist": {
         "mode": "rawParam",
-        "param": "artists[]",
+        "param": "authorOrArtist",
         "valueSource": "tagId",
         "requiredPattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
       },
