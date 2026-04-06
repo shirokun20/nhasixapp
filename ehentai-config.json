@@ -112,6 +112,13 @@
     }
   },
   "navigation": {
+    "tagQueryMapping": {
+      "default": {
+        "mode": "rawParam",
+        "param": "f_search",
+        "valueSource": "tagIdOrName"
+      }
+    },
     "genreQueryPrefix": "tag:",
     "genreTagType": "tag"
   },
