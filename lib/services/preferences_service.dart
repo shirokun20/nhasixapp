@@ -1,14 +1,17 @@
 import 'dart:convert';
 
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/entities/user_preferences.dart';
 
 /// Service for handling app preferences using SharedPreferences
 class PreferencesService {
-  PreferencesService(this._prefs);
+  PreferencesService(this._prefs, {Logger? logger})
+      : _logger = logger ?? Logger();
 
   final SharedPreferences _prefs;
+  final Logger _logger;
 
   // Setting keys
   static const String _keyAutoCleanupHistory = 'auto_cleanup_history';
@@ -27,16 +30,28 @@ class PreferencesService {
   static const String _keyImageQuality = 'image_quality';
   static const String _keyBlurThumbnails = 'blur_thumbnails';
   static const String _keyBlacklistedTags = 'blacklistedTags';
+  static const String _keyBlacklistedTagMetadata = 'blacklistedTagMetadata';
+
+  /// Get blur thumbnails setting directly (for fallback scenarios)
+  bool getBlurThumbnailsDirect() {
+    return _prefs.getBool(_keyBlurThumbnails) ?? true;
+  }
 
   /// Get all user preferences
   Future<UserPreferences> getUserPreferences() async {
+    final blurValue = _prefs.getBool(_keyBlurThumbnails) ?? true;
+    _logger.d(
+        'PREFS_READ: blur=$blurValue (raw=${_prefs.getBool(_keyBlurThumbnails)}, key=$_keyBlurThumbnails)');
     return UserPreferences(
       theme: _prefs.getString(_keyTheme) ?? 'dark',
       defaultLanguage: _prefs.getString(_keyDefaultLanguage) ?? 'english',
       showNsfwContent: _prefs.getBool(_keyShowNsfwContent) ?? true,
       imageQuality: _prefs.getString(_keyImageQuality) ?? 'high',
-      blurThumbnails: _prefs.getBool(_keyBlurThumbnails) ?? true,
+      blurThumbnails: blurValue,
       blacklistedTags: _readStringCollection(_keyBlacklistedTags),
+      blacklistedTagMetadata: _readBlacklistedTagMetadata(
+        _keyBlacklistedTagMetadata,
+      ),
 
       // History cleanup settings
       autoCleanupHistory: _prefs.getBool(_keyAutoCleanupHistory) ?? false,
@@ -54,37 +69,65 @@ class PreferencesService {
 
   /// Save user preferences
   Future<void> saveUserPreferences(UserPreferences preferences) async {
-    await Future.wait([
-      _prefs.setString(_keyTheme, preferences.theme),
-      _prefs.setString(_keyDefaultLanguage, preferences.defaultLanguage),
-      _prefs.setBool(_keyShowNsfwContent, preferences.showNsfwContent),
-      _prefs.setString(_keyImageQuality, preferences.imageQuality),
-      _prefs.setBool(_keyBlurThumbnails, preferences.blurThumbnails),
-      if (preferences.blacklistedTags.isEmpty)
-        _prefs.remove(_keyBlacklistedTags)
-      else
-        _prefs.setString(
-          _keyBlacklistedTags,
-          jsonEncode(preferences.blacklistedTags),
-        ),
+    try {
+      _logger.d(
+          'PREFS_SAVE: blur=${preferences.blurThumbnails}, tags=${preferences.blacklistedTags.length}');
+      final futures = <Future<bool>>[
+        _prefs.setString(_keyTheme, preferences.theme),
+        _prefs.setString(_keyDefaultLanguage, preferences.defaultLanguage),
+        _prefs.setBool(_keyShowNsfwContent, preferences.showNsfwContent),
+        _prefs.setString(_keyImageQuality, preferences.imageQuality),
+        _prefs
+            .setBool(_keyBlurThumbnails, preferences.blurThumbnails)
+            .then((result) {
+          _logger.d(
+              '🔍 PREFS_BLUR_WRITE: key=$_keyBlurThumbnails, value=${preferences.blurThumbnails}, result=$result');
+          return result;
+        }),
+        if (preferences.blacklistedTags.isEmpty)
+          _prefs.remove(_keyBlacklistedTags)
+        else
+          _prefs.setString(
+            _keyBlacklistedTags,
+            jsonEncode(preferences.blacklistedTags),
+          ),
+        if (preferences.blacklistedTagMetadata.isEmpty)
+          _prefs.remove(_keyBlacklistedTagMetadata)
+        else
+          _prefs.setString(
+            _keyBlacklistedTagMetadata,
+            jsonEncode(
+              preferences.blacklistedTagMetadata.map(
+                (id, metadata) => MapEntry(id, metadata.toJson()),
+              ),
+            ),
+          ),
 
-      // History cleanup settings
-      _prefs.setBool(_keyAutoCleanupHistory, preferences.autoCleanupHistory),
-      _prefs.setInt(
-          _keyHistoryCleanupInterval, preferences.historyCleanupIntervalHours),
-      _prefs.setInt(_keyMaxHistoryDays, preferences.maxHistoryDays),
-      _prefs.setBool(_keyCleanupOnInactivity, preferences.cleanupOnInactivity),
-      _prefs.setInt(
-          _keyInactivityCleanupDays, preferences.inactivityCleanupDays),
+        // History cleanup settings
+        _prefs.setBool(_keyAutoCleanupHistory, preferences.autoCleanupHistory),
+        _prefs.setInt(_keyHistoryCleanupInterval,
+            preferences.historyCleanupIntervalHours),
+        _prefs.setInt(_keyMaxHistoryDays, preferences.maxHistoryDays),
+        _prefs.setBool(
+            _keyCleanupOnInactivity, preferences.cleanupOnInactivity),
+        _prefs.setInt(
+            _keyInactivityCleanupDays, preferences.inactivityCleanupDays),
 
-      // Timestamps
-      if (preferences.lastHistoryCleanup != null)
-        _prefs.setString(_keyLastHistoryCleanup,
-            preferences.lastHistoryCleanup!.toIso8601String()),
-      if (preferences.lastAppAccess != null)
-        _prefs.setString(
-            _keyLastAppAccess, preferences.lastAppAccess!.toIso8601String()),
-    ]);
+        // Timestamps
+        if (preferences.lastHistoryCleanup != null)
+          _prefs.setString(_keyLastHistoryCleanup,
+              preferences.lastHistoryCleanup!.toIso8601String()),
+        if (preferences.lastAppAccess != null)
+          _prefs.setString(
+              _keyLastAppAccess, preferences.lastAppAccess!.toIso8601String()),
+      ];
+
+      await Future.wait(futures);
+      _logger.d('PREFS_SAVED: blur=${preferences.blurThumbnails}');
+    } catch (e) {
+      _logger.e('PREFS_ERROR: $e');
+      rethrow;
+    }
   }
 
   /// Get specific setting
@@ -167,29 +210,76 @@ class PreferencesService {
   }
 
   List<String> _readStringCollection(String key) {
-    final stringList = _prefs.getStringList(key);
-    if (stringList != null && stringList.isNotEmpty) {
-      return stringList;
+    try {
+      final stringList = _prefs.getStringList(key);
+      if (stringList != null && stringList.isNotEmpty) {
+        _logger.d(
+            '📋 READ_COLLECTION: $key loaded as StringList (${stringList.length} items)');
+        return stringList;
+      }
+    } catch (e) {
+      _logger.w(
+          '📋 READ_COLLECTION: $key is not a StringList, trying JSON parse: $e');
     }
 
     final rawString = _prefs.getString(key);
     if (rawString == null || rawString.isEmpty) {
+      _logger.d('📋 READ_COLLECTION: $key is empty, returning []');
       return const [];
     }
 
     try {
       final decoded = jsonDecode(rawString);
       if (decoded is List) {
-        return decoded
+        final result = decoded
             .map((entry) => entry.toString().trim())
             .where((entry) => entry.isNotEmpty)
             .toList(growable: false);
+        _logger.d(
+            '📋 READ_COLLECTION: $key parsed from JSON (${result.length} items)');
+        return result;
       }
-    } catch (_) {
+    } catch (e) {
+      _logger.w('📋 READ_COLLECTION: Failed to parse $key from JSON: $e');
       return const [];
     }
 
+    _logger.w('📋 READ_COLLECTION: $key has unexpected format, returning []');
     return const [];
+  }
+
+  Map<String, BlacklistedTagMetadata> _readBlacklistedTagMetadata(String key) {
+    final rawString = _prefs.getString(key);
+    if (rawString == null || rawString.isEmpty) {
+      return const {};
+    }
+
+    try {
+      final decoded = jsonDecode(rawString);
+      if (decoded is! Map) {
+        return const {};
+      }
+
+      final result = <String, BlacklistedTagMetadata>{};
+      decoded.forEach((rawId, rawValue) {
+        if (rawId == null || rawValue is! Map) {
+          return;
+        }
+        final id = rawId.toString();
+        final rawMap = Map<String, dynamic>.from(
+          rawValue.map((k, v) => MapEntry(k.toString(), v)),
+        );
+        final metadata = BlacklistedTagMetadata.fromJson(rawMap);
+        if (metadata.id.isNotEmpty && metadata.name.isNotEmpty) {
+          result[id] = metadata;
+        }
+      });
+
+      return result;
+    } catch (e) {
+      _logger.w('📋 READ_COLLECTION: Failed to parse $key metadata: $e');
+      return const {};
+    }
   }
 
   /// Clear all preferences

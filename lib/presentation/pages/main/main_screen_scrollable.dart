@@ -102,7 +102,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     });
 
     _initializeContent();
-    unawaited(_refreshBlacklistForActiveSource());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshBlacklistForActiveSource());
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showMaintenanceSnackbarIfNeeded();
@@ -304,9 +306,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   }
 
   void _handleTagBlacklistChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +19,8 @@ import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
@@ -44,6 +48,7 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
+  late final TagBlacklistService _tagBlacklistService;
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
@@ -224,6 +229,8 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleBlacklistChanged);
 
     // Check if we need to switch source first
     if (widget.sourceId != null) {
@@ -242,6 +249,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // Load content detail first, then load related content separately
     _loadContentAndRelated();
+    unawaited(_refreshOnlineBlacklistForDetail());
 
     // Initialize download manager if not already initialized
     final downloadBloc = context.read<DownloadBloc>();
@@ -295,8 +303,28 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _refreshOnlineBlacklistForDetail() async {
+    final sourceId =
+        widget.sourceId ?? context.read<SourceCubit>().state.activeSource?.id;
+    if (sourceId == null || sourceId.isEmpty) {
+      return;
+    }
+
+    await _tagBlacklistService.syncOnlineEntries(sourceId);
+  }
+
+  void _handleBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleBlacklistChanged);
     _scrollController.dispose();
     _detailCubit.close();
     super.dispose();
@@ -880,6 +908,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     // Title section
                     _buildTitleSection(content),
+                    const SizedBox(height: 12),
+                    _buildBlacklistMatchBanner(content),
                     const SizedBox(height: 24),
 
                     // Metadata section
@@ -1020,6 +1050,55 @@ class _DetailScreenState extends State<DetailScreen> {
                 _formatDate(content.uploadDate), Icons.schedule),
           _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
               _formatNumber(content.favorites), Icons.favorite),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistMatchBanner(Content content) {
+    final settingsState = context.read<SettingsCubit>().state;
+    final localBlacklistEntries = settingsState is SettingsLoaded
+        ? settingsState.preferences.blacklistedTags
+        : const <String>[];
+
+    final isBlacklisted = _tagBlacklistService.isContentBlacklisted(
+      content,
+      localEntries: localBlacklistEntries,
+    );
+
+    if (!isBlacklisted) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.visibility_off_rounded,
+            color: theme.colorScheme.onErrorContainer,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'This gallery matches blacklist rules. Cover/cards can be blurred in list views.',
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );

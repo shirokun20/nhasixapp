@@ -9,15 +9,45 @@ abstract class FilterItem with _$FilterItem {
   const factory FilterItem({
     required String value,
     required bool isExcluded,
+    int? tagId,
+    String? tagType,
+    String? tagName,
+    String? tagSlug,
   }) = _FilterItem;
 
   /// Create an included filter item
-  factory FilterItem.include(String value) =>
-      FilterItem(value: value, isExcluded: false);
+  factory FilterItem.include(
+    String value, {
+    int? tagId,
+    String? tagType,
+    String? tagName,
+    String? tagSlug,
+  }) =>
+      FilterItem(
+        value: value,
+        isExcluded: false,
+        tagId: tagId,
+        tagType: tagType,
+        tagName: tagName,
+        tagSlug: tagSlug,
+      );
 
   /// Create an excluded filter item
-  factory FilterItem.exclude(String value) =>
-      FilterItem(value: value, isExcluded: true);
+  factory FilterItem.exclude(
+    String value, {
+    int? tagId,
+    String? tagType,
+    String? tagName,
+    String? tagSlug,
+  }) =>
+      FilterItem(
+        value: value,
+        isExcluded: true,
+        tagId: tagId,
+        tagType: tagType,
+        tagName: tagName,
+        tagSlug: tagSlug,
+      );
 
   factory FilterItem.fromJson(Map<String, dynamic> json) =>
       _$FilterItemFromJson(json);

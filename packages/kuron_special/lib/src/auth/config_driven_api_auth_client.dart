@@ -430,6 +430,23 @@ class ConfigDrivenApiAuthClient {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getBlacklistRules() async {
+    final endpoint = _config.blacklistEndpoint;
+    if (endpoint == null || endpoint.isEmpty) {
+      throw StateError('blacklist endpoint is not configured');
+    }
+
+    try {
+      final response = await _dio.get<dynamic>(_resolveUrl(endpoint));
+      return _parseBlacklistRules(response.data);
+    } on DioException catch (e) {
+      if (_isUnauthorized(e)) {
+        await _clearSessionLocally();
+      }
+      rethrow;
+    }
+  }
+
   ApiFavoriteStatus _parseFavoriteStatus(dynamic raw) {
     final data = _toJsonMap(raw);
     final favorited = data['favorited'] == true;
@@ -441,31 +458,18 @@ class ConfigDrivenApiAuthClient {
   }
 
   List<String> _parseBlacklistIds(dynamic raw) {
-    final values = <dynamic>[];
-
-    if (raw is List) {
-      values.addAll(raw);
-    } else if (raw is Map) {
-      final data = Map<String, dynamic>.from(raw);
-      for (final candidate in [
-        data['ids'],
-        data['blacklist'],
-        data['result'],
-        data['data']
-      ]) {
-        if (candidate is List) {
-          values.addAll(candidate);
-          break;
-        }
-      }
-    }
+    final values = _extractBlacklistValues(raw);
 
     return values
         .map((value) {
           if (value is Map) {
+            final nestedTag = value['tag'];
+            final nestedRule = value['rule'];
             return value['id'] ??
                 value['tag_id'] ??
                 value['tagId'] ??
+                (nestedTag is Map ? nestedTag['id'] : null) ??
+                (nestedRule is Map ? nestedRule['id'] : null) ??
                 value['value'];
           }
           return value;
@@ -474,6 +478,114 @@ class ConfigDrivenApiAuthClient {
         .map((value) => value.toString().trim())
         .where((value) => value.isNotEmpty)
         .toList(growable: false);
+  }
+
+  List<Map<String, dynamic>> _parseBlacklistRules(dynamic raw) {
+    final values = _extractBlacklistValues(raw);
+    return values.map<Map<String, dynamic>>((value) {
+      if (value is Map) {
+        final map = value.map(
+          (key, item) => MapEntry(key.toString(), item),
+        );
+
+        final nestedTag = map['tag'];
+        if (nestedTag is Map) {
+          final tagMap = nestedTag.map(
+            (key, item) => MapEntry(key.toString(), item),
+          );
+          map.putIfAbsent('id', () => tagMap['id']);
+          map.putIfAbsent('type', () => tagMap['type']);
+          map.putIfAbsent('name', () => tagMap['name']);
+          map.putIfAbsent('slug', () => tagMap['slug']);
+        }
+
+        final nestedRule = map['rule'];
+        if (nestedRule is Map) {
+          final ruleMap = nestedRule.map(
+            (key, item) => MapEntry(key.toString(), item),
+          );
+          map.putIfAbsent('id', () => ruleMap['id']);
+          map.putIfAbsent('type', () => ruleMap['type']);
+          map.putIfAbsent('name', () => ruleMap['name']);
+          map.putIfAbsent('slug', () => ruleMap['slug']);
+        }
+
+        return map;
+      }
+
+      return <String, dynamic>{'id': value};
+    }).toList(growable: false);
+  }
+
+  List<dynamic> _extractBlacklistValues(dynamic raw) {
+    final values = <dynamic>[];
+    final payload = raw is String ? jsonDecode(raw) : raw;
+
+    if (payload is List) {
+      values.addAll(payload);
+    } else if (payload is Map) {
+      final data = Map<String, dynamic>.from(payload);
+      List<dynamic>? resolveList(dynamic candidate) {
+        if (candidate is List) {
+          return candidate;
+        }
+        if (candidate is Map) {
+          final nested = Map<String, dynamic>.from(candidate);
+          for (final key in const [
+            'result',
+            'data',
+            'items',
+            'rules',
+            'entries',
+            'tags',
+            'blacklist',
+            'ids'
+          ]) {
+            final nestedCandidate = nested[key];
+            if (nestedCandidate is List) {
+              return nestedCandidate;
+            }
+          }
+
+          for (final nestedCandidate in nested.values) {
+            if (nestedCandidate is List) {
+              return nestedCandidate;
+            }
+          }
+        }
+
+        return null;
+      }
+
+      for (final candidate in [
+        data['ids'],
+        data['blacklist'],
+        data['rules'],
+        data['entries'],
+        data['items'],
+        data['tags'],
+        data['result'],
+        data['data'],
+      ]) {
+        final resolved = resolveList(candidate);
+        if (resolved != null) {
+          values.addAll(resolved);
+          break;
+        }
+      }
+
+      if (values.isEmpty) {
+        for (final candidate in data.values) {
+          final resolved = resolveList(candidate);
+          if (resolved != null) {
+            values.addAll(resolved);
+            break;
+          }
+        }
+      }
+    }
+
+    return values;
   }
 
   Future<Map<String, dynamic>> getUserProfile() async {

@@ -84,9 +84,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   }
 
   void _handleBlacklistChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override

@@ -16,6 +16,10 @@ T _$identity<T>(T value) => value;
 mixin _$FilterItem {
   String get value;
   bool get isExcluded;
+  int? get tagId;
+  String? get tagType;
+  String? get tagName;
+  String? get tagSlug;
 
   /// Create a copy of FilterItem
   /// with the given fields replaced by the non-null parameter values.
@@ -34,16 +38,21 @@ mixin _$FilterItem {
             other is FilterItem &&
             (identical(other.value, value) || other.value == value) &&
             (identical(other.isExcluded, isExcluded) ||
-                other.isExcluded == isExcluded));
+                other.isExcluded == isExcluded) &&
+            (identical(other.tagId, tagId) || other.tagId == tagId) &&
+            (identical(other.tagType, tagType) || other.tagType == tagType) &&
+            (identical(other.tagName, tagName) || other.tagName == tagName) &&
+            (identical(other.tagSlug, tagSlug) || other.tagSlug == tagSlug));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, value, isExcluded);
+  int get hashCode => Object.hash(
+      runtimeType, value, isExcluded, tagId, tagType, tagName, tagSlug);
 
   @override
   String toString() {
-    return 'FilterItem(value: $value, isExcluded: $isExcluded)';
+    return 'FilterItem(value: $value, isExcluded: $isExcluded, tagId: $tagId, tagType: $tagType, tagName: $tagName, tagSlug: $tagSlug)';
   }
 }
 
@@ -53,7 +62,13 @@ abstract mixin class $FilterItemCopyWith<$Res> {
           FilterItem value, $Res Function(FilterItem) _then) =
       _$FilterItemCopyWithImpl;
   @useResult
-  $Res call({String value, bool isExcluded});
+  $Res call(
+      {String value,
+      bool isExcluded,
+      int? tagId,
+      String? tagType,
+      String? tagName,
+      String? tagSlug});
 }
 
 /// @nodoc
@@ -70,6 +85,10 @@ class _$FilterItemCopyWithImpl<$Res> implements $FilterItemCopyWith<$Res> {
   $Res call({
     Object? value = null,
     Object? isExcluded = null,
+    Object? tagId = freezed,
+    Object? tagType = freezed,
+    Object? tagName = freezed,
+    Object? tagSlug = freezed,
   }) {
     return _then(_self.copyWith(
       value: null == value
@@ -80,6 +99,22 @@ class _$FilterItemCopyWithImpl<$Res> implements $FilterItemCopyWith<$Res> {
           ? _self.isExcluded
           : isExcluded // ignore: cast_nullable_to_non_nullable
               as bool,
+      tagId: freezed == tagId
+          ? _self.tagId
+          : tagId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tagType: freezed == tagType
+          ? _self.tagType
+          : tagType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagName: freezed == tagName
+          ? _self.tagName
+          : tagName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagSlug: freezed == tagSlug
+          ? _self.tagSlug
+          : tagSlug // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -177,13 +212,16 @@ extension FilterItemPatterns on FilterItem {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(String value, bool isExcluded)? $default, {
+    TResult Function(String value, bool isExcluded, int? tagId, String? tagType,
+            String? tagName, String? tagSlug)?
+        $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _FilterItem() when $default != null:
-        return $default(_that.value, _that.isExcluded);
+        return $default(_that.value, _that.isExcluded, _that.tagId,
+            _that.tagType, _that.tagName, _that.tagSlug);
       case _:
         return orElse();
     }
@@ -204,12 +242,15 @@ extension FilterItemPatterns on FilterItem {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(String value, bool isExcluded) $default,
+    TResult Function(String value, bool isExcluded, int? tagId, String? tagType,
+            String? tagName, String? tagSlug)
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FilterItem():
-        return $default(_that.value, _that.isExcluded);
+        return $default(_that.value, _that.isExcluded, _that.tagId,
+            _that.tagType, _that.tagName, _that.tagSlug);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -229,12 +270,15 @@ extension FilterItemPatterns on FilterItem {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(String value, bool isExcluded)? $default,
+    TResult? Function(String value, bool isExcluded, int? tagId,
+            String? tagType, String? tagName, String? tagSlug)?
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FilterItem() when $default != null:
-        return $default(_that.value, _that.isExcluded);
+        return $default(_that.value, _that.isExcluded, _that.tagId,
+            _that.tagType, _that.tagName, _that.tagSlug);
       case _:
         return null;
     }
@@ -244,7 +288,13 @@ extension FilterItemPatterns on FilterItem {
 /// @nodoc
 @JsonSerializable()
 class _FilterItem implements FilterItem {
-  const _FilterItem({required this.value, required this.isExcluded});
+  const _FilterItem(
+      {required this.value,
+      required this.isExcluded,
+      this.tagId,
+      this.tagType,
+      this.tagName,
+      this.tagSlug});
   factory _FilterItem.fromJson(Map<String, dynamic> json) =>
       _$FilterItemFromJson(json);
 
@@ -252,6 +302,14 @@ class _FilterItem implements FilterItem {
   final String value;
   @override
   final bool isExcluded;
+  @override
+  final int? tagId;
+  @override
+  final String? tagType;
+  @override
+  final String? tagName;
+  @override
+  final String? tagSlug;
 
   /// Create a copy of FilterItem
   /// with the given fields replaced by the non-null parameter values.
@@ -275,16 +333,21 @@ class _FilterItem implements FilterItem {
             other is _FilterItem &&
             (identical(other.value, value) || other.value == value) &&
             (identical(other.isExcluded, isExcluded) ||
-                other.isExcluded == isExcluded));
+                other.isExcluded == isExcluded) &&
+            (identical(other.tagId, tagId) || other.tagId == tagId) &&
+            (identical(other.tagType, tagType) || other.tagType == tagType) &&
+            (identical(other.tagName, tagName) || other.tagName == tagName) &&
+            (identical(other.tagSlug, tagSlug) || other.tagSlug == tagSlug));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, value, isExcluded);
+  int get hashCode => Object.hash(
+      runtimeType, value, isExcluded, tagId, tagType, tagName, tagSlug);
 
   @override
   String toString() {
-    return 'FilterItem(value: $value, isExcluded: $isExcluded)';
+    return 'FilterItem(value: $value, isExcluded: $isExcluded, tagId: $tagId, tagType: $tagType, tagName: $tagName, tagSlug: $tagSlug)';
   }
 }
 
@@ -296,7 +359,13 @@ abstract mixin class _$FilterItemCopyWith<$Res>
       __$FilterItemCopyWithImpl;
   @override
   @useResult
-  $Res call({String value, bool isExcluded});
+  $Res call(
+      {String value,
+      bool isExcluded,
+      int? tagId,
+      String? tagType,
+      String? tagName,
+      String? tagSlug});
 }
 
 /// @nodoc
@@ -313,6 +382,10 @@ class __$FilterItemCopyWithImpl<$Res> implements _$FilterItemCopyWith<$Res> {
   $Res call({
     Object? value = null,
     Object? isExcluded = null,
+    Object? tagId = freezed,
+    Object? tagType = freezed,
+    Object? tagName = freezed,
+    Object? tagSlug = freezed,
   }) {
     return _then(_FilterItem(
       value: null == value
@@ -323,6 +396,22 @@ class __$FilterItemCopyWithImpl<$Res> implements _$FilterItemCopyWith<$Res> {
           ? _self.isExcluded
           : isExcluded // ignore: cast_nullable_to_non_nullable
               as bool,
+      tagId: freezed == tagId
+          ? _self.tagId
+          : tagId // ignore: cast_nullable_to_non_nullable
+              as int?,
+      tagType: freezed == tagType
+          ? _self.tagType
+          : tagType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagName: freezed == tagName
+          ? _self.tagName
+          : tagName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagSlug: freezed == tagSlug
+          ? _self.tagSlug
+          : tagSlug // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }

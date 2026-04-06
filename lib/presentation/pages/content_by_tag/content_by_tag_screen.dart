@@ -127,9 +127,12 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
   }
 
   void _handleBlacklistChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _refreshOnlineBlacklist() async {

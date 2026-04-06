@@ -60,6 +60,46 @@ Coba solusi berikut:
 3. Gunakan VPN jika akses diblokir di wilayah Anda
 4. Tarik ke bawah untuk refresh konten
 5. **Khusus Crotpedia**: Beberapa chapter mewajibkan login. Buka **Drawer → Login** untuk mengakses konten penuh.
+6. **Nhentai**: Beberapa fitur (favorit online, sinkronisasi blacklist) memerlukan login. Buka **Drawer → Login (nhentai)** untuk masuk.
+
+---
+
+**Q: Bisakah saya login dengan akun nhentai?**
+
+Ya! Kuron mendukung login nhentai mulai versi v0.9.15:
+- Buka **Drawer → Login (nhentai)** dan masukkan kredensial Anda.
+- Anda mungkin perlu menyelesaikan CAPTCHA saat login — ketuk **Solve CAPTCHA** dan selesaikan tantangannya.
+- Setelah login, Anda dapat menyinkronkan **favorit online** dan **blacklist tag** nhentai (tag yang ingin Anda sembunyikan di feed).
+
+---
+
+**Q: Apa itu Favorit Online?**
+
+Favorit Online disinkronkan langsung dengan akun nhentai Anda. Saat menambahkan galeri ke favorit dari layar Detail, Anda bisa memilih:
+- **Offline** — disimpan hanya di perangkat lokal
+- **Online** — disinkronkan ke akun nhentai Anda (memerlukan login)
+- **Keduanya** — disimpan lokal DAN disinkronkan ke nhentai
+
+Lihat favorit online di tab **Favorit → Online**.
+
+---
+
+**Q: Apa itu Tag Blacklist?**
+
+Tag Blacklist memungkinkan Anda menyembunyikan konten yang tidak diinginkan dengan memblur thumbnail di semua feed.
+- **Aturan lokal**: Kelola tag di **Pengaturan → Blacklist**. Bekerja offline, tidak perlu login.
+- **Sinkronisasi online (nhentai)**: Saat login, blacklist server-side nhentai Anda otomatis digabungkan dengan aturan lokal untuk pencocokan blur gabungan.
+
+---
+
+**Q: Apa itu "Source Lain"? Apakah gratis?**
+
+Kuron mendukung beberapa penyedia konten selain nhentai:
+- **E-Hentai, HentaiNexus, Hitomi, dan lainnya** adalah **source premium / tingkat lanjut**.
+- Source ini **tidak disertakan** secara default dan memerlukan instalasi manual melalui:
+  **Pengaturan → Sources → Add via Link** atau **Import ZIP**.
+- Source-source ini mungkin memerlukan akun atau memiliki persyaratan akses sendiri.
+- nhentai adalah source gratis default yang sudah tersedia langsung.
 
 ---
 
@@ -114,8 +154,8 @@ Anda bisa:
 
 Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
 
-Rilis terbaru saat ini: **v0.9.14+23**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.14%2B23
+Rilis terbaru saat ini: **v0.9.15+24**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.15%2B24
 
 ---
 

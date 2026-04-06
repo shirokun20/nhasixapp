@@ -139,6 +139,7 @@ Future<void> _setupExternalDependencies() async {
   // PreferencesService - Wrapper for SharedPreferences
   getIt.registerLazySingleton<PreferencesService>(() => PreferencesService(
         getIt<SharedPreferences>(),
+        logger: getIt<Logger>(),
       ));
 
   // Connectivity
@@ -335,6 +336,7 @@ void _setupServices() {
   getIt.registerLazySingleton<TagBlacklistService>(() => TagBlacklistService(
         sourceAuthService: getIt<SourceAuthService>(),
         logger: getIt<Logger>(),
+        prefs: getIt<SharedPreferences>(),
       ));
 }
 

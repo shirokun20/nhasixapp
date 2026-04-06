@@ -89,6 +89,21 @@ class SourceAuthService {
     return blacklistIdsEndpoint.isNotEmpty;
   }
 
+  bool supportsOnlineBlacklistRulesRead(String sourceId) {
+    if (!supportsTokenApiAuth(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final features = raw['features'] as Map<String, dynamic>?;
+    if (features?['blacklist'] != true) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final blacklistEndpoint = endpoints?['blacklist']?.toString().trim() ?? '';
+    return blacklistEndpoint.isNotEmpty;
+  }
+
   List<String> getSourcesSupportingOnlineFavorites({
     bool requireWrite = false,
   }) {
@@ -262,6 +277,12 @@ class SourceAuthService {
     final client = _buildClient(sourceId);
     await client.attachSessionHeaderFromStorage();
     return client.getBlacklistIds();
+  }
+
+  Future<List<Map<String, dynamic>>> getBlacklistRules(String sourceId) async {
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+    return client.getBlacklistRules();
   }
 
   ConfigDrivenApiAuthClient _buildClient(String sourceId) {

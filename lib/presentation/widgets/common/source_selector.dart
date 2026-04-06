@@ -361,7 +361,10 @@ class SourceSelector extends StatelessWidget {
       },
     ).then((selectedId) {
       if (selectedId != null && context.mounted) {
-        context.read<SourceCubit>().switchSource(selectedId);
+        final sourceCubit = context.read<SourceCubit>();
+        if (selectedId != sourceCubit.state.activeSource?.id) {
+          sourceCubit.switchSource(selectedId);
+        }
       }
     });
   }

@@ -87,7 +87,7 @@ class SelectedFilterChip extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
             child: Text(
-              filterItem.value,
+              filterItem.tagName ?? filterItem.value,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -211,7 +211,7 @@ class SelectedFilterChipCompact extends StatelessWidget {
                   vertical: 6,
                 ),
                 child: Text(
-                  filterItem.value,
+                  filterItem.tagName ?? filterItem.value,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: _getTextColor(context),
                     fontWeight: FontWeight.w500,

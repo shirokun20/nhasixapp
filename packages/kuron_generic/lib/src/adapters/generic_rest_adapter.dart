@@ -937,6 +937,23 @@ class GenericRestAdapter implements GenericAdapter {
           const FieldSelector(selector: r'$.artists[*].name')),
     );
 
+    final charactersRaw = _parser.extractList(
+      item,
+      _selectorOrDefault(selectors, 'characters',
+          const FieldSelector(selector: r'$.characters[*].name')),
+    );
+
+    final tagIdsRaw = _selectorOrNull(selectors, 'tagIds') != null
+        ? _parser.extractList(item, _selectorOrNull(selectors, 'tagIds')!)
+        : const <String>[];
+    final tagIdTokens = tagIdsRaw
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    final blacklistCharacterTokens = tagIdTokens.isEmpty
+        ? charactersRaw
+        : <String>{...charactersRaw, ...tagIdTokens}.toList(growable: false);
+
     return Content(
       id: id,
       sourceId: _sourceId,
@@ -944,7 +961,7 @@ class GenericRestAdapter implements GenericAdapter {
       coverUrl: coverUrl,
       tags: tags,
       artists: artistsRaw,
-      characters: const [],
+      characters: blacklistCharacterTokens,
       parodies: const [],
       groups: const [],
       language: _extractLanguage(item, selectors, rawConfig: rawConfig),

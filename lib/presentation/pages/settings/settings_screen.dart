@@ -6,20 +6,21 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../../../domain/entities/search_filter.dart' as search_filter;
 import '../../../domain/entities/user_preferences.dart';
-import '../../../core/routing/app_route.dart';
 import '../../../core/utils/tag_blacklist_utils.dart';
 import '../../../services/tag_blacklist_service.dart';
 
@@ -45,7 +46,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _tagBlacklistService = getIt<TagBlacklistService>();
-    unawaited(_tagBlacklistService.syncOnlineEntries('nhentai'));
+
+    unawaited(
+      Future.wait([
+        _tagBlacklistService.syncOnlineEntries('nhentai'),
+        _tagBlacklistService.syncOnlineRules('nhentai'),
+      ]),
+    );
   }
 
   @override
@@ -576,18 +583,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return AnimatedBuilder(
       animation: _tagBlacklistService,
       builder: (context, _) {
-        final onlineEntries = _tagBlacklistService.getCachedOnlineEntries(
-          'nhentai',
-        );
         final mergedEntries = _tagBlacklistService.getMergedEntries(
           sourceId: 'nhentai',
           localEntries: prefs.blacklistedTags,
         );
-        final supportsOnline = _tagBlacklistService.supportsOnlineSync(
+        final onlineRules = _tagBlacklistService.getCachedOnlineRules(
           'nhentai',
         );
         final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
-        final isSyncing = _tagBlacklistService.isSyncing('nhentai');
+        final isSyncingRules = _tagBlacklistService.isSyncingRules('nhentai');
 
         return _buildSettingsCard([
           Padding(
@@ -652,12 +656,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     _buildBlacklistStatChip(
                       theme: theme,
-                      label: 'Online',
-                      value: supportsOnline
-                          ? (hasSession ? '${onlineEntries.length}' : 'Login')
-                          : 'N/A',
-                      icon: Icons.cloud_sync_rounded,
-                      isLoading: isSyncing,
+                      label: 'Rules',
+                      value: hasSession ? '${onlineRules.length}' : 'Login',
+                      icon: Icons.rule_rounded,
+                      isLoading: isSyncingRules,
                     ),
                     _buildBlacklistStatChip(
                       theme: theme,
@@ -667,6 +669,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+                if (hasSession) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Online rule details (${onlineRules.length})',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (onlineRules.isEmpty)
+                    _buildSheetHint(
+                      theme,
+                      'No online detailed rules returned yet. Pull refresh to fetch /blacklist data.',
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: onlineRules
+                          .take(12)
+                          .map(
+                            (rule) => _buildBlacklistEntryChip(
+                              theme,
+                              rule.displayLabel,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                ],
                 const SizedBox(height: 16),
                 if (mergedEntries.isEmpty)
                   Container(
@@ -688,13 +720,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   )
                 else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: mergedEntries
-                        .take(12)
-                        .map((entry) => _buildBlacklistEntryChip(theme, entry))
-                        .toList(),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      'Active coverage is enabled for ${mergedEntries.length} tokens (local + online IDs). Hidden here to keep this view human-readable.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -766,6 +808,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  String _buildLocalBlacklistLabel(
+    String entry,
+    List<OnlineBlacklistRule> onlineRules,
+    Map<String, BlacklistedTagMetadata> localMetadata,
+  ) {
+    final normalized = TagBlacklistUtils.normalizeEntry(entry);
+
+    String? idCandidate;
+    if (int.tryParse(normalized) != null) {
+      idCandidate = normalized;
+    } else {
+      final idMatch =
+          RegExp(r'^(?:id|tag_id|tagid|tag):\s*(\d+)$').firstMatch(normalized);
+      idCandidate = idMatch?.group(1);
+    }
+
+    if (idCandidate == null) {
+      return entry;
+    }
+
+    final localMeta = localMetadata[idCandidate];
+    if (localMeta != null && localMeta.name.isNotEmpty) {
+      return '${localMeta.type}:${localMeta.name} (#$idCandidate)';
+    }
+
+    for (final rule in onlineRules) {
+      if (rule.id == idCandidate) {
+        return '${rule.displayLabel} (#$idCandidate)';
+      }
+    }
+
+    return '#$idCandidate';
+  }
+
   Future<void> _showTagBlacklistSheet(
     BuildContext context,
     UserPreferences prefs,
@@ -773,6 +849,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     final controller = TextEditingController();
     var localEntries = List<String>.from(prefs.blacklistedTags);
+    var localMetadata =
+        Map<String, BlacklistedTagMetadata>.from(prefs.blacklistedTagMetadata);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -781,16 +859,154 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setSheetState) {
+            // Initialize: sync from Cubit to ensure fresh data on first open
+            final settingsState = sheetContext.read<SettingsCubit>().state;
+            if (settingsState is SettingsLoaded &&
+                (!listEquals(localEntries,
+                        settingsState.preferences.blacklistedTags) ||
+                    localMetadata.length !=
+                        settingsState
+                            .preferences.blacklistedTagMetadata.length)) {
+              // If Cubit has different data, use that (source of truth)
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                localEntries = List<String>.from(
+                    settingsState.preferences.blacklistedTags);
+                localMetadata = Map<String, BlacklistedTagMetadata>.from(
+                  settingsState.preferences.blacklistedTagMetadata,
+                );
+                if (sheetContext.mounted) {
+                  setSheetState(() {});
+                }
+              });
+            }
+
             final mediaQuery = MediaQuery.of(sheetContext);
-            final onlineEntries = _tagBlacklistService.getCachedOnlineEntries(
-              'nhentai',
-            );
             final mergedEntries = _tagBlacklistService.getMergedEntries(
               sourceId: 'nhentai',
               localEntries: localEntries,
             );
+            final onlineRules = _tagBlacklistService.getCachedOnlineRules(
+              'nhentai',
+            );
             final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
             final isSyncing = _tagBlacklistService.isSyncing('nhentai');
+            final isSyncingRules = _tagBlacklistService.isSyncingRules(
+              'nhentai',
+            );
+
+            /// Sync localEntries from Cubit state to ensure data consistency
+            void syncFromCubit() {
+              final settingsState = context.read<SettingsCubit>().state;
+              if (settingsState is SettingsLoaded) {
+                localEntries = List<String>.from(
+                    settingsState.preferences.blacklistedTags);
+                localMetadata = Map<String, BlacklistedTagMetadata>.from(
+                  settingsState.preferences.blacklistedTagMetadata,
+                );
+              }
+            }
+
+            Future<void> saveState() async {
+              await context
+                  .read<SettingsCubit>()
+                  .updateBlacklistedTagsWithMetadata(
+                    localEntries,
+                    localMetadata,
+                  );
+            }
+
+            Future<void> pickFromTags() async {
+              final selectedFiltersForPicker = localEntries.map((entry) {
+                final normalizedEntry = TagBlacklistUtils.normalizeEntry(entry);
+                final numericId = int.tryParse(normalizedEntry);
+                if (numericId == null) {
+                  return search_filter.FilterItem.include(
+                    entry,
+                    tagName: entry,
+                  );
+                }
+
+                final localMeta = localMetadata[normalizedEntry];
+                if (localMeta != null) {
+                  return search_filter.FilterItem.include(
+                    normalizedEntry,
+                    tagId: numericId,
+                    tagType: localMeta.type,
+                    tagName: localMeta.name,
+                    tagSlug: localMeta.slug,
+                  );
+                }
+
+                final onlineMeta = onlineRules.firstWhere(
+                  (rule) => rule.id == normalizedEntry,
+                  orElse: () => OnlineBlacklistRule(token: normalizedEntry),
+                );
+                return search_filter.FilterItem.include(
+                  normalizedEntry,
+                  tagId: numericId,
+                  tagType: onlineMeta.type,
+                  tagName: onlineMeta.name,
+                );
+              }).toList(growable: false);
+
+              final selected = await AppRouter.goToFilterData(
+                context,
+                filterType: 'tag',
+                sourceId: 'nhentai',
+                hideOtherTabs: false,
+                supportsExclude: false,
+                selectedFilters: selectedFiltersForPicker,
+              );
+
+              if (!context.mounted || selected == null) {
+                return;
+              }
+
+              final backupEntries = List<String>.from(localEntries);
+              final backupMetadata =
+                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
+
+              // FilterData works as a full selector. Apply should replace
+              // current local selections, including the empty state.
+              localEntries = <String>[];
+              localMetadata = <String, BlacklistedTagMetadata>{};
+
+              for (final filter in selected.where((item) => !item.isExcluded)) {
+                final id = filter.tagId;
+                if (id != null && id > 0) {
+                  final idString = id.toString();
+                  localEntries.add(idString);
+                  localMetadata[idString] = BlacklistedTagMetadata(
+                    id: idString,
+                    type: filter.tagType ?? 'tag',
+                    name: filter.tagName ?? filter.value,
+                    slug: filter.tagSlug,
+                  );
+                } else {
+                  localEntries.add(filter.value);
+                }
+              }
+
+              localEntries = TagBlacklistUtils.sanitizeEntries(localEntries);
+
+              try {
+                await saveState();
+                syncFromCubit();
+              } catch (e) {
+                localEntries = backupEntries;
+                localMetadata = backupMetadata;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to save: $e')),
+                  );
+                }
+                return;
+              }
+
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            }
 
             Future<void> addEntries() async {
               final parsedEntries =
@@ -799,26 +1015,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return;
               }
 
+              // Diagnostic: check Cubit state BEFORE add
+              final cubitBefore = context.read<SettingsCubit>().state;
+              if (cubitBefore is SettingsLoaded) {
+                getIt<Logger>().d(
+                    'SHEET_ADD_BEFORE: blur=${cubitBefore.preferences.blurThumbnails}, tags=${cubitBefore.preferences.blacklistedTags.length}');
+              }
+
+              final backup = List<String>.from(localEntries);
               localEntries = TagBlacklistUtils.sanitizeEntries([
                 ...localEntries,
                 ...parsedEntries,
               ]);
-              await context
-                  .read<SettingsCubit>()
-                  .updateBlacklistedTags(localEntries);
-              controller.clear();
+
+              try {
+                await saveState();
+
+                // Diagnostic: check Cubit state AFTER add
+                if (!context.mounted) return;
+                final cubitAfter = context.read<SettingsCubit>().state;
+                if (cubitAfter is SettingsLoaded) {
+                  getIt<Logger>().d(
+                      'SHEET_ADD_AFTER: blur=${cubitAfter.preferences.blurThumbnails}, tags=${cubitAfter.preferences.blacklistedTags.length}');
+                }
+
+                // Sync back from Cubit to ensure data consistency
+                syncFromCubit();
+
+                controller.clear();
+              } catch (e) {
+                // Restore backup if save failed
+                localEntries = backup;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to save: $e')),
+                  );
+                }
+                return;
+              }
+
               if (sheetContext.mounted) {
                 setSheetState(() {});
               }
             }
 
             Future<void> removeEntry(String entry) async {
+              final backup = List<String>.from(localEntries);
+              final backupMetadata =
+                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
               localEntries = localEntries
                   .where((current) => current != entry)
                   .toList(growable: false);
-              await context
-                  .read<SettingsCubit>()
-                  .updateBlacklistedTags(localEntries);
+              final normalized = TagBlacklistUtils.normalizeEntry(entry);
+              localMetadata.remove(normalized);
+
+              try {
+                await saveState();
+
+                // Sync back from Cubit to ensure data consistency
+                syncFromCubit();
+              } catch (e) {
+                // Restore backup if save failed
+                localEntries = backup;
+                localMetadata = backupMetadata;
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(content: Text('Failed to delete: $e')),
+                  );
+                }
+                return;
+              }
+
               if (sheetContext.mounted) {
                 setSheetState(() {});
               }
@@ -926,11 +1193,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 onPressed: isSyncing
                                     ? null
                                     : () async {
-                                        await _tagBlacklistService
-                                            .syncOnlineEntries(
-                                          'nhentai',
-                                          forceRefresh: true,
-                                        );
+                                        await Future.wait([
+                                          _tagBlacklistService
+                                              .syncOnlineEntries(
+                                            'nhentai',
+                                            forceRefresh: true,
+                                          ),
+                                          _tagBlacklistService.syncOnlineRules(
+                                            'nhentai',
+                                            forceRefresh: true,
+                                          ),
+                                        ]);
                                         if (sheetContext.mounted) {
                                           setSheetState(() {});
                                         }
@@ -958,6 +1231,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: pickFromTags,
+                            icon: const Icon(Icons.playlist_add_rounded),
+                            label: const Text('Pick from tags'),
+                          ),
+                        ),
                         const SizedBox(height: 18),
                         Text(
                           'Local rules (${localEntries.length})',
@@ -980,9 +1262,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 .map(
                                   (entry) => InputChip(
                                     label: Text(
-                                      int.tryParse(entry) != null
-                                          ? '#$entry'
-                                          : entry,
+                                      _buildLocalBlacklistLabel(
+                                        entry,
+                                        onlineRules,
+                                        localMetadata,
+                                      ),
                                     ),
                                     onDeleted: () => removeEntry(entry),
                                     deleteIconColor:
@@ -994,8 +1278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 20),
                         Text(
                           hasSession
-                              ? 'Online nhentai sync (${onlineEntries.length})'
-                              : 'Online nhentai sync',
+                              ? 'Online rules metadata (${onlineRules.length})'
+                              : 'Online rules metadata',
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1003,55 +1287,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 10),
                         if (!hasSession)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Login required to merge your nhentai account blacklist IDs.',
-                                  style: TextStyleConst.bodySmall.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(sheetContext).pop();
-                                    context.push(
-                                      '${AppRoute.sourceLogin}?source=nhentai',
-                                    );
-                                  },
-                                  icon: const Icon(Icons.login_rounded),
-                                  label: const Text('Open nhentai login'),
-                                ),
-                              ],
-                            ),
-                          )
-                        else if (onlineEntries.isEmpty)
                           _buildSheetHint(
                             theme,
-                            'No online blacklist IDs returned yet. Tap refresh if you recently changed them on nhentai.',
+                            'Login required to fetch detailed rule metadata from /blacklist.',
+                          )
+                        else if (isSyncingRules && onlineRules.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'Syncing online rule details...',
+                          )
+                        else if (onlineRules.isEmpty)
+                          _buildSheetHint(
+                            theme,
+                            'No online rule details returned yet. Tap refresh to fetch /blacklist.',
                           )
                         else
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: onlineEntries
-                                .map((entry) => _buildBlacklistEntryChip(
-                                      theme,
-                                      entry,
-                                    ))
+                            children: onlineRules
+                                .map(
+                                  (rule) => _buildBlacklistEntryChip(
+                                    theme,
+                                    rule.displayLabel,
+                                  ),
+                                )
                                 .toList(),
                           ),
                         const SizedBox(height: 20),
@@ -1069,20 +1329,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'Blacklisted galleries will be blurred here once you add local rules or sync online IDs.',
                           )
                         else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: mergedEntries
-                                .take(24)
-                                .map((entry) =>
-                                    _buildBlacklistEntryChip(theme, entry))
-                                .toList(),
+                          _buildSheetHint(
+                            theme,
+                            'Coverage is active for ${mergedEntries.length} tokens. ID tokens are hidden here by request; only named online rules are shown above.',
                           ),
                         const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
-                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            onPressed: () async {
+                              // Ensure all pending updates are flushed before closing
+                              // This gives time for any lingering async updates to complete
+                              await Future.delayed(
+                                const Duration(milliseconds: 100),
+                              );
+                              if (sheetContext.mounted) {
+                                Navigator.of(sheetContext).pop();
+                              }
+                            },
                             child: const Text('Done'),
                           ),
                         ),

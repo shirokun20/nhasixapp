@@ -1,5 +1,40 @@
 import 'package:equatable/equatable.dart';
 
+class BlacklistedTagMetadata extends Equatable {
+  const BlacklistedTagMetadata({
+    required this.id,
+    required this.type,
+    required this.name,
+    this.slug,
+  });
+
+  final String id;
+  final String type;
+  final String name;
+  final String? slug;
+
+  @override
+  List<Object?> get props => [id, type, name, slug];
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'name': name,
+      'slug': slug,
+    };
+  }
+
+  factory BlacklistedTagMetadata.fromJson(Map<String, dynamic> json) {
+    return BlacklistedTagMetadata(
+      id: (json['id'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      slug: json['slug']?.toString(),
+    );
+  }
+}
+
 /// User preferences entity for app customization
 /// NOTE: Default values are hardcoded to avoid dependency on get_it during initialization
 class UserPreferences extends Equatable {
@@ -22,6 +57,7 @@ class UserPreferences extends Equatable {
     this.autoBackup = false,
     this.showNsfwContent = true,
     this.blacklistedTags = const [],
+    this.blacklistedTagMetadata = const {},
     this.favoriteCategories = const [],
     // Reader settings
     this.readerBrightness = 1.0,
@@ -69,6 +105,7 @@ class UserPreferences extends Equatable {
   final bool autoBackup;
   final bool showNsfwContent;
   final List<String> blacklistedTags;
+  final Map<String, BlacklistedTagMetadata> blacklistedTagMetadata;
   final List<String> favoriteCategories;
   // Reader settings
   final double readerBrightness;
@@ -120,6 +157,7 @@ class UserPreferences extends Equatable {
         autoBackup,
         showNsfwContent,
         blacklistedTags,
+        blacklistedTagMetadata,
         favoriteCategories,
         readerBrightness,
         readerInvertColors,
@@ -165,6 +203,7 @@ class UserPreferences extends Equatable {
     bool? autoBackup,
     bool? showNsfwContent,
     List<String>? blacklistedTags,
+    Map<String, BlacklistedTagMetadata>? blacklistedTagMetadata,
     List<String>? favoriteCategories,
     double? readerBrightness,
     bool? readerInvertColors,
@@ -212,6 +251,8 @@ class UserPreferences extends Equatable {
       autoBackup: autoBackup ?? this.autoBackup,
       showNsfwContent: showNsfwContent ?? this.showNsfwContent,
       blacklistedTags: blacklistedTags ?? this.blacklistedTags,
+      blacklistedTagMetadata:
+          blacklistedTagMetadata ?? this.blacklistedTagMetadata,
       favoriteCategories: favoriteCategories ?? this.favoriteCategories,
       readerBrightness: readerBrightness ?? this.readerBrightness,
       readerInvertColors: readerInvertColors ?? this.readerInvertColors,
@@ -338,6 +379,9 @@ class UserPreferences extends Equatable {
       'autoBackup': autoBackup,
       'showNsfwContent': showNsfwContent,
       'blacklistedTags': blacklistedTags,
+      'blacklistedTagMetadata': blacklistedTagMetadata.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
       'favoriteCategories': favoriteCategories,
       'readerBrightness': readerBrightness,
       'readerInvertColors': readerInvertColors,
@@ -391,6 +435,8 @@ class UserPreferences extends Equatable {
       autoBackup: _safeParseBool(json['autoBackup'], false),
       showNsfwContent: _safeParseBool(json['showNsfwContent'], true),
       blacklistedTags: List<String>.from(json['blacklistedTags'] ?? []),
+      blacklistedTagMetadata:
+          _parseBlacklistedTagMetadata(json['blacklistedTagMetadata']),
       favoriteCategories: List<String>.from(json['favoriteCategories'] ?? []),
       readerBrightness: (json['readerBrightness'] ?? 1.0).toDouble(),
       readerInvertColors: _safeParseBool(json['readerInvertColors'], false),
@@ -452,6 +498,31 @@ class UserPreferences extends Equatable {
 
     // If we can't parse it, return the default value
     return defaultValue;
+  }
+
+  static Map<String, BlacklistedTagMetadata> _parseBlacklistedTagMetadata(
+    dynamic value,
+  ) {
+    if (value is! Map) {
+      return const {};
+    }
+
+    final result = <String, BlacklistedTagMetadata>{};
+    value.forEach((key, rawMeta) {
+      if (key == null || rawMeta is! Map) {
+        return;
+      }
+      final normalizedId = key.toString();
+      final rawMap = Map<String, dynamic>.from(
+        rawMeta.map((k, v) => MapEntry(k.toString(), v)),
+      );
+      final metadata = BlacklistedTagMetadata.fromJson(rawMap);
+      if (metadata.id.isNotEmpty && metadata.name.isNotEmpty) {
+        result[normalizedId] = metadata;
+      }
+    });
+
+    return result;
   }
 
   /// Safely parse integer value from JSON, handling various data types
