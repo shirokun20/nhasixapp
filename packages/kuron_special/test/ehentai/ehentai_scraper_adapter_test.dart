@@ -68,8 +68,42 @@ void main() {
 <html><body>
   <h1 id="gn">Sample EHentai Title</h1>
   <div id="gd1"><img src="https://cover.example/1.jpg"></div>
-  <div class="gt" title="artist:john doe"></div>
-  <div class="gt" title="language:english"></div>
+  <div id="taglist">
+    <table><tbody>
+      <tr>
+        <td class="tc">language:</td>
+        <td>
+          <div id="td_language:english" class="gt"><a href="https://e-hentai.org/tag/language:english">english</a></div>
+          <div id="td_language:translated" class="gt"><a href="https://e-hentai.org/tag/language:translated">translated</a></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="tc">group:</td>
+        <td>
+          <div id="td_group:test_circle" class="gtl"><a href="https://e-hentai.org/tag/group:test+circle">test circle</a></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="tc">artist:</td>
+        <td>
+          <div id="td_artist:john_doe" class="gtl"><a href="https://e-hentai.org/tag/artist:john+doe">john doe</a></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="tc">female:</td>
+        <td>
+          <div id="td_female:big_breasts" class="gtl"><a href="https://e-hentai.org/tag/female:big+breasts">big breasts</a></div>
+          <div id="td_female:bikini" class="gtl"><a href="https://e-hentai.org/tag/female:bikini">bikini</a></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="tc">male:</td>
+        <td>
+          <div id="td_male:tanline" class="gtl"><a href="https://e-hentai.org/tag/male:tanline">tanline</a></div>
+        </td>
+      </tr>
+    </tbody></table>
+  </div>
   <div id="gdt">
     <a href="/s/hash-1/123-1">p1</a>
     <a href="/s/hash-2/123-2">p2</a>
@@ -213,11 +247,22 @@ void main() {
       if (artistTag.isNotEmpty) {
         expect(artistTag.first.name, 'john doe');
       }
+      final groupTag = result.content.tags.where((t) => t.type == 'group');
+      if (groupTag.isNotEmpty) {
+        expect(groupTag.first.name, 'test circle');
+      }
+      expect(
+        result.content.tags.map((t) => t.name),
+        containsAll(['big breasts', 'bikini', 'tanline']),
+      );
       if (languageTag.isNotEmpty) {
         expect(languageTag.first.name, 'english');
       }
       if (result.content.artists.isNotEmpty) {
         expect(result.content.artists, contains('john doe'));
+      }
+      if (result.content.groups.isNotEmpty) {
+        expect(result.content.groups, contains('test circle'));
       }
       expect(result.content.language, isNotEmpty);
     });
@@ -560,6 +605,38 @@ void main() {
       expect(result.items[0].coverUrl, 'https://thumb.example/a.webp');
       expect(result.items[1].coverUrl, 'https://thumb.example/b.webp');
       expect(result.items[2].coverUrl, 'https://thumb.example/c.webp');
+    });
+
+    test('search home keeps unknown language when row has no language tag',
+        () async {
+      const homeHtmlWithoutLanguageTags = '''
+<html><body>
+  <table class="itg gltc">
+    <tr>
+      <td class="gl2c"><img src="https://thumb.example/a.webp"></td>
+      <td class="gl3c glname">
+          <a href="/g/111/aaa/"><span class="glink">Item A</span></a>
+      </td>
+    </tr>
+  </table>
+</body></html>
+''';
+
+      mock.onGet(
+        'https://e-hentai.org/?page=1',
+        (server) => server.reply(
+          200,
+          homeHtmlWithoutLanguageTags,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(const SearchFilter(page: 1), config);
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.language, 'unknown');
     });
 
     test('search raw query page 2 follows token pagination and keeps covers',

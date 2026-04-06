@@ -12,6 +12,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
   final Dio _dio;
   final GenericUrlBuilder _urlBuilder;
   final GenericHtmlParser _parser;
+  final Logger _logger;
+  final String _sourceId;
   final GenericScraperAdapter _delegate;
   final Map<String, String> _pageUrlCache = <String, String>{};
   DateTime? _lastRequestAt;
@@ -25,6 +27,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
   })  : _dio = dio,
         _urlBuilder = urlBuilder,
         _parser = parser,
+        _logger = logger,
+        _sourceId = sourceId,
         _delegate = GenericScraperAdapter(
           dio: dio,
           urlBuilder: urlBuilder,
@@ -331,13 +335,14 @@ class EHentaiScraperAdapter implements GenericAdapter {
 
       final detailUrl = GenericUrlBuilder(baseUrl: baseUrl)
           .buildDetailUrl(detailPattern, contentId);
-      final detailHtml = await _fetchDetailHtml(
+      final detailHtmlRaw = await _fetchDetailHtml(
         detailUrl: detailUrl,
         baseUrl: baseUrl,
         detailPattern: detailPattern,
         contentId: contentId,
         rawConfig: rawConfig,
       );
+      final detailHtml = _normalizeHtml(detailHtmlRaw);
       if (detailHtml.isEmpty) {
         return AdapterDetailResult(
           content: normalizedContent,
@@ -366,7 +371,12 @@ class EHentaiScraperAdapter implements GenericAdapter {
         content: updated,
         imageUrls: fallbackImages, // Empty - will be loaded by reader screen
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _logger.e(
+        '$_sourceId fetchDetail failed for $contentId',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return AdapterDetailResult(
         content: normalizedContent,
         imageUrls: fallbackImages,
@@ -754,11 +764,24 @@ class EHentaiScraperAdapter implements GenericAdapter {
       characters: const [],
       parodies: const [],
       groups: const [],
-      language: (rawConfig['defaultLanguage'] as String?) ?? 'unknown',
+      language: 'unknown',
       pageCount: 0,
       imageUrls: const [],
       uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
     );
+  }
+
+  String _normalizeHtml(String html) {
+    if (!html.contains(r'\"') && !html.contains(r'\n')) {
+      return html;
+    }
+
+    return html
+        .replaceAll(r'\"', '"')
+        .replaceAll(r"\'", "'")
+        .replaceAll(r'\/', '/')
+        .replaceAll(r'\n', '\n')
+        .replaceAll(r'\t', '\t');
   }
 
   Content _hydrateDetailMetadata(Content content, String html) {
@@ -851,31 +874,32 @@ class EHentaiScraperAdapter implements GenericAdapter {
     ///   <a id="ta_language:korean" href="..." class="">korean</a>
     /// </div>
     /// Parse tags from div ID attribute: "td_TYPE:VALUE"
-    final doc = _parser.parse(html);
-    final tagDivs = doc.querySelectorAll('div.gt[id^="td_"]');
-
     final tags = <Tag>[];
-    for (final div in tagDivs) {
-      final id = div.attributes['id'] ?? '';
-      if (!id.startsWith('td_')) continue;
+    final tagMatches = RegExp(
+      r'<div[^>]*id="td_([^"]+)"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)</a>',
+      caseSensitive: false,
+    ).allMatches(html);
 
-      // Extract type:value from ID (td_language:korean -> language:korean)
-      final tagSpec = id.substring(3);
-      if (tagSpec.isEmpty) continue;
+    for (final match in tagMatches) {
+      final tagSpec = (match.group(1) ?? '').trim();
+      if (tagSpec.isEmpty || !tagSpec.contains(':')) continue;
 
-      // Extract text from <a> tag inside
-      final link = div.querySelector('a');
-      final tagText = link?.text.trim() ?? '';
+      final separatorIndex = tagSpec.indexOf(':');
+      final rawType = tagSpec.substring(0, separatorIndex).trim();
+      if (rawType.isEmpty) continue;
+
+      final href = (match.group(2) ?? '').trim();
+      final tagText = _cleanHtmlText(match.group(3) ?? '');
       if (tagText.isEmpty) continue;
 
-      // Reconstruct full tag name as "type:value"
-      final fullTagName = tagSpec;
-
+      final fullTagName = '$rawType:$tagText';
       tags.add(Tag(
         id: 0,
         name: fullTagName,
         type: TagType.tag,
         count: 0,
+        url: href,
+        slug: fullTagName,
       ));
     }
 

@@ -501,6 +501,42 @@ void main() {
       expect(result.items.first.title, 'Solo Leveling');
     });
 
+    test('raw search preserves authorOrArtist UUID params', () async {
+      const expectedAuthorUrl =
+          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&authorOrArtist=11111111-2222-3333-4444-555555555555&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
+      const expectedArtistUrl =
+          '$_baseUrl/manga?limit=30&offset=0&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=erotica&contentRating[]=pornographic&contentRating[]=suggestive&contentRating[]=safe&hasAvailableChapters=true&authorOrArtist=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&availableTranslatedLanguage[]=id&availableTranslatedLanguage[]=en&availableTranslatedLanguage[]=ja&availableTranslatedLanguage[]=zh';
+
+      dioAdapter.onGet(
+        expectedAuthorUrl,
+        (server) => server.reply(200, _listResponse),
+      );
+      dioAdapter.onGet(
+        expectedArtistUrl,
+        (server) => server.reply(200, _listResponse),
+      );
+
+      final authorResult = await adapter.search(
+        const SearchFilter(
+          query: 'raw:authorOrArtist=11111111-2222-3333-4444-555555555555',
+          page: 1,
+        ),
+        _config,
+      );
+      final artistResult = await adapter.search(
+        const SearchFilter(
+          query: 'raw:authorOrArtist=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+          page: 1,
+        ),
+        _config,
+      );
+
+      expect(authorResult.items, hasLength(1));
+      expect(authorResult.items.first.id, _mangaId);
+      expect(artistResult.items, hasLength(1));
+      expect(artistResult.items.first.id, _mangaId);
+    });
+
     test('search handles missing cover relationship without crashing',
         () async {
       dioAdapter.onGet(
