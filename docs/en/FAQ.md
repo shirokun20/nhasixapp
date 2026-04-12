@@ -95,10 +95,10 @@ The Tag Blacklist lets you hide unwanted content by blurring thumbnails in all f
 **Q: What are "Other Sources"? Are they free?**
 
 Kuron supports multiple content providers beyond nhentai:
-- **E-Hentai, HentaiNexus, Hitomi, and others** are **premium / advanced sources**.
+- **MangaDex, E-Hentai, HentaiNexus, Hitomi, and others** are **advanced sources**.
 - They are **not bundled** by default and require manual installation via:
   **Settings → Sources → Add via Link** or **Import ZIP**.
-- These sources may require an account or have their own access requirements.
+- These sources may require an account (MangaDex, E-Hentai) or have their own access requirements.
 - nhentai is the default free source included out of the box.
 
 ---
@@ -154,8 +154,8 @@ You can either:
 
 Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
 
-Current latest release: **v0.9.15+24**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.15%2B24
+Current latest release: **v0.9.16+25**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25
 
 ---
 

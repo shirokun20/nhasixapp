@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.15-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.16-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
@@ -19,7 +19,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.15+24**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.15%2B24)
+[📦 **Get v0.9.16+25**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -30,7 +30,7 @@
 
 ## ✨ **Key Features**
 
-### � **Nhentai Login & Online Sync (NEW in v0.9.15!)**
+### � **Nhentai Login & Online Sync **
 - **Account Login**: Sign in with your nhentai account directly in the app (Drawer → Login).
 - **CAPTCHA Solver**: Native Android WebView activity for smooth Turnstile / hCaptcha solving.
 - **Online Favorites**: Sync favorites with your nhentai account — choose Offline, Online, or Both per gallery.

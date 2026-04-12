@@ -95,10 +95,10 @@ Tag Blacklist memungkinkan Anda menyembunyikan konten yang tidak diinginkan deng
 **Q: Apa itu "Source Lain"? Apakah gratis?**
 
 Kuron mendukung beberapa penyedia konten selain nhentai:
-- **E-Hentai, HentaiNexus, Hitomi, dan lainnya** adalah **source premium / tingkat lanjut**.
+- **MangaDex, E-Hentai, HentaiNexus, Hitomi, dan lainnya** adalah **source tingkat lanjut**.
 - Source ini **tidak disertakan** secara default dan memerlukan instalasi manual melalui:
   **Pengaturan → Sources → Add via Link** atau **Import ZIP**.
-- Source-source ini mungkin memerlukan akun atau memiliki persyaratan akses sendiri.
+- Source-source ini mungkin memerlukan akun (MangaDex, E-Hentai) atau memiliki persyaratan akses sendiri.
 - nhentai adalah source gratis default yang sudah tersedia langsung.
 
 ---
@@ -154,8 +154,8 @@ Anda bisa:
 
 Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
 
-Rilis terbaru saat ini: **v0.9.15+24**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.15%2B24
+Rilis terbaru saat ini: **v0.9.16+25**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25
 
 ---
 

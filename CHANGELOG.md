@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.16+25] - 2026-04-12
+
+### ✨ Highlights
+
+#### 📦 MangaDex Integration
+- **MangaDex Support**: Added initial support for MangaDex with partial API integration and supporting assets.
+- **OpenAPI Config**: Configured `mangadex-config.json` with fallback mechanisms and local cache support.
+
+#### ⭐ Local Collections & Favorites
+- **Categorized Collections**: Introduced local collection categories for better organization of favorite series.
+- **Management Tools**: Enhanced favorites management including search and deduplication improvements.
+
+#### 📖 Reader Optimizations
+- **Smart History Tracking**: Fixed a critical bug where reading progress could reset when navigating back. Introduced precise page tracking (`_lastTrackedPage`) independent of the UI state.
+- **Asynchronous Navigation**: Refactored `goToReader` to return a `Future`, enabling better synchronization with reading history updates.
+
+#### 🛠 E-Hentai Sync & Auth
+- **Auth UI Cleanup**: Temporarily disabled the incompatible token-based login UI for E-Hentai to avoid user confusion.
+- **Config Sync**: Harmonized config keys with the internal `GenericHttpSource` implementation.
+
+### 🩹 Bug Fixes & UX
+- **Blacklist Fixes**: Resolved regressions in the blacklist picker's "clear all" functionality.
+- **Tag Metadata**: Improved search filters by including detailed tag metadata.
+
+---
+
 ## [0.9.15+24] - 2026-04-03
 
 ### 🎉 QoL Enhancements — Issue #32
