@@ -55,6 +55,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   // Chapter navigation context
   Content? _parentContent; // Parent series for chapter navigation
   List<Chapter>? _allChapters; // All chapters available for navigation
+  int _lastTrackedPage = 1; // Tracks current page for persistence even when state is silent
 
   // Public getters for chapter navigation
   Content? get parentContent => _parentContent;
@@ -127,6 +128,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       final startPage = initialPage > 1
           ? initialPage
           : (restoredPage > 1 ? restoredPage : initialPage);
+
+      _lastTrackedPage = startPage;
 
       Content? content;
       bool isOfflineMode = false;
@@ -364,6 +367,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.d(
             'Next page: $currentPage -> $newPage (total: $pageCount, max with nav: $maxPage)');
 
+        _lastTrackedPage = newPage;
         emit(state.copyWith(currentPage: newPage));
         _saveReaderPosition();
         _saveToHistory();
@@ -382,6 +386,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d(
           'Previous page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
 
+      _lastTrackedPage = newPage;
       emit(state.copyWith(currentPage: newPage));
       _saveReaderPosition();
       _saveToHistory();
@@ -464,6 +469,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       if (targetPage >= beforeCount) {
         targetPage = (beforeCount + 1).clamp(1, merged.length);
       }
+
+      _lastTrackedPage = targetPage;
 
       emit(ReaderLoaded(state.copyWith(
         content: newContent,
@@ -757,6 +764,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapters: _allChapters ?? [], // Include all chapters for navigation
       );
 
+      _lastTrackedPage = 1;
+
       emit(ReaderLoaded(state.copyWith(
         content: newContent,
         currentPage: 1,
@@ -797,6 +806,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d(
           'Navigating to page: $validPage (requested: $page, total: $totalPages)');
 
+      _lastTrackedPage = validPage;
       emit(state.copyWith(currentPage: validPage));
       _saveReaderPosition();
       _saveToHistory();
@@ -822,6 +832,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d(
           'Updating page from swipe: $validPage (total: $totalPages, max with nav: $maxPage)');
 
+      _lastTrackedPage = validPage;
+
       // Only emit state change, don't trigger sync navigation
       emit(state.copyWith(currentPage: validPage));
       _saveReaderPosition();
@@ -836,6 +848,8 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     final totalPages = state.content!.pageCount;
     final validPage = page.clamp(1, totalPages);
+
+    _lastTrackedPage = validPage;
 
     _logger.d(
         '📍 Silent page update for continuous scroll: $validPage (total: $totalPages)');
@@ -1331,7 +1345,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       final safePage =
-          (state.currentPage ?? 1).clamp(1, state.content!.pageCount);
+          _lastTrackedPage.clamp(1, state.content!.pageCount);
 
       final params = AddToHistoryParams.fromString(
         historyContentId,
@@ -1364,7 +1378,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       final position = ReaderPosition.create(
         contentId: state.content!.id,
-        currentPage: state.currentPage ?? 1,
+        currentPage: _lastTrackedPage,
         totalPages: state.content!.pageCount,
         title: state.content!.title,
         coverUrl: state.content!.coverUrl,
