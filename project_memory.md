@@ -348,6 +348,10 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 - Added planning artifacts:
   - `projects/issues/2026-04-12-local-collection-categories-and-reading-status.md`
   - `projects/analysis-plan/local_collection_categories/local_collection_categories_2026-04-12.md`
+- Expanded the issue note with explicit DB-migration semantics:
+  - existing `favorites` remains the base saved-items registry
+  - new `favorite_collections` and `favorite_collection_items` sit on top as user-defined grouping layers
+  - reading status remains a separate smart-view concern
 - Effort estimate captured in analysis:
   - manual collections only: 2–3 days
   - manual collections + smart shelves: 3–4 days
