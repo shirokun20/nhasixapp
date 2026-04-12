@@ -13,12 +13,16 @@ RemoteConfig _$RemoteConfigFromJson(Map<String, dynamic> json) => RemoteConfig(
       crotpedia: json['crotpedia'] == null
           ? null
           : SourceConfig.fromJson(json['crotpedia'] as Map<String, dynamic>),
+      ehentai: json['ehentai'] == null
+          ? null
+          : SourceConfig.fromJson(json['ehentai'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$RemoteConfigToJson(RemoteConfig instance) =>
     <String, dynamic>{
       'nhentai': instance.nhentai?.toJson(),
       'crotpedia': instance.crotpedia?.toJson(),
+      'ehentai': instance.ehentai?.toJson(),
     };
 
 SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) => SourceConfig(

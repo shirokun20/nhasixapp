@@ -12,6 +12,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/source_url_resolver.dart';
@@ -130,6 +131,18 @@ class _DetailScreenState extends State<DetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.folder_special_outlined),
+                enabled: detailState.isFavorited,
+                title: const Text('Manage Collections'),
+                subtitle: detailState.isFavorited
+                    ? null
+                    : const Text('Add to favorites first'),
+                onTap: detailState.isFavorited
+                    ? () => Navigator.of(context).pop('manage_collections')
+                    : null,
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.phone_android),
                 title: const Text('Favorite Offline'),
                 onTap: () => Navigator.of(context).pop('offline'),
@@ -167,6 +180,9 @@ class _DetailScreenState extends State<DetailScreen> {
     if (!mounted || selection == null) return;
 
     switch (selection) {
+      case 'manage_collections':
+        await _showManageCollectionsSheet(detailState.content);
+        break;
       case 'offline':
         await _detailCubit.toggleFavorite();
         break;
@@ -806,10 +822,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                     .onSurface
                                     .withValues(alpha: 0.3)),
                       ),
-                      onPressed:
-                          (detailState.isTogglingFavorite || !favoriteEnabled)
-                              ? null
-                              : () => _onFavoritePressed(detailState),
+                      onPressed: !favoriteEnabled
+                          ? null
+                          : () => _onFavoritePressed(detailState),
                     );
                   },
                 ),
@@ -820,29 +835,71 @@ class _DetailScreenState extends State<DetailScreen> {
                   onPressed: () => _shareContent(content),
                 ),
                 // More options
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert,
-                      color: Theme.of(context).colorScheme.onSurface),
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  onSelected: (value) => _handleMenuAction(value, content),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'copy_link',
-                      child: Row(
-                        children: [
-                          Icon(Icons.link,
-                              color: Theme.of(context).colorScheme.onSurface),
-                          const SizedBox(width: 12),
-                          Text(
-                            AppLocalizations.of(context)!.copyLink,
-                            style: TextStyleConst.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
+                BlocBuilder<DetailCubit, DetailState>(
+                  builder: (context, detailState) {
+                    if (detailState is! DetailLoaded) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return PopupMenuButton<String>(
+                      icon: Icon(Icons.more_vert,
+                          color: Theme.of(context).colorScheme.onSurface),
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      onSelected: (value) => _handleMenuAction(value, content),
+                      itemBuilder: (context) {
+                        final items = <PopupMenuEntry<String>>[];
+
+                        if (detailState.isFavorited) {
+                          items.add(
+                            PopupMenuItem(
+                              value: 'manage_collections',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.folder_special_outlined,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Manage Collections',
+                                    style: TextStyleConst.bodyMedium.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        items.add(
+                          PopupMenuItem(
+                            value: 'copy_link',
+                            child: Row(
+                              children: [
+                                Icon(Icons.link,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
+                                const SizedBox(width: 12),
+                                Text(
+                                  AppLocalizations.of(context)!.copyLink,
+                                  style: TextStyleConst.bodyMedium.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        );
+
+                        return items;
+                      },
+                    );
+                  },
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
@@ -2797,6 +2854,9 @@ class _DetailScreenState extends State<DetailScreen> {
       case 'copy_link':
         _copyContentLink(content);
         break;
+      case 'manage_collections':
+        _showManageCollectionsSheet(content);
+        break;
     }
   }
 
@@ -3129,6 +3189,221 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       ),
     );
+  }
+
+  /// Show manage collections sheet for a favorite item
+  Future<void> _showManageCollectionsSheet(Content content) async {
+    final favoriteCubit = getIt<FavoriteCubit>();
+    if (favoriteCubit.state is! FavoriteLoaded) {
+      await favoriteCubit.loadFavorites();
+    }
+
+    var currentState = favoriteCubit.state;
+    if (currentState is! FavoriteLoaded) return;
+
+    if (currentState.collections.isEmpty) {
+      final created = await _showCreateCollectionFromDetailDialog();
+      if (!created) return;
+
+      if (favoriteCubit.state is! FavoriteLoaded) {
+        await favoriteCubit.loadFavorites();
+      }
+      currentState = favoriteCubit.state;
+      if (currentState is! FavoriteLoaded || currentState.collections.isEmpty) {
+        return;
+      }
+    }
+
+    final favoriteId = content.id;
+    final sourceId = content.sourceId;
+
+    final assignedIds = await favoriteCubit.getFavoriteCollectionIds(
+      favoriteId: favoriteId,
+      sourceId: sourceId,
+    );
+    if (!mounted) return;
+
+    final selectedIds = assignedIds.toSet();
+
+    if (!mounted) return;
+    final loadedState = currentState;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Collections',
+                    style: TextStyleConst.withColor(
+                      TextStyleConst.headingSmall,
+                      Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: loadedState.collections.map((collection) {
+                          final isSelected =
+                              selectedIds.contains(collection.id);
+                          return CheckboxListTile(
+                            value: isSelected,
+                            title: Text(collection.name),
+                            subtitle: Text('${collection.itemCount} items'),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (value) {
+                              setSheetState(() {
+                                if (value == true) {
+                                  selectedIds.add(collection.id);
+                                } else {
+                                  selectedIds.remove(collection.id);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(growable: false),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: Text(AppLocalizations.of(context)!.cancel),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          final created =
+                              await _showCreateCollectionFromDetailDialog();
+                          if (!created || !mounted) return;
+                          await _showManageCollectionsSheet(content);
+                        },
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                        label: const Text('New collection'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          await favoriteCubit.setFavoriteCollectionIds(
+                            favoriteId: favoriteId,
+                            sourceId: sourceId,
+                            collectionIds: selectedIds.toList(growable: false),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Collections updated successfully'),
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(AppLocalizations.of(context)!.save),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _showCreateCollectionFromDetailDialog() async {
+    final favoriteCubit = getIt<FavoriteCubit>();
+    String inputName = '';
+    final controller = TextEditingController();
+
+    final created = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return StatefulBuilder(
+              builder: (dialogBuilderContext, setDialogState) {
+                return AlertDialog(
+                  backgroundColor: Theme.of(dialogBuilderContext)
+                      .colorScheme
+                      .surfaceContainer,
+                  title: const Text('Create collection'),
+                  content: TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Collection name',
+                    ),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        inputName = value;
+                      });
+                    },
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        Navigator.of(dialogBuilderContext).pop(true);
+                      }
+                    },
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.of(dialogBuilderContext).pop(false),
+                      child: Text(
+                          AppLocalizations.of(dialogBuilderContext)!.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: inputName.trim().isEmpty
+                          ? null
+                          : () => Navigator.of(dialogBuilderContext).pop(true),
+                      child:
+                          Text(AppLocalizations.of(dialogBuilderContext)!.save),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ) ??
+        false;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
+
+    if (!created || inputName.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      await favoriteCubit.createCollection(inputName.trim());
+      return true;
+    } catch (e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create collection: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return false;
+    }
   }
 }
 

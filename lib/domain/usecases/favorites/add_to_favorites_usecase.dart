@@ -20,6 +20,7 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
       if (params.checkDuplicate) {
         final isAlreadyFavorite = await _userDataRepository.isFavorite(
           params.content.id,
+          sourceId: params.content.sourceId,
         );
 
         if (isAlreadyFavorite) {

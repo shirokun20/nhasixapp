@@ -42,10 +42,10 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<void> removeFromFavorites(String id) async {
+  Future<void> removeFromFavorites(String id, {String? sourceId}) async {
     try {
       _logger.i('Removing content $id from favorites');
-      await localDataSource.removeFromFavorites(id);
+      await localDataSource.removeFromFavorites(id, sourceId: sourceId);
       _logger.d('Successfully removed from favorites');
     } catch (e, stackTrace) {
       _logger.e('Failed to remove from favorites',
@@ -58,12 +58,14 @@ class UserDataRepositoryImpl implements UserDataRepository {
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
+    String? collectionId,
   }) async {
     try {
       _logger.i('Getting favorites, page: $page, limit: $limit');
       final favorites = await localDataSource.getFavorites(
         page: page,
         limit: limit,
+        collectionId: collectionId,
       );
       _logger.d('Retrieved ${favorites.length} favorites');
       return favorites;
@@ -74,9 +76,9 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<bool> isFavorite(String id) async {
+  Future<bool> isFavorite(String id, {String? sourceId}) async {
     try {
-      return await localDataSource.isFavorited(id);
+      return await localDataSource.isFavorited(id, sourceId: sourceId);
     } catch (e, stackTrace) {
       _logger.e('Failed to check if favorite',
           error: e, stackTrace: stackTrace);
@@ -85,9 +87,10 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
-  Future<int> getFavoritesCount() async {
+  Future<int> getFavoritesCount({String? collectionId}) async {
     try {
-      return await localDataSource.getFavoritesCount();
+      return await localDataSource.getFavoritesCount(
+          collectionId: collectionId);
     } catch (e, stackTrace) {
       _logger.e('Failed to get favorites count',
           error: e, stackTrace: stackTrace);
@@ -105,6 +108,115 @@ class UserDataRepositoryImpl implements UserDataRepository {
       return favorites;
     } catch (e, stackTrace) {
       _logger.e('Failed to get all favorites for export',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
+  Future<FavoriteCollection> createFavoriteCollection({
+    required String name,
+    String? collectionId,
+  }) async {
+    try {
+      return await localDataSource.createFavoriteCollection(
+        name: name,
+        collectionId: collectionId,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to create favorite collection',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> renameFavoriteCollection({
+    required String collectionId,
+    required String name,
+  }) async {
+    try {
+      await localDataSource.renameFavoriteCollection(
+        collectionId: collectionId,
+        name: name,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to rename favorite collection',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteFavoriteCollection(String collectionId) async {
+    try {
+      await localDataSource.deleteFavoriteCollection(collectionId);
+    } catch (e, stackTrace) {
+      _logger.e('Failed to delete favorite collection',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<FavoriteCollection>> getFavoriteCollections() async {
+    try {
+      return await localDataSource.getFavoriteCollections();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get favorite collections',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
+  Future<List<String>> getFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+  }) async {
+    try {
+      return await localDataSource.getFavoriteCollectionIds(
+        favoriteId: favoriteId,
+        sourceId: sourceId,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get favorite collection ids',
+          error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> setFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+    required List<String> collectionIds,
+  }) async {
+    try {
+      await localDataSource.setFavoriteCollectionIds(
+        favoriteId: favoriteId,
+        sourceId: sourceId,
+        collectionIds: collectionIds,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('Failed to set favorite collection ids',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<FavoriteCollection>> getFavoriteCollectionsForExport() async {
+    return getFavoriteCollections();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>>
+      getFavoriteCollectionMembershipsForExport() async {
+    try {
+      return await localDataSource.getFavoriteCollectionMembershipsForExport();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to export favorite collection memberships',
           error: e, stackTrace: stackTrace);
       return [];
     }

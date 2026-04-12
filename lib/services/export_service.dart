@@ -185,6 +185,10 @@ class ExportService {
     // Get favorites
     final favorites =
         await _userDataRepository.getFavorites(limit: AppLimits.maxBatchSize);
+    final favoriteCollections =
+        await _userDataRepository.getFavoriteCollectionsForExport();
+    final favoriteCollectionItems =
+        await _userDataRepository.getFavoriteCollectionMembershipsForExport();
 
     // Get history
     final history =
@@ -204,6 +208,9 @@ class ExportService {
               })
           .toList(),
       'favorites': favorites,
+      'favoriteCollections':
+          favoriteCollections.map((item) => item.toJson()).toList(),
+      'favoriteCollectionItems': favoriteCollectionItems,
       'history': history
           .map((h) => {
                 'id': h.contentId,

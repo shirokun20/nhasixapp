@@ -7,8 +7,9 @@ part 'config_models.g.dart';
 class RemoteConfig {
   final SourceConfig? nhentai;
   final SourceConfig? crotpedia;
+  final SourceConfig? ehentai;
 
-  RemoteConfig({this.nhentai, this.crotpedia});
+  RemoteConfig({this.nhentai, this.crotpedia, this.ehentai});
 
   factory RemoteConfig.fromJson(Map<String, dynamic> json) =>
       _$RemoteConfigFromJson(json);

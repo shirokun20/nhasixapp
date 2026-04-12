@@ -25,54 +25,64 @@ class FavoriteLoading extends FavoriteState {
 class FavoriteLoaded extends FavoriteState {
   const FavoriteLoaded({
     required this.favorites,
+    required this.collections,
     required this.currentPage,
     required this.hasMore,
     required this.totalCount,
     required this.lastUpdated,
     this.isLoadingMore = false,
     this.isBatchOperating = false,
+    this.activeCollectionId,
     this.searchQuery,
   });
 
   final List<Map<String, dynamic>> favorites;
+  final List<FavoriteCollection> collections;
   final int currentPage;
   final bool hasMore;
   final int totalCount;
   final DateTime lastUpdated;
   final bool isLoadingMore;
   final bool isBatchOperating;
+  final String? activeCollectionId;
   final String? searchQuery;
 
   @override
   List<Object?> get props => [
         favorites,
+        collections,
         currentPage,
         hasMore,
         totalCount,
         lastUpdated,
         isLoadingMore,
         isBatchOperating,
+        activeCollectionId,
         searchQuery,
       ];
 
   FavoriteLoaded copyWith({
     List<Map<String, dynamic>>? favorites,
+    List<FavoriteCollection>? collections,
     int? currentPage,
     bool? hasMore,
     int? totalCount,
     DateTime? lastUpdated,
     bool? isLoadingMore,
     bool? isBatchOperating,
+    String? activeCollectionId,
     String? searchQuery,
   }) {
     return FavoriteLoaded(
       favorites: favorites ?? this.favorites,
+      collections: collections ?? this.collections,
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       totalCount: totalCount ?? this.totalCount,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isBatchOperating: isBatchOperating ?? this.isBatchOperating,
+      activeCollectionId: activeCollectionId ?? this.activeCollectionId,
       searchQuery: searchQuery ?? this.searchQuery,
     );
   }

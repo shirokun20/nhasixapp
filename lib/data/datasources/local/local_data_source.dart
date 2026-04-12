@@ -6,6 +6,7 @@ import 'package:nhasixapp/core/constants/app_constants.dart';
 import '../../models/download_status_model.dart';
 import '../../models/history_model.dart';
 import '../../models/reader_position_model.dart';
+import '../../../domain/entities/favorite_collection.dart';
 import '../../../domain/entities/user_preferences.dart';
 import '../../../domain/entities/download_status.dart';
 import 'database_helper.dart';
@@ -72,7 +73,7 @@ class LocalDataSource {
   }
 
   /// Remove content from favorites
-  Future<void> removeFromFavorites(String id) async {
+  Future<void> removeFromFavorites(String id, {String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -80,7 +81,15 @@ class LocalDataSource {
         return;
       }
 
-      await db.delete('favorites', where: 'id = ?', whereArgs: [id]);
+      if (sourceId == null) {
+        await db.delete('favorites', where: 'id = ?', whereArgs: [id]);
+      } else {
+        await db.delete(
+          'favorites',
+          where: 'id = ? AND source_id = ?',
+          whereArgs: [id, sourceId],
+        );
+      }
       _logger.d('Removed content $id from favorites');
     } catch (e) {
       _logger.e('Error removing from favorites: $e');
@@ -110,6 +119,7 @@ class LocalDataSource {
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
+    String? collectionId,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -121,6 +131,17 @@ class LocalDataSource {
       final offset = (page - 1) * limit;
 
       // Prefer f.title, fallback to history/downloads for old data
+      final collectionJoin = collectionId == null
+          ? ''
+          : 'INNER JOIN favorite_collection_items fci ON f.id = fci.favorite_id AND f.source_id = fci.source_id';
+      final collectionWhere =
+          collectionId == null ? '' : 'WHERE fci.collection_id = ?';
+      final args = <Object?>[
+        if (collectionId != null) collectionId,
+        limit,
+        offset,
+      ];
+
       final result = await db.rawQuery('''
         SELECT 
           f.id,
@@ -129,11 +150,13 @@ class LocalDataSource {
           f.added_at,
           COALESCE(f.title, h.title, d.title) as title
         FROM favorites f
+        $collectionJoin
         LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
         LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id
+        $collectionWhere
         ORDER BY f.added_at DESC
         LIMIT ? OFFSET ?
-      ''', [limit, offset]);
+      ''', args);
 
       return result;
     } catch (e) {
@@ -143,7 +166,7 @@ class LocalDataSource {
   }
 
   /// Check if content is favorited
-  Future<bool> isFavorited(String id) async {
+  Future<bool> isFavorited(String id, {String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) {
@@ -151,12 +174,10 @@ class LocalDataSource {
         return false;
       }
 
-      final result = await db.query(
-        'favorites',
-        where: 'id = ?',
-        whereArgs: [id],
-        limit: 1,
-      );
+      final result = await db.query('favorites',
+          where: sourceId == null ? 'id = ?' : 'id = ? AND source_id = ?',
+          whereArgs: sourceId == null ? [id] : [id, sourceId],
+          limit: 1);
 
       return result.isNotEmpty;
     } catch (e) {
@@ -166,13 +187,21 @@ class LocalDataSource {
   }
 
   /// Get favorites count
-  Future<int> getFavoritesCount() async {
+  Future<int> getFavoritesCount({String? collectionId}) async {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return 0;
 
-      final result =
-          await db.rawQuery('SELECT COUNT(*) as count FROM favorites');
+      final result = await db.rawQuery(
+        collectionId == null
+            ? 'SELECT COUNT(*) as count FROM favorites'
+            : '''
+              SELECT COUNT(*) as count
+              FROM favorite_collection_items
+              WHERE collection_id = ?
+            ''',
+        collectionId == null ? null : [collectionId],
+      );
       return result.first['count'] as int;
     } catch (e) {
       _logger.e('Error getting favorites count: $e');
@@ -207,6 +236,184 @@ class LocalDataSource {
       _logger.e('Error getting all favorites: $e');
       return [];
     }
+  }
+
+  Future<FavoriteCollection> createFavoriteCollection({
+    required String name,
+    String? collectionId,
+  }) async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      throw StateError('Database not available, cannot create collection');
+    }
+
+    final now = DateTime.now();
+    final normalizedName = name.trim();
+    final resolvedId =
+        collectionId ?? 'collection_${now.microsecondsSinceEpoch}';
+
+    await db.insert(
+      'favorite_collections',
+      {
+        'id': resolvedId,
+        'name': normalizedName,
+        'created_at': now.millisecondsSinceEpoch,
+        'updated_at': now.millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return FavoriteCollection(
+      id: resolvedId,
+      name: normalizedName,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  Future<void> renameFavoriteCollection({
+    required String collectionId,
+    required String name,
+  }) async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      throw StateError('Database not available, cannot rename collection');
+    }
+
+    await db.update(
+      'favorite_collections',
+      {
+        'name': name.trim(),
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [collectionId],
+    );
+  }
+
+  Future<void> deleteFavoriteCollection(String collectionId) async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      throw StateError('Database not available, cannot delete collection');
+    }
+
+    await db.delete(
+      'favorite_collections',
+      where: 'id = ?',
+      whereArgs: [collectionId],
+    );
+  }
+
+  Future<List<FavoriteCollection>> getFavoriteCollections() async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      _logger.e('Database not available, returning empty favorite collections');
+      return [];
+    }
+
+    final result = await db.rawQuery('''
+      SELECT
+        fc.id,
+        fc.name,
+        fc.created_at,
+        fc.updated_at,
+        COUNT(fci.favorite_id) as item_count
+      FROM favorite_collections fc
+      LEFT JOIN favorite_collection_items fci
+        ON fc.id = fci.collection_id
+      GROUP BY fc.id, fc.name, fc.created_at, fc.updated_at
+      ORDER BY fc.updated_at DESC, fc.name COLLATE NOCASE ASC
+    ''');
+
+    return result.map(_mapFavoriteCollection).toList(growable: false);
+  }
+
+  Future<List<String>> getFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+  }) async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      _logger
+          .e('Database not available, returning empty favorite collection ids');
+      return [];
+    }
+
+    final result = await db.query(
+      'favorite_collection_items',
+      columns: ['collection_id'],
+      where: 'favorite_id = ? AND source_id = ?',
+      whereArgs: [favoriteId, sourceId],
+    );
+
+    return result
+        .map((row) => row['collection_id']?.toString())
+        .whereType<String>()
+        .toList(growable: false);
+  }
+
+  Future<void> setFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+    required List<String> collectionIds,
+  }) async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      throw StateError('Database not available, cannot update memberships');
+    }
+
+    final uniqueCollectionIds = collectionIds.toSet().toList(growable: false);
+
+    await db.transaction((txn) async {
+      await txn.delete(
+        'favorite_collection_items',
+        where: 'favorite_id = ? AND source_id = ?',
+        whereArgs: [favoriteId, sourceId],
+      );
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      for (final collectionId in uniqueCollectionIds) {
+        await txn.insert(
+          'favorite_collection_items',
+          {
+            'collection_id': collectionId,
+            'favorite_id': favoriteId,
+            'source_id': sourceId,
+            'added_at': now,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      if (uniqueCollectionIds.isNotEmpty) {
+        final placeholders =
+            List.filled(uniqueCollectionIds.length, '?').join(',');
+        await txn.rawUpdate(
+          '''
+            UPDATE favorite_collections
+            SET updated_at = ?
+            WHERE id IN ($placeholders)
+          ''',
+          [now, ...uniqueCollectionIds],
+        );
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>>
+      getFavoriteCollectionMembershipsForExport() async {
+    final db = await _getSafeDatabase();
+    if (db == null) {
+      _logger.e('Database not available, cannot export memberships');
+      return [];
+    }
+
+    final result = await db.query(
+      'favorite_collection_items',
+      orderBy: 'added_at DESC',
+    );
+
+    return result;
   }
 
   // ==================== DOWNLOAD OPERATIONS ====================
@@ -1258,6 +1465,8 @@ class LocalDataSource {
       batch.delete('search_history');
       batch.delete('history');
       batch.delete('downloads');
+      batch.delete('favorite_collection_items');
+      batch.delete('favorite_collections');
       batch.delete('favorites');
       batch.delete('reader_positions');
 
@@ -1379,5 +1588,20 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error clearing reader positions: $e');
     }
+  }
+
+  FavoriteCollection _mapFavoriteCollection(Map<String, Object?> row) {
+    final createdAtMs = int.tryParse(row['created_at']?.toString() ?? '') ?? 0;
+    final updatedAtMs =
+        int.tryParse(row['updated_at']?.toString() ?? '') ?? createdAtMs;
+    final itemCount = int.tryParse(row['item_count']?.toString() ?? '') ?? 0;
+
+    return FavoriteCollection(
+      id: row['id']?.toString() ?? '',
+      name: row['name']?.toString() ?? '',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMs),
+      itemCount: itemCount,
+    );
   }
 }

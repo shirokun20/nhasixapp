@@ -22,6 +22,7 @@ class RemoveFromFavoritesUseCase
       if (params.checkExists) {
         final isFavorite = await _userDataRepository.isFavorite(
           params.contentId.value,
+          sourceId: params.sourceId,
         );
 
         if (!isFavorite) {
@@ -37,6 +38,7 @@ class RemoveFromFavoritesUseCase
       // Remove from favorites (simplified)
       await _userDataRepository.removeFromFavorites(
         params.contentId.value,
+        sourceId: params.sourceId,
       );
     } on UseCaseException {
       rethrow;
@@ -50,28 +52,33 @@ class RemoveFromFavoritesUseCase
 class RemoveFromFavoritesParams extends UseCaseParams {
   const RemoveFromFavoritesParams({
     required this.contentId,
+    this.sourceId,
     this.checkExists = true,
     this.throwIfNotExists = false,
   });
 
   final ContentId contentId;
+  final String? sourceId;
   final bool checkExists;
   final bool throwIfNotExists;
 
   @override
   List<Object?> get props => [
         contentId,
+        sourceId,
         checkExists,
         throwIfNotExists,
       ];
 
   RemoveFromFavoritesParams copyWith({
     ContentId? contentId,
+    String? sourceId,
     bool? checkExists,
     bool? throwIfNotExists,
   }) {
     return RemoveFromFavoritesParams(
       contentId: contentId ?? this.contentId,
+      sourceId: sourceId ?? this.sourceId,
       checkExists: checkExists ?? this.checkExists,
       throwIfNotExists: throwIfNotExists ?? this.throwIfNotExists,
     );
@@ -80,11 +87,13 @@ class RemoveFromFavoritesParams extends UseCaseParams {
   /// Create params from string ID
   factory RemoveFromFavoritesParams.fromString(
     String contentId, {
+    String? sourceId,
     bool checkExists = true,
     bool throwIfNotExists = false,
   }) {
     return RemoveFromFavoritesParams(
       contentId: ContentId.fromString(contentId),
+      sourceId: sourceId,
       checkExists: checkExists,
       throwIfNotExists: throwIfNotExists,
     );
@@ -93,11 +102,13 @@ class RemoveFromFavoritesParams extends UseCaseParams {
   /// Create params from int ID
   factory RemoveFromFavoritesParams.fromInt(
     int contentId, {
+    String? sourceId,
     bool checkExists = true,
     bool throwIfNotExists = false,
   }) {
     return RemoveFromFavoritesParams(
       contentId: ContentId.fromInt(contentId),
+      sourceId: sourceId,
       checkExists: checkExists,
       throwIfNotExists: throwIfNotExists,
     );
