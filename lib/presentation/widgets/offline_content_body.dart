@@ -996,7 +996,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
 
     // Fallback to Image Reader
     if (context.mounted) {
-      AppRouter.goToReader(context, content.id, content: content);
+      await AppRouter.goToReader(context, content.id, content: content);
     }
   }
 

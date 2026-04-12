@@ -53,6 +53,21 @@ class _DetailScreenState extends State<DetailScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
+  int _historyRefreshToken = 0;
+
+  Future<void> _refreshChapterHistoryAfterReaderReturn() async {
+    final refreshToken = ++_historyRefreshToken;
+
+    // First refresh immediately after reader pop.
+    await _detailCubit.refreshChapterHistory();
+
+    // Second refresh catches trailing async writes from reader save debounce.
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (!mounted || refreshToken != _historyRefreshToken) {
+      return;
+    }
+    await _detailCubit.refreshChapterHistory();
+  }
 
   String? _resolveTagIdFromLoadedContent(
     String tagName,
@@ -370,18 +385,6 @@ class _DetailScreenState extends State<DetailScreen> {
     _scrollController.dispose();
     _detailCubit.close();
     super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh chapter history when returning from reader (screen regains focus)
-    final route = ModalRoute.of(context);
-    if (route?.isCurrent == true) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _detailCubit.refreshChapterHistory();
-      });
-    }
   }
 
   /// Navigate to tag browsing mode (SIMPLIFIED routing)
@@ -2663,13 +2666,13 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _readContent(
+  Future<void> _readContent(
     Content content, {
     bool forceStartFromBeginning = false,
     Content? parentContent, // Parent series for chapter mode
     ChapterData? chapterData, // Navigation data
     Chapter? currentChapter, // Current chapter
-  }) {
+  }) async {
     // Get metadata from current state if available
     final currentState = _detailCubit.state;
     final imageMetadata =
@@ -2704,7 +2707,7 @@ class _DetailScreenState extends State<DetailScreen> {
     Logger().i('  chapterData.prevId: ${chapterData?.prevChapterId ?? "NULL"}');
     Logger().i('  chapterData.nextId: ${chapterData?.nextChapterId ?? "NULL"}');
 
-    AppRouter.goToReader(
+    await AppRouter.goToReader(
       context,
       content.id,
       forceStartFromBeginning: forceStartFromBeginning,
@@ -2715,6 +2718,11 @@ class _DetailScreenState extends State<DetailScreen> {
       allChapters: allChapters, // Pass all chapters
       currentChapter: currentChapter, // Pass current chapter
     );
+
+    if (!mounted) {
+      return;
+    }
+    await _refreshChapterHistoryAfterReaderReturn();
   }
 
   /// Get base URL for active source

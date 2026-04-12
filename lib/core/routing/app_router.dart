@@ -463,7 +463,7 @@ class AppRouter {
     return await context.push<SearchFilter>('/content/$encodedContentId$query');
   }
 
-  static void goToReader(BuildContext context, String contentId,
+  static Future<void> goToReader(BuildContext context, String contentId,
       {int page = 1,
       bool forceStartFromBeginning = false,
       Content? content,
@@ -474,7 +474,7 @@ class AppRouter {
       Chapter? currentChapter}) {
     // Current chapter being read
     final encodedContentId = Uri.encodeComponent(contentId);
-    context.push(
+    return context.push(
         '/reader/$encodedContentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
         extra: {
           'content': content,
