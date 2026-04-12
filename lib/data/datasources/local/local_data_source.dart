@@ -148,10 +148,19 @@ class LocalDataSource {
           f.source_id,
           f.cover_url,
           f.added_at,
-          COALESCE(f.title, h.title, d.title) as title
+          COALESCE(
+            f.title,
+            (
+              SELECT h.title
+              FROM history h
+              WHERE h.id = f.id AND h.source_id = f.source_id
+              ORDER BY h.last_viewed DESC
+              LIMIT 1
+            ),
+            d.title
+          ) as title
         FROM favorites f
         $collectionJoin
-        LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
         LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id
         $collectionWhere
         ORDER BY f.added_at DESC
@@ -224,9 +233,18 @@ class LocalDataSource {
           f.source_id,
           f.cover_url,
           f.added_at,
-          COALESCE(f.title, h.title, d.title) as title
+          COALESCE(
+            f.title,
+            (
+              SELECT h.title
+              FROM history h
+              WHERE h.id = f.id AND h.source_id = f.source_id
+              ORDER BY h.last_viewed DESC
+              LIMIT 1
+            ),
+            d.title
+          ) as title
         FROM favorites f
-        LEFT JOIN history h ON f.id = h.id AND f.source_id = h.source_id
         LEFT JOIN downloads d ON f.id = d.id AND f.source_id = d.source_id
         ORDER BY f.added_at DESC
       ''');

@@ -42,7 +42,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _onlineSearchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
 
   // Selection mode for batch operations
   bool _isSelectionMode = false;
@@ -72,7 +71,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     super.initState();
     _favoriteCubit = getIt<FavoriteCubit>();
     _sourceAuthService = getIt<SourceAuthService>();
-    _scrollController.addListener(_onScroll);
     unawaited(_initializeOnlineFavorites());
   }
 
@@ -81,7 +79,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _searchController.dispose();
     _onlineSearchController.dispose();
     _onlineSearchDebounce?.cancel();
-    _scrollController.dispose();
     _favoriteCubit.close();
     super.dispose();
   }
@@ -441,12 +438,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
-      // Load more when 80% scrolled
+  bool _handleOfflineScrollNotification(ScrollNotification notification) {
+    if (notification.metrics.maxScrollExtent <= 0) {
+      return false;
+    }
+
+    if (notification.metrics.pixels >=
+        notification.metrics.maxScrollExtent * 0.8) {
       _favoriteCubit.loadMoreFavorites();
     }
+
+    return false;
   }
 
   void _toggleSelectionMode() {
@@ -1536,8 +1538,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     if (state is FavoriteLoaded) {
       final contentKey = ValueKey<String>(
-        'offline-${state.activeCollectionId ?? 'all'}-'
-        '${state.searchQuery}-${state.favorites.length}-${state.isSearching}',
+        'offline-${state.activeCollectionId ?? 'all'}-${state.searchQuery?.trim() ?? ''}',
       );
 
       return Column(
@@ -1623,36 +1624,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       child: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, settingsState) {
-          return GridView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
-              context,
-              context.read<SettingsCubit>(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: state.favorites.length + (state.hasMore ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= state.favorites.length) {
-                // Loading more indicator
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
+          return NotificationListener<ScrollNotification>(
+            onNotification: _handleOfflineScrollNotification,
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: ResponsiveGridDelegate.createStandardGridDelegate(
+                context,
+                context.read<SettingsCubit>(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: state.favorites.length + (state.hasMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index >= state.favorites.length) {
+                  // Loading more indicator
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              final favorite = state.favorites[index];
-              final contentId = favorite['id'].toString();
-              final isSelected = _selectedItems.contains(contentId);
+                final favorite = state.favorites[index];
+                final contentId = favorite['id'].toString();
+                final isSelected = _selectedItems.contains(contentId);
 
-              return _buildFavoriteCard(
-                  favorite, isSelected, state.searchQuery);
-            },
+                return _buildFavoriteCard(
+                    favorite, isSelected, state.searchQuery);
+              },
+            ),
           );
         },
       ),

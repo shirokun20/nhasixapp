@@ -253,6 +253,20 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _onFavoriteLongPressed(DetailLoaded detailState) async {
+    if (!detailState.isFavorited) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Add to favorites first to manage collections'),
+        ),
+      );
+      return;
+    }
+
+    await _showManageCollectionsSheet(detailState.content);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -808,23 +822,28 @@ class _DetailScreenState extends State<DetailScreen> {
                       (f) => f.favorite,
                     );
 
-                    return IconButton(
-                      icon: Icon(
-                        detailState.isFavorited
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: detailState.isFavorited
-                            ? Theme.of(context).colorScheme.error
-                            : (favoriteEnabled
-                                ? Theme.of(context).colorScheme.onSurface
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.3)),
-                      ),
-                      onPressed: !favoriteEnabled
+                    return GestureDetector(
+                      onLongPress: !favoriteEnabled
                           ? null
-                          : () => _onFavoritePressed(detailState),
+                          : () => _onFavoriteLongPressed(detailState),
+                      child: IconButton(
+                        icon: Icon(
+                          detailState.isFavorited
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: detailState.isFavorited
+                              ? Theme.of(context).colorScheme.error
+                              : (favoriteEnabled
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.3)),
+                        ),
+                        onPressed: !favoriteEnabled
+                            ? null
+                            : () => _onFavoritePressed(detailState),
+                      ),
                     );
                   },
                 ),

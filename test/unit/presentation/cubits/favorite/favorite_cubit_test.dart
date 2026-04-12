@@ -177,6 +177,194 @@ void main() {
       },
     );
 
+    blocTest<FavoriteCubit, FavoriteState>(
+      'loadMoreFavorites deduplicates merged favorites by source and id',
+      build: () {
+        when(() => mockUserDataRepository.getFavoriteCollections())
+            .thenAnswer((_) async => []);
+        when(() => mockUserDataRepository.getFavoritesCount(
+              collectionId: any(named: 'collectionId'),
+            )).thenAnswer((_) async => 40);
+        when(() => mockGetFavoritesUseCase(any()))
+            .thenAnswer((invocation) async {
+          final params =
+              invocation.positionalArguments.first as GetFavoritesParams;
+          if (params.page == 1) {
+            return List.generate(20, (index) {
+              return {
+                'id': '${123 + index}',
+                'source_id': 'nhentai',
+                'title': 'Title $index',
+                'cover_url': 'https://example.com/cover-$index.jpg',
+              };
+            });
+          }
+
+          return [
+            {
+              'id': '130',
+              'source_id': 'nhentai',
+              'title': 'Title 7',
+              'cover_url': 'https://example.com/cover-7.jpg',
+            },
+            {
+              'id': '200',
+              'source_id': 'nhentai',
+              'title': 'Third Title',
+              'cover_url': 'https://example.com/cover-3.jpg',
+            },
+          ];
+        });
+
+        return cubit;
+      },
+      act: (cubit) async {
+        await cubit.loadFavorites(refresh: true);
+        await cubit.loadMoreFavorites();
+      },
+      expect: () => [
+        isA<FavoriteLoading>(),
+        isA<FavoriteLoaded>().having(
+          (s) => s.favorites.length,
+          'favorites length after first page',
+          20,
+        ),
+        isA<FavoriteLoaded>().having(
+          (s) => s.isLoadingMore,
+          'loading more flag',
+          true,
+        ),
+        isA<FavoriteLoaded>()
+            .having((s) => s.favorites.length, 'deduped favorites length', 21)
+            .having((s) => s.favorites.last['id'], 'last favorite id', '200'),
+      ],
+    );
+
+    blocTest<FavoriteCubit, FavoriteState>(
+      'searchFavorites finds items outside currently loaded page',
+      build: () {
+        when(() => mockUserDataRepository.getFavoriteCollections())
+            .thenAnswer((_) async => []);
+        when(() => mockUserDataRepository.getFavoritesCount(
+              collectionId: any(named: 'collectionId'),
+            )).thenAnswer((_) async => 40);
+
+        when(() => mockGetFavoritesUseCase(any()))
+            .thenAnswer((invocation) async {
+          final params =
+              invocation.positionalArguments.first as GetFavoritesParams;
+
+          // Initial load page (20 items) does not include target text.
+          if (params.limit == 20) {
+            return [
+              {
+                'id': '1',
+                'source_id': 'nhentai',
+                'title': 'Alpha',
+                'cover_url': 'https://example.com/a.jpg',
+              },
+            ];
+          }
+
+          // Search base load (full dataset) contains the target.
+          return [
+            {
+              'id': '1',
+              'source_id': 'nhentai',
+              'title': 'Alpha',
+              'cover_url': 'https://example.com/a.jpg',
+            },
+            {
+              'id': '2',
+              'source_id': 'nhentai',
+              'title': 'Target Match',
+              'cover_url': 'https://example.com/b.jpg',
+            },
+          ];
+        });
+
+        return cubit;
+      },
+      act: (cubit) async {
+        await cubit.loadFavorites(refresh: true);
+        await cubit.searchFavorites('target');
+      },
+      expect: () => [
+        isA<FavoriteLoading>(),
+        isA<FavoriteLoaded>().having(
+          (s) => s.favorites.length,
+          'initial loaded count',
+          1,
+        ),
+        isA<FavoriteLoaded>()
+            .having((s) => s.favorites.length, 'search result count', 1)
+            .having((s) => s.favorites.first['id'], 'search result id', '2')
+            .having((s) => s.searchQuery, 'search query', 'target')
+            .having((s) => s.hasMore, 'has more during search', false),
+      ],
+    );
+
+    blocTest<FavoriteCubit, FavoriteState>(
+      'searchFavorites matches source_id',
+      build: () {
+        when(() => mockUserDataRepository.getFavoriteCollections())
+            .thenAnswer((_) async => []);
+        when(() => mockUserDataRepository.getFavoritesCount(
+              collectionId: any(named: 'collectionId'),
+            )).thenAnswer((_) async => 40);
+
+        when(() => mockGetFavoritesUseCase(any()))
+            .thenAnswer((invocation) async {
+          final params =
+              invocation.positionalArguments.first as GetFavoritesParams;
+
+          if (params.limit == 20) {
+            return [
+              {
+                'id': '1',
+                'source_id': 'nhentai',
+                'title': 'Alpha',
+                'cover_url': 'https://example.com/a.jpg',
+              },
+            ];
+          }
+
+          return [
+            {
+              'id': '1',
+              'source_id': 'nhentai',
+              'title': 'Alpha',
+              'cover_url': 'https://example.com/a.jpg',
+            },
+            {
+              'id': '2',
+              'source_id': 'mangadex',
+              'title': 'Beta',
+              'cover_url': 'https://example.com/b.jpg',
+            },
+          ];
+        });
+
+        return cubit;
+      },
+      act: (cubit) async {
+        await cubit.loadFavorites(refresh: true);
+        await cubit.searchFavorites('mangadex');
+      },
+      expect: () => [
+        isA<FavoriteLoading>(),
+        isA<FavoriteLoaded>().having(
+          (s) => s.favorites.length,
+          'initial loaded count',
+          1,
+        ),
+        isA<FavoriteLoaded>()
+            .having((s) => s.favorites.length, 'search result count', 1)
+            .having((s) => s.favorites.first['id'], 'search result id', '2')
+            .having((s) => s.searchQuery, 'search query', 'mangadex'),
+      ],
+    );
+
     test('exportFavorites includes collections and memberships', () async {
       when(() => mockUserDataRepository.getAllFavoritesForExport())
           .thenAnswer((_) async => [

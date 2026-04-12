@@ -35,6 +35,40 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   static const int _itemsPerPage = 20;
   String? _activeCollectionId;
 
+  List<Map<String, dynamic>> _dedupeFavorites(
+    Iterable<Map<String, dynamic>> favorites,
+  ) {
+    final deduped = <String, Map<String, dynamic>>{};
+
+    for (final favorite in favorites) {
+      final id = favorite['id']?.toString() ?? '';
+      final sourceId = favorite['source_id']?.toString() ?? '';
+      final key = '$sourceId::$id';
+      if (id.isEmpty || sourceId.isEmpty) {
+        continue;
+      }
+      deduped[key] = favorite;
+    }
+
+    return deduped.values.toList(growable: false);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSearchBaseFavorites() async {
+    final totalCount = await _userDataRepository.getFavoritesCount(
+      collectionId: _activeCollectionId,
+    );
+    if (totalCount <= 0) {
+      return const [];
+    }
+
+    final params = GetFavoritesParams.firstPage(
+      limit: totalCount,
+      collectionId: _activeCollectionId,
+    );
+
+    return _dedupeFavorites(await _getFavoritesUseCase(params));
+  }
+
   /// Load favorites list
   Future<void> loadFavorites({
     bool refresh = false,
@@ -61,7 +95,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         limit: _itemsPerPage,
         collectionId: _activeCollectionId,
       );
-      final favorites = await _getFavoritesUseCase(params);
+      final favorites = _dedupeFavorites(await _getFavoritesUseCase(params));
       final totalCount = await _userDataRepository.getFavoritesCount(
         collectionId: _activeCollectionId,
       );
@@ -96,7 +130,10 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   /// Load more favorites (pagination)
   Future<void> loadMoreFavorites() async {
     final currentState = state;
-    if (currentState is! FavoriteLoaded || !currentState.hasMore) {
+    if (currentState is! FavoriteLoaded ||
+        !currentState.hasMore ||
+        currentState.isLoadingMore ||
+        currentState.isSearching) {
       return;
     }
 
@@ -110,9 +147,12 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         limit: _itemsPerPage,
         collectionId: _activeCollectionId,
       );
-      final newFavorites = await _getFavoritesUseCase(params);
+      final newFavorites = _dedupeFavorites(await _getFavoritesUseCase(params));
 
-      final allFavorites = [...currentState.favorites, ...newFavorites];
+      final allFavorites = _dedupeFavorites([
+        ...currentState.favorites,
+        ...newFavorites,
+      ]);
       final hasMore = newFavorites.length == _itemsPerPage;
 
       emit(currentState.copyWith(
@@ -166,7 +206,10 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
           'added_at': DateTime.now().millisecondsSinceEpoch,
         };
 
-        final updatedFavorites = [newFavorite, ...currentState.favorites];
+        final updatedFavorites = _dedupeFavorites([
+          newFavorite,
+          ...currentState.favorites,
+        ]);
 
         emit(currentState.copyWith(
           favorites: updatedFavorites,
@@ -314,20 +357,28 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       if (query.isEmpty) {
         // Reset to show all favorites
-        await loadFavorites(refresh: true);
+        await loadFavorites(refresh: true, collectionId: _activeCollectionId);
         return;
       }
 
-      // Filter current favorites by query (simple text search)
+      // Search against the full favorites dataset from DB, not only the
+      // currently paginated items.
+      final searchBaseFavorites = await _loadSearchBaseFavorites();
+
       final lowerQuery = query.toLowerCase();
-      final filteredFavorites = currentState.favorites.where((favorite) {
+      final filteredFavorites = searchBaseFavorites.where((favorite) {
         final id = favorite['id']?.toString().toLowerCase() ?? '';
         final title = favorite['title']?.toString().toLowerCase() ?? '';
-        return id.contains(lowerQuery) || title.contains(lowerQuery);
-      }).toList();
+        final sourceId = favorite['source_id']?.toString().toLowerCase() ?? '';
+        return id.contains(lowerQuery) ||
+            title.contains(lowerQuery) ||
+            sourceId.contains(lowerQuery);
+      }).toList(growable: false);
 
       emit(currentState.copyWith(
-        favorites: filteredFavorites,
+        favorites: _dedupeFavorites(filteredFavorites),
+        currentPage: 1,
+        hasMore: false,
         searchQuery: query,
         lastUpdated: DateTime.now(),
       ));
@@ -341,7 +392,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   /// Clear search and show all favorites
   Future<void> clearSearch() async {
     logInfo('Clearing favorites search');
-    await loadFavorites(refresh: true);
+    await loadFavorites(refresh: true, collectionId: _activeCollectionId);
   }
 
   Future<void> selectCollection(String? collectionId) async {
