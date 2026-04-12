@@ -89,18 +89,20 @@ lib/
 ### 🚧 In Progress (1)
 - qol_enhancements ✨ **NEAR COMPLETE** (Submit Comments remaining, all other tasks done)
 
-### 📋 Analysis Phase (5)
+### 📋 Analysis Phase (6)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
+- local_collection_categories
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
 - nhentai_search_revamp
 
-### 🐛 Open Issues (4)
+### 🐛 Open Issues (5)
 - import-zip-and-metadata-bug (2026-03-31) → (Bug: KomikTap/Crotpedia Title Fixed ✅, Feature: Import ZIP Pending)
+- local collection categories + reading status shelves (2026-04-12) → `analysis-plan/local_collection_categories/`
 - qol_enhancements — Issue #32: Login/Gesture/Sort (2026-03-30) → `analysis-plan/qol_enhancements/`
 - download range ignores page bounds (2026-02-17)
 - download metadata chapter parentid (2026-02-15)
@@ -180,6 +182,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
 | 2026-04-03 | Copilot | Release prep v0.9.15+24 — changelog, docs, README | ✅ Done | Bumped version 0.9.14+23 → 0.9.15+24. Wrote full `[0.9.15+24]` CHANGELOG entry covering: nhentai login + native CAPTCHA solver, online favorites (2-tab, add/remove/check, offline/online/both), tag blacklist (local settings manager + nhentai online sync + blur overlays + picker fix), random gallery, gesture navigation, centralized settings, native explorer, ZIP import. Added premium-source callout (E-Hentai/HentaiNexus/Hitomi require manual install via Link/ZIP). Updated docs/en/FAQ.md + docs/id/FAQ.md with new Q&A sections: nhentai login, online favorites, tag blacklist, other sources premium req. Updated README.md + README_ID.md: version badge v0.9.15, download link +24, new login/sync features block, premium source warning. Updated project_memory.md. |
+| 2026-04-12 | Codex | Local collection categories + reading status analysis | ✅ Done | Audited current local favorites architecture and confirmed the app still uses a flat `favorites` table plus single-list `FavoriteCubit`/`FavoritesScreen`, while reading state already exists in `history` and `reader_positions`. Created a new local issue note and analysis package for `local_collection_categories`, recommending manual collections via new SQLite tables plus smart `Reading`/`Completed` shelves derived from history/progress instead of duplicating bookmark state. Estimated MVP at 2–4 days depending on export/import and polish scope. |
 | 2026-04-02 | Copilot | Blacklist picker clear-all apply sync fix | ✅ Done | Fixed settings blacklist picker regression: `Clear All` then `Apply` previously kept old tags due to empty-result early return and append behavior. Updated flow so `null` remains cancel-only, empty selection is saved as valid clear state, and picker results replace prior local entries/metadata. |
 | 2026-04-02 | Codex | QoL blacklist offline+online completion | ✅ Done | Finished Sub-Plan P5 for `qol_enhancements`: persisted local `blacklistedTags` through `PreferencesService` + `SettingsCubit`, added a modern blacklist manager in Settings, extended config-driven auth with nhentai `/api/v2/blacklist/ids`, and merged cached online IDs with local rules through `TagBlacklistUtils` / `TagBlacklistService`. Applied blurred blacklist cover overlays across main cards, generic content cards, tag-browse results, and offline library cards. |
 | 2026-04-02 | Copilot | Native CAPTCHA migration + favorites online hardening | ✅ Done | Migrated CAPTCHA solving flow from embedded `webview_flutter` page to `kuron_native` (`showCaptchaWebView`) with a dedicated Android `CaptchaWebViewActivity`, token/error JS bridge, and status-bar-safe toolbar insets. In parallel, stabilized online favorites with auto-retry for transient network failures and localized friendly error messaging to avoid raw DioException output in UI. |
@@ -328,7 +331,31 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 
 ---
 
-## 🆕 Latest Session — 2026-04-02
+## 🆕 Latest Session — 2026-04-12
+
+### Local Collection Categories + Reading Status Analysis ✅
+
+- Reviewed current local favorites implementation:
+  - local storage still uses a flat `favorites` table with no concept of user-defined collections
+  - `FavoriteCubit` and `FavoritesScreen` still assume a single local favorites list
+  - export/import also still use a single-array `favorites.json` schema
+- Confirmed reading/bookmark status support already exists elsewhere:
+  - `history` stores `last_page`, `total_pages`, `is_completed`, chapter metadata, and parent linkage
+  - `reader_positions` stores current page and computed reading progress
+- Product conclusion:
+  - user-defined multiple local favorite collections are feasible
+  - bookmark-style shelves such as `Reading` and `Completed` are also feasible, and should be modeled as smart shelves derived from history/progress instead of manual duplicated flags on favorites
+- Added planning artifacts:
+  - `projects/issues/2026-04-12-local-collection-categories-and-reading-status.md`
+  - `projects/analysis-plan/local_collection_categories/local_collection_categories_2026-04-12.md`
+- Effort estimate captured in analysis:
+  - manual collections only: 2–3 days
+  - manual collections + smart shelves: 3–4 days
+  - with export/import + polish: 4–6 days
+
+---
+
+## Previous Session — 2026-04-02
 
 ### Native CAPTCHA Migration + Online Favorites Stabilization ✅
 
