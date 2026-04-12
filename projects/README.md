@@ -31,6 +31,7 @@
 ## 🚧 On Progress
 | Project Name | Progress | % | Status |
 |---|---|---|---|
+| **local_collection_categories** | `██████████` | 100% | ✅ Ready |
 | **premium_enhancements** | `..........` | 0% | Pending |
 | **qol_enhancements** | `█████████░` | 87% | 🔥 Hot |
 

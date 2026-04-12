@@ -8,7 +8,7 @@ import 'package:logger/logger.dart';
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
   static const int _databaseVersion =
-      12; // Updated for parent_id support in history
+      13; // Updated for favorite collections support
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -110,6 +110,8 @@ class DatabaseHelper {
 
     // Create essential tables only
     _createFavoritesTable(batch);
+    _createFavoriteCollectionsTable(batch);
+    _createFavoriteCollectionItemsTable(batch);
     _createDownloadsTable(batch);
     _createHistoryTable(batch);
     _createPreferencesTable(batch);
@@ -454,6 +456,44 @@ class DatabaseHelper {
         _logger.w('Error adding parent_id column: $e');
       }
     }
+
+    if (oldVersion < 13 && newVersion >= 13) {
+      _logger.i('Upgrading to version 13: Adding favorite collections tables');
+      try {
+        await db.execute('''
+          CREATE TABLE favorite_collections (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE favorite_collection_items (
+            collection_id TEXT NOT NULL,
+            favorite_id TEXT NOT NULL,
+            source_id TEXT NOT NULL DEFAULT 'nhentai',
+            added_at INTEGER NOT NULL,
+            PRIMARY KEY (collection_id, favorite_id, source_id),
+            FOREIGN KEY (collection_id) REFERENCES favorite_collections(id) ON DELETE CASCADE,
+            FOREIGN KEY (favorite_id, source_id) REFERENCES favorites(id, source_id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute(
+            'CREATE INDEX idx_favorite_collections_name ON favorite_collections (name)');
+        await db.execute(
+            'CREATE INDEX idx_collection_items_collection ON favorite_collection_items (collection_id)');
+        await db.execute(
+            'CREATE INDEX idx_collection_items_favorite ON favorite_collection_items (favorite_id, source_id)');
+
+        _logger.i('Favorite collections tables created successfully');
+      } catch (e) {
+        _logger.e('Error upgrading favorite collections tables: $e');
+        rethrow;
+      }
+    }
   }
 
   /// Create favorites table with source_id for multi-source support
@@ -466,6 +506,31 @@ class DatabaseHelper {
         cover_url TEXT,
         added_at INTEGER,
         PRIMARY KEY (id, source_id)
+      )
+    ''');
+  }
+
+  void _createFavoriteCollectionsTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE favorite_collections (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  void _createFavoriteCollectionItemsTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE favorite_collection_items (
+        collection_id TEXT NOT NULL,
+        favorite_id TEXT NOT NULL,
+        source_id TEXT NOT NULL DEFAULT 'nhentai',
+        added_at INTEGER NOT NULL,
+        PRIMARY KEY (collection_id, favorite_id, source_id),
+        FOREIGN KEY (collection_id) REFERENCES favorite_collections(id) ON DELETE CASCADE,
+        FOREIGN KEY (favorite_id, source_id) REFERENCES favorites(id, source_id) ON DELETE CASCADE
       )
     ''');
   }
@@ -586,6 +651,12 @@ class DatabaseHelper {
     batch.execute(
         'CREATE INDEX idx_favorites_added_at ON favorites (added_at DESC)');
     batch.execute('CREATE INDEX idx_favorites_source ON favorites (source_id)');
+    batch.execute(
+        'CREATE INDEX idx_favorite_collections_name ON favorite_collections (name)');
+    batch.execute(
+        'CREATE INDEX idx_collection_items_collection ON favorite_collection_items (collection_id)');
+    batch.execute(
+        'CREATE INDEX idx_collection_items_favorite ON favorite_collection_items (favorite_id, source_id)');
 
     // Downloads indexes
     batch.execute('CREATE INDEX idx_downloads_state ON downloads (state)');
@@ -651,6 +722,8 @@ class DatabaseHelper {
       'preferences',
       'history',
       'downloads',
+      'favorite_collection_items',
+      'favorite_collections',
       'favorites',
     ];
 
@@ -679,6 +752,8 @@ class DatabaseHelper {
     batch.delete('search_history');
     batch.delete('history');
     batch.delete('downloads');
+    batch.delete('favorite_collection_items');
+    batch.delete('favorite_collections');
     batch.delete('favorites');
     batch.delete('doujin_list');
 

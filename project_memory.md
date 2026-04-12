@@ -86,15 +86,15 @@ lib/
 - unity-ads-fix
 - view_comments
 
-### 🚧 In Progress (1)
+### 🚧 In Progress (2)
+- local_collection_categories
 - qol_enhancements ✨ **NEAR COMPLETE** (Submit Comments remaining, all other tasks done)
 
-### 📋 Analysis Phase (6)
+### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
 - download_metadata_revamp
 - flutter-desktop-migration
 - komiktap_navigation_lists
-- local_collection_categories
 - reader-ads
 
 ### 🔮 Future/Backlog (1)
@@ -182,6 +182,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
 | 2026-04-03 | Copilot | Release prep v0.9.15+24 — changelog, docs, README | ✅ Done | Bumped version 0.9.14+23 → 0.9.15+24. Wrote full `[0.9.15+24]` CHANGELOG entry covering: nhentai login + native CAPTCHA solver, online favorites (2-tab, add/remove/check, offline/online/both), tag blacklist (local settings manager + nhentai online sync + blur overlays + picker fix), random gallery, gesture navigation, centralized settings, native explorer, ZIP import. Added premium-source callout (E-Hentai/HentaiNexus/Hitomi require manual install via Link/ZIP). Updated docs/en/FAQ.md + docs/id/FAQ.md with new Q&A sections: nhentai login, online favorites, tag blacklist, other sources premium req. Updated README.md + README_ID.md: version badge v0.9.15, download link +24, new login/sync features block, premium source warning. Updated project_memory.md. |
+| 2026-04-12 | Codex | Local collection categories MVP execution | ✅ Done | Moved `local_collection_categories` into onprogress and implemented the MVP requested by GitHub issue #37. Added SQLite support for `favorite_collections` + `favorite_collection_items`, introduced a new Freezed `FavoriteCollection` entity, extended favorites repository/data source contracts for collection CRUD and membership management, made favorite checks/removals source-aware, updated offline favorites UI with collection chips plus create/rename/delete and per-item assignment flows, and upgraded export/import schema to include collections. Targeted `fvm dart analyze` on touched files passed clean. |
 | 2026-04-12 | Codex | Local collection categories + reading status analysis | ✅ Done | Audited current local favorites architecture and confirmed the app still uses a flat `favorites` table plus single-list `FavoriteCubit`/`FavoritesScreen`, while reading state already exists in `history` and `reader_positions`. Created a new local issue note and analysis package for `local_collection_categories`, recommending manual collections via new SQLite tables plus smart `Reading`/`Completed` shelves derived from history/progress instead of duplicating bookmark state. Estimated MVP at 2–4 days depending on export/import and polish scope. |
 | 2026-04-02 | Copilot | Blacklist picker clear-all apply sync fix | ✅ Done | Fixed settings blacklist picker regression: `Clear All` then `Apply` previously kept old tags due to empty-result early return and append behavior. Updated flow so `null` remains cancel-only, empty selection is saved as valid clear state, and picker results replace prior local entries/metadata. |
 | 2026-04-02 | Codex | QoL blacklist offline+online completion | ✅ Done | Finished Sub-Plan P5 for `qol_enhancements`: persisted local `blacklistedTags` through `PreferencesService` + `SettingsCubit`, added a modern blacklist manager in Settings, extended config-driven auth with nhentai `/api/v2/blacklist/ids`, and merged cached online IDs with local rules through `TagBlacklistUtils` / `TagBlacklistService`. Applied blurred blacklist cover overlays across main cards, generic content cards, tag-browse results, and offline library cards. |
@@ -332,6 +333,31 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 ---
 
 ## 🆕 Latest Session — 2026-04-12
+
+### Local Collection Categories MVP Execution ✅
+
+- Moved `local_collection_categories` into execution with a dedicated `progress.md`.
+- Implemented SQLite migration for:
+  - `favorite_collections`
+  - `favorite_collection_items`
+- Added the new `FavoriteCollection` entity and extended user-data contracts for:
+  - collection CRUD
+  - favorite-to-collection membership management
+  - collection-aware favorites queries
+- Updated offline favorites behavior:
+  - collection filter chips (`All` + custom collections)
+  - create collection action
+  - rename/delete collection via long-press
+  - assign favorite item to one or more collections from the card UI
+- Kept backward compatibility:
+  - base `favorites` table remains the saved-items registry
+  - removing a favorite also removes collection memberships via DB-level cascade
+  - export/import schema now carries collections and collection memberships in addition to flat favorites
+- Validation:
+  - `fvm dart run build_runner build --delete-conflicting-outputs`
+  - targeted `fvm dart analyze ...` on touched files → **No issues found**
+
+---
 
 ### Local Collection Categories + Reading Status Analysis ✅
 

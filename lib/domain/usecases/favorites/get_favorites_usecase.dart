@@ -30,6 +30,7 @@ class GetFavoritesUseCase
       final result = await _userDataRepository.getFavorites(
         page: params.page,
         limit: params.limit,
+        collectionId: params.collectionId,
       );
 
       // Filter out favorites from non-installed sources
@@ -53,32 +54,42 @@ class GetFavoritesParams extends UseCaseParams {
   const GetFavoritesParams({
     this.page = 1,
     this.limit = 20,
+    this.collectionId,
   });
 
   final int page;
   final int limit;
+  final String? collectionId;
 
   @override
-  List<Object?> get props => [page, limit];
+  List<Object?> get props => [page, limit, collectionId];
 
   GetFavoritesParams copyWith({
     int? page,
     int? limit,
+    String? collectionId,
   }) {
     return GetFavoritesParams(
       page: page ?? this.page,
       limit: limit ?? this.limit,
+      collectionId: collectionId ?? this.collectionId,
     );
   }
 
   /// Create params for first page
-  factory GetFavoritesParams.firstPage({int limit = 20}) {
-    return GetFavoritesParams(page: 1, limit: limit);
+  factory GetFavoritesParams.firstPage({int limit = 20, String? collectionId}) {
+    return GetFavoritesParams(
+        page: 1, limit: limit, collectionId: collectionId);
   }
 
   /// Create params for specific page
-  factory GetFavoritesParams.page(int page, {int limit = 20}) {
-    return GetFavoritesParams(page: page, limit: limit);
+  factory GetFavoritesParams.page(int page,
+      {int limit = 20, String? collectionId}) {
+    return GetFavoritesParams(
+      page: page,
+      limit: limit,
+      collectionId: collectionId,
+    );
   }
 
   /// Create params for next page

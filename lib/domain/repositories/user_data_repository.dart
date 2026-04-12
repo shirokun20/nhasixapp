@@ -20,7 +20,7 @@ abstract class UserDataRepository {
   /// Remove content from favorites
   ///
   /// [id] - Content ID to remove
-  Future<void> removeFromFavorites(String id);
+  Future<void> removeFromFavorites(String id, {String? sourceId});
 
   /// Get all favorite content (simplified)
   ///
@@ -30,23 +30,62 @@ abstract class UserDataRepository {
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
+    String? collectionId,
   });
 
   /// Check if content is in favorites
   ///
   /// [id] - Content ID to check
   /// Returns true if content is favorited
-  Future<bool> isFavorite(String id);
+  Future<bool> isFavorite(String id, {String? sourceId});
 
   /// Get favorites count
   ///
   /// Returns total number of favorites
-  Future<int> getFavoritesCount();
+  Future<int> getFavoritesCount({String? collectionId});
 
   /// Get all favorites at once (for export)
   ///
   /// Returns all favorite items without pagination
   Future<List<Map<String, dynamic>>> getAllFavoritesForExport();
+
+  /// Create a user-defined local favorite collection.
+  Future<FavoriteCollection> createFavoriteCollection({
+    required String name,
+    String? collectionId,
+  });
+
+  /// Rename a local favorite collection.
+  Future<void> renameFavoriteCollection({
+    required String collectionId,
+    required String name,
+  });
+
+  /// Delete a local favorite collection and all memberships.
+  Future<void> deleteFavoriteCollection(String collectionId);
+
+  /// Get all local favorite collections with item counts.
+  Future<List<FavoriteCollection>> getFavoriteCollections();
+
+  /// Get current collection memberships for a specific favorite item.
+  Future<List<String>> getFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+  });
+
+  /// Replace collection memberships for a specific favorite item.
+  Future<void> setFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+    required List<String> collectionIds,
+  });
+
+  /// Export collection definitions.
+  Future<List<FavoriteCollection>> getFavoriteCollectionsForExport();
+
+  /// Export collection memberships.
+  Future<List<Map<String, dynamic>>>
+      getFavoriteCollectionMembershipsForExport();
 
   // ==================== DOWNLOADS ====================
 

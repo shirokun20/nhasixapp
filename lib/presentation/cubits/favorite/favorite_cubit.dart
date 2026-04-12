@@ -33,10 +33,19 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   // Current page for pagination
   int _currentPage = 1;
   static const int _itemsPerPage = 20;
+  String? _activeCollectionId;
 
   /// Load favorites list
-  Future<void> loadFavorites({bool refresh = false}) async {
+  Future<void> loadFavorites({
+    bool refresh = false,
+    String? collectionId,
+  }) async {
     try {
+      if (collectionId != _activeCollectionId) {
+        _activeCollectionId = collectionId;
+        _currentPage = 1;
+      }
+
       if (refresh) {
         _currentPage = 1;
         logInfo('Refreshing favorites list');
@@ -46,23 +55,31 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         emit(const FavoriteLoading());
       }
 
-      final params =
-          GetFavoritesParams.page(_currentPage, limit: _itemsPerPage);
+      final collections = await _userDataRepository.getFavoriteCollections();
+      final params = GetFavoritesParams.page(
+        _currentPage,
+        limit: _itemsPerPage,
+        collectionId: _activeCollectionId,
+      );
       final favorites = await _getFavoritesUseCase(params);
-      final totalCount = await _userDataRepository.getFavoritesCount();
+      final totalCount = await _userDataRepository.getFavoritesCount(
+        collectionId: _activeCollectionId,
+      );
 
       final hasMore = favorites.length == _itemsPerPage;
 
       emit(FavoriteLoaded(
         favorites: favorites,
+        collections: collections,
         currentPage: _currentPage,
         hasMore: hasMore,
         totalCount: totalCount,
         lastUpdated: DateTime.now(),
+        activeCollectionId: _activeCollectionId,
       ));
 
-      logInfo(
-          'Successfully loaded ${favorites.length} favorites (page $_currentPage)');
+      logInfo('Successfully loaded ${favorites.length} favorites '
+          '(page $_currentPage, collection=${_activeCollectionId ?? 'all'})');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'load favorites');
 
@@ -88,8 +105,11 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       emit(currentState.copyWith(isLoadingMore: true));
 
       _currentPage++;
-      final params =
-          GetFavoritesParams.page(_currentPage, limit: _itemsPerPage);
+      final params = GetFavoritesParams.page(
+        _currentPage,
+        limit: _itemsPerPage,
+        collectionId: _activeCollectionId,
+      );
       final newFavorites = await _getFavoritesUseCase(params);
 
       final allFavorites = [...currentState.favorites, ...newFavorites];
@@ -97,10 +117,12 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       emit(currentState.copyWith(
         favorites: allFavorites,
+        collections: currentState.collections,
         currentPage: _currentPage,
         hasMore: hasMore,
         isLoadingMore: false,
         lastUpdated: DateTime.now(),
+        activeCollectionId: _activeCollectionId,
       ));
 
       logInfo('Successfully loaded ${newFavorites.length} more favorites');
@@ -125,12 +147,21 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       final params = AddToFavoritesParams.create(content);
       await _addToFavoritesUseCase(params);
 
+      if (_activeCollectionId != null) {
+        await loadFavorites(refresh: true, collectionId: _activeCollectionId);
+        logInfo(
+            'Favorite added while collection filter active; list refreshed');
+        return;
+      }
+
       // Update current state if loaded
       final currentState = state;
       if (currentState is FavoriteLoaded) {
         // Add to beginning of list
         final newFavorite = {
           'id': content.id,
+          'source_id': content.sourceId,
+          'title': content.title,
           'cover_url': content.coverUrl,
           'added_at': DateTime.now().millisecondsSinceEpoch,
         };
@@ -152,18 +183,24 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   }
 
   /// Remove content from favorites
-  Future<void> removeFromFavorites(String contentId) async {
+  Future<void> removeFromFavorites(String contentId, {String? sourceId}) async {
     try {
       logInfo('Starting removal of content from favorites: $contentId');
 
       // First check if content exists in favorites
-      final isFavorite = await _userDataRepository.isFavorite(contentId);
+      final isFavorite = await _userDataRepository.isFavorite(
+        contentId,
+        sourceId: sourceId,
+      );
       if (!isFavorite) {
         logWarning('Content $contentId is not in favorites, skipping removal');
         return;
       }
 
-      final params = RemoveFromFavoritesParams.fromString(contentId);
+      final params = RemoveFromFavoritesParams.fromString(
+        contentId,
+        sourceId: sourceId,
+      );
       logInfo('Calling removeFromFavoritesUseCase with params: $params');
 
       await _removeFromFavoritesUseCase(params);
@@ -177,7 +214,9 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
         final beforeCount = currentState.favorites.length;
         final updatedFavorites = currentState.favorites
-            .where((favorite) => favorite['id'] != contentId)
+            .where((favorite) =>
+                favorite['id'] != contentId ||
+                (sourceId != null && favorite['source_id'] != sourceId))
             .toList();
         final afterCount = updatedFavorites.length;
 
@@ -204,9 +243,12 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   }
 
   /// Check if content is favorited
-  Future<bool> isFavorited(String contentId) async {
+  Future<bool> isFavorited(String contentId, {String? sourceId}) async {
     try {
-      return await _userDataRepository.isFavorite(contentId);
+      return await _userDataRepository.isFavorite(
+        contentId,
+        sourceId: sourceId,
+      );
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'check if favorited');
       return false;
@@ -302,6 +344,71 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     await loadFavorites(refresh: true);
   }
 
+  Future<void> selectCollection(String? collectionId) async {
+    if (_activeCollectionId == collectionId && state is FavoriteLoaded) {
+      return;
+    }
+
+    await loadFavorites(refresh: true, collectionId: collectionId);
+  }
+
+  Future<void> createCollection(String name) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Collection name cannot be empty');
+    }
+
+    await _userDataRepository.createFavoriteCollection(name: trimmedName);
+    await loadFavorites(refresh: true, collectionId: _activeCollectionId);
+  }
+
+  Future<void> renameCollection({
+    required String collectionId,
+    required String name,
+  }) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Collection name cannot be empty');
+    }
+
+    await _userDataRepository.renameFavoriteCollection(
+      collectionId: collectionId,
+      name: trimmedName,
+    );
+    await loadFavorites(refresh: true, collectionId: _activeCollectionId);
+  }
+
+  Future<void> deleteCollection(String collectionId) async {
+    await _userDataRepository.deleteFavoriteCollection(collectionId);
+    if (_activeCollectionId == collectionId) {
+      _activeCollectionId = null;
+    }
+    await loadFavorites(refresh: true, collectionId: _activeCollectionId);
+  }
+
+  Future<List<String>> getFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+  }) {
+    return _userDataRepository.getFavoriteCollectionIds(
+      favoriteId: favoriteId,
+      sourceId: sourceId,
+    );
+  }
+
+  Future<void> setFavoriteCollectionIds({
+    required String favoriteId,
+    required String sourceId,
+    required List<String> collectionIds,
+  }) async {
+    await _userDataRepository.setFavoriteCollectionIds(
+      favoriteId: favoriteId,
+      sourceId: sourceId,
+      collectionIds: collectionIds,
+    );
+    await loadFavorites(refresh: true, collectionId: _activeCollectionId);
+  }
+
   /// Export favorites data
   Future<Map<String, dynamic>> exportFavorites() async {
     try {
@@ -309,12 +416,18 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
 
       // Get all favorites at once (no pagination - much faster!)
       final allFavorites = await _userDataRepository.getAllFavoritesForExport();
+      final collections =
+          await _userDataRepository.getFavoriteCollectionsForExport();
+      final collectionItems =
+          await _userDataRepository.getFavoriteCollectionMembershipsForExport();
 
       final exportData = {
-        'version': '1.0',
+        'version': '2.0',
         'exported_at': DateTime.now().toIso8601String(),
         'total_count': allFavorites.length,
         'favorites': allFavorites,
+        'collections': collections.map((item) => item.toJson()).toList(),
+        'collection_items': collectionItems,
       };
 
       logInfo('Successfully exported ${allFavorites.length} favorites');
@@ -331,7 +444,10 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       logInfo('Importing favorites data');
 
       final favorites = data['favorites'] as List<dynamic>? ?? [];
+      final collectionMaps = data['collections'] as List<dynamic>? ?? [];
+      final collectionItems = data['collection_items'] as List<dynamic>? ?? [];
       int importedCount = 0;
+      final importedCollectionIdsBySource = <String, String>{};
 
       for (final favoriteData in favorites) {
         try {
@@ -352,6 +468,51 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         } catch (e) {
           logWarning('Failed to import favorite: $e');
           // Continue with next favorite
+        }
+      }
+
+      for (final collectionData in collectionMaps) {
+        try {
+          final rawMap = Map<String, dynamic>.from(
+            (collectionData as Map).cast<String, dynamic>(),
+          );
+          final collection = FavoriteCollection.fromJson(rawMap);
+          final created = await _userDataRepository.createFavoriteCollection(
+            name: collection.name,
+            collectionId: collection.id,
+          );
+          importedCollectionIdsBySource[collection.id] = created.id;
+        } catch (e) {
+          logWarning('Failed to import favorite collection: $e');
+        }
+      }
+
+      for (final membershipData in collectionItems) {
+        try {
+          final rawMap = Map<String, dynamic>.from(
+            (membershipData as Map).cast<String, dynamic>(),
+          );
+          final favoriteId = rawMap['favorite_id']?.toString();
+          final sourceId = rawMap['source_id']?.toString() ?? 'nhentai';
+          final importedCollectionId = importedCollectionIdsBySource[
+              rawMap['collection_id']?.toString()];
+
+          if (favoriteId == null || importedCollectionId == null) {
+            continue;
+          }
+
+          final existingIds =
+              await _userDataRepository.getFavoriteCollectionIds(
+            favoriteId: favoriteId,
+            sourceId: sourceId,
+          );
+          await _userDataRepository.setFavoriteCollectionIds(
+            favoriteId: favoriteId,
+            sourceId: sourceId,
+            collectionIds: [...existingIds, importedCollectionId],
+          );
+        } catch (e) {
+          logWarning('Failed to import favorite collection membership: $e');
         }
       }
 
@@ -445,5 +606,13 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       return currentState.searchQuery;
     }
     return null;
+  }
+
+  String? get activeCollectionId {
+    final currentState = state;
+    if (currentState is FavoriteLoaded) {
+      return currentState.activeCollectionId;
+    }
+    return _activeCollectionId;
   }
 }

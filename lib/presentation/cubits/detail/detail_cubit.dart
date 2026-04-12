@@ -83,9 +83,15 @@ class DetailCubit extends BaseCubit<DetailState> {
         // OR just assume false until user toggles (which is bad UX).
         // Ideally, CrotpediaSource should check bookmark status during getDetail if logged in.
         // Let's stick to existing code for now and refine if needed.
-        isFavorited = await _checkIfFavorited(contentId);
+        isFavorited = await _checkIfFavorited(
+          contentId,
+          sourceId: content.sourceId,
+        );
       } else {
-        isFavorited = await _checkIfFavorited(contentId);
+        isFavorited = await _checkIfFavorited(
+          contentId,
+          sourceId: content.sourceId,
+        );
       }
 
       // Generate image metadata for performance optimization
@@ -265,7 +271,10 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       // Perform actual toggle operation
       if (currentState.isFavorited) {
-        await _removeFromFavorites(currentState.content.id);
+        await _removeFromFavorites(
+          currentState.content.id,
+          sourceId: currentState.content.sourceId,
+        );
         logInfo('Removed from favorites: ${currentState.content.title}');
       } else {
         await _addToFavorites(currentState.content);
@@ -327,9 +336,12 @@ class DetailCubit extends BaseCubit<DetailState> {
   }
 
   /// Check if content is favorited
-  Future<bool> _checkIfFavorited(String contentId) async {
+  Future<bool> _checkIfFavorited(String contentId, {String? sourceId}) async {
     try {
-      return await _userDataRepository.isFavorite(contentId);
+      return await _userDataRepository.isFavorite(
+        contentId,
+        sourceId: sourceId,
+      );
     } catch (e) {
       logWarning('Failed to check favorite status: ${e.toString()}');
       return false;
@@ -348,9 +360,13 @@ class DetailCubit extends BaseCubit<DetailState> {
   }
 
   /// Remove content from favorites
-  Future<void> _removeFromFavorites(String contentId) async {
+  Future<void> _removeFromFavorites(String contentId,
+      {String? sourceId}) async {
     try {
-      final params = RemoveFromFavoritesParams.fromString(contentId);
+      final params = RemoveFromFavoritesParams.fromString(
+        contentId,
+        sourceId: sourceId,
+      );
       await _removeFromFavoritesUseCase(params);
       logDebug('Removed from favorites: $contentId');
     } catch (e) {

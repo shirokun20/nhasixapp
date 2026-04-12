@@ -16,6 +16,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/utils/error_message_utils.dart';
 import '../../../core/utils/storage_settings.dart';
+import '../../../domain/entities/entities.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
 import '../../../services/source_auth_service.dart';
@@ -883,6 +884,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         ] else if (!_isSelectionMode) ...[
           IconButton(
+            icon: Icon(Icons.create_new_folder,
+                color: Theme.of(context).colorScheme.onSurface),
+            onPressed: _showCreateCollectionDialog,
+            tooltip: 'Create collection',
+          ),
+          IconButton(
             icon: Icon(Icons.select_all,
                 color: Theme.of(context).colorScheme.onSurface),
             onPressed: _toggleSelectionMode,
@@ -1003,6 +1010,251 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           _favoriteCubit.searchFavorites(query);
         },
       ),
+    );
+  }
+
+  Future<void> _showCreateCollectionDialog({
+    FavoriteCollection? collection,
+  }) async {
+    final controller = TextEditingController(text: collection?.name ?? '');
+    final title =
+        collection == null ? 'Create collection' : 'Rename collection';
+
+    final submittedName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        title: Text(
+          title,
+          style: TextStyleConst.withColor(TextStyleConst.headingMedium,
+              Theme.of(context).colorScheme.onSurface),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Collection name',
+          ),
+          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: Text(AppLocalizations.of(context)!.save),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    final name = submittedName?.trim() ?? '';
+    if (name.isEmpty) return;
+
+    try {
+      if (collection == null) {
+        await _favoriteCubit.createCollection(name);
+      } else {
+        await _favoriteCubit.renameCollection(
+          collectionId: collection.id,
+          name: name,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save collection: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showCollectionActions(FavoriteCollection collection) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Rename collection'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _showCreateCollectionDialog(collection: collection);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Delete collection',
+                style: TextStyleConst.withColor(
+                  TextStyleConst.bodyMedium,
+                  Theme.of(context).colorScheme.error,
+                ),
+              ),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceContainer,
+                        title: const Text('Delete collection'),
+                        content: Text(
+                          'Delete "${collection.name}"? Item favorites stay saved, only the collection grouping is removed.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: Text(AppLocalizations.of(context)!.cancel),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: Text(
+                              AppLocalizations.of(context)!.delete,
+                              style: TextStyleConst.withColor(
+                                TextStyleConst.buttonMedium,
+                                Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false;
+
+                if (!confirmed) return;
+
+                await _favoriteCubit.deleteCollection(collection.id);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showManageCollectionsSheet(
+      Map<String, dynamic> favorite) async {
+    final currentState = _favoriteCubit.state;
+    if (currentState is! FavoriteLoaded) return;
+
+    if (currentState.collections.isEmpty) {
+      await _showCreateCollectionDialog();
+      return;
+    }
+
+    final favoriteId = favorite['id']?.toString();
+    final sourceId = favorite['source_id']?.toString() ?? SourceType.nhentai.id;
+    if (favoriteId == null || favoriteId.isEmpty) {
+      return;
+    }
+
+    final assignedIds = await _favoriteCubit.getFavoriteCollectionIds(
+      favoriteId: favoriteId,
+      sourceId: sourceId,
+    );
+    if (!mounted) return;
+
+    final selectedIds = assignedIds.toSet();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Collections',
+                    style: TextStyleConst.withColor(
+                      TextStyleConst.headingSmall,
+                      Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: currentState.collections.map((collection) {
+                          final isSelected =
+                              selectedIds.contains(collection.id);
+                          return CheckboxListTile(
+                            value: isSelected,
+                            title: Text(collection.name),
+                            subtitle: Text('${collection.itemCount} items'),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (value) {
+                              setSheetState(() {
+                                if (value == true) {
+                                  selectedIds.add(collection.id);
+                                } else {
+                                  selectedIds.remove(collection.id);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(growable: false),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          _showCreateCollectionDialog();
+                        },
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                        label: const Text('New collection'),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: Text(AppLocalizations.of(context)!.cancel),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () async {
+                          Navigator.of(sheetContext).pop();
+                          await _favoriteCubit.setFavoriteCollectionIds(
+                            favoriteId: favoriteId,
+                            sourceId: sourceId,
+                            collectionIds: selectedIds.toList(growable: false),
+                          );
+                        },
+                        child: Text(AppLocalizations.of(context)!.save),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1262,11 +1514,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     if (state is FavoriteLoaded) {
-      if (state.isEmpty) {
-        return _buildEmptyState(state);
-      }
-
-      return _buildFavoritesList(state);
+      return Column(
+        children: [
+          _buildCollectionBar(state),
+          Expanded(
+            child: state.isEmpty
+                ? _buildEmptyState(state)
+                : _buildFavoritesList(state),
+          ),
+        ],
+      );
     }
 
     return const SizedBox.shrink();
@@ -1350,6 +1607,46 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildCollectionBar(FavoriteLoaded state) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            ChoiceChip(
+              label: Text(AppLocalizations.of(context)!.all),
+              selected: state.activeCollectionId == null,
+              onSelected: (_) => _favoriteCubit.selectCollection(null),
+            ),
+            const SizedBox(width: 8),
+            ...state.collections.map((collection) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onLongPress: () => _showCollectionActions(collection),
+                    child: ChoiceChip(
+                      label: Text(
+                        '${collection.name} (${collection.itemCount})',
+                      ),
+                      selected: state.activeCollectionId == collection.id,
+                      onSelected: (_) =>
+                          _favoriteCubit.selectCollection(collection.id),
+                    ),
+                  ),
+                )),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 18),
+              label: const Text('New'),
+              onPressed: _showCreateCollectionDialog,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1508,6 +1805,42 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             if (!_isSelectionMode)
               Positioned(
                 top: 8,
+                left: 8,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .shadow
+                            .withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.folder_special_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () => _showManageCollectionsSheet(favorite),
+                    iconSize: 20,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                  ),
+                ),
+              ),
+            if (!_isSelectionMode)
+              Positioned(
+                top: 8,
                 right: 8,
                 child: Container(
                   decoration: BoxDecoration(
@@ -1565,7 +1898,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             TextButton(
                               onPressed: () {
                                 Navigator.of(context).pop();
-                                _removeFavorite(contentId);
+                                _removeFavorite(
+                                  contentId,
+                                  sourceId: sourceId,
+                                );
                               },
                               child: Text(
                                 AppLocalizations.of(context)!.remove,
@@ -1632,7 +1968,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
-  Future<void> _removeFavorite(String contentId) async {
+  Future<void> _removeFavorite(String contentId, {String? sourceId}) async {
     try {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1658,7 +1994,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
       );
 
-      await _favoriteCubit.removeFromFavorites(contentId);
+      await _favoriteCubit.removeFromFavorites(
+        contentId,
+        sourceId: sourceId,
+      );
 
       if (mounted) {
         // Hide loading snackbar
@@ -1698,7 +2037,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,
               textColor: Theme.of(context).colorScheme.onError,
-              onPressed: () => _removeFavorite(contentId),
+              onPressed: () => _removeFavorite(contentId, sourceId: sourceId),
             ),
           ),
         );
