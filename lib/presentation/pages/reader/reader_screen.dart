@@ -57,6 +57,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
   int _lastSavedPage = 0; // Track last saved page to prevent backward saves
+  String? _lastTrackedProgressKey;
 
   // 🐛 FIX: Cache rendered image heights to prevent scroll jumping on scroll-up
   // When items are rebuilt after disposal, the loading placeholder must match
@@ -316,6 +317,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ScrollUpdateNotification notification, ReaderState state) {
     if (state.content == null) return;
 
+    final progressKey =
+        '${state.content?.id ?? ''}::${state.currentChapter?.id ?? ''}';
+    if (_lastTrackedProgressKey != progressKey) {
+      _lastTrackedProgressKey = progressKey;
+      _lastSavedPage = 0;
+      _lastReportedPage = 0;
+    }
+
     // 🐛 CRITICAL: Skip all processing during programmatic scroll
     // This prevents false page saves during initial positioning
     if (_isProgrammaticAnimation) {
@@ -395,7 +404,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final isAtBottom =
         metrics.pixels >= metrics.maxScrollExtent - 50; // 50px threshold
 
-    if (isAtBottom && _lastSavedPage < totalPages) {
+    if (isAtBottom) {
       // User reached bottom -> save to DB with debounce to avoid spam
       _debounceSaveHistory(state, totalPages);
     }

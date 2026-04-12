@@ -390,6 +390,8 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Load next chapter
   Future<void> loadNextChapter() async {
+    await _saveToHistory();
+
     final nextChapterId = _resolveNextChapterId();
     if (nextChapterId == null) {
       _logger.d('No next chapter available');
@@ -406,6 +408,8 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   /// Load previous chapter
   Future<void> loadPreviousChapter() async {
+    await _saveToHistory();
+
     final previousChapterId = _resolvePreviousChapterId();
     if (previousChapterId == null) {
       _logger.d('No previous chapter available');
@@ -1326,9 +1330,12 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.d('📖 NON-CHAPTER MODE: contentId=$historyContentId');
       }
 
+      final safePage =
+          (state.currentPage ?? 1).clamp(1, state.content!.pageCount);
+
       final params = AddToHistoryParams.fromString(
         historyContentId,
-        state.currentPage ?? 1,
+        safePage,
         state.content!.pageCount,
         timeSpent: state.readingTimer ?? Duration.zero,
         title: state.content!.title,
@@ -1342,9 +1349,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _logger.d(
           '📤 Saving history with contentId: ${params.contentId.value}, parentId: ${params.parentId}, chapterId: ${params.chapterId}');
-      if (params.page <= params.totalPages) {
-        await addToHistoryUseCase(params);
-      }
+      await addToHistoryUseCase(params);
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading progress to history',
           error: e, stackTrace: stackTrace);
