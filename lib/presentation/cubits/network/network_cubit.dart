@@ -36,7 +36,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
         onError: (error) {
           handleError(error, StackTrace.current, 'connectivity monitoring');
           emit(const NetworkError(
-            message: 'Failed to monitor network connectivity',
+            message: 'failedMonitorNetwork',
             errorType: 'connectivity',
           ));
         },
@@ -44,7 +44,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'initialize connectivity');
       emit(NetworkError(
-        message: 'Failed to initialize network monitoring: ${e.toString()}',
+        message: 'failedInitNetwork',
         errorType: determineErrorType(e),
       ));
     }
@@ -70,7 +70,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'update connection status');
       emit(NetworkError(
-        message: 'Failed to update connection status: ${e.toString()}',
+        message: 'failedUpdateConnection',
         errorType: determineErrorType(e),
       ));
     }
@@ -126,7 +126,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'check connectivity');
       emit(NetworkError(
-        message: 'Failed to check connectivity: ${e.toString()}',
+        message: 'failedCheckConnectivity',
         errorType: determineErrorType(e),
       ));
     }

@@ -379,7 +379,7 @@ class DownloadItemWidget extends StatelessWidget {
                 context,
                 icon: Icons.pause,
                 title: AppLocalizations.of(context)?.downloadActionPause ??
-                    'Pause',
+                    AppLocalizations.of(context)!.pause,
                 action: 'pause',
               ),
 
@@ -388,7 +388,7 @@ class DownloadItemWidget extends StatelessWidget {
                 context,
                 icon: Icons.play_arrow,
                 title: AppLocalizations.of(context)?.downloadActionResume ??
-                    'Resume',
+                    AppLocalizations.of(context)!.resume,
                 action: 'start',
               ),
 
@@ -397,7 +397,7 @@ class DownloadItemWidget extends StatelessWidget {
                 context,
                 icon: Icons.cancel,
                 title: AppLocalizations.of(context)?.downloadActionCancel ??
-                    'Cancel',
+                    AppLocalizations.of(context)!.cancel,
                 action: 'cancel',
                 isDestructive: true,
               ),
@@ -407,7 +407,7 @@ class DownloadItemWidget extends StatelessWidget {
                 context,
                 icon: Icons.refresh,
                 title: AppLocalizations.of(context)?.downloadActionRetry ??
-                    'Retry',
+                    AppLocalizations.of(context)!.retry,
                 action: 'retry',
               ),
 
@@ -420,7 +420,7 @@ class DownloadItemWidget extends StatelessWidget {
               context,
               icon: Icons.info_outline,
               title: AppLocalizations.of(context)?.downloadActionDetails ??
-                  'Details',
+                  AppLocalizations.of(context)!.details,
               action: 'details',
             ),
 
@@ -428,7 +428,7 @@ class DownloadItemWidget extends StatelessWidget {
               context,
               icon: Icons.delete_outline,
               title: AppLocalizations.of(context)?.downloadActionRemove ??
-                  'Remove',
+                  AppLocalizations.of(context)!.remove,
               action: 'remove',
               isDestructive: true,
             ),
@@ -493,7 +493,7 @@ class DownloadItemWidget extends StatelessWidget {
             return _buildActionTile(
               context,
               icon: Icons.picture_as_pdf,
-              title: 'Open PDF',
+              title: AppLocalizations.of(context)!.openPdf,
               action: 'open_pdf', // New action for opening PDF
             );
           }
@@ -502,7 +502,7 @@ class DownloadItemWidget extends StatelessWidget {
             context,
             icon: Icons.picture_as_pdf,
             title: AppLocalizations.of(context)?.downloadActionConvertToPdf ??
-                'Convert to PDF',
+                AppLocalizations.of(context)!.convertToPdf,
             action: 'convert_pdf',
           );
         },

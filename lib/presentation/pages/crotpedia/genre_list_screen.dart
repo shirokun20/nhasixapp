@@ -10,6 +10,7 @@ import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CrotpediaGenreListScreen extends StatelessWidget {
   const CrotpediaGenreListScreen({super.key});
 
@@ -20,7 +21,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
       child: Scaffold(
         drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
-          title: const Text('Genre List'),
+          title: Text(AppLocalizations.of(context)!.genreListTitle),
           centerTitle: true,
         ),
         body: BlocBuilder<CrotpediaFeatureCubit, CrotpediaFeatureState>(
@@ -30,7 +31,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
             } else if (state is CrotpediaFeatureError) {
               return Center(
                 child: AppErrorWidget(
-                  title: 'Error Loading Genres',
+                  title: AppLocalizations.of(context)!.errorLoadingGenres,
                   message: state.message,
                   onRetry: () =>
                       context.read<CrotpediaFeatureCubit>().loadGenreList(),
@@ -38,10 +39,10 @@ class CrotpediaGenreListScreen extends StatelessWidget {
               );
             } else if (state is GenreListLoaded) {
               if (state.genres.isEmpty) {
-                return const Center(
+                return Center(
                   child: AppErrorWidget(
-                    title: 'No Genres Found',
-                    message: 'There are no genres available at the moment.',
+                    title: AppLocalizations.of(context)!.noGenresFound,
+                    message: AppLocalizations.of(context)!.noGenresAvailable,
                     icon: Icons.category_outlined,
                   ),
                 );
@@ -65,7 +66,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Browse by Genre',
+                              AppLocalizations.of(context)!.browseByGenre,
                               style: TextStyleConst.headingSmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),

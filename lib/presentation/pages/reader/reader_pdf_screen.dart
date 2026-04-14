@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/services/native_pdf_service.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class ReaderPdfScreen extends StatefulWidget {
   final String filePath;
   final String contentId;
@@ -42,7 +43,7 @@ class _ReaderPdfScreenState extends State<ReaderPdfScreen> {
       debugPrint('Error launching native PDF: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToOpenPdf(e.toString()))),
         );
         context.pop();
       }

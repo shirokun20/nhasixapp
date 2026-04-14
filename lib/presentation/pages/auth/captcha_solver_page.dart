@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kuron_native/kuron_native.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CaptchaSolverPage extends StatefulWidget {
   final String provider;
   final String siteKey;
@@ -63,14 +64,14 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
       setState(() {
         _challengeErrorCode = errorCode?.isEmpty == true ? null : errorCode;
         _error = (errorMessage == null || errorMessage.isEmpty)
-            ? 'CAPTCHA challenge was cancelled or failed.'
+            ? AppLocalizations.of(context)!.captchaCancelled
             : errorMessage;
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Failed to open native CAPTCHA solver: $e';
+        _error = AppLocalizations.of(context)!.failedToOpenCaptcha(e.toString());
         _loading = false;
       });
     }
@@ -80,10 +81,10 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Solve CAPTCHA'),
+        title: Text(AppLocalizations.of(context)!.solveCaptchaTitle),
         actions: [
           IconButton(
-            tooltip: 'Reload challenge',
+            tooltip: AppLocalizations.of(context)!.reloadChallenge,
             onPressed: _startNativeCaptcha,
             icon: const Icon(Icons.refresh),
           ),
@@ -98,7 +99,7 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
               color: Theme.of(context).colorScheme.errorContainer,
               padding: const EdgeInsets.all(12),
               child: Text(
-                'Failed to load CAPTCHA: $_error',
+                AppLocalizations.of(context)!.failedToLoadCaptcha(_error ?? ''),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onErrorContainer,
                 ),
@@ -110,7 +111,7 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.all(12),
               child: const Text(
-                'Cloudflare Turnstile rejected the challenge (110200). Please retry or use manual token input.',
+                AppLocalizations.of(context)!.turnstileRejected,
               ),
             ),
           Expanded(
@@ -119,8 +120,8 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   _loading
-                      ? 'Opening native CAPTCHA solver...'
-                      : 'Tap refresh to retry native CAPTCHA challenge.',
+                      ? AppLocalizations.of(context)!.openingNativeCaptcha
+                      : AppLocalizations.of(context)!.tapRefreshToRetry,
                   textAlign: TextAlign.center,
                 ),
               ),

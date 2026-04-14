@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CrotpediaLoginPage extends StatelessWidget {
   const CrotpediaLoginPage({super.key});
 
@@ -10,13 +11,13 @@ class CrotpediaLoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login to Crotpedia'),
+        title: Text(AppLocalizations.of(context)!.loginToCrotpedia),
       ),
       body: BlocConsumer<CrotpediaAuthCubit, CrotpediaAuthState>(
         listener: (context, state) {
           if (state is CrotpediaAuthSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Synced as ${state.username}')),
+              SnackBar(content: Text(AppLocalizations.of(context)!.syncedAsUser(state.username))),
             );
           } else if (state is CrotpediaAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -39,7 +40,7 @@ class CrotpediaLoginPage extends StatelessWidget {
                 children: [
                   const Icon(Icons.check_circle, color: Colors.green, size: 64),
                   const SizedBox(height: 16),
-                  Text('Logged in as ${state.username}',
+                  Text(AppLocalizations.of(context)!.loggedInAsUser(state.username),
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -47,7 +48,7 @@ class CrotpediaLoginPage extends StatelessWidget {
                       context.read<CrotpediaAuthCubit>().logout();
                     },
                     icon: const Icon(Icons.logout),
-                    label: const Text('Logout'),
+                    label: Text(AppLocalizations.of(context)!.logout),
                   ),
                 ],
               ),
@@ -63,19 +64,19 @@ class CrotpediaLoginPage extends StatelessWidget {
                   const Icon(Icons.lock_person, size: 80, color: Colors.blue),
                   const SizedBox(height: 24),
                   Text(
-                    'Login Required',
+                    AppLocalizations.of(context)!.loginRequired,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Login to Crotpedia using the native secure browser to access bookmarks and more.',
+                    AppLocalizations.of(context)!.loginToCrotpediaDescription,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
                   FilledButton.icon(
                     onPressed: () => _launchNativeLogin(context),
                     icon: const Icon(Icons.login),
-                    label: const Text('Login via Secure Browser'),
+                    label: Text(AppLocalizations.of(context)!.loginViaSecureBrowser),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 32, vertical: 16),
@@ -120,8 +121,8 @@ class CrotpediaLoginPage extends StatelessWidget {
         } else {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Login incomplete. Please try again.')),
+              SnackBar(
+                  content: Text(AppLocalizations.of(context)!.loginIncomplete)),
             );
           }
         }
@@ -129,7 +130,7 @@ class CrotpediaLoginPage extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedError(e.toString()))),
         );
       }
     }

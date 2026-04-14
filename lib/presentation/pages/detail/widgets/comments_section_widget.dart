@@ -6,6 +6,7 @@ import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/comments/comments_state.dart';
 import 'package:nhasixapp/presentation/pages/detail/widgets/comment_item_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class CommentsSectionWidget extends StatelessWidget {
   final String contentId;
@@ -50,7 +51,7 @@ class _CommentsList extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'No comments yet',
+                AppLocalizations.of(context)!.noCommentsYet,
                 style: TextStyle(
                   color: Theme.of(context).hintColor,
                 ),
@@ -75,7 +76,7 @@ class _CommentsList extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Comments (${comments.length})',
+                AppLocalizations.of(context)!.commentsCount(comments.length),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -117,7 +118,7 @@ class _CommentsContent extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Center(
               child: Text(
-                'Failed to load comments',
+                AppLocalizations.of(context)!.failedToLoadComments,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -137,7 +138,7 @@ class _CommentsContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'No comments yet',
+                    AppLocalizations.of(context)!.noCommentsYet,
                     style: TextStyle(
                       color: Theme.of(context).hintColor,
                     ),
@@ -164,7 +165,7 @@ class _CommentsContent extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Comments (${state.comments.length})',
+                      AppLocalizations.of(context)!.commentsCount(state.comments.length),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,

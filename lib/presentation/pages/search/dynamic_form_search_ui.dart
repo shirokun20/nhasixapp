@@ -12,6 +12,7 @@ import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 /// Generic search form UI driven entirely by [SearchFormConfig].
 ///
 /// Renders form fields based on the `searchForm.params` block in the source
@@ -324,7 +325,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       _logger.e('DynamicFormSearchUI: failed to save filter: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to apply search: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToApplySearch(e.toString()))),
         );
       }
     }
@@ -372,7 +373,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   FilledButton.icon(
                     onPressed: _onSearch,
                     icon: const Icon(Icons.search),
-                    label: const Text('SEARCH'),
+                    label: Text(AppLocalizations.of(context)!.search),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -380,7 +381,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   const SizedBox(height: 8),
                   OutlinedButton(
                     onPressed: _onReset,
-                    child: const Text('Reset'),
+                    child: Text(AppLocalizations.of(context)!.reset),
                   ),
                 ],
               ),
@@ -493,7 +494,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             prefixIcon: const Icon(Icons.tag),
             suffixIcon: IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'Add tag',
+              tooltip: AppLocalizations.of(context)!.addTag,
               onPressed: addCurrentInput,
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -505,7 +506,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Tip: tekan Enter atau tombol + untuk menambah tag. Bisa ketik banyak tag pakai koma/baris baru.',
+          AppLocalizations.of(context)!.tagInputTip,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context)
                     .colorScheme
@@ -595,14 +596,14 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                     child: Text(
                       selected.isEmpty
                           ? (isLoading
-                              ? 'Loading options...'
+                              ? AppLocalizations.of(context)!.loadingOptions
                               : hasLoadError
-                                  ? 'Failed to load options. Tap to retry.'
+                                  ? AppLocalizations.of(context)!.failedToLoadOptionsTap
                                   : hasCachedOptions
                                       ? (field.placeholder ??
-                                          'Choose ${_labelFor(name)}')
-                                      : 'Tap to load options')
-                          : '${selected.length} selected',
+                                          AppLocalizations.of(context)!.chooseField(_labelFor(name)))
+                                      : AppLocalizations.of(context)!.tapToLoadOptions)
+                          : AppLocalizations.of(context)!.nSelectedItems(selected.length),
                       style: selected.isEmpty
                           ? null
                           : TextStyle(
@@ -685,7 +686,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'FILTER TAGS',
+          AppLocalizations.of(context)!.filterTags,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -727,13 +728,13 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                     child: Text(
                       (included.isEmpty && excluded.isEmpty)
                           ? (isLoading
-                              ? 'Loading options...'
+                              ? AppLocalizations.of(context)!.loadingOptions
                               : hasLoadError
-                                  ? 'Failed to load options. Tap to retry.'
+                                  ? AppLocalizations.of(context)!.failedToLoadOptionsTap
                                   : hasCachedOptions
-                                      ? 'Tap to choose included/excluded tags'
-                                      : 'Tap to load options')
-                          : 'Include ${included.length} • Exclude ${excluded.length}',
+                                      ? AppLocalizations.of(context)!.tapToChooseTags
+                                      : AppLocalizations.of(context)!.tapToLoadOptions)
+                          : AppLocalizations.of(context)!.includeExcludeCount(included.length, excluded.length),
                     ),
                   ),
                   if (isLoading)
@@ -822,10 +823,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loadError == null || loadError.isEmpty
-              ? 'No options available for this field'
-              : 'Failed loading options. Check connection and try again.'),
+              ? AppLocalizations.of(context)!.noOptionsAvailable
+              : AppLocalizations.of(context)!.failedLoadingOptions),
           action: SnackBarAction(
-            label: 'Retry',
+            label: AppLocalizations.of(context)!.retryAction,
             onPressed: () => _openCombinedPicker(
               includedName: includedName,
               includedField: includedField,
@@ -937,7 +938,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                         children: [
                           Expanded(
                             child: Text(
-                              'Filter Tags',
+                              AppLocalizations.of(context)!.filterTags,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -945,7 +946,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                             onPressed: selectedState.isEmpty
                                 ? null
                                 : () => setSheetState(selectedState.clear),
-                            child: const Text('Reset'),
+                            child: Text(AppLocalizations.of(context)!.reset),
                           ),
                         ],
                       ),
@@ -955,19 +956,19 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           Icon(Icons.add_circle_outline,
                               size: 16, color: includeColor),
                           const SizedBox(width: 4),
-                          Text('Include $includeCount'),
+                          Text(AppLocalizations.of(context)!.includeCountLabel(includeCount)),
                           const SizedBox(width: 12),
                           Icon(Icons.remove_circle_outline,
                               size: 16, color: excludeColor),
                           const SizedBox(width: 4),
-                          Text('Exclude $excludeCount'),
+                          Text(AppLocalizations.of(context)!.excludeCountLabel(excludeCount)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search tags...',
+                          hintText: AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -980,7 +981,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                         child: filtered.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No tags found',
+                                  AppLocalizations.of(context)!.noTagsFound,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               )
@@ -1101,7 +1102,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               ),
                             );
                           },
-                          child: Text('Apply ($includeCount / $excludeCount)'),
+                          child: Text(AppLocalizations.of(context)!.applyWithCounts(includeCount, excludeCount)),
                         ),
                       ),
                     ],
@@ -1164,10 +1165,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(loadError == null || loadError.isEmpty
-              ? 'No options available for this field'
-              : 'Failed loading options. Check connection and try again.'),
+              ? AppLocalizations.of(context)!.noOptionsAvailable
+              : AppLocalizations.of(context)!.failedLoadingOptions),
           action: SnackBarAction(
-            label: 'Retry',
+            label: AppLocalizations.of(context)!.retryAction,
             onPressed: () => _openPicker(name, field),
           ),
         ),
@@ -1267,7 +1268,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                 ? null
                                 : () =>
                                     setSheetState(() => selectedValues.clear()),
-                            child: const Text('Reset'),
+                            child: Text(AppLocalizations.of(context)!.reset),
                           ),
                         ],
                       ),
@@ -1275,7 +1276,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search tags...',
+                          hintText: AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1288,7 +1289,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                         child: filtered.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No tags found',
+                                  AppLocalizations.of(context)!.noTagsFound,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               )
@@ -1380,7 +1381,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                 .toList();
                             Navigator.of(context).pop(applied);
                           },
-                          child: Text('Apply (${selectedValues.length})'),
+                          child: Text(AppLocalizations.of(context)!.applyWithCount(selectedValues.length)),
                         ),
                       ),
                     ],
@@ -1738,7 +1739,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Preview Query (q)',
+            AppLocalizations.of(context)!.previewQuery,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -1917,7 +1918,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           children: [
             // "All" chip = clear selection
             ChoiceChip(
-              label: const Text('All'),
+              label: Text(AppLocalizations.of(context)!.all),
               selected: selected == null,
               onSelected: (_) => setState(() => _selectValues[name] = null),
               selectedColor: Theme.of(context).colorScheme.primaryContainer,
@@ -1941,12 +1942,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           (_rawFieldConfig(name)?['label'] as String).trim().isEmpty
               ? _capitalize(name)
               : (_rawFieldConfig(name)?['label'] as String),
-        'query' => 'Search',
-        'genre' => 'Genre',
-        'status' => 'Status',
-        'order' => 'Order by',
-        'author' => 'Author',
-        'artist' => 'Artist',
+        'query' => AppLocalizations.of(context)!.searchLabel,
+        'genre' => AppLocalizations.of(context)!.genreLabel,
+        'status' => AppLocalizations.of(context)!.statusLabel,
+        'order' => AppLocalizations.of(context)!.orderBy,
+        'author' => AppLocalizations.of(context)!.authorLabel,
+        'artist' => AppLocalizations.of(context)!.artistFilterLabel,
         _ => _capitalize(name),
       };
 

@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:kuron_core/kuron_core.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CrotpediaRequestListScreen extends StatelessWidget {
   const CrotpediaRequestListScreen({super.key});
 
@@ -21,7 +22,7 @@ class CrotpediaRequestListScreen extends StatelessWidget {
       child: Scaffold(
         drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
-          title: const Text('Project Requests'),
+          title: Text(AppLocalizations.of(context)!.projectRequests),
           centerTitle: true,
         ),
         body: const _RequestListBody(),
@@ -74,7 +75,7 @@ class _RequestListBodyState extends State<_RequestListBody> {
         } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(
-              title: 'Error Loading Requests',
+              title: AppLocalizations.of(context)!.errorLoadingRequests,
               message: state.message,
               onRetry: () => context
                   .read<CrotpediaFeatureCubit>()
@@ -83,10 +84,10 @@ class _RequestListBodyState extends State<_RequestListBody> {
           );
         } else if (state is RequestListLoaded) {
           if (state.requests.isEmpty) {
-            return const Center(
+            return Center(
               child: AppErrorWidget(
-                title: 'No Requests Found',
-                message: 'There are no project requests at the moment.',
+                title: AppLocalizations.of(context)!.noRequestsFound,
+                message: AppLocalizations.of(context)!.noProjectRequests,
                 icon: Icons.assignment_outlined,
               ),
             );
@@ -243,7 +244,7 @@ class _RequestCard extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
-                            '+${genres.length - 5} more',
+                            AppLocalizations.of(context)!.nMoreGenres(genres.length - 5),
                             style: TextStyleConst.labelSmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                               fontStyle: FontStyle.italic,

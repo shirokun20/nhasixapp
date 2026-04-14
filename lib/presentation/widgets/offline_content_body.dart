@@ -378,7 +378,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               const SizedBox(height: 24),
               Text(
                 state.query.isEmpty
-                    ? 'No offline content'
+                    ? AppLocalizations.of(context)!.noOfflineContent
                     : AppLocalizations.of(context)!
                         .noResultsFoundFor(state.query),
                 textAlign: TextAlign.center,
@@ -394,7 +394,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     await importFromBackup(context);
                   },
                   icon: const Icon(Icons.restore_page),
-                  label: const Text('Import from Backup'),
+                  label: Text(AppLocalizations.of(context)!.importFromBackup),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
@@ -433,7 +433,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'How to get started',
+                            AppLocalizations.of(context)!.howToGetStarted,
                             style: TextStyleConst.titleSmall.copyWith(
                               color: colorScheme.onSurface,
                             ),
@@ -456,7 +456,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   onPressed: () => context.go('/downloads'),
                   icon: const Icon(Icons.download_rounded),
                   label: const Text(
-                      'Browse Downloads'), // Hardcoded to avoid key guessing
+                      AppLocalizations.of(context)!.browseDownloads), // Hardcoded to avoid key guessing
                   style: FilledButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
@@ -541,7 +541,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'Loading more...',
+                                  AppLocalizations.of(context)!.loadingMore,
                                   style: TextStyleConst.bodySmall.copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
@@ -703,7 +703,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${content.pageCount} pages • $sizeText',
+                            AppLocalizations.of(context)!.pagesWithSize(content.pageCount, sizeText),
                             style: TextStyleConst.bodySmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -747,7 +747,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       leading: Icon(Icons.picture_as_pdf,
                           color: colorScheme.tertiary),
                       title: Text(l10n.convertToPdf),
-                      subtitle: Text('${content.pageCount} pages'),
+                      subtitle: Text(AppLocalizations.of(context)!.nPages(content.pageCount)),
                       onTap: () {
                         Navigator.pop(bottomSheetContext);
                         _generatePdf(parentContext, content);
@@ -821,7 +821,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           SnackBar(
             content: Text(l10n.pdfConversionFailedWithError(
               content.title,
-              'No images found',
+              AppLocalizations.of(context)!.noImagesFound,
             )),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -887,8 +887,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 value: dontAskAgain,
                 onChanged: (value) =>
                     dontAskAgainNotifier.value = value ?? false,
-                title: const Text(
-                    "Don't ask again"), // Hardcoded fallback if key missing
+                title: Text(
+                    AppLocalizations.of(context)!.dontAskAgain),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
               ),

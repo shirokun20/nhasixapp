@@ -44,7 +44,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               children: [
                 Text(
                   AppLocalizations.of(context)?.downloadSettingsTitle ??
-                      'Download Settings',
+                      AppLocalizations.of(context)!.downloadSettings,
                   style: TextStyleConst.headlineSmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -73,7 +73,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     // Concurrent downloads
                     _buildSectionTitle(
                         AppLocalizations.of(context)?.performanceSection ??
-                            'Performance'),
+                            AppLocalizations.of(context)!.performance),
                     _buildConcurrentDownloadsSlider(),
                     const SizedBox(height: 16),
 
@@ -84,7 +84,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     // Auto retry settings
                     _buildSectionTitle(
                         AppLocalizations.of(context)?.autoRetrySection ??
-                            'Auto Retry'),
+                            AppLocalizations.of(context)!.autoRetry),
                     _buildAutoRetrySwitch(),
                     if (_settings.autoRetry) ...[
                       const SizedBox(height: 8),
@@ -95,7 +95,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     // Network settings
                     _buildSectionTitle(
                         AppLocalizations.of(context)?.networkSection ??
-                            'Network'),
+                            AppLocalizations.of(context)!.network),
                     _buildWifiOnlySwitch(),
                     const SizedBox(height: 16),
                     _buildTimeoutSlider(),
@@ -104,7 +104,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
                     // Notifications
                     _buildSectionTitle(
                         AppLocalizations.of(context)?.notificationsSection ??
-                            'Notifications'),
+                            AppLocalizations.of(context)!.notifications),
                     _buildNotificationsSwitch(),
                     const SizedBox(height: 32),
                   ],
@@ -179,7 +179,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           children: [
             Text(
               AppLocalizations.of(context)?.maxConcurrentDownloads ??
-                  'Max Concurrent Downloads',
+                  AppLocalizations.of(context)!.maxConcurrentDownloads,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -212,7 +212,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
         ),
         Text(
           AppLocalizations.of(context)?.concurrentDownloadsWarning ??
-              'Higher values may consume more bandwidth and device resources',
+              AppLocalizations.of(context)!.higherValuesBandwidth,
           style: TextStyleConst.bodySmall.copyWith(
             color:
                 Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -292,14 +292,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             children: [
               Text(
                 AppLocalizations.of(context)?.autoRetryFailedDownloads ??
-                    'Auto Retry Failed Downloads',
+                    AppLocalizations.of(context)!.autoRetryFailed,
                 style: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
                 AppLocalizations.of(context)?.autoRetryDescription ??
-                    'Automatically retry failed downloads',
+                    AppLocalizations.of(context)!.autoRetryDescription,
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -331,7 +331,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           children: [
             Text(
               AppLocalizations.of(context)?.maxRetryAttempts ??
-                  'Max Retry Attempts',
+                  AppLocalizations.of(context)!.maxRetryAttempts,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -379,7 +379,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
               ),
               Text(
                 AppLocalizations.of(context)?.wifiOnlyDescription ??
-                    'Only download when connected to WiFi',
+                    AppLocalizations.of(context)!.wifiOnlyDownload,
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -411,7 +411,7 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           children: [
             Text(
               AppLocalizations.of(context)?.downloadTimeoutLabel ??
-                  'Download Timeout',
+                  AppLocalizations.of(context)!.downloadTimeout,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -455,14 +455,14 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
             children: [
               Text(
                 AppLocalizations.of(context)?.enableNotificationsLabel ??
-                    'Enable Notifications',
+                    AppLocalizations.of(context)!.enableNotifications,
                 style: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Text(
                 AppLocalizations.of(context)?.enableNotificationsDescription ??
-                    'Show notifications for download progress',
+                    AppLocalizations.of(context)!.showNotificationsProgress,
                 style: TextStyleConst.bodySmall.copyWith(
                   color: Theme.of(context)
                       .colorScheme

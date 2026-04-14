@@ -1,6 +1,5 @@
 {
   "@@locale": "id",
-  
   "errorNetwork": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
   "errorServer": "Kesalahan server. Silakan coba lagi nanti.",
   "errorCloudflare": "Konten diblokir sementara (Cloudflare). Silakan coba lagi sebentar lagi.",
@@ -9,17 +8,20 @@
   "errorConnectionTimeout": "Koneksi habis waktu. Silakan coba lagi.",
   "errorConnectionRefused": "Koneksi ditolak. Server mungkin sedang down.",
   "appTitle": "Kuron",
-  "appSubtitle": "NHentai",
   "sourceAuthProfileTitle": "Profil {sourceId}",
   "@sourceAuthProfileTitle": {
     "placeholders": {
-      "sourceId": {"type": "String"}
+      "sourceId": {
+        "type": "String"
+      }
     }
   },
   "sourceAuthLoginTitle": "Masuk {sourceId}",
   "@sourceAuthLoginTitle": {
     "placeholders": {
-      "sourceId": {"type": "String"}
+      "sourceId": {
+        "type": "String"
+      }
     }
   },
   "sourceAuthConnectedAccount": "Akun Terhubung",
@@ -48,7 +50,6 @@
   "sourceAuthFlowFetchingProfile": "Sesi terverifikasi. Mengambil profil...",
   "sourceAuthFlowLoginSuccess": "Masuk berhasil",
   "sourceAuthCaptchaCaptured": "CAPTCHA berhasil disimpan",
-  
   "home": "Beranda",
   "search": "Cari",
   "favorites": "Favorit",
@@ -62,7 +63,7 @@
   "randomGalleryNoResult": "Tidak ada galeri acak ditemukan. Coba lagi.",
   "randomGalleryError": "Gagal memuat galeri acak. Silakan coba lagi.",
   "randomGalleryUnavailableTitle": "Fitur tidak tersedia",
-  "randomGalleryUnavailableMessage": "Galeri Acak belum tersedia untuk source ini.",
+  "randomGalleryUnavailableMessage": "Galeri Acak belum tersedia untuk sumber ini.",
   "offlineContent": "Konten Offline",
   "settings": "Pengaturan",
   "appDisguise": "Penyamaran Aplikasi",
@@ -73,34 +74,23 @@
   "supportDeveloperSubtitle": "Traktir saya kopi",
   "donateMessage": "Jika aplikasi ini bermanfaat, kamu bisa mendukung pengembangannya dengan berdonasi via QRIS. Terima kasih! ☕",
   "thankYouMessage": "Terima kasih atas dukunganmu!",
-
   "facebookPage": "Doujin Stash 3",
   "facebookPageSubtitle": "Bantu support dengan like halaman",
-  
   "searchHint": "Cari konten...",
   "searchPlaceholder": "Masukkan kata kunci pencarian",
   "noResults": "Tidak ada hasil ditemukan",
   "searchSuggestions": "Saran Pencarian",
   "suggestions": "Saran:",
-  "tapToJump": "Ketuk untuk lompat",
   "goToPage": "Pergi ke Halaman",
   "previousPageTooltip": "Halaman sebelumnya",
-  "nextPageTooltip": "Halaman berikutnya", 
+  "nextPageTooltip": "Halaman berikutnya",
   "tapToJumpToPage": "Ketuk untuk lompat ke halaman",
   "tapToLoadContent": "Ketuk untuk memuat konten",
-  "connectionFailed": "Koneksi Gagal",
-  "readyToGo": "Siap Berangkat!",
-  "launchingApp": "Meluncurkan aplikasi utama...",
-  "downloaded": "Diunduh",
   "imageNotAvailable": "Gambar tidak tersedia",
   "loadingPage": "Memuat halaman {pageNumber}...",
   "checkInternetConnection": "Periksa koneksi internet Anda",
-  "justNow": "Baru saja",
-  "daysAgo": "{count} hari{s} yang lalu",
-  "hoursAgo": "{count} jam{s} yang lalu",
-  "minutesAgo": "{count} menit{s} yang lalu",
-  "trySwitchingNetwork": "Coba beralih antara WiFi dan data seluler",
-  "restartRouter": "Restart router jika menggunakan WiFi",
+  "trySwitchingNetwork": "Coba beralih antara Wi-Fi dan data seluler",
+  "restartRouter": "Restart router jika menggunakan Wi-Fi",
   "checkWebsiteStatus": "Periksa apakah situs web sedang down",
   "cloudflareBypassMessage": "Situs web dilindungi oleh Cloudflare. Kami sedang mencoba untuk melewati proteksi.",
   "forceBypass": "Paksa Bypass",
@@ -109,19 +99,19 @@
   "serverReturnedError": "Server mengembalikan kesalahan {statusCode}. Layanan mungkin sedang tidak tersedia.",
   "@serverReturnedError": {
     "placeholders": {
-      "statusCode": {"type": "int"}
+      "statusCode": {
+        "type": "int"
+      }
     }
   },
-  "searchResults": "Hasil Pencarian",
   "failedToOpenBrowser": "Gagal membuka browser",
   "viewDownloads": "Lihat Unduhan",
   "clearSearch": "Bersihkan Pencarian",
   "clearFilters": "Bersihkan Filter",
   "anyLanguage": "Bahasa Apa Saja",
   "anyCategory": "Kategori Apa Saja",
-  "errorOpeningFilter": "Error membuka pilihan filter",
-  "errorBrowsingTag": "Error menjelajahi tag",
-  
+  "errorOpeningFilter": "Kesalahan membuka pilihan filter",
+  "errorBrowsingTag": "Kesalahan menjelajahi tag",
   "shuffleToNextGallery": "Acak ke galeri berikutnya",
   "contentHidden": "Konten Disembunyikan",
   "tapToViewAnyway": "Ketuk untuk tetap melihat",
@@ -129,16 +119,15 @@
   "galleriesPreloaded": "{count} galeri dimuat sebelumnya",
   "@galleriesPreloaded": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "oopsSomethingWentWrong": "Ups! Ada yang salah",
   "cleanupInfo": "Info Pembersihan",
-  "loadingHistory": "Memuat riwayat...",
   "clearingHistory": "Menghapus riwayat...",
   "areYouSureClearHistory": "Apakah Anda yakin ingin menghapus semua riwayat bacaan? Tindakan ini tidak dapat dibatalkan.",
-  "justNow": "Baru saja",
-  
   "artistCg": "artist cg",
   "gameCg": "game cg",
   "manga": "manga",
@@ -147,77 +136,66 @@
   "cosplay": "cosplay",
   "artistcg": "artistcg",
   "gamecg": "gamecg",
-  
   "bigBreasts": "big breasts",
   "soleFemale": "sole female",
   "soleMale": "sole male",
   "fullColor": "full color",
-  "pleaseSetStorageLocation": "Silahkan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.",
+  "pleaseSetStorageLocation": "Silakan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.",
   "@pleaseSetStorageLocation": {
     "description": "Pesan error ketika lokasi penyimpanan khusus belum diatur"
   },
   "schoolgirlUniform": "schoolgirl uniform",
-  
   "tryADifferentSearchTerm": "Coba istilah pencarian yang berbeda",
-  "unknownError": "Error tidak diketahui",
+  "unknownError": "Kesalahan tidak diketahui",
   "loadingOfflineContent": "Memuat konten offline...",
-  
   "excludeTags": "Kecualikan Tag",
-  "excludeGroups": "Kecualikan Grup", 
+  "excludeGroups": "Kecualikan Grup",
   "excludeCharacters": "Kecualikan Karakter",
   "excludeParodies": "Kecualikan Parodi",
   "excludeArtists": "Kecualikan Artis",
-  
   "noResultsFound": "Tidak ada hasil ditemukan",
   "tryAdjustingFilters": "Coba sesuaikan filter pencarian atau istilah pencarian Anda.",
-  "tryDifferentKeywords": "Coba cari dengan kata kunci yang berbeda.",
-  "networkError": "Error jaringan. Silakan periksa koneksi Anda dan coba lagi.",
-  "serverError": "Error server. Silakan coba lagi nanti.",
+  "networkError": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
   "accessBlocked": "Akses diblokir. Mencoba melewati proteksi...",
   "tooManyRequests": "Terlalu banyak permintaan. Silakan tunggu sebentar dan coba lagi.",
-  "errorProcessingResults": "Error memproses hasil pencarian. Silakan coba lagi.",
+  "errorProcessingResults": "Kesalahan memproses hasil pencarian. Silakan coba lagi.",
   "invalidSearchParameters": "Parameter pencarian tidak valid. Silakan periksa input Anda.",
   "unexpectedError": "Terjadi error yang tidak terduga. Silakan coba lagi.",
   "retryBypass": "Coba Bypass Lagi",
   "retryConnection": "Coba Koneksi Lagi",
   "retrySearch": "Coba Cari Lagi",
-  "networkErrorTitle": "Error Jaringan",
-  "serverErrorTitle": "Error Server",
-  "unknownErrorTitle": "Error Tidak Diketahui",
-  
-  "loadingContent": "Memuat konten...",
+  "networkErrorTitle": "Kesalahan Jaringan",
+  "serverErrorTitle": "Kesalahan Server",
+  "unknownErrorTitle": "Kesalahan Tidak Diketahui",
   "refreshingContent": "Menyegarkan konten...",
   "loadingMoreContent": "Memuat konten lainnya...",
   "searchResults": "Hasil Pencarian",
   "latestContent": "Konten Terbaru",
-  "noInternetConnection": "Tidak ada koneksi internet. Silakan periksa jaringan Anda dan coba lagi.",
   "serverTemporarilyUnavailable": "Server sementara tidak tersedia. Silakan coba lagi nanti.",
-  "failedToLoadContent": "Gagal memuat konten. Struktur situs mungkin telah berubah.",
   "cloudflareProtectionDetected": "Proteksi Cloudflare terdeteksi. Silakan tunggu dan coba lagi.",
   "tooManyRequestsWait": "Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mencoba lagi.",
   "noContentFoundMatching": "Tidak ada konten yang ditemukan sesuai kriteria pencarian Anda. Coba sesuaikan filter Anda.",
   "noContentFoundForTag": "Tidak ada konten ditemukan untuk tag \"{tagName}\".",
   "@noContentFoundForTag": {
     "placeholders": {
-      "tagName": {"type": "String"}
+      "tagName": {
+        "type": "String"
+      }
     }
   },
-  "removeSomeFilters": "Coba hapus beberapa filter",
-  "checkSpelling": "Periksa ejaan Anda",
   "useGeneralTerms": "Gunakan istilah pencarian yang lebih umum",
-  "browsePopularContent": "Jelajahi konten populer sebagai gantinya",
   "tryBrowsingOtherTags": "Coba jelajahi tag lain",
   "checkPopularContent": "Periksa konten populer",
   "useSearchFunction": "Gunakan fungsi pencarian",
   "checkInternetConnectionSuggestion": "Periksa koneksi internet Anda",
-  "tryRefreshingPage": "Coba segarkan halaman",
   "browsePopularContentSuggestion": "Jelajahi konten populer",
-  
   "failedToInitializeSearch": "Gagal menginisialisasi pencarian",
   "noResultsFoundFor": "Tidak ada hasil ditemukan untuk \"{query}\"",
   "@noResultsFoundFor": {
     "placeholders": {
-      "query": {"type": "String"}
+      "query": {
+        "type": "String"
+      }
     }
   },
   "searchingWithFilters": "Mencari dengan filter...",
@@ -225,35 +203,36 @@
   "invalidFilter": "Filter tidak valid: {errors}",
   "@invalidFilter": {
     "placeholders": {
-      "errors": {"type": "String"}
+      "errors": {
+        "type": "String"
+      }
     }
   },
   "invalidSearchFilter": "Filter pencarian tidak valid: {errors}",
   "@invalidSearchFilter": {
     "placeholders": {
-      "errors": {"type": "String"}
+      "errors": {
+        "type": "String"
+      }
     }
   },
-  
   "pages": "Halaman",
   "tags": "Tag",
   "language": "Bahasa",
   "uploadedOn": "Diunggah pada",
   "readNow": "Baca Sekarang",
   "featured": "Unggulan",
-  "confirmDownload": "Konfirmasi Download",
-  "downloadConfirmation": "Apakah Anda yakin ingin mendownload?",
+  "confirmDownload": "Konfirmasi Unduhan",
+  "downloadConfirmation": "Apakah Anda yakin ingin mengunduh?",
   "confirmButton": "Konfirmasi",
-  "download": "Download",
+  "download": "Unduh",
   "downloading": "Mengunduh",
   "downloadCompleted": "Unduhan Selesai",
-  "downloadFailed": "Unduhan Gagal",
   "initializing": "Memulai...",
   "noContentToBrowse": "Tidak ada konten untuk dibuka di browser",
   "addToFavorites": "Tambah ke Favorit",
   "removeFromFavorites": "Hapus dari Favorit",
   "content": "Konten",
-  "view": "Lihat",
   "clearAll": "Bersihkan Semua",
   "exportList": "Ekspor Daftar",
   "unableToCheck": "Tidak dapat memeriksa koneksi.",
@@ -266,44 +245,44 @@
   "foundGalleries": "Galeri Ditemukan",
   "checkingDownloadStatus": "Memeriksa Status Unduhan...",
   "allGalleriesDownloaded": "Semua Galeri Telah Diunduh",
-  
-  "downloadStarted": "Unduhan dimulai: {title}",
   "downloadNewGalleries": "Unduh Galeri Baru",
   "downloadProgress": "Progres Unduhan",
-  "downloadComplete": "Unduhan Selesai",
-  "downloadError": "Error Unduhan",
   "verifyingFiles": "Memverifikasi File",
   "verifyingFilesWithTitle": "Memverifikasi {title}...",
   "@verifyingFilesWithTitle": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "verifyingProgress": "Memverifikasi ({progress}%)",
   "@verifyingProgress": {
     "placeholders": {
-      "progress": {"type": "int"}
+      "progress": {
+        "type": "int"
+      }
     }
   },
   "initializingDownloads": "Memulai unduhan...",
   "loadingDownloads": "Memuat unduhan...",
-  "pauseAll": "Pause Semua",
-  "resumeAll": "Resume Semua",
-  "cancelAll": "Batal Semua",
-  "clearCompleted": "Bersihkan Selesai",
-  "cleanupStorage": "Bersihkan Storage",
+  "pauseAll": "Jeda Semua",
+  "resumeAll": "Lanjutkan Semua",
+  "cancelAll": "Batalkan Semua",
+  "clearCompleted": "Hapus yang Selesai",
+  "cleanupStorage": "Bersihkan Penyimpanan",
   "all": "Semua",
-  "active": "Aktif",
   "completed": "Selesai",
   "noDownloadsYet": "Belum ada unduhan",
   "noActiveDownloads": "Tidak ada unduhan aktif",
   "noQueuedDownloads": "Tidak ada unduhan antrian",
   "noCompletedDownloads": "Tidak ada unduhan selesai",
   "noFailedDownloads": "Tidak ada unduhan gagal",
-  "pdfConversionStarted": "Konversi PDF dimulai untuk {contentId}",
   "@pdfConversionStarted": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "cancelAllDownloads": "Batalkan Semua Unduhan",
@@ -315,23 +294,16 @@
   "cleanupConfirmation": "Ini akan menghapus file yatim dan membersihkan unduhan yang gagal. Lanjutkan?",
   "downloadDetails": "Detail Unduhan",
   "status": "Status",
-  "progress": "Progress",
-  "progressPercent": "Progress %",
-  "speed": "Kecepatan",
-  "size": "Ukuran",
+  "progress": "Progres",
+  "progressPercent": "Progres %",
   "started": "Dimulai",
   "ended": "Selesai",
-  "duration": "Durasi",
   "eta": "ETA",
-  "queued": "Antrian",
-  "downloaded": "Diunduh",
-  "resume": "Lanjutkan",
   "failed": "Gagal",
   "downloadListExported": "Daftar unduhan diekspor",
   "downloadAll": "Unduh Semua",
   "downloadRange": "Unduh Rentang",
   "selectDownloadRange": "Pilih Rentang Unduhan",
-  "totalPages": "Total Halaman",
   "useSliderToSelectRange": "Gunakan slider untuk memilih rentang:",
   "orEnterManually": "Atau masukkan secara manual:",
   "startPage": "Halaman Awal",
@@ -343,23 +315,104 @@
   "first10": "10 Pertama",
   "last10": "10 Terakhir",
   "countAlreadyDownloaded": "Dilewati {count} yang sudah diunduh",
-  "newGalleriesToDownload": "• {count} galeri baru untuk didownload",
-  "alreadyDownloaded": "• {count} sudah didownload (akan dilewati)",
-  "downloadNew": "Download {count} Baru",
-  "queuedDownloads": "Mengantri {count} download baru",
-  "downloadInfo": "Download {count} galeri baru?\\n\\nIni mungkin memerlukan waktu dan ruang penyimpanan yang signifikan.",
-  "failedToDownload": "Gagal mendownload galeri",
+  "@countAlreadyDownloaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newGalleriesToDownload": "• {count} galeri baru untuk diunduh",
+  "@newGalleriesToDownload": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alreadyDownloaded": "• {count} sudah diunduh (akan dilewati)",
+  "@alreadyDownloaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadNew": "Unduh {count} Baru",
+  "@downloadNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queuedDownloads": "Mengantri {count} unduhan baru",
+  "@queuedDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadInfo": "Unduh {count} galeri baru?\\n\\nIni mungkin memerlukan waktu dan ruang penyimpanan yang signifikan.",
+  "@downloadInfo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToDownload": "Gagal mengunduh galeri",
   "selectedPagesTo": "Dipilih: Halaman {start} hingga {end}",
+  "@selectedPagesTo": {
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
+  },
   "pagesPercentage": "{count} halaman ({percentage}%)",
+  "@pagesPercentage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "percentage": {
+        "type": "String"
+      }
+    }
+  },
   "rangeDownloadStarted": "Unduhan rentang dimulai: {title} ({pageText})",
+  "@rangeDownloadStarted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "pageText": {
+        "type": "String"
+      }
+    }
+  },
   "opening": "Membuka: {title}",
+  "@opening": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "lastUpdatedLabel": "Diperbarui:",
   "rangeLabel": "Rentang:",
   "ofWord": "dari",
   "waitAndTry": "Tunggu {minutes} menit dan coba lagi",
   "@waitAndTry": {
     "placeholders": {
-      "minutes": {"type": "int"}
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "serviceUnderMaintenance": "Layanan mungkin sedang dalam pemeliharaan",
@@ -378,7 +431,6 @@
   "removeSomeFilters": "Hapus beberapa filter",
   "checkSpelling": "Periksa ejaan",
   "useBroaderSearchTerms": "Gunakan istilah pencarian yang lebih luas",
-  
   "welcomeTitle": "Selamat Datang di Kuron!",
   "welcomeMessage": "Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:",
   "ispBlockingInfo": "🚨 Pemberitahuan Pemblokiran ISP",
@@ -394,14 +446,22 @@
   "getStarted": "Mulai",
   "pleaseGrantAllPermissions": "Harap berikan semua izin yang diperlukan untuk melanjutkan",
   "permissionDenied": "Izin ditolak. Beberapa fitur mungkin tidak berfungsi dengan baik.",
-  
   "loadingFavorites": "Memuat favorit...",
-  "errorLoadingFavorites": "Error Memuat Favorit",
-  "removeFavorite": "Hapus Favorit",
+  "errorLoadingFavorites": "Kesalahan Memuat Favorit",
   "removeFavoriteConfirmation": "Yakin ingin menghapus konten ini dari favorit?",
   "removeAction": "Hapus",
   "deleteFavorites": "Hapus Favorit",
   "deleteFavoritesConfirmation": "Yakin ingin menghapus {count} favorit{s}?",
+  "@deleteFavoritesConfirmation": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "exportFavorites": "Ekspor Favorit",
   "noFavoritesYet": "Belum ada favorit. Mulai tambahkan konten ke favorit Anda!",
   "@noFavoritesYet": {
@@ -410,25 +470,55 @@
   "exportingFavorites": "Mengekspor favorit...",
   "exportComplete": "Ekspor Selesai",
   "exportedFavoritesCount": "Berhasil mengekspor {count} favorit.",
-  "exportFailed": "Ekspor gagal: {error}",
+  "@exportedFavoritesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectedCount": "{count} dipilih",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "selectFavorites": "Pilih favorit",
-  "exportAction": "Ekspor",
-  "refreshAction": "Segarkan",
   "deleteSelected": "Hapus yang dipilih",
   "searchFavorites": "Cari favorit...",
   "selectAll": "Pilih Semua",
-  "clearSelection": "Bersihkan",
   "removingFromFavorites": "Menghapus dari favorit...",
   "removedFromFavorites": "Dihapus dari favorit",
   "failedToRemoveFavorite": "Gagal menghapus favorit: {error}",
+  "@failedToRemoveFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "removedFavoritesCount": "Menghapus {count} favorit",
+  "@removedFavoritesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "failedToRemoveFavorites": "Gagal menghapus favorit: {error}",
-  
+  "@failedToRemoveFavorites": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "appearance": "Tampilan",
   "theme": "Tema",
   "imageQuality": "Kualitas Gambar",
-  "blurThumbnails": "Blur Thumbnail",
+  "blurThumbnails": "Blur Gambar Mini",
   "blurThumbnailsDescription": "Terapkan efek blur pada gambar kartu untuk privasi",
   "gridColumns": "Kolom Grid (Portrait)",
   "reader": "Pembaca",
@@ -445,7 +535,6 @@
   "inactivityThreshold": "Batas Tidak Aktif",
   "daysOfInactivityBeforeCleanup": "Hari tidak aktif sebelum pembersihan",
   "resetToDefault": "Reset ke Default",
-  "resetToDefaults": "Reset ke Default",
   "generalSettings": "Pengaturan Umum",
   "displaySettings": "Tampilan",
   "darkMode": "Mode Gelap",
@@ -464,30 +553,21 @@
   "resetReaderSettings": "Reset Pengaturan Reader",
   "resetReaderSettingsConfirmation": "Ini akan mengatur ulang semua pengaturan pembaca ke nilai default:\n\n",
   "readingModeLabel": "Mode Membaca: Halaman Horizontal",
-  "keepScreenOnLabel": "Tetap Nyalakan Layar: Mati",
-  "showUILabel": "Tampilkan UI: Aktif",
   "areYouSure": "Apakah Anda yakin ingin melanjutkan?",
   "readerSettingsResetSuccess": "Pengaturan pembaca telah direset ke default.",
-  "failedToResetSettings": "Gagal mengatur ulang pengaturan: {error}",
-
   "readingHistory": "Riwayat Baca",
   "clearAllHistory": "Bersihkan Semua Riwayat",
   "manualCleanup": "Pembersihan Manual",
   "cleanupSettings": "Pengaturan Pembersihan",
-  "removeFromHistory": "Hapus dari Riwayat",
   "removeFromHistoryQuestion": "Hapus item ini dari riwayat baca?",
   "cleanup": "Bersihkan",
   "failedToLoadCleanupStatus": "Gagal memuat status pembersihan",
   "manualCleanupConfirmation": "Ini akan melakukan pembersihan berdasarkan pengaturan Anda saat ini. Lanjutkan?",
-  "noReadingHistory": "Tidak Ada Riwayat Baca",
-  "errorLoadingHistory": "Error Memuat Riwayat",
-  
   "nextPage": "Halaman Berikutnya",
   "previousPage": "Halaman Sebelumnya",
   "pageOf": "dari",
   "fullscreen": "Layar Penuh",
   "exitFullscreen": "Keluar Layar Penuh",
-  
   "checkingConnection": "Memeriksa koneksi...",
   "backOnline": "Kembali online! Semua fitur tersedia.",
   "stillNoInternet": "Masih tidak ada koneksi internet.",
@@ -495,7 +575,6 @@
   "noInternetConnection": "Tidak ada koneksi internet",
   "connectionError": "Kesalahan koneksi",
   "serverError": "Kesalahan server",
-  
   "low": "Rendah",
   "medium": "Sedang",
   "high": "Tinggi",
@@ -507,39 +586,29 @@
   "mediumQuality": "Sedang",
   "highQuality": "Tinggi (Kualitas Lebih Baik)",
   "originalQuality": "Asli (Terbesar)",
-  
   "dark": "Gelap",
   "light": "Terang",
   "amoled": "AMOLED",
-  
   "english": "Bahasa Inggris",
   "japanese": "Bahasa Jepang",
   "indonesian": "Bahasa Indonesia",
   "chinese": "Bahasa Tionghoa (Sederhana)",
   "comfortReading": "Pembacaan yang Nyaman",
-  
-  "sortBy": "Urutkan berdasarkan",
   "filterBy": "Filter berdasarkan",
   "recent": "Terbaru",
   "popular": "Populer",
   "oldest": "Terlama",
-  
   "ok": "OK",
-  "cancel": "Batal",
   "exitApp": "Keluar Aplikasi",
   "areYouSureExit": "Apakah Anda yakin ingin keluar dari aplikasi?",
   "exit": "Keluar",
   "delete": "Hapus",
   "confirm": "Konfirmasi",
-  "loading": "Memuat...",
-  "error": "Error",
-  "retry": "Coba Lagi",
   "tryAgain": "Coba Lagi",
   "save": "Simpan",
   "edit": "Edit",
   "close": "Tutup",
   "clear": "Bersihkan",
-  "remove": "Hapus",
   "share": "Bagikan",
   "goBack": "Kembali",
   "yes": "Ya",
@@ -548,20 +617,9 @@
   "next": "Selanjutnya",
   "goToDownloads": "Ke Unduhan",
   "retryAction": "Coba Lagi",
-  
-  "hours": "{count} jam",
-  "days": "{count} hari",
   "unknown": "Tidak diketahui",
-  "justNow": "Baru saja",
-  "daysAgo": "{days}h yang lalu",
-  "hoursAgo": "{hours}j yang lalu",
-  "minutesAgo": "{count}m yang lalu",
-  
   "noData": "Tidak Ada Data",
-  "unknownTitle": "Judul Tidak Diketahui",
-  "offlineContentError": "Error Konten Offline",
-  "downloadError": "Error Unduhan",
-  
+  "downloadError": "Kesalahan Unduhan",
   "other": "Lainnya",
   "confirmResetSettings": "Yakin ingin mengembalikan semua pengaturan ke default?",
   "reset": "Reset",
@@ -573,158 +631,60 @@
   "lastAppAccess": "Akses aplikasi terakhir",
   "oneDay": "1 hari",
   "twoDays": "2 hari",
-  "oneWeek": "1 minggu", 
-  "privacyInfoText": "• Data disimpan di device Anda\n• Tidak dikirim ke server eksternal\n• Hanya untuk meningkatkan performa app\n• Dapat dimatikan kapan saja",
+  "oneWeek": "1 minggu",
+  "privacyInfoText": "• Data disimpan di perangkat Anda\n• Tidak dikirim ke server eksternal\n• Hanya untuk meningkatkan performa aplikasi\n• Dapat dimatikan kapan saja",
   "unlimited": "Tanpa batas",
   "daysValue": "{days} hari",
-  "analyticsSubtitle": "Membantu pengembangan app dengan data lokal (tidak dibagikan)",
-
+  "@daysValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsSubtitle": "Membantu pengembangan aplikasi dengan data lokal (tidak dibagikan)",
   "@downloadStarted": {
     "placeholders": {
-      "title": {"type": "String"}
-    }
-  },
-  "@countAlreadyDownloaded": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@newGalleriesToDownload": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@alreadyDownloaded": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@downloadNew": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@queuedDownloads": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@downloadInfo": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@selectedPagesTo": {
-    "placeholders": {
-      "start": {"type": "int"},
-      "end": {"type": "int"}
-    }
-  },
-  "@pagesPercentage": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "percentage": {"type": "String"}
-    }
-  },
-  "@rangeDownloadStarted": {
-    "placeholders": {
-      "title": {"type": "String"},
-      "pageText": {"type": "String"}
-    }
-  },
-  "@opening": {
-    "placeholders": {
-      "title": {"type": "String"}
-    }
-  },
-  "@deleteFavoritesConfirmation": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "s": {"type": "String"}
-    }
-  },
-  "@exportedFavoritesCount": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@exportFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "@selectedCount": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@failedToRemoveFavorite": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "@removedFavoritesCount": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "@failedToRemoveFavorites": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "@hours": {
-    "placeholders": {
-      "count": {"type": "int"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "@days": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-  "@daysAgo": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-  "@hoursAgo": {
-    "placeholders": {
-      "hours": {"type": "int"}
-    }
-  },
-  "@minutesAgo": {
-    "placeholders": {
-      "minutes": {"type": "int"}
-    }
-  },
-  "@daysValue": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-
+  "days": "{count} hari",
   "loadingContent": "Memuat konten...",
   "loadingError": "Kesalahan Memuat",
   "jumpToPage": "Loncat ke Halaman",
   "pageInputLabel": "Halaman (1-{maxPages})",
   "@pageInputLabel": {
     "placeholders": {
-      "maxPages": {"type": "int"}
+      "maxPages": {
+        "type": "int"
+      }
     }
   },
   "pageOfPages": "Halaman {current} dari {total}",
   "@pageOfPages": {
     "placeholders": {
-      "current": {"type": "int"},
-      "total": {"type": "int"}
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "jump": "Loncat",
   "readerSettings": "Pengaturan Pembaca",
   "readingMode": "Mode Baca",
   "horizontalPages": "Halaman Horizontal",
-  "verticalPages": "Halaman Vertikal", 
+  "verticalPages": "Halaman Vertikal",
   "continuousScroll": "Gulir Terus Menerus",
   "keepScreenOnLabel": "Jaga Layar Hidup: Mati",
   "showUILabel": "Tampilkan UI: Hidup",
@@ -733,49 +693,42 @@
   "platformNotSupported": "Platform Tidak Didukung",
   "platformNotSupportedBody": "Kuron dirancang khusus untuk perangkat Android.",
   "platformNotSupportedInstall": "Silakan pasang dan jalankan aplikasi ini di perangkat Android.",
-  "storagePermissionRequired": "Izin Penyimpanan Diperlukan",
   "storagePermissionExplanation": "Aplikasi ini membutuhkan izin penyimpanan untuk mengunduh file ke perangkat Anda. File akan disimpan di folder Downloads/nhasix.",
   "grantPermission": "Berikan Izin",
   "permissionRequired": "Izin Diperlukan",
   "storagePermissionSettingsPrompt": "Izin penyimpanan diperlukan untuk mengunduh file. Silakan berikan izin penyimpanan di pengaturan aplikasi.",
   "openSettings": "Buka Pengaturan",
-  
   "noReadingHistory": "Tidak Ada Riwayat Baca",
   "readingHistoryMessage": "Riwayat bacaan Anda akan muncul di sini saat Anda membaca konten.",
-  "startReading": "Mulai Membaca", 
+  "startReading": "Mulai Membaca",
   "browsePopularContent": "Jelajahi konten populer",
   "searchSomethingInteresting": "Cari sesuatu yang menarik",
   "checkOutFeaturedItems": "Lihat item unggulan",
-  
   "appSubtitleDescription": "Klien tidak resmi Nhentai",
   "downloadedGalleries": "Galeri yang diunduh",
   "favoriteGalleries": "Galeri favorit",
   "viewHistory": "Lihat riwayat",
-  
   "openInBrowser": "Buka di browser",
   "downloadAllGalleries": "Unduh semua galeri di halaman ini",
-  
   "featureDisabledTitle": "Fitur Tidak Tersedia",
-  "downloadFeatureDisabled": "Fitur download tidak tersedia untuk source ini",
-  "favoriteFeatureDisabled": "Fitur favorit tidak tersedia untuk source ini",
+  "downloadFeatureDisabled": "Fitur unduhan tidak tersedia untuk sumber ini",
+  "favoriteFeatureDisabled": "Fitur favorit tidak tersedia untuk sumber ini",
   "featureNotAvailable": "Fitur ini saat ini tidak tersedia",
-  
   "chaptersTitle": "Chapter",
   "chapterCount": "{count} chapter",
   "@chapterCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "readChapter": "Baca",
-  "downloadChapter": "Download Chapter",
-  
+  "downloadChapter": "Unduh Chapter",
   "enterPageNumber": "Masukkan nomor halaman (1 - {totalPages})",
-  "pageNumber": "Nomor halaman",
   "go": "Pergi",
   "validPageNumberError": "Silakan masukkan nomor halaman yang valid antara 1 dan {totalPages}",
   "tapToJump": "Ketuk untuk loncat",
-  
   "loadingContentTitle": "Memuat Konten",
   "loadingContentDetails": "Memuat Detail Konten",
   "fetchingMetadata": "Mengambil metadata dan gambar...",
@@ -794,7 +747,6 @@
   "shareFailed": "Berbagi gagal, tetapi link telah disalin ke clipboard",
   "downloadStartedFor": "Unduhan dimulai untuk \"{title}\"",
   "viewDownloadsAction": "Lihat",
-  "failedToStartDownload": "Gagal memulai unduhan. Silakan coba lagi.",
   "linkCopiedToClipboard": "Link telah disalin ke clipboard",
   "failedToCopyLink": "Gagal menyalin link. Silakan coba lagi.",
   "copiedLink": "Link Disalin",
@@ -805,24 +757,17 @@
   "goingOnline": "Membuka online...",
   "idLabel": "ID",
   "pagesLabel": "Halaman",
-  "languageLabel": "Bahasa",
   "artistLabel": "Artis",
-  "charactersLabel": "Karakter",
-  "parodiesLabel": "Parodi",
-  "groupsLabel": "Grup",
   "uploadedLabel": "Diunggah",
   "viewAllChapters": "Lihat Semua Chapter",
   "searchChapters": "Cari chapter...",
   "noChaptersFound": "Tidak ada chapter ditemukan",
   "favoritesLabel": "Favorit",
-  "tagsLabel": "Tag",
-  "artistsLabel": "Artis",
   "relatedLabel": "Terkait",
   "yearAgo": "{count} tahun{plural} lalu",
   "monthAgo": "{count} bulan{plural} lalu",
-  "dayAgo": "{count} hari{plural} lalu", 
+  "dayAgo": "{count} hari{plural} lalu",
   "hourAgo": "{count} jam{plural} lalu",
-  
   "selectFavoritesTooltip": "Pilih favorit",
   "deleteSelectedTooltip": "Hapus yang dipilih",
   "exportAction": "Ekspor",
@@ -841,49 +786,40 @@
   "exportingFavoritesMessage": "Mengekspor favorit...",
   "favoritesExportedMessage": "Favorit berhasil diekspor",
   "failedToExportFavoritesMessage": "Gagal mengekspor favorit",
-  
   "searchFavoritesHint": "Cari favorit...",
   "searchOfflineContentHint": "Cari konten offline...",
   "failedToLoadPage": "Gagal memuat halaman {pageNumber}",
   "@failedToLoadPage": {
     "placeholders": {
-      "pageNumber": {"type": "int"}
+      "pageNumber": {
+        "type": "int"
+      }
     }
   },
+  "pageNumber": "Nomor halaman",
   "failedToLoad": "Gagal memuat",
-  "loginRequiredForAction": "Login diperlukan untuk tindakan ini",
-  "login": "Login",
+  "loginRequiredForAction": "Masuk diperlukan untuk tindakan ini",
+  "login": "Masuk",
   "offlineContentTitle": "Konten Offline",
-  "offlineContentError": "Error Konten Offline",
+  "offlineContentError": "Kesalahan Konten Offline",
   "favorited": "Difavoritkan",
   "favorite": "Favorit",
-  "errorLoadingHistory": "Error Memuat Riwayat",
+  "errorLoadingHistory": "Kesalahan Memuat Riwayat",
   "errorLoadingFavoritesTitle": "Kesalahan Memuat Favorit",
-  
   "filterDataTitle": "Filter Data",
-  "clearAllAction": "Bersihkan Semua",
   "searchFilterHint": "Cari {filterType}...",
   "selectedCountFormat2": "Dipilih ({count})",
   "errorLoadingFilterDataTitle": "Kesalahan memuat data filter",
   "contentDeleted": "Konten dihapus",
-  "browseDownloads": "Lihat Unduhan",
   "noFilterTypeAvailable": "Tidak ada {filterType} tersedia",
   "noResultsFoundForQuery": "Tidak ada hasil untuk \"{query}\"",
-  
   "contentNotFoundTitle": "Konten Tidak Ditemukan",
   "contentNotFoundMessage": "Konten dengan ID \"{contentId}\" tidak ditemukan.",
   "filterCategoriesTitle": "Kategori Filter",
-  "tagsLabel": "Tag",
-  "artistsLabel": "Artis",
-  "charactersLabel": "Karakter", 
-  "parodiesLabel": "Parodi",
-  "groupsLabel": "Grup",
-  
   "searchTitle": "Cari",
   "advancedSearchTitle": "Pencarian Lanjutan",
   "enterSearchQueryHint": "Masukkan kata kunci pencarian (contoh: \"big breasts english\")",
   "popularSearchesTitle": "Pencarian Populer",
-  "recentSearchesTitle": "Pencarian Terbaru",
   "clearAllAction": "Bersihkan Semua",
   "pressSearchButtonMessage": "Tekan tombol Cari untuk menemukan konten dengan filter saat ini",
   "searchingMessage": "Mencari...",
@@ -891,12 +827,10 @@
   "viewInMainAction": "Lihat di Utama",
   "searchErrorTitle": "Kesalahan Pencarian",
   "noResultsFoundTitle": "Tidak ada hasil",
-  
   "pageText": "halaman {pageNumber}",
   "pagesText": "halaman {startPage}-{endPage}",
   "offlineStatus": "OFFLINE",
   "onlineStatus": "ONLINE",
-  
   "sortBy": "Urutkan berdasarkan",
   "errorOccurred": "Terjadi kesalahan",
   "tapToRetry": "Ketuk untuk mencoba lagi",
@@ -908,10 +842,9 @@
   "sendReportText": "Kirim Laporan",
   "technicalDetailsTitle": "Detail Teknis",
   "reportSentText": "Laporan terkirim!",
-  
   "suggestionCheckConnection": "Periksa koneksi internet Anda",
-  "suggestionTryWifiMobile": "Coba beralih antara WiFi dan data seluler",
-  "suggestionRestartRouter": "Restart router jika menggunakan WiFi",
+  "suggestionTryWifiMobile": "Coba beralih antara Wi-Fi dan data seluler",
+  "suggestionRestartRouter": "Restart router jika menggunakan Wi-Fi",
   "suggestionCheckWebsite": "Periksa apakah situs web sedang down",
   "noContentFoundWithQuery": "Tidak ada konten ditemukan untuk \"{query}\". Coba sesuaikan istilah pencarian atau filter.",
   "@noContentFoundWithQuery": {
@@ -926,125 +859,129 @@
   "suggestionRemoveFilters": "Hapus beberapa filter",
   "suggestionCheckSpelling": "Periksa ejaan",
   "suggestionUseBroaderTerms": "Gunakan istilah pencarian yang lebih luas",
-  "underMaintenanceTitle": "Sedang Maintenance",
+  "underMaintenanceTitle": "Sedang Pemeliharaan",
   "underMaintenanceMessage": "Layanan sedang dalam pemeliharaan. Silakan coba lagi nanti.",
-  "suggestionMaintenanceHours": "Maintenance biasanya memakan waktu beberapa jam",
-  "suggestionCheckSocial": "Periksa media sosial untuk update",
+  "suggestionMaintenanceHours": "Pemeliharaan biasanya memakan waktu beberapa jam",
+  "suggestionCheckSocial": "Periksa media sosial untuk pembaruan",
   "suggestionTryLater": "Coba lagi nanti",
-  
   "includeFilter": "Sertakan",
   "excludeFilter": "Kecualikan",
-  
-  "overallProgress": "Progress Keseluruhan",
-  "total": "Total",
-  "active": "Aktif", 
+  "overallProgress": "Progres Keseluruhan",
+  "active": "Aktif",
   "queued": "Antri",
-  "done": "Selesai",
   "speed": "Kecepatan",
-  "downloaded": "Terunduh",
   "downloadsFailed": "{count} unduhan gagal",
   "@downloadsFailed": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
   "view": "Lihat",
   "processing": "Memproses...",
-  
   "loading": "Memuat...",
-  
   "unknownTitle": "Judul Tidak Diketahui",
   "readingCompleted": "Selesai",
-  "readAgain": "Baca Lagi", 
+  "readAgain": "Baca Lagi",
   "continueReading": "Lanjutkan Membaca",
   "removeFromHistory": "Hapus dari Riwayat",
   "lessThanOneMinute": "Kurang dari 1 menit",
   "readingTime": "waktu baca",
-  
-  "downloadActions": "Tindakan Download",
+  "downloadActions": "Tindakan Unduhan",
   "pause": "Jeda",
   "resume": "Lanjutkan",
   "cancel": "Batalkan",
   "retry": "Coba Lagi",
-  "convertToPdf": "Ubah ke PDF",
   "details": "Detail",
   "remove": "Hapus",
-  
   "downloadActionPause": "Jeda",
   "downloadActionResume": "Lanjutkan",
   "downloadActionCancel": "Batalkan",
-  "downloadActionRetry": "Coba Lagi", 
+  "downloadActionRetry": "Coba Lagi",
   "downloadActionConvertToPdf": "Ubah ke PDF",
   "downloadActionDetails": "Detail",
   "downloadActionRemove": "Hapus",
-  
   "downloadPagesRangeFormat": "{downloaded}/{total} (Halaman {start}-{end} dari {totalPages})",
   "@downloadPagesRangeFormat": {
     "placeholders": {
-      "downloaded": {"type": "int"},
-      "total": {"type": "int"},
-      "start": {"type": "int"},
-      "end": {"type": "int"},
-      "totalPages": {"type": "int"}
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
     }
   },
+  "totalPages": "Total Halaman",
   "downloadPagesFormat": "{downloaded}/{total}",
   "@downloadPagesFormat": {
     "placeholders": {
-      "downloaded": {"type": "int"},
-      "total": {"type": "int"}
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
-  
+  "downloaded": "Terunduh",
   "downloadContentTitle": "Konten {contentId}",
   "@downloadContentTitle": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "downloadEtaLabel": "Perkiraan: {duration}",
   "@downloadEtaLabel": {
     "placeholders": {
-      "duration": {"type": "String"}
+      "duration": {
+        "type": "String"
+      }
     }
   },
-  
-  "downloadSettingsTitle": "Pengaturan Download",
+  "duration": "Durasi",
+  "downloadSettingsTitle": "Pengaturan Unduhan",
   "performanceSection": "Performa",
-  "maxConcurrentDownloads": "Maks Download Bersamaan",
-  "concurrentDownloadsWarning": "Nilai tinggi mungkin menggunakan lebih banyak bandwidth dan resource perangkat",
+  "maxConcurrentDownloads": "Maks Unduhan Bersamaan",
+  "concurrentDownloadsWarning": "Nilai tinggi mungkin menggunakan lebih banyak bandwidth dan sumber daya perangkat",
   "imageQualityLabel": "Kualitas Gambar",
   "autoRetrySection": "Ulangi Otomatis",
-  "autoRetryFailedDownloads": "Ulangi Download Gagal Otomatis",
-  "autoRetryDescription": "Otomatis ulangi download yang gagal",
+  "autoRetryFailedDownloads": "Ulangi Unduhan Gagal Otomatis",
+  "autoRetryDescription": "Otomatis ulangi unduhan yang gagal",
   "maxRetryAttempts": "Maks Percobaan Ulang",
   "networkSection": "Jaringan",
-  "wifiOnlyLabel": "Hanya WiFi",
-  "wifiOnlyDescription": "Hanya download saat terhubung ke WiFi",
-  "downloadTimeoutLabel": "Timeout Download",
+  "wifiOnlyLabel": "Hanya Wi-Fi",
+  "wifiOnlyDescription": "Hanya unduh saat terhubung ke Wi-Fi",
+  "downloadTimeoutLabel": "Batas Waktu Unduhan",
   "notificationsSection": "Notifikasi",
   "enableNotificationsLabel": "Aktifkan Notifikasi",
-  "enableNotificationsDescription": "Tampilkan notifikasi untuk progress download",
+  "enableNotificationsDescription": "Tampilkan notifikasi untuk progres unduhan",
   "minutesUnit": "mnt",
-  
   "searchContentHint": "Cari konten...",
   "hideFiltersTooltip": "Sembunyikan filter",
   "showMoreFiltersTooltip": "Tampilkan lebih banyak filter",
   "advancedFiltersTitle": "Filter Lanjutan",
   "sortByLabel": "Urutkan berdasarkan",
-  "languageLabel": "Bahasa",
-  "categoryLabel": "Kategori",
   "recentSearchesTitle": "Pencarian Terbaru",
   "includeTagsLabel": "Sertakan tag (dipisahkan koma)",
   "includeTagsHint": "contoh: romansa, komedi, sekolah",
-  "excludeTagsLabel": "Kecualikan tag (dipisahkan koma)",
   "excludeTagsHint": "contoh: horor, kekerasan",
-  "artistsLabel": "Artis (dipisahkan koma)",
   "artistsHint": "contoh: artis1, artis2",
-  "charactersLabel": "Karakter",
-  "parodiesLabel": "Parodi",
-  "groupsLabel": "Grup (dipisahkan koma)",
   "pageCountRangeTitle": "Rentang Jumlah Halaman",
   "minPagesLabel": "Halaman minimal",
   "maxPagesLabel": "Halaman maksimal",
@@ -1052,8 +989,6 @@
   "popularTagsTitle": "Tag Populer",
   "filtersActiveLabel": "aktif",
   "clearAllFilters": "Hapus Semua",
-  
-
   "appSubtitle": "Pengalaman Membaca yang Ditingkatkan",
   "initializingApp": "Menginisialisasi Aplikasi...",
   "settingUpComponents": "Menyiapkan komponen dan memeriksa koneksi...",
@@ -1061,11 +996,12 @@
   "connectionFailed": "Koneksi Gagal",
   "readyToGo": "Siap Digunakan!",
   "launchingApp": "Meluncurkan aplikasi utama...",
-  
   "selectedItemsCount": "{count} terpilih",
   "@selectedItemsCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "removeFavorite": "Hapus Favorit",
@@ -1074,10 +1010,9 @@
   "someFeaturesLimited": "Beberapa fitur terbatas. Sambungkan ke internet untuk akses penuh.",
   "wifi": "WIFI",
   "ethernet": "ETHERNET",
-  "mobile": "MOBILE", 
+  "mobile": "MOBILE",
   "online": "ONLINE",
   "offlineMode": "Mode Offline",
-  
   "applySearch": "Terapkan Pencarian",
   "addFiltersToSearch": "Tambahkan filter di atas untuk mengaktifkan pencarian",
   "startSearching": "Mulai mencari",
@@ -1087,7 +1022,6 @@
   "offlineSomeFeaturesUnavailable": "Anda sedang offline. Beberapa fitur mungkin tidak tersedia.",
   "usingDownloadedContentOnly": "Menggunakan konten yang diunduh saja",
   "onlineModeWithNetworkAccess": "Mode online dengan akses jaringan",
-
   "tagsScreenPlaceholder": "Layar Tag - Akan diimplementasikan",
   "artistsScreenPlaceholder": "Layar Artis - Akan diimplementasikan",
   "statusScreenPlaceholder": "Layar Status - Akan diimplementasikan",
@@ -1095,922 +1029,1044 @@
   "pageNotFoundWithUri": "Halaman tidak ditemukan: {uri}",
   "@pageNotFoundWithUri": {
     "placeholders": {
-      "uri": {"type": "String"}
+      "uri": {
+        "type": "String"
+      }
     }
   },
   "goHome": "Kembali ke Beranda",
-
-   "debugThemeInfo": "DEBUG: Info Tema",
-   "lightTheme": "Terang",
-   "darkTheme": "Gelap",
-   "amoledTheme": "AMOLED",
-
-   "systemMessages": "Pesan Sistem dan Layanan Latar Belakang",
-
-   "notificationMessages": "Pesan Notifikasi",
-   "convertingToPdf": "Mengkonversi ke PDF",
-   "convertingToPdfWithTitle": "Mengkonversi {title} ke PDF...",
-   "convertingToPdfProgress": "Mengkonversi ke PDF ({progress}%)",
-   "convertingToPdfProgressWithTitle": "Mengkonversi {title} ke PDF ({progress}%)",
-   "pdfCreatedSuccessfully": "PDF Berhasil Dibuat",
-   "pdfCreatedWithParts": "{title} dikonversi ke {partsCount} file PDF",
-   "pdfConversionFailed": "Konversi PDF Gagal",
-   "pdfConversionFailedWithError": "Gagal mengkonversi {title} ke PDF: {error}",
-   "downloadStarted": "Unduhan Dimulai",
-   "downloadingWithTitle": "Mengunduh: {title}",
-   "downloadingProgress": "Mengunduh ({progress}%)",
-   "downloadComplete": "Unduhan Selesai",
-   "downloadedWithTitle": "Diunduh: {title}",
-   "downloadFailed": "Unduhan Gagal",
-   "downloadFailedWithTitle": "Gagal: {title}",
-   "downloadPaused": "Dijeda",
-   "downloadResumed": "Dilanjutkan",
-   "downloadCancelled": "Dibatalkan",
-   "downloadRetry": "Coba Lagi",
-   "downloadOpen": "Buka",
-   "pdfOpen": "Buka PDF",
-   "pdfShare": "Bagikan",
-   "pdfRetry": "Coba Lagi PDF",
-
-   "downloadServiceMessages": "Pesan Layanan Unduhan",
-   "downloadRangeInfo": " (Halaman {startPage}-{endPage})",
-   "downloadRangeComplete": " (Halaman {startPage}-{endPage})",
-   "invalidPageRange": "Rentang halaman tidak valid: {start}-{end} (total: {total})",
-   "storagePermissionRequired": "Izin penyimpanan diperlukan untuk unduhan. Harap berikan izin penyimpanan di pengaturan aplikasi.",
-   "noDataReceived": "Tidak ada data yang diterima untuk gambar: {url}",
-   "createdNoMediaFile": "File .nomedia dibuat untuk privasi: {path}",
-   "privacyProtectionEnsured": "Perlindungan privasi dipastikan untuk unduhan yang ada",
-
-   "pdfConversionMessages": "Pesan Layanan Konversi PDF",
-   "pdfConversionStarted": "Konversi PDF dimulai untuk {contentId}",
-   "pdfConversionCompleted": "Konversi PDF berhasil diselesaikan untuk {contentId}",
-   "pdfConversionFailed": "Konversi PDF gagal untuk {contentId}: {error}",
-   "pdfPartProcessing": "Memproses bagian {part} dalam isolate...",
-   "pdfSingleProcessing": "Memproses PDF tunggal dalam isolate...",
-   "pdfSplitRequired": "Memisahkan menjadi {totalParts} bagian ({totalPages} halaman)",
-   "pdfCreatedFiles": "Dibuat {partsCount} file PDF dengan {pageCount} total halaman",
-   "pdfNoImagesProvided": "Tidak ada gambar yang disediakan untuk konversi PDF",
-   "pdfFailedToCreatePart": "Gagal membuat bagian PDF {part}: {error}",
-   "pdfFailedToCreate": "Gagal membuat PDF: {error}",
-   "pdfOutputDirectoryCreated": "Direktori output PDF dibuat: {path}",
-   "pdfUsingFallbackDirectory": "Menggunakan direktori fallback: {path}",
-   "pdfInfoSaved": "Info PDF disimpan untuk {contentId} ({partsCount} bagian, {pageCount} halaman)",
-   "pdfExistsForContent": "PDF ada untuk {contentId}: {exists}",
-   "pdfFoundFiles": "Ditemukan {count} file PDF untuk {contentId}",
-   "pdfDeletedFiles": "Berhasil menghapus {count} file PDF untuk {contentId}",
-   "pdfTotalSize": "Total ukuran PDF untuk {contentId}: {sizeBytes} bytes",
-   "pdfCleanupStarted": "Memulai pembersihan PDF, menghapus file yang lebih lama dari {maxAge} hari",
-   "pdfCleanupCompleted": "Pembersihan selesai, menghapus {deletedCount} file PDF lama",
-   "pdfStatistics": "Statistik PDF - {totalFiles} file, {totalSizeFormatted} total ukuran, {uniqueContents} konten unik, {averageFilesPerContent} rata-rata file per konten",
-
-   "historyCleanupMessages": "Pesan Layanan Pembersihan Riwayat",
-   "historyCleanupServiceInitialized": "Layanan Pembersihan Riwayat diinisialisasi",
-   "historyCleanupServiceDisposed": "Layanan Pembersihan Riwayat dibuang",
-   "autoCleanupDisabled": "Pembersihan otomatis riwayat dinonaktifkan",
-   "cleanupServiceStarted": "Layanan pembersihan dimulai dengan interval {intervalHours} jam",
-   "performingHistoryCleanup": "Melakukan pembersihan riwayat: {reason}",
-   "historyCleanupCompleted": "Pembersihan riwayat selesai: membersihkan {clearedCount} entri ({reason})",
-   "manualHistoryCleanup": "Melakukan pembersihan riwayat manual",
-   "updatedLastAppAccess": "Memperbarui waktu akses aplikasi terakhir",
-   "updatedLastCleanupTime": "Memperbarui waktu pembersihan terakhir",
-   "intervalCleanup": "Pembersihan interval ({intervalHours} jam)",
-   "inactivityCleanup": "Pembersihan tidak aktif ({inactivityDays} hari)",
-   "maxAgeCleanup": "Pembersihan usia maksimal ({maxDays} hari)",
-   "initialCleanupSetup": "Pengaturan pembersihan awal",
-   "shouldCleanupOldHistory": "Harus membersihkan riwayat lama: {shouldCleanup}",
-
-   "analyticsMessages": "Pesan Layanan Analytics",
-   "analyticsServiceInitialized": "Layanan analytics diinisialisasi - pelacakan {enabled}",
-   "analyticsTrackingEnabled": "Pelacakan analytics diaktifkan oleh pengguna",
-   "analyticsTrackingDisabled": "Pelacakan analytics dinonaktifkan oleh pengguna - data dibersihkan",
-   "analyticsDataCleared": "Data analytics dibersihkan atas permintaan pengguna",
-   "analyticsServiceDisposed": "Layanan analytics dibuang",
-   "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
-   "appStartedEvent": "Event aplikasi dimulai dilacak",
-   "sessionEndEvent": "Event akhir sesi dilacak ({minutes} menit)",
-   "analyticsEnabledEvent": "Event analytics diaktifkan dilacak",
-   "analyticsDisabledEvent": "Event analytics dinonaktifkan dilacak",
-   "screenViewEvent": "Tampilan layar dilacak: {screenName}",
-   "userActionEvent": "Aksi pengguna dilacak: {action}",
-   "performanceEvent": "Performa dilacak: {operation} ({durationMs}ms)",
-   "errorEvent": "Error dilacak: {errorType} - {errorMessage}",
-   "featureUsageEvent": "Penggunaan fitur dilacak: {feature}",
-   "readingSessionEvent": "Sesi membaca dilacak: {contentId} ({minutes}mnt, {pages} halaman)",
-
-   "offlineManagerMessages": "Pesan Manajer Konten Offline",
-   "offlineContentAvailable": "Konten {contentId} tersedia offline: {available}",
-   "offlineContentPath": "Path konten offline untuk {contentId}: {path}",
-   "foundExistingFiles": "Ditemukan {count} file yang sudah diunduh",
-   "offlineImageUrlsFound": "Ditemukan {count} URL gambar offline untuk {contentId}",
-   "offlineContentIdsFound": "Ditemukan {count} ID konten offline",
-   "searchingOfflineContent": "Mencari konten offline untuk: {query}",
-   "offlineContentMetadata": "Metadata konten offline untuk {contentId}: {source}",
-   "offlineContentCreated": "Konten offline dibuat untuk {contentId}",
-   "offlineStorageUsage": "Penggunaan penyimpanan offline: {sizeBytes} bytes",
-   "cleanupOrphanedFilesStarted": "Memulai pembersihan file offline yang yatim piatu",
-   "cleanupOrphanedFilesCompleted": "Pembersihan file offline yang yatim piatu selesai",
-   "removedOrphanedDirectory": "Direktori yatim piatu dihapus: {path}",
-
-   "daysAgo": "{count} hari{suffix} yang lalu",
-   "@daysAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "hoursAgo": "{count} jam{suffix} yang lalu",
-   "@hoursAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "minutesAgo": "{count} menit{suffix} yang lalu",
-   "@minutesAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "justNow": "Baru saja",
-
-   "queryLabel": "Kueri",
-   "tagsLabel": "Tag",
-   "excludeTagsLabel": "Kecualikan Tag",
-   "groupsLabel": "Grup",
-   "excludeGroupsLabel": "Kecualikan Grup", 
-   "charactersLabel": "Karakter",
-   "excludeCharactersLabel": "Kecualikan Karakter",
-   "parodiesLabel": "Parodi",
-   "excludeParodiesLabel": "Kecualikan Parodi",
-   "artistsLabel": "Artis",
-   "excludeArtistsLabel": "Kecualikan Artis",
-   "languageLabel": "Bahasa",
-   "categoryLabel": "Kategori",
-
-   "hours": "{count}j",
-   "@hours": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "minutes": "{count}m",
-   "@minutes": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "seconds": "{count}d",
-   "@seconds": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-
-   "loadingUserPreferences": "Memuat preferensi pengguna",
-   "successfullyLoadedUserPreferences": "Berhasil memuat preferensi pengguna",
-   "invalidColumnsPortraitValue": "Nilai kolom potret tidak valid: {value}",
-   "@invalidColumnsPortraitValue": {
-     "placeholders": {
-       "value": {"type": "int"}
-     }
-   },
-   "invalidColumnsLandscapeValue": "Nilai kolom lanskap tidak valid: {value}",
-   "@invalidColumnsLandscapeValue": {
-     "placeholders": {
-       "value": {"type": "int"}
-     }
-   },
-   "updatingSettingsViaPreferencesService": "Memperbarui pengaturan melalui PreferencesService",
-   "successfullyUpdatedSettings": "Berhasil memperbarui pengaturan",
-   "failedToUpdateSetting": "Gagal memperbarui pengaturan: {error}",
-   "@failedToUpdateSetting": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "resettingAllSettingsToDefaults": "Mereset semua pengaturan ke default",
-   "successfullyResetAllSettingsToDefaults": "Berhasil mereset semua pengaturan ke default",
-   "failedToResetSettings": "Gagal mereset pengaturan: {error}",
-   "@failedToResetSettings": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "settingsNotLoaded": "Pengaturan tidak dimuat",
-   "exportingSettings": "Mengekspor pengaturan",
-   "successfullyExportedSettings": "Berhasil mengekspor pengaturan",
-   "failedToExportSettings": "Gagal mengekspor pengaturan: {error}",
-   "@failedToExportSettings": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "importingSettings": "Mengimpor pengaturan",
-   "successfullyImportedSettings": "Berhasil mengimpor pengaturan",
-   "failedToImportSettings": "Gagal mengimpor pengaturan: {error}",
-   "@failedToImportSettings": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "unableToSyncSettings": "Tidak dapat menyinkronkan pengaturan. Perubahan akan disimpan secara lokal.",
-   "@unableToSyncSettings": {
-     "description": "Pesan kesalahan ketika pengaturan tidak dapat disinkronkan"
-   },
-   "unableToSaveSettings": "Tidak dapat menyimpan pengaturan. Silakan periksa penyimpanan perangkat.",
-   "@unableToSaveSettings": {
-     "description": "Pesan kesalahan ketika pengaturan tidak dapat disimpan karena masalah penyimpanan"
-   },
-   "failedToUpdateSettings": "Gagal memperbarui pengaturan. Silakan coba lagi.",
-   "@failedToUpdateSettings": {
-     "description": "Pesan kesalahan umum ketika pembaruan pengaturan gagal"
-   },
-
-   "loadingHistory": "Memuat riwayat",
-   "noHistoryFound": "Tidak ada riwayat ditemukan",
-   "loadedHistoryEntries": "Memuat {count} entri riwayat",
-   "@loadedHistoryEntries": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "failedToLoadHistory": "Gagal memuat riwayat: {error}",
-   "@failedToLoadHistory": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "loadingMoreHistory": "Memuat lebih banyak riwayat (halaman {page})",
-   "@loadingMoreHistory": {
-     "placeholders": {
-       "page": {"type": "int"}
-     }
-   },
-   "loadedMoreHistoryEntries": "Memuat {count} entri lagi, total: {total}",
-   "@loadedMoreHistoryEntries": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "total": {"type": "int"}
-     }
-   },
-   "refreshingHistory": "Menyegarkan riwayat",
-   "refreshedHistoryWithEntries": "Riwayat disegarkan dengan {count} entri",
-   "@refreshedHistoryWithEntries": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "failedToRefreshHistory": "Gagal menyegarkan riwayat: {error}",
-   "@failedToRefreshHistory": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "clearingAllHistory": "Menghapus semua riwayat",
-   "allHistoryCleared": "Semua riwayat dihapus",
-   "failedToClearHistory": "Gagal menghapus riwayat: {error}",
-   "@failedToClearHistory": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "removingHistoryItem": "Menghapus item riwayat: {contentId}",
-   "@removingHistoryItem": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "removedHistoryItem": "Item riwayat dihapus: {contentId}",
-   "@removedHistoryItem": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "failedToRemoveHistoryItem": "Gagal menghapus item riwayat: {error}",
-   "@failedToRemoveHistoryItem": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "performingManualHistoryCleanup": "Melakukan pembersihan riwayat manual",
-   "manualCleanupCompleted": "Pembersihan manual selesai",
-   "failedToPerformCleanup": "Gagal melakukan pembersihan: {error}",
-   "@failedToPerformCleanup": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "updatingCleanupSettings": "Memperbarui pengaturan pembersihan",
-   "cleanupSettingsUpdated": "Pengaturan pembersihan diperbarui",
-
-   "addingContentToFavorites": "Menambahkan konten ke favorit: {title}",
-   "@addingContentToFavorites": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "successfullyAddedToFavorites": "Berhasil ditambahkan ke favorit: {title}",
-   "@successfullyAddedToFavorites": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "contentNotInFavorites": "Konten {contentId} tidak ada di favorit, melewati penghapusan",
-   "@contentNotInFavorites": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "callingRemoveFromFavoritesUseCase": "Memanggil removeFromFavoritesUseCase dengan parameter: {params}",
-   "@callingRemoveFromFavoritesUseCase": {
-     "placeholders": {
-       "params": {"type": "String"}
-     }
-   },
-   "successfullyCalledRemoveFromFavoritesUseCase": "Berhasil memanggil removeFromFavoritesUseCase",
-   "updatingFavoritesListInState": "Memperbarui daftar favorit di state, menghapus contentId: {contentId}",
-   "@updatingFavoritesListInState": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "favoritesCountBeforeAfter": "Jumlah favorit: sebelum={before}, setelah={after}",
-   "@favoritesCountBeforeAfter": {
-     "placeholders": {
-       "before": {"type": "int"},
-       "after": {"type": "int"}
-     }
-   },
-   "stateUpdatedSuccessfully": "State berhasil diperbarui",
-   "successfullyRemovedFromFavorites": "Berhasil dihapus dari favorit: {contentId}",
-   "@successfullyRemovedFromFavorites": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "errorRemovingContentFromFavorites": "Kesalahan menghapus konten {contentId} dari favorit: {error}",
-   "@errorRemovingContentFromFavorites": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "removingFavoritesInBatch": "Menghapus {count} favorit dalam batch",
-   "@removingFavoritesInBatch": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "successfullyRemovedFavoritesInBatch": "Berhasil menghapus {count} favorit dalam batch",
-   "@successfullyRemovedFavoritesInBatch": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "searchingFavoritesWithQuery": "Mencari favorit dengan query: {query}",
-   "@searchingFavoritesWithQuery": {
-     "placeholders": {
-       "query": {"type": "String"}
-     }
-   },
-   "foundFavoritesMatchingQuery": "Ditemukan {count} favorit yang cocok dengan query",
-   "@foundFavoritesMatchingQuery": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "clearingFavoritesSearch": "Menghapus pencarian favorit",
-   "exportingFavoritesData": "Mengekspor data favorit",
-   "successfullyExportedFavorites": "Berhasil mengekspor {count} favorit",
-   "@successfullyExportedFavorites": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "importingFavoritesData": "Mengimpor data favorit",
-   "successfullyImportedFavorites": "Berhasil mengimpor {count} favorit",
-   "@successfullyImportedFavorites": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "failedToImportFavorite": "Gagal mengimpor favorit: {error}",
-   "@failedToImportFavorite": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "retryingFavoritesLoading": "Mencoba lagi memuat favorit",
-   "refreshingFavorites": "Menyegarkan favorit",
-
-   "failedToLoadFavorites": "Gagal memuat favorit: {error}",
-   "@failedToLoadFavorites": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToInitializeDownloadManager": "Gagal menginisialisasi manajer unduhan: {error}",
-   "@failedToInitializeDownloadManager": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "downloadBlocInitializedWithDownloads": "DownloadBloc: Diinisialisasi dengan {count} unduhan",
-   "@downloadBlocInitializedWithDownloads": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "downloadBlocProgressStreamSubscriptionInitialized": "DownloadBloc: Langganan stream progress diinisialisasi",
-   "downloadBlocNotificationCallbacksConfigured": "DownloadBloc: Callback notifikasi dikonfigurasi",
-   "downloadBlocReceivedProgressUpdate": "DownloadBloc: Menerima pembaruan progress: {update}",
-   "@downloadBlocReceivedProgressUpdate": {
-     "placeholders": {
-       "update": {"type": "String"}
-     }
-   },
-   "downloadBlocReceivedCompletionEvent": "DownloadBloc: Menerima event penyelesaian untuk {contentId}",
-   "@downloadBlocReceivedCompletionEvent": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "downloadBlocProgressStreamError": "DownloadBloc: Kesalahan stream progress: {error}",
-   "@downloadBlocProgressStreamError": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "notificationActionPauseRequested": "NotificationAction: Pause diminta untuk {contentId}",
-   "@notificationActionPauseRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionResumeRequested": "NotificationAction: Resume diminta untuk {contentId}",
-   "@notificationActionResumeRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionCancelRequested": "NotificationAction: Cancel diminta untuk {contentId}",
-   "@notificationActionCancelRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionRetryRequested": "NotificationAction: Retry diminta untuk {contentId}",
-   "@notificationActionRetryRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionPdfRetryRequested": "NotificationAction: PDF retry diminta untuk {contentId}",
-   "@notificationActionPdfRetryRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionOpenDownloadRequested": "NotificationAction: Open download diminta untuk {contentId}",
-   "@notificationActionOpenDownloadRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "notificationActionNavigateToDownloadsRequested": "NotificationAction: Navigasi ke downloads diminta untuk {contentId}",
-   "@notificationActionNavigateToDownloadsRequested": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "downloadBlocErrorInitializing": "DownloadBloc: Kesalahan saat inisialisasi",
-   "downloadBlocFailedToReadDownloadBlocState": "Gagal membaca state DownloadBloc, kembali ke pengecekan filesystem: {error}",
-   "@downloadBlocFailedToReadDownloadBlocState": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-
-   "failedToQueueDownload": "Gagal mengantri unduhan: {error}",
-   "@failedToQueueDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-
-   "failedToInitializeDownloadManager": "Gagal menginisialisasi manajer unduhan: {error}",
-   "@failedToInitializeDownloadManager": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "waitingForWifiConnection": "Menunggu koneksi WiFi",
-   "retryingDownload": "Mencoba lagi... ({current}/{total})",
-   "@retryingDownload": {
-     "placeholders": {
-       "current": {"type": "int"},
-       "total": {"type": "int"}
-     }
-   },
-   "failedToStartDownload": "Gagal memulai unduhan: {error}",
-   "@failedToStartDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "downloadCancelledByUser": "Unduhan dibatalkan oleh pengguna",
-   "failedToPauseDownload": "Gagal menjeda unduhan: {error}",
-   "@failedToPauseDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToCancelDownload": "Gagal membatalkan unduhan: {error}",
-   "@failedToCancelDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRetryDownload": "Gagal mencoba lagi unduhan: {error}",
-   "@failedToRetryDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToResumeDownload": "Gagal melanjutkan unduhan: {error}",
-   "@failedToResumeDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRemoveDownload": "Gagal menghapus unduhan: {error}",
-   "@failedToRemoveDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRefreshDownloads": "Gagal menyegarkan unduhan: {error}",
-   "@failedToRefreshDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToUpdateDownloadSettings": "Gagal memperbarui pengaturan unduhan: {error}",
-   "@failedToUpdateDownloadSettings": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "pausingAllDownloads": "Menjeda semua unduhan",
-   "resumingAllDownloads": "Melanjutkan semua unduhan",
-   "cancellingAllDownloads": "Membatalkan semua unduhan",
-   "clearingCompletedDownloads": "Menghapus unduhan yang selesai",
-   "failedToPauseAllDownloads": "Gagal menjeda semua unduhan: {error}",
-   "@failedToPauseAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToResumeAllDownloads": "Gagal melanjutkan semua unduhan: {error}",
-   "@failedToResumeAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToCancelAllDownloads": "Gagal membatalkan semua unduhan: {error}",
-   "@failedToCancelAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToQueueRangeDownload": "Gagal mengantri unduhan rentang: {error}",
-   "@failedToQueueRangeDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToStartDownload": "Gagal memulai unduhan: {error}",
-   "@failedToStartDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToPauseDownload": "Gagal menjeda unduhan: {error}",
-   "@failedToPauseDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToCancelDownload": "Gagal membatalkan unduhan: {error}",
-   "@failedToCancelDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRetryDownload": "Gagal mencoba lagi unduhan: {error}",
-   "@failedToRetryDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToResumeDownload": "Gagal melanjutkan unduhan: {error}",
-   "@failedToResumeDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRemoveDownload": "Gagal menghapus unduhan: {error}",
-   "@failedToRemoveDownload": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToRefreshDownloads": "Gagal menyegarkan unduhan: {error}",
-   "@failedToRefreshDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToUpdateDownloadSettings": "Gagal memperbarui pengaturan unduhan: {error}",
-   "@failedToUpdateDownloadSettings": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToPauseAllDownloads": "Gagal menjeda semua unduhan: {error}",
-   "@failedToPauseAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToResumeAllDownloads": "Gagal melanjutkan semua unduhan: {error}",
-   "@failedToResumeAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToCancelAllDownloads": "Gagal membatalkan semua unduhan: {error}",
-   "@failedToCancelAllDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToClearCompletedDownloads": "Gagal menghapus unduhan yang selesai: {error}",
-   "@failedToClearCompletedDownloads": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "downloadNotCompletedYet": "Unduhan belum selesai",
-   "noImagesFoundForConversion": "Tidak ada gambar yang ditemukan untuk konversi",
-   "storageCleanupCompleted": "Pembersihan penyimpanan selesai. Membersihkan {cleanedFiles} direktori, membebaskan {freedSpace} MB",
-   "@storageCleanupCompleted": {
-     "placeholders": {
-       "cleanedFiles": {"type": "int"},
-       "freedSpace": {"type": "String"}
-     }
-   },
-   "storageCleanupComplete": "Pembersihan Penyimpanan Selesai: Membersihkan {cleanedFiles} item, membebaskan {freedSpace} MB",
-   "@storageCleanupComplete": {
-     "placeholders": {
-       "cleanedFiles": {"type": "int"},
-       "freedSpace": {"type": "String"}
-     }
-   },
-   "storageCleanupFailed": "Pembersihan Penyimpanan Gagal: {error}",
-   "@storageCleanupFailed": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "exportDownloadsComplete": "Ekspor Selesai: Unduhan diekspor ke {fileName}",
-   "@exportDownloadsComplete": {
-     "placeholders": {
-       "fileName": {"type": "String"}
-     }
-   },
-   "exportFailed": "Ekspor Gagal: {error}",
-   "@exportFailed": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToDeleteDirectory": "Gagal menghapus direktori: {path}, error: {error}",
-   "@failedToDeleteDirectory": {
-     "placeholders": {
-       "path": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "failedToDeleteTempFile": "Gagal menghapus file temp: {path}, error: {error}",
-   "@failedToDeleteTempFile": {
-     "placeholders": {
-       "path": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "downloadDirectoryNotFound": "Direktori unduhan tidak ditemukan: {path}",
-   "@downloadDirectoryNotFound": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-   "cannotOpenIncompleteDownload": "Tidak dapat membuka - unduhan belum selesai atau path hilang untuk {contentId}",
-   "@cannotOpenIncompleteDownload": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "errorOpeningDownloadedContent": "Error membuka konten yang diunduh: {error}",
-   "@errorOpeningDownloadedContent": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "allStrategiesFailedToOpenDownload": "Semua strategi gagal membuka konten yang diunduh untuk {contentId}",
-   "@allStrategiesFailedToOpenDownload": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "failedToSaveProgressToDatabase": "Gagal menyimpan progress ke database: {error}",
-   "@failedToSaveProgressToDatabase": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToUpdatePauseNotification": "Gagal memperbarui notifikasi jeda: {error}",
-   "@failedToUpdatePauseNotification": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToUpdateResumeNotification": "Gagal memperbarui notifikasi lanjut: {error}",
-   "@failedToUpdateResumeNotification": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "failedToUpdateNotificationProgress": "Gagal memperbarui progress notifikasi: {error}",
-   "@failedToUpdateNotificationProgress": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "errorCalculatingDirectorySize": "Error menghitung ukuran direktori: {error}",
-   "@errorCalculatingDirectorySize": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "errorCleaningTempFiles": "Error membersihkan file temp di: {path}, error: {error}",
-   "@errorCleaningTempFiles": {
-     "placeholders": {
-       "path": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "errorDetectingDownloadsDirectory": "Error mendeteksi direktori Downloads: {error}",
-   "@errorDetectingDownloadsDirectory": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "usingEmergencyFallbackDirectory": "Menggunakan direktori fallback darurat: {path}",
-   "@usingEmergencyFallbackDirectory": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-   "errorDuringStorageCleanup": "Error selama pembersihan penyimpanan",
-   "errorDuringExport": "Error selama ekspor",
-   "errorDuringPdfConversion": "Error selama konversi PDF untuk {contentId}",
-   "@errorDuringPdfConversion": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "errorRetryingPdfConversion": "Error mencoba lagi konversi PDF: {error}",
-   "@errorRetryingPdfConversion": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "errorOpeningDownloadedContent": "Error membuka konten yang diunduh: {error}",
-   "@errorOpeningDownloadedContent": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-
-   "importBackupFolder": "Import Folder Backup",
-   "importBackupFolderDescription": "Masukkan path ke folder backup yang berisi folder konten nhasix:",
-   "scanningBackupFolder": "Memindai folder backup...",
-   "backupContentFound": "Ditemukan {count} item backup",
-   "@backupContentFound": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "noBackupContentFound": "Tidak ada konten valid ditemukan di folder backup",
-   "errorScanningBackup": "Error memindai backup: {error}",
-   "@errorScanningBackup": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "themeDescription": "Pilih tema warna yang diinginkan untuk antarmuka aplikasi.",
-   "imageQualityDescription": "Pilih kualitas gambar untuk unduhan. Kualitas lebih tinggi menggunakan lebih banyak penyimpanan dan data.",
-   "gridColumnsDescription": "Pilih berapa banyak kolom untuk menampilkan konten dalam mode potret. Lebih banyak kolom menampilkan lebih banyak item tetapi lebih kecil.",
-   "gridPreview": "Pratinjau Grid",
-   "autoCleanupDescription": "Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.",
-   "testCacheClearing": "Tes Pembersihan Cache Update App",
-   "testCacheClearingDescription": "Simulasikan update aplikasi dan tes perilaku pembersihan cache.",
-   "forceClearCache": "Paksa Bersihkan Semua Cache",
-   "forceClearCacheDescription": "Bersihkan semua cache gambar secara manual.",
-   "runTest": "Jalankan Tes",
-   "clearCacheButton": "Bersihkan Cache",
-   "disguiseModeDescription": "Pilih bagaimana aplikasi muncul di launcher Anda untuk privasi.",
-   "applyingDisguiseMode": "Menerapkan perubahan mode penyamaran...",
-   "disguiseDefault": "Default",
-   "disguiseCalculator": "Kalkulator",
-   "disguiseNotes": "Catatan",
-   "disguiseWeather": "Cuaca",
-   "storagePermissionScan": "Izin penyimpanan diperlukan untuk memindai folder backup",
-   "syncResult": "Disinkronkan: {synced} baru, {updated} diperbarui",
-   "@syncResult": {
-     "placeholders": {
-       "synced": {"type": "int"},
-       "updated": {"type": "int"}
-     }
-   },
-   "exportingLibrary": "Mengekspor Perpustakaan",
-   "libraryExportSuccess": "Perpustakaan berhasil diekspor!",
-   "browseDownloads": "Jelajahi Unduhan",
-   "deletingContent": "Menghapus {title}...",
-   "@deletingContent": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "contentDeletedFreed": "{title} dihapus. Menghemat {size} MB",
-   "@contentDeletedFreed": {
-     "placeholders": {
-       "title": {"type": "String"},
-       "size": {"type": "String"}
-     }
-   },
-   "failedToDeleteContent": "Gagal menghapus {title}",
-   "@failedToDeleteContent": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "errorGeneric": "Error: {error}",
-   "@errorGeneric": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "cacheManagementDebug": "🚀 Manajemen Cache (Debug)",
-   "convertToPdf": "Konversi ke PDF",
+  "debugThemeInfo": "DEBUG: Info Tema",
+  "lightTheme": "Terang",
+  "darkTheme": "Gelap",
+  "amoledTheme": "AMOLED",
+  "systemMessages": "Pesan Sistem dan Layanan Latar Belakang",
+  "notificationMessages": "Pesan Notifikasi",
+  "convertingToPdfWithTitle": "Mengonversi {title} ke PDF...",
+  "convertingToPdfProgress": "Mengonversi ke PDF ({progress}%)",
+  "convertingToPdfProgressWithTitle": "Mengonversi {title} ke PDF ({progress}%)",
+  "pdfCreatedSuccessfully": "PDF Berhasil Dibuat",
+  "pdfCreatedWithParts": "{title} dikonversi ke {partsCount} file PDF",
+  "downloadStarted": "Unduhan Dimulai",
+  "downloadingWithTitle": "Mengunduh: {title}",
+  "downloadingProgress": "Mengunduh ({progress}%)",
+  "downloadComplete": "Unduhan Selesai",
+  "downloadedWithTitle": "Diunduh: {title}",
+  "downloadFailed": "Unduhan Gagal",
+  "downloadFailedWithTitle": "Gagal: {title}",
+  "downloadPaused": "Dijeda",
+  "downloadResumed": "Dilanjutkan",
+  "downloadCancelled": "Dibatalkan",
+  "downloadRetry": "Coba Lagi",
+  "downloadOpen": "Buka",
+  "pdfOpen": "Buka PDF",
+  "pdfShare": "Bagikan",
+  "pdfRetry": "Coba Lagi PDF",
+  "downloadServiceMessages": "Pesan Layanan Unduhan",
+  "downloadRangeInfo": " (Halaman {startPage}-{endPage})",
+  "downloadRangeComplete": " (Halaman {startPage}-{endPage})",
+  "invalidPageRange": "Rentang halaman tidak valid: {start}-{end} (total: {total})",
+  "storagePermissionRequired": "Izin penyimpanan diperlukan untuk unduhan. Harap berikan izin penyimpanan di pengaturan aplikasi.",
+  "noDataReceived": "Tidak ada data yang diterima untuk gambar: {url}",
+  "createdNoMediaFile": "File .nomedia dibuat untuk privasi: {path}",
+  "privacyProtectionEnsured": "Perlindungan privasi dipastikan untuk unduhan yang ada",
+  "pdfConversionMessages": "Pesan Layanan Konversi PDF",
+  "pdfConversionStarted": "Konversi PDF dimulai untuk {contentId}",
+  "pdfConversionCompleted": "Konversi PDF berhasil diselesaikan untuk {contentId}",
+  "pdfConversionFailed": "Konversi PDF gagal untuk {contentId}: {error}",
+  "pdfPartProcessing": "Memproses bagian {part} dalam isolate...",
+  "pdfSingleProcessing": "Memproses PDF tunggal dalam isolate...",
+  "pdfSplitRequired": "Memisahkan menjadi {totalParts} bagian ({totalPages} halaman)",
+  "pdfCreatedFiles": "Dibuat {partsCount} file PDF dengan {pageCount} total halaman",
+  "pdfNoImagesProvided": "Tidak ada gambar yang disediakan untuk konversi PDF",
+  "pdfFailedToCreatePart": "Gagal membuat bagian PDF {part}: {error}",
+  "pdfFailedToCreate": "Gagal membuat PDF: {error}",
+  "pdfOutputDirectoryCreated": "Direktori output PDF dibuat: {path}",
+  "pdfUsingFallbackDirectory": "Menggunakan direktori fallback: {path}",
+  "pdfInfoSaved": "Info PDF disimpan untuk {contentId} ({partsCount} bagian, {pageCount} halaman)",
+  "pdfExistsForContent": "PDF ada untuk {contentId}: {exists}",
+  "pdfFoundFiles": "Ditemukan {count} file PDF untuk {contentId}",
+  "pdfDeletedFiles": "Berhasil menghapus {count} file PDF untuk {contentId}",
+  "pdfTotalSize": "Total ukuran PDF untuk {contentId}: {sizeBytes} bytes",
+  "pdfCleanupStarted": "Memulai pembersihan PDF, menghapus file yang lebih lama dari {maxAge} hari",
+  "pdfCleanupCompleted": "Pembersihan selesai, menghapus {deletedCount} file PDF lama",
+  "pdfStatistics": "Statistik PDF - {totalFiles} file, {totalSizeFormatted} total ukuran, {uniqueContents} konten unik, {averageFilesPerContent} rata-rata file per konten",
+  "historyCleanupMessages": "Pesan Layanan Pembersihan Riwayat",
+  "historyCleanupServiceInitialized": "Layanan Pembersihan Riwayat diinisialisasi",
+  "historyCleanupServiceDisposed": "Layanan Pembersihan Riwayat dibuang",
+  "autoCleanupDisabled": "Pembersihan otomatis riwayat dinonaktifkan",
+  "cleanupServiceStarted": "Layanan pembersihan dimulai dengan interval {intervalHours} jam",
+  "performingHistoryCleanup": "Melakukan pembersihan riwayat: {reason}",
+  "historyCleanupCompleted": "Pembersihan riwayat selesai: membersihkan {clearedCount} entri ({reason})",
+  "manualHistoryCleanup": "Melakukan pembersihan riwayat manual",
+  "updatedLastAppAccess": "Memperbarui waktu akses aplikasi terakhir",
+  "updatedLastCleanupTime": "Memperbarui waktu pembersihan terakhir",
+  "intervalCleanup": "Pembersihan interval ({intervalHours} jam)",
+  "inactivityCleanup": "Pembersihan tidak aktif ({inactivityDays} hari)",
+  "maxAgeCleanup": "Pembersihan usia maksimal ({maxDays} hari)",
+  "initialCleanupSetup": "Pengaturan pembersihan awal",
+  "shouldCleanupOldHistory": "Harus membersihkan riwayat lama: {shouldCleanup}",
+  "analyticsMessages": "Pesan Layanan Analytics",
+  "analyticsServiceInitialized": "Layanan analytics diinisialisasi - pelacakan {enabled}",
+  "analyticsTrackingEnabled": "Pelacakan analytics diaktifkan oleh pengguna",
+  "analyticsTrackingDisabled": "Pelacakan analytics dinonaktifkan oleh pengguna - data dibersihkan",
+  "analyticsDataCleared": "Data analytics dibersihkan atas permintaan pengguna",
+  "analyticsServiceDisposed": "Layanan analytics dibuang",
+  "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
+  "appStartedEvent": "Event aplikasi dimulai dilacak",
+  "sessionEndEvent": "Event akhir sesi dilacak ({minutes} menit)",
+  "analyticsEnabledEvent": "Event analytics diaktifkan dilacak",
+  "analyticsDisabledEvent": "Event analytics dinonaktifkan dilacak",
+  "screenViewEvent": "Tampilan layar dilacak: {screenName}",
+  "userActionEvent": "Aksi pengguna dilacak: {action}",
+  "performanceEvent": "Performa dilacak: {operation} ({durationMs}ms)",
+  "errorEvent": "Kesalahan dilacak: {errorType} - {errorMessage}",
+  "featureUsageEvent": "Penggunaan fitur dilacak: {feature}",
+  "readingSessionEvent": "Sesi membaca dilacak: {contentId} ({minutes}mnt, {pages} halaman)",
+  "offlineManagerMessages": "Pesan Manajer Konten Offline",
+  "offlineContentAvailable": "Konten {contentId} tersedia offline: {available}",
+  "offlineContentPath": "Path konten offline untuk {contentId}: {path}",
+  "foundExistingFiles": "Ditemukan {count} file yang sudah diunduh",
+  "offlineImageUrlsFound": "Ditemukan {count} URL gambar offline untuk {contentId}",
+  "offlineContentIdsFound": "Ditemukan {count} ID konten offline",
+  "searchingOfflineContent": "Mencari konten offline untuk: {query}",
+  "offlineContentMetadata": "Metadata konten offline untuk {contentId}: {source}",
+  "offlineContentCreated": "Konten offline dibuat untuk {contentId}",
+  "offlineStorageUsage": "Penggunaan penyimpanan offline: {sizeBytes} bytes",
+  "cleanupOrphanedFilesStarted": "Memulai pembersihan file offline yang yatim piatu",
+  "cleanupOrphanedFilesCompleted": "Pembersihan file offline yang yatim piatu selesai",
+  "removedOrphanedDirectory": "Direktori yatim piatu dihapus: {path}",
+  "daysAgo": "{count} hari{suffix} yang lalu",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{count} jam{suffix} yang lalu",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{count} menit{suffix} yang lalu",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Baru saja",
+  "queryLabel": "Kueri",
+  "tagsLabel": "Tag",
+  "excludeTagsLabel": "Kecualikan Tag",
+  "groupsLabel": "Grup",
+  "excludeGroupsLabel": "Kecualikan Grup",
+  "charactersLabel": "Karakter",
+  "excludeCharactersLabel": "Kecualikan Karakter",
+  "parodiesLabel": "Parodi",
+  "excludeParodiesLabel": "Kecualikan Parodi",
+  "artistsLabel": "Artis",
+  "excludeArtistsLabel": "Kecualikan Artis",
+  "languageLabel": "Bahasa",
+  "categoryLabel": "Kategori",
+  "hours": "{count}j",
+  "@hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "minutes": "{count}m",
+  "@minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seconds": "{count}d",
+  "@seconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "loadingUserPreferences": "Memuat preferensi pengguna",
+  "successfullyLoadedUserPreferences": "Berhasil memuat preferensi pengguna",
+  "invalidColumnsPortraitValue": "Nilai kolom potret tidak valid: {value}",
+  "@invalidColumnsPortraitValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "invalidColumnsLandscapeValue": "Nilai kolom lanskap tidak valid: {value}",
+  "@invalidColumnsLandscapeValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "updatingSettingsViaPreferencesService": "Memperbarui pengaturan melalui PreferencesService",
+  "successfullyUpdatedSettings": "Berhasil memperbarui pengaturan",
+  "failedToUpdateSetting": "Gagal memperbarui pengaturan: {error}",
+  "@failedToUpdateSetting": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resettingAllSettingsToDefaults": "Mereset semua pengaturan ke default",
+  "successfullyResetAllSettingsToDefaults": "Berhasil mereset semua pengaturan ke default",
+  "failedToResetSettings": "Gagal mereset pengaturan: {error}",
+  "@failedToResetSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNotLoaded": "Pengaturan tidak dimuat",
+  "exportingSettings": "Mengekspor pengaturan",
+  "successfullyExportedSettings": "Berhasil mengekspor pengaturan",
+  "failedToExportSettings": "Gagal mengekspor pengaturan: {error}",
+  "@failedToExportSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importingSettings": "Mengimpor pengaturan",
+  "successfullyImportedSettings": "Berhasil mengimpor pengaturan",
+  "failedToImportSettings": "Gagal mengimpor pengaturan: {error}",
+  "@failedToImportSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unableToSyncSettings": "Tidak dapat menyinkronkan pengaturan. Perubahan akan disimpan secara lokal.",
+  "@unableToSyncSettings": {
+    "description": "Pesan kesalahan ketika pengaturan tidak dapat disinkronkan"
+  },
+  "unableToSaveSettings": "Tidak dapat menyimpan pengaturan. Silakan periksa penyimpanan perangkat.",
+  "@unableToSaveSettings": {
+    "description": "Pesan kesalahan ketika pengaturan tidak dapat disimpan karena masalah penyimpanan"
+  },
+  "failedToUpdateSettings": "Gagal memperbarui pengaturan. Silakan coba lagi.",
+  "@failedToUpdateSettings": {
+    "description": "Pesan kesalahan umum ketika pembaruan pengaturan gagal"
+  },
+  "loadingHistory": "Memuat riwayat",
+  "noHistoryFound": "Tidak ada riwayat ditemukan",
+  "loadedHistoryEntries": "Memuat {count} entri riwayat",
+  "@loadedHistoryEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoadHistory": "Gagal memuat riwayat: {error}",
+  "@failedToLoadHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingMoreHistory": "Memuat lebih banyak riwayat (halaman {page})",
+  "@loadingMoreHistory": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "loadedMoreHistoryEntries": "Memuat {count} entri lagi, total: {total}",
+  "@loadedMoreHistoryEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "refreshingHistory": "Menyegarkan riwayat",
+  "refreshedHistoryWithEntries": "Riwayat disegarkan dengan {count} entri",
+  "@refreshedHistoryWithEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToRefreshHistory": "Gagal menyegarkan riwayat: {error}",
+  "@failedToRefreshHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearingAllHistory": "Menghapus semua riwayat",
+  "allHistoryCleared": "Semua riwayat dihapus",
+  "failedToClearHistory": "Gagal menghapus riwayat: {error}",
+  "@failedToClearHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "removingHistoryItem": "Menghapus item riwayat: {contentId}",
+  "@removingHistoryItem": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "removedHistoryItem": "Item riwayat dihapus: {contentId}",
+  "@removedHistoryItem": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRemoveHistoryItem": "Gagal menghapus item riwayat: {error}",
+  "@failedToRemoveHistoryItem": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "performingManualHistoryCleanup": "Melakukan pembersihan riwayat manual",
+  "manualCleanupCompleted": "Pembersihan manual selesai",
+  "failedToPerformCleanup": "Gagal melakukan pembersihan: {error}",
+  "@failedToPerformCleanup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "updatingCleanupSettings": "Memperbarui pengaturan pembersihan",
+  "cleanupSettingsUpdated": "Pengaturan pembersihan diperbarui",
+  "addingContentToFavorites": "Menambahkan konten ke favorit: {title}",
+  "@addingContentToFavorites": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyAddedToFavorites": "Berhasil ditambahkan ke favorit: {title}",
+  "@successfullyAddedToFavorites": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentNotInFavorites": "Konten {contentId} tidak ada di favorit, melewati penghapusan",
+  "@contentNotInFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "callingRemoveFromFavoritesUseCase": "Memanggil removeFromFavoritesUseCase dengan parameter: {params}",
+  "@callingRemoveFromFavoritesUseCase": {
+    "placeholders": {
+      "params": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyCalledRemoveFromFavoritesUseCase": "Berhasil memanggil removeFromFavoritesUseCase",
+  "updatingFavoritesListInState": "Memperbarui daftar favorit di state, menghapus contentId: {contentId}",
+  "@updatingFavoritesListInState": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesCountBeforeAfter": "Jumlah favorit: sebelum={before}, setelah={after}",
+  "@favoritesCountBeforeAfter": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "stateUpdatedSuccessfully": "State berhasil diperbarui",
+  "successfullyRemovedFromFavorites": "Berhasil dihapus dari favorit: {contentId}",
+  "@successfullyRemovedFromFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemovingContentFromFavorites": "Kesalahan menghapus konten {contentId} dari favorit: {error}",
+  "@errorRemovingContentFromFavorites": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "removingFavoritesInBatch": "Menghapus {count} favorit dalam batch",
+  "@removingFavoritesInBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "successfullyRemovedFavoritesInBatch": "Berhasil menghapus {count} favorit dalam batch",
+  "@successfullyRemovedFavoritesInBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingFavoritesWithQuery": "Mencari favorit dengan query: {query}",
+  "@searchingFavoritesWithQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "foundFavoritesMatchingQuery": "Ditemukan {count} favorit yang cocok dengan query",
+  "@foundFavoritesMatchingQuery": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearingFavoritesSearch": "Menghapus pencarian favorit",
+  "exportingFavoritesData": "Mengekspor data favorit",
+  "successfullyExportedFavorites": "Berhasil mengekspor {count} favorit",
+  "@successfullyExportedFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importingFavoritesData": "Mengimpor data favorit",
+  "successfullyImportedFavorites": "Berhasil mengimpor {count} favorit",
+  "@successfullyImportedFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToImportFavorite": "Gagal mengimpor favorit: {error}",
+  "@failedToImportFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "retryingFavoritesLoading": "Mencoba lagi memuat favorit",
+  "refreshingFavorites": "Menyegarkan favorit",
+  "failedToLoadFavorites": "Gagal memuat favorit: {error}",
+  "@failedToLoadFavorites": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocInitializedWithDownloads": "DownloadBloc: Diinisialisasi dengan {count} unduhan",
+  "@downloadBlocInitializedWithDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadBlocProgressStreamSubscriptionInitialized": "DownloadBloc: Langganan stream progress diinisialisasi",
+  "downloadBlocNotificationCallbacksConfigured": "DownloadBloc: Callback notifikasi dikonfigurasi",
+  "downloadBlocReceivedProgressUpdate": "DownloadBloc: Menerima pembaruan progress: {update}",
+  "@downloadBlocReceivedProgressUpdate": {
+    "placeholders": {
+      "update": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocReceivedCompletionEvent": "DownloadBloc: Menerima event penyelesaian untuk {contentId}",
+  "@downloadBlocReceivedCompletionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocProgressStreamError": "DownloadBloc: Kesalahan stream progress: {error}",
+  "@downloadBlocProgressStreamError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPauseRequested": "NotificationAction: Pause diminta untuk {contentId}",
+  "@notificationActionPauseRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionResumeRequested": "NotificationAction: Resume diminta untuk {contentId}",
+  "@notificationActionResumeRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionCancelRequested": "NotificationAction: Cancel diminta untuk {contentId}",
+  "@notificationActionCancelRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionRetryRequested": "NotificationAction: Retry diminta untuk {contentId}",
+  "@notificationActionRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionPdfRetryRequested": "NotificationAction: PDF retry diminta untuk {contentId}",
+  "@notificationActionPdfRetryRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionOpenDownloadRequested": "NotificationAction: Open download diminta untuk {contentId}",
+  "@notificationActionOpenDownloadRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationActionNavigateToDownloadsRequested": "NotificationAction: Navigasi ke downloads diminta untuk {contentId}",
+  "@notificationActionNavigateToDownloadsRequested": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadBlocErrorInitializing": "DownloadBloc: Kesalahan saat inisialisasi",
+  "downloadBlocFailedToReadDownloadBlocState": "Gagal membaca state DownloadBloc, kembali ke pengecekan filesystem: {error}",
+  "@downloadBlocFailedToReadDownloadBlocState": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToQueueDownload": "Gagal mengantri unduhan: {error}",
+  "@failedToQueueDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToInitializeDownloadManager": "Gagal menginisialisasi manajer unduhan: {error}",
+  "@failedToInitializeDownloadManager": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "waitingForWifiConnection": "Menunggu koneksi Wi-Fi",
+  "retryingDownload": "Mencoba lagi... ({current}/{total})",
+  "@retryingDownload": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadCancelledByUser": "Unduhan dibatalkan oleh pengguna",
+  "pausingAllDownloads": "Menjeda semua unduhan",
+  "resumingAllDownloads": "Melanjutkan semua unduhan",
+  "cancellingAllDownloads": "Membatalkan semua unduhan",
+  "clearingCompletedDownloads": "Menghapus unduhan yang selesai",
+  "failedToQueueRangeDownload": "Gagal mengantri unduhan rentang: {error}",
+  "@failedToQueueRangeDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPauseDownload": "Gagal menjeda unduhan: {error}",
+  "@failedToPauseDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCancelDownload": "Gagal membatalkan unduhan: {error}",
+  "@failedToCancelDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRetryDownload": "Gagal mencoba lagi unduhan: {error}",
+  "@failedToRetryDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToResumeDownload": "Gagal melanjutkan unduhan: {error}",
+  "@failedToResumeDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRemoveDownload": "Gagal menghapus unduhan: {error}",
+  "@failedToRemoveDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToRefreshDownloads": "Gagal menyegarkan unduhan: {error}",
+  "@failedToRefreshDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateDownloadSettings": "Gagal memperbarui pengaturan unduhan: {error}",
+  "@failedToUpdateDownloadSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPauseAllDownloads": "Gagal menjeda semua unduhan: {error}",
+  "@failedToPauseAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToResumeAllDownloads": "Gagal melanjutkan semua unduhan: {error}",
+  "@failedToResumeAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCancelAllDownloads": "Gagal membatalkan semua unduhan: {error}",
+  "@failedToCancelAllDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToClearCompletedDownloads": "Gagal menghapus unduhan yang selesai: {error}",
+  "@failedToClearCompletedDownloads": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadNotCompletedYet": "Unduhan belum selesai",
+  "noImagesFoundForConversion": "Tidak ada gambar yang ditemukan untuk konversi",
+  "storageCleanupCompleted": "Pembersihan penyimpanan selesai. Membersihkan {cleanedFiles} direktori, membebaskan {freedSpace} MB",
+  "@storageCleanupCompleted": {
+    "placeholders": {
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
+    }
+  },
+  "storageCleanupComplete": "Pembersihan Penyimpanan Selesai: Membersihkan {cleanedFiles} item, membebaskan {freedSpace} MB",
+  "@storageCleanupComplete": {
+    "placeholders": {
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
+    }
+  },
+  "storageCleanupFailed": "Pembersihan Penyimpanan Gagal: {error}",
+  "@storageCleanupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportDownloadsComplete": "Ekspor Selesai: Unduhan diekspor ke {fileName}",
+  "@exportDownloadsComplete": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFailed": "Ekspor Gagal: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteDirectory": "Gagal menghapus direktori: {path}, error: {error}",
+  "@failedToDeleteDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteTempFile": "Gagal menghapus file temp: {path}, error: {error}",
+  "@failedToDeleteTempFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadDirectoryNotFound": "Direktori unduhan tidak ditemukan: {path}",
+  "@downloadDirectoryNotFound": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotOpenIncompleteDownload": "Tidak dapat membuka - unduhan belum selesai atau path hilang untuk {contentId}",
+  "@cannotOpenIncompleteDownload": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "allStrategiesFailedToOpenDownload": "Semua strategi gagal membuka konten yang diunduh untuk {contentId}",
+  "@allStrategiesFailedToOpenDownload": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSaveProgressToDatabase": "Gagal menyimpan progress ke database: {error}",
+  "@failedToSaveProgressToDatabase": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdatePauseNotification": "Gagal memperbarui notifikasi jeda: {error}",
+  "@failedToUpdatePauseNotification": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateResumeNotification": "Gagal memperbarui notifikasi lanjut: {error}",
+  "@failedToUpdateResumeNotification": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateNotificationProgress": "Gagal memperbarui progress notifikasi: {error}",
+  "@failedToUpdateNotificationProgress": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCalculatingDirectorySize": "Kesalahan menghitung ukuran direktori: {error}",
+  "@errorCalculatingDirectorySize": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCleaningTempFiles": "Kesalahan membersihkan file temp di: {path}, kesalahan: {error}",
+  "@errorCleaningTempFiles": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorDetectingDownloadsDirectory": "Kesalahan mendeteksi direktori Unduhan: {error}",
+  "@errorDetectingDownloadsDirectory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "usingEmergencyFallbackDirectory": "Menggunakan direktori fallback darurat: {path}",
+  "@usingEmergencyFallbackDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "errorDuringStorageCleanup": "Kesalahan selama pembersihan penyimpanan",
+  "errorDuringExport": "Kesalahan selama ekspor",
+  "errorDuringPdfConversion": "Kesalahan selama konversi PDF untuk {contentId}",
+  "@errorDuringPdfConversion": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRetryingPdfConversion": "Kesalahan mencoba lagi konversi PDF: {error}",
+  "@errorRetryingPdfConversion": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOpeningDownloadedContent": "Kesalahan membuka konten yang diunduh: {error}",
+  "@errorOpeningDownloadedContent": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importBackupFolder": "Impor Folder Cadangan",
+  "importBackupFolderDescription": "Masukkan path ke folder backup yang berisi folder konten nhasix:",
+  "scanningBackupFolder": "Memindai folder backup...",
+  "backupContentFound": "Ditemukan {count} item backup",
+  "@backupContentFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBackupContentFound": "Tidak ada konten valid ditemukan di folder backup",
+  "errorScanningBackup": "Kesalahan memindai cadangan: {error}",
+  "@errorScanningBackup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "themeDescription": "Pilih tema warna yang diinginkan untuk antarmuka aplikasi.",
+  "imageQualityDescription": "Pilih kualitas gambar untuk unduhan. Kualitas lebih tinggi menggunakan lebih banyak penyimpanan dan data.",
+  "gridColumnsDescription": "Pilih berapa banyak kolom untuk menampilkan konten dalam mode potret. Lebih banyak kolom menampilkan lebih banyak item tetapi lebih kecil.",
+  "gridPreview": "Pratinjau Grid",
+  "autoCleanupDescription": "Kelola pembersihan otomatis riwayat baca untuk menghemat ruang penyimpanan.",
+  "testCacheClearing": "Tes Pembersihan Cache Update App",
+  "testCacheClearingDescription": "Simulasikan update aplikasi dan tes perilaku pembersihan cache.",
+  "forceClearCache": "Paksa Bersihkan Semua Cache",
+  "forceClearCacheDescription": "Bersihkan semua cache gambar secara manual.",
+  "runTest": "Jalankan Tes",
+  "clearCacheButton": "Bersihkan Cache",
+  "disguiseModeDescription": "Pilih bagaimana aplikasi muncul di launcher Anda untuk privasi.",
+  "applyingDisguiseMode": "Menerapkan perubahan mode penyamaran...",
+  "disguiseDefault": "Default",
+  "disguiseCalculator": "Kalkulator",
+  "disguiseNotes": "Catatan",
+  "disguiseWeather": "Cuaca",
+  "storagePermissionScan": "Izin penyimpanan diperlukan untuk memindai folder backup",
+  "exportingLibrary": "Mengekspor Perpustakaan",
+  "libraryExportSuccess": "Perpustakaan berhasil diekspor!",
+  "browseDownloads": "Jelajahi Unduhan",
+  "deletingContent": "Menghapus {title}...",
+  "@deletingContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentDeletedFreed": "{title} dihapus. Menghemat {size} MB",
+  "@contentDeletedFreed": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "size": "Ukuran",
+  "failedToDeleteContent": "Gagal menghapus {title}",
+  "@failedToDeleteContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "errorGeneric": "Kesalahan: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cacheManagementDebug": "🚀 Manajemen Cache (Debug)",
+  "convertToPdf": "Konversi ke PDF",
   "convertingToPdf": "Mengonversi ke PDF...",
   "pdfConversionFailedWithError": "Konversi PDF gagal untuk {title}: {error}",
   "@pdfConversionFailedWithError": {
     "placeholders": {
-      "title": {"type": "String"},
-      "error": {"type": "String"}
+      "title": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
-  "syncStarted": "Menyingkronkan Cadangan...",
+  "syncStarted": "Menyinkronkan Cadangan...",
   "syncStartedMessage": "Memindai dan mengimpor konten offline",
-  "syncInProgress": "Menyingkronkan Cadangan ({percent}%)",
+  "syncInProgress": "Menyinkronkan Cadangan ({percent}%)",
   "@syncInProgress": {
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "syncProgressMessage": "Diproses {processed} dari {total} item",
   "@syncProgressMessage": {
     "placeholders": {
-      "processed": {"type": "int"},
-      "total": {"type": "int"}
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
+  "total": "Total",
   "syncCompleted": "Sinkronisasi Selesai",
   "syncCompletedMessage": "Diimpor: {synced}, Diperbarui: {updated}",
   "@syncCompletedMessage": {
     "placeholders": {
-      "synced": {"type": "int"},
-      "updated": {"type": "int"}
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
     }
   },
   "syncResult": "Hasil Sinkronisasi: {synced} diimpor, {updated} diperbarui",
   "@syncResult": {
     "placeholders": {
-      "synced": {"type": "int"},
-      "updated": {"type": "int"}
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
     }
   },
   "storageSection": "Lokasi Penyimpanan",
@@ -2091,5 +2147,770 @@
         "type": "String"
       }
     }
-  }
+  },
+  "aboutTitle": "Tentang",
+  "appIsUpToDate": "Aplikasi sudah versi terbaru!",
+  "checkFailedMessage": "Pemeriksaan gagal: {message}",
+  "@checkFailedMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesSection": "Pembaruan",
+  "communityAndInfo": "Komunitas & Info",
+  "githubRepository": "Repositori GitHub",
+  "viewSourceCodeContribute": "Lihat kode sumber & berkontribusi",
+  "openSourceLicenses": "Lisensi Sumber Terbuka",
+  "librariesUsedInApp": "Pustaka yang digunakan di aplikasi ini",
+  "builtWith": "Dibangun Dengan",
+  "madeWithLoveBy": "Dibuat dengan ❤️ oleh Shirokun20",
+  "allRightsReserved": "© 2025 Hak Cipta Dilindungi",
+  "appUpdates": "Pembaruan Aplikasi",
+  "checkForUpdates": "Periksa pembaruan",
+  "checking": "Memeriksa...",
+  "updateAvailable": "Pembaruan Tersedia!",
+  "upToDate": "Sudah terbaru",
+  "checkFailed": "Pemeriksaan gagal",
+  "couldNotLaunchUrl": "Tidak bisa membuka {url}",
+  "@couldNotLaunchUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "solveCaptchaTitle": "Selesaikan CAPTCHA",
+  "reloadChallenge": "Muat ulang tantangan",
+  "loginToCrotpedia": "Masuk ke Crotpedia",
+  "syncedAsUser": "Tersinkronisasi sebagai {username}",
+  "@syncedAsUser": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "loggedInAsUser": "Masuk sebagai {username}",
+  "@loggedInAsUser": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "logout": "Keluar",
+  "loginViaSecureBrowser": "Masuk via Browser Aman",
+  "loginIncomplete": "Masuk tidak lengkap. Silakan coba lagi.",
+  "loginFailedError": "Masuk gagal: {error}",
+  "@loginFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "doujinListTitle": "Daftar Doujin (A-Z)",
+  "errorLoadingDoujinList": "Kesalahan Memuat Daftar Doujin",
+  "noDoujinsFound": "Doujin Tidak Ditemukan",
+  "doujinListEmpty": "Daftar doujin kosong.",
+  "searchDoujinsHint": "Cari doujin...",
+  "cannotParseSlug": "Tidak dapat mengurai slug dari URL: {url}",
+  "@cannotParseSlug": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "errorParsingUrl": "Kesalahan mengurai URL: {url}",
+  "@errorParsingUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "genreListTitle": "Daftar Genre",
+  "errorLoadingGenres": "Kesalahan Memuat Genre",
+  "noGenresFound": "Genre Tidak Ditemukan",
+  "noGenresAvailable": "Belum ada genre tersedia saat ini.",
+  "projectRequests": "Permintaan Proyek",
+  "errorLoadingRequests": "Kesalahan Memuat Permintaan",
+  "noRequestsFound": "Permintaan Tidak Ditemukan",
+  "noProjectRequests": "Belum ada permintaan proyek saat ini.",
+  "manageCollections": "Kelola Koleksi",
+  "addToFavoritesFirst": "Tambahkan ke favorit terlebih dahulu",
+  "favoriteOffline": "Favorit Offline",
+  "favoriteOnline": "Favorit Online",
+  "favoriteBoth": "Favorit Keduanya",
+  "unsupportedGalleryId": "ID galeri tidak didukung untuk favorit online.",
+  "addToFavoritesManageCollections": "Tambahkan ke favorit terlebih dahulu untuk mengelola koleksi",
+  "loginRequiredAction": "Masuk diperlukan untuk tindakan ini",
+  "newCollection": "Koleksi baru",
+  "collectionName": "Nama koleksi",
+  "failedToCreateCollection": "Gagal membuat koleksi: {error}",
+  "@failedToCreateCollection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearSelection": "Hapus Pilihan",
+  "refreshingDownloads": "Menyegarkan unduhan...",
+  "refresh": "Segarkan",
+  "failedToSaveCollection": "Gagal menyimpan koleksi: {error}",
+  "@failedToSaveCollection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "renameCollection": "Ubah nama koleksi",
+  "pressBackToExit": "Tekan kembali untuk keluar",
+  "backToDetail": "Kembali ke Detail",
+  "failedToOpenPdf": "Gagal membuka PDF: {error}",
+  "@failedToOpenPdf": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noChaptersAvailable": "Tidak ada chapter tersedia",
+  "failedToApplySearch": "Gagal menerapkan pencarian: {error}",
+  "@failedToApplySearch": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addTag": "Tambah tag",
+  "includeCountLabel": "Sertakan {count}",
+  "@includeCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "excludeCountLabel": "Kecualikan {count}",
+  "@excludeCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchTagsHint": "Cari tag...",
+  "applyWithCounts": "Terapkan ({include} / {exclude})",
+  "@applyWithCounts": {
+    "placeholders": {
+      "include": {
+        "type": "int"
+      },
+      "exclude": {
+        "type": "int"
+      }
+    }
+  },
+  "applyWithCount": "Terapkan ({count})",
+  "@applyWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchByTitleHint": "Cari berdasarkan judul, ID, atau kata kunci...",
+  "pagesLabel2": "Halaman",
+  "favoritesGte": "Favorit ≥",
+  "manage": "Kelola",
+  "local": "Lokal",
+  "rules": "Aturan",
+  "failedToSave": "Gagal menyimpan: {error}",
+  "@failedToSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDelete": "Gagal menghapus: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchExampleHint": "romansa, artis:contoh, 12345",
+  "refreshOnline": "Segarkan online",
+  "addRules": "Tambah aturan",
+  "pickFromTags": "Pilih dari tag",
+  "done": "Selesai",
+  "uninstallSource": "Hapus sumber",
+  "uninstallSourceTitle": "Hapus Sumber",
+  "uninstall": "Hapus",
+  "failedToUninstall": "Gagal menghapus \"{sourceId}\": {error}",
+  "@failedToUninstall": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseOneSource": "Pilih satu sumber untuk diinstal.",
+  "chooseMultipleSources": "Pilih satu atau lebih sumber untuk diinstal.",
+  "installSelectedCount": "Instal Terpilih ({count})",
+  "@installSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installSelected": "Instal Terpilih",
+  "offlineModeLabel": "Mode Luring",
+  "descriptionLabel": "Deskripsi",
+  "aliasesLabel": "Alias",
+  "searchContentWithTag": "Cari Konten Dengan Tag Ini",
+  "backToFilters": "Kembali ke Filter",
+  "dnsSettings": "Pengaturan DNS",
+  "resetToDefaults": "Kembalikan ke bawaan",
+  "enableDnsOverHttps": "Aktifkan DNS-over-HTTPS",
+  "dnsServerIp": "IP Server DNS",
+  "primaryDnsAddress": "Alamat server DNS utama",
+  "dnsOverHttpsUrl": "URL endpoint DNS-over-HTTPS",
+  "resetDnsSettings": "Reset Pengaturan DNS",
+  "syncRefresh": "Sinkronisasi/Segarkan",
+  "importFromBackup": "Impor dari Cadangan",
+  "importZipFile": "Impor File ZIP",
+  "exportLibrary": "Ekspor Pustaka",
+  "loginRequired": "Masuk Diperlukan",
+  "openPdf": "Buka PDF",
+  "maybeLater": "Nanti Saja",
+  "noContentAtMoment": "Tidak ada konten tersedia saat ini.",
+  "refreshingContentMsg": "Menyegarkan konten...",
+  "retryingMsg": "Mencoba lagi...",
+  "clearingSearchMsg": "Membersihkan pencarian...",
+  "failedToClearSearch": "Gagal membersihkan hasil pencarian: {error}",
+  "@failedToClearSearch": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchingContentMsg": "Mencari konten...",
+  "noContentMatchingSearch": "Tidak ada konten yang cocok dengan kriteria pencarian Anda.",
+  "loadingPopularContent": "Memuat konten populer...",
+  "noPopularContent": "Tidak ada konten populer tersedia saat ini.",
+  "loadingContentByTag": "Memuat konten berdasarkan tag...",
+  "noContentForTag": "Tidak ada konten ditemukan untuk tag ini.",
+  "loadingPageNum": "Memuat halaman {page}...",
+  "@loadingPageNum": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "noContentOnPage": "Tidak ada konten ditemukan di halaman ini.",
+  "noDownloadableImages": "Konten ini tidak memiliki gambar yang dapat diunduh.",
+  "failedToStartDownload": "Gagal memulai unduhan: {error}",
+  "@failedToStartDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkDeleteCompleted": "Hapus Massal Selesai",
+  "bulkDeletePartial": "Hapus Massal Sebagian",
+  "failedToInitSearch": "Gagal menginisialisasi pencarian",
+  "searchingMsg": "Mencari...",
+  "noResultsForQuery": "Tidak ada hasil untuk \"{query}\"",
+  "@noResultsForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchingWithFiltersMsg": "Mencari dengan filter...",
+  "noResultsWithFilters": "Tidak ada hasil dengan filter saat ini",
+  "invalidFilterErrors": "Filter tidak valid: {errors}",
+  "@invalidFilterErrors": {
+    "placeholders": {
+      "errors": {
+        "type": "String"
+      }
+    }
+  },
+  "noResultsGeneric": "Tidak ada hasil ditemukan",
+  "loadingConfigMsg": "Memuat konfigurasi...",
+  "initTagsDbMsg": "Menginisialisasi database tag...",
+  "downloadingTagsMsg": "Mengunduh tag untuk {source}...",
+  "@downloadingTagsMsg": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "initFailedMsg": "Inisialisasi gagal: {error}",
+  "@initFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "initBypassMsg": "Menginisialisasi sistem bypass...",
+  "connectingToSite": "Menghubungkan ke nhentai.net...",
+  "connectedSuccess": "Berhasil terhubung ke nhentai.net",
+  "failedToConnect": "Gagal terhubung ke nhentai.net. Silakan coba lagi.",
+  "failedInitBypass": "Gagal menginisialisasi sistem bypass: {error}",
+  "@failedInitBypass": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bypassFailed": "Verifikasi bypass gagal. Silakan coba lagi.",
+  "offlineBypassFailed": "Mode Luring (Bypass Gagal)",
+  "errorBypassResult": "Kesalahan memproses hasil bypass: {error}",
+  "@errorBypassResult": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "readyOfflineLimited": "Siap (Mode Luring - Terbatas)",
+  "downloadingInitConfig": "Mengunduh konfigurasi awal...",
+  "readyOffline": "Siap (Mode Luring)",
+  "connectingMsg": "Menghubungkan...",
+  "failedLoadOffline": "Gagal memuat konten offline: {error}",
+  "@failedLoadOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noInternetCheckOffline": "Tidak ada koneksi internet. Memeriksa konten offline...",
+  "foundOfflineItems": "Ditemukan {count} item offline. Melanjutkan...",
+  "@foundOfflineItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noInternetNoOffline": "Tidak ada koneksi internet dan tidak ada konten offline tersedia.",
+  "unableCheckOffline": "Tidak dapat memeriksa konten offline. {error}",
+  "@unableCheckOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineLimitedFeatures": "Mode Luring (Fitur Terbatas)",
+  "readyOfflineLimitedFeatures": "Siap (Mode Luring - Fitur Terbatas)",
+  "failedEnableOffline": "Gagal mengaktifkan mode offline: {error}",
+  "@failedEnableOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedCheckOffline": "Gagal memeriksa konten offline: {error}",
+  "@failedCheckOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedOpenChapter": "Gagal membuka chapter: {message}",
+  "@failedOpenChapter": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "failedInitFilterData": "Gagal menginisialisasi data filter: {error}",
+  "@failedInitFilterData": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedSwitchFilterType": "Gagal mengganti tipe filter: {error}",
+  "@failedSwitchFilterType": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedMonitorNetwork": "Gagal memantau konektivitas jaringan",
+  "failedInitNetwork": "Gagal menginisialisasi pemantauan jaringan: {error}",
+  "@failedInitNetwork": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedUpdateConnection": "Gagal memperbarui status koneksi: {error}",
+  "@failedUpdateConnection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedCheckConnectivity": "Gagal memeriksa konektivitas: {error}",
+  "@failedCheckConnectivity": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedSearchOffline": "Gagal mencari konten offline: {error}",
+  "@failedSearchOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedLoadOfflineContent": "Gagal memuat konten offline",
+  "failedScanBackup": "Gagal memindai folder cadangan: {error}",
+  "@failedScanBackup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedLoadContentError": "Gagal memuat konten: {error}",
+  "@failedLoadContentError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chapterNavNotAvailable": "Navigasi chapter tidak tersedia",
+  "unknownChapter": "Chapter Tidak Dikenal",
+  "failedLoadChapterImages": "Gagal memuat gambar chapter",
+  "failedLoadChapter": "Gagal memuat chapter: {error}",
+  "@failedLoadChapter": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailedError": "Impor gagal: {error}",
+  "@importFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorImportingZip": "Kesalahan mengimpor ZIP: {error}",
+  "@errorImportingZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Kesalahan",
+  "lightThemeDesc": "Tema terang dengan warna cerah",
+  "darkThemeDesc": "Tema gelap dengan warna redup",
+  "amoledThemeDesc": "Tema hitam pekat untuk layar AMOLED",
+  "systemThemeDesc": "Ikuti pengaturan tema sistem",
+
+  "nItems": "{count} item",
+  "nPages": "{count} halaman",
+  "nGalleries": "{count} galeri",
+  "sourceUninstalled": "Sumber \"{sourceId}\" dicopot.",
+  "selectedSourcesCount": "Sumber dipilih: {count}",
+  "timeoutMinutes": "{minutes} menit",
+  "dohUrlOptional": "URL DoH (Opsional)",
+
+  "dnsEncryptedDescription": "Gunakan DNS terenkripsi untuk privasi yang lebih baik dan melewati pemblokiran",
+  "usingSystemDns": "Menggunakan DNS bawaan sistem",
+  "dnsProvider": "Penyedia DNS",
+  "customConfiguration": "Konfigurasi Kustom",
+  "aboutDoh": "Tentang DNS-over-HTTPS",
+  "dohDescription": "DNS-over-HTTPS (DoH) mengenkripsi kueri DNS Anda, mencegah ISP dan administrator jaringan memantau situs yang Anda kunjungi. Ini juga membantu melewati sensor dan pembatasan geografis berbasis DNS.",
+  "dnsQueriesEncrypted": "Semua kueri DNS dienkripsi melalui HTTPS",
+  "enhancedPrivacy": "Privasi dan keamanan yang ditingkatkan",
+  "resetDnsConfirmation": "Ini akan mengatur ulang pengaturan DNS ke bawaan sistem. Lanjutkan?",
+
+  "collections": "Koleksi",
+  "collectionsUpdatedSuccessfully": "Koleksi berhasil diperbarui",
+  "createCollection": "Buat koleksi",
+  "deleteCollection": "Hapus koleksi",
+  "blacklistMatchWarning": "Galeri ini cocok dengan aturan daftar hitam. Sampul/kartu dapat diburamkan di tampilan daftar.",
+  "chapterCompleted": "Bab selesai",
+  "continueFromPage": "Lanjutkan dari halaman {page}",
+  "readAgain": "Baca Lagi",
+  "loginRequiredForContent": "Anda harus masuk ke Crotpedia untuk melihat konten ini.",
+  "unknownError": "Kesalahan tidak diketahui",
+
+  "commentsCount": "Komentar ({count})",
+  "noCommentsYet": "Belum ada komentar",
+  "failedToLoadComments": "Gagal memuat komentar",
+
+  "nSelected": "{count} dipilih",
+  "bulkDelete": "Hapus Massal",
+  "bulkDeleteConfirmation": "Apakah Anda yakin ingin menghapus {count} unduhan?",
+
+  "exportedFavoritesTo": "Mengekspor favorit saja ({count} item) ke:\n{path}",
+  "failedToSaveExportFile": "Gagal menyimpan file ekspor",
+  "importFavorites": "Impor Favorit",
+  "successfullyImportedFavorites": "Berhasil mengimpor {count} favorit",
+  "importFailed": "Impor gagal: {error}",
+  "noOnlineFavoritesSource": "Tidak ada sumber favorit online yang tersedia.",
+  "unsupportedGalleryId": "ID galeri tidak didukung untuk favorit online.",
+  "collectionWithCount": "{name} ({count})",
+  "newLabel": "Baru",
+  "failedToRemoveFavorite": "Gagal menghapus favorit: {error}",
+
+  "tryDifferentSearchTerm": "Coba istilah pencarian yang berbeda",
+  "applyWithCount": "Terapkan ({count})",
+  "apply": "Terapkan",
+
+  "nItemsInHistory": "{count} item dalam riwayat",
+  "pageProgress": "{lastPage}/{totalPages} halaman",
+
+  "tapToLoadContent": "Ketuk untuk memuat konten",
+  "refreshingContent": "Menyegarkan konten...",
+
+  "chapterComplete": "Bab Selesai!",
+  "finishedReading": "Selesai Membaca",
+
+  "readerSettings": "Pengaturan Pembaca",
+  "chapterLabel": "Bab",
+  "noChapterSelected": "Tidak ada bab yang dipilih",
+  "preventScreenOff": "Mencegah layar mati saat membaca",
+  "chapters": "Bab-bab",
+  "readerSettingsReset": "Pengaturan pembaca telah diatur ulang ke bawaan.",
+  "failedToResetSettings": "Gagal mengatur ulang pengaturan: {error}",
+
+  "tagInputTip": "Tips: tekan Enter atau tombol + untuk menambah tag. Bisa ketik banyak tag pakai koma atau baris baru.",
+  "loadingOptions": "Memuat opsi...",
+  "filterTags": "Filter Tag",
+  "noOptionsAvailable": "Tidak ada opsi tersedia untuk kolom ini",
+  "failedLoadingOptions": "Gagal memuat opsi. Periksa koneksi dan coba lagi.",
+  "noTagsFound": "Tag tidak ditemukan",
+  "previewQuery": "Pratinjau Kueri (q)",
+  "all": "Semua",
+  "showLess": "Tampilkan Lebih Sedikit",
+  "showAllCount": "Tampilkan Semua ({count})",
+  "advancedFilters": "Filter Lanjutan",
+  "min": "Min",
+  "max": "Maks",
+  "searchConfigUnavailable": "Konfigurasi pencarian tidak tersedia untuk {sourceId}",
+  "checkInternetOrReload": "Silakan periksa koneksi internet Anda atau coba muat ulang aplikasi.",
+
+  "tagBlacklist": "Daftar hitam tag",
+  "blacklistDescription": "Entri lokal berfungsi offline. Akun nhentai yang masuk juga menarik ID daftar hitam online.",
+  "onlineRuleDetailsCount": "Detail aturan online ({count})",
+  "noBlacklistRulesYet": "Belum ada aturan daftar hitam. Tambahkan nama tag seperti romance, artist:foo, atau ID tag numerik.",
+  "activeCoverageDescription": "Cakupan aktif diaktifkan untuk {count} token (lokal + ID online). Disembunyikan di sini agar tampilan tetap mudah dibaca.",
+  "manageTagBlacklist": "Kelola daftar hitam tag",
+  "addTagRulesDescription": "Tambahkan nama tag, aturan bertipe seperti artist:foo, atau ID tag numerik. Pisahkan beberapa nilai dengan koma atau baris baru.",
+  "localRulesCount": "Aturan lokal ({count})",
+  "onlineRulesMetadataCount": "Metadata aturan online ({count})",
+  "onlineRulesMetadata": "Metadata aturan online",
+  "activeCoverageCount": "Cakupan aktif ({count})",
+  "nSourcesInstalled": "{count} sumber terpasang",
+  "removeSourceConfirmation": "Hapus \"{sourceId}\" dari sumber terpasang lokal?",
+  "installedSourcesFromZip": "Memasang {count} sumber dari ZIP",
+
+  "enhancedReadingExperience": "Pengalaman Membaca yang Ditingkatkan",
+  "initializingApplication": "Menginisialisasi Aplikasi...",
+  "offlineContentAvailable": "Konten Offline Tersedia",
+  "offlineModeEnabled": "Mode Offline Diaktifkan",
+  "launchingApp": "Meluncurkan aplikasi utama...",
+
+  "confirmExit": "Apakah Anda yakin ingin keluar?",
+  "resize": "Ubah Ukuran",
+  "youAreOffline": "Anda sedang offline",
+  "offlineFeaturesLimited": "Beberapa fitur terbatas. Hubungkan ke internet untuk akses penuh.",
+
+  "downloadSettings": "Pengaturan Unduhan",
+  "maxConcurrentDownloads": "Unduhan Bersamaan Maksimal",
+  "higherValuesBandwidth": "Nilai lebih tinggi dapat mengonsumsi lebih banyak bandwidth dan sumber daya perangkat",
+  "autoRetryFailed": "Coba Ulang Otomatis Unduhan Gagal",
+  "autoRetryDescription": "Secara otomatis mencoba ulang unduhan yang gagal",
+  "maxRetryAttempts": "Percobaan Ulang Maksimal",
+  "wifiOnlyDownload": "Hanya unduh saat terhubung ke Wi-Fi",
+  "downloadTimeout": "Batas Waktu Unduhan",
+  "enableNotifications": "Aktifkan Notifikasi",
+  "showNotificationsProgress": "Tampilkan notifikasi untuk progres unduhan",
+
+  "failedToLoadImage": "Gagal memuat gambar",
+  "retrying": "Mencoba ulang...",
+  "failedToLoad": "Gagal memuat",
+  "pageAttempt": "Halaman {pageNumber} • Percobaan {current}/{max}",
+  "pageNumber": "Halaman {pageNumber}",
+  "downloadingNItems": "Mengunduh {count} item",
+  "failedToLoadContent": "Gagal memuat konten",
+
+  "noOfflineContent": "Tidak ada konten offline",
+  "howToGetStarted": "Cara memulai",
+  "loadingMore": "Memuat lebih banyak...",
+  "noImagesFound": "Gambar tidak ditemukan",
+  "dontAskAgain": "Jangan tanya lagi",
+
+  "pageOfTotal": "Halaman {current} dari {total}",
+
+  "loadingPageNumber": "Memuat halaman {pageNumber}...",
+  "checkInternetConnection": "Periksa koneksi internet Anda",
+
+  "recentSearches": "Pencarian Terbaru",
+  "pageCountRange": "Rentang Jumlah Halaman",
+
+  "nMoreFilters": "+{count} lagi",
+
+  "newUpdateAvailable": "Pembaruan Baru Tersedia!",
+  "newVersion": "Versi Baru: ",
+  "whatsNew": "Yang Baru",
+  "downloadUpdate": "Unduh Pembaruan",
+
+  "exportPath": "Jalur: {path}",
+  "importedContentWithImages": "Mengimpor \"{contentId}\" dengan {count} gambar ke folder lokal",
+
+  "failedToLoadCaptcha": "Gagal memuat CAPTCHA: {error}",
+  "turnstileRejected": "Cloudflare Turnstile menolak tantangan (110200). Silakan coba lagi atau gunakan input token manual.",
+  "openingNativeCaptcha": "Membuka pemecah CAPTCHA bawaan...",
+  "tapRefreshToRetry": "Ketuk segarkan untuk mencoba ulang tantangan CAPTCHA bawaan.",
+
+  "loginRequired": "Login Diperlukan",
+  "loginToCrotpediaDescription": "Masuk ke Crotpedia menggunakan browser aman bawaan untuk mengakses bookmark dan lainnya.",
+  "crotpediaBookmarkLoginPrompt": "Fitur ini (Bookmark) mengharuskan Anda masuk ke Crotpedia.\n\nApakah Anda ingin masuk sekarang?",
+
+  "thisMayTakeMoments": "Ini mungkin memerlukan beberapa saat...",
+  "noResultsForQuery": "Tidak ada hasil untuk \"{query}\"",
+  "browseByGenre": "Jelajahi berdasarkan Genre",
+  "nMoreGenres": "+{count} lagi",
+
+  "selectSourceFromManifest": "Pilih Sumber dari Manifest",
+  "pagesWithSize": "{pageCount} halaman • {size}",
+  "browseComics": "1. Jelajahi komik yang Anda suka",
+  "tapDownloadButton": "2. Ketuk tombol unduh",
+  "accessOffline": "3. Akses kapan saja, bahkan offline!",
+
+  "source": "Sumber",
+  "continueReading": "Lanjutkan",
+  "artistLabel": "Seniman: {name}",
+  "nPagesText": "{count} halaman",
+  "checkItOut": "Lihat di sini: {url}",
+  "filteredResults": "Hasil Filter",
+  "filter": "Filter",
+  "clearingHistory": "Menghapus riwayat...",
+  "crotpediaMaintenance": "Pemeliharaan Crotpedia: {reason}",
+  "tapToChangeFilters": "Ketuk untuk mengubah filter pencarian",
+  "prevChapter": "Bab Sebelumnya",
+  "nextChapter": "Bab Berikutnya",
+  "loadingContent": "Memuat konten...",
+  "pageOfContent": "Halaman {current} dari {total}",
+  "horizontalPages": "Halaman Horizontal",
+  "continuousScroll": "Gulir Berkelanjutan",
+  "nChapters": "{count} bab",
+  "today": "Hari ini",
+  "yesterday": "Kemarin",
+  "failedToLoadOptionsTap": "Gagal memuat opsi. Ketuk untuk mencoba lagi.",
+  "chooseField": "Pilih {field}",
+  "tapToLoadOptions": "Ketuk untuk memuat opsi",
+  "nSelectedItems": "{count} dipilih",
+  "tapToChooseTags": "Ketuk untuk memilih tag disertakan/dikecualikan",
+  "includeExcludeCount": "Sertakan {include} • Kecualikan {exclude}",
+  "searchLabel": "Cari",
+  "genreLabel": "Genre",
+  "statusLabel": "Status",
+  "orderBy": "Urutkan",
+  "authorLabel": "Penulis",
+  "artistFilterLabel": "Seniman",
+  "tags": "Tag",
+  "artists": "Seniman",
+  "characters": "Karakter",
+  "parodies": "Parodi",
+  "groups": "Grup",
+  "filterCategories": "KATEGORI FILTER",
+  "dateUploaded": "TANGGAL DIUNGGAH",
+  "numericFilters": "FILTER NUMERIK",
+  "older": "Lebih Lama",
+  "contentFilters": "FILTER KONTEN",
+  "blurCoversDescription": "Buramkan sampul yang cocok dengan aturan tag lokal Anda, bahkan saat menjelajah offline. Jika Anda masuk ke nhentai, ID daftar hitam online digabungkan secara otomatis.",
+  "appDisguise": "PENYAMARAN APLIKASI",
+  "developerTools": "ALAT PENGEMBANG",
+  "login": "Masuk",
+  "noOnlineRulesYet": "Belum ada aturan online terperinci. Tarik untuk menyegarkan dan mengambil data /blacklist.",
+  "nothingSavedLocally": "Belum ada yang disimpan secara lokal. Aturan lokal selalu diterapkan, termasuk hasil offline.",
+  "loginRequiredForRules": "Login diperlukan untuk mengambil metadata aturan terperinci dari /blacklist.",
+  "syncingOnlineRules": "Menyinkronkan detail aturan online...",
+  "noOnlineRuleDetails": "Belum ada detail aturan online. Ketuk segarkan untuk mengambil /blacklist.",
+  "blacklistGalleriesInfo": "Galeri yang masuk daftar hitam akan diburamkan di sini setelah Anda menambahkan aturan lokal atau menyinkronkan ID online.",
+  "coverageActiveDescription": "Cakupan aktif untuk {count} token. Token ID disembunyikan di sini atas permintaan; hanya aturan online yang dinamai ditampilkan di atas.",
+  "availableSources": "SUMBER TERSEDIA",
+  "settingUpConnection": "Menyiapkan komponen dan memeriksa koneksi...",
+  "bypassingProtection": "Melewati perlindungan dan membuat koneksi...",
+  "tagId": "ID Tag",
+  "slug": "Slug",
+  "path": "Jalur",
+  "tag": "Tag",
+  "profileWithName": "Profil ({name})",
+  "profile": "Profil",
+  "loginAccount": "Masuk / Akun",
+  "accountWithName": "Akun ({name})",
+  "pause": "Jeda",
+  "resume": "Lanjutkan",
+  "cancel": "Batal",
+  "retry": "Coba Lagi",
+  "details": "Detail",
+  "remove": "Hapus",
+  "convertToPdf": "Konversi ke PDF",
+  "performance": "Performa",
+  "autoRetry": "Coba Ulang Otomatis",
+  "network": "Jaringan",
+  "notifications": "Notifikasi",
+  "downloaded": "{size} diunduh",
+  "estimatingProgress": "Memperkirakan progres...",
+  "downloadingImageData": "Mengunduh data gambar...",
+  "searchHint": "Cari...",
+  "hideFilters": "Sembunyikan filter",
+  "showMoreFilters": "Tampilkan lebih banyak filter",
+  "preparingExport": "Mempersiapkan ekspor...",
+  "readingFavorites": "Membaca favorit dari database...",
+  "encodingFavorites": "Mengenkode data favorit...",
+  "writingExportFile": "Menulis file ekspor...",
+  "finalizingExport": "Menyelesaikan ekspor...",
+  "renameCollection": "Ubah nama koleksi",
+  "captchaCancelled": "Tantangan CAPTCHA dibatalkan atau gagal.",
+  "failedToOpenCaptcha": "Gagal membuka pemecah CAPTCHA bawaan: {error}"
 }

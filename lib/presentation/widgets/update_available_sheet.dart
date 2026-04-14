@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/services/update_service.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class UpdateAvailableSheet extends StatelessWidget {
   final UpdateInfo updateInfo;
 
@@ -85,7 +86,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                   ],
                 ).createShader(bounds),
                 child: Text(
-                  'New Update Available!',
+                  AppLocalizations.of(context)!.newUpdateAvailable,
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Colors.white, // Required for masking
                     fontSize: 24,
@@ -100,7 +101,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'New Version: ',
+                    AppLocalizations.of(context)!.newVersion,
                     style:
                         TextStyleConst.bodyMedium.copyWith(color: Colors.grey),
                   ),
@@ -150,7 +151,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                             size: 16, color: Colors.amber),
                         const SizedBox(width: 8),
                         Text(
-                          "What's New",
+                          AppLocalizations.of(context)!.whatsNew,
                           style: TextStyleConst.titleMedium.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -194,7 +195,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: const Text(
-                    'Download Update',
+                    AppLocalizations.of(context)!.downloadUpdate,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -208,7 +209,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey,
                 ),
-                child: const Text('Maybe Later'),
+                child: Text(AppLocalizations.of(context)!.maybeLater),
               ),
             ],
           ),

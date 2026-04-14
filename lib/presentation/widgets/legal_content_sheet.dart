@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 /// Bottom sheet widget for displaying legal content (T&C, Privacy, FAQ)
 class LegalContentSheet extends StatefulWidget {
   const LegalContentSheet({
@@ -120,7 +121,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
-                  tooltip: 'Close',
+                  tooltip: AppLocalizations.of(context)!.close,
                 ),
               ],
             ),
@@ -229,7 +230,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Failed to load content',
+              AppLocalizations.of(context)!.failedToLoadContent,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -246,7 +247,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
             FilledButton.icon(
               onPressed: _loadContent,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context)!.retryAction),
             ),
           ],
         ),

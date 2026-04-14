@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CrotpediaLoginPrompt extends StatelessWidget {
   const CrotpediaLoginPrompt({super.key});
 
@@ -14,20 +15,20 @@ class CrotpediaLoginPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.lock_outline),
-          SizedBox(width: 8),
-          Text('Login Required'),
+          const Icon(Icons.lock_outline),
+          const SizedBox(width: 8),
+          Text(AppLocalizations.of(context)!.loginRequired),
         ],
       ),
-      content: const Text(
-        'This feature (Bookmarking) requires you to be logged in to Crotpedia.\n\nWould you like to login now?',
+      content: Text(
+        AppLocalizations.of(context)!.crotpediaBookmarkLoginPrompt,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
         FilledButton(
           onPressed: () async {
@@ -47,7 +48,7 @@ class CrotpediaLoginPrompt extends StatelessWidget {
             // This pattern might need adjustment depending on how DetailCubit waits.
             // But usually UI logic handles the flow.
           },
-          child: const Text('Login'),
+          child: Text(AppLocalizations.of(context)!.login),
         ),
       ],
     );

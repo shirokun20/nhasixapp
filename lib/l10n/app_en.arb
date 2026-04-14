@@ -1,17 +1,20 @@
 {
   "@@locale": "en",
   "appTitle": "Kuron",
-  "appSubtitle": "NHentai",
   "sourceAuthProfileTitle": "Profile {sourceId}",
   "@sourceAuthProfileTitle": {
     "placeholders": {
-      "sourceId": {"type": "String"}
+      "sourceId": {
+        "type": "String"
+      }
     }
   },
   "sourceAuthLoginTitle": "Login {sourceId}",
   "@sourceAuthLoginTitle": {
     "placeholders": {
-      "sourceId": {"type": "String"}
+      "sourceId": {
+        "type": "String"
+      }
     }
   },
   "sourceAuthConnectedAccount": "Connected Account",
@@ -40,7 +43,6 @@
   "sourceAuthFlowFetchingProfile": "Session verified. Fetching profile...",
   "sourceAuthFlowLoginSuccess": "Login successful",
   "sourceAuthCaptchaCaptured": "CAPTCHA captured successfully",
-  
   "home": "Home",
   "search": "Search",
   "favorites": "Favorites",
@@ -53,7 +55,7 @@
   "randomGalleryFoundMessage": "Opening gallery details...",
   "randomGalleryNoResult": "No random gallery found. Try again.",
   "randomGalleryError": "Error loading random gallery. Please try again.",
-  "randomGalleryUnavailableTitle": "Feature unavailable",
+  "randomGalleryUnavailableTitle": "Feature Unavailable",
   "randomGalleryUnavailableMessage": "Random Gallery is not available for this source.",
   "offlineContent": "Offline Content",
   "settings": "Settings",
@@ -65,19 +67,16 @@
   "supportDeveloperSubtitle": "Buy me a coffee",
   "donateMessage": "If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕",
   "thankYouMessage": "Thank you for your support!",
-  
   "searchHint": "Search content...",
   "searchPlaceholder": "Enter search keywords",
-  "noResults": "No results found",
+  "noResults": "No Results Found",
   "searchSuggestions": "Search Suggestions",
   "suggestions": "Suggestions:",
-
   "facebookPage": "Doujin Stash 3",
   "facebookPageSubtitle": "Support us by liking our page",
   "tapToLoadContent": "Tap to load content",
-  "checkInternetConnection": "Check your internet connection",
-  "trySwitchingNetwork": "Try switching between WiFi and mobile data",
-  "restartRouter": "Restart your router if using WiFi",
+  "trySwitchingNetwork": "Try switching between Wi-Fi and mobile data",
+  "restartRouter": "Restart your router if using Wi-Fi",
   "checkWebsiteStatus": "Check if the website is down",
   "cloudflareBypassMessage": "The website is protected by Cloudflare. We're trying to bypass the protection.",
   "forceBypass": "Force Bypass",
@@ -86,11 +85,12 @@
   "serverReturnedError": "Server returned error {statusCode}. The service might be temporarily unavailable.",
   "@serverReturnedError": {
     "placeholders": {
-      "statusCode": {"type": "int"}
+      "statusCode": {
+        "type": "int"
+      }
     }
   },
-  "searchResults": "Search Results",
-  "failedToOpenBrowser": "Failed to open browser",
+  "failedToOpenBrowser": "Failed to open browser.",
   "viewDownloads": "View Downloads",
   "clearSearch": "Clear Search",
   "clearFilters": "Clear Filters",
@@ -98,7 +98,6 @@
   "anyCategory": "Any category",
   "errorOpeningFilter": "Error opening filter selection",
   "errorBrowsingTag": "Error browsing tag",
-  
   "shuffleToNextGallery": "Shuffle to next gallery",
   "contentHidden": "Content Hidden",
   "tapToViewAnyway": "Tap to view anyway",
@@ -106,16 +105,15 @@
   "galleriesPreloaded": "{count} galleries preloaded",
   "@galleriesPreloaded": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "oopsSomethingWentWrong": "Oops! Something went wrong",
   "cleanupInfo": "Cleanup Info",
-  "loadingHistory": "Loading history...",
   "clearingHistory": "Clearing history...",
   "areYouSureClearHistory": "Are you sure you want to clear all reading history? This action cannot be undone.",
-  "justNow": "Just now",
-  
   "artistCg": "artist cg",
   "gameCg": "game cg",
   "manga": "manga",
@@ -124,7 +122,6 @@
   "cosplay": "cosplay",
   "artistcg": "artistcg",
   "gamecg": "gamecg",
-  
   "bigBreasts": "big breasts",
   "soleFemale": "sole female",
   "soleMale": "sole male",
@@ -133,22 +130,17 @@
     "description": "Error message when custom storage location is not set"
   },
   "schoolgirlUniform": "schoolgirl uniform",
-  
   "tryADifferentSearchTerm": "Try a different search term",
   "unknownError": "Unknown error",
   "loadingOfflineContent": "Loading offline content...",
-  
   "excludeTags": "Exclude Tags",
-  "excludeGroups": "Exclude Groups", 
+  "excludeGroups": "Exclude Groups",
   "excludeCharacters": "Exclude Characters",
   "excludeParodies": "Exclude Parodies",
   "excludeArtists": "Exclude Artists",
-  
-  "noResultsFound": "No results found",
+  "noResultsFound": "No Results Found",
   "tryAdjustingFilters": "Try adjusting your search filters or search terms.",
-  "tryDifferentKeywords": "Try searching with different keywords.",
   "networkError": "Network error. Please check your connection and try again.",
-  "serverError": "Server error. Please try again later.",
   "accessBlocked": "Access blocked. Trying to bypass protection...",
   "tooManyRequests": "Too many requests. Please wait a moment and try again.",
   "errorProcessingResults": "Error processing search results. Please try again.",
@@ -164,44 +156,38 @@
   "errorUnknown": "Something went wrong. Please try again.",
   "errorConnectionTimeout": "Connection timed out. Please try again.",
   "errorConnectionRefused": "Connection refused. Server might be down.",
-  
   "networkErrorTitle": "Network Error",
   "serverErrorTitle": "Server Error",
   "unknownErrorTitle": "Unknown Error",
-  
-  "loadingContent": "Loading content...",
   "refreshingContent": "Refreshing content...",
   "loadingMoreContent": "Loading more content...",
   "searchResults": "Search Results",
   "latestContent": "Latest Content",
-  "noInternetConnection": "No internet connection. Please check your network and try again.",
   "serverTemporarilyUnavailable": "Server is temporarily unavailable. Please try again later.",
-  "failedToLoadContent": "Failed to load content. The website structure may have changed.",
   "cloudflareProtectionDetected": "Cloudflare protection detected. Please wait and try again.",
   "tooManyRequestsWait": "Too many requests. Please wait a moment before trying again.",
   "noContentFoundMatching": "No content found matching your search criteria. Try adjusting your filters.",
   "noContentFoundForTag": "No content found for tag \"{tagName}\".",
   "@noContentFoundForTag": {
     "placeholders": {
-      "tagName": {"type": "String"}
+      "tagName": {
+        "type": "String"
+      }
     }
   },
-  "removeSomeFilters": "Try removing some filters",
-  "checkSpelling": "Check your spelling",
   "useGeneralTerms": "Use more general search terms",
-  "browsePopularContent": "Browse popular content instead",
   "tryBrowsingOtherTags": "Try browsing other tags",
   "checkPopularContent": "Check popular content",
   "useSearchFunction": "Use the search function",
   "checkInternetConnectionSuggestion": "Check your internet connection",
-  "tryRefreshingPage": "Try refreshing the page",
   "browsePopularContentSuggestion": "Browse popular content",
-  
   "failedToInitializeSearch": "Failed to initialize search",
   "noResultsFoundFor": "No results found for \"{query}\"",
   "@noResultsFoundFor": {
     "placeholders": {
-      "query": {"type": "String"}
+      "query": {
+        "type": "String"
+      }
     }
   },
   "searchingWithFilters": "Searching with filters...",
@@ -209,17 +195,19 @@
   "invalidFilter": "Invalid filter: {errors}",
   "@invalidFilter": {
     "placeholders": {
-      "errors": {"type": "String"}
+      "errors": {
+        "type": "String"
+      }
     }
   },
   "invalidSearchFilter": "Invalid search filter: {errors}",
   "@invalidSearchFilter": {
     "placeholders": {
-      "errors": {"type": "String"}
+      "errors": {
+        "type": "String"
+      }
     }
   },
-  
-  "pages": "Pages",
   "tags": "Tags",
   "language": "Language",
   "uploadedOn": "Uploaded on",
@@ -231,47 +219,47 @@
   "download": "Download",
   "downloading": "Downloading",
   "downloadCompleted": "Download Completed",
-  "downloadFailed": "Download Failed",
   "initializing": "Initializing...",
   "noContentToBrowse": "No content loaded to open in browser",
   "addToFavorites": "Add to Favorites",
   "removeFromFavorites": "Remove from Favorites",
   "content": "Content",
-  "view": "View",
   "clearAll": "Clear All",
   "exportList": "Export List",
   "unableToCheck": "Unable to check connection.",
-  "noContentAvailable": "No content available",
-  "noContentToDownload": "No content available to download",
-  "noGalleriesFound": "No galleries found on this page",
+  "noContentAvailable": "No content available.",
+  "noContentToDownload": "No content available to download.",
+  "noGalleriesFound": "No galleries found on this page.",
   "noContentLoadedToBrowse": "No content loaded to open in browser",
   "showCachedContent": "Show Cached Content",
   "openedInBrowser": "Opened in browser",
   "foundGalleries": "Found Galleries",
   "checkingDownloadStatus": "Checking Download Status...",
   "allGalleriesDownloaded": "All Galleries Downloaded",
-  
-  "downloadStarted": "Download started for \"{title}\"",
   "@downloadStarted": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "downloadNewGalleries": "Download New Galleries",
   "downloadProgress": "Download Progress",
-  "downloadComplete": "Download Complete",
-  "downloadError": "Download Error",
   "verifyingFiles": "Verifying Files",
   "verifyingFilesWithTitle": "Verifying {title}...",
   "@verifyingFilesWithTitle": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "verifyingProgress": "Verifying ({progress}%)",
   "@verifyingProgress": {
     "placeholders": {
-      "progress": {"type": "int"}
+      "progress": {
+        "type": "int"
+      }
     }
   },
   "initializingDownloads": "Initializing downloads...",
@@ -282,19 +270,12 @@
   "clearCompleted": "Clear Completed",
   "cleanupStorage": "Cleanup Storage",
   "all": "All",
-  "active": "Active",
   "completed": "Completed",
   "noDownloadsYet": "No downloads yet",
-  "noActiveDownloads": "No active downloads",
-  "noQueuedDownloads": "No queued downloads",
-  "noCompletedDownloads": "No completed downloads",
-  "noFailedDownloads": "No failed downloads",
-  "pdfConversionStarted": "PDF conversion started for {contentId}",
-  "@pdfConversionStarted": {
-    "placeholders": {
-      "contentId": {"type": "String"}
-    }
-  },
+  "noActiveDownloads": "No active downloads.",
+  "noQueuedDownloads": "No queued downloads.",
+  "noCompletedDownloads": "No completed downloads.",
+  "noFailedDownloads": "No failed downloads.",
   "cancelAllDownloads": "Cancel All Downloads",
   "cancelAllConfirmation": "Are you sure you want to cancel all active downloads? This action cannot be undone.",
   "cancelDownload": "Cancel Download",
@@ -304,27 +285,17 @@
   "cleanupConfirmation": "This will remove orphaned files and clean up failed downloads. Continue?",
   "downloadDetails": "Download Details",
   "status": "Status",
-  "progress": "Progress",
   "progressPercent": "Progress %",
-  "speed": "Speed",
-  "size": "Size",
   "started": "Started",
   "ended": "Ended",
-  "duration": "Duration",
   "eta": "ETA",
-  "queued": "Queued",
-  "downloaded": "Downloaded",
-  "resume": "Resume",
   "failed": "Failed",
   "downloadListExported": "Download list exported",
   "downloadAll": "Download All",
   "downloadRange": "Download Range",
   "selectDownloadRange": "Select Download Range",
-  "totalPages": "Total Pages",
   "useSliderToSelectRange": "Use slider to select range:",
   "orEnterManually": "Or enter manually:",
-  "startPage": "Start Page",
-  "endPage": "End Page",
   "quickSelections": "Quick selections:",
   "allPages": "All Pages",
   "firstHalf": "First Half",
@@ -334,65 +305,91 @@
   "countAlreadyDownloaded": "Skipped {count} already downloaded",
   "@countAlreadyDownloaded": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newGalleriesToDownload": "• {count} new galleries to download",
   "@newGalleriesToDownload": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "alreadyDownloaded": "• {count} already downloaded (will be skipped)",
   "@alreadyDownloaded": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "downloadNew": "Download {count} New",
   "@downloadNew": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "queuedDownloads": "Queued {count} new downloads",
   "@queuedDownloads": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "downloadInfo": "Download {count} new galleries?\\n\\nThis may take significant time and storage space.",
   "@downloadInfo": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "failedToDownload": "Failed to download galleries",
   "selectedPagesTo": "Selected: Pages {start} to {end}",
   "@selectedPagesTo": {
     "placeholders": {
-      "start": {"type": "int"},
-      "end": {"type": "int"}
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
     }
   },
   "pagesPercentage": "{count} pages ({percentage}%)",
   "@pagesPercentage": {
     "placeholders": {
-      "count": {"type": "int"},
-      "percentage": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "percentage": {
+        "type": "String"
+      }
     }
   },
   "rangeDownloadStarted": "Range download started: {title} ({pageText})",
   "@rangeDownloadStarted": {
     "placeholders": {
-      "title": {"type": "String"},
-      "pageText": {"type": "String"}
+      "title": {
+        "type": "String"
+      },
+      "pageText": {
+        "type": "String"
+      }
     }
   },
   "opening": "Opening: {title}",
   "@opening": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "lastUpdatedLabel": "Updated:",
@@ -401,7 +398,9 @@
   "waitAndTry": "Wait {minutes} minutes and try again",
   "@waitAndTry": {
     "placeholders": {
-      "minutes": {"type": "int"}
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "serviceUnderMaintenance": "The service might be under maintenance",
@@ -420,32 +419,6 @@
   "removeSomeFilters": "Remove some filters",
   "checkSpelling": "Check spelling",
   "useBroaderSearchTerms": "Use broader search terms",
-  "lastUpdatedLabel": "Updated:",
-  "rangeLabel": "Range:",
-  "ofWord": "of",
-  "waitAndTry": "Wait {minutes} minutes and try again",
-  "@waitAndTry": {
-    "placeholders": {
-      "minutes": {"type": "int"}
-    }
-  },
-  "serviceUnderMaintenance": "The service might be under maintenance",
-  "tryRefreshingPage": "Try refreshing the page",
-  "waitForBypass": "Wait for automatic bypass to complete",
-  "tryUsingVpn": "Try using a VPN if available",
-  "checkBackLater": "Check back in a few minutes",
-  "tryRefreshingContent": "Try refreshing the content",
-  "checkForAppUpdate": "Check if the app needs an update",
-  "reportIfPersists": "Report the issue if it persists",
-  "maintenanceTakesHours": "Maintenance usually takes a few hours",
-  "checkSocialMedia": "Check social media for updates",
-  "tryAgainLater": "Try again later",
-  "tryDifferentKeywords": "Try different keywords",
-  "serverUnavailable": "The server is currently unavailable. Please try again later.",
-  "removeSomeFilters": "Remove some filters",
-  "checkSpelling": "Check spelling",
-  "useBroaderSearchTerms": "Use broader search terms",
-  
   "welcomeTitle": "Welcome to Kuron!",
   "welcomeMessage": "Thank you for installing our app. Before you start, please note:",
   "ispBlockingInfo": "🚨 ISP Blocking Notice",
@@ -461,18 +434,20 @@
   "getStarted": "Get Started",
   "pleaseGrantAllPermissions": "Please grant all required permissions to continue",
   "permissionDenied": "Permission denied. Some features may not work properly.",
-  
   "loadingFavorites": "Loading favorites...",
   "errorLoadingFavorites": "Error Loading Favorites",
-  "removeFavorite": "Remove Favorite",
   "removeFavoriteConfirmation": "Are you sure you want to remove this content from favorites?",
   "removeAction": "Remove",
   "deleteFavorites": "Delete Favorites",
   "deleteFavoritesConfirmation": "Are you sure you want to remove {count} favorite{s}?",
   "@deleteFavoritesConfirmation": {
     "placeholders": {
-      "count": {"type": "int"},
-      "s": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "s": {
+        "type": "String"
+      }
     }
   },
   "exportFavorites": "Export Favorites",
@@ -485,49 +460,49 @@
   "exportedFavoritesCount": "Exported {count} favorites successfully.",
   "@exportedFavoritesCount": {
     "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "exportFailed": "Export failed: {error}",
-  "@exportFailed": {
-    "placeholders": {
-      "error": {"type": "String"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "selectedCount": "{count} selected",
   "@selectedCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "selectFavorites": "Select favorites",
-  "exportAction": "Export",
-  "refreshAction": "Refresh",
   "deleteSelected": "Delete selected",
   "searchFavorites": "Search favorites...",
   "selectAll": "Select All",
-  "clearSelection": "Clear",
   "removingFromFavorites": "Removing from favorites...",
   "removedFromFavorites": "Removed from favorites",
   "failedToRemoveFavorite": "Failed to remove favorite: {error}",
   "@failedToRemoveFavorite": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "removedFavoritesCount": "Removed {count} favorites",
   "@removedFavoritesCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "failedToRemoveFavorites": "Failed to remove favorites: {error}",
   "@failedToRemoveFavorites": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-  
   "appearance": "Appearance",
   "theme": "Theme",
   "imageQuality": "Image Quality",
@@ -548,7 +523,6 @@
   "inactivityThreshold": "Inactivity Threshold",
   "daysOfInactivityBeforeCleanup": "Days of inactivity before cleanup",
   "resetToDefault": "Reset to Default",
-  "resetToDefaults": "Reset to Defaults",
   "generalSettings": "General Settings",
   "displaySettings": "Display",
   "darkMode": "Dark Mode",
@@ -567,30 +541,21 @@
   "resetReaderSettings": "Reset Reader Settings",
   "resetReaderSettingsConfirmation": "This will reset all reader settings to their default values:\n\n",
   "readingModeLabel": "Reading Mode: Horizontal Pages",
-  "keepScreenOnLabel": "Keep Screen On: Off",
-  "showUILabel": "Show UI: On",
   "areYouSure": "Are you sure you want to proceed?",
   "readerSettingsResetSuccess": "Reader settings have been reset to defaults.",
-  "failedToResetSettings": "Failed to reset settings: {error}",
-
   "readingHistory": "Reading History",
   "clearAllHistory": "Clear All History",
   "manualCleanup": "Manual Cleanup",
   "cleanupSettings": "Cleanup Settings",
-  "removeFromHistory": "Remove from History",
   "removeFromHistoryQuestion": "Remove this item from reading history?",
   "cleanup": "Cleanup",
   "failedToLoadCleanupStatus": "Failed to load cleanup status",
   "manualCleanupConfirmation": "This will perform cleanup based on your current settings. Continue?",
-  "noReadingHistory": "No Reading History",
-  "errorLoadingHistory": "Error Loading History",
-  
   "nextPage": "Next Page",
   "previousPage": "Previous Page",
   "pageOf": "of",
   "fullscreen": "Fullscreen",
   "exitFullscreen": "Exit Fullscreen",
-  
   "checkingConnection": "Checking connection...",
   "backOnline": "Back online! All features available.",
   "stillNoInternet": "Still no internet connection.",
@@ -598,9 +563,8 @@
   "noInternetConnection": "No internet connection",
   "connectionError": "Connection error",
   "serverError": "Server error",
-  
   "low": "Low",
-  "medium": "Medium", 
+  "medium": "Medium",
   "high": "High",
   "original": "Original",
   "lowFaster": "Low (Faster)",
@@ -610,39 +574,29 @@
   "mediumQuality": "Medium",
   "highQuality": "High (Better Quality)",
   "originalQuality": "Original (Largest)",
-  
   "dark": "Dark",
   "light": "Light",
   "amoled": "AMOLED",
-  
   "english": "English",
   "japanese": "Japanese",
   "indonesian": "Indonesian",
   "chinese": "Chinese (Simplified)",
   "comfortReading": "Comfortable Reading",
-  
-  "sortBy": "Sort by",
   "filterBy": "Filter by",
   "recent": "Recent",
   "popular": "Popular",
   "oldest": "Oldest",
-  
   "ok": "OK",
-  "cancel": "Cancel",
   "exitApp": "Exit App",
   "areYouSureExit": "Are you sure you want to exit the app?",
   "exit": "Exit",
   "delete": "Delete",
   "confirm": "Confirm",
-  "loading": "Loading...",
-  "error": "Error",
-  "retry": "Retry",
   "tryAgain": "Try Again",
   "save": "Save",
   "edit": "Edit",
   "close": "Close",
   "clear": "Clear",
-  "remove": "Remove",
   "share": "Share",
   "goBack": "Go Back",
   "yes": "Yes",
@@ -651,45 +605,16 @@
   "next": "Next",
   "goToDownloads": "Go to Downloads",
   "retryAction": "Retry",
-  
-  "hours": "{count} hours",
-  "@hours": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "days": "{count} days",
   "@days": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "unknown": "Unknown",
-  "justNow": "Just now",
-  "daysAgo": "{days}d ago",
-  "@daysAgo": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-  "hoursAgo": "{hours}h ago",
-  "@hoursAgo": {
-    "placeholders": {
-      "hours": {"type": "int"}
-    }
-  },
-  "minutesAgo": "{minutes}m ago",
-  "@minutesAgo": {
-    "placeholders": {
-      "minutes": {"type": "int"}
-    }
-  },
-  
   "noData": "No Data",
-  "unknownTitle": "Unknown Title",
-  "offlineContentError": "Offline Content Error",
   "downloadError": "Download Error",
-  
   "other": "Other",
   "confirmResetSettings": "Are you sure you want to restore all settings to default?",
   "reset": "Reset",
@@ -700,39 +625,47 @@
   "lastCleanup": "Last cleanup",
   "lastAppAccess": "Last app access",
   "oneDay": "1 day",
-  "twoDays": "2 days", 
+  "twoDays": "2 days",
   "oneWeek": "1 week",
   "privacyInfoText": "• Data is stored on your device\n• Not sent to external servers\n• Only to improve app performance\n• Can be disabled anytime",
   "unlimited": "Unlimited",
   "daysValue": "{days} days",
   "@daysValue": {
     "placeholders": {
-      "days": {"type": "int"}
+      "days": {
+        "type": "int"
+      }
     }
   },
+  "days": "{count} days",
   "analyticsSubtitle": "Helps app development with local data (not shared)",
-
   "loadingContent": "Loading content...",
   "loadingError": "Loading Error",
   "jumpToPage": "Jump to Page",
   "pageInputLabel": "Page (1-{maxPages})",
   "@pageInputLabel": {
     "placeholders": {
-      "maxPages": {"type": "int"}
+      "maxPages": {
+        "type": "int"
+      }
     }
   },
   "pageOfPages": "Page {current} of {total}",
   "@pageOfPages": {
     "placeholders": {
-      "current": {"type": "int"},
-      "total": {"type": "int"}
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "jump": "Jump",
   "readerSettings": "Reader Settings",
   "readingMode": "Reading Mode",
   "horizontalPages": "Horizontal Pages",
-  "verticalPages": "Vertical Pages", 
+  "verticalPages": "Vertical Pages",
   "continuousScroll": "Continuous Scroll",
   "keepScreenOnLabel": "Keep Screen On: Off",
   "showUILabel": "Show UI: On",
@@ -741,63 +674,60 @@
   "platformNotSupported": "Platform Not Supported",
   "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
   "platformNotSupportedInstall": "Please install and run this app on an Android device.",
-  "storagePermissionRequired": "Storage Permission Required",
   "storagePermissionExplanation": "This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.",
   "grantPermission": "Grant Permission",
   "permissionRequired": "Permission Required",
   "storagePermissionSettingsPrompt": "Storage permission is required to download files. Please grant storage permission in app settings.",
   "openSettings": "Open Settings",
-  
   "noReadingHistory": "No Reading History",
   "readingHistoryMessage": "Your reading history will appear here as you read content.",
   "startReading": "Start Reading",
   "browsePopularContent": "Browse popular content",
-  "searchSomethingInteresting": "Search for something interesting", 
+  "searchSomethingInteresting": "Search for something interesting",
   "checkOutFeaturedItems": "Check out featured items",
-  
   "appSubtitleDescription": "Nhentai unofficial client",
   "downloadedGalleries": "Downloaded galleries",
   "favoriteGalleries": "Favorite galleries",
   "viewHistory": "View history",
-  
   "openInBrowser": "Open in browser",
   "downloadAllGalleries": "Download all galleries in this page",
-  
   "featureDisabledTitle": "Feature Not Available",
   "downloadFeatureDisabled": "Download feature is not available for this source",
   "favoriteFeatureDisabled": "Favorite feature is not available for this source",
   "featureNotAvailable": "This feature is currently unavailable",
-  
   "chaptersTitle": "Chapters",
   "chapterCount": "{count} chapters",
   "@chapterCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "readChapter": "Read",
   "downloadChapter": "Download Chapter",
-  
   "enterPageNumber": "Enter page number (1 - {totalPages})",
   "@enterPageNumber": {
     "placeholders": {
-      "totalPages": {"type": "int"}
+      "totalPages": {
+        "type": "int"
+      }
     }
   },
-  "pageNumber": "Page number",
   "go": "Go",
   "validPageNumberError": "Please enter a valid page number between 1 and {totalPages}",
   "@validPageNumberError": {
     "placeholders": {
-      "totalPages": {"type": "int"}
+      "totalPages": {
+        "type": "int"
+      }
     }
   },
   "tapToJump": "Tap to jump",
   "goToPage": "Go to Page",
-  "previousPageTooltip": "Previous page", 
+  "previousPageTooltip": "Previous page",
   "nextPageTooltip": "Next page",
   "tapToJumpToPage": "Tap to jump to page",
-  
   "loadingContentTitle": "Loading Content",
   "loadingContentDetails": "Loading Content Details",
   "fetchingMetadata": "Fetching metadata and images...",
@@ -810,18 +740,19 @@
   "moreOptions": "More Options",
   "moreLikeThis": "More Like This",
   "statistics": "Statistics",
-  "failedToLoadContent": "Failed to load content",
+  "failedToLoadContent": "Failed to load content.",
   "shareContent": "Share Content",
   "sharePanelOpened": "Share panel opened successfully!",
   "shareFailed": "Share failed, but link copied to clipboard",
   "downloadStartedFor": "Download started for \"{title}\"",
   "@downloadStartedFor": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "viewDownloadsAction": "View",
-  "failedToStartDownload": "Failed to start download. Please try again.",
   "linkCopiedToClipboard": "Link copied to clipboard",
   "failedToCopyLink": "Failed to copy link. Please try again.",
   "copiedLink": "Copied Link",
@@ -832,48 +763,57 @@
   "goingOnline": "Going online...",
   "idLabel": "ID",
   "pagesLabel": "Pages",
-  "languageLabel": "Language",
   "artistLabel": "Artist",
-  "charactersLabel": "Characters",
-  "parodiesLabel": "Parodies",
-  "groupsLabel": "Groups",
   "uploadedLabel": "Uploaded",
   "viewAllChapters": "View All Chapters",
   "searchChapters": "Search chapters...",
-  "noChaptersFound": "No chapters found",
+  "noChaptersFound": "No chapters found.",
   "favoritesLabel": "Favorites",
-  "tagsLabel": "Tags",
-  "artistsLabel": "Artists",
   "relatedLabel": "Related",
   "yearAgo": "{count} year{plural} ago",
   "@yearAgo": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
-  "monthAgo": "{count} month{plural} ago", 
+  "monthAgo": "{count} month{plural} ago",
   "@monthAgo": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
   "dayAgo": "{count} day{plural} ago",
   "@dayAgo": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
   "hourAgo": "{count} hour{plural} ago",
   "@hourAgo": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
-  
   "selectFavoritesTooltip": "Select favorites",
   "deleteSelectedTooltip": "Delete selected",
   "exportAction": "Export",
@@ -883,37 +823,46 @@
   "selectedCountFormat": "{selected} / {total}",
   "@selectedCountFormat": {
     "placeholders": {
-      "selected": {"type": "int"},
-      "total": {"type": "int"}
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "loadingFavoritesMessage": "Loading favorites...",
   "deletingFavoritesMessage": "Deleting favorites...",
   "removingFromFavoritesMessage": "Removing from favorites...",
   "favoritesDeletedMessage": "Favorites deleted successfully",
-  "failedToDeleteFavoritesMessage": "Failed to delete favorites",
+  "failedToDeleteFavoritesMessage": "Failed to delete favorites.",
   "confirmDeleteFavoritesTitle": "Delete Favorites",
   "confirmDeleteFavoritesMessage": "Are you sure you want to delete {count} favorite{plural}?",
   "@confirmDeleteFavoritesMessage": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
   "exportFavoritesTitle": "Export Favorites",
   "exportingFavoritesMessage": "Exporting favorites...",
   "favoritesExportedMessage": "Favorites exported successfully",
   "failedToExportFavoritesMessage": "Failed to export favorites",
-  
   "searchFavoritesHint": "Search favorites...",
   "searchOfflineContentHint": "Search offline content...",
   "failedToLoadPage": "Failed to load page {pageNumber}",
   "@failedToLoadPage": {
     "placeholders": {
-      "pageNumber": {"type": "int"}
+      "pageNumber": {
+        "type": "int"
+      }
     }
   },
-  "failedToLoad": "Failed to load",
+  "failedToLoad": "Failed to load.",
   "loginRequiredForAction": "Login required for this action",
   "login": "Login",
   "offlineContentTitle": "Offline Content",
@@ -922,83 +871,89 @@
   "favorite": "Favorite",
   "errorLoadingHistory": "Error Loading History",
   "errorLoadingFavoritesTitle": "Error Loading Favorites",
-  
   "filterDataTitle": "Filter Data",
-  "clearAllAction": "Clear All",
   "searchFilterHint": "Search {filterType}...",
   "@searchFilterHint": {
     "placeholders": {
-      "filterType": {"type": "String"}
+      "filterType": {
+        "type": "String"
+      }
     }
   },
   "selectedCountFormat2": "Selected ({count})",
   "@selectedCountFormat2": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-  "errorLoadingFilterDataTitle": "Error loading filter data",
+  "errorLoadingFilterDataTitle": "Error Loading Filter Data",
   "noFilterTypeAvailable": "No {filterType} available",
   "@noFilterTypeAvailable": {
     "placeholders": {
-      "filterType": {"type": "String"}
+      "filterType": {
+        "type": "String"
+      }
     }
   },
   "noResultsFoundForQuery": "No results found for \"{query}\"",
   "@noResultsFoundForQuery": {
     "placeholders": {
-      "query": {"type": "String"}
+      "query": {
+        "type": "String"
+      }
     }
   },
-  
   "contentNotFoundTitle": "Content Not Found",
   "contentNotFoundMessage": "Content with ID \"{contentId}\" was not found.",
   "@contentNotFoundMessage": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "filterCategoriesTitle": "Filter Categories",
-  "tagsLabel": "Tags",
-  "artistsLabel": "Artists", 
-  "charactersLabel": "Characters",
-  "parodiesLabel": "Parodies",
-  "groupsLabel": "Groups",
-  
   "searchTitle": "Search",
   "advancedSearchTitle": "Advanced Search",
   "enterSearchQueryHint": "Enter search query (e.g. \"big breasts english\")",
   "popularSearchesTitle": "Popular Searches",
-  "recentSearchesTitle": "Recent Searches",
   "clearAllAction": "Clear All",
   "pressSearchButtonMessage": "Press the Search button to find content with your current filters",
   "searchingMessage": "Searching...",
   "resultsCountFormat": "{count} results",
   "@resultsCountFormat": {
     "placeholders": {
-      "count": {"type": "String"}
+      "count": {
+        "type": "String"
+      }
     }
   },
   "viewInMainAction": "View in Main",
   "searchErrorTitle": "Search Error",
-  "noResultsFoundTitle": "No results found",
-  
+  "noResultsFoundTitle": "No Results Found",
   "pageText": "page {pageNumber}",
   "@pageText": {
     "placeholders": {
-      "pageNumber": {"type": "int"}
+      "pageNumber": {
+        "type": "int"
+      }
     }
   },
   "pagesText": "pages {startPage}-{endPage}",
   "@pagesText": {
     "placeholders": {
-      "startPage": {"type": "int"},
-      "endPage": {"type": "int"}
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
     }
   },
   "offlineStatus": "OFFLINE",
   "onlineStatus": "ONLINE",
-  
   "sortBy": "Sort by",
   "errorOccurred": "An error occurred",
   "tapToRetry": "Tap to retry",
@@ -1010,10 +965,9 @@
   "sendReportText": "Send Report",
   "technicalDetailsTitle": "Technical Details",
   "reportSentText": "Report sent!",
-  
   "suggestionCheckConnection": "Check your internet connection",
-  "suggestionTryWifiMobile": "Try switching between WiFi and mobile data",
-  "suggestionRestartRouter": "Restart your router if using WiFi",
+  "suggestionTryWifiMobile": "Try switching between Wi-Fi and mobile data",
+  "suggestionRestartRouter": "Restart your router if using Wi-Fi",
   "suggestionCheckWebsite": "Check if the website is down",
   "noContentFoundWithQuery": "No content found for \"{query}\". Try adjusting your search terms or filters.",
   "@noContentFoundWithQuery": {
@@ -1033,85 +987,95 @@
   "suggestionMaintenanceHours": "Maintenance usually takes a few hours",
   "suggestionCheckSocial": "Check social media for updates",
   "suggestionTryLater": "Try again later",
-  
   "includeFilter": "Include",
   "excludeFilter": "Exclude",
-  
   "overallProgress": "Overall Progress",
-  "total": "Total",
-  "active": "Active", 
+  "active": "Active",
   "queued": "Queued",
-  "done": "Done",
   "speed": "Speed",
-  "downloaded": "Downloaded",
   "downloadsFailed": "{count} download{plural} failed",
   "@downloadsFailed": {
     "placeholders": {
-      "count": {"type": "int"},
-      "plural": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      }
     }
   },
   "view": "View",
   "processing": "Processing...",
-  
   "loading": "Loading...",
-  
   "unknownTitle": "Unknown Title",
   "readingCompleted": "Completed",
-  "readAgain": "Read Again", 
+  "readAgain": "Read Again",
   "continueReading": "Continue Reading",
   "removeFromHistory": "Remove from History",
   "lessThanOneMinute": "Less than 1 minute",
   "readingTime": "reading time",
-  
   "downloadActions": "Download Actions",
   "pause": "Pause",
-  "resume": "Resume", 
+  "resume": "Resume",
   "cancel": "Cancel",
   "retry": "Retry",
-  "convertToPdf": "Convert to PDF",
   "details": "Details",
   "remove": "Remove",
-  
   "downloadActionPause": "Pause",
   "downloadActionResume": "Resume",
-  "downloadActionCancel": "Cancel", 
+  "downloadActionCancel": "Cancel",
   "downloadActionRetry": "Retry",
   "downloadActionConvertToPdf": "Convert to PDF",
   "downloadActionDetails": "Details",
   "downloadActionRemove": "Remove",
-  
   "downloadPagesRangeFormat": "{downloaded}/{total} (Pages {start}-{end} of {totalPages})",
   "@downloadPagesRangeFormat": {
     "placeholders": {
-      "downloaded": {"type": "int"},
-      "total": {"type": "int"},
-      "start": {"type": "int"},
-      "end": {"type": "int"},
-      "totalPages": {"type": "int"}
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
     }
   },
   "downloadPagesFormat": "{downloaded}/{total}",
   "@downloadPagesFormat": {
     "placeholders": {
-      "downloaded": {"type": "int"},
-      "total": {"type": "int"}
+      "downloaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
-  
   "downloadContentTitle": "Content {contentId}",
   "@downloadContentTitle": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "downloadEtaLabel": "ETA: {duration}",
   "@downloadEtaLabel": {
     "placeholders": {
-      "duration": {"type": "String"}
+      "duration": {
+        "type": "String"
+      }
     }
   },
-  
+  "duration": "Duration",
   "downloadSettingsTitle": "Download Settings",
   "performanceSection": "Performance",
   "maxConcurrentDownloads": "Max Concurrent Downloads",
@@ -1122,31 +1086,23 @@
   "autoRetryDescription": "Automatically retry failed downloads",
   "maxRetryAttempts": "Max Retry Attempts",
   "networkSection": "Network",
-  "wifiOnlyLabel": "WiFi Only",
-  "wifiOnlyDescription": "Only download when connected to WiFi",
+  "wifiOnlyLabel": "Wi-Fi Only",
+  "wifiOnlyDescription": "Only download when connected to Wi-Fi",
   "downloadTimeoutLabel": "Download Timeout",
   "notificationsSection": "Notifications",
   "enableNotificationsLabel": "Enable Notifications",
   "enableNotificationsDescription": "Show notifications for download progress",
   "minutesUnit": "min",
-  
   "searchContentHint": "Search content...",
   "hideFiltersTooltip": "Hide filters",
   "showMoreFiltersTooltip": "Show more filters",
   "advancedFiltersTitle": "Advanced Filters",
   "sortByLabel": "Sort by",
-  "languageLabel": "Language",
-  "categoryLabel": "Category",
   "recentSearchesTitle": "Recent Searches",
   "includeTagsLabel": "Include tags (comma separated)",
   "includeTagsHint": "e.g., romance, comedy, school",
-  "excludeTagsLabel": "Exclude tags (comma separated)",
   "excludeTagsHint": "e.g., horror, violence",
-  "artistsLabel": "Artists (comma separated)",
   "artistsHint": "e.g., artist1, artist2",
-  "charactersLabel": "Characters",
-  "parodiesLabel": "Parodies",
-  "groupsLabel": "Groups (comma separated)",
   "pageCountRangeTitle": "Page Count Range",
   "minPagesLabel": "Min pages",
   "maxPagesLabel": "Max pages",
@@ -1154,8 +1110,6 @@
   "popularTagsTitle": "Popular Tags",
   "filtersActiveLabel": "active",
   "clearAllFilters": "Clear All",
-  
-
   "appSubtitle": "Enhanced Reading Experience",
   "initializingApp": "Initializing Application...",
   "settingUpComponents": "Setting up components and checking connection...",
@@ -1168,49 +1122,30 @@
   "loadingPage": "Loading page {pageNumber}...",
   "@loadingPage": {
     "placeholders": {
-      "pageNumber": {"type": "int"}
+      "pageNumber": {
+        "type": "int"
+      }
     }
   },
+  "pageNumber": "Page number",
   "checkInternetConnection": "Check your internet connection",
-  "justNow": "Just now",
-  "daysAgo": "{count} day{s} ago",
-  "@daysAgo": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "s": {"type": "String"}
-    }
-  },
-  "hoursAgo": "{count} hour{s} ago",
-  "@hoursAgo": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "s": {"type": "String"}
-    }
-  },
-  "minutesAgo": "{count} minute{s} ago",
-  "@minutesAgo": {
-    "placeholders": {
-      "count": {"type": "int"},
-      "s": {"type": "String"}
-    }
-  },
-  
   "selectedItemsCount": "{count} selected",
   "@selectedItemsCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "removeFavorite": "Remove Favorite",
   "noImage": "No image",
   "youAreOfflineShort": "You are offline",
   "someFeaturesLimited": "Some features are limited. Connect to internet for full access.",
-  "wifi": "WIFI",
-  "ethernet": "ETHERNET", 
+  "wifi": "WI-FI",
+  "ethernet": "ETHERNET",
   "mobile": "MOBILE",
   "online": "ONLINE",
   "offlineMode": "Offline Mode",
-  
   "applySearch": "Apply Search",
   "addFiltersToSearch": "Add filters above to enable search",
   "startSearching": "Start searching",
@@ -1220,7 +1155,6 @@
   "offlineSomeFeaturesUnavailable": "You are offline. Some features may not be available.",
   "usingDownloadedContentOnly": "Using downloaded content only",
   "onlineModeWithNetworkAccess": "Online mode with network access",
-
   "tagsScreenPlaceholder": "Tags Screen - To be implemented",
   "artistsScreenPlaceholder": "Artists Screen - To be implemented",
   "statusScreenPlaceholder": "Status Screen - To be implemented",
@@ -1228,492 +1162,660 @@
   "pageNotFoundWithUri": "Page not found: {uri}",
   "@pageNotFoundWithUri": {
     "placeholders": {
-      "uri": {"type": "String"}
+      "uri": {
+        "type": "String"
+      }
     }
   },
   "goHome": "Go Home",
-
-   "debugThemeInfo": "DEBUG: Theme Info",
-   "lightTheme": "Light",
-   "darkTheme": "Dark",
-   "amoledTheme": "AMOLED",
-
-   "systemMessages": "System Messages and Background Services",
-
-   "notificationMessages": "Notification Messages",
-   "convertingToPdf": "Converting to PDF",
-   "convertingToPdfWithTitle": "Converting {title} to PDF...",
-   "@convertingToPdfWithTitle": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "convertingToPdfProgress": "Converting to PDF ({progress}%)",
-   "convertingToPdfProgressWithTitle": "Converting {title} to PDF ({progress}%)",
-   "@convertingToPdfProgressWithTitle": {
-     "placeholders": {
-       "title": {"type": "String"},
-       "progress": {"type": "int"}
-     }
-   },
-   "pdfCreatedSuccessfully": "PDF Created Successfully",
-   "pdfCreatedWithParts": "{title} converted to {partsCount} PDF files",
-   "@pdfCreatedWithParts": {
-     "placeholders": {
-       "title": {"type": "String"},
-       "partsCount": {"type": "int"}
-     }
-   },
-   "pdfConversionFailed": "PDF Conversion Failed",
-   "pdfConversionFailedWithError": "Failed to convert {title} to PDF: {error}",
-   "@pdfConversionFailedWithError": {
-     "placeholders": {
-       "title": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "downloadStarted": "Download Started",
-   "downloadingWithTitle": "Downloading: {title}",
-   "@downloadingWithTitle": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "downloadingProgress": "Downloading ({progress}%)",
-   "downloadComplete": "Download Complete",
-   "downloadedWithTitle": "Downloaded: {title}",
-   "@downloadedWithTitle": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "downloadFailed": "Download Failed",
-   "downloadFailedWithTitle": "Failed: {title}",
-   "@downloadFailedWithTitle": {
-     "placeholders": {
-       "title": {"type": "String"}
-     }
-   },
-   "downloadPaused": "Paused",
-   "downloadResumed": "Resumed",
-   "downloadCancelled": "Cancelled",
-   "downloadRetry": "Retry",
-   "downloadOpen": "Open",
-   "pdfOpen": "Open PDF",
-   "pdfShare": "Share",
-   "pdfRetry": "Retry PDF",
-
-   "downloadServiceMessages": "Download Service Messages",
-   "downloadRangeInfo": " (Pages {startPage}-{endPage})",
-   "@downloadRangeInfo": {
-     "placeholders": {
-       "startPage": {"type": "int"},
-       "endPage": {"type": "int"}
-     }
-   },
-   "downloadRangeComplete": " (Pages {startPage}-{endPage})",
-   "@downloadRangeComplete": {
-     "placeholders": {
-       "startPage": {"type": "int"},
-       "endPage": {"type": "int"}
-     }
-   },
-   "invalidPageRange": "Invalid page range: {start}-{end} (total: {total})",
-   "@invalidPageRange": {
-     "placeholders": {
-       "start": {"type": "int"},
-       "end": {"type": "int"},
-       "total": {"type": "int"}
-     }
-   },
-   "storagePermissionRequired": "Storage permission is required for downloads. Please grant storage permission in app settings.",
-   "noDataReceived": "No data received for image: {url}",
-   "@noDataReceived": {
-     "placeholders": {
-       "url": {"type": "String"}
-     }
-   },
-   "createdNoMediaFile": "Created .nomedia file for privacy: {path}",
-   "@createdNoMediaFile": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-   "privacyProtectionEnsured": "Privacy protection ensured for existing downloads",
-
-   "pdfConversionMessages": "PDF Conversion Service Messages",
-   "pdfConversionStarted": "PDF conversion started for {contentId}",
-   "@pdfConversionStarted": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "pdfConversionCompleted": "PDF conversion completed successfully for {contentId}",
-   "@pdfConversionCompleted": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "pdfConversionFailed": "PDF conversion failed for {contentId}: {error}",
-   "@pdfConversionFailed": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "error": {"type": "String"}
-     }
-   },
-   "pdfPartProcessing": "Processing part {part} in isolate...",
-   "@pdfPartProcessing": {
-     "placeholders": {
-       "part": {"type": "int"}
-     }
-   },
-   "pdfSingleProcessing": "Processing single PDF in isolate...",
-   "pdfSplitRequired": "Splitting into {totalParts} parts ({totalPages} pages)",
-   "@pdfSplitRequired": {
-     "placeholders": {
-       "totalParts": {"type": "int"},
-       "totalPages": {"type": "int"}
-     }
-   },
-   "pdfCreatedFiles": "Created {partsCount} PDF file(s) with {pageCount} total pages",
-   "@pdfCreatedFiles": {
-     "placeholders": {
-       "partsCount": {"type": "int"},
-       "pageCount": {"type": "int"}
-     }
-   },
-   "pdfNoImagesProvided": "No images provided for PDF conversion",
-   "pdfFailedToCreatePart": "Failed to create PDF part {part}: {error}",
-   "@pdfFailedToCreatePart": {
-     "placeholders": {
-       "part": {"type": "int"},
-       "error": {"type": "String"}
-     }
-   },
-   "pdfFailedToCreate": "Failed to create PDF: {error}",
-   "@pdfFailedToCreate": {
-     "placeholders": {
-       "error": {"type": "String"}
-     }
-   },
-   "pdfOutputDirectoryCreated": "Created PDF output directory: {path}",
-   "@pdfOutputDirectoryCreated": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-   "pdfUsingFallbackDirectory": "Using fallback directory: {path}",
-   "@pdfUsingFallbackDirectory": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-   "pdfInfoSaved": "PDF info saved for {contentId} ({partsCount} parts, {pageCount} pages)",
-   "@pdfInfoSaved": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "partsCount": {"type": "int"},
-       "pageCount": {"type": "int"}
-     }
-   },
-   "pdfExistsForContent": "PDF exists for {contentId}: {exists}",
-   "@pdfExistsForContent": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "exists": {"type": "String"}
-     }
-   },
-   "pdfFoundFiles": "Found {count} PDF file(s) for {contentId}",
-   "@pdfFoundFiles": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "count": {"type": "int"}
-     }
-   },
-   "pdfDeletedFiles": "Successfully deleted {count} PDF file(s) for {contentId}",
-   "@pdfDeletedFiles": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "count": {"type": "int"}
-     }
-   },
-   "pdfTotalSize": "Total PDF size for {contentId}: {sizeBytes} bytes",
-   "@pdfTotalSize": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "sizeBytes": {"type": "int"}
-     }
-   },
-   "pdfCleanupStarted": "Starting PDF cleanup, deleting files older than {maxAge} days",
-   "@pdfCleanupStarted": {
-     "placeholders": {
-       "maxAge": {"type": "int"}
-     }
-   },
-   "pdfCleanupCompleted": "Cleanup completed, deleted {deletedCount} old PDF files",
-   "@pdfCleanupCompleted": {
-     "placeholders": {
-       "deletedCount": {"type": "int"}
-     }
-   },
-   "pdfStatistics": "PDF statistics - {totalFiles} files, {totalSizeFormatted} total size, {uniqueContents} unique contents, {averageFilesPerContent} avg files per content",
-
-   "historyCleanupMessages": "History Cleanup Service Messages",
-   "historyCleanupServiceInitialized": "History Cleanup Service initialized",
-   "historyCleanupServiceDisposed": "History Cleanup Service disposed",
-   "autoCleanupDisabled": "Auto cleanup history is disabled",
-   "cleanupServiceStarted": "Cleanup service started with {intervalHours}h interval",
-   "@cleanupServiceStarted": {
-     "placeholders": {
-       "intervalHours": {"type": "int"}
-     }
-   },
-   "performingHistoryCleanup": "Performing history cleanup: {reason}",
-   "@performingHistoryCleanup": {
-     "placeholders": {
-       "reason": {"type": "String"}
-     }
-   },
-   "historyCleanupCompleted": "History cleanup completed: cleared {clearedCount} entries ({reason})",
-   "@historyCleanupCompleted": {
-     "placeholders": {
-       "clearedCount": {"type": "int"},
-       "reason": {"type": "String"}
-     }
-   },
-   "manualHistoryCleanup": "Performing manual history cleanup",
-   "updatedLastAppAccess": "Updated last app access time",
-   "updatedLastCleanupTime": "Updated last cleanup time",
-   "intervalCleanup": "Interval cleanup ({intervalHours}h)",
-   "@intervalCleanup": {
-     "placeholders": {
-       "intervalHours": {"type": "int"}
-     }
-   },
-   "inactivityCleanup": "Inactivity cleanup ({inactivityDays} days)",
-   "@inactivityCleanup": {
-     "placeholders": {
-       "inactivityDays": {"type": "int"}
-     }
-   },
-   "maxAgeCleanup": "Max age cleanup ({maxDays} days)",
-   "@maxAgeCleanup": {
-     "placeholders": {
-       "maxDays": {"type": "int"}
-     }
-   },
-   "initialCleanupSetup": "Initial cleanup setup",
-   "shouldCleanupOldHistory": "Should cleanup old history: {shouldCleanup}",
-   "@shouldCleanupOldHistory": {
-     "placeholders": {
-       "shouldCleanup": {"type": "String"}
-     }
-   },
-
-   "analyticsMessages": "Analytics Service Messages",
-   "analyticsServiceInitialized": "Analytics service initialized - tracking {enabled}",
-   "@analyticsServiceInitialized": {
-     "placeholders": {
-       "enabled": {"type": "String"}
-     }
-   },
-   "analyticsTrackingEnabled": "Analytics tracking enabled by user",
-   "analyticsTrackingDisabled": "Analytics tracking disabled by user - data cleared",
-   "analyticsDataCleared": "Analytics data cleared by user request",
-   "analyticsServiceDisposed": "Analytics service disposed",
-   "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
-   "@analyticsEventTracked": {
-     "placeholders": {
-       "eventType": {"type": "String"},
-       "eventName": {"type": "String"}
-     }
-   },
-   "appStartedEvent": "App started event tracked",
-   "sessionEndEvent": "Session end event tracked ({minutes} minutes)",
-   "@sessionEndEvent": {
-     "placeholders": {
-       "minutes": {"type": "int"}
-     }
-   },
-   "analyticsEnabledEvent": "Analytics enabled event tracked",
-   "analyticsDisabledEvent": "Analytics disabled event tracked",
-   "screenViewEvent": "Screen view tracked: {screenName}",
-   "@screenViewEvent": {
-     "placeholders": {
-       "screenName": {"type": "String"}
-     }
-   },
-   "userActionEvent": "User action tracked: {action}",
-   "@userActionEvent": {
-     "placeholders": {
-       "action": {"type": "String"}
-     }
-   },
-   "performanceEvent": "Performance tracked: {operation} ({durationMs}ms)",
-   "@performanceEvent": {
-     "placeholders": {
-       "operation": {"type": "String"},
-       "durationMs": {"type": "int"}
-     }
-   },
-   "errorEvent": "Error tracked: {errorType} - {errorMessage}",
-   "@errorEvent": {
-     "placeholders": {
-       "errorType": {"type": "String"},
-       "errorMessage": {"type": "String"}
-     }
-   },
-   "featureUsageEvent": "Feature usage tracked: {feature}",
-   "@featureUsageEvent": {
-     "placeholders": {
-       "feature": {"type": "String"}
-     }
-   },
-   "readingSessionEvent": "Reading session tracked: {contentId} ({minutes}min, {pages} pages)",
-   "@readingSessionEvent": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "minutes": {"type": "int"},
-       "pages": {"type": "int"}
-     }
-   },
-
-   "offlineManagerMessages": "Offline Content Manager Messages",
-   "offlineContentAvailable": "Content {contentId} is available offline: {available}",
-   "@offlineContentAvailable": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "available": {"type": "String"}
-     }
-   },
-   "offlineContentPath": "Offline content path for {contentId}: {path}",
-   "@offlineContentPath": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "path": {"type": "String"}
-     }
-   },
-   "foundExistingFiles": "Found {count} existing downloaded files",
-   "@foundExistingFiles": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "offlineImageUrlsFound": "Found {count} offline image URLs for {contentId}",
-   "@offlineImageUrlsFound": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "count": {"type": "int"}
-     }
-   },
-   "offlineContentIdsFound": "Found {count} offline content IDs",
-   "@offlineContentIdsFound": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "searchingOfflineContent": "Searching offline content for: {query}",
-   "@searchingOfflineContent": {
-     "placeholders": {
-       "query": {"type": "String"}
-     }
-   },
-   "offlineContentMetadata": "Offline content metadata for {contentId}: {source}",
-   "@offlineContentMetadata": {
-     "placeholders": {
-       "contentId": {"type": "String"},
-       "source": {"type": "String"}
-     }
-   },
-   "offlineContentCreated": "Offline content created for {contentId}",
-   "@offlineContentCreated": {
-     "placeholders": {
-       "contentId": {"type": "String"}
-     }
-   },
-   "offlineStorageUsage": "Offline storage usage: {sizeBytes} bytes",
-   "@offlineStorageUsage": {
-     "placeholders": {
-       "sizeBytes": {"type": "int"}
-     }
-   },
-   "cleanupOrphanedFilesStarted": "Starting cleanup of orphaned offline files",
-   "cleanupOrphanedFilesCompleted": "Cleanup of orphaned offline files completed",
-   "removedOrphanedDirectory": "Removed orphaned directory: {path}",
-   "@removedOrphanedDirectory": {
-     "placeholders": {
-       "path": {"type": "String"}
-     }
-   },
-
-   "daysAgo": "{count}{suffix} ago",
-   "@daysAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "hoursAgo": "{count}{suffix} ago",
-   "@hoursAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "minutesAgo": "{count}{suffix} ago",
-   "@minutesAgo": {
-     "placeholders": {
-       "count": {"type": "int"},
-       "suffix": {"type": "String"}
-     }
-   },
-   "justNow": "Just now",
-
-   "queryLabel": "Query",
-   "tagsLabel": "Tags",
-   "excludeTagsLabel": "Exclude Tags",
-   "groupsLabel": "Groups", 
-   "excludeGroupsLabel": "Exclude Groups",
-   "charactersLabel": "Characters",
-   "excludeCharactersLabel": "Exclude Characters",
-   "parodiesLabel": "Parodies",
-   "excludeParodiesLabel": "Exclude Parodies",
-   "artistsLabel": "Artists",
-   "excludeArtistsLabel": "Exclude Artists",
-   "languageLabel": "Language",
-   "categoryLabel": "Category",
-
-   "hours": "{count}h",
-   "@hours": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
-   "minutes": "{count}m",
-   "@minutes": {
-     "placeholders": {
-       "count": {"type": "int"}
-     }
-   },
+  "debugThemeInfo": "DEBUG: Theme Info",
+  "lightTheme": "Light",
+  "darkTheme": "Dark",
+  "amoledTheme": "AMOLED",
+  "systemMessages": "System Messages and Background Services",
+  "notificationMessages": "Notification Messages",
+  "convertingToPdfWithTitle": "Converting {title} to PDF...",
+  "@convertingToPdfWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "convertingToPdfProgress": "Converting to PDF ({progress}%)",
+  "convertingToPdfProgressWithTitle": "Converting {title} to PDF ({progress}%)",
+  "@convertingToPdfProgressWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "progress": "Progress",
+  "pdfCreatedSuccessfully": "PDF Created Successfully",
+  "pdfCreatedWithParts": "{title} converted to {partsCount} PDF files",
+  "@pdfCreatedWithParts": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "partsCount": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadStarted": "Download Started",
+  "downloadingWithTitle": "Downloading: {title}",
+  "@downloadingWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadingProgress": "Downloading ({progress}%)",
+  "downloadComplete": "Download Complete",
+  "downloadedWithTitle": "Downloaded: {title}",
+  "@downloadedWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailed": "Download Failed",
+  "downloadFailedWithTitle": "Failed: {title}",
+  "@downloadFailedWithTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadPaused": "Paused",
+  "downloadResumed": "Resumed",
+  "downloadCancelled": "Cancelled",
+  "downloadRetry": "Retry",
+  "downloadOpen": "Open",
+  "pdfOpen": "Open PDF",
+  "pdfShare": "Share",
+  "pdfRetry": "Retry PDF",
+  "downloadServiceMessages": "Download Service Messages",
+  "downloadRangeInfo": " (Pages {startPage}-{endPage})",
+  "@downloadRangeInfo": {
+    "placeholders": {
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadRangeComplete": " (Pages {startPage}-{endPage})",
+  "@downloadRangeComplete": {
+    "placeholders": {
+      "startPage": {
+        "type": "int"
+      },
+      "endPage": {
+        "type": "int"
+      }
+    }
+  },
+  "startPage": "Start Page",
+  "endPage": "End Page",
+  "invalidPageRange": "Invalid page range: {start}-{end} (total: {total})",
+  "@invalidPageRange": {
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "storagePermissionRequired": "Storage permission is required for downloads. Please grant storage permission in app settings.",
+  "noDataReceived": "No data received for image: {url}",
+  "@noDataReceived": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "createdNoMediaFile": "Created .nomedia file for privacy: {path}",
+  "@createdNoMediaFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyProtectionEnsured": "Privacy protection ensured for existing downloads",
+  "pdfConversionMessages": "PDF Conversion Service Messages",
+  "pdfConversionStarted": "PDF conversion started for {contentId}",
+  "@pdfConversionStarted": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfConversionCompleted": "PDF conversion completed successfully for {contentId}",
+  "@pdfConversionCompleted": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfConversionFailed": "PDF conversion failed for {contentId}: {error}",
+  "@pdfConversionFailed": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfPartProcessing": "Processing part {part} in isolate...",
+  "@pdfPartProcessing": {
+    "placeholders": {
+      "part": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfSingleProcessing": "Processing single PDF in isolate...",
+  "pdfSplitRequired": "Splitting into {totalParts} parts ({totalPages} pages)",
+  "@pdfSplitRequired": {
+    "placeholders": {
+      "totalParts": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+  "totalPages": "Total Pages",
+  "pdfCreatedFiles": "Created {partsCount} PDF file(s) with {pageCount} total pages",
+  "@pdfCreatedFiles": {
+    "placeholders": {
+      "partsCount": {
+        "type": "int"
+      },
+      "pageCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfNoImagesProvided": "No images provided for PDF conversion",
+  "pdfFailedToCreatePart": "Failed to create PDF part {part}: {error}",
+  "@pdfFailedToCreatePart": {
+    "placeholders": {
+      "part": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfFailedToCreate": "Failed to create PDF: {error}",
+  "@pdfFailedToCreate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfOutputDirectoryCreated": "Created PDF output directory: {path}",
+  "@pdfOutputDirectoryCreated": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfUsingFallbackDirectory": "Using fallback directory: {path}",
+  "@pdfUsingFallbackDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfInfoSaved": "PDF info saved for {contentId} ({partsCount} parts, {pageCount} pages)",
+  "@pdfInfoSaved": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "partsCount": {
+        "type": "int"
+      },
+      "pageCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfExistsForContent": "PDF exists for {contentId}: {exists}",
+  "@pdfExistsForContent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "exists": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfFoundFiles": "Found {count} PDF file(s) for {contentId}",
+  "@pdfFoundFiles": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfDeletedFiles": "Successfully deleted {count} PDF file(s) for {contentId}",
+  "@pdfDeletedFiles": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfTotalSize": "Total PDF size for {contentId}: {sizeBytes} bytes",
+  "@pdfTotalSize": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "sizeBytes": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCleanupStarted": "Starting PDF cleanup, deleting files older than {maxAge} days",
+  "@pdfCleanupStarted": {
+    "placeholders": {
+      "maxAge": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfCleanupCompleted": "Cleanup completed, deleted {deletedCount} old PDF files",
+  "@pdfCleanupCompleted": {
+    "placeholders": {
+      "deletedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfStatistics": "PDF statistics - {totalFiles} files, {totalSizeFormatted} total size, {uniqueContents} unique contents, {averageFilesPerContent} avg files per content",
+  "historyCleanupMessages": "History Cleanup Service Messages",
+  "historyCleanupServiceInitialized": "History Cleanup Service initialized",
+  "historyCleanupServiceDisposed": "History Cleanup Service disposed",
+  "autoCleanupDisabled": "Auto cleanup history is disabled",
+  "cleanupServiceStarted": "Cleanup service started with {intervalHours}h interval",
+  "@cleanupServiceStarted": {
+    "placeholders": {
+      "intervalHours": {
+        "type": "int"
+      }
+    }
+  },
+  "performingHistoryCleanup": "Performing history cleanup: {reason}",
+  "@performingHistoryCleanup": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "historyCleanupCompleted": "History cleanup completed: cleared {clearedCount} entries ({reason})",
+  "@historyCleanupCompleted": {
+    "placeholders": {
+      "clearedCount": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHistoryCleanup": "Performing manual history cleanup",
+  "updatedLastAppAccess": "Updated last app access time",
+  "updatedLastCleanupTime": "Updated last cleanup time",
+  "intervalCleanup": "Interval cleanup ({intervalHours}h)",
+  "@intervalCleanup": {
+    "placeholders": {
+      "intervalHours": {
+        "type": "int"
+      }
+    }
+  },
+  "inactivityCleanup": "Inactivity cleanup ({inactivityDays} days)",
+  "@inactivityCleanup": {
+    "placeholders": {
+      "inactivityDays": {
+        "type": "int"
+      }
+    }
+  },
+  "maxAgeCleanup": "Max age cleanup ({maxDays} days)",
+  "@maxAgeCleanup": {
+    "placeholders": {
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "initialCleanupSetup": "Initial cleanup setup",
+  "shouldCleanupOldHistory": "Should cleanup old history: {shouldCleanup}",
+  "@shouldCleanupOldHistory": {
+    "placeholders": {
+      "shouldCleanup": {
+        "type": "String"
+      }
+    }
+  },
+  "analyticsMessages": "Analytics Service Messages",
+  "analyticsServiceInitialized": "Analytics service initialized - tracking {enabled}",
+  "@analyticsServiceInitialized": {
+    "placeholders": {
+      "enabled": {
+        "type": "String"
+      }
+    }
+  },
+  "analyticsTrackingEnabled": "Analytics tracking enabled by user",
+  "analyticsTrackingDisabled": "Analytics tracking disabled by user - data cleared",
+  "analyticsDataCleared": "Analytics data cleared by user request",
+  "analyticsServiceDisposed": "Analytics service disposed",
+  "analyticsEventTracked": "📊 Analytics: {eventType} - {eventName}",
+  "@analyticsEventTracked": {
+    "placeholders": {
+      "eventType": {
+        "type": "String"
+      },
+      "eventName": {
+        "type": "String"
+      }
+    }
+  },
+  "appStartedEvent": "App started event tracked",
+  "sessionEndEvent": "Session end event tracked ({minutes} minutes)",
+  "@sessionEndEvent": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsEnabledEvent": "Analytics enabled event tracked",
+  "analyticsDisabledEvent": "Analytics disabled event tracked",
+  "screenViewEvent": "Screen view tracked: {screenName}",
+  "@screenViewEvent": {
+    "placeholders": {
+      "screenName": {
+        "type": "String"
+      }
+    }
+  },
+  "userActionEvent": "User action tracked: {action}",
+  "@userActionEvent": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "performanceEvent": "Performance tracked: {operation} ({durationMs}ms)",
+  "@performanceEvent": {
+    "placeholders": {
+      "operation": {
+        "type": "String"
+      },
+      "durationMs": {
+        "type": "int"
+      }
+    }
+  },
+  "errorEvent": "Error tracked: {errorType} - {errorMessage}",
+  "@errorEvent": {
+    "placeholders": {
+      "errorType": {
+        "type": "String"
+      },
+      "errorMessage": {
+        "type": "String"
+      }
+    }
+  },
+  "featureUsageEvent": "Feature usage tracked: {feature}",
+  "@featureUsageEvent": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "readingSessionEvent": "Reading session tracked: {contentId} ({minutes}min, {pages} pages)",
+  "@readingSessionEvent": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "pages": "Pages",
+  "offlineManagerMessages": "Offline Content Manager Messages",
+  "offlineContentAvailable": "Content {contentId} is available offline: {available}",
+  "@offlineContentAvailable": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentPath": "Offline content path for {contentId}: {path}",
+  "@offlineContentPath": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "foundExistingFiles": "Found {count} existing downloaded files",
+  "@foundExistingFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineImageUrlsFound": "Found {count} offline image URLs for {contentId}",
+  "@offlineImageUrlsFound": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineContentIdsFound": "Found {count} offline content IDs",
+  "@offlineContentIdsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingOfflineContent": "Searching offline content for: {query}",
+  "@searchingOfflineContent": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentMetadata": "Offline content metadata for {contentId}: {source}",
+  "@offlineContentMetadata": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineContentCreated": "Offline content created for {contentId}",
+  "@offlineContentCreated": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStorageUsage": "Offline storage usage: {sizeBytes} bytes",
+  "@offlineStorageUsage": {
+    "placeholders": {
+      "sizeBytes": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupOrphanedFilesStarted": "Starting cleanup of orphaned offline files",
+  "cleanupOrphanedFilesCompleted": "Cleanup of orphaned offline files completed",
+  "removedOrphanedDirectory": "Removed orphaned directory: {path}",
+  "@removedOrphanedDirectory": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "daysAgo": "{count}{suffix} ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{count}{suffix} ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{count}{suffix} ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "queryLabel": "Query",
+  "tagsLabel": "Tags",
+  "excludeTagsLabel": "Exclude Tags",
+  "groupsLabel": "Groups",
+  "excludeGroupsLabel": "Exclude Groups",
+  "charactersLabel": "Characters",
+  "excludeCharactersLabel": "Exclude Characters",
+  "parodiesLabel": "Parodies",
+  "excludeParodiesLabel": "Exclude Parodies",
+  "artistsLabel": "Artists",
+  "excludeArtistsLabel": "Exclude Artists",
+  "languageLabel": "Language",
+  "categoryLabel": "Category",
+  "hours": "{count}h",
+  "@hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "minutes": "{count}m",
+  "@minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "seconds": "{count}s",
   "@seconds": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "loadingUserPreferences": "Loading user preferences",
   "successfullyLoadedUserPreferences": "Successfully loaded user preferences",
   "invalidColumnsPortraitValue": "Invalid columns portrait value: {value}",
   "@invalidColumnsPortraitValue": {
     "placeholders": {
-      "value": {"type": "int"}
+      "value": {
+        "type": "int"
+      }
     }
   },
   "invalidColumnsLandscapeValue": "Invalid columns landscape value: {value}",
   "@invalidColumnsLandscapeValue": {
     "placeholders": {
-      "value": {"type": "int"}
+      "value": {
+        "type": "int"
+      }
     }
   },
   "updatingSettingsViaPreferencesService": "Updating settings via PreferencesService",
@@ -1721,7 +1823,9 @@
   "failedToUpdateSetting": "Failed to update setting: {error}",
   "@failedToUpdateSetting": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "resettingAllSettingsToDefaults": "Resetting all settings to defaults",
@@ -1729,7 +1833,9 @@
   "failedToResetSettings": "Failed to reset settings: {error}",
   "@failedToResetSettings": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "settingsNotLoaded": "Settings not loaded",
@@ -1738,7 +1844,9 @@
   "failedToExportSettings": "Failed to export settings: {error}",
   "@failedToExportSettings": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "importingSettings": "Importing settings",
@@ -1746,7 +1854,9 @@
   "failedToImportSettings": "Failed to import settings: {error}",
   "@failedToImportSettings": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "unableToSyncSettings": "Unable to sync settings. Changes will be saved locally.",
@@ -1761,45 +1871,58 @@
   "@failedToUpdateSettings": {
     "description": "Generic error message when settings update fails"
   },
-
   "loadingHistory": "Loading history",
   "noHistoryFound": "No history found",
   "loadedHistoryEntries": "Loaded {count} history entries",
   "@loadedHistoryEntries": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "failedToLoadHistory": "Failed to load history: {error}",
   "@failedToLoadHistory": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "loadingMoreHistory": "Loading more history (page {page})",
   "@loadingMoreHistory": {
     "placeholders": {
-      "page": {"type": "int"}
+      "page": {
+        "type": "int"
+      }
     }
   },
   "loadedMoreHistoryEntries": "Loaded {count} more entries, total: {total}",
   "@loadedMoreHistoryEntries": {
     "placeholders": {
-      "count": {"type": "int"},
-      "total": {"type": "int"}
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "refreshingHistory": "Refreshing history",
   "refreshedHistoryWithEntries": "Refreshed history with {count} entries",
   "@refreshedHistoryWithEntries": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "failedToRefreshHistory": "Failed to refresh history: {error}",
   "@failedToRefreshHistory": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "clearingAllHistory": "Clearing all history",
@@ -1807,25 +1930,33 @@
   "failedToClearHistory": "Failed to clear history: {error}",
   "@failedToClearHistory": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "removingHistoryItem": "Removing history item: {contentId}",
   "@removingHistoryItem": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "removedHistoryItem": "Removed history item: {contentId}",
   "@removedHistoryItem": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "failedToRemoveHistoryItem": "Failed to remove history item: {error}",
   "@failedToRemoveHistoryItem": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "performingManualHistoryCleanup": "Performing manual history cleanup",
@@ -1833,86 +1964,115 @@
   "failedToPerformCleanup": "Failed to perform cleanup: {error}",
   "@failedToPerformCleanup": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "updatingCleanupSettings": "Updating cleanup settings",
   "cleanupSettingsUpdated": "Cleanup settings updated",
-
   "addingContentToFavorites": "Adding content to favorites: {title}",
   "@addingContentToFavorites": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "successfullyAddedToFavorites": "Successfully added to favorites: {title}",
   "@successfullyAddedToFavorites": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "contentNotInFavorites": "Content {contentId} is not in favorites, skipping removal",
   "@contentNotInFavorites": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "callingRemoveFromFavoritesUseCase": "Calling removeFromFavoritesUseCase with params: {params}",
   "@callingRemoveFromFavoritesUseCase": {
     "placeholders": {
-      "params": {"type": "String"}
+      "params": {
+        "type": "String"
+      }
     }
   },
   "successfullyCalledRemoveFromFavoritesUseCase": "Successfully called removeFromFavoritesUseCase",
   "updatingFavoritesListInState": "Updating favorites list in state, removing contentId: {contentId}",
   "@updatingFavoritesListInState": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "favoritesCountBeforeAfter": "Favorites count: before={before}, after={after}",
   "@favoritesCountBeforeAfter": {
     "placeholders": {
-      "before": {"type": "int"},
-      "after": {"type": "int"}
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
     }
   },
   "stateUpdatedSuccessfully": "State updated successfully",
   "successfullyRemovedFromFavorites": "Successfully removed from favorites: {contentId}",
   "@successfullyRemovedFromFavorites": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "errorRemovingContentFromFavorites": "Error removing content {contentId} from favorites: {error}",
   "@errorRemovingContentFromFavorites": {
     "placeholders": {
-      "contentId": {"type": "String"},
-      "error": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
   "removingFavoritesInBatch": "Removing {count} favorites in batch",
   "@removingFavoritesInBatch": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "successfullyRemovedFavoritesInBatch": "Successfully removed {count} favorites in batch",
   "@successfullyRemovedFavoritesInBatch": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "searchingFavoritesWithQuery": "Searching favorites with query: {query}",
   "@searchingFavoritesWithQuery": {
     "placeholders": {
-      "query": {"type": "String"}
+      "query": {
+        "type": "String"
+      }
     }
   },
   "foundFavoritesMatchingQuery": "Found {count} favorites matching query",
   "@foundFavoritesMatchingQuery": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "clearingFavoritesSearch": "Clearing favorites search",
@@ -1920,198 +2080,165 @@
   "successfullyExportedFavorites": "Successfully exported {count} favorites",
   "@successfullyExportedFavorites": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "importingFavoritesData": "Importing favorites data",
   "successfullyImportedFavorites": "Successfully imported {count} favorites",
   "@successfullyImportedFavorites": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "failedToImportFavorite": "Failed to import favorite: {error}",
   "@failedToImportFavorite": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "retryingFavoritesLoading": "Retrying favorites loading",
   "refreshingFavorites": "Refreshing favorites",
-
   "failedToLoadFavorites": "Failed to load favorites: {error}",
   "@failedToLoadFavorites": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToInitializeDownloadManager": "Failed to initialize download manager: {error}",
   "@failedToInitializeDownloadManager": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-  "waitingForWifiConnection": "Waiting for WiFi connection",
+  "waitingForWifiConnection": "Waiting for Wi-Fi connection",
   "failedToQueueDownload": "Failed to queue download: {error}",
   "@failedToQueueDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "retryingDownload": "Retrying... ({current}/{total})",
   "@retryingDownload": {
     "placeholders": {
-      "current": {"type": "int"},
-      "total": {"type": "int"}
-    }
-  },
-  "failedToStartDownload": "Failed to start download: {error}",
-  "@failedToStartDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "downloadCancelledByUser": "Download cancelled by user",
-  "failedToPauseDownload": "Failed to pause download: {error}",
-  "@failedToPauseDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToCancelDownload": "Failed to cancel download: {error}",
-  "@failedToCancelDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToRetryDownload": "Failed to retry download: {error}",
-  "@failedToRetryDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToResumeDownload": "Failed to resume download: {error}",
-  "@failedToResumeDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToRemoveDownload": "Failed to remove download: {error}",
-  "@failedToRemoveDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToRefreshDownloads": "Failed to refresh downloads: {error}",
-  "@failedToRefreshDownloads": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToUpdateDownloadSettings": "Failed to update download settings: {error}",
-  "@failedToUpdateDownloadSettings": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
   "pausingAllDownloads": "Pausing all downloads",
   "resumingAllDownloads": "Resuming all downloads",
   "cancellingAllDownloads": "Cancelling all downloads",
   "clearingCompletedDownloads": "Clearing completed downloads",
-  "failedToPauseAllDownloads": "Failed to pause all downloads: {error}",
-  "@failedToPauseAllDownloads": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToResumeAllDownloads": "Failed to resume all downloads: {error}",
-  "@failedToResumeAllDownloads": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToCancelAllDownloads": "Failed to cancel all downloads: {error}",
-  "@failedToCancelAllDownloads": {
-    "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
   "failedToQueueRangeDownload": "Failed to queue range download: {error}",
   "@failedToQueueRangeDownload": {
     "placeholders": {
-      "error": {"type": "String"}
-    }
-  },
-  "failedToStartDownload": "Failed to start download: {error}",
-  "@failedToStartDownload": {
-    "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToPauseDownload": "Failed to pause download: {error}",
   "@failedToPauseDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToCancelDownload": "Failed to cancel download: {error}",
   "@failedToCancelDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToRetryDownload": "Failed to retry download: {error}",
   "@failedToRetryDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToResumeDownload": "Failed to resume download: {error}",
   "@failedToResumeDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToRemoveDownload": "Failed to remove download: {error}",
   "@failedToRemoveDownload": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToRefreshDownloads": "Failed to refresh downloads: {error}",
   "@failedToRefreshDownloads": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToUpdateDownloadSettings": "Failed to update download settings: {error}",
   "@failedToUpdateDownloadSettings": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToPauseAllDownloads": "Failed to pause all downloads: {error}",
   "@failedToPauseAllDownloads": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToResumeAllDownloads": "Failed to resume all downloads: {error}",
   "@failedToResumeAllDownloads": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToCancelAllDownloads": "Failed to cancel all downloads: {error}",
   "@failedToCancelAllDownloads": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToClearCompletedDownloads": "Failed to clear completed downloads: {error}",
   "@failedToClearCompletedDownloads": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "downloadNotCompletedYet": "Download is not completed yet",
@@ -2119,120 +2246,160 @@
   "storageCleanupCompleted": "Storage cleanup completed. Cleaned {cleanedFiles} directories, freed {freedSpace} MB",
   "@storageCleanupCompleted": {
     "placeholders": {
-      "cleanedFiles": {"type": "int"},
-      "freedSpace": {"type": "String"}
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
     }
   },
   "storageCleanupComplete": "Storage Cleanup Complete: Cleaned {cleanedFiles} items, freed {freedSpace} MB",
   "@storageCleanupComplete": {
     "placeholders": {
-      "cleanedFiles": {"type": "int"},
-      "freedSpace": {"type": "String"}
+      "cleanedFiles": {
+        "type": "int"
+      },
+      "freedSpace": {
+        "type": "String"
+      }
     }
   },
   "storageCleanupFailed": "Storage Cleanup Failed: {error}",
   "@storageCleanupFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "exportDownloadsComplete": "Export Complete: Downloads exported to {fileName}",
   "@exportDownloadsComplete": {
     "placeholders": {
-      "fileName": {"type": "String"}
+      "fileName": {
+        "type": "String"
+      }
     }
   },
   "exportFailed": "Export Failed: {error}",
   "@exportFailed": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToDeleteDirectory": "Failed to delete directory: {path}, error: {error}",
   "@failedToDeleteDirectory": {
     "placeholders": {
-      "path": {"type": "String"},
-      "error": {"type": "String"}
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToDeleteTempFile": "Failed to delete temp file: {path}, error: {error}",
   "@failedToDeleteTempFile": {
     "placeholders": {
-      "path": {"type": "String"},
-      "error": {"type": "String"}
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
   "downloadDirectoryNotFound": "Download directory not found: {path}",
   "@downloadDirectoryNotFound": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "cannotOpenIncompleteDownload": "Cannot open - download not completed or path missing for {contentId}",
   "@cannotOpenIncompleteDownload": {
     "placeholders": {
-      "contentId": {"type": "String"}
-    }
-  },
-  "errorOpeningDownloadedContent": "Error opening downloaded content: {error}",
-  "@errorOpeningDownloadedContent": {
-    "placeholders": {
-      "error": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "allStrategiesFailedToOpenDownload": "All strategies failed to open downloaded content for {contentId}",
   "@allStrategiesFailedToOpenDownload": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "failedToSaveProgressToDatabase": "Failed to save progress to database: {error}",
   "@failedToSaveProgressToDatabase": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToUpdatePauseNotification": "Failed to update pause notification: {error}",
   "@failedToUpdatePauseNotification": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToUpdateResumeNotification": "Failed to update resume notification: {error}",
   "@failedToUpdateResumeNotification": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "failedToUpdateNotificationProgress": "Failed to update notification progress: {error}",
   "@failedToUpdateNotificationProgress": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorCalculatingDirectorySize": "Error calculating directory size: {error}",
   "@errorCalculatingDirectorySize": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorCleaningTempFiles": "Error cleaning temp files in: {path}, error: {error}",
   "@errorCleaningTempFiles": {
     "placeholders": {
-      "path": {"type": "String"},
-      "error": {"type": "String"}
+      "path": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorDetectingDownloadsDirectory": "Error detecting Downloads directory: {error}",
   "@errorDetectingDownloadsDirectory": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "usingEmergencyFallbackDirectory": "Using emergency fallback directory: {path}",
   "@usingEmergencyFallbackDirectory": {
     "placeholders": {
-      "path": {"type": "String"}
+      "path": {
+        "type": "String"
+      }
     }
   },
   "errorDuringStorageCleanup": "Error during storage cleanup",
@@ -2240,39 +2407,47 @@
   "errorDuringPdfConversion": "Error during PDF conversion for {contentId}",
   "@errorDuringPdfConversion": {
     "placeholders": {
-      "contentId": {"type": "String"}
+      "contentId": {
+        "type": "String"
+      }
     }
   },
   "errorRetryingPdfConversion": "Error retrying PDF conversion: {error}",
   "@errorRetryingPdfConversion": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "errorOpeningDownloadedContent": "Error opening downloaded content: {error}",
   "@errorOpeningDownloadedContent": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "importBackupFolder": "Import Backup Folder",
   "importBackupFolderDescription": "Enter the path to your backup folder containing nhasix content folders:",
   "scanningBackupFolder": "Scanning backup folder...",
   "backupContentFound": "Found {count} backup items",
   "@backupContentFound": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "noBackupContentFound": "No valid content found in backup folder",
   "errorScanningBackup": "Error scanning backup: {error}",
   "@errorScanningBackup": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "themeDescription": "Choose your preferred color theme for the app interface.",
   "imageQualityDescription": "Choose image quality for downloads. Higher quality uses more storage and data.",
   "gridColumnsDescription": "Choose how many columns to display content in portrait mode. More columns show more content but smaller items.",
@@ -2291,39 +2466,43 @@
   "disguiseNotes": "Notes",
   "disguiseWeather": "Weather",
   "storagePermissionScan": "Storage permission required to scan backup folders",
-  "syncResult": "Synced: {synced} new, {updated} updated",
-  "@syncResult": {
-    "placeholders": {
-      "synced": {"type": "int"},
-      "updated": {"type": "int"}
-    }
-  },
   "exportingLibrary": "Exporting Library",
   "libraryExportSuccess": "Library exported successfully!",
   "browseDownloads": "Browse Downloads",
   "deletingContent": "Deleting {title}...",
   "@deletingContent": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "contentDeletedFreed": "{title} deleted. Freed {size} MB",
   "@contentDeletedFreed": {
     "placeholders": {
-      "title": {"type": "String"},
-      "size": {"type": "String"}
+      "title": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
     }
   },
+  "size": "Size",
   "failedToDeleteContent": "Failed to delete {title}",
   "@failedToDeleteContent": {
     "placeholders": {
-      "title": {"type": "String"}
+      "title": {
+        "type": "String"
+      }
     }
   },
   "errorGeneric": "Error: {error}",
   "@errorGeneric": {
     "placeholders": {
-      "error": {"type": "String"}
+      "error": {
+        "type": "String"
+      }
     }
   },
   "contentDeleted": "Content deleted",
@@ -2333,8 +2512,12 @@
   "pdfConversionFailedWithError": "PDF conversion failed for {title}: {error}",
   "@pdfConversionFailedWithError": {
     "placeholders": {
-      "title": {"type": "String"},
-      "error": {"type": "String"}
+      "title": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
     }
   },
   "syncStarted": "Syncing Backup...",
@@ -2342,29 +2525,44 @@
   "syncInProgress": "Syncing Backup ({percent}%)",
   "@syncInProgress": {
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "syncProgressMessage": "Processed {processed} of {total} items",
   "@syncProgressMessage": {
     "placeholders": {
-      "processed": {"type": "int"},
-      "total": {"type": "int"}
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
+  "total": "Total",
   "syncCompleted": "Sync Completed",
   "syncCompletedMessage": "Imported: {synced}, Updated: {updated}",
   "@syncCompletedMessage": {
     "placeholders": {
-      "synced": {"type": "int"},
-      "updated": {"type": "int"}
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
     }
   },
   "syncResult": "Sync Result: {synced} imported, {updated} updated",
   "@syncResult": {
     "placeholders": {
-      "synced": {"type": "int"},
-      "updated": {"type": "int"}
+      "synced": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
     }
   },
   "storageSection": "Storage Location",
@@ -2540,6 +2738,1201 @@
   },
   "sourceImportFailedFromZip": "Failed to import ZIP source: {error}",
   "@sourceImportFailedFromZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutTitle": "About",
+  "appIsUpToDate": "App is up to date!",
+  "checkFailedMessage": "Check failed: {message}",
+  "@checkFailedMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesSection": "Updates",
+  "communityAndInfo": "Community & Info",
+  "githubRepository": "GitHub Repository",
+  "viewSourceCodeContribute": "View source code & contribute",
+  "openSourceLicenses": "Open Source Licenses",
+  "librariesUsedInApp": "Libraries used in this app",
+  "builtWith": "Built With",
+  "madeWithLoveBy": "Made with ❤️ by Shirokun20",
+  "allRightsReserved": "© 2025 All Rights Reserved",
+  "appUpdates": "App Updates",
+  "checkForUpdates": "Check for updates",
+  "checking": "Checking...",
+  "updateAvailable": "Update Available!",
+  "upToDate": "Up to date",
+  "checkFailed": "Check failed",
+  "couldNotLaunchUrl": "Could not launch {url}",
+  "@couldNotLaunchUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "solveCaptchaTitle": "Solve CAPTCHA",
+  "reloadChallenge": "Reload challenge",
+  "loginToCrotpedia": "Login to Crotpedia",
+  "syncedAsUser": "Synced as {username}",
+  "@syncedAsUser": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "loggedInAsUser": "Logged in as {username}",
+  "@loggedInAsUser": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "logout": "Logout",
+  "loginViaSecureBrowser": "Login via Secure Browser",
+  "loginIncomplete": "Login incomplete. Please try again.",
+  "loginFailedError": "Login failed: {error}",
+  "@loginFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "doujinListTitle": "Doujin List (A-Z)",
+  "errorLoadingDoujinList": "Error Loading Doujin List",
+  "noDoujinsFound": "No Doujins Found",
+  "doujinListEmpty": "The doujin list is empty.",
+  "searchDoujinsHint": "Search doujins...",
+  "cannotParseSlug": "Cannot parse slug from URL: {url}",
+  "@cannotParseSlug": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "errorParsingUrl": "Error parsing URL: {url}",
+  "@errorParsingUrl": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "genreListTitle": "Genre List",
+  "errorLoadingGenres": "Error Loading Genres",
+  "noGenresFound": "No Genres Found",
+  "noGenresAvailable": "There are no genres available at the moment.",
+  "projectRequests": "Project Requests",
+  "errorLoadingRequests": "Error Loading Requests",
+  "noRequestsFound": "No Requests Found",
+  "noProjectRequests": "There are no project requests at the moment.",
+  "manageCollections": "Manage Collections",
+  "addToFavoritesFirst": "Add to favorites first",
+  "favoriteOffline": "Favorite Offline",
+  "favoriteOnline": "Favorite Online",
+  "favoriteBoth": "Favorite Both",
+  "unsupportedGalleryId": "Unsupported gallery ID for online favorite.",
+  "addToFavoritesManageCollections": "Add to favorites first to manage collections",
+  "loginRequiredAction": "Login required for this action",
+  "newCollection": "New collection",
+  "collectionName": "Collection name",
+  "failedToCreateCollection": "Failed to create collection: {error}",
+  "@failedToCreateCollection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearSelection": "Clear Selection",
+  "refreshingDownloads": "Refreshing downloads...",
+  "refresh": "Refresh",
+  "failedToSaveCollection": "Failed to save collection: {error}",
+  "@failedToSaveCollection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "renameCollection": "Rename collection",
+  "pressBackToExit": "Press back again to exit",
+  "backToDetail": "Back to Detail",
+  "failedToOpenPdf": "Failed to open PDF: {error}",
+  "@failedToOpenPdf": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noChaptersAvailable": "No chapters available",
+  "failedToApplySearch": "Failed to apply search: {error}",
+  "@failedToApplySearch": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addTag": "Add tag",
+  "includeCountLabel": "Include {count}",
+  "@includeCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "excludeCountLabel": "Exclude {count}",
+  "@excludeCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchTagsHint": "Search tags...",
+  "applyWithCounts": "Apply ({include} / {exclude})",
+  "@applyWithCounts": {
+    "placeholders": {
+      "include": {
+        "type": "int"
+      },
+      "exclude": {
+        "type": "int"
+      }
+    }
+  },
+  "applyWithCount": "Apply ({count})",
+  "@applyWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchByTitleHint": "Search by title, ID, or keyword...",
+  "pagesLabel2": "Pages",
+  "favoritesGte": "Favorites ≥",
+  "manage": "Manage",
+  "local": "Local",
+  "rules": "Rules",
+  "failedToSave": "Failed to save: {error}",
+  "@failedToSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDelete": "Failed to delete: {error}",
+  "@failedToDelete": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchExampleHint": "romance, artist:example, 12345",
+  "refreshOnline": "Refresh online",
+  "addRules": "Add rules",
+  "pickFromTags": "Pick from tags",
+  "done": "Done",
+  "uninstallSource": "Uninstall source",
+  "uninstallSourceTitle": "Uninstall Source",
+  "uninstall": "Uninstall",
+  "failedToUninstall": "Failed to uninstall \"{sourceId}\": {error}",
+  "@failedToUninstall": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseOneSource": "Choose one source to install.",
+  "chooseMultipleSources": "Choose one or more sources to install.",
+  "installSelectedCount": "Install Selected ({count})",
+  "@installSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installSelected": "Install Selected",
+  "offlineModeLabel": "Offline Mode",
+  "descriptionLabel": "Description",
+  "aliasesLabel": "Aliases",
+  "searchContentWithTag": "Search Content With This Tag",
+  "backToFilters": "Back to Filters",
+  "dnsSettings": "DNS Settings",
+  "resetToDefaults": "Reset to defaults",
+  "enableDnsOverHttps": "Enable DNS-over-HTTPS",
+  "dnsServerIp": "DNS Server IP",
+  "primaryDnsAddress": "Primary DNS server address",
+  "dnsOverHttpsUrl": "DNS-over-HTTPS endpoint URL",
+  "resetDnsSettings": "Reset DNS Settings",
+  "syncRefresh": "Sync/Refresh",
+  "importFromBackup": "Import from Backup",
+  "importZipFile": "Import ZIP File",
+  "exportLibrary": "Export Library",
+  "loginRequired": "Login Required",
+  "openPdf": "Open PDF",
+  "maybeLater": "Maybe Later",
+  "noContentAtMoment": "No content available at the moment.",
+  "refreshingContentMsg": "Refreshing content...",
+  "retryingMsg": "Retrying...",
+  "clearingSearchMsg": "Clearing search...",
+  "failedToClearSearch": "Failed to clear search results: {error}",
+  "@failedToClearSearch": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchingContentMsg": "Searching content...",
+  "noContentMatchingSearch": "No content found matching your search criteria.",
+  "loadingPopularContent": "Loading popular content...",
+  "noPopularContent": "No popular content available at the moment.",
+  "loadingContentByTag": "Loading content by tag...",
+  "noContentForTag": "No content found for this tag.",
+  "loadingPageNum": "Loading page {page}...",
+  "@loadingPageNum": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "noContentOnPage": "No content found on this page.",
+  "noDownloadableImages": "This content has no downloadable images.",
+  "failedToStartDownload": "Failed to start download: {error}",
+  "@failedToStartDownload": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkDeleteCompleted": "Bulk Delete Completed",
+  "bulkDeletePartial": "Bulk Delete Partial",
+  "failedToInitSearch": "Failed to initialize search",
+  "searchingMsg": "Searching...",
+  "noResultsForQuery": "No results found for \"{query}\"",
+  "@noResultsForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchingWithFiltersMsg": "Searching with filters...",
+  "noResultsWithFilters": "No results found with current filters",
+  "invalidFilterErrors": "Invalid filter: {errors}",
+  "@invalidFilterErrors": {
+    "placeholders": {
+      "errors": {
+        "type": "String"
+      }
+    }
+  },
+  "noResultsGeneric": "No Results Found",
+  "loadingConfigMsg": "Loading configuration...",
+  "initTagsDbMsg": "Initializing tags database...",
+  "downloadingTagsMsg": "Downloading tags for {source}...",
+  "@downloadingTagsMsg": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "initFailedMsg": "Initialization failed: {error}",
+  "@initFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "initBypassMsg": "Initializing bypass system...",
+  "connectingToSite": "Connecting to nhentai.net...",
+  "connectedSuccess": "Successfully connected to nhentai.net",
+  "failedToConnect": "Failed to connect to nhentai.net. Please try again.",
+  "failedInitBypass": "Failed to initialize bypass system: {error}",
+  "@failedInitBypass": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bypassFailed": "Bypass verification failed. Please try again.",
+  "offlineBypassFailed": "Offline Mode (Bypass Failed)",
+  "errorBypassResult": "Error processing bypass result: {error}",
+  "@errorBypassResult": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "readyOfflineLimited": "Ready (Offline Mode - Limited)",
+  "downloadingInitConfig": "Downloading initial configuration...",
+  "readyOffline": "Ready (Offline Mode)",
+  "connectingMsg": "Connecting...",
+  "failedLoadOffline": "Failed to load offline content: {error}",
+  "@failedLoadOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noInternetCheckOffline": "No internet connection. Checking offline content...",
+  "foundOfflineItems": "Found {count} offline items. Continuing...",
+  "@foundOfflineItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noInternetNoOffline": "No internet connection and no offline content available.",
+  "unableCheckOffline": "Unable to check offline content. {error}",
+  "@unableCheckOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineLimitedFeatures": "Offline Mode (Limited Features)",
+  "readyOfflineLimitedFeatures": "Ready (Offline Mode - Limited Features)",
+  "failedEnableOffline": "Failed to enable offline mode: {error}",
+  "@failedEnableOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedCheckOffline": "Failed to check offline content: {error}",
+  "@failedCheckOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedOpenChapter": "Failed to open chapter: {message}",
+  "@failedOpenChapter": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "failedInitFilterData": "Failed to initialize filter data: {error}",
+  "@failedInitFilterData": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedSwitchFilterType": "Failed to switch filter type: {error}",
+  "@failedSwitchFilterType": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedMonitorNetwork": "Failed to monitor network connectivity",
+  "failedInitNetwork": "Failed to initialize network monitoring: {error}",
+  "@failedInitNetwork": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedUpdateConnection": "Failed to update connection status: {error}",
+  "@failedUpdateConnection": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedCheckConnectivity": "Failed to check connectivity: {error}",
+  "@failedCheckConnectivity": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedSearchOffline": "Failed to search offline content: {error}",
+  "@failedSearchOffline": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedLoadOfflineContent": "Failed to load offline content",
+  "failedScanBackup": "Failed to scan backup folder: {error}",
+  "@failedScanBackup": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedLoadContentError": "Failed to load content: {error}",
+  "@failedLoadContentError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chapterNavNotAvailable": "Chapter navigation not available",
+  "unknownChapter": "Unknown Chapter",
+  "failedLoadChapterImages": "Failed to load chapter images",
+  "failedLoadChapter": "Failed to load chapter: {error}",
+  "@failedLoadChapter": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailedError": "Import failed: {error}",
+  "@importFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorImportingZip": "Error importing ZIP: {error}",
+  "@errorImportingZip": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Error",
+  "lightThemeDesc": "Light theme with bright colors",
+  "darkThemeDesc": "Dark theme with muted colors",
+  "amoledThemeDesc": "Pure black theme for AMOLED displays",
+  "systemThemeDesc": "Follow system theme settings",
+
+  "nItems": "{count} items",
+  "@nItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nPages": "{count} pages",
+  "@nPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nGalleries": "{count} galleries",
+  "@nGalleries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sourceUninstalled": "Source \"{sourceId}\" uninstalled.",
+  "@sourceUninstalled": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "selectedSourcesCount": "Selected sources: {count}",
+  "@selectedSourcesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeoutMinutes": "{minutes} min",
+  "@timeoutMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "dohUrlOptional": "DoH URL (Optional)",
+
+  "dnsEncryptedDescription": "Use encrypted DNS for enhanced privacy and bypass censorship",
+  "usingSystemDns": "Using system default DNS resolver",
+  "dnsProvider": "DNS Provider",
+  "customConfiguration": "Custom Configuration",
+  "aboutDoh": "About DNS-over-HTTPS",
+  "dohDescription": "DNS-over-HTTPS (DoH) encrypts your DNS queries, preventing ISPs and network administrators from monitoring which websites you visit. It also helps bypass DNS-based censorship and geo-restrictions.",
+  "dnsQueriesEncrypted": "All DNS queries encrypted via HTTPS",
+  "enhancedPrivacy": "Enhanced privacy and security",
+  "resetDnsConfirmation": "This will reset DNS settings to system defaults. Continue?",
+
+  "collections": "Collections",
+  "collectionsUpdatedSuccessfully": "Collections updated successfully",
+  "createCollection": "Create collection",
+  "deleteCollection": "Delete collection",
+  "blacklistMatchWarning": "This gallery matches blacklist rules. Cover/cards can be blurred in list views.",
+  "chapterCompleted": "Chapter completed",
+  "continueFromPage": "Continue from page {page}",
+  "@continueFromPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "readAgain": "Read Again",
+  "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
+  "unknownError": "Unknown error",
+
+  "commentsCount": "Comments ({count})",
+  "@commentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noCommentsYet": "No comments yet",
+  "failedToLoadComments": "Failed to load comments",
+
+  "nSelected": "{count} selected",
+  "@nSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkDelete": "Bulk Delete",
+  "bulkDeleteConfirmation": "Are you sure you want to delete {count} downloads?",
+  "@bulkDeleteConfirmation": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "exportedFavoritesTo": "Exported favorites only ({count} items) to:\n{path}",
+  "@exportedFavoritesTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSaveExportFile": "Failed to save export file",
+  "importFavorites": "Import Favorites",
+  "successfullyImportedFavorites": "Successfully imported {count} favorites",
+  "@successfullyImportedFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noOnlineFavoritesSource": "No online favorites source available.",
+  "unsupportedGalleryId": "Unsupported gallery ID for online favorite.",
+  "collectionWithCount": "{name} ({count})",
+  "@collectionWithCount": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newLabel": "New",
+  "failedToRemoveFavorite": "Failed to remove favorite: {error}",
+  "@failedToRemoveFavorite": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "tryDifferentSearchTerm": "Try a different search term",
+  "applyWithCount": "Apply ({count})",
+  "@applyWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apply": "Apply",
+
+  "nItemsInHistory": "{count} items in history",
+  "@nItemsInHistory": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pageProgress": "{lastPage}/{totalPages} pages",
+  "@pageProgress": {
+    "placeholders": {
+      "lastPage": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      }
+    }
+  },
+
+  "tapToLoadContent": "Tap to load content",
+  "refreshingContent": "Refreshing content...",
+
+  "chapterComplete": "Chapter Complete!",
+  "finishedReading": "Finished Reading",
+
+  "readerSettings": "Reader Settings",
+  "chapterLabel": "Chapter",
+  "noChapterSelected": "No chapter selected",
+  "preventScreenOff": "Prevent screen from turning off while reading",
+  "chapters": "Chapters",
+  "readerSettingsReset": "Reader settings have been reset to defaults.",
+  "failedToResetSettings": "Failed to reset settings: {error}",
+  "@failedToResetSettings": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "tagInputTip": "Tip: press Enter or the + button to add a tag. You can type multiple tags using commas or new lines.",
+  "loadingOptions": "Loading options...",
+  "filterTags": "Filter Tags",
+  "noOptionsAvailable": "No options available for this field",
+  "failedLoadingOptions": "Failed loading options. Check connection and try again.",
+  "noTagsFound": "No tags found",
+  "previewQuery": "Preview Query (q)",
+  "all": "All",
+  "showLess": "Show Less",
+  "showAllCount": "Show All ({count})",
+  "@showAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "advancedFilters": "Advanced Filters",
+  "min": "Min",
+  "max": "Max",
+  "searchConfigUnavailable": "Search configuration unavailable for {sourceId}",
+  "@searchConfigUnavailable": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInternetOrReload": "Please check your internet connection or try reloading the application.",
+
+  "tagBlacklist": "Tag blacklist",
+  "blacklistDescription": "Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.",
+  "onlineRuleDetailsCount": "Online rule details ({count})",
+  "@onlineRuleDetailsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBlacklistRulesYet": "No blacklist rules yet. Add tag names like romance, artist:foo, or numeric tag IDs.",
+  "activeCoverageDescription": "Active coverage is enabled for {count} tokens (local + online IDs). Hidden here to keep this view human-readable.",
+  "@activeCoverageDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "manageTagBlacklist": "Manage tag blacklist",
+  "addTagRulesDescription": "Add tag names, typed rules like artist:foo, or numeric tag IDs. Separate multiple values with commas or new lines.",
+  "localRulesCount": "Local rules ({count})",
+  "@localRulesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlineRulesMetadataCount": "Online rules metadata ({count})",
+  "@onlineRulesMetadataCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlineRulesMetadata": "Online rules metadata",
+  "activeCoverageCount": "Active coverage ({count})",
+  "@activeCoverageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nSourcesInstalled": "{count} source(s) installed",
+  "@nSourcesInstalled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeSourceConfirmation": "Remove \"{sourceId}\" from local installed sources?",
+  "@removeSourceConfirmation": {
+    "placeholders": {
+      "sourceId": {
+        "type": "String"
+      }
+    }
+  },
+  "installedSourcesFromZip": "Installed {count} sources from ZIP",
+  "@installedSourcesFromZip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "enhancedReadingExperience": "Enhanced Reading Experience",
+  "initializingApplication": "Initializing Application...",
+  "offlineContentAvailable": "Offline Content Available",
+  "offlineModeEnabled": "Offline Mode Enabled",
+  "launchingApp": "Launching main application...",
+
+  "confirmExit": "Are you sure you want to exit?",
+  "resize": "Resize",
+  "youAreOffline": "You are offline",
+  "offlineFeaturesLimited": "Some features are limited. Connect to internet for full access.",
+
+  "downloadSettings": "Download Settings",
+  "maxConcurrentDownloads": "Max Concurrent Downloads",
+  "higherValuesBandwidth": "Higher values may consume more bandwidth and device resources",
+  "autoRetryFailed": "Auto Retry Failed Downloads",
+  "autoRetryDescription": "Automatically retry failed downloads",
+  "maxRetryAttempts": "Max Retry Attempts",
+  "wifiOnlyDownload": "Only download when connected to WiFi",
+  "downloadTimeout": "Download Timeout",
+  "enableNotifications": "Enable Notifications",
+  "showNotificationsProgress": "Show notifications for download progress",
+
+  "failedToLoadImage": "Failed to load image",
+  "retrying": "Retrying...",
+  "failedToLoad": "Failed to load",
+  "pageAttempt": "Page {pageNumber} • Attempt {current}/{max}",
+  "@pageAttempt": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      },
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "pageNumber": "Page {pageNumber}",
+  "@pageNumber": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadingNItems": "Downloading {count} items",
+  "@downloadingNItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoadContent": "Failed to load content",
+
+  "noOfflineContent": "No offline content",
+  "howToGetStarted": "How to get started",
+  "loadingMore": "Loading more...",
+  "noImagesFound": "No images found",
+  "dontAskAgain": "Don't ask again",
+
+  "pageOfTotal": "Page {current} of {total}",
+  "@pageOfTotal": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+
+  "loadingPageNumber": "Loading page {pageNumber}...",
+  "@loadingPageNumber": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "checkInternetConnection": "Check your internet connection",
+
+  "recentSearches": "Recent Searches",
+  "pageCountRange": "Page Count Range",
+
+  "nMoreFilters": "+{count} more",
+  "@nMoreFilters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "newUpdateAvailable": "New Update Available!",
+  "newVersion": "New Version: ",
+  "whatsNew": "What's New",
+  "downloadUpdate": "Download Update",
+
+  "exportPath": "Path: {path}",
+  "@exportPath": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "importedContentWithImages": "Imported \"{contentId}\" with {count} images to local folder",
+  "@importedContentWithImages": {
+    "placeholders": {
+      "contentId": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "failedToLoadCaptcha": "Failed to load CAPTCHA: {error}",
+  "@failedToLoadCaptcha": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "turnstileRejected": "Cloudflare Turnstile rejected the challenge (110200). Please retry or use manual token input.",
+  "openingNativeCaptcha": "Opening native CAPTCHA solver...",
+  "tapRefreshToRetry": "Tap refresh to retry native CAPTCHA challenge.",
+
+  "loginRequired": "Login Required",
+  "loginToCrotpediaDescription": "Login to Crotpedia using the native secure browser to access bookmarks and more.",
+  "crotpediaBookmarkLoginPrompt": "This feature (Bookmarking) requires you to be logged in to Crotpedia.\n\nWould you like to login now?",
+
+  "thisMayTakeMoments": "This may take a few moments...",
+  "noResultsForQuery": "No results for \"{query}\"",
+  "@noResultsForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "browseByGenre": "Browse by Genre",
+  "nMoreGenres": "+{count} more",
+  "@nMoreGenres": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "selectSourceFromManifest": "Select Source from Manifest",
+  "pagesWithSize": "{pageCount} pages • {size}",
+  "@pagesWithSize": {
+    "placeholders": {
+      "pageCount": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "browseComics": "1. Browse comics you like",
+  "tapDownloadButton": "2. Tap the download button",
+  "accessOffline": "3. Access them here anytime, even offline!",
+
+  "source": "Source",
+  "continueReading": "Continue",
+  "artistLabel": "Artist: {name}",
+  "@artistLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nPagesText": "{count} pages",
+  "@nPagesText": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkItOut": "Check it out: {url}",
+  "@checkItOut": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+
+  "filteredResults": "Filtered Results",
+  "filter": "Filter",
+  "clearingHistory": "Clearing history...",
+
+  "crotpediaMaintenance": "Crotpedia maintenance: {reason}",
+  "@crotpediaMaintenance": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "tapToChangeFilters": "Tap to change search filters",
+
+  "prevChapter": "Prev Chapter",
+  "nextChapter": "Next Chapter",
+  "loadingContent": "Loading content...",
+  "pageOfContent": "Page {current} of {total}",
+  "@pageOfContent": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "horizontalPages": "Horizontal Pages",
+  "continuousScroll": "Continuous Scroll",
+  "nChapters": "{count} chapters",
+  "@nChapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+
+  "failedToLoadOptionsTap": "Failed to load options. Tap to retry.",
+  "chooseField": "Choose {field}",
+  "@chooseField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "tapToLoadOptions": "Tap to load options",
+  "nSelectedItems": "{count} selected",
+  "@nSelectedItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tapToChooseTags": "Tap to choose included/excluded tags",
+  "includeExcludeCount": "Include {include} • Exclude {exclude}",
+  "@includeExcludeCount": {
+    "placeholders": {
+      "include": {
+        "type": "int"
+      },
+      "exclude": {
+        "type": "int"
+      }
+    }
+  },
+  "searchLabel": "Search",
+  "genreLabel": "Genre",
+  "statusLabel": "Status",
+  "orderBy": "Order by",
+  "authorLabel": "Author",
+  "artistFilterLabel": "Artist",
+
+  "tags": "Tags",
+  "artists": "Artists",
+  "characters": "Characters",
+  "parodies": "Parodies",
+  "groups": "Groups",
+  "filterCategories": "FILTER CATEGORIES",
+  "dateUploaded": "DATE UPLOADED",
+  "numericFilters": "NUMERIC FILTERS",
+  "older": "Older",
+
+  "contentFilters": "CONTENT FILTERS",
+  "blurCoversDescription": "Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.",
+  "appDisguise": "APP DISGUISE",
+  "developerTools": "DEVELOPER TOOLS",
+  "login": "Login",
+  "noOnlineRulesYet": "No online detailed rules returned yet. Pull refresh to fetch /blacklist data.",
+  "nothingSavedLocally": "Nothing saved locally yet. Local rules are always applied, including offline results.",
+  "loginRequiredForRules": "Login required to fetch detailed rule metadata from /blacklist.",
+  "syncingOnlineRules": "Syncing online rule details...",
+  "noOnlineRuleDetails": "No online rule details returned yet. Tap refresh to fetch /blacklist.",
+  "blacklistGalleriesInfo": "Blacklisted galleries will be blurred here once you add local rules or sync online IDs.",
+  "coverageActiveDescription": "Coverage is active for {count} tokens. ID tokens are hidden here by request; only named online rules are shown above.",
+  "@coverageActiveDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "availableSources": "AVAILABLE SOURCES",
+
+  "settingUpConnection": "Setting up components and checking connection...",
+  "bypassingProtection": "Bypassing protection and establishing connection...",
+
+  "tagId": "Tag ID",
+  "slug": "Slug",
+  "path": "Path",
+  "tag": "Tag",
+
+  "profileWithName": "Profile ({name})",
+  "@profileWithName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profile": "Profile",
+  "loginAccount": "Login / Account",
+  "accountWithName": "Account ({name})",
+  "@accountWithName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "pause": "Pause",
+  "resume": "Resume",
+  "cancel": "Cancel",
+  "retry": "Retry",
+  "details": "Details",
+  "remove": "Remove",
+  "convertToPdf": "Convert to PDF",
+
+  "performance": "Performance",
+  "autoRetry": "Auto Retry",
+  "network": "Network",
+  "notifications": "Notifications",
+
+  "downloaded": "{size} downloaded",
+  "@downloaded": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "estimatingProgress": "Estimating progress...",
+  "downloadingImageData": "Downloading image data...",
+
+  "searchHint": "Search...",
+  "hideFilters": "Hide filters",
+  "showMoreFilters": "Show more filters",
+
+  "preparingExport": "Preparing export...",
+  "readingFavorites": "Reading favorites from database...",
+  "encodingFavorites": "Encoding favorites data...",
+  "writingExportFile": "Writing export file...",
+  "finalizingExport": "Finalizing export...",
+  "renameCollection": "Rename collection",
+
+  "captchaCancelled": "CAPTCHA challenge was cancelled or failed.",
+  "failedToOpenCaptcha": "Failed to open native CAPTCHA solver: {error}",
+  "@failedToOpenCaptcha": {
     "placeholders": {
       "error": {
         "type": "String"

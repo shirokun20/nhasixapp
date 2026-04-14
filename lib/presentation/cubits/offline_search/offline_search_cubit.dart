@@ -321,7 +321,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
       } else {
         emit(OfflineSearchError(
-          message: 'Failed to search offline content: ${e.toString()}',
+          message: 'failedSearchOffline',
           query: query,
         ));
       }
@@ -557,7 +557,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
       } else {
         emit(const OfflineSearchError(
-          message: 'Failed to load offline content',
+          message: 'failedLoadOfflineContent',
           query: '',
         ));
       }
@@ -778,7 +778,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'scan backup content');
       emit(OfflineSearchError(
-        message: 'Failed to scan backup folder: ${e.toString()}',
+        message: 'failedScanBackup',
         query: '',
       ));
     }

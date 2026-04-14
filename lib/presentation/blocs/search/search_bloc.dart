@@ -152,7 +152,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           error: e, stackTrace: stackTrace);
 
       emit(SearchError(
-        message: 'Failed to initialize search',
+        message: 'failedToInitSearch',
         errorType: SearchErrorType.unknown,
         stackTrace: stackTrace,
       ));
@@ -179,7 +179,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
 
       // Show loading state
-      emit(const SearchLoading(message: 'Searching...'));
+      emit(const SearchLoading(message: 'searchingMsg'));
 
       // Perform search
       final result = await _searchContentUseCase(_currentFilter);
@@ -190,7 +190,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (result.isEmpty) {
         emit(SearchEmpty(
           filter: _currentFilter,
-          message: 'No results found for "${event.query}"',
+          message: 'noResultsForQuery',
           suggestions: await _generateSearchSuggestions(event.query),
         ));
         return;
@@ -236,7 +236,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           event.filter; // ✅ Use the page from event, don't reset to 1
 
       // Show loading state
-      emit(const SearchLoading(message: 'Searching with filters...'));
+      emit(const SearchLoading(message: 'searchingWithFiltersMsg'));
 
       // Perform search
       final result = await _searchContentUseCase(_currentFilter);
@@ -249,7 +249,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (result.isEmpty) {
         emit(SearchEmpty(
           filter: _currentFilter,
-          message: 'No results found with current filters',
+          message: 'noResultsWithFilters',
         ));
         return;
       }
@@ -294,7 +294,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           'SearchBloc: Filter validation failed: ${validationResult.issuesText}');
 
       emit(SearchError(
-        message: 'Invalid filter: ${validationResult.errors.join(', ')}',
+        message: 'invalidFilterErrors',
         errorType: SearchErrorType.validation,
         canRetry: false,
         filter: _currentFilter,
@@ -353,7 +353,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           'SearchBloc: Submitting search with filter: ${_currentFilter.toQueryString()}');
 
       // Show loading state
-      emit(const SearchLoading(message: 'Searching...'));
+      emit(const SearchLoading(message: 'searchingMsg'));
 
       // Save search filter state to local datasource for persistence
       // BUT EXCLUDE tag clicks from detail screen to prevent unwanted saving
@@ -379,7 +379,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (result.isEmpty) {
         emit(SearchEmpty(
           filter: _currentFilter,
-          message: 'No results found with current filters',
+          message: 'noResultsWithFilters',
         ));
         return;
       }
@@ -527,7 +527,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (result.isEmpty) {
         emit(SearchEmpty(
           filter: _currentFilter,
-          message: 'No results found',
+          message: 'noResultsGeneric',
         ));
         return;
       }

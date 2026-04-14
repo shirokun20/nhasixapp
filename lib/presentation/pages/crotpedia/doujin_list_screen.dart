@@ -15,6 +15,7 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class CrotpediaDoujinListScreen extends StatelessWidget {
   const CrotpediaDoujinListScreen({super.key});
 
@@ -25,7 +26,7 @@ class CrotpediaDoujinListScreen extends StatelessWidget {
       child: Scaffold(
         drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
-          title: const Text('Doujin List (A-Z)'),
+          title: Text(AppLocalizations.of(context)!.doujinListTitle),
           centerTitle: true,
         ),
         body: const _DoujinListBody(),
@@ -150,7 +151,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This may take a few moments...',
+                  AppLocalizations.of(context)!.thisMayTakeMoments,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -166,7 +167,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
         } else if (state is CrotpediaFeatureError) {
           return Center(
             child: AppErrorWidget(
-              title: 'Error Loading Doujin List',
+              title: AppLocalizations.of(context)!.errorLoadingDoujinList,
               message: state.message,
               onRetry: () => context
                   .read<CrotpediaFeatureCubit>()
@@ -175,10 +176,10 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
           );
         } else if (state is DoujinListLoaded) {
           if (state.doujins.isEmpty) {
-            return const Center(
+            return Center(
               child: AppErrorWidget(
-                title: 'No Doujins Found',
-                message: 'The doujin list is empty.',
+                title: AppLocalizations.of(context)!.noDoujinsFound,
+                message: AppLocalizations.of(context)!.doujinListEmpty,
                 icon: Icons.library_books_outlined,
               ),
             );
@@ -207,7 +208,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Search doujins...',
+                      hintText: AppLocalizations.of(context)!.searchDoujinsHint,
                       hintStyle: TextStyleConst.bodyLarge.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -289,7 +290,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'No results for "$_searchQuery"',
+                                    AppLocalizations.of(context)!.noResultsForQuery(_searchQuery),
                                     style: TextStyleConst.bodyLarge.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                     ),
@@ -470,11 +471,11 @@ class _DoujinListTile extends StatelessWidget {
             sourceId: SourceType.crotpedia.id);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Cannot parse slug from URL: ${doujin.url}')));
+            content: Text(AppLocalizations.of(context)!.cannotParseSlug(doujin.url))));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error parsing URL: ${doujin.url}')));
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorParsingUrl(doujin.url))));
     }
   }
 }

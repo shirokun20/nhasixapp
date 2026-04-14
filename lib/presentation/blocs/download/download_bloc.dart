@@ -444,7 +444,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             'DownloadBloc: Content ${event.content.id} has no downloadable images');
 
         emit(DownloadError(
-          message: 'This content has no downloadable images.',
+          message: 'noDownloadableImages',
           errorType: DownloadErrorType.unknown,
           previousState: currentState,
         ));
@@ -1057,7 +1057,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (currentState is! DownloadLoaded) {
       if (error is! Exception) {
         emit(DownloadError(
-          message: 'Failed to start download: ${error.toString()}',
+          message: 'failedToStartDownload',
           errorType: _determineErrorType(error),
           previousState: null,
           stackTrace: stackTrace,
@@ -1145,7 +1145,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       await _processQueue();
     } else {
       emit(DownloadError(
-        message: 'Failed to start download: ${error.toString()}',
+        message: 'failedToStartDownload',
         errorType: _determineErrorType(error),
         previousState: currentState,
         stackTrace: stackTrace,
@@ -2998,13 +2998,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         if (failureCount == 0) {
           await _notificationService.showDownloadCompleted(
             contentId: 'bulk_delete',
-            title: 'Bulk Delete Completed',
+            title: 'bulkDeleteCompleted',
             downloadPath: '',
           );
         } else {
           await _notificationService.showDownloadError(
             contentId: 'bulk_delete',
-            title: 'Bulk Delete Partial',
+            title: 'bulkDeletePartial',
             error: 'Deleted $successCount items, failed $failureCount items',
           );
         }

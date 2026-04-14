@@ -66,7 +66,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
             builder: (context) => AlertDialog(
               title: Text(AppLocalizations.of(context)?.exitApp ?? 'Exit App'),
               content: Text(AppLocalizations.of(context)?.areYouSureExit ??
-                  'Are you sure you want to exit?'),
+                  AppLocalizations.of(context)!.confirmExit),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -163,7 +163,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Resize',
+                                        AppLocalizations.of(context)!.resize,
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Theme.of(context)
@@ -299,14 +299,14 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
               children: [
                 Text(
                   AppLocalizations.of(context)?.youAreOfflineShort ??
-                      'You are offline',
+                      AppLocalizations.of(context)!.youAreOffline,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
                 Text(
                   AppLocalizations.of(context)?.someFeaturesLimited ??
-                      'Some features are limited. Connect to internet for full access.',
+                      AppLocalizations.of(context)!.offlineFeaturesLimited,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),

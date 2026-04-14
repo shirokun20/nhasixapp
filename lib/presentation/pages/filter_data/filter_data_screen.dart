@@ -321,7 +321,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                 Text(
                   state.message ??
                       (AppLocalizations.of(context)?.unknownError ??
-                          'Unknown error'),
+                          AppLocalizations.of(context)!.unknownError),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -369,7 +369,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                     const SizedBox(height: 8),
                     Text(
                       AppLocalizations.of(context)?.tryADifferentSearchTerm ??
-                          'Try a different search term',
+                          AppLocalizations.of(context)!.tryDifferentSearchTerm,
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -460,8 +460,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   ),
                   child: Text(
                     state is FilterDataLoaded && state.hasSelectedFilters
-                        ? 'Apply (${state.selectedCount})'
-                        : 'Apply',
+                        ? AppLocalizations.of(context)!.applyWithCount(state.selectedCount)
+                        : AppLocalizations.of(context)!.apply,
                   ),
                 ),
               ),
@@ -477,7 +477,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
     if (currentIndex >= 0 && currentIndex < _filterTypes.length) {
       return TagType.getDisplayName(_filterTypes[currentIndex]);
     }
-    return 'Filter';
+    return AppLocalizations.of(context)!.filter;
   }
 }
 

@@ -712,7 +712,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       alignment: Alignment.center,
       padding: const EdgeInsets.all(16),
       child: Text(
-        'Failed to load image',
+        AppLocalizations.of(context)!.failedToLoadImage,
         style: Theme.of(context).textTheme.bodyMedium,
         textAlign: TextAlign.center,
       ),
@@ -802,7 +802,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   child: Text(
                     progressPercent != null
                         ? '$progressPercent%'
-                        : 'Loading...',
+                        : AppLocalizations.of(context)!.loading,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -828,9 +828,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(totalBytes)}'
                       : progressPercent != null
                           ? (loadedBytes > 0
-                              ? '${_formatByteSize(loadedBytes)} downloaded'
-                              : 'Estimating progress...')
-                          : 'Downloading image data...',
+                              ? AppLocalizations.of(context)!.downloaded(_formatByteSize(loadedBytes))
+                              : AppLocalizations.of(context)!.estimatingProgress)
+                          : AppLocalizations.of(context)!.downloadingImageData,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -914,8 +914,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 // Error message or auto-retry indicator
                 Text(
                   (_autoRetryTimer?.isActive ?? false)
-                      ? 'Retrying...'
-                      : 'Failed to load',
+                      ? AppLocalizations.of(context)!.retrying
+                      : AppLocalizations.of(context)!.failedToLoad,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: (_autoRetryTimer?.isActive ?? false)
                             ? Theme.of(context).colorScheme.primary
@@ -928,8 +928,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 // Page number and retry count
                 Text(
                   (_autoRetryTimer?.isActive ?? false)
-                      ? 'Page ${widget.pageNumber} • Attempt $_imageLoadRetries/$_maxImageLoadRetries'
-                      : 'Page ${widget.pageNumber}',
+                      ? AppLocalizations.of(context)!.pageAttempt(widget.pageNumber, _imageLoadRetries, _maxImageLoadRetries)
+                      : AppLocalizations.of(context)!.pageNumber(widget.pageNumber),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

@@ -316,7 +316,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 const SizedBox(height: 8),
                 Text(
                   AppLocalizations.of(context)?.appSubtitle ??
-                      'Enhanced Reading Experience',
+                      AppLocalizations.of(context)!.enhancedReadingExperience,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -396,7 +396,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         child: Text(
                           state is SplashInitializing
                               ? AppLocalizations.of(context)?.initializingApp ??
-                                  'Initializing Application...'
+                                  AppLocalizations.of(context)!.initializingApplication
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
@@ -411,10 +411,10 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         state is SplashInitializing
                             ? AppLocalizations.of(context)
                                     ?.settingUpComponents ??
-                                'Setting up components and checking connection...'
+                                AppLocalizations.of(context)!.settingUpConnection
                             : AppLocalizations.of(context)
                                     ?.bypassingProtection ??
-                                'Bypassing protection and establishing connection...',
+                                AppLocalizations.of(context)!.bypassingProtection,
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -524,7 +524,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Offline Content Available',
+                        AppLocalizations.of(context)!.offlineContentAvailable,
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -558,7 +558,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          'No Internet Connection',
+                          AppLocalizations.of(context)!.noInternetConnection,
                           style: TextStyleConst.headingMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -584,7 +584,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           ElevatedButton.icon(
                             onPressed: () => _showOfflineOptionsDialog(context),
                             icon: const Icon(Icons.wifi_off),
-                            label: const Text('Offline Mode'),
+                            label: Text(AppLocalizations.of(context)!.offlineModeLabel),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
@@ -630,7 +630,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Offline Mode Enabled',
+                        AppLocalizations.of(context)!.offlineModeEnabled,
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.secondary,
                         ),
@@ -666,7 +666,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           AppLocalizations.of(context)?.connectionFailed ??
-                              'Connection Failed',
+                              AppLocalizations.of(context)!.connectionFailed,
                           style: TextStyleConst.statusError.copyWith(
                             fontSize: 18,
                           ),
@@ -761,7 +761,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 // Additional success info
                 Text(
                   AppLocalizations.of(context)?.launchingApp ??
-                      'Launching main application...',
+                      AppLocalizations.of(context)!.launchingApp,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
