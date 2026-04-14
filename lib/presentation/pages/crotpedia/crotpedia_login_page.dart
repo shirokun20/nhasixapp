@@ -4,6 +4,7 @@ import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CrotpediaLoginPage extends StatelessWidget {
   const CrotpediaLoginPage({super.key});
 
@@ -17,7 +18,9 @@ class CrotpediaLoginPage extends StatelessWidget {
         listener: (context, state) {
           if (state is CrotpediaAuthSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppLocalizations.of(context)!.syncedAsUser(state.username))),
+              SnackBar(
+                  content: Text(AppLocalizations.of(context)!
+                      .syncedAsUser(state.username))),
             );
           } else if (state is CrotpediaAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -40,7 +43,9 @@ class CrotpediaLoginPage extends StatelessWidget {
                 children: [
                   const Icon(Icons.check_circle, color: Colors.green, size: 64),
                   const SizedBox(height: 16),
-                  Text(AppLocalizations.of(context)!.loggedInAsUser(state.username),
+                  Text(
+                      AppLocalizations.of(context)!
+                          .loggedInAsUser(state.username),
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -68,7 +73,7 @@ class CrotpediaLoginPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     AppLocalizations.of(context)!.loginToCrotpediaDescription,
                     textAlign: TextAlign.center,
                   ),
@@ -76,7 +81,8 @@ class CrotpediaLoginPage extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: () => _launchNativeLogin(context),
                     icon: const Icon(Icons.login),
-                    label: Text(AppLocalizations.of(context)!.loginViaSecureBrowser),
+                    label: Text(
+                        AppLocalizations.of(context)!.loginViaSecureBrowser),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 32, vertical: 16),
@@ -130,7 +136,9 @@ class CrotpediaLoginPage extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedError(e.toString()))),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!
+                  .loginFailedError(e.toString()))),
         );
       }
     }

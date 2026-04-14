@@ -3350,6 +3350,7 @@
   "enhancedReadingExperience": "增强阅读体验",
   "initializingApplication": "正在初始化应用...",
   "offlineContentAvailable": "离线内容可用",
+  "offlineContentAvailableLabel": "离线内容可用",
   "offlineModeEnabled": "已启用离线模式",
   "launchingApp": "正在启动主应用...",
 

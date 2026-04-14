@@ -5,6 +5,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/services/update_service.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class UpdateAvailableSheet extends StatelessWidget {
   final UpdateInfo updateInfo;
 
@@ -194,9 +195,9 @@ class UpdateAvailableSheet extends StatelessWidget {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text(
+                  child: Text(
                     AppLocalizations.of(context)!.downloadUpdate,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),

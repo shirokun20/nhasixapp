@@ -12,9 +12,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'Kuron';
 
   @override
-  String get appSubtitle => 'Enhanced Reading Experience';
-
-  @override
   String sourceAuthProfileTitle(String sourceId) {
     return '个人资料 $sourceId';
   }
@@ -175,7 +172,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get thankYouMessage => '感谢您的支持！';
 
   @override
-  String get searchHint => '搜索内容...';
+  String get searchHint => '搜索...';
 
   @override
   String get searchPlaceholder => '输入搜索关键词';
@@ -199,13 +196,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tapToLoadContent => '点击加载内容';
 
   @override
-  String get checkInternetConnection => '请检查您的网络连接';
+  String get trySwitchingNetwork => '尝试切换 Wi-Fi 或移动数据';
 
   @override
-  String get trySwitchingNetwork => '尝试切换 WiFi 或移动数据';
-
-  @override
-  String get restartRouter => '如果使用 WiFi，请尝试重启路由器';
+  String get restartRouter => '如果使用 Wi-Fi，请尝试重启路由器';
 
   @override
   String get checkWebsiteStatus => '检查目标网站是否正常运行';
@@ -226,9 +220,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String serverReturnedError(int statusCode) {
     return '服务器返回错误代码 $statusCode，服务暂时不可用。';
   }
-
-  @override
-  String get searchResults => '搜索结果';
 
   @override
   String get failedToOpenBrowser => '无法打开浏览器';
@@ -278,16 +269,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cleanupInfo => '清理信息';
 
   @override
-  String get loadingHistory => '加载中历史';
-
-  @override
-  String get clearingHistory => '清除历史记录...';
+  String get clearingHistory => '正在清除历史...';
 
   @override
   String get areYouSureClearHistory => '您确定要清除所有阅读历史记录吗？此操作无法撤销。';
-
-  @override
-  String get justNow => '刚刚';
 
   @override
   String get artistCg => '画师 cg';
@@ -359,13 +344,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tryAdjustingFilters => '尝试调整筛选条件或使用其他关键词。';
 
   @override
-  String get tryDifferentKeywords => '尝试使用不同的关键词。';
-
-  @override
   String get networkError => '网络连接错误，请检查网络设置。';
-
-  @override
-  String get serverError => '服务器错误';
 
   @override
   String get accessBlocked => '访问被阻止。正在尝试绕过保护...';
@@ -383,13 +362,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unexpectedError => '发生意外错误。请重试。';
 
   @override
-  String get retryBypass => '重试 Bypass';
+  String get retryBypass => '重试绕过';
 
   @override
-  String get retryConnection => 'Retry 连接';
+  String get retryConnection => '重试连接';
 
   @override
-  String get retrySearch => '重试 搜索';
+  String get retrySearch => '重试搜索';
 
   @override
   String get errorNetwork => '网络连接错误，请检查您的网络设置。';
@@ -413,79 +392,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorConnectionRefused => '连接被拒绝，服务器可能已停止服务。';
 
   @override
-  String get networkErrorTitle => '网络 错误';
+  String get networkErrorTitle => '网络错误';
 
   @override
   String get serverErrorTitle => '服务器错误';
 
   @override
-  String get unknownErrorTitle => '未知 错误';
+  String get unknownErrorTitle => '未知错误';
 
   @override
-  String get loadingContent => '加载中内容...';
+  String get refreshingContent => '正在刷新内容...';
 
   @override
-  String get refreshingContent => 'Refreshing 内容...';
+  String get loadingMoreContent => '正在加载更多内容...';
 
   @override
-  String get loadingMoreContent => '加载中 more 内容...';
+  String get searchResults => '搜索结果';
 
   @override
-  String get latestContent => 'Latest 内容';
+  String get latestContent => '最新内容';
 
   @override
-  String get noInternetConnection => '无网络连接';
+  String get serverTemporarilyUnavailable => '服务器暂时不可用，请稍后再试。';
 
   @override
-  String get serverTemporarilyUnavailable =>
-      '服务器 is temporarily不可用. Please try again later.';
+  String get cloudflareProtectionDetected => '检测到 Cloudflare 保护，请稍等后重试。';
 
   @override
-  String get failedToLoadContent => '无法load 内容';
+  String get tooManyRequestsWait => '请求过多，请稍等片刻后重试。';
 
   @override
-  String get cloudflareProtectionDetected =>
-      'Cloudflare protection detected. Please wait and try again.';
-
-  @override
-  String get tooManyRequestsWait =>
-      'Too many requests. Please wait a moment before trying again.';
-
-  @override
-  String get noContentFoundMatching =>
-      '未找到content matching your 搜索criteria. Try adjusting your filters.';
+  String get noContentFoundMatching => '未找到符合搜索条件的内容。请尝试调整筛选器。';
 
   @override
   String noContentFoundForTag(String tagName) {
-    return '未找到content for 标签 \"$tagName\".';
+    return '未找到标签 \"$tagName\" 的内容。';
   }
 
   @override
-  String get removeSomeFilters => '移除some filters';
+  String get useGeneralTerms => '使用更宽泛的搜索词';
 
   @override
-  String get checkSpelling => 'Check spelling';
+  String get tryBrowsingOtherTags => '尝试浏览其他标签';
 
   @override
-  String get useGeneralTerms => 'Use more general 搜索terms';
+  String get checkPopularContent => '查看热门内容';
 
   @override
-  String get browsePopularContent => 'Browse 热门内容';
-
-  @override
-  String get tryBrowsingOtherTags => 'Try browsing other tags';
-
-  @override
-  String get checkPopularContent => 'Check 热门内容';
-
-  @override
-  String get useSearchFunction => 'Use the 搜索function';
+  String get useSearchFunction => '使用搜索功能';
 
   @override
   String get checkInternetConnectionSuggestion => '检查您的网络连接';
-
-  @override
-  String get tryRefreshingPage => '尝试刷新页面';
 
   @override
   String get browsePopularContentSuggestion => '浏览热门内容';
@@ -513,9 +470,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String invalidSearchFilter(String errors) {
     return '无效的搜索筛选：$errors';
   }
-
-  @override
-  String get pages => '页数';
 
   @override
   String get tags => '标签';
@@ -551,9 +505,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadCompleted => '下载完成';
 
   @override
-  String get downloadFailed => '下载失败';
-
-  @override
   String get initializing => '初始化中...';
 
   @override
@@ -567,9 +518,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get content => '内容';
-
-  @override
-  String get view => '查看';
 
   @override
   String get clearAll => '清空全部';
@@ -608,21 +556,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get allGalleriesDownloaded => '所有画廊已下载';
 
   @override
-  String downloadStarted(String title) {
-    return '下载已开始';
-  }
-
-  @override
   String get downloadNewGalleries => '下载新画廊';
 
   @override
   String get downloadProgress => '下载进度';
-
-  @override
-  String get downloadComplete => '下载完成';
-
-  @override
-  String get downloadError => '下载错误';
 
   @override
   String get verifyingFiles => '校验文件';
@@ -662,9 +599,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get all => '全部';
 
   @override
-  String get active => '进行中';
-
-  @override
   String get completed => '已完成';
 
   @override
@@ -681,11 +615,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noFailedDownloads => '没有失败的下载';
-
-  @override
-  String pdfConversionStarted(String contentId) {
-    return '已开始转换 PDF: $contentId';
-  }
 
   @override
   String get cancelAllDownloads => '取消所有下载';
@@ -715,16 +644,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get status => '状态';
 
   @override
-  String get progress => '进度';
-
-  @override
   String get progressPercent => '进度 %';
-
-  @override
-  String get speed => '速度';
-
-  @override
-  String get size => '大小';
 
   @override
   String get started => '开始时间';
@@ -733,19 +653,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ended => '结束时间';
 
   @override
-  String get duration => '耗时';
-
-  @override
   String get eta => '预计剩余时间';
-
-  @override
-  String get queued => '排队中';
-
-  @override
-  String get downloaded => '已下载';
-
-  @override
-  String get resume => '继续';
 
   @override
   String get failed => '失败';
@@ -763,19 +671,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectDownloadRange => '选择下载范围';
 
   @override
-  String get totalPages => '总页数';
-
-  @override
   String get useSliderToSelectRange => '使用滑块选择范围：';
 
   @override
   String get orEnterManually => '或手动输入：';
-
-  @override
-  String get startPage => '起始页';
-
-  @override
-  String get endPage => '结束页';
 
   @override
   String get quickSelections => '快速选择：';
@@ -866,6 +765,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serviceUnderMaintenance => '服务可能正在维护中';
 
   @override
+  String get tryRefreshingPage => '尝试刷新页面';
+
+  @override
   String get waitForBypass => '等待自动绕过完成';
 
   @override
@@ -893,7 +795,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tryAgainLater => '请稍后重试';
 
   @override
+  String get tryDifferentKeywords => '尝试使用不同的关键词。';
+
+  @override
   String get serverUnavailable => '服务器当前不可用，请稍后再试。';
+
+  @override
+  String get removeSomeFilters => '移除部分筛选器';
+
+  @override
+  String get checkSpelling => '检查拼写';
 
   @override
   String get useBroaderSearchTerms => '使用更宽泛的搜索词';
@@ -951,9 +862,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorLoadingFavorites => '加载收藏失败';
 
   @override
-  String get removeFavorite => '取消收藏';
-
-  @override
   String get removeFavoriteConfirmation => '确定要将此内容移出收藏夹吗？';
 
   @override
@@ -985,23 +893,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String exportFailed(String error) {
-    return '导出失败: $error';
-  }
-
-  @override
   String selectedCount(int count) {
     return '已选择 $count 项';
   }
 
   @override
   String get selectFavorites => '选择收藏';
-
-  @override
-  String get exportAction => '导出';
-
-  @override
-  String get refreshAction => '刷新';
 
   @override
   String get deleteSelected => '删除所选';
@@ -1013,9 +910,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectAll => '全选';
 
   @override
-  String get clearSelection => '清除';
-
-  @override
   String get removingFromFavorites => '正在移除收藏...';
 
   @override
@@ -1023,7 +917,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String failedToRemoveFavorite(String error) {
-    return '移除收藏失败: $error';
+    return '移除收藏失败：$error';
   }
 
   @override
@@ -1097,9 +991,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetToDefault => '恢复默认';
 
   @override
-  String get resetToDefaults => '恢复默认设置';
-
-  @override
   String get generalSettings => '通用设置';
 
   @override
@@ -1154,21 +1045,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readingModeLabel => '阅读模式：水平翻页';
 
   @override
-  String get keepScreenOnLabel => '保持屏幕常亮：关';
-
-  @override
-  String get showUILabel => '显示界面：开';
-
-  @override
   String get areYouSure => '确定要继续吗？';
 
   @override
   String get readerSettingsResetSuccess => '阅读器设置已恢复默认。';
-
-  @override
-  String failedToResetSettings(String error) {
-    return '重置设置失败：$error';
-  }
 
   @override
   String get readingHistory => '阅读历史';
@@ -1183,9 +1063,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cleanupSettings => '清理设置';
 
   @override
-  String get removeFromHistory => '从历史中移除';
-
-  @override
   String get removeFromHistoryQuestion => '确定移除此历史记录？';
 
   @override
@@ -1196,12 +1073,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get manualCleanupConfirmation => '将根据当前设置执行清理，是否继续？';
-
-  @override
-  String get noReadingHistory => '暂无阅读历史';
-
-  @override
-  String get errorLoadingHistory => '加载历史记录出错';
 
   @override
   String get nextPage => '下一页';
@@ -1231,7 +1102,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unableToCheckConnection => '无法检查连接。';
 
   @override
+  String get noInternetConnection => '无网络连接';
+
+  @override
   String get connectionError => '连接错误';
+
+  @override
+  String get serverError => '服务器错误';
 
   @override
   String get low => '低';
@@ -1291,9 +1168,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get comfortReading => '舒适阅读';
 
   @override
-  String get sortBy => '排序';
-
-  @override
   String get filterBy => '筛选';
 
   @override
@@ -1309,13 +1183,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ok => '确定';
 
   @override
-  String get cancel => '取消';
-
-  @override
   String get exitApp => '退出应用';
 
   @override
-  String get areYouSureExit => 'Are you sure you want to 退出 the 应用?';
+  String get areYouSureExit => '您确定要退出应用吗？';
 
   @override
   String get exit => '退出';
@@ -1325,15 +1196,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get confirm => '确认';
-
-  @override
-  String get loading => '加载中...';
-
-  @override
-  String get error => '错误';
-
-  @override
-  String get retry => '重试';
 
   @override
   String get tryAgain => '重试';
@@ -1349,9 +1211,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clear => '清除';
-
-  @override
-  String get remove => '移除';
 
   @override
   String get share => '分享';
@@ -1378,41 +1237,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retryAction => '重试';
 
   @override
-  String hours(int count) {
-    return '$count 小时';
-  }
-
-  @override
-  String days(int count) {
-    return '$count 天';
-  }
-
-  @override
   String get unknown => '未知';
-
-  @override
-  String daysAgo(int count, String suffix) {
-    return '$count$suffix前';
-  }
-
-  @override
-  String hoursAgo(int count, String suffix) {
-    return '$count$suffix前';
-  }
-
-  @override
-  String minutesAgo(int count, String suffix) {
-    return '$count$suffix前';
-  }
 
   @override
   String get noData => '无数据';
 
   @override
-  String get unknownTitle => '未知标题';
-
-  @override
-  String get offlineContentError => '离线内容错误';
+  String get downloadError => '下载错误';
 
   @override
   String get other => '其他';
@@ -1463,7 +1294,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get analyticsSubtitle => '利用本地数据辅助开发优 (不共享)';
+  String days(int count) {
+    return '$count 天';
+  }
+
+  @override
+  String get analyticsSubtitle => '利用本地数据辅助开发优化（不共享）';
+
+  @override
+  String get loadingContent => '加载内容中...';
 
   @override
   String get loadingError => '加载错误';
@@ -1497,7 +1336,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get verticalPages => '垂直翻页';
 
   @override
-  String get continuousScroll => '连续卷轴';
+  String get continuousScroll => '连续滚动';
+
+  @override
+  String get keepScreenOnLabel => '保持屏幕常亮：关';
+
+  @override
+  String get showUILabel => '显示界面：开';
 
   @override
   String get keepScreenOn => '保持屏幕常亮';
@@ -1513,9 +1358,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get platformNotSupportedInstall => '请在 Android 设备上安装并运行此应用。';
-
-  @override
-  String get storagePermissionRequired => '下载功能需要存储权限，请在设置中授予权限。';
 
   @override
   String get storagePermissionExplanation =>
@@ -1534,10 +1376,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openSettings => '打开设置';
 
   @override
+  String get noReadingHistory => '暂无阅读历史';
+
+  @override
   String get readingHistoryMessage => '您的阅读历史将在这里显示。';
 
   @override
   String get startReading => '开始阅读';
+
+  @override
+  String get browsePopularContent => '浏览热门内容';
 
   @override
   String get searchSomethingInteresting => '搜索些有趣的内容吧';
@@ -1595,9 +1443,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get pageNumber => '页码';
-
-  @override
   String get go => '前往';
 
   @override
@@ -1630,10 +1475,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fetchingMetadata => '正在获取元数据和图片...';
 
   @override
-  String get thisMayTakeMoments => '这可能需要一点时间';
+  String get thisMayTakeMoments => '这可能需要一会儿...';
 
   @override
-  String get youAreOffline => '当前处于离线状态，部分功能受限。';
+  String get youAreOffline => '您已离线';
 
   @override
   String get goOnline => '切换至在线';
@@ -1657,6 +1502,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statistics => '统计信息';
 
   @override
+  String get failedToLoadContent => '加载内容失败';
+
+  @override
   String get shareContent => '分享内容';
 
   @override
@@ -1672,11 +1520,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get viewDownloadsAction => '查看';
-
-  @override
-  String failedToStartDownload(String error) {
-    return '无法开始下载: $error';
-  }
 
   @override
   String get linkCopiedToClipboard => '链接已复制';
@@ -1709,22 +1552,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pagesLabel => '页数';
 
   @override
-  String get languageLabel => '语言';
+  String artistLabel(String name) {
+    return '画师：$name';
+  }
 
   @override
-  String get artistLabel => '画师';
-
-  @override
-  String get charactersLabel => '角色';
-
-  @override
-  String get parodiesLabel => '原作';
-
-  @override
-  String get groupsLabel => '社团';
-
-  @override
-  String get uploadedLabel => 'Uploaded';
+  String get uploadedLabel => '上传时间';
 
   @override
   String get viewAllChapters => '查看所有章节';
@@ -1737,12 +1570,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get favoritesLabel => '收藏';
-
-  @override
-  String get tagsLabel => '标签';
-
-  @override
-  String get artistsLabel => '画师';
 
   @override
   String get relatedLabel => '相关';
@@ -1772,6 +1599,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteSelectedTooltip => '已选择删除项';
+
+  @override
+  String get exportAction => '导出';
+
+  @override
+  String get refreshAction => '刷新';
 
   @override
   String get selectAllAction => '全选';
@@ -1843,19 +1676,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineContentTitle => '离线内容';
 
   @override
+  String get offlineContentError => '离线内容错误';
+
+  @override
   String get favorited => '已收藏';
 
   @override
   String get favorite => '收藏';
 
   @override
+  String get errorLoadingHistory => '加载历史记录出错';
+
+  @override
   String get errorLoadingFavoritesTitle => '加载收藏出错';
 
   @override
   String get filterDataTitle => '筛选数据';
-
-  @override
-  String get clearAllAction => '清除全部';
 
   @override
   String searchFilterHint(String filterType) {
@@ -1904,7 +1740,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get popularSearchesTitle => '热门搜索';
 
   @override
-  String get recentSearchesTitle => '最近搜索';
+  String get clearAllAction => '清除全部';
 
   @override
   String get pressSearchButtonMessage => '点击搜索按钮以应用当前筛选条件';
@@ -1943,6 +1779,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onlineStatus => '在线';
 
   @override
+  String get sortBy => '排序';
+
+  @override
   String get errorOccurred => '发生错误';
 
   @override
@@ -1976,10 +1815,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get suggestionCheckConnection => '检查网络连接';
 
   @override
-  String get suggestionTryWifiMobile => '尝试切换 WiFi 或移动数据';
+  String get suggestionTryWifiMobile => '尝试切换 Wi-Fi 或移动数据';
 
   @override
-  String get suggestionRestartRouter => '如果使用 WiFi，请尝试重启路由器';
+  String get suggestionRestartRouter => '如果使用 Wi-Fi，请尝试重启路由器';
 
   @override
   String get suggestionCheckWebsite => '检查网站是否宕机';
@@ -2029,10 +1868,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get overallProgress => '总进度';
 
   @override
-  String get total => '总计';
+  String get active => '进行中';
 
   @override
-  String get done => '完成';
+  String get queued => '排队中';
+
+  @override
+  String get speed => '速度';
 
   @override
   String downloadsFailed(int count, String plural) {
@@ -2040,16 +1882,28 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get view => '查看';
+
+  @override
   String get processing => '处理中...';
+
+  @override
+  String get loading => '加载中...';
+
+  @override
+  String get unknownTitle => '未知标题';
 
   @override
   String get readingCompleted => '已完成';
 
   @override
-  String get readAgain => '再次阅读';
+  String get readAgain => '重新阅读';
 
   @override
-  String get continueReading => '继续阅读';
+  String get continueReading => '继续';
+
+  @override
+  String get removeFromHistory => '从历史中移除';
 
   @override
   String get lessThanOneMinute => '少于 1 分钟';
@@ -2064,10 +1918,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pause => '暂停';
 
   @override
-  String get convertToPdf => '转换为 PDF';
+  String get resume => '恢复';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get retry => '重试';
 
   @override
   String get details => '详情';
+
+  @override
+  String get remove => '移除';
 
   @override
   String get downloadActionPause => '暂停';
@@ -2112,6 +1975,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get duration => '耗时';
+
+  @override
   String get downloadSettingsTitle => '下载设置';
 
   @override
@@ -2133,7 +1999,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoRetryFailedDownloads => '自动重试失败的下载';
 
   @override
-  String get autoRetryDescription => '自动重试失败的下载任务';
+  String get autoRetryDescription => '自动重试下载失败的任务';
 
   @override
   String get maxRetryAttempts => '最大重试次数';
@@ -2142,10 +2008,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get networkSection => '网络';
 
   @override
-  String get wifiOnlyLabel => '仅 WiFi';
+  String get wifiOnlyLabel => '仅 Wi-Fi';
 
   @override
-  String get wifiOnlyDescription => '仅在连接 WiFi 时下载';
+  String get wifiOnlyDescription => '仅在连接 Wi-Fi 时下载';
 
   @override
   String get downloadTimeoutLabel => '下载超时';
@@ -2178,16 +2044,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sortByLabel => '排序方式';
 
   @override
-  String get categoryLabel => '分类';
+  String get recentSearchesTitle => '最近搜索';
 
   @override
   String get includeTagsLabel => '包含标签 (逗号分隔)';
 
   @override
   String get includeTagsHint => '例如: romance, comedy, school';
-
-  @override
-  String get excludeTagsLabel => '排除标签';
 
   @override
   String get excludeTagsHint => '例如: horror, violence';
@@ -2217,13 +2080,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearAllFilters => '清除全部';
 
   @override
+  String get appSubtitle => 'Enhanced Reading Experience';
+
+  @override
   String get initializingApp => '正在初始化应用...';
 
   @override
   String get settingUpComponents => '正在设置组件并检查连接...';
 
   @override
-  String get bypassingProtection => '正在绕过防护并建立连接...';
+  String get bypassingProtection => '正在绕过保护并建立连接...';
 
   @override
   String get connectionFailed => '连接失败';
@@ -2235,6 +2101,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get launchingApp => '正在启动主应用...';
 
   @override
+  String downloaded(String size) {
+    return '已下载 $size';
+  }
+
+  @override
   String get imageNotAvailable => '图片不可用';
 
   @override
@@ -2243,9 +2114,20 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String pageNumber(int pageNumber) {
+    return '第 $pageNumber 页';
+  }
+
+  @override
+  String get checkInternetConnection => '请检查您的网络连接';
+
+  @override
   String selectedItemsCount(int count) {
     return '已选择 $count 项';
   }
+
+  @override
+  String get removeFavorite => '取消收藏';
 
   @override
   String get noImage => '无图';
@@ -2257,7 +2139,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get someFeaturesLimited => '部分功能受限。请连接网络以获取完整体验。';
 
   @override
-  String get wifi => 'WIFI';
+  String get wifi => 'WI-FI';
 
   @override
   String get ethernet => '以太网';
@@ -2337,9 +2219,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationMessages => '通知消息';
 
   @override
-  String get convertingToPdf => '正在转换为 PDF...';
-
-  @override
   String convertingToPdfWithTitle(String title) {
     return '正在将 $title 转换为 PDF...';
   }
@@ -2355,6 +2234,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get progress => '进度';
+
+  @override
   String get pdfCreatedSuccessfully => 'PDF 创建成功';
 
   @override
@@ -2363,13 +2245,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String pdfConversionFailed(String contentId, String error) {
-    return '$contentId PDF 转换失败: $error';
-  }
-
-  @override
-  String pdfConversionFailedWithError(String title, String error) {
-    return '$title PDF 转换失败: $error';
+  String downloadStarted(String title) {
+    return '下载已开始';
   }
 
   @override
@@ -2383,9 +2260,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get downloadComplete => '下载完成';
+
+  @override
   String downloadedWithTitle(String title) {
     return '已下载: $title';
   }
+
+  @override
+  String get downloadFailed => '下载失败';
 
   @override
   String downloadFailedWithTitle(String title) {
@@ -2430,9 +2313,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get startPage => '起始页';
+
+  @override
+  String get endPage => '结束页';
+
+  @override
   String invalidPageRange(int start, int end, int total) {
     return '无效的页码范围: $start-$end (共 $total 页)';
   }
+
+  @override
+  String get storagePermissionRequired => '下载功能需要存储权限，请在设置中授予权限。';
 
   @override
   String noDataReceived(String url) {
@@ -2451,8 +2343,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pdfConversionMessages => 'PDF 转换服务消息';
 
   @override
+  String pdfConversionStarted(String contentId) {
+    return '已开始转换 PDF: $contentId';
+  }
+
+  @override
   String pdfConversionCompleted(String contentId) {
     return '$contentId PDF 转换成功';
+  }
+
+  @override
+  String pdfConversionFailed(String contentId, String error) {
+    return '$contentId PDF 转换失败: $error';
   }
 
   @override
@@ -2467,6 +2369,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String pdfSplitRequired(int totalParts, int totalPages) {
     return '正在分割为 $totalParts 个部分 (共 $totalPages 页)';
   }
+
+  @override
+  String get totalPages => '总页数';
 
   @override
   String pdfCreatedFiles(int partsCount, int pageCount) {
@@ -2666,11 +2571,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get pages => '页数';
+
+  @override
   String get offlineManagerMessages => '离线内容管理器消息';
 
   @override
   String offlineContentAvailable(String contentId, String available) {
-    return '内容 $contentId 可离线访问: $available';
+    return '离线内容可用';
   }
 
   @override
@@ -2725,19 +2633,66 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String daysAgo(int count, String suffix) {
+    return '$count$suffix前';
+  }
+
+  @override
+  String hoursAgo(int count, String suffix) {
+    return '$count$suffix前';
+  }
+
+  @override
+  String minutesAgo(int count, String suffix) {
+    return '$count$suffix前';
+  }
+
+  @override
+  String get justNow => '刚刚';
+
+  @override
   String get queryLabel => '查询';
+
+  @override
+  String get tagsLabel => '标签';
+
+  @override
+  String get excludeTagsLabel => '排除标签';
+
+  @override
+  String get groupsLabel => '社团';
 
   @override
   String get excludeGroupsLabel => '排除社团';
 
   @override
+  String get charactersLabel => '角色';
+
+  @override
   String get excludeCharactersLabel => '排除角色';
+
+  @override
+  String get parodiesLabel => '原作';
 
   @override
   String get excludeParodiesLabel => '排除原作';
 
   @override
+  String get artistsLabel => '画师';
+
+  @override
   String get excludeArtistsLabel => '排除画师';
+
+  @override
+  String get languageLabel => '语言';
+
+  @override
+  String get categoryLabel => '分类';
+
+  @override
+  String hours(int count) {
+    return '$count 小时';
+  }
 
   @override
   String minutes(int count) {
@@ -2784,6 +2739,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get successfullyResetAllSettingsToDefaults => '已恢复所有默认设置';
 
   @override
+  String failedToResetSettings(String error) {
+    return '重置设置失败：$error';
+  }
+
+  @override
   String get settingsNotLoaded => '设置未加载';
 
   @override
@@ -2816,6 +2776,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get failedToUpdateSettings => '设置更新失败，请重试。';
+
+  @override
+  String get loadingHistory => '正在加载历史...';
 
   @override
   String get noHistoryFound => '未找到历史记录';
@@ -2988,365 +2951,381 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get retryingFavoritesLoading => 'Retrying 收藏加载中';
+  String get retryingFavoritesLoading => '正在重新加载收藏';
 
   @override
-  String get refreshingFavorites => 'Refreshing 收藏';
+  String get refreshingFavorites => '正在刷新收藏';
 
   @override
   String failedToLoadFavorites(String error) {
-    return '无法load favorites: $error';
+    return '加载收藏失败: $error';
   }
 
   @override
   String failedToInitializeDownloadManager(String error) {
-    return '无法initialize 下载 manager: $error';
+    return '初始化下载管理器失败: $error';
   }
 
   @override
-  String get waitingForWifiConnection => 'Waiting for WiFi 连接';
+  String get waitingForWifiConnection => '等待 Wi-Fi 连接';
 
   @override
   String failedToQueueDownload(String error) {
-    return '无法queue download: $error';
+    return '下载入队失败: $error';
   }
 
   @override
   String retryingDownload(int current, int total) {
-    return '重试ing... ($current/$total)';
+    return '正在重试... ($current/$total)';
   }
 
   @override
-  String get downloadCancelledByUser => '下载 cancelled by 用户';
+  String get downloadCancelledByUser => '用户已取消下载';
+
+  @override
+  String get pausingAllDownloads => '正在暂停所有下载';
+
+  @override
+  String get resumingAllDownloads => '正在继续所有下载';
+
+  @override
+  String get cancellingAllDownloads => '正在取消所有下载';
+
+  @override
+  String get clearingCompletedDownloads => '正在清除已完成的下载';
+
+  @override
+  String failedToQueueRangeDownload(String error) {
+    return '范围下载入队失败: $error';
+  }
 
   @override
   String failedToPauseDownload(String error) {
-    return '无法pause download: $error';
+    return '暂停下载失败: $error';
   }
 
   @override
   String failedToCancelDownload(String error) {
-    return '无法cancel download: $error';
+    return '取消下载失败: $error';
   }
 
   @override
   String failedToRetryDownload(String error) {
-    return '无法retry download: $error';
+    return '重试下载失败: $error';
   }
 
   @override
   String failedToResumeDownload(String error) {
-    return '无法resume download: $error';
+    return '继续下载失败: $error';
   }
 
   @override
   String failedToRemoveDownload(String error) {
-    return '无法移除download: $error';
+    return '移除下载失败: $error';
   }
 
   @override
   String failedToRefreshDownloads(String error) {
-    return '无法refresh downloads: $error';
+    return '刷新下载失败: $error';
   }
 
   @override
   String failedToUpdateDownloadSettings(String error) {
-    return '无法update download设置: $error';
+    return '更新下载设置失败: $error';
   }
 
   @override
-  String get pausingAllDownloads => 'Pausing 全部 downloads';
-
-  @override
-  String get resumingAllDownloads => 'Resuming 全部 downloads';
-
-  @override
-  String get cancellingAllDownloads => 'Cancelling 全部 downloads';
-
-  @override
-  String get clearingCompletedDownloads => '清除ing completed downloads';
-
-  @override
   String failedToPauseAllDownloads(String error) {
-    return '无法pause 全部 downloads: $error';
+    return '暂停所有下载失败: $error';
   }
 
   @override
   String failedToResumeAllDownloads(String error) {
-    return '无法resume 全部 downloads: $error';
+    return '继续所有下载失败: $error';
   }
 
   @override
   String failedToCancelAllDownloads(String error) {
-    return '无法cancel 全部 downloads: $error';
-  }
-
-  @override
-  String failedToQueueRangeDownload(String error) {
-    return '无法queue range download: $error';
+    return '取消所有下载失败: $error';
   }
 
   @override
   String failedToClearCompletedDownloads(String error) {
-    return '无法清除completed downloads: $error';
+    return '清除已完成下载失败: $error';
   }
 
   @override
-  String get downloadNotCompletedYet => '下载 is not completed yet';
+  String get downloadNotCompletedYet => '下载尚未完成';
 
   @override
-  String get noImagesFoundForConversion => '未找到images for conversion';
+  String get noImagesFoundForConversion => '未找到可转换的图片';
 
   @override
   String storageCleanupCompleted(int cleanedFiles, String freedSpace) {
-    return '存储 cleanup completed. Cleaned $cleanedFiles directories, freed $freedSpace MB';
+    return '存储清理完成。清理了 $cleanedFiles 个目录，释放了 $freedSpace MB';
   }
 
   @override
   String storageCleanupComplete(int cleanedFiles, String freedSpace) {
-    return '存储 Cleanup Complete: Cleaned $cleanedFiles items, freed $freedSpace MB';
+    return '存储清理完成: 清理了 $cleanedFiles 个项目，释放了 $freedSpace MB';
   }
 
   @override
   String storageCleanupFailed(String error) {
-    return '存储 Cleanup失败: $error';
+    return '存储清理失败: $error';
   }
 
   @override
   String exportDownloadsComplete(String fileName) {
-    return '导出 Complete: 下载 exported to $fileName';
+    return '导出完成: 下载已导出到 $fileName';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return '导出失败: $error';
   }
 
   @override
   String failedToDeleteDirectory(String path, String error) {
-    return '无法删除directory: $path, error: $error';
+    return '删除目录失败: $path，错误: $error';
   }
 
   @override
   String failedToDeleteTempFile(String path, String error) {
-    return '无法删除temp file: $path, error: $error';
+    return '删除临时文件失败: $path，错误: $error';
   }
 
   @override
   String downloadDirectoryNotFound(String path) {
-    return '下载 directory not found: $path';
+    return '未找到下载目录: $path';
   }
 
   @override
   String cannotOpenIncompleteDownload(String contentId) {
-    return 'Cannot 打开 - 下载 not completed or path missing for $contentId';
-  }
-
-  @override
-  String errorOpeningDownloadedContent(String error) {
-    return 'opening downloaded content: $error错误';
+    return '无法打开 - 下载未完成或 $contentId 路径丢失';
   }
 
   @override
   String allStrategiesFailedToOpenDownload(String contentId) {
-    return '全部 strategies 无法open downloaded 内容 for $contentId';
+    return '所有策略均无法打开 $contentId 的已下载内容';
   }
 
   @override
   String failedToSaveProgressToDatabase(String error) {
-    return '无法save 进度 to database: $error';
+    return '保存进度到数据库失败: $error';
   }
 
   @override
   String failedToUpdatePauseNotification(String error) {
-    return '无法update pause notification: $error';
+    return '更新暂停通知失败: $error';
   }
 
   @override
   String failedToUpdateResumeNotification(String error) {
-    return '无法update resume notification: $error';
+    return '更新继续通知失败: $error';
   }
 
   @override
   String failedToUpdateNotificationProgress(String error) {
-    return '无法update 通知 progress: $error';
+    return '更新通知进度失败: $error';
   }
 
   @override
   String errorCalculatingDirectorySize(String error) {
-    return 'calculating directory size: $error错误';
+    return '计算目录大小出错: $error';
   }
 
   @override
   String errorCleaningTempFiles(String path, String error) {
-    return 'cleaning temp files in: $path, error: $error错误';
+    return '清理临时文件出错: $path，错误: $error';
   }
 
   @override
   String errorDetectingDownloadsDirectory(String error) {
-    return 'detecting Downloads directory: $error错误';
+    return '检测下载目录出错: $error';
   }
 
   @override
   String usingEmergencyFallbackDirectory(String path) {
-    return 'Using emergency fallback directory: $path';
+    return '使用紧急备用目录: $path';
   }
 
   @override
-  String get errorDuringStorageCleanup => 'during 存储 cleanup错误';
+  String get errorDuringStorageCleanup => '存储清理过程中出错';
 
   @override
-  String get errorDuringExport => 'during export错误';
+  String get errorDuringExport => '导出过程中出错';
 
   @override
   String errorDuringPdfConversion(String contentId) {
-    return 'during PDF conversion for $contentId错误';
+    return '$contentId PDF 转换过程中出错';
   }
 
   @override
   String errorRetryingPdfConversion(String error) {
-    return 'retrying PDF conversion: $error错误';
+    return '重试 PDF 转换出错: $error';
   }
 
   @override
-  String get importBackupFolder => '导入 返回up Folder';
+  String errorOpeningDownloadedContent(String error) {
+    return '打开已下载内容出错: $error';
+  }
 
   @override
-  String get importBackupFolderDescription =>
-      '输入the path to your backup folder containing nhasix 内容 folders:';
+  String get importBackupFolder => '导入备份文件夹';
 
   @override
-  String get scanningBackupFolder => 'Scanning backup folder...';
+  String get importBackupFolderDescription => '请输入包含 nhasix 内容文件夹的备份路径:';
+
+  @override
+  String get scanningBackupFolder => '正在扫描备份文件夹...';
 
   @override
   String backupContentFound(int count) {
-    return 'Found $count backup items';
+    return '发现 $count 个备份项目';
   }
 
   @override
-  String get noBackupContentFound => '未找到valid 内容 in backup folder';
+  String get noBackupContentFound => '备份文件夹中未找到有效内容';
 
   @override
   String errorScanningBackup(String error) {
-    return 'scanning backup: $error错误';
+    return '扫描备份出错: $error';
   }
 
   @override
-  String get themeDescription => '选择 your preferred 颜色主题 for the 应用 interface.';
+  String get themeDescription => '选择您偏好的应用界面颜色主题。';
 
   @override
-  String get imageQualityDescription =>
-      '选择图片质量 for downloads. Higher 质量 uses more 存储 and data.';
+  String get imageQualityDescription => '选择下载的图片质量。质量越高，占用的存储和数据越多。';
 
   @override
-  String get gridColumnsDescription =>
-      '选择 how many columns to 显示内容 in portrait模式. More columns 显示more 内容 but smaller items.';
+  String get gridColumnsDescription => '选择竖屏模式下的内容列数。列数越多，显示的内容越多但尺寸越小。';
 
   @override
   String get gridPreview => '网格预览';
 
   @override
-  String get autoCleanupDescription =>
-      'Manage automatic cleanup of reading 历史 to free up 存储 space.';
+  String get autoCleanupDescription => '管理阅读历史的自动清理以释放存储空间。';
 
   @override
-  String get testCacheClearing => 'Test 应用更新 Cache Clearing';
+  String get testCacheClearing => '测试应用更新缓存清理';
 
   @override
-  String get testCacheClearingDescription =>
-      'Simulate 应用更新 and test cache clearing behavior.';
+  String get testCacheClearingDescription => '模拟应用更新并测试缓存清理行为。';
 
   @override
-  String get forceClearCache => 'Force 清除All Caches';
+  String get forceClearCache => '强制清除所有缓存';
 
   @override
-  String get forceClearCacheDescription => 'Manually 清除all 图片 caches.';
+  String get forceClearCacheDescription => '手动清除所有图片缓存。';
 
   @override
-  String get runTest => 'Run Test';
+  String get runTest => '运行测试';
 
   @override
   String get clearCacheButton => '清除缓存';
 
   @override
-  String get disguiseModeDescription =>
-      '选择 how the 应用 appears in your launcher for privacy.';
+  String get disguiseModeDescription => '选择应用在启动器中的显示方式以保护隐私。';
 
   @override
-  String get applyingDisguiseMode => 'Applying disguise模式 changes...';
+  String get applyingDisguiseMode => '正在应用伪装模式更改...';
 
   @override
   String get disguiseDefault => '默认';
 
   @override
-  String get disguiseCalculator => 'Calculator';
+  String get disguiseCalculator => '计算器';
 
   @override
-  String get disguiseNotes => '否tes';
+  String get disguiseNotes => '笔记';
 
   @override
-  String get disguiseWeather => 'Weather';
+  String get disguiseWeather => '天气';
 
   @override
-  String get storagePermissionScan => '需要Storage 权限 to scan backup folders';
+  String get storagePermissionScan => '扫描备份文件夹需要存储权限';
 
   @override
-  String syncResult(int synced, int updated) {
-    return 'Sync Result: $synced imported, $updated已更新';
-  }
+  String get exportingLibrary => '正在导出资料库';
 
   @override
-  String get exportingLibrary => 'Exporting 书库';
+  String get libraryExportSuccess => '资料库导出成功！';
 
   @override
-  String get libraryExportSuccess => '书库 exported成功ly!';
-
-  @override
-  String get browseDownloads => 'Browse 下载';
+  String get browseDownloads => '浏览下载';
 
   @override
   String deletingContent(String title) {
-    return 'Deleting $title...';
+    return '正在删除 $title...';
   }
 
   @override
   String contentDeletedFreed(String title, String size) {
-    return '$title已删除. Freed $size MB';
+    return '$title 已删除，释放了 $size MB';
   }
 
   @override
+  String get size => '大小';
+
+  @override
   String failedToDeleteContent(String title) {
-    return '无法删除$title';
+    return '删除 $title 失败';
   }
 
   @override
   String errorGeneric(String error) {
-    return 'Error: $error';
+    return '错误: $error';
   }
 
   @override
-  String get contentDeleted => 'Content已删除';
+  String get contentDeleted => '内容已删除';
 
   @override
-  String get cacheManagementDebug => '🚀 Cache Management (Debug)';
+  String get cacheManagementDebug => '🚀 缓存管理（调试）';
 
   @override
-  String get syncStarted => 'Syncing 返回up...';
+  String get convertToPdf => '转换为 PDF';
 
   @override
-  String get syncStartedMessage => 'Scanning and importing offline 内容';
+  String get convertingToPdf => '正在转换为 PDF...';
+
+  @override
+  String pdfConversionFailedWithError(String title, String error) {
+    return '$title PDF 转换失败: $error';
+  }
+
+  @override
+  String get syncStarted => '正在同步备份...';
+
+  @override
+  String get syncStartedMessage => '正在扫描并导入离线内容';
 
   @override
   String syncInProgress(int percent) {
-    return 'Syncing 返回up ($percent%)';
+    return '正在同步备份 ($percent%)';
   }
 
   @override
   String syncProgressMessage(int processed, int total) {
-    return 'Processed $processed of $total items';
+    return '已处理 $processed/$total 项';
   }
 
   @override
-  String get syncCompleted => 'Sync 已完成';
+  String get total => '总计';
+
+  @override
+  String get syncCompleted => '同步完成';
 
   @override
   String syncCompletedMessage(int synced, int updated) {
-    return 'Imported: $synced,已更新: $updated';
+    return '已导入: $synced，已更新: $updated';
+  }
+
+  @override
+  String syncResult(int synced, int updated) {
+    return '同步结果: 导入 $synced 个，更新 $updated 个';
   }
 
   @override
@@ -3390,7 +3369,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectFolder => '选择文件夹';
 
   @override
-  String get premiumFeature => 'Premium Feature';
+  String get premiumFeature => '高级功能';
 
   @override
   String get commentsMaintenance => '评论正在维护中';
@@ -3584,5 +3563,1311 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String sourceImportFailedFromZip(String error) {
     return '导入 ZIP 来源失败：$error';
+  }
+
+  @override
+  String get aboutTitle => '关于';
+
+  @override
+  String get appIsUpToDate => '应用已是最新版本！';
+
+  @override
+  String checkFailedMessage(String message) {
+    return '检查失败：$message';
+  }
+
+  @override
+  String get updatesSection => '更新';
+
+  @override
+  String get communityAndInfo => '社区 & 信息';
+
+  @override
+  String get githubRepository => 'GitHub 仓库';
+
+  @override
+  String get viewSourceCodeContribute => '查看源代码和贡献';
+
+  @override
+  String get openSourceLicenses => '开源许可证';
+
+  @override
+  String get librariesUsedInApp => '本应用使用的库';
+
+  @override
+  String get builtWith => '技术栈';
+
+  @override
+  String get madeWithLoveBy => '由 Shirokun20 用 ❤️ 制作';
+
+  @override
+  String get allRightsReserved => '© 2025 保留所有权利';
+
+  @override
+  String get appUpdates => '应用更新';
+
+  @override
+  String get checkForUpdates => '检查更新';
+
+  @override
+  String get checking => '检查中...';
+
+  @override
+  String get updateAvailable => '有更新可用！';
+
+  @override
+  String get upToDate => '已是最新';
+
+  @override
+  String get checkFailed => '检查失败';
+
+  @override
+  String couldNotLaunchUrl(String url) {
+    return '无法打开 $url';
+  }
+
+  @override
+  String get solveCaptchaTitle => '完成 CAPTCHA';
+
+  @override
+  String get reloadChallenge => '重新加载验证';
+
+  @override
+  String get loginToCrotpedia => '登录到 Crotpedia';
+
+  @override
+  String syncedAsUser(String username) {
+    return '已同步为 $username';
+  }
+
+  @override
+  String loggedInAsUser(String username) {
+    return '已登录为 $username';
+  }
+
+  @override
+  String get logout => '退出登录';
+
+  @override
+  String get loginViaSecureBrowser => '通过安全浏览器登录';
+
+  @override
+  String get loginIncomplete => '登录未完成，请重试。';
+
+  @override
+  String loginFailedError(String error) {
+    return '登录失败：$error';
+  }
+
+  @override
+  String get doujinListTitle => '同人列表 (A-Z)';
+
+  @override
+  String get errorLoadingDoujinList => '加载同人列表出错';
+
+  @override
+  String get noDoujinsFound => '未找到同人作品';
+
+  @override
+  String get doujinListEmpty => '同人列表为空。';
+
+  @override
+  String get searchDoujinsHint => '搜索同人...';
+
+  @override
+  String cannotParseSlug(String url) {
+    return '无法解析 URL 中的 slug：$url';
+  }
+
+  @override
+  String errorParsingUrl(String url) {
+    return '解析 URL 出错：$url';
+  }
+
+  @override
+  String get genreListTitle => '分类列表';
+
+  @override
+  String get errorLoadingGenres => '加载分类出错';
+
+  @override
+  String get noGenresFound => '未找到分类';
+
+  @override
+  String get noGenresAvailable => '暂无可用分类。';
+
+  @override
+  String get projectRequests => '项目请求';
+
+  @override
+  String get errorLoadingRequests => '加载请求出错';
+
+  @override
+  String get noRequestsFound => '未找到请求';
+
+  @override
+  String get noProjectRequests => '暂无项目请求。';
+
+  @override
+  String get manageCollections => '管理收藏夹';
+
+  @override
+  String get addToFavoritesFirst => '请先添加到收藏';
+
+  @override
+  String get favoriteOffline => '离线收藏';
+
+  @override
+  String get favoriteOnline => '在线收藏';
+
+  @override
+  String get favoriteBoth => '同时收藏';
+
+  @override
+  String get unsupportedGalleryId => '不支持的在线收藏画廊 ID。';
+
+  @override
+  String get addToFavoritesManageCollections => '请先添加到收藏以管理收藏夹';
+
+  @override
+  String get loginRequiredAction => '此操作需要先登录';
+
+  @override
+  String get newCollection => '新建收藏夹';
+
+  @override
+  String get collectionName => '收藏夹名称';
+
+  @override
+  String failedToCreateCollection(String error) {
+    return '创建收藏夹失败：$error';
+  }
+
+  @override
+  String get clearSelection => '清除选择';
+
+  @override
+  String get refreshingDownloads => '正在刷新下载...';
+
+  @override
+  String get refresh => '刷新';
+
+  @override
+  String failedToSaveCollection(String error) {
+    return '保存收藏夹失败：$error';
+  }
+
+  @override
+  String get renameCollection => '重命名合集';
+
+  @override
+  String get pressBackToExit => '再按一次返回退出';
+
+  @override
+  String get backToDetail => '返回详情';
+
+  @override
+  String failedToOpenPdf(String error) {
+    return '打开 PDF 失败：$error';
+  }
+
+  @override
+  String get noChaptersAvailable => '没有可用章节';
+
+  @override
+  String failedToApplySearch(String error) {
+    return '应用搜索失败：$error';
+  }
+
+  @override
+  String get addTag => '添加标签';
+
+  @override
+  String includeCountLabel(int count) {
+    return '包含 $count';
+  }
+
+  @override
+  String excludeCountLabel(int count) {
+    return '排除 $count';
+  }
+
+  @override
+  String get searchTagsHint => '搜索标签...';
+
+  @override
+  String applyWithCounts(int include, int exclude) {
+    return '应用 ($include / $exclude)';
+  }
+
+  @override
+  String applyWithCount(int count) {
+    return '应用 ($count)';
+  }
+
+  @override
+  String get searchByTitleHint => '按标题、ID 或关键词搜索...';
+
+  @override
+  String get pagesLabel2 => '页数';
+
+  @override
+  String get favoritesGte => '收藏 ≥';
+
+  @override
+  String get manage => '管理';
+
+  @override
+  String get local => '本地';
+
+  @override
+  String get rules => '规则';
+
+  @override
+  String failedToSave(String error) {
+    return '保存失败：$error';
+  }
+
+  @override
+  String failedToDelete(String error) {
+    return '删除失败：$error';
+  }
+
+  @override
+  String get searchExampleHint => '浪漫, 画师:示例, 12345';
+
+  @override
+  String get refreshOnline => '在线刷新';
+
+  @override
+  String get addRules => '添加规则';
+
+  @override
+  String get pickFromTags => '从标签中选择';
+
+  @override
+  String get done => '完成';
+
+  @override
+  String get uninstallSource => '卸载来源';
+
+  @override
+  String get uninstallSourceTitle => '卸载来源';
+
+  @override
+  String get uninstall => '卸载';
+
+  @override
+  String failedToUninstall(String sourceId, String error) {
+    return '卸载 \"$sourceId\" 失败：$error';
+  }
+
+  @override
+  String get chooseOneSource => '选择一个来源进行安装。';
+
+  @override
+  String get chooseMultipleSources => '选择一个或多个来源进行安装。';
+
+  @override
+  String installSelectedCount(int count) {
+    return '安装所选 ($count)';
+  }
+
+  @override
+  String get installSelected => '安装所选';
+
+  @override
+  String get offlineModeLabel => '离线模式';
+
+  @override
+  String get descriptionLabel => '描述';
+
+  @override
+  String get aliasesLabel => '别名';
+
+  @override
+  String get searchContentWithTag => '搜索带有此标签的内容';
+
+  @override
+  String get backToFilters => '返回筛选';
+
+  @override
+  String get dnsSettings => 'DNS 设置';
+
+  @override
+  String get resetToDefaults => '恢复默认';
+
+  @override
+  String get enableDnsOverHttps => '启用 DNS-over-HTTPS';
+
+  @override
+  String get dnsServerIp => 'DNS 服务器 IP';
+
+  @override
+  String get primaryDnsAddress => '主 DNS 服务器地址';
+
+  @override
+  String get dnsOverHttpsUrl => 'DNS-over-HTTPS 端点 URL';
+
+  @override
+  String get resetDnsSettings => '重置 DNS 设置';
+
+  @override
+  String get syncRefresh => '同步/刷新';
+
+  @override
+  String get importFromBackup => '从备份导入';
+
+  @override
+  String get importZipFile => '导入 ZIP 文件';
+
+  @override
+  String get exportLibrary => '导出资料库';
+
+  @override
+  String get loginRequired => '需要登录';
+
+  @override
+  String get openPdf => '打开 PDF';
+
+  @override
+  String get maybeLater => '以后再说';
+
+  @override
+  String get noContentAtMoment => '暂无可用内容。';
+
+  @override
+  String get refreshingContentMsg => '正在刷新内容...';
+
+  @override
+  String get retryingMsg => '正在重试...';
+
+  @override
+  String get clearingSearchMsg => '正在清除搜索...';
+
+  @override
+  String failedToClearSearch(String error) {
+    return '清除搜索结果失败：$error';
+  }
+
+  @override
+  String get searchingContentMsg => '正在搜索内容...';
+
+  @override
+  String get noContentMatchingSearch => '未找到符合搜索条件的内容。';
+
+  @override
+  String get loadingPopularContent => '正在加载热门内容...';
+
+  @override
+  String get noPopularContent => '暂无热门内容。';
+
+  @override
+  String get loadingContentByTag => '正在按标签加载内容...';
+
+  @override
+  String get noContentForTag => '未找到此标签的内容。';
+
+  @override
+  String loadingPageNum(int page) {
+    return '正在加载第 $page 页...';
+  }
+
+  @override
+  String get noContentOnPage => '此页面未找到内容。';
+
+  @override
+  String get noDownloadableImages => '此内容没有可下载的图片。';
+
+  @override
+  String failedToStartDownload(String error) {
+    return '启动下载失败：$error';
+  }
+
+  @override
+  String get bulkDeleteCompleted => '批量删除完成';
+
+  @override
+  String get bulkDeletePartial => '批量删除部分完成';
+
+  @override
+  String get failedToInitSearch => '搜索初始化失败';
+
+  @override
+  String get searchingMsg => '搜索中...';
+
+  @override
+  String noResultsForQuery(String query) {
+    return '没有找到 \"$query\" 的结果';
+  }
+
+  @override
+  String get searchingWithFiltersMsg => '正在使用筛选条件搜索...';
+
+  @override
+  String get noResultsWithFilters => '当前筛选条件下未找到结果';
+
+  @override
+  String invalidFilterErrors(String errors) {
+    return '无效的筛选器：$errors';
+  }
+
+  @override
+  String get noResultsGeneric => '未找到结果';
+
+  @override
+  String get loadingConfigMsg => '正在加载配置...';
+
+  @override
+  String get initTagsDbMsg => '正在初始化标签数据库...';
+
+  @override
+  String downloadingTagsMsg(String source) {
+    return '正在下载 $source 的标签...';
+  }
+
+  @override
+  String initFailedMsg(String error) {
+    return '初始化失败：$error';
+  }
+
+  @override
+  String get initBypassMsg => '正在初始化绕过系统...';
+
+  @override
+  String get connectingToSite => '正在连接 nhentai.net...';
+
+  @override
+  String get connectedSuccess => '成功连接到 nhentai.net';
+
+  @override
+  String get failedToConnect => '连接 nhentai.net 失败，请重试。';
+
+  @override
+  String failedInitBypass(String error) {
+    return '初始化绕过系统失败：$error';
+  }
+
+  @override
+  String get bypassFailed => '绕过验证失败，请重试。';
+
+  @override
+  String get offlineBypassFailed => '离线模式（绕过失败）';
+
+  @override
+  String errorBypassResult(String error) {
+    return '处理绕过结果出错：$error';
+  }
+
+  @override
+  String get readyOfflineLimited => '就绪（离线模式 - 受限）';
+
+  @override
+  String get downloadingInitConfig => '正在下载初始配置...';
+
+  @override
+  String get readyOffline => '就绪（离线模式）';
+
+  @override
+  String get connectingMsg => '连接中...';
+
+  @override
+  String failedLoadOffline(String error) {
+    return '加载离线内容失败：$error';
+  }
+
+  @override
+  String get noInternetCheckOffline => '无网络连接，正在检查离线内容...';
+
+  @override
+  String foundOfflineItems(int count) {
+    return '找到 $count 个离线项目，继续中...';
+  }
+
+  @override
+  String get noInternetNoOffline => '无网络连接且没有可用的离线内容。';
+
+  @override
+  String unableCheckOffline(String error) {
+    return '无法检查离线内容。$error';
+  }
+
+  @override
+  String get offlineLimitedFeatures => '离线模式（功能受限）';
+
+  @override
+  String get readyOfflineLimitedFeatures => '就绪（离线模式 - 功能受限）';
+
+  @override
+  String failedEnableOffline(String error) {
+    return '启用离线模式失败：$error';
+  }
+
+  @override
+  String failedCheckOffline(String error) {
+    return '检查离线内容失败：$error';
+  }
+
+  @override
+  String failedOpenChapter(String message) {
+    return '打开章节失败：$message';
+  }
+
+  @override
+  String failedInitFilterData(String error) {
+    return '初始化筛选数据失败：$error';
+  }
+
+  @override
+  String failedSwitchFilterType(String error) {
+    return '切换筛选类型失败：$error';
+  }
+
+  @override
+  String get failedMonitorNetwork => '监控网络连接失败';
+
+  @override
+  String failedInitNetwork(String error) {
+    return '初始化网络监控失败：$error';
+  }
+
+  @override
+  String failedUpdateConnection(String error) {
+    return '更新连接状态失败：$error';
+  }
+
+  @override
+  String failedCheckConnectivity(String error) {
+    return '检查连接性失败：$error';
+  }
+
+  @override
+  String failedSearchOffline(String error) {
+    return '搜索离线内容失败：$error';
+  }
+
+  @override
+  String get failedLoadOfflineContent => '加载离线内容失败';
+
+  @override
+  String failedScanBackup(String error) {
+    return '扫描备份文件夹失败：$error';
+  }
+
+  @override
+  String failedLoadContentError(String error) {
+    return '加载内容失败：$error';
+  }
+
+  @override
+  String get chapterNavNotAvailable => '章节导航不可用';
+
+  @override
+  String get unknownChapter => '未知章节';
+
+  @override
+  String get failedLoadChapterImages => '加载章节图片失败';
+
+  @override
+  String failedLoadChapter(String error) {
+    return '加载章节失败：$error';
+  }
+
+  @override
+  String importFailedError(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String errorImportingZip(String error) {
+    return '导入 ZIP 出错：$error';
+  }
+
+  @override
+  String get error => '错误';
+
+  @override
+  String get lightThemeDesc => '明亮色彩的浅色主题';
+
+  @override
+  String get darkThemeDesc => '柔和色彩的深色主题';
+
+  @override
+  String get amoledThemeDesc => '适用于 AMOLED 屏幕的纯黑主题';
+
+  @override
+  String get systemThemeDesc => '跟随系统主题设置';
+
+  @override
+  String nItems(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String nPages(int count) {
+    return '$count 页';
+  }
+
+  @override
+  String nGalleries(int count) {
+    return '$count 个画廊';
+  }
+
+  @override
+  String sourceUninstalled(String sourceId) {
+    return '源 \"$sourceId\" 已卸载。';
+  }
+
+  @override
+  String selectedSourcesCount(int count) {
+    return '已选择源：$count';
+  }
+
+  @override
+  String timeoutMinutes(int minutes) {
+    return '$minutes 分钟';
+  }
+
+  @override
+  String get dohUrlOptional => 'DoH URL（可选）';
+
+  @override
+  String get dnsEncryptedDescription => '使用加密 DNS 提升隐私并绕过审查';
+
+  @override
+  String get usingSystemDns => '使用系统默认 DNS 解析器';
+
+  @override
+  String get dnsProvider => 'DNS 提供商';
+
+  @override
+  String get customConfiguration => '自定义配置';
+
+  @override
+  String get aboutDoh => '关于 DNS-over-HTTPS';
+
+  @override
+  String get dohDescription =>
+      'DNS-over-HTTPS (DoH) 加密您的 DNS 查询，防止 ISP 和网络管理员监控您访问的网站。它还有助于绕过基于 DNS 的审查和地理限制。';
+
+  @override
+  String get dnsQueriesEncrypted => '所有 DNS 查询通过 HTTPS 加密';
+
+  @override
+  String get enhancedPrivacy => '增强的隐私和安全性';
+
+  @override
+  String get resetDnsConfirmation => '这将把 DNS 设置重置为系统默认值。是否继续？';
+
+  @override
+  String get collections => '合集';
+
+  @override
+  String get collectionsUpdatedSuccessfully => '合集更新成功';
+
+  @override
+  String get createCollection => '创建合集';
+
+  @override
+  String get deleteCollection => '删除合集';
+
+  @override
+  String get blacklistMatchWarning => '此画廊匹配黑名单规则。封面/卡片可在列表视图中模糊显示。';
+
+  @override
+  String get chapterCompleted => '章节已完成';
+
+  @override
+  String continueFromPage(int page) {
+    return '从第 $page 页继续';
+  }
+
+  @override
+  String get loginRequiredForContent => '您需要登录 Crotpedia 才能查看此内容。';
+
+  @override
+  String commentsCount(int count) {
+    return '评论 ($count)';
+  }
+
+  @override
+  String get noCommentsYet => '暂无评论';
+
+  @override
+  String get failedToLoadComments => '加载评论失败';
+
+  @override
+  String nSelected(int count) {
+    return '已选择 $count 项';
+  }
+
+  @override
+  String get bulkDelete => '批量删除';
+
+  @override
+  String bulkDeleteConfirmation(int count) {
+    return '确定要删除 $count 个下载吗？';
+  }
+
+  @override
+  String exportedFavoritesTo(int count, String path) {
+    return '仅导出收藏（$count 项）到：\n$path';
+  }
+
+  @override
+  String get failedToSaveExportFile => '保存导出文件失败';
+
+  @override
+  String get importFavorites => '导入收藏';
+
+  @override
+  String importFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get noOnlineFavoritesSource => '没有可用的在线收藏源。';
+
+  @override
+  String collectionWithCount(String name, int count) {
+    return '$name ($count)';
+  }
+
+  @override
+  String get newLabel => '新建';
+
+  @override
+  String get tryDifferentSearchTerm => '尝试不同的搜索词';
+
+  @override
+  String get apply => '应用';
+
+  @override
+  String nItemsInHistory(int count) {
+    return '历史记录中有 $count 项';
+  }
+
+  @override
+  String pageProgress(int lastPage, int totalPages) {
+    return '$lastPage/$totalPages 页';
+  }
+
+  @override
+  String get chapterComplete => '章节完成！';
+
+  @override
+  String get finishedReading => '阅读完成';
+
+  @override
+  String get chapterLabel => '章节';
+
+  @override
+  String get noChapterSelected => '未选择章节';
+
+  @override
+  String get preventScreenOff => '阅读时防止屏幕关闭';
+
+  @override
+  String get chapters => '章节列表';
+
+  @override
+  String get readerSettingsReset => '阅读器设置已重置为默认值。';
+
+  @override
+  String get tagInputTip => '提示：按 Enter 或 + 按钮添加标签。可以用逗号或换行输入多个标签。';
+
+  @override
+  String get loadingOptions => '加载选项中...';
+
+  @override
+  String get filterTags => '筛选标签';
+
+  @override
+  String get noOptionsAvailable => '此字段没有可用选项';
+
+  @override
+  String get failedLoadingOptions => '加载选项失败。请检查连接后重试。';
+
+  @override
+  String get noTagsFound => '未找到标签';
+
+  @override
+  String get previewQuery => '预览查询 (q)';
+
+  @override
+  String get showLess => '收起';
+
+  @override
+  String showAllCount(int count) {
+    return '显示全部 ($count)';
+  }
+
+  @override
+  String get advancedFilters => '高级筛选';
+
+  @override
+  String get min => '最小';
+
+  @override
+  String get max => '最大';
+
+  @override
+  String searchConfigUnavailable(String sourceId) {
+    return '$sourceId 的搜索配置不可用';
+  }
+
+  @override
+  String get checkInternetOrReload => '请检查您的网络连接或尝试重新加载应用。';
+
+  @override
+  String get tagBlacklist => '标签黑名单';
+
+  @override
+  String get blacklistDescription => '本地条目离线可用。已登录的 nhentai 帐户还会拉取在线黑名单 ID。';
+
+  @override
+  String onlineRuleDetailsCount(int count) {
+    return '在线规则详情 ($count)';
+  }
+
+  @override
+  String get noBlacklistRulesYet =>
+      '暂无黑名单规则。添加标签名称如 romance、artist:foo 或数字标签 ID。';
+
+  @override
+  String activeCoverageDescription(int count) {
+    return '已为 $count 个令牌启用活跃覆盖（本地 + 在线 ID）。此处隐藏以保持视图可读性。';
+  }
+
+  @override
+  String get manageTagBlacklist => '管理标签黑名单';
+
+  @override
+  String get addTagRulesDescription =>
+      '添加标签名称、类型规则如 artist:foo 或数字标签 ID。用逗号或换行分隔多个值。';
+
+  @override
+  String localRulesCount(int count) {
+    return '本地规则 ($count)';
+  }
+
+  @override
+  String onlineRulesMetadataCount(int count) {
+    return '在线规则元数据 ($count)';
+  }
+
+  @override
+  String get onlineRulesMetadata => '在线规则元数据';
+
+  @override
+  String activeCoverageCount(int count) {
+    return '活跃覆盖 ($count)';
+  }
+
+  @override
+  String nSourcesInstalled(int count) {
+    return '已安装 $count 个源';
+  }
+
+  @override
+  String removeSourceConfirmation(String sourceId) {
+    return '从本地已安装源中移除 \"$sourceId\"？';
+  }
+
+  @override
+  String installedSourcesFromZip(int count) {
+    return '从 ZIP 安装了 $count 个源';
+  }
+
+  @override
+  String get enhancedReadingExperience => '增强阅读体验';
+
+  @override
+  String get initializingApplication => '正在初始化应用...';
+
+  @override
+  String get offlineContentAvailableLabel => '离线内容可用';
+
+  @override
+  String get offlineModeEnabled => '已启用离线模式';
+
+  @override
+  String get confirmExit => '确定要退出吗？';
+
+  @override
+  String get resize => '调整大小';
+
+  @override
+  String get offlineFeaturesLimited => '部分功能受限。连接网络以获得完整访问权限。';
+
+  @override
+  String get downloadSettings => '下载设置';
+
+  @override
+  String get higherValuesBandwidth => '较高的值可能消耗更多带宽和设备资源';
+
+  @override
+  String get autoRetryFailed => '自动重试失败的下载';
+
+  @override
+  String get wifiOnlyDownload => '仅在连接 Wi-Fi 时下载';
+
+  @override
+  String get downloadTimeout => '下载超时';
+
+  @override
+  String get enableNotifications => '启用通知';
+
+  @override
+  String get showNotificationsProgress => '显示下载进度通知';
+
+  @override
+  String get failedToLoadImage => '加载图片失败';
+
+  @override
+  String get retrying => '正在重试...';
+
+  @override
+  String pageAttempt(int pageNumber, int current, int max) {
+    return '第 $pageNumber 页 • 第 $current/$max 次尝试';
+  }
+
+  @override
+  String downloadingNItems(int count) {
+    return '正在下载 $count 项';
+  }
+
+  @override
+  String get noOfflineContent => '没有离线内容';
+
+  @override
+  String get howToGetStarted => '如何开始';
+
+  @override
+  String get loadingMore => '加载更多...';
+
+  @override
+  String get noImagesFound => '未找到图片';
+
+  @override
+  String get dontAskAgain => '不再询问';
+
+  @override
+  String pageOfTotal(int current, int total) {
+    return '第 $current 页，共 $total 页';
+  }
+
+  @override
+  String loadingPageNumber(int pageNumber) {
+    return '正在加载第 $pageNumber 页...';
+  }
+
+  @override
+  String get recentSearches => '最近搜索';
+
+  @override
+  String get pageCountRange => '页数范围';
+
+  @override
+  String nMoreFilters(int count) {
+    return '+$count 更多';
+  }
+
+  @override
+  String get newUpdateAvailable => '有新更新可用！';
+
+  @override
+  String get newVersion => '新版本：';
+
+  @override
+  String get whatsNew => '更新内容';
+
+  @override
+  String get downloadUpdate => '下载更新';
+
+  @override
+  String exportPath(String path) {
+    return '路径：$path';
+  }
+
+  @override
+  String importedContentWithImages(String contentId, int count) {
+    return '已导入 \"$contentId\"，含 $count 张图片到本地文件夹';
+  }
+
+  @override
+  String failedToLoadCaptcha(String error) {
+    return '加载验证码失败：$error';
+  }
+
+  @override
+  String get turnstileRejected =>
+      'Cloudflare Turnstile 拒绝了挑战（110200）。请重试或使用手动令牌输入。';
+
+  @override
+  String get openingNativeCaptcha => '正在打开原生验证码求解器...';
+
+  @override
+  String get tapRefreshToRetry => '点击刷新以重试原生验证码挑战。';
+
+  @override
+  String get loginToCrotpediaDescription => '使用原生安全浏览器登录 Crotpedia 以访问书签和更多功能。';
+
+  @override
+  String get crotpediaBookmarkLoginPrompt =>
+      '此功能（书签）需要您登录 Crotpedia。\n\n是否现在登录？';
+
+  @override
+  String get browseByGenre => '按类型浏览';
+
+  @override
+  String nMoreGenres(int count) {
+    return '+$count 更多';
+  }
+
+  @override
+  String get selectSourceFromManifest => '从清单选择源';
+
+  @override
+  String pagesWithSize(int pageCount, String size) {
+    return '$pageCount 页 • $size';
+  }
+
+  @override
+  String get browseComics => '1. 浏览您喜欢的漫画';
+
+  @override
+  String get tapDownloadButton => '2. 点击下载按钮';
+
+  @override
+  String get accessOffline => '3. 随时随地访问，即使离线！';
+
+  @override
+  String get source => '来源';
+
+  @override
+  String nPagesText(int count) {
+    return '$count 页';
+  }
+
+  @override
+  String checkItOut(String url) {
+    return '在这里查看：$url';
+  }
+
+  @override
+  String get filteredResults => '筛选结果';
+
+  @override
+  String get filter => '筛选';
+
+  @override
+  String crotpediaMaintenance(String reason) {
+    return 'Crotpedia 维护中：$reason';
+  }
+
+  @override
+  String get tapToChangeFilters => '点击更改搜索筛选器';
+
+  @override
+  String get prevChapter => '上一章';
+
+  @override
+  String get nextChapter => '下一章';
+
+  @override
+  String pageOfContent(int current, int total) {
+    return '第 $current 页，共 $total 页';
+  }
+
+  @override
+  String nChapters(int count) {
+    return '$count 章';
+  }
+
+  @override
+  String get today => '今天';
+
+  @override
+  String get yesterday => '昨天';
+
+  @override
+  String get failedToLoadOptionsTap => '加载选项失败。点击重试。';
+
+  @override
+  String chooseField(String field) {
+    return '选择$field';
+  }
+
+  @override
+  String get tapToLoadOptions => '点击加载选项';
+
+  @override
+  String nSelectedItems(int count) {
+    return '已选 $count 项';
+  }
+
+  @override
+  String get tapToChooseTags => '点击选择包含/排除标签';
+
+  @override
+  String includeExcludeCount(int include, int exclude) {
+    return '包含 $include • 排除 $exclude';
+  }
+
+  @override
+  String get searchLabel => '搜索';
+
+  @override
+  String get genreLabel => '类型';
+
+  @override
+  String get statusLabel => '状态';
+
+  @override
+  String get orderBy => '排序';
+
+  @override
+  String get authorLabel => '作者';
+
+  @override
+  String get artistFilterLabel => '画师';
+
+  @override
+  String get artists => '画师';
+
+  @override
+  String get characters => '角色';
+
+  @override
+  String get parodies => '同人';
+
+  @override
+  String get groups => '团体';
+
+  @override
+  String get filterCategories => '筛选分类';
+
+  @override
+  String get dateUploaded => '上传日期';
+
+  @override
+  String get numericFilters => '数值筛选';
+
+  @override
+  String get older => '更早';
+
+  @override
+  String get contentFilters => '内容筛选';
+
+  @override
+  String get blurCoversDescription =>
+      '模糊匹配本地标签规则的封面，即使离线浏览也有效。如果您登录了 nhentai，在线黑名单 ID 会自动合并。';
+
+  @override
+  String get developerTools => '开发者工具';
+
+  @override
+  String get noOnlineRulesYet => '尚未获取在线详细规则。下拉刷新以获取 /blacklist 数据。';
+
+  @override
+  String get nothingSavedLocally => '本地尚未保存任何内容。本地规则始终生效，包括离线结果。';
+
+  @override
+  String get loginRequiredForRules => '需要登录才能从 /blacklist 获取详细规则元数据。';
+
+  @override
+  String get syncingOnlineRules => '正在同步在线规则详情...';
+
+  @override
+  String get noOnlineRuleDetails => '尚未获取在线规则详情。点击刷新以获取 /blacklist。';
+
+  @override
+  String get blacklistGalleriesInfo => '添加本地规则或同步在线 ID 后，黑名单画廊将在此模糊显示。';
+
+  @override
+  String coverageActiveDescription(int count) {
+    return '已为 $count 个令牌启用覆盖。ID 令牌按请求在此隐藏；上方仅显示已命名的在线规则。';
+  }
+
+  @override
+  String get availableSources => '可用来源';
+
+  @override
+  String get settingUpConnection => '正在设置组件并检查连接...';
+
+  @override
+  String get tagId => '标签 ID';
+
+  @override
+  String get slug => 'Slug';
+
+  @override
+  String get path => '路径';
+
+  @override
+  String get tag => '标签';
+
+  @override
+  String profileWithName(String name) {
+    return '个人资料 ($name)';
+  }
+
+  @override
+  String get profile => '个人资料';
+
+  @override
+  String get loginAccount => '登录 / 账户';
+
+  @override
+  String accountWithName(String name) {
+    return '账户 ($name)';
+  }
+
+  @override
+  String get performance => '性能';
+
+  @override
+  String get autoRetry => '自动重试';
+
+  @override
+  String get network => '网络';
+
+  @override
+  String get notifications => '通知';
+
+  @override
+  String get estimatingProgress => '正在估算进度...';
+
+  @override
+  String get downloadingImageData => '正在下载图片数据...';
+
+  @override
+  String get hideFilters => '隐藏筛选器';
+
+  @override
+  String get showMoreFilters => '显示更多筛选器';
+
+  @override
+  String get preparingExport => '正在准备导出...';
+
+  @override
+  String get readingFavorites => '正在从数据库读取收藏...';
+
+  @override
+  String get encodingFavorites => '正在编码收藏数据...';
+
+  @override
+  String get writingExportFile => '正在写入导出文件...';
+
+  @override
+  String get finalizingExport => '正在完成导出...';
+
+  @override
+  String get captchaCancelled => '验证码挑战已取消或失败。';
+
+  @override
+  String failedToOpenCaptcha(String error) {
+    return '无法打开原生验证码求解器：$error';
   }
 }

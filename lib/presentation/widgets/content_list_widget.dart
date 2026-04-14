@@ -381,7 +381,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       isHighlighted:
                           isDownloaded, // NEW: Highlight downloaded content instead of search match
                       highlightReason: isDownloaded
-                          ? AppLocalizations.of(context)!.downloaded
+                          ? AppLocalizations.of(context)!.alreadyDownloaded(1)
                           : null, // NEW: Indicate download status
                     );
                   },

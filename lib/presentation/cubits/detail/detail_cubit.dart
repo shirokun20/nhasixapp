@@ -530,7 +530,7 @@ class DetailCubit extends BaseCubit<DetailState> {
       ));
     } catch (e) {
       logger.e('Failed to open chapter: $e');
-      final message = ErrorMessageUtils.getFriendlyErrorMessage(e);
+      ErrorMessageUtils.getFriendlyErrorMessage(e);
 
       emit(DetailActionFailure(
         message: 'failedOpenChapter',

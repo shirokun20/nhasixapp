@@ -73,7 +73,7 @@ class _ModernPaginationWidgetState extends State<ModernPaginationWidget> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: l10n.pageNumber,
+                hintText: l10n.pageNumber(widget.currentPage),
                 hintStyle: TextStyleConst.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

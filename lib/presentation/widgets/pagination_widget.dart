@@ -83,7 +83,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.pageNumber,
+                hintText: AppLocalizations.of(context)!
+                    .pageNumber(widget.currentPage),
                 hintStyle: TextStyleConst.placeholderText.copyWith(
                   fontSize: 16,
                 ),
@@ -206,7 +207,8 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                     children: [
                       // Page text
                       Text(
-                        AppLocalizations.of(context)!.pageOfTotal(widget.currentPage, widget.totalPages),
+                        AppLocalizations.of(context)!
+                            .pageOfTotal(widget.currentPage, widget.totalPages),
                         style: TextStyleConst.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

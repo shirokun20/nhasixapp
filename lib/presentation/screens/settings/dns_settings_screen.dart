@@ -7,6 +7,7 @@ import '../../../core/network/dns_settings_service.dart';
 import 'package:logger/logger.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 /// DNS Settings configuration screen
 class DnsSettingsScreen extends StatelessWidget {
   const DnsSettingsScreen({super.key});
@@ -167,11 +168,13 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: _dnsServerController,
-                          decoration: const InputDecoration(
-                            labelText: AppLocalizations.of(context)!.dnsServerIp,
+                          decoration: InputDecoration(
+                            labelText:
+                                AppLocalizations.of(context)!.dnsServerIp,
                             hintText: '1.1.1.1',
-                            helperText: AppLocalizations.of(context)!.primaryDnsAddress,
-                            border: OutlineInputBorder(),
+                            helperText:
+                                AppLocalizations.of(context)!.primaryDnsAddress,
+                            border: const OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
@@ -187,9 +190,11 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                         TextField(
                           controller: _dohUrlController,
                           decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.dohUrlOptional,
+                            labelText:
+                                AppLocalizations.of(context)!.dohUrlOptional,
                             hintText: 'https://dns.example.com/dns-query',
-                            helperText: AppLocalizations.of(context)!.dnsOverHttpsUrl,
+                            helperText:
+                                AppLocalizations.of(context)!.dnsOverHttpsUrl,
                             border: const OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.url,

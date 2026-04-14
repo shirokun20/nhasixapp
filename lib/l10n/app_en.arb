@@ -3562,6 +3562,7 @@
   "enhancedReadingExperience": "Enhanced Reading Experience",
   "initializingApplication": "Initializing Application...",
   "offlineContentAvailable": "Offline Content Available",
+  "offlineContentAvailableLabel": "Offline Content Available",
   "offlineModeEnabled": "Offline Mode Enabled",
   "launchingApp": "Launching main application...",
 

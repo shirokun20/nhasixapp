@@ -455,8 +455,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 FilledButton.icon(
                   onPressed: () => context.go('/downloads'),
                   icon: const Icon(Icons.download_rounded),
-                  label: const Text(
-                      AppLocalizations.of(context)!.browseDownloads), // Hardcoded to avoid key guessing
+                  label: Text(AppLocalizations.of(context)!
+                      .browseDownloads), // Hardcoded to avoid key guessing
                   style: FilledButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
@@ -703,7 +703,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            AppLocalizations.of(context)!.pagesWithSize(content.pageCount, sizeText),
+                            AppLocalizations.of(context)!
+                                .pagesWithSize(content.pageCount, sizeText),
                             style: TextStyleConst.bodySmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -747,7 +748,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       leading: Icon(Icons.picture_as_pdf,
                           color: colorScheme.tertiary),
                       title: Text(l10n.convertToPdf),
-                      subtitle: Text(AppLocalizations.of(context)!.nPages(content.pageCount)),
+                      subtitle: Text(AppLocalizations.of(context)!
+                          .nPages(content.pageCount)),
                       onTap: () {
                         Navigator.pop(bottomSheetContext);
                         _generatePdf(parentContext, content);
@@ -887,8 +889,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 value: dontAskAgain,
                 onChanged: (value) =>
                     dontAskAgainNotifier.value = value ?? false,
-                title: Text(
-                    AppLocalizations.of(context)!.dontAskAgain),
+                title: Text(AppLocalizations.of(context)!.dontAskAgain),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
               ),
