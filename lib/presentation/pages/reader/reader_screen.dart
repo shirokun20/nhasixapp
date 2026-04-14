@@ -68,6 +68,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
 
+  // 🎬 Heavy-image auto-switch guard: content IDs already switched to singlePage.
+  // Static so it persists across reader navigations within the same session.
+  static final Set<String> _autoSwitchedContentIds = <String>{};
+
   // Throttle expensive continuous-scroll computations.
   // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms to reduce frame pressure
   // More throttling = better GPU utilization, less buffer starvation
@@ -477,6 +481,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
         _readerCubit.hideUI();
       }
     });
+  }
+
+  /// Called when an [ExtendedImageReaderWidget] at an early page detects a
+  /// heavy animated WebP (\u2265 2 MB) while in continuous-scroll mode.
+  ///
+  /// Automatically switches to single-page mode so only one animation is
+  /// rendered at a time, eliminating concurrent-decode frame drops.
+  /// Shows a dismissible [SnackBar] so the user knows what happened.
+  void _onHeavyImageDetected() {
+    if (!mounted) return;
+    final contentId = widget.contentId;
+    if (_autoSwitchedContentIds.contains(contentId)) return;
+    _autoSwitchedContentIds.add(contentId);
+
+    // Switch to single-page mode.
+    _readerCubit.changeReadingMode(ReadingMode.singlePage);
+
+    // Inform user with an undo action.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Mode diubah ke Satu Halaman \u2014 gambar animasi berat terdeteksi',
+        ),
+        action: SnackBarAction(
+          label: 'Batalkan',
+          onPressed: () {
+            _autoSwitchedContentIds.remove(contentId);
+            _readerCubit.changeReadingMode(ReadingMode.continuousScroll);
+          },
+        ),
+        duration: const Duration(seconds: 5),
+      ),
+    );
   }
 
   @override
@@ -975,6 +1012,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // For navigation page (index == pageCount), report pageCount + 1
           final reportPage = index + 1;
 
+          // Update visible page notifier so off-screen animations pause
+          _visiblePageNotifier.value = reportPage;
+
           debugPrint(
               '📖 PageView changed to index=$index (reporting page $reportPage)');
 
@@ -1042,6 +1082,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Convert 0-indexed to 1-indexed page number
           // For navigation page (index == pageCount), report pageCount + 1
           final reportPage = index + 1;
+
+          // Update visible page notifier so off-screen animations pause
+          _visiblePageNotifier.value = reportPage;
 
           debugPrint(
               '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
@@ -1130,7 +1173,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
               : 2500.0, // Keep fewer offscreen pages for heavy sources
           addAutomaticKeepAlives:
-              false, // 🔥 THERMAL: Disabled for all modes to reduce memory
+              true, // Heavy animated images set wantKeepAlive=true; normal images stay false
           itemCount: totalItems,
           itemBuilder: (context, index) {
             if (showNavigation && index == pageCount) {
@@ -1189,6 +1232,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             sourceId: sourceId,
             httpHeaders: headers,
             enableZoom: zoom,
+            visiblePageNotifier: _visiblePageNotifier,
+            onHeavyImageDetected: _onHeavyImageDetected,
             onImageLoaded: (int page, Size imageSize) {
               // Cache rendered height: image scaled to screen width
               final screenWidth = MediaQuery.of(context).size.width;
@@ -1235,6 +1280,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             sourceId: resolvedSourceId,
             httpHeaders: headers,
             enableZoom: zoom,
+            visiblePageNotifier: _visiblePageNotifier,
             onImageLoaded:
                 _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
           );
@@ -1437,7 +1483,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           AppLocalizations.of(context)?.pageOfPages(
                                   state.currentPage ?? 1,
                                   state.content?.pageCount ?? 1) ??
-                              AppLocalizations.of(context)!.pageOfContent(state.currentPage ?? 1, state.content?.pageCount ?? 1),
+                              AppLocalizations.of(context)!.pageOfContent(
+                                  state.currentPage ?? 1,
+                                  state.content?.pageCount ?? 1),
                           style: TextStyleConst.bodySmall.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -2048,7 +2096,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     activeLanguage != null &&
                                             effectiveChapters.isNotEmpty
                                         ? '${effectiveChapters.length} chapters • ${activeLanguage.toUpperCase()}'
-                                        : AppLocalizations.of(context)!.nChapters(effectiveChapters.length),
+                                        : AppLocalizations.of(context)!
+                                            .nChapters(
+                                                effectiveChapters.length),
                                     style: TextStyleConst.bodySmall.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -2301,7 +2351,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             content: Text(
               AppLocalizations.of(context)
                       ?.failedToResetSettings(e.toString()) ??
-                  AppLocalizations.of(context)!.failedToResetSettings(e.toString()),
+                  AppLocalizations.of(context)!
+                      .failedToResetSettings(e.toString()),
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onError,
               ),

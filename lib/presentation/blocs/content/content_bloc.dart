@@ -920,10 +920,11 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     Emitter<ContentState> emit,
   ) async {
     try {
-      // Show minimal loading state for pagination
+      // Show minimal loading state for pagination (include target page for localization)
       emit(ContentLoading(
         message: 'loadingPageNum',
         previousContents: currentState.contents,
+        pageNumber: page,
       ));
 
       ContentListResult result;

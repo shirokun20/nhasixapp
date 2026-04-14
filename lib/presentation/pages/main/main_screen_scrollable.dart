@@ -592,14 +592,48 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Text(
-                      state.message.isNotEmpty
-                          ? state.message
-                          : AppLocalizations.of(context)!.loading,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
+                    Builder(builder: (context) {
+                      final l10n = AppLocalizations.of(context)!;
+                      String displayMessage;
+
+                      switch (state.message) {
+                        case 'loadingPageNum':
+                        case 'loadingPageNumber':
+                          displayMessage = state.pageNumber != null
+                              ? l10n.loadingPageNum(state.pageNumber!)
+                              : l10n.loading;
+                          break;
+                        case 'refreshingContentMsg':
+                          displayMessage = l10n.refreshingContentMsg;
+                          break;
+                        case 'searchingContentMsg':
+                          displayMessage = l10n.searchingContentMsg;
+                          break;
+                        case 'loadingPopularContent':
+                          displayMessage = l10n.loadingPopularContent;
+                          break;
+                        case 'loadingContentByTag':
+                          displayMessage = l10n.loadingContentByTag;
+                          break;
+                        case 'clearingSearchMsg':
+                          displayMessage = l10n.clearingSearchMsg;
+                          break;
+                        case 'retryingMsg':
+                          displayMessage = l10n.retryingMsg;
+                          break;
+                        default:
+                          displayMessage = state.message.isNotEmpty
+                              ? state.message
+                              : l10n.loading;
+                      }
+
+                      return Text(
+                        displayMessage,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),

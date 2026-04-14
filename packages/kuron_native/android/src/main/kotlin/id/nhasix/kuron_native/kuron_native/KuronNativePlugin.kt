@@ -5,11 +5,16 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.ImageDecoder
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
+import android.os.Build
+import java.nio.ByteBuffer
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -28,7 +33,6 @@ import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
-import android.os.Build
 
 /** KuronNativePlugin */
 class KuronNativePlugin :
@@ -73,6 +77,15 @@ class KuronNativePlugin :
         // Initialize download event channel and handler
         downloadEventChannel = io.flutter.plugin.common.EventChannel(flutterPluginBinding.binaryMessenger, "kuron_native/download_progress")
         downloadHandler = id.nhasix.kuron_native.kuron_native.download.DownloadHandler(context, downloadEventChannel)
+
+        // Register native animated-WebP PlatformView.
+        // AnimatedWebPView guards API level internally:
+        //   ≥ API 28 → AnimatedImageDrawable (full animation, RenderThread)
+        //   < API 28 → BitmapFactory first-frame fallback
+        flutterPluginBinding.platformViewRegistry.registerViewFactory(
+            "kuron_animated_webp_view",
+            AnimatedWebPViewFactory(),
+        )
     }
 
     override fun onMethodCall(
@@ -136,9 +149,100 @@ class KuronNativePlugin :
             "kuronNativeCountDownloadedFiles" -> {
                 downloadHandler.handleMethodCall(call, result)
             }
+            "getThumbnailForWebP" -> {
+                handleGetWebPThumbnail(call, result)
+            }
             else -> {
                 result.notImplemented()
             }
+        }
+    }
+
+    // ──────────────────────────────────────────────────
+    // WebP Thumbnail
+    // ──────────────────────────────────────────────────
+
+    /**
+     * Extracts the first frame of an animated WebP as a compressed JPEG and
+     * caches it in [context.cacheDir]/webp_thumbnails/.
+     *
+     * Params (from MethodCall):
+     *   filePath – absolute path to an already-cached WebP file (preferred).
+     *   url      – fallback HTTP URL to download if filePath is absent.
+     *
+     * Returns the absolute path of the generated JPEG, or null on failure.
+     */
+    private fun handleGetWebPThumbnail(call: MethodCall, result: Result) {
+        val filePath = call.argument<String>("filePath")
+        val url = call.argument<String>("url")
+
+        val cacheKey = filePath ?: url ?: run {
+            result.success(null)
+            return
+        }
+
+        val thumbDir = File(context.cacheDir, "webp_thumbnails").also { it.mkdirs() }
+        val thumbFile = File(thumbDir, "${Math.abs(cacheKey.hashCode())}.jpg")
+
+        if (thumbFile.exists() && thumbFile.length() > 0) {
+            result.success(thumbFile.absolutePath)
+            return
+        }
+
+        executor.execute {
+            try {
+                val bytes: ByteArray = when {
+                    !filePath.isNullOrEmpty() -> {
+                        val f = File(filePath)
+                        if (f.exists()) f.readBytes()
+                        else if (url != null) downloadBytesForThumbnail(url)
+                        else { mainThread { result.success(null) }; return@execute }
+                    }
+                    url != null -> downloadBytesForThumbnail(url)
+                    else -> { mainThread { result.success(null) }; return@execute }
+                }
+
+                // Decode first frame of animated WebP to Bitmap.
+                // API 28+: ImageDecoder.decodeBitmap is reliable for animated WebP.
+                // API < 28: BitmapFactory fallback (decodes first frame only).
+                val bitmap: android.graphics.Bitmap? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    try {
+                        val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+                        ImageDecoder.decodeBitmap(source)
+                    } catch (_: Exception) {
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    }
+                } else {
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                }
+                if (bitmap == null) { mainThread { result.success(null) }; return@execute }
+
+                FileOutputStream(thumbFile).use { fos ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 75, fos)
+                }
+                bitmap.recycle()
+
+                mainThread { result.success(thumbFile.absolutePath) }
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "getThumbnailForWebP failed: ${e.message}")
+                mainThread { result.success(null) }
+            }
+        }
+    }
+
+    /** Runs [block] on the Android main thread (required by Flutter Result callbacks). */
+    private fun mainThread(block: () -> Unit) =
+        Handler(Looper.getMainLooper()).post(block)
+
+    private fun downloadBytesForThumbnail(url: String): ByteArray {
+        val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+        return try {
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 90_000
+            conn.requestMethod = "GET"
+            conn.inputStream.use { it.readBytes() }
+        } finally {
+            conn.disconnect()
         }
     }
 

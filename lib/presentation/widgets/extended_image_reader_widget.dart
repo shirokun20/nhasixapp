@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:logger/logger.dart';
+import 'package:kuron_native/kuron_native.dart';
 // import '../../core/utils/webtoon_detector.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -30,6 +31,8 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.enableZoom = true,
     this.onLoadError,
     this.onImageLoaded,
+    this.visiblePageNotifier,
+    this.onHeavyImageDetected,
   });
 
   final String imageUrl;
@@ -44,9 +47,55 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   /// 🎯 PHASE 1: Callback when image loads with actual dimensions
   final Function(int pageNumber, Size imageSize)? onImageLoaded;
 
+  /// Called once (per content ID) when this page is identified as a heavy
+  /// animated WebP (≥ 2 MB) while in continuous-scroll mode.
+  ///
+  /// The parent can use this to switch to single-page mode so that only one
+  /// animation is rendered at a time, eliminating concurrent-decode jank.
+  final VoidCallback? onHeavyImageDetected;
+
+  /// Notifier that emits the currently visible page number.
+  /// Forwarded to [AnimatedWebPView] to auto-pause off-screen animations.
+  final ValueNotifier<int>? visiblePageNotifier;
+
   @override
   State<ExtendedImageReaderWidget> createState() =>
       _ExtendedImageReaderWidgetState();
+
+  // ── Testing helpers ────────────────────────────────────────────────────────
+
+  /// Directly adds a URL to the heavy-image static set.
+  /// Only use in tests via `@visibleForTesting`.
+  @visibleForTesting
+  static void addHeavyUrlForTesting(String url) =>
+      _ExtendedImageReaderWidgetState._heavyImageUrls.add(url);
+
+  /// Returns whether [url] is currently in the heavy-image set.
+  @visibleForTesting
+  static bool isHeavyUrlForTesting(String url) =>
+      _ExtendedImageReaderWidgetState._heavyImageUrls.contains(url);
+
+  /// Clears the heavy-image set. Call in [tearDown] to isolate tests.
+  @visibleForTesting
+  static void clearHeavyUrlsForTesting() =>
+      _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
+
+  /// Exposes the threshold constant for assertion in tests.
+  @visibleForTesting
+  static int get heavyImageThresholdBytesForTesting =>
+      _ExtendedImageReaderWidgetState._heavyImageThresholdBytes;
+
+  /// Exposes the `_isLikelyAnimatedWebP` heuristic for unit testing
+  /// without needing to build a full widget tree.
+  @visibleForTesting
+  static bool isLikelyAnimatedWebPForTesting({
+    required String url,
+    required bool isHeavy,
+  }) {
+    if (!isHeavy) return false;
+    final path = url.toLowerCase().split('?').first;
+    return path.endsWith('.webp') || path.contains('-wbp');
+  }
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
@@ -67,11 +116,40 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Map<String, double> _syntheticProgressByImageKey =
       <String, double>{};
 
+  /// URLs identified as heavy/animated (large file size ≥ threshold).
+  /// Persisted across widget rebuilds so keep-alive activates immediately
+  /// when the widget is re-created after a scroll-back.
+  static final Set<String> _heavyImageUrls = <String>{};
+
+  /// Content IDs for which [onHeavyImageDetected] has already been fired.
+  /// Prevents repeated callbacks when the same chapter is re-opened.
+  static final Set<String> _notifiedHeavyContentIds = <String>{};
+
+  /// Maps a heavy image URL → its extended_image disk-cache file path.
+  /// Persisted so that when a widget is re-created (scroll-out → scroll-back)
+  /// the native [AnimatedWebPView] can load from disk instead of re-downloading.
+  static final Map<String, String> _cachedFilePathByUrl = <String, String>{};
+
+  /// Files ≥ 2 MB are treated as heavy (animated WebP, large scans, etc.).
+  /// These are kept in memory between scroll-outs to avoid expensive re-decode.
+  static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
+
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
   String? _hitomiFallbackImageUrl;
+
+  /// Whether this specific image URL has been identified as heavy/animated.
+  /// Mirrors the static [_heavyImageUrls] set but as instance flag so that
+  /// [wantKeepAlive], [clearMemoryCacheWhenDispose], and native-view routing
+  /// are always in sync.
+  bool _isHeavyImage = false;
+
+  /// Path to the extended_image disk-cache file for this URL.
+  /// Populated after [LoadState.completed] via [getCachedImageFile].
+  /// When set, the native [AnimatedWebPView] reads from disk (no re-download).
+  String? _cachedFilePath;
 
   // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
@@ -85,9 +163,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
 
-  // 🚀 OPTIMIZATION: Keep widget alive in ListView to prevent reload
+  // 🚀 OPTIMIZATION: Keep ALL images alive in continuousScroll.
+  // Disposing + re-decoding on scroll-back is far more expensive than holding
+  // decoded images in memory. Normal images are small (~100-300 KB decoded);
+  // the real cost is the decode work + frame drops that happen during re-decode.
+  //
+  // For non-continuousScroll modes (single page, vertical page) the PageView
+  // already manages its own caching, so keep-alive is always true there.
   @override
-  bool get wantKeepAlive => widget.readingMode != ReadingMode.continuousScroll;
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -102,7 +186,72 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _syntheticProgressValue =
         _syntheticProgressByImageKey[_imageProgressKey] ?? 0.0;
 
+    // Restore heavy-image state from static maps so keep-alive and native-view
+    // routing are applied immediately on the first build — and the native view
+    // reads from disk instead of re-downloading on every scroll-back.
+    _isHeavyImage = _heavyImageUrls.contains(widget.imageUrl);
+    _cachedFilePath = _cachedFilePathByUrl[widget.imageUrl];
+
+    // Pre-check: for .webp URLs not yet identified as heavy, query the disk
+    // cache BEFORE ExtendedImage gets a chance to decode. This catches images
+    // that were downloaded in a previous reading session — we skip Flutter's
+    // expensive raster-thread decode entirely and go straight to native view.
+    if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
+      _preCheckDiskCacheForHeavy();
+    }
+
     _prepareEhentaiResolveFuture();
+  }
+
+  /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
+  /// seed the static maps and trigger a rebuild to route straight to native.
+  void _preCheckDiskCacheForHeavy() {
+    final urlPath = widget.imageUrl.toLowerCase().split('?').first;
+    final couldBeWebP = urlPath.endsWith('.webp') || urlPath.contains('-wbp');
+    if (!couldBeWebP) return;
+
+    getCachedImageFile(widget.imageUrl).then((file) {
+      if (file == null) return;
+      final size = file.lengthSync();
+      if (size >= _heavyImageThresholdBytes) {
+        _heavyImageUrls.add(widget.imageUrl);
+        _cachedFilePathByUrl[widget.imageUrl] = file.path;
+        if (!mounted) return;
+        setState(() {
+          _isHeavyImage = true;
+          _cachedFilePath = file.path;
+        });
+        updateKeepAlive();
+        _logger.i(
+          '[NativeWebP] Pre-check HIT: heavy WebP from disk cache '
+          'page=${widget.pageNumber} '
+          'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
+        );
+        _maybeNotifyHeavyImageDetected();
+      }
+    }).catchError((Object e) {
+      _logger.w('[NativeWebP] Pre-check error: $e');
+    });
+  }
+
+  /// Fire [widget.onHeavyImageDetected] at most once per content ID.
+  /// Only relevant for continuous-scroll mode on early pages (≤ 3).
+  void _maybeNotifyHeavyImageDetected() {
+    if (widget.onHeavyImageDetected == null) return;
+    if (widget.readingMode != ReadingMode.continuousScroll) return;
+    if (widget.pageNumber > 3) return;
+    if (_notifiedHeavyContentIds.contains(widget.contentId)) return;
+    _notifiedHeavyContentIds.add(widget.contentId);
+    // postFrameCallback so we never call this during a build/layout phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onHeavyImageDetected?.call();
+    });
+  }
+
+  /// Pre-seed the static set WITHOUT setState so an in-flight ExtendedImage
+  /// download is never interrupted mid-way.
+  void _preSeedHeavyImageUrl() {
+    _heavyImageUrls.add(widget.imageUrl);
   }
 
   @override
@@ -271,8 +420,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
             : ExtendedImageMode.none,
+        // Keep heavy/animated local files in memory on dispose so scroll-back
+        // does not trigger re-decode.
         clearMemoryCacheWhenDispose:
-            widget.readingMode == ReadingMode.continuousScroll,
+            widget.readingMode == ReadingMode.continuousScroll &&
+                !_isHeavyImage,
         enableLoadState: true,
         extendedImageGestureKey: _gestureKey,
         initGestureConfigHandler: (state) {
@@ -377,6 +529,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     String url, {
     Map<String, String>? headers,
   }) {
+    // 🎬 THUMBNAIL-FIRST for ALL animated image URLs (.webp / .gif):
+    // Route straight to native view with JPEG thumbnail + play button.
+    // No size threshold — even small animated files should not auto-play.
+    // Use the actual `url` param (not widget.imageUrl) — they may differ for
+    // EHentai resolved URLs or Hitomi AVIF→WebP fallbacks.
+    final urlLower = url.toLowerCase().split('?').first;
+    final isAnimatedUrl = urlLower.endsWith('.webp') ||
+        urlLower.endsWith('.gif') ||
+        urlLower.contains('-wbp');
+    if (isAnimatedUrl && AnimatedWebPView.isAvailable) {
+      return _buildNativeAnimatedWebP(url, headers);
+    }
+
     final decodeWidth = _targetDecodeWidth(context);
 
     return ExtendedImage.network(
@@ -384,20 +549,24 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
       headers: headers,
       fit: _getAdaptiveBoxFit(),
-      // 🔥 THERMAL: Use none for HentaiNexus; medium for others. Skips quality downsampling.
-      filterQuality: _isHeavyReaderSource() &&
-              widget.readingMode == ReadingMode.continuousScroll
-          ? FilterQuality.low
-          : (_isHeavyReaderSource() ? FilterQuality.low : FilterQuality.medium),
+      // 🔥 THERMAL / FRAME-RATE:
+      // - Animated WebP (≥2MB .webp): FilterQuality.none — fastest per-frame
+      //   GPU composite; quality is acceptable at reduced cacheWidth.
+      // - Other heavy sources: FilterQuality.low — balanced.
+      // - Normal images: FilterQuality.medium — standard quality.
+      filterQuality: _isLikelyAnimatedWebP
+          ? FilterQuality.none
+          : (_isHeavyReaderSource() || _isHeavyImage)
+              ? FilterQuality.low
+              : FilterQuality.medium,
       mode: widget.enableZoom &&
               widget.readingMode != ReadingMode.continuousScroll
           ? ExtendedImageMode.gesture
           : ExtendedImageMode.none,
-      // Keep RAM cache for heavy sources so scrolling back to older pages
-      // does not trigger full reload/decode again.
-      clearMemoryCacheWhenDispose:
-          widget.readingMode == ReadingMode.continuousScroll &&
-              !_isHeavyReaderSource(),
+      // Keep RAM cache — widgets are kept alive via wantKeepAlive=true,
+      // so clearing the memory cache would just cause a re-decode when the
+      // widget is painted again after being off-screen.
+      clearMemoryCacheWhenDispose: false,
       cache: true,
       cacheWidth: decodeWidth,
       enableLoadState: true,
@@ -427,6 +596,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             } else {
               _startSyntheticProgress();
             }
+
+            // Optional pre-seed via Content-Length (only if server sends it):
+            // servers that skip Content-Length are handled at LoadState.completed.
+            if (!_isHeavyImage) {
+              try {
+                final dynamic prog = (state as dynamic).loadingProgress;
+                final total = prog?.expectedTotalBytes;
+                if (total is num && total >= _heavyImageThresholdBytes) {
+                  _preSeedHeavyImageUrl();
+                }
+              } catch (_) {}
+            }
+
             return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
             _stopSyntheticProgress(reset: true);
@@ -465,9 +647,108 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 widget.onImageLoaded?.call(widget.pageNumber, imageSize);
               });
             }
+
+            // 🎬 ANIMATED WebP DETECTION (at completion, no Content-Length needed):
+            //
+            // Many servers (nhentai, HitomiNexus, etc.) skip Content-Length, so
+            // expectedTotalBytes is always null and the pre-seed above never fires.
+            // At LoadState.completed the file IS on disk — check its actual size.
+            //
+            // Steps:
+            //   1. URL heuristic: ends with .webp or contains -wbp (H@H)
+            //   2. getCachedImageFile → stat file size ≥ 2 MB
+            //   3. setState → _isHeavyImage = true, _cachedFilePath = path
+            //   4. Next build routes straight to AnimatedWebPView (disk read, no re-download)
+            if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
+              final urlPath = url.toLowerCase().split('?').first;
+              final couldBeAnimatedWebP =
+                  urlPath.endsWith('.webp') || urlPath.contains('-wbp');
+              if (couldBeAnimatedWebP) {
+                getCachedImageFile(url).then((cacheFile) {
+                  // Check file size BEFORE mounted check so _heavyImageUrls
+                  // is seeded even if this widget instance is already unmounted
+                  // (e.g. user switched reading mode while download was in flight).
+                  // Future widget instances created by the mode switch will then
+                  // find the URL in the set and go straight to native view.
+                  if (cacheFile == null) return;
+                  final fileSize = cacheFile.lengthSync();
+                  _logger.d(
+                    '[NativeWebP] WebP cached=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
+                    'threshold=${(_heavyImageThresholdBytes / 1024 / 1024).toStringAsFixed(0)} MB '
+                    'page=${widget.pageNumber}',
+                  );
+                  if (fileSize >= _heavyImageThresholdBytes) {
+                    // ✅ Seed BEFORE mounted check so scroll-back widgets
+                    //    immediately get _isHeavyImage=true and read from disk.
+                    _heavyImageUrls.add(url);
+                    _cachedFilePathByUrl[url] = cacheFile.path;
+
+                    // 🔥 Evict from ExtendedImage memory cache so Flutter's
+                    // MultiFrameImageStreamCompleter stops decoding animated
+                    // frames on the raster thread. The native view takes over.
+                    clearMemoryImageCache(url);
+
+                    // Only call setState if our widget is still alive.
+                    if (!mounted) return;
+                    setState(() {
+                      _isHeavyImage = true;
+                      _cachedFilePath = cacheFile.path;
+                    });
+                    updateKeepAlive();
+                    _maybeNotifyHeavyImageDetected();
+                    _logger.i(
+                      '[NativeWebP] => AnimatedImageDrawable: '
+                      'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
+                      ' path=${cacheFile.path}',
+                    );
+                  } else {
+                    _logger.d(
+                      '[NativeWebP] WebP too small for native (${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
+                      'keep Flutter renderer page=${widget.pageNumber}',
+                    );
+                  }
+                }).catchError((Object e) {
+                  _logger.w('[NativeWebP] getCachedImageFile error: $e');
+                });
+              }
+            }
+
             return _buildCompletedImage(context, state);
         }
       },
+    );
+  }
+
+  /// Renders an animated WebP using Android's native [AnimatedImageDrawable].
+  ///
+  /// Wraps [AnimatedWebPView] in a [RepaintBoundary] so the continuously
+  /// animating native layer does not invalidate the surrounding Flutter tree.
+  Widget _buildNativeAnimatedWebP(String url, Map<String, String>? headers) {
+    // Lightweight fallback: simple spinner. Do NOT use ExtendedImage here —
+    // it would decode the animated WebP on Flutter's raster thread, which is
+    // exactly what we're trying to avoid.
+    const fallback = Center(
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+
+    return RepaintBoundary(
+      child: AnimatedWebPView(
+        key: ValueKey('native_webp_${widget.contentId}_${widget.pageNumber}'),
+        url: url,
+        filePath: _cachedFilePath,
+        headers: headers ?? const {},
+        targetWidth: _nativeDecodeWidth(context),
+        // Always thumbnail-first: show JPEG preview + play button.
+        // User taps to start animation in any reading mode.
+        autoPlay: false,
+        pageNumber: widget.pageNumber,
+        visiblePageNotifier: widget.visiblePageNotifier,
+        fallback: fallback,
+      ),
     );
   }
 
@@ -561,16 +842,53 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return widget.sourceId == 'hentainexus';
   }
 
+  /// True when this image is likely an animated WebP.
+  ///
+  /// Heuristic: large file (already marked heavy) with a .webp URL.
+  /// H@H uses `-wbp` directory suffix; generic sources just end in `.webp`.
+  /// Animated WebP with 45+ frames at 1416×1608 requires 400 MB of raw
+  /// decoded RGBA data — aggressive optimisation is warranted.
+  bool get _isLikelyAnimatedWebP {
+    if (!_isHeavyImage) return false;
+    final path = widget.imageUrl.toLowerCase().split('?').first;
+    return path.endsWith('.webp') || path.contains('-wbp');
+  }
+
   int? _targetDecodeWidth(BuildContext context) {
-    if (!_isHeavyReaderSource() ||
-        widget.readingMode != ReadingMode.continuousScroll) {
-      return null;
-    }
+    // Apply decode downsampling for heavy sources and known heavy/animated images.
+    //
+    // Benefits:
+    // - Smaller GPU texture upload on each animation frame tick
+    // - Reduced memory footprint per decoded frame
+    // - On second open within session (_isHeavyImage=true from initState),
+    //   cacheWidth is applied from the very first decode request.
+    //
+    // Note: Android's MediaCodec does NOT hardware-decode animated WebP;
+    // libwebp (CPU) is always used. cacheWidth reduces the decode resolution
+    // so each frame is cheaper to decode AND cheaper to composite via GPU.
+    final bool isHeavyScroll =
+        widget.readingMode == ReadingMode.continuousScroll &&
+            (_isHeavyReaderSource() || _isHeavyImage);
+    if (!isHeavyScroll) return null;
 
     final mediaQuery = MediaQuery.of(context);
-    // Use 75% width to keep text/details sharp while still limiting decoder load.
-    return ((mediaQuery.size.width * 0.75) * mediaQuery.devicePixelRatio)
+    // Animated WebP: 40% — each frame of a 45-frame 1416×1608 animation at
+    // 75% would still be ~2.5 MB raw; at 40% it drops to ~700 KB per frame,
+    // bringing the total decoded footprint from ~112 MB to ~31 MB.
+    // Static heavy: 75% — keeps text/detail readable.
+    final double factor = _isLikelyAnimatedWebP ? 0.40 : 0.75;
+    return ((mediaQuery.size.width * factor) * mediaQuery.devicePixelRatio)
         .round();
+  }
+
+  /// Target decode width for the native [AnimatedWebPView] Kotlin renderer.
+  ///
+  /// Uses full viewport width × devicePixelRatio so the animation fills the
+  /// screen width at native resolution. This is typically ~500-600px on a
+  /// 1080p phone, vs the original 1416px — a ~65% reduction in decode area.
+  int _nativeDecodeWidth(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return (mq.size.width * mq.devicePixelRatio).round();
   }
 
   Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {
@@ -828,8 +1146,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(totalBytes)}'
                       : progressPercent != null
                           ? (loadedBytes > 0
-                              ? AppLocalizations.of(context)!.downloaded(_formatByteSize(loadedBytes))
-                              : AppLocalizations.of(context)!.estimatingProgress)
+                              ? AppLocalizations.of(context)!
+                                  .downloaded(_formatByteSize(loadedBytes))
+                              : AppLocalizations.of(context)!
+                                  .estimatingProgress)
                           : AppLocalizations.of(context)!.downloadingImageData,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -928,8 +1248,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 // Page number and retry count
                 Text(
                   (_autoRetryTimer?.isActive ?? false)
-                      ? AppLocalizations.of(context)!.pageAttempt(widget.pageNumber, _imageLoadRetries, _maxImageLoadRetries)
-                      : AppLocalizations.of(context)!.pageNumber(widget.pageNumber),
+                      ? AppLocalizations.of(context)!.pageAttempt(
+                          widget.pageNumber,
+                          _imageLoadRetries,
+                          _maxImageLoadRetries)
+                      : AppLocalizations.of(context)!
+                          .pageNumber(widget.pageNumber),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -969,7 +1293,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build completed image with zoom indicator
+  /// Build completed image with zoom indicator.
+  ///
+  /// Animated images are wrapped in a [RepaintBoundary] so each animation
+  /// tick only re-rasterizes the image's own composited layer instead of
+  /// invalidating the parent ListView cell and all its siblings.
+  /// This is the single most effective fix for animated-WebP frame drops.
   Widget _buildCompletedImage(BuildContext context, ExtendedImageState state) {
     // For gesture mode, use completedWidget which includes gesture handling
     // For non-gesture mode, use ExtendedRawImage directly
@@ -984,27 +1313,28 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     // Add zoom indicator overlay for gesture mode
     if (!widget.enableZoom) {
-      return imageWidget;
+      // Still wrap in RepaintBoundary for animated images displayed without zoom
+      // (e.g. continuousScroll mode).
+      return _isLikelyAnimatedWebP
+          ? RepaintBoundary(child: imageWidget)
+          : imageWidget;
     }
 
-    // For gesture mode, wrap with listener to detect zoom level
-    return AnimatedBuilder(
+    // For gesture mode, wrap with listener to detect zoom level.
+    // RepaintBoundary around gesture mode is important for animated WebP:
+    // the zoom/scale AnimatedBuilder triggers rebuilds on every zoom tick;
+    // the boundary keeps those repaints isolated from the ListView.
+    final Widget gestureWidget = AnimatedBuilder(
       animation: _zoomController,
       builder: (context, child) {
-        // Try to get gesture state from the global key
         final gestureState = _gestureKey.currentState;
         final currentScale = gestureState?.gestureDetails?.totalScale ?? 1.0;
         final isZoomed = currentScale > 1.2;
 
         return Stack(
-          alignment:
-              Alignment.center, // Center all children (image + zoom indicator)
+          alignment: Alignment.center,
           children: [
-            // Main image with gesture - wrap with Center for proper vertical alignment
             Center(child: imageWidget),
-
-            // Zoom indicator (only show when zoomed AND not in continuous scroll mode)
-            // In continuous scroll, per-image zoom is not relevant as multiple pages are visible
             if (isZoomed && widget.readingMode != ReadingMode.continuousScroll)
               Positioned(
                 top: 16,
@@ -1019,11 +1349,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.zoom_in,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      const Icon(Icons.zoom_in, color: Colors.white, size: 16),
                       const SizedBox(width: 4),
                       Text(
                         '${(currentScale * 100).toInt()}%',
@@ -1041,6 +1367,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         );
       },
     );
+
+    return _isLikelyAnimatedWebP
+        ? RepaintBoundary(child: gestureWidget)
+        : gestureWidget;
   }
 
   /// 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network errors)

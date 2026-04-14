@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 export 'utils/backup_utils.dart'; // Export for users
 export 'widgets/kuron_widgets.dart'; // Export Widgets
+export 'widgets/animated_webp_view.dart'; // Export native animated-WebP viewer
 
 class KuronNative {
   /// Singleton instance

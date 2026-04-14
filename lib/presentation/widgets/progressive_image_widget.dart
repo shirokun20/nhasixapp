@@ -725,7 +725,8 @@ class _ProgressiveReaderImageWidgetState
           const SizedBox(height: 16),
           Text(
             AppLocalizations.of(context)?.loadingPage(widget.pageNumber) ??
-                AppLocalizations.of(context)!.loadingPageNumber(widget.pageNumber),
+                AppLocalizations.of(context)!
+                    .loadingPageNumber(widget.pageNumber),
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

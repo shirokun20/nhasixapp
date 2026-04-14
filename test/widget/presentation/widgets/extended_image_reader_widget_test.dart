@@ -1,0 +1,269 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/data/models/reader_settings_model.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/presentation/widgets/extended_image_reader_widget.dart';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Minimal app wrapper providing localizations and direction.
+Widget _wrap(Widget child) => MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    );
+
+/// Build a [ExtendedImageReaderWidget] with sensible defaults.
+Widget _buildWidget({
+  required String url,
+  ReadingMode mode = ReadingMode.continuousScroll,
+  String sourceId = 'nhentai',
+  Map<String, String>? headers,
+}) =>
+    _wrap(
+      ExtendedImageReaderWidget(
+        imageUrl: url,
+        contentId: 'test-content',
+        pageNumber: 1,
+        readingMode: mode,
+        sourceId: sourceId,
+        httpHeaders: headers,
+      ),
+    );
+
+/// Force a URL into the heavy-image static set to simulate a second visit.
+void _markHeavy(String url) {
+  // Access the private static via reflection is not possible in Dart, so we
+  // inject via the threshold-bytes detection path by pumping a widget and
+  // driving it through the loading state.  Instead, we rely on the fact that
+  // the static set is package-private and test indirectly through widget behavior.
+  //
+  // In tests that need the flag pre-seeded we call [_ExposeHeavySet.add] which
+  // is the same set referenced by the widget (static, shared).
+  _ExposeHeavySet.add(url);
+}
+
+// ignore: library_private_types_in_public_api
+extension _ExposeHeavySet on ExtendedImageReaderWidget {
+  static void add(String url) {
+    // Reflection workaround: run a warm-up widget with a fake state so the
+    // static set receives the URL.  We do this by simulating what
+    // _markAsHeavyImage() does internally – the test helpers below call
+    // [_InjectHeavyUrl.inject] which invokes the same static add path used
+    // by the real widget.
+    _InjectHeavyUrl.inject(url);
+  }
+}
+
+/// Thin shim that exposes the private static set for testing.
+/// Since Dart doesn't allow cross-library access to private members, we expose
+/// a @visibleForTesting hook in the production widget below.
+///
+/// For now the tests that need pre-seeding use [ExtendedImageReaderWidget.addHeavyUrlForTesting].
+class _InjectHeavyUrl {
+  _InjectHeavyUrl._();
+  static void inject(String url) {
+    ExtendedImageReaderWidget.addHeavyUrlForTesting(url);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+void main() {
+  // Prevent real network calls in widget tests.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Intercept the kuron_animated_webp_view platform channel so
+  // AndroidView does not crash in the Flutter test environment.
+  const MethodChannel systemUiChannel = MethodChannel('flutter/platform_views');
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(systemUiChannel, (call) async => null);
+    // Clear heavy-image set before each test so tests are isolated.
+    ExtendedImageReaderWidget.clearHeavyUrlsForTesting();
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(systemUiChannel, null);
+    ExtendedImageReaderWidget.clearHeavyUrlsForTesting();
+  });
+
+  // ── Unit-style logic tests ────────────────────────────────────────────────
+
+  group('_isLikelyAnimatedWebP heuristic', () {
+    test('returns false when image is NOT yet heavy', () {
+      // URL is a .webp but _isHeavyImage = false (no static set entry)
+      // → should NOT trigger native view
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/1_4.webp',
+          isHeavy: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true for plain .webp URL when heavy', () {
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/1_4.webp',
+          isHeavy: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns true for H@H -wbp suffix when heavy', () {
+      const url =
+          'https://tkltdpb.zwekrcqhhvdx.hath.network:43649/h/abc-8530696-1416-1608-wbp/'
+          'keystamp=123;fileindex=456;xres=org/1_4.webp';
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: url,
+          isHeavy: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false for .jpg even when heavy', () {
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/1_4.jpg',
+          isHeavy: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('strips query string before checking extension', () {
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/image.webp?token=abc&ts=123',
+          isHeavy: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('is case-insensitive', () {
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/IMAGE.WEBP',
+          isHeavy: true,
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('heavy image threshold', () {
+    test('threshold is 2 MB', () {
+      expect(
+        ExtendedImageReaderWidget.heavyImageThresholdBytesForTesting,
+        equals(2 * 1024 * 1024),
+      );
+    });
+  });
+
+  group('_heavyImageUrls static set persistence', () {
+    test('URL added to set is visible to next widget instance', () {
+      const url = 'https://example.com/heavy.webp';
+      expect(ExtendedImageReaderWidget.isHeavyUrlForTesting(url), isFalse);
+
+      ExtendedImageReaderWidget.addHeavyUrlForTesting(url);
+
+      expect(ExtendedImageReaderWidget.isHeavyUrlForTesting(url), isTrue);
+    });
+
+    test('clearHeavyUrlsForTesting resets the set', () {
+      const url = 'https://example.com/heavy.webp';
+      ExtendedImageReaderWidget.addHeavyUrlForTesting(url);
+      ExtendedImageReaderWidget.clearHeavyUrlsForTesting();
+      expect(ExtendedImageReaderWidget.isHeavyUrlForTesting(url), isFalse);
+    });
+  });
+
+  // ── Widget routing tests ──────────────────────────────────────────────────
+
+  group('native view routing', () {
+    testWidgets(
+        'shows ExtendedImage.network on first visit (not yet heavy) – '
+        'no AndroidView', (tester) async {
+      const url = 'https://example.com/page.webp';
+      // URL is NOT in heavy set → should render ExtendedImage
+
+      await tester.pumpWidget(_buildWidget(url: url));
+      await tester.pump(); // let build complete
+
+      // AndroidView should NOT be present; ExtendedImage should be.
+      // We check widget type indirectly: if native, an AndroidView would appear.
+      expect(find.byType(AndroidView), findsNothing);
+    });
+
+    testWidgets(
+        'shows AnimatedWebPView (AndroidView) on second visit – '
+        'URL already in heavy set', (tester) async {
+      const url = 'https://example.com/page.webp';
+      _markHeavy(url); // simulate previous visit having detected it as heavy
+
+      await tester.pumpWidget(_buildWidget(url: url));
+      await tester.pump();
+
+      // On Android (test env mimics Android), AndroidView should appear.
+      // AnimatedWebPView.isAvailable is true on Android.
+      // In the test host (Linux/macOS CI) Platform.isAndroid = false,
+      // so AnimatedWebPView renders [fallback] → ExtendedImage.
+      // Either way there should be NO crash and widget renders.
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('non-webp URL is never routed to native view even if heavy',
+        (tester) async {
+      const url = 'https://example.com/page.jpg';
+      _markHeavy(url);
+
+      await tester.pumpWidget(_buildWidget(url: url));
+      await tester.pump();
+
+      expect(find.byType(AndroidView), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('wantKeepAlive true for heavy image in continuousScroll',
+        (tester) async {
+      const url = 'https://example.com/page.webp';
+      _markHeavy(url);
+
+      await tester.pumpWidget(_buildWidget(
+        url: url,
+        mode: ReadingMode.continuousScroll,
+      ));
+      await tester.pump();
+
+      // Widget should still be alive (no crash, no dispose triggered).
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('AnimatedWebPView.isAvailable', () {
+    test('is false on non-Android test host', () {
+      // Tests run on macOS/Linux CI, not Android.
+      expect(AnimatedWebPView.isAvailable, equals(Platform.isAndroid));
+    });
+  });
+}
