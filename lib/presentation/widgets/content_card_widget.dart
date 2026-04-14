@@ -368,7 +368,7 @@ class ContentCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               AppLocalizations.of(context)?.imageNotAvailable ??
-                  'Image not available',
+                  AppLocalizations.of(context)!.imageNotAvailable,
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

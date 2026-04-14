@@ -105,7 +105,7 @@ class AppMainHeaderWidget extends StatelessWidget
                     Icons.sync,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Sync/Refresh',
+                  tooltip: AppLocalizations.of(context)!.syncRefresh,
                 ),
               // Import Button
               if (onImport != null)
@@ -115,7 +115,7 @@ class AppMainHeaderWidget extends StatelessWidget
                     Icons.create_new_folder_outlined,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Import from Backup',
+                  tooltip: AppLocalizations.of(context)!.importFromBackup,
                 ),
               // Import ZIP Button
               if (onImportZip != null)
@@ -125,7 +125,7 @@ class AppMainHeaderWidget extends StatelessWidget
                     Icons.folder_zip,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Import ZIP File',
+                  tooltip: AppLocalizations.of(context)!.importZipFile,
                 ),
               // Export Button
               if (onExport != null)
@@ -135,7 +135,7 @@ class AppMainHeaderWidget extends StatelessWidget
                     Icons.file_upload,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: 'Export Library',
+                  tooltip: AppLocalizations.of(context)!.exportLibrary,
                 ),
             ]
           : [
@@ -217,7 +217,7 @@ class AppMainHeaderWidget extends StatelessWidget
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context)!.ok),
           ),
         ],
       ),

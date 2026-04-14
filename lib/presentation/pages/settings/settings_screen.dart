@@ -183,12 +183,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           _buildSectionHeader(
             Icons.visibility_off_outlined,
-            'CONTENT FILTERS',
+            AppLocalizations.of(context)!.contentFilters,
             theme,
           ),
           const SizedBox(height: 12),
           _buildInfoBanner(
-            'Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.',
+            AppLocalizations.of(context)!.blurCoversDescription,
             Icons.shield_moon_outlined,
             theme,
           ),
@@ -321,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // App Disguise Card
           _buildSectionHeader(
             Icons.visibility_off_outlined,
-            'APP DISGUISE',
+            AppLocalizations.of(context)!.appDisguise,
             theme,
           ),
           const SizedBox(height: 12),
@@ -339,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Developer Tools Card
           _buildSectionHeader(
             Icons.bug_report_outlined,
-            'DEVELOPER TOOLS',
+            AppLocalizations.of(context)!.developerTools,
             theme,
           ),
           const SizedBox(height: 12),
@@ -619,7 +619,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tag blacklist',
+                            AppLocalizations.of(context)!.tagBlacklist,
                             style: TextStyleConst.bodyLarge.copyWith(
                               fontWeight: FontWeight.w700,
                               color: theme.colorScheme.onSurface,
@@ -627,7 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.',
+                            AppLocalizations.of(context)!.blacklistDescription,
                             style: TextStyleConst.bodySmall.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -639,7 +639,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () =>
                           _showTagBlacklistSheet(context, prefs, theme),
                       icon: const Icon(Icons.tune_rounded, size: 18),
-                      label: const Text('Manage'),
+                      label: Text(AppLocalizations.of(context)!.manage),
                     ),
                   ],
                 ),
@@ -650,20 +650,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     _buildBlacklistStatChip(
                       theme: theme,
-                      label: 'Local',
+                      label: AppLocalizations.of(context)!.local,
                       value: '${prefs.blacklistedTags.length}',
                       icon: Icons.sd_storage_rounded,
                     ),
                     _buildBlacklistStatChip(
                       theme: theme,
-                      label: 'Rules',
-                      value: hasSession ? '${onlineRules.length}' : 'Login',
+                      label: AppLocalizations.of(context)!.rules,
+                      value: hasSession ? '${onlineRules.length}' : AppLocalizations.of(context)!.login,
                       icon: Icons.rule_rounded,
                       isLoading: isSyncingRules,
                     ),
                     _buildBlacklistStatChip(
                       theme: theme,
-                      label: 'Active',
+                      label: AppLocalizations.of(context)!.active,
                       value: '${mergedEntries.length}',
                       icon: Icons.layers_rounded,
                     ),
@@ -672,7 +672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (hasSession) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'Online rule details (${onlineRules.length})',
+                    AppLocalizations.of(context)!.onlineRuleDetailsCount(onlineRules.length),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -682,7 +682,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (onlineRules.isEmpty)
                     _buildSheetHint(
                       theme,
-                      'No online detailed rules returned yet. Pull refresh to fetch /blacklist data.',
+                      AppLocalizations.of(context)!.noOnlineRulesYet,
                     )
                   else
                     Wrap(
@@ -713,7 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     child: Text(
-                      'No blacklist rules yet. Add tag names like romance, artist:foo, or numeric tag IDs.',
+                      AppLocalizations.of(context)!.noBlacklistRulesYet,
                       style: TextStyleConst.bodySmall.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -732,7 +732,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     child: Text(
-                      'Active coverage is enabled for ${mergedEntries.length} tokens (local + online IDs). Hidden here to keep this view human-readable.',
+                      AppLocalizations.of(context)!.activeCoverageDescription(mergedEntries.length),
                       style: TextStyleConst.bodySmall.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -997,7 +997,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localMetadata = backupMetadata;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text('Failed to save: $e')),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToSave(e.toString()))),
                   );
                 }
                 return;
@@ -1048,7 +1048,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localEntries = backup;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text('Failed to save: $e')),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToSave(e.toString()))),
                   );
                 }
                 return;
@@ -1080,7 +1080,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localMetadata = backupMetadata;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text('Failed to delete: $e')),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToDelete(e.toString()))),
                   );
                 }
                 return;
@@ -1140,14 +1140,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Manage tag blacklist',
+                                    AppLocalizations.of(context)!.manageTagBlacklist,
                                     style: TextStyleConst.headingSmall.copyWith(
                                       color: theme.colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Add tag names, typed rules like artist:foo, or numeric tag IDs. Separate multiple values with commas or new lines.',
+                                    AppLocalizations.of(context)!.addTagRulesDescription,
                                     style: TextStyleConst.bodySmall.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -1163,7 +1163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           minLines: 1,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            hintText: 'romance, artist:example, 12345',
+                            hintText: AppLocalizations.of(context)!.searchExampleHint,
                             prefixIcon: const Icon(Icons.tag_rounded),
                             filled: true,
                             fillColor:
@@ -1218,7 +1218,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.sync_rounded, size: 18),
-                                label: const Text('Refresh online'),
+                                label: Text(AppLocalizations.of(context)!.refreshOnline),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1226,7 +1226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: FilledButton.icon(
                                 onPressed: addEntries,
                                 icon: const Icon(Icons.add_rounded, size: 18),
-                                label: const Text('Add rules'),
+                                label: Text(AppLocalizations.of(context)!.addRules),
                               ),
                             ),
                           ],
@@ -1237,12 +1237,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: OutlinedButton.icon(
                             onPressed: pickFromTags,
                             icon: const Icon(Icons.playlist_add_rounded),
-                            label: const Text('Pick from tags'),
+                            label: Text(AppLocalizations.of(context)!.pickFromTags),
                           ),
                         ),
                         const SizedBox(height: 18),
                         Text(
-                          'Local rules (${localEntries.length})',
+                          AppLocalizations.of(context)!.localRulesCount(localEntries.length),
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1252,7 +1252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (localEntries.isEmpty)
                           _buildSheetHint(
                             theme,
-                            'Nothing saved locally yet. Local rules are always applied, including offline results.',
+                            AppLocalizations.of(context)!.nothingSavedLocally,
                           )
                         else
                           Wrap(
@@ -1278,8 +1278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 20),
                         Text(
                           hasSession
-                              ? 'Online rules metadata (${onlineRules.length})'
-                              : 'Online rules metadata',
+                              ? AppLocalizations.of(context)!.onlineRulesMetadataCount(onlineRules.length)
+                              : AppLocalizations.of(context)!.onlineRulesMetadata,
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1289,17 +1289,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (!hasSession)
                           _buildSheetHint(
                             theme,
-                            'Login required to fetch detailed rule metadata from /blacklist.',
+                            AppLocalizations.of(context)!.loginRequiredForRules,
                           )
                         else if (isSyncingRules && onlineRules.isEmpty)
                           _buildSheetHint(
                             theme,
-                            'Syncing online rule details...',
+                            AppLocalizations.of(context)!.syncingOnlineRules,
                           )
                         else if (onlineRules.isEmpty)
                           _buildSheetHint(
                             theme,
-                            'No online rule details returned yet. Tap refresh to fetch /blacklist.',
+                            AppLocalizations.of(context)!.noOnlineRuleDetails,
                           )
                         else
                           Wrap(
@@ -1316,7 +1316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         const SizedBox(height: 20),
                         Text(
-                          'Active coverage (${mergedEntries.length})',
+                          AppLocalizations.of(context)!.activeCoverageCount(mergedEntries.length),
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1326,12 +1326,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (mergedEntries.isEmpty)
                           _buildSheetHint(
                             theme,
-                            'Blacklisted galleries will be blurred here once you add local rules or sync online IDs.',
+                            AppLocalizations.of(context)!.blacklistGalleriesInfo,
                           )
                         else
                           _buildSheetHint(
                             theme,
-                            'Coverage is active for ${mergedEntries.length} tokens. ID tokens are hidden here by request; only named online rules are shown above.',
+                            AppLocalizations.of(context)!.coverageActiveDescription(mergedEntries.length),
                           ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -1347,7 +1347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Navigator.of(sheetContext).pop();
                               }
                             },
-                            child: const Text('Done'),
+                            child: Text(AppLocalizations.of(context)!.done),
                           ),
                         ),
                       ],
@@ -1850,7 +1850,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   min: 1,
                   max: 30,
                   divisions: 29,
-                  label: '${settings.timeoutDuration.inMinutes} min',
+                  label: AppLocalizations.of(context)!.timeoutMinutes(settings.timeoutDuration.inMinutes),
                   onChanged: (value) {
                     context.read<DownloadBloc>().add(
                           DownloadSettingsUpdateEvent(
@@ -1959,7 +1959,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Header
         _buildSectionHeader(
           Icons.download_outlined,
-          'AVAILABLE SOURCES',
+          AppLocalizations.of(context)!.availableSources,
           theme,
         ),
         const SizedBox(height: 12),
@@ -2022,7 +2022,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  '${state.availableSources.length} source(s) installed',
+                  AppLocalizations.of(context)!.nSourcesInstalled(state.availableSources.length),
                   style: TextStyleConst.bodySmall.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -2104,7 +2104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (canUninstall) ...[
                           if (isActive) const SizedBox(width: 4),
                           IconButton(
-                            tooltip: 'Uninstall source',
+                            tooltip: AppLocalizations.of(context)!.uninstallSource,
                             onPressed: () =>
                                 _confirmAndUninstallSource(context, source.id),
                             icon: Icon(
@@ -2178,9 +2178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Uninstall Source'),
+            title: Text(AppLocalizations.of(context)!.uninstallSourceTitle),
             content: Text(
-              'Remove "$sourceId" from local installed sources?',
+              AppLocalizations.of(context)!.removeSourceConfirmation(sourceId),
             ),
             actions: [
               TextButton(
@@ -2189,7 +2189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Uninstall'),
+                child: Text(AppLocalizations.of(context)!.uninstall),
               ),
             ],
           ),
@@ -2221,7 +2221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Source "$sourceId" uninstalled.'),
+          content: Text(AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
           backgroundColor: Colors.green.shade700,
         ),
       );
@@ -2232,7 +2232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to uninstall "$sourceId": $e'),
+          content: Text(AppLocalizations.of(context)!.failedToUninstall(sourceId, e.toString())),
           backgroundColor: Colors.red,
         ),
       );
@@ -2406,7 +2406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (failed.isEmpty) {
         final message = installed.length == 1
             ? l10n.sourceImportInstalledFromZip(installed.first)
-            : 'Installed ${installed.length} sources from ZIP';
+            : AppLocalizations.of(context)!.installedSourcesFromZip(installed.length);
         messenger.showSnackBar(
           SnackBar(
             content: Text(message),
@@ -2654,9 +2654,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const ListTile(
-              title: Text('Select Source from Manifest'),
-              subtitle: Text('Choose one source to install.'),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.selectSourceFromManifest),
+              subtitle: Text(AppLocalizations.of(context)!.chooseOneSource),
             ),
             Flexible(
               child: ListView.separated(
@@ -2698,9 +2698,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             height: MediaQuery.of(ctx).size.height * 0.75,
             child: Column(
               children: [
-                const ListTile(
-                  title: Text('Select Source from Manifest'),
-                  subtitle: Text('Choose one or more sources to install.'),
+                ListTile(
+                  title: Text(AppLocalizations.of(context)!.selectSourceFromManifest),
+                  subtitle: Text(AppLocalizations.of(context)!.chooseMultipleSources),
                 ),
                 Expanded(
                   child: ListView.separated(
@@ -2733,7 +2733,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Expanded(
                         child: TextButton(
                           onPressed: () => Navigator.pop(ctx, const []),
-                          child: const Text('Cancel'),
+                          child: Text(AppLocalizations.of(context)!.cancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -2748,7 +2748,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             (entry) => selected.contains(entry))
                                         .toList(growable: false),
                                   ),
-                          child: Text('Install Selected (${selected.length})'),
+                          child: Text(AppLocalizations.of(context)!.installSelectedCount(selected.length)),
                         ),
                       ),
                     ],
@@ -3183,7 +3183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Selected sources: ${candidates.length}'),
+              Text(AppLocalizations.of(context)!.selectedSourcesCount(candidates.length)),
               const SizedBox(height: 8),
               Flexible(
                 child: ListView.separated(
@@ -3208,7 +3208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Install Selected'),
+            child: Text(AppLocalizations.of(context)!.installSelected),
           ),
         ],
       ),

@@ -206,7 +206,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
                     children: [
                       // Page text
                       Text(
-                        'Page ${widget.currentPage} of ${widget.totalPages}',
+                        AppLocalizations.of(context)!.pageOfTotal(widget.currentPage, widget.totalPages),
                         style: TextStyleConst.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

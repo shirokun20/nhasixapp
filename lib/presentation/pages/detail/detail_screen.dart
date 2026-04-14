@@ -148,10 +148,10 @@ class _DetailScreenState extends State<DetailScreen> {
               ListTile(
                 leading: const Icon(Icons.folder_special_outlined),
                 enabled: detailState.isFavorited,
-                title: const Text('Manage Collections'),
+                title: Text(AppLocalizations.of(context)!.manageCollections),
                 subtitle: detailState.isFavorited
                     ? null
-                    : const Text('Add to favorites first'),
+                    : Text(AppLocalizations.of(context)!.addToFavoritesFirst),
                 onTap: detailState.isFavorited
                     ? () => Navigator.of(context).pop('manage_collections')
                     : null,
@@ -159,13 +159,13 @@ class _DetailScreenState extends State<DetailScreen> {
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.phone_android),
-                title: const Text('Favorite Offline'),
+                title: Text(AppLocalizations.of(context)!.favoriteOffline),
                 onTap: () => Navigator.of(context).pop('offline'),
               ),
               ListTile(
                 leading: const Icon(Icons.cloud),
                 enabled: hasSession,
-                title: const Text('Favorite Online'),
+                title: Text(AppLocalizations.of(context)!.favoriteOnline),
                 subtitle: hasSession
                     ? null
                     : Text(
@@ -177,7 +177,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ListTile(
                 leading: const Icon(Icons.cloud_done),
                 enabled: hasSession,
-                title: const Text('Favorite Both'),
+                title: Text(AppLocalizations.of(context)!.favoriteBoth),
                 subtitle: hasSession
                     ? null
                     : Text(
@@ -219,7 +219,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Unsupported gallery ID for online favorite.'),
+          content: Text(AppLocalizations.of(context)!.unsupportedGalleryId),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -272,8 +272,8 @@ class _DetailScreenState extends State<DetailScreen> {
     if (!detailState.isFavorited) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Add to favorites first to manage collections'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.addToFavoritesManageCollections),
         ),
       );
       return;
@@ -670,9 +670,9 @@ class _DetailScreenState extends State<DetailScreen> {
                     // Legacy support or fallback
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Login required for this action'),
+                        content: Text(AppLocalizations.of(context)!.loginRequiredAction),
                         action: SnackBarAction(
-                          label: 'Login',
+                          label: AppLocalizations.of(context)!.login,
                           onPressed: () {
                             context.push('/crotpedia-login');
                           },
@@ -883,7 +883,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                           .onSurface),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Manage Collections',
+                                    AppLocalizations.of(context)!.manageCollections,
                                     style: TextStyleConst.bodyMedium.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -1112,7 +1112,7 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
-          _buildMetadataRow('Source', content.source, Icons.dns_rounded),
+          _buildMetadataRow(AppLocalizations.of(context)!.source, content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
           if (content.chapters != null && content.chapters!.isNotEmpty)
@@ -1183,7 +1183,7 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'This gallery matches blacklist rules. Cover/cards can be blurred in list views.',
+              AppLocalizations.of(context)!.blacklistMatchWarning,
               style: TextStyleConst.bodySmall.copyWith(
                 color: theme.colorScheme.onErrorContainer,
                 fontWeight: FontWeight.w600,
@@ -1921,8 +1921,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                       Flexible(
                                         child: Text(
                                           isCompleted
-                                              ? 'Chapter completed'
-                                              : 'Continue from page ${chapterHistory[chapter.id]!.lastPage}',
+                                              ? AppLocalizations.of(context)!.chapterCompleted
+                                              : AppLocalizations.of(context)!.continueFromPage(chapterHistory[chapter.id]!.lastPage),
                                           style:
                                               TextStyleConst.bodySmall.copyWith(
                                             color: isCompleted
@@ -2070,9 +2070,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       isCompleted
-                                          ? 'Read Again'
+                                          ? AppLocalizations.of(context)!.readAgain
                                           : isRead
-                                              ? 'Continue'
+                                              ? AppLocalizations.of(context)!.continueReading
                                               : l10n.readChapter,
                                       style:
                                           TextStyleConst.labelMedium.copyWith(
@@ -2499,7 +2499,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   child: Text(
                     isLoginError
-                        ? 'You need to log in to Crotpedia to view this content.'
+                        ? AppLocalizations.of(context)!.loginRequiredForContent
                         : ErrorMessageUtils.getFriendlyErrorMessage(
                             state.error, l10n),
                     style: TextStyleConst.bodyMedium.copyWith(
@@ -2844,11 +2844,11 @@ class _DetailScreenState extends State<DetailScreen> {
     final List<String> metadata = [];
 
     if (content.artists.isNotEmpty) {
-      metadata.add('Artist: ${content.artists.first}');
+      metadata.add(AppLocalizations.of(context)!.artistLabel(content.artists.first));
     }
 
     if (content.pageCount > 0) {
-      metadata.add('${content.pageCount} pages');
+      metadata.add(AppLocalizations.of(context)!.nPagesText(content.pageCount));
     }
 
     if (content.language.isNotEmpty) {
@@ -2860,7 +2860,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     // Add URL
-    messageParts.add('Check it out: $url');
+    messageParts.add(AppLocalizations.of(context)!.checkItOut(url));
 
     return messageParts.join('\n\n');
   }
@@ -2987,7 +2987,7 @@ class _DetailScreenState extends State<DetailScreen> {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context)!
-                      .failedToStartDownload('Unknown error'),
+                      .failedToStartDownload(AppLocalizations.of(context)!.unknownError),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),
@@ -3015,7 +3015,7 @@ class _DetailScreenState extends State<DetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context)!.ok),
           ),
         ],
       ),
@@ -3269,7 +3269,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Collections',
+                    AppLocalizations.of(context)!.collections,
                     style: TextStyleConst.withColor(
                       TextStyleConst.headingSmall,
                       Theme.of(context).colorScheme.onSurface,
@@ -3286,7 +3286,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           return CheckboxListTile(
                             value: isSelected,
                             title: Text(collection.name),
-                            subtitle: Text('${collection.itemCount} items'),
+                            subtitle: Text(AppLocalizations.of(context)!.nItems(collection.itemCount)),
                             controlAffinity: ListTileControlAffinity.leading,
                             onChanged: (value) {
                               setSheetState(() {
@@ -3320,7 +3320,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           await _showManageCollectionsSheet(content);
                         },
                         icon: const Icon(Icons.create_new_folder_outlined),
-                        label: const Text('New collection'),
+                        label: Text(AppLocalizations.of(context)!.newCollection),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
@@ -3335,7 +3335,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text(
-                                    'Collections updated successfully'),
+                                    AppLocalizations.of(context)!.collectionsUpdatedSuccessfully),
                                 backgroundColor:
                                     Theme.of(context).colorScheme.primary,
                               ),
@@ -3369,13 +3369,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   backgroundColor: Theme.of(dialogBuilderContext)
                       .colorScheme
                       .surfaceContainer,
-                  title: const Text('Create collection'),
+                  title: Text(AppLocalizations.of(context)!.createCollection),
                   content: TextField(
                     controller: controller,
                     autofocus: true,
                     textInputAction: TextInputAction.done,
-                    decoration: const InputDecoration(
-                      labelText: 'Collection name',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.collectionName,
                     ),
                     onChanged: (value) {
                       setDialogState(() {
@@ -3425,7 +3425,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to create collection: $e'),
+          content: Text(AppLocalizations.of(context)!.failedToCreateCollection(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

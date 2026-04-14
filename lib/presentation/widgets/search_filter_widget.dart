@@ -305,9 +305,9 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               tooltip: _isExpanded
                   ? (AppLocalizations.of(context)?.hideFiltersTooltip ??
-                      'Hide filters')
+                      AppLocalizations.of(context)!.hideFilters)
                   : (AppLocalizations.of(context)?.showMoreFiltersTooltip ??
-                      'Show more filters'),
+                      AppLocalizations.of(context)!.showMoreFilters),
             ),
           ],
         ],
@@ -378,7 +378,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
             Text(
               AppLocalizations.of(context)?.advancedFiltersTitle ??
-                  'Advanced Filters',
+                  AppLocalizations.of(context)!.advancedFilters,
               style: TextStyleConst.headingSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
@@ -533,7 +533,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       children: [
         Text(
           AppLocalizations.of(context)?.recentSearchesTitle ??
-              'Recent Searches',
+              AppLocalizations.of(context)!.recentSearches,
           style: TextStyleConst.label,
         ),
         const SizedBox(height: 8),
@@ -690,7 +690,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
       children: [
         Text(
           AppLocalizations.of(context)?.pageCountRangeTitle ??
-              'Page Count Range',
+              AppLocalizations.of(context)!.pageCountRange,
           style: TextStyleConst.label,
         ),
         const SizedBox(height: 8),

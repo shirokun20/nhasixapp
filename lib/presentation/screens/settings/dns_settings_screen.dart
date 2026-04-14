@@ -6,6 +6,7 @@ import '../../cubits/dns_settings/dns_settings_cubit.dart';
 import '../../../core/network/dns_settings_service.dart';
 import 'package:logger/logger.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 /// DNS Settings configuration screen
 class DnsSettingsScreen extends StatelessWidget {
   const DnsSettingsScreen({super.key});
@@ -53,11 +54,11 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DNS Settings'),
+        title: Text(AppLocalizations.of(context)!.dnsSettings),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Reset to defaults',
+            tooltip: AppLocalizations.of(context)!.resetToDefaults,
             onPressed: () => _showResetDialog(context),
           ),
         ],
@@ -68,9 +69,9 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
             children: [
               // DNS-over-HTTPS Enable Switch
               SwitchListTile(
-                title: const Text('Enable DNS-over-HTTPS'),
-                subtitle: const Text(
-                  'Use encrypted DNS for enhanced privacy and bypass censorship',
+                title: Text(AppLocalizations.of(context)!.enableDnsOverHttps),
+                subtitle: Text(
+                  AppLocalizations.of(context)!.dnsEncryptedDescription,
                 ),
                 value: settings.enabled,
                 onChanged: (enabled) {
@@ -87,16 +88,16 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                   child: Card(
                     color:
                         Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Padding(
-                      padding: EdgeInsets.all(12.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, size: 20),
-                          SizedBox(width: 12),
+                          const Icon(Icons.info_outline, size: 20),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Using system default DNS resolver',
-                              style: TextStyle(fontSize: 13),
+                              AppLocalizations.of(context)!.usingSystemDns,
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
@@ -107,11 +108,11 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
 
               // Provider Selection (only when enabled)
               if (settings.enabled) ...[
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
-                    'DNS Provider',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.dnsProvider,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -156,9 +157,9 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Custom Configuration',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.customConfiguration,
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -167,9 +168,9 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                         TextField(
                           controller: _dnsServerController,
                           decoration: const InputDecoration(
-                            labelText: 'DNS Server IP',
+                            labelText: AppLocalizations.of(context)!.dnsServerIp,
                             hintText: '1.1.1.1',
-                            helperText: 'Primary DNS server address',
+                            helperText: AppLocalizations.of(context)!.primaryDnsAddress,
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
@@ -185,11 +186,11 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
                         const SizedBox(height: 16),
                         TextField(
                           controller: _dohUrlController,
-                          decoration: const InputDecoration(
-                            labelText: 'DoH URL (Optional)',
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.dohUrlOptional,
                             hintText: 'https://dns.example.com/dns-query',
-                            helperText: 'DNS-over-HTTPS endpoint URL',
-                            border: OutlineInputBorder(),
+                            helperText: AppLocalizations.of(context)!.dnsOverHttpsUrl,
+                            border: const OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.url,
                           onChanged: (value) {
@@ -211,45 +212,42 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
 
               // Information section
               const Divider(),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'About DNS-over-HTTPS',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.aboutDoh,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'DNS-over-HTTPS (DoH) encrypts your DNS queries, '
-                      'preventing ISPs and network administrators from '
-                      'monitoring which websites you visit. It also helps '
-                      'bypass DNS-based censorship and geo-restrictions.',
-                      style: TextStyle(fontSize: 13),
+                      AppLocalizations.of(context)!.dohDescription,
+                      style: const TextStyle(fontSize: 13),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
-                        Icon(Icons.security, size: 16),
-                        SizedBox(width: 8),
+                        const Icon(Icons.security, size: 16),
+                        const SizedBox(width: 8),
                         Text(
-                          'All DNS queries encrypted via HTTPS',
-                          style: TextStyle(fontSize: 12),
+                          AppLocalizations.of(context)!.dnsQueriesEncrypted,
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.vpn_lock, size: 16),
-                        SizedBox(width: 8),
+                        const Icon(Icons.vpn_lock, size: 16),
+                        const SizedBox(width: 8),
                         Text(
-                          'Enhanced privacy and security',
-                          style: TextStyle(fontSize: 12),
+                          AppLocalizations.of(context)!.enhancedPrivacy,
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
@@ -267,21 +265,21 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset DNS Settings'),
-        content: const Text(
-          'This will reset DNS settings to system defaults. Continue?',
+        title: Text(AppLocalizations.of(context)!.resetDnsSettings),
+        content: Text(
+          AppLocalizations.of(context)!.resetDnsConfirmation,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<DnsSettingsCubit>().resetToDefaults();
               Navigator.pop(dialogContext);
             },
-            child: const Text('Reset'),
+            child: Text(AppLocalizations.of(context)!.reset),
           ),
         ],
       ),

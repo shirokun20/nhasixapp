@@ -856,7 +856,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return Center(
         child: AppProgressIndicator(
           message: AppLocalizations.of(context)?.loadingContent ??
-              'Loading content...',
+              AppLocalizations.of(context)!.loadingContent,
         ),
       );
     }
@@ -1371,7 +1371,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       child: Text(
                         state.content?.getDisplayTitle() ??
                             AppLocalizations.of(context)?.loading ??
-                            'Loading...',
+                            AppLocalizations.of(context)!.loading,
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -1426,7 +1426,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       if ((state.currentPage ?? 1) >
                           (state.content?.pageCount ?? 1))
                         Text(
-                          'Chapter Complete',
+                          AppLocalizations.of(context)!.chapterComplete,
                           style: TextStyleConst.bodySmall.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -1437,7 +1437,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           AppLocalizations.of(context)?.pageOfPages(
                                   state.currentPage ?? 1,
                                   state.content?.pageCount ?? 1) ??
-                              'Page ${state.currentPage ?? 1} of ${state.content?.pageCount ?? 1}',
+                              AppLocalizations.of(context)!.pageOfContent(state.currentPage ?? 1, state.content?.pageCount ?? 1),
                           style: TextStyleConst.bodySmall.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1707,7 +1707,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
               Text(
                 AppLocalizations.of(context)?.readerSettings ??
-                    'Reader Settings',
+                    AppLocalizations.of(context)!.readerSettings,
                 style: TextStyleConst.headingMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -1764,7 +1764,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 const Divider(height: 32),
                 ListTile(
                   title: Text(
-                    'Chapter',
+                    AppLocalizations.of(context)!.chapterLabel,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -1772,7 +1772,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   subtitle: Text(
                     currentState.currentChapter?.title ??
                         currentState.content?.title.split(' - ').last ??
-                        'No chapter selected',
+                        AppLocalizations.of(context)!.noChapterSelected,
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1795,14 +1795,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ListTile(
                 title: Text(
                   AppLocalizations.of(context)?.keepScreenOn ??
-                      'Keep Screen On',
+                      AppLocalizations.of(context)!.keepScreenOn,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   AppLocalizations.of(context)?.keepScreenOnDescription ??
-                      'Prevent screen from turning off while reading',
+                      AppLocalizations.of(context)!.preventScreenOff,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1827,7 +1827,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                   label: Text(
                     AppLocalizations.of(context)?.resetToDefaults ??
-                        'Reset to Defaults',
+                        AppLocalizations.of(context)!.resetToDefaults,
                     style: TextStyleConst.buttonMedium.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -1863,12 +1863,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     switch (mode) {
       case ReadingMode.singlePage:
         return AppLocalizations.of(context)?.horizontalPages ??
-            'Horizontal Pages';
+            AppLocalizations.of(context)!.horizontalPages;
       case ReadingMode.verticalPage:
         return AppLocalizations.of(context)?.verticalPages ?? 'Vertical Pages';
       case ReadingMode.continuousScroll:
         return AppLocalizations.of(context)?.continuousScroll ??
-            'Continuous Scroll';
+            AppLocalizations.of(context)!.continuousScroll;
     }
   }
 
@@ -1924,7 +1924,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (_readerCubit.allChapters == null || _readerCubit.allChapters!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('No chapters available'),
+          content: Text(AppLocalizations.of(context)!.noChaptersAvailable),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -2036,7 +2036,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Chapters',
+                                    AppLocalizations.of(context)!.chapters,
                                     style: TextStyleConst.headingSmall.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -2048,7 +2048,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     activeLanguage != null &&
                                             effectiveChapters.isNotEmpty
                                         ? '${effectiveChapters.length} chapters • ${activeLanguage.toUpperCase()}'
-                                        : '${effectiveChapters.length} chapters',
+                                        : AppLocalizations.of(context)!.nChapters(effectiveChapters.length),
                                     style: TextStyleConst.bodySmall.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -2256,8 +2256,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   String _formatChapterDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    if (diff.inDays == 0) return 'Today';
-    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays == 0) return AppLocalizations.of(context)!.today;
+    if (diff.inDays == 1) return AppLocalizations.of(context)!.yesterday;
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
     if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
@@ -2278,7 +2278,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           SnackBar(
             content: Text(
               AppLocalizations.of(context)?.readerSettingsResetSuccess ??
-                  'Reader settings have been reset to defaults.',
+                  AppLocalizations.of(context)!.readerSettingsReset,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -2301,7 +2301,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             content: Text(
               AppLocalizations.of(context)
                       ?.failedToResetSettings(e.toString()) ??
-                  'Failed to reset settings: ${e.toString()}',
+                  AppLocalizations.of(context)!.failedToResetSettings(e.toString()),
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onError,
               ),

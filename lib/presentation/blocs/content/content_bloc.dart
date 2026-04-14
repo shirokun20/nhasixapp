@@ -95,7 +95,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         _logger.w(
             'ContentBloc: Load page ${event.page} returned empty result, emitting ContentEmpty with currentPage: ${event.page}');
         emit(ContentEmpty(
-          message: 'No content available at the moment.',
+          message: 'noContentAtMoment',
           sortBy: event.sortBy,
           currentPage: event.page,
           // If we are on page > 1 and it's empty, we might want to capture that
@@ -259,7 +259,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           lastUpdated: currentState.lastUpdated,
         ));
       } else {
-        emit(const ContentLoading(message: 'Refreshing content...'));
+        emit(const ContentLoading(message: 'refreshingContentMsg'));
       }
 
       ContentListResult result;
@@ -303,7 +303,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       if (result.isEmpty) {
         emit(const ContentEmpty(
-          message: 'No content available at the moment.',
+          message: 'noContentAtMoment',
         ));
         return;
       }
@@ -468,7 +468,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
     // Emit loading state immediately for instant visual feedback
     emit(ContentLoading(
-      message: 'Retrying...',
+      message: 'retryingMsg',
       previousContents: previousContents,
     ));
     _logger
@@ -546,7 +546,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       }
 
       emit(ContentLoading(
-        message: 'Clearing search...',
+        message: 'clearingSearchMsg',
         previousContents: previousState?.contents,
       ));
 
@@ -568,7 +568,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       if (result.isEmpty) {
         emit(const ContentEmpty(
-          message: 'No content available at the moment.',
+          message: 'noContentAtMoment',
         ));
         return;
       }
@@ -596,7 +596,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       final errorType = _determineErrorType(e);
       emit(ContentError(
-        message: 'Failed to clear search results: ${e.toString()}',
+        message: 'failedToClearSearch',
         canRetry: true,
         errorType: errorType,
         stackTrace: stackTrace,
@@ -616,13 +616,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           'ContentBloc: Searching content with filter: ${event.filter.toQueryString()}');
 
       // Show loading state
-      emit(const ContentLoading(message: 'Searching content...'));
+      emit(const ContentLoading(message: 'searchingContentMsg'));
 
       final result = await _searchContentUseCase(event.filter);
 
       if (result.isEmpty) {
         emit(ContentEmpty(
-          message: 'No content found matching your search criteria.',
+          message: 'noContentMatchingSearch',
           searchFilter: event.filter,
           // Context
           sortBy: event.filter.sortBy,
@@ -687,7 +687,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       // Show loading state if no previous content or force refresh
       if (state is! ContentLoaded || event.forceRefresh) {
-        emit(const ContentLoading(message: 'Loading popular content...'));
+        emit(const ContentLoading(message: 'loadingPopularContent'));
       }
 
       final result = await _contentRepository.getPopularContent(
@@ -697,7 +697,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       if (result.isEmpty) {
         emit(const ContentEmpty(
-          message: 'No popular content available at the moment.',
+          message: 'noPopularContent',
           currentPage: 1,
           sortBy: SortOption.popular,
         ));
@@ -761,7 +761,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       // Show loading state if no previous content or force refresh
       if (state is! ContentLoaded || event.forceRefresh) {
-        emit(const ContentLoading(message: 'Loading content by tag...'));
+        emit(const ContentLoading(message: 'loadingContentByTag'));
       }
 
       final result = await _contentRepository.getContentByTag(
@@ -772,7 +772,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
       if (result.isEmpty) {
         emit(ContentEmpty(
-          message: 'No content found for this tag.',
+          message: 'noContentForTag',
           tag: event.tag,
           // Context
           sortBy: event.sortBy,
@@ -922,7 +922,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     try {
       // Show minimal loading state for pagination
       emit(ContentLoading(
-        message: 'Loading page $page...',
+        message: 'loadingPageNum',
         previousContents: currentState.contents,
       ));
 
@@ -959,7 +959,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         _logger.w(
             'ContentBloc: Page $page returned empty result, emitting ContentEmpty with currentPage: $page');
         emit(ContentEmpty(
-          message: 'No content found on this page.',
+          message: 'noContentOnPage',
           // Context
           currentPage: page,
           sortBy: currentState.sortBy,

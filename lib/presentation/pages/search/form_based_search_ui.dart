@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 class FormBasedSearchUI extends StatefulWidget {
   final SearchConfig config;
   final String sourceId;
@@ -252,7 +253,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
       _logger.e('Failed to save search filter: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to apply search: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToApplySearch(e.toString()))),
         );
       }
     }
@@ -294,7 +295,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
                     ElevatedButton.icon(
                       onPressed: _onSearch,
                       icon: const Icon(Icons.search),
-                      label: const Text('SEARCH'),
+                      label: Text(AppLocalizations.of(context)!.search),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: Theme.of(context).primaryColor,
@@ -451,8 +452,8 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
                     });
                   },
                   child: Text(isExpanded
-                      ? 'Show Less'
-                      : 'Show All (${availableTags.length})'),
+                      ? AppLocalizations.of(context)!.showLess
+                      : AppLocalizations.of(context)!.showAllCount(availableTags.length)),
                 )
             ],
           ),

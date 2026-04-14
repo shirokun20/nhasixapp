@@ -302,7 +302,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _stopAutoHideTimer();
       if (!isClosed) {
         emit(ReaderError(state.copyWith(
-          message: 'Failed to load content: ${e.toString()}',
+          message: 'failedLoadContentError',
         )));
       }
     }
@@ -670,7 +670,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       if (_allChapters == null || _allChapters!.isEmpty) {
         _logger.e('⛔ Cannot navigate: No chapter list available');
         emit(ReaderError(state.copyWith(
-          message: 'Chapter navigation not available',
+          message: 'chapterNavNotAvailable',
         )));
         return;
       }
@@ -682,7 +682,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       final chapter = _allChapters!.firstWhere(
         (ch) => ch.id == chapterId,
         orElse: () =>
-            Chapter(id: chapterId, title: 'Unknown Chapter', url: chapterId),
+            Chapter(id: chapterId, title: 'unknownChapter', url: chapterId),
       );
 
       _logger.i('Loading chapter: ${chapter.title} (${chapter.id})');
@@ -736,7 +736,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
           if (chapterData.images.isEmpty) {
             emit(ReaderError(state.copyWith(
-              message: 'Failed to load chapter images',
+              message: 'failedLoadChapterImages',
             )));
             return;
           }
@@ -745,7 +745,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         } catch (e) {
           _logger.e('Failed to load chapter from online API: $e');
           emit(ReaderError(state.copyWith(
-            message: 'Failed to load chapter: ${e.toString()}',
+            message: 'failedLoadChapter',
           )));
           return;
         }
@@ -781,7 +781,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e) {
       _logger.e('Failed to load chapter: $e');
       emit(ReaderError(state.copyWith(
-        message: 'Failed to load chapter: ${e.toString()}',
+        message: 'failedLoadChapter',
       )));
     }
   }

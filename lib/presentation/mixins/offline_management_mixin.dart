@@ -54,7 +54,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     final exportService = getIt<ExportService>();
 
     // Show progress dialog
-    String progressMessage = 'Preparing export...';
+    String progressMessage = AppLocalizations.of(context)!.preparingExport;
     double progressValue = 0.0;
 
     // Use a reference to the dialog state setter to update progress
@@ -109,7 +109,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
                 Text(AppLocalizations.of(context)!.libraryExportSuccess),
                 const SizedBox(height: 8),
                 Text(
-                  'Path: $exportPath',
+                  AppLocalizations.of(context)!.exportPath(exportPath),
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context)
@@ -327,7 +327,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Imported "$contentId" with $imageCount images to local folder',
+              AppLocalizations.of(context)!.importedContentWithImages(contentId, imageCount),
             ),
             duration: const Duration(seconds: 3),
           ),
@@ -356,7 +356,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Import failed: $error'),
+              content: Text(AppLocalizations.of(context)!.importFailedError(error.toString())),
               backgroundColor: Theme.of(context).colorScheme.error,
               duration: const Duration(seconds: 4),
             ),
@@ -374,7 +374,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error importing ZIP: $e'),
+          content: Text(AppLocalizations.of(context)!.errorImportingZip(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

@@ -372,7 +372,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
             const SizedBox(height: 4),
             Text(
               AppLocalizations.of(context)?.imageNotAvailable ??
-                  'Image not available',
+                  AppLocalizations.of(context)!.imageNotAvailable,
               style: TextStyleConst.caption.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -725,7 +725,7 @@ class _ProgressiveReaderImageWidgetState
           const SizedBox(height: 16),
           Text(
             AppLocalizations.of(context)?.loadingPage(widget.pageNumber) ??
-                'Loading page ${widget.pageNumber}...',
+                AppLocalizations.of(context)!.loadingPageNumber(widget.pageNumber),
             style: TextStyleConst.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -757,7 +757,7 @@ class _ProgressiveReaderImageWidgetState
           const SizedBox(height: 8),
           Text(
             AppLocalizations.of(context)?.checkInternetConnection ??
-                'Check your internet connection',
+                AppLocalizations.of(context)!.checkInternetConnection,
             style: TextStyleConst.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

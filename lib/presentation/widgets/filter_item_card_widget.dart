@@ -94,7 +94,7 @@ class FilterItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     // Tag count
                     Text(
-                      '${tag.count} items',
+                      AppLocalizations.of(context)!.nItems(tag.count),
                       style: TextStyleConst.bodySmall.copyWith(
                         color: Theme.of(context)
                             .colorScheme

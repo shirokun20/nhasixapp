@@ -575,7 +575,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _showExportDialog() async {
     final progressNotifier = ValueNotifier<double>(0.0);
-    final progressTextNotifier = ValueNotifier<String>('Preparing export...');
+    final progressTextNotifier = ValueNotifier<String>(AppLocalizations.of(context)!.preparingExport);
 
     unawaited(showDialog<void>(
       context: context,
@@ -619,14 +619,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     try {
       progressNotifier.value = 0.15;
-      progressTextNotifier.value = 'Reading favorites from database...';
+      progressTextNotifier.value = AppLocalizations.of(context)!.readingFavorites;
 
       // Get export data from cubit
       final exportData = await _favoriteCubit.exportFavorites();
       final totalCount = exportData['total_count'] as int;
 
       progressNotifier.value = 0.6;
-      progressTextNotifier.value = 'Encoding favorites data...';
+      progressTextNotifier.value = AppLocalizations.of(context)!.encodingFavorites;
 
       // Convert to JSON string
       final jsonString = jsonEncode(exportData);
@@ -638,7 +638,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       final customDirectory = await StorageSettings.getCustomRootPath();
 
       progressNotifier.value = 0.85;
-      progressTextNotifier.value = 'Writing export file...';
+      progressTextNotifier.value = AppLocalizations.of(context)!.writingExportFile;
 
       // Save to file
       final filePath = await BackupUtils.exportJson(
@@ -648,7 +648,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       );
 
       progressNotifier.value = 1.0;
-      progressTextNotifier.value = 'Finalizing export...';
+      progressTextNotifier.value = AppLocalizations.of(context)!.finalizingExport;
       await Future<void>.delayed(const Duration(milliseconds: 120));
 
       if (mounted) {
@@ -659,7 +659,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Exported favorites only ($totalCount items) to:\n$filePath',
+                AppLocalizations.of(context)!.exportedFavoritesTo(totalCount, filePath),
                 style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                     Theme.of(context).colorScheme.onPrimary),
               ),
@@ -674,7 +674,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Failed to save export file',
+                AppLocalizations.of(context)!.failedToSaveExportFile,
                 style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                     Theme.of(context).colorScheme.onError),
               ),
@@ -714,7 +714,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          'Import Favorites',
+          AppLocalizations.of(context)!.importFavorites,
           style: TextStyleConst.withColor(TextStyleConst.headingMedium,
               Theme.of(context).colorScheme.onSurface),
         ),
@@ -759,7 +759,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Successfully imported $importedCount favorites',
+              AppLocalizations.of(context)!.successfullyImportedFavorites(importedCount),
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onPrimary),
             ),
@@ -777,7 +777,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Import failed: ${e.toString()}',
+              AppLocalizations.of(context)!.importFailed(e.toString()),
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onError),
             ),
@@ -938,7 +938,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 12),
                     Text(
-                      'Import Favorites',
+                      AppLocalizations.of(context)!.importFavorites,
                       style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                           Theme.of(context).colorScheme.onSurface),
                     ),
@@ -1019,7 +1019,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     FavoriteCollection? collection,
   }) async {
     final title =
-        collection == null ? 'Create collection' : 'Rename collection';
+        collection == null ? 'Create collection' : AppLocalizations.of(context)!.renameCollection;
 
     TextEditingController? controller;
 
@@ -1040,8 +1040,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               content: TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Collection name',
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.collectionName,
                 ),
                 onSubmitted: (value) {
                   Navigator.of(context).pop(value.trim());
@@ -1090,7 +1090,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save collection: $e'),
+          content: Text(AppLocalizations.of(context)!.failedToSaveCollection(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -1107,7 +1107,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Rename collection'),
+              title: Text(AppLocalizations.of(context)!.renameCollection),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _showCreateCollectionDialog(collection: collection);
@@ -1133,7 +1133,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         backgroundColor: Theme.of(dialogContext)
                             .colorScheme
                             .surfaceContainer,
-                        title: const Text('Delete collection'),
+                        title: Text(AppLocalizations.of(context)!.deleteCollection),
                         content: Text(
                           'Delete "${collection.name}"? Item favorites stay saved, only the collection grouping is removed.',
                         ),
@@ -1209,7 +1209,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Collections',
+                    AppLocalizations.of(context)!.collections,
                     style: TextStyleConst.withColor(
                       TextStyleConst.headingSmall,
                       Theme.of(context).colorScheme.onSurface,
@@ -1226,7 +1226,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           return CheckboxListTile(
                             value: isSelected,
                             title: Text(collection.name),
-                            subtitle: Text('${collection.itemCount} items'),
+                            subtitle: Text(AppLocalizations.of(context)!.nItems(collection.itemCount)),
                             controlAffinity: ListTileControlAffinity.leading,
                             onChanged: (value) {
                               setSheetState(() {
@@ -1251,7 +1251,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           _showCreateCollectionDialog();
                         },
                         icon: const Icon(Icons.create_new_folder_outlined),
-                        label: const Text('New collection'),
+                        label: Text(AppLocalizations.of(context)!.newCollection),
                       ),
                       const Spacer(),
                       TextButton(
@@ -1292,7 +1292,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (sourceId == null) {
       return Center(
         child: Text(
-          'No online favorites source available.',
+          AppLocalizations.of(context)!.noOnlineFavoritesSource,
           style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
               Theme.of(context).colorScheme.onSurfaceVariant),
         ),
@@ -1438,7 +1438,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unsupported gallery ID for online favorite.',
+            AppLocalizations.of(context)!.unsupportedGalleryId,
             style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                 Theme.of(context).colorScheme.onError),
           ),
@@ -1702,7 +1702,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       selected: state.activeCollectionId == collection.id,
                       child: ChoiceChip(
                         label: Text(
-                          '${collection.name} (${collection.itemCount})',
+                          AppLocalizations.of(context)!.collectionWithCount(collection.name, collection.itemCount),
                         ),
                         selected: state.activeCollectionId == collection.id,
                         onSelected: (_) =>
@@ -1713,7 +1713,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 )),
             ActionChip(
               avatar: const Icon(Icons.add, size: 18),
-              label: const Text('New'),
+              label: Text(AppLocalizations.of(context)!.newLabel),
               onPressed: _showCreateCollectionDialog,
             ),
           ],
@@ -2099,7 +2099,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             content: Text(
               AppLocalizations.of(context)
                       ?.failedToRemoveFavorite(e.toString()) ??
-                  'Failed to remove favorite: ${e.toString()}',
+                  AppLocalizations.of(context)!.failedToRemoveFavorite(e.toString()),
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onError),
             ),

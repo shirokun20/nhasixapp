@@ -108,7 +108,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _logger.e('FilterDataCubit: Error initializing',
           error: e, stackTrace: stackTrace);
       emit(state.copyWith(
-        message: 'Failed to initialize filter data: $e',
+        message: 'failedInitFilterData',
         filterType: _currentFilterType,
         selectedFilters: _selectedFilters,
       ));
@@ -227,7 +227,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       _logger.e('FilterDataCubit: Error switching filter type',
           error: e, stackTrace: stackTrace);
       emit(state.copyWith(
-        message: 'Failed to switch filter type: $e',
+        message: 'failedSwitchFilterType',
         filterType: _currentFilterType,
         selectedFilters: _selectedFilters,
       ));

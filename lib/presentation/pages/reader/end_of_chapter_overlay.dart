@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../cubits/reader/reader_cubit.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 /// End-of-Chapter Overlay Widget
 /// Shows at the last page of content with navigation options
 class EndOfChapterOverlay extends StatelessWidget {
@@ -24,11 +25,11 @@ class EndOfChapterOverlay extends StatelessWidget {
     final previousLabel =
         (state.chapterData?.prevChapterTitle?.trim().isNotEmpty ?? false)
             ? state.chapterData!.prevChapterTitle!.trim()
-            : 'Prev Chapter';
+            : AppLocalizations.of(context)!.prevChapter;
     final nextLabel =
         (state.chapterData?.nextChapterTitle?.trim().isNotEmpty ?? false)
             ? state.chapterData!.nextChapterTitle!.trim()
-            : 'Next Chapter';
+            : AppLocalizations.of(context)!.nextChapter;
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
@@ -50,7 +51,7 @@ class EndOfChapterOverlay extends StatelessWidget {
 
               // Title
               Text(
-                isChapterMode ? 'Chapter Complete!' : 'Finished Reading',
+                isChapterMode ? AppLocalizations.of(context)!.chapterComplete : AppLocalizations.of(context)!.finishedReading,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -113,7 +114,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onBackToDetail,
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to Detail'),
+                    label: Text(AppLocalizations.of(context)!.backToDetail),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -126,7 +127,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: onBackToDetail,
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to Detail'),
+                    label: Text(AppLocalizations.of(context)!.backToDetail),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),

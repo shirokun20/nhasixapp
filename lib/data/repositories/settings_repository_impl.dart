@@ -231,25 +231,25 @@ class SettingsRepositoryImpl implements SettingsRepository {
         ThemeOption(
           id: 'light',
           name: 'Light',
-          description: 'Light theme with bright colors',
+          description: 'lightThemeDesc',
           previewColors: ['#FFFFFF', '#000000', '#2196F3'],
         ),
         ThemeOption(
           id: 'dark',
           name: 'Dark',
-          description: 'Dark theme with muted colors',
+          description: 'darkThemeDesc',
           previewColors: ['#121212', '#FFFFFF', '#BB86FC'],
         ),
         ThemeOption(
           id: 'amoled',
           name: 'AMOLED Black',
-          description: 'Pure black theme for AMOLED displays',
+          description: 'amoledThemeDesc',
           previewColors: ['#000000', '#FFFFFF', '#03DAC6'],
         ),
         ThemeOption(
           id: 'system',
           name: 'System',
-          description: 'Follow system theme settings',
+          description: 'systemThemeDesc',
           previewColors: ['#FFFFFF', '#000000', '#2196F3'],
         ),
       ];

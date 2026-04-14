@@ -156,7 +156,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return Center(
         child: AppProgressIndicator(
             message: AppLocalizations.of(context)?.clearingHistory ??
-                'Clearing history...'),
+                AppLocalizations.of(context)!.clearingHistory),
       );
     }
 
@@ -188,7 +188,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           child: Text(
-            '${state.history.length} items in history',
+            AppLocalizations.of(context)!.nItemsInHistory(state.history.length),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey.withValues(alpha: 0.3),
                 ),

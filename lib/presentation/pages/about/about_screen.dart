@@ -75,7 +75,7 @@ class _AboutContentState extends State<_AboutContent>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About'),
+        title: Text(l10n.aboutTitle),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -94,11 +94,11 @@ class _AboutContentState extends State<_AboutContent>
             );
           } else if (state is UpdateNotAvailable && state.isManualCheck) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('App is up to date!')),
+              SnackBar(content: Text(l10n.appIsUpToDate)),
             );
           } else if (state is UpdateError && state.isManualCheck) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Check failed: ${state.message}')),
+              SnackBar(content: Text(l10n.checkFailedMessage(state.message))),
             );
           }
         },
@@ -178,21 +178,21 @@ class _AboutContentState extends State<_AboutContent>
                 const SizedBox(height: 48),
 
                 // Update Card
-                _buildSectionTitle('Updates'),
+                _buildSectionTitle(l10n.updatesSection),
                 const SizedBox(height: 8),
                 _buildUpdateCard(theme),
 
                 const SizedBox(height: 32),
 
                 // Links Section
-                _buildSectionTitle('Community & Info'),
+                _buildSectionTitle(l10n.communityAndInfo),
                 const SizedBox(height: 8),
                 _buildMenuCard([
                   _buildMenuItem(
                     context,
                     icon: Icons.code,
-                    title: 'GitHub Repository',
-                    subtitle: 'View source code & contribute',
+                    title: l10n.githubRepository,
+                    subtitle: l10n.viewSourceCodeContribute,
                     onTap: () =>
                         _launchURL('https://github.com/shirokun20/nhasixapp'),
                     isExternal: true,
@@ -201,8 +201,8 @@ class _AboutContentState extends State<_AboutContent>
                   _buildMenuItem(
                     context,
                     icon: Icons.description_outlined,
-                    title: 'Open Source Licenses',
-                    subtitle: 'Libraries used in this app',
+                    title: l10n.openSourceLicenses,
+                    subtitle: l10n.librariesUsedInApp,
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: l10n.appTitle,
@@ -263,7 +263,7 @@ class _AboutContentState extends State<_AboutContent>
                 const SizedBox(height: 32),
 
                 // Tech Stack
-                _buildSectionTitle('Built With'),
+                _buildSectionTitle(l10n.builtWith),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
@@ -282,7 +282,7 @@ class _AboutContentState extends State<_AboutContent>
 
                 // Footer
                 Text(
-                  'Made with ❤️ by Shirokun20',
+                  l10n.madeWithLoveBy,
                   style: TextStyleConst.caption.copyWith(
                     color: theme.textTheme.bodySmall?.color
                         ?.withValues(alpha: 0.6),
@@ -290,7 +290,7 @@ class _AboutContentState extends State<_AboutContent>
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  '© 2025 All Rights Reserved',
+                  l10n.allRightsReserved,
                   style: TextStyleConst.caption.copyWith(
                     fontSize: 10,
                     color: theme.textTheme.bodySmall?.color
@@ -325,20 +325,21 @@ class _AboutContentState extends State<_AboutContent>
   Widget _buildUpdateCard(ThemeData theme) {
     return BlocBuilder<UpdateCubit, UpdateState>(
       builder: (context, state) {
-        String status = 'Check for updates';
+        final l10n = AppLocalizations.of(context)!;
+        String status = l10n.checkForUpdates;
         IconData icon = Icons.refresh;
         final bool isLoading = state is UpdateChecking;
 
         if (isLoading) {
-          status = 'Checking...';
+          status = l10n.checking;
         } else if (state is UpdateAvailable) {
-          status = 'Update Available!';
+          status = l10n.updateAvailable;
           icon = Icons.file_download_outlined;
         } else if (state is UpdateNotAvailable) {
-          status = 'Up to date';
+          status = l10n.upToDate;
           icon = Icons.check_circle_outline;
         } else if (state is UpdateError) {
-          status = 'Check failed';
+          status = l10n.checkFailed;
           icon = Icons.error_outline;
         }
 
@@ -379,7 +380,7 @@ class _AboutContentState extends State<_AboutContent>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'App Updates',
+                          l10n.appUpdates,
                           style: TextStyleConst.bodyLarge
                               .copyWith(fontWeight: FontWeight.bold),
                         ),
@@ -479,7 +480,7 @@ class _AboutContentState extends State<_AboutContent>
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch $urlString')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.couldNotLaunchUrl(urlString))),
         );
       }
     }

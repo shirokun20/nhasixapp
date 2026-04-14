@@ -141,7 +141,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
 
     final message = crotpediaReason != null && crotpediaReason.isNotEmpty
-        ? 'Crotpedia maintenance: $crotpediaReason'
+        ? AppLocalizations.of(context)!.crotpediaMaintenance(crotpediaReason)
         : 'Source maintenance: ${sourceNames.join(', ')}';
 
     _hasShownMaintenanceNotice = true;
@@ -330,9 +330,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
           _lastBackPressTime = now;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Press back again to exit'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.pressBackToExit),
+              duration: const Duration(seconds: 2),
             ),
           );
           return;
@@ -514,7 +514,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       return Center(
         child: Text(
           AppLocalizations.of(context)?.tapToLoadContent ??
-              'Tap to load content',
+              AppLocalizations.of(context)!.tapToLoadContent,
           style: TextStyleConst.placeholderText,
         ),
       );
@@ -749,7 +749,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     },
                     resultCount: state.totalCount,
                     infoText: _isShowingSearchResults
-                        ? 'Tap to change search filters'
+                        ? AppLocalizations.of(context)!.tapToChangeFilters
                         : null,
                   );
                 },
@@ -1068,7 +1068,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 ),
                 const SizedBox(width: 12),
                 Text(AppLocalizations.of(context)?.refreshingContent ??
-                    'Refreshing content...'),
+                    AppLocalizations.of(context)!.refreshingContent),
               ],
             ),
             duration: const Duration(seconds: 2),
@@ -1171,7 +1171,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                   children: [
                     Text(
                       AppLocalizations.of(context)?.searchResults ??
-                          'Search Results',
+                          AppLocalizations.of(context)!.searchResults,
                       style: TextStyleConst.headingSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -1819,7 +1819,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             duration: const Duration(seconds: 5),
             action: SnackBarAction(
               label: AppLocalizations.of(context)?.viewDownloads ??
-                  'View Downloads',
+                  AppLocalizations.of(context)!.viewDownloads,
               textColor: Colors.white,
               onPressed: () {
                 AppRouter.goToDownloads(context);

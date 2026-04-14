@@ -113,7 +113,7 @@ class HistoryItemWidget extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              '${history.lastPage}/${history.totalPages} pages',
+              AppLocalizations.of(context)!.pageProgress(history.lastPage, history.totalPages),
               style: TextStyleConst.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

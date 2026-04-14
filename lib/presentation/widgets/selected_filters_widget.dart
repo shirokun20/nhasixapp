@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Horizontal scrollable widget for displaying selected filters
 class SelectedFiltersWidget extends StatelessWidget {
@@ -156,7 +157,7 @@ class SelectedFiltersWidgetCompact extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              '+$remainingCount more',
+              AppLocalizations.of(context)!.nMoreFilters(remainingCount),
               style: TextStyleConst.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

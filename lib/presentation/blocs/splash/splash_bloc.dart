@@ -72,7 +72,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       // CRITICAL FIX: Always load config from assets first (offline-ready)
       // smartInitialize() only loads from bundled assets, no internet required
       emit(SplashInitializing(
-          message: 'Loading configuration...', progress: 0.1));
+          message: 'loadingConfigMsg', progress: 0.1));
 
       await _remoteConfigService.smartInitialize(
         isFirstRun: true,
@@ -90,7 +90,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
       // 4. Initialize Tag Data for all sources
       emit(SplashInitializing(
-          message: 'Initializing tags database...', progress: 1.0));
+          message: 'initTagsDbMsg', progress: 1.0));
 
       // Initialize sources
       // CRITICAL: Access registry AFTER smartInitialize() completes to ensure config is loaded
@@ -139,7 +139,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         // Check for updates (Blocking if no tags, Background if has tags)
         if (!_tagDataManager.hasTags(source)) {
           emit(SplashInitializing(
-              message: 'Downloading tags for $source...', progress: 1.0));
+              message: 'downloadingTagsMsg', progress: 1.0));
           await _tagDataManager.checkForUpdates(source: source);
         } else {
           _tagDataManager.checkForUpdates(source: source).ignore();
@@ -175,7 +175,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.e('SplashBloc: Error during initialization',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Initialization failed: ${e.toString()}',
+        message: 'initFailedMsg',
         canRetry: true,
       ));
     }
@@ -187,18 +187,18 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   ) async {
     try {
       _logger.i('SplashBloc: Initializing Cloudflare bypass...');
-      emit(SplashBypassInProgress(message: 'Initializing bypass system...'));
+      emit(SplashBypassInProgress(message: 'initBypassMsg'));
 
       // Initialize the remote data source (includes anti-detection)
       // await Future.delayed(Duration(seconds: 1)); // Removed for optimization
-      emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
+      emit(SplashBypassInProgress(message: 'connectingToSite'));
       final success = await _remoteDataSource.initialize();
 
       if (success) {
-        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+        emit(SplashSuccess(message: 'connectedSuccess'));
       } else {
         emit(SplashError(
-          message: 'Failed to connect to nhentai.net. Please try again.',
+          message: 'failedToConnect',
           canRetry: true,
         ));
       }
@@ -209,7 +209,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.e('SplashBloc: Error initializing bypass',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Failed to initialize bypass system: ${e.toString()}',
+        message: 'failedInitBypass',
         canRetry: true,
       ));
     }
@@ -228,12 +228,12 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         if (isVerified) {
           _logger.i('SplashBloc: Cloudflare bypass successful and verified');
-          emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+          emit(SplashSuccess(message: 'connectedSuccess'));
         } else {
           _logger
               .w('SplashBloc: Bypass reported success but verification failed');
           emit(SplashError(
-            message: 'Bypass verification failed. Please try again.',
+            message: 'bypassFailed',
             canRetry: true,
           ));
         }
@@ -242,13 +242,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Force continue with offline mode
         AppStateManager().enableOfflineMode();
-        emit(SplashSuccess(message: 'Offline Mode (Bypass Failed)'));
+        emit(SplashSuccess(message: 'offlineBypassFailed'));
       }
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error processing bypass result',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Error processing bypass result: ${e.toString()}',
+        message: 'errorBypassResult',
         canRetry: true,
       ));
     }
@@ -295,7 +295,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             hasContent: false,
             contentCount: 0,
           );
-          emit(SplashSuccess(message: 'Ready (Offline Mode - Limited)'));
+          emit(SplashSuccess(message: 'readyOfflineLimited'));
         }
         return;
       }
@@ -311,7 +311,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         _logger.i(
             'SplashBloc: No cache found, downloading initial configuration...');
         emit(SplashInitializing(
-            message: 'Downloading initial configuration...', progress: 0.05));
+            message: 'downloadingInitConfig', progress: 0.05));
 
         try {
           await _remoteConfigService.smartInitialize(
@@ -321,7 +321,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             },
           );
           // Config downloaded successfully, now try to bypass
-          emit(SplashBypassInProgress(message: 'Connecting to nhentai.net...'));
+          emit(SplashBypassInProgress(message: 'connectingToSite'));
           final result = await _remoteDataSource.bypassCloudflare().timeout(
             const Duration(seconds: 15),
             onTimeout: () {
@@ -333,10 +333,10 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
           if (result) {
             emit(SplashSuccess(
-                message: 'Successfully connected to nhentai.net'));
+                message: 'connectedSuccess'));
           } else {
             AppStateManager().enableOfflineMode();
-            emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+            emit(SplashSuccess(message: 'readyOffline'));
           }
         } catch (e) {
           _logger.w('SplashBloc: Failed to download config: $e');
@@ -345,13 +345,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             hasContent: false,
             contentCount: 0,
           );
-          emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+          emit(SplashSuccess(message: 'readyOffline'));
         }
         return;
       }
 
       // Has cache - try to bypass cloudflare
-      emit(SplashBypassInProgress(message: 'Connecting...'));
+      emit(SplashBypassInProgress(message: 'connectingMsg'));
 
       final result = await _remoteDataSource.bypassCloudflare().timeout(
         const Duration(seconds: 15),
@@ -362,19 +362,19 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       );
 
       if (result) {
-        emit(SplashSuccess(message: 'Successfully connected to nhentai.net'));
+        emit(SplashSuccess(message: 'connectedSuccess'));
       } else {
         // Connection failed - go to offline mode instead of showing error
         _logger.w('SplashBloc: Connection failed, forcing offline mode');
         AppStateManager().enableOfflineMode();
-        emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+        emit(SplashSuccess(message: 'readyOffline'));
       }
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error during retry - going to offline mode',
           error: e, stackTrace: stackTrace);
       // Instead of showing error, go to offline mode
       AppStateManager().enableOfflineMode();
-      emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+      emit(SplashSuccess(message: 'readyOffline'));
     }
   }
 
@@ -419,7 +419,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.e('SplashBloc: Error in offline mode',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Failed to load offline content: ${e.toString()}',
+        message: 'failedLoadOffline',
         canRetry: true,
         canUseOffline: false,
       ));
@@ -432,7 +432,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     try {
       // First, show that we're checking offline content
       emit(SplashOfflineDetected(
-          message: 'No internet connection. Checking offline content...'));
+          message: 'noInternetCheckOffline'));
 
       // Get offline content from multiple sources
       int totalOfflineContent = 0;
@@ -494,7 +494,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
             'SplashBloc: Found $totalOfflineContent offline items total (DB: ${databaseContentIds.length}, FS: ${filesystemContentIds.length}), auto-continuing');
         emit(SplashOfflineReady(
           offlineContentCount: totalOfflineContent,
-          message: 'Found $totalOfflineContent offline items. Continuing...',
+          message: 'foundOfflineItems',
         ));
 
         // Enable global offline mode
@@ -502,19 +502,19 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
         // Auto-navigate to main after brief delay
         await Future.delayed(const Duration(seconds: 1));
-        emit(SplashSuccess(message: 'Ready (Offline Mode)'));
+        emit(SplashSuccess(message: 'readyOffline'));
       } else {
         // ❌ No offline content - show options
         _logger.i('SplashBloc: No offline content available, showing options');
         emit(SplashOfflineEmpty(
-          message: 'No internet connection and no offline content available.',
+          message: 'noInternetNoOffline',
         ));
       }
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error during offline mode handling',
           error: e, stackTrace: stackTrace);
       emit(SplashOfflineEmpty(
-        message: 'Unable to check offline content. ${e.toString()}',
+        message: 'unableCheckOffline',
       ));
     }
   }
@@ -536,18 +536,18 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       AppStateManager().enableOfflineMode();
 
       emit(SplashOfflineMode(
-        message: 'Offline Mode (Limited Features)',
+        message: 'offlineLimitedFeatures',
         canRetryOnline: true,
       ));
 
       // Auto-continue to main app
       await Future.delayed(const Duration(seconds: 1));
-      emit(SplashSuccess(message: 'Ready (Offline Mode - Limited Features)'));
+      emit(SplashSuccess(message: 'readyOfflineLimitedFeatures'));
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error forcing offline mode',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Failed to enable offline mode: ${e.toString()}',
+        message: 'failedEnableOffline',
         canRetry: true,
         canUseOffline: false,
       ));
@@ -567,7 +567,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       _logger.e('SplashBloc: Error during manual offline content check',
           error: e, stackTrace: stackTrace);
       emit(SplashError(
-        message: 'Failed to check offline content: ${e.toString()}',
+        message: 'failedCheckOffline',
         canRetry: true,
         canUseOffline: false,
       ));

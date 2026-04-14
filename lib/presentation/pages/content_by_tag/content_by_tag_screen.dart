@@ -21,6 +21,7 @@ import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Screen for browsing content by specific tag
 ///
@@ -64,7 +65,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
             value.length > 16 ? '${value.substring(0, 16)}...' : value;
         return '$key: $shortValue';
       }
-      return 'Filtered Results';
+      return AppLocalizations.of(context)!.filteredResults;
     }
 
     return raw;

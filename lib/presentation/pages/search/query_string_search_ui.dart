@@ -14,6 +14,7 @@ import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/usecases/tags/get_tags_by_type_usecase.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 
+import 'package:nhasixapp/l10n/app_localizations.dart';
 /// Nhentai-style search UI (Query String mode)
 class QueryStringSearchUI extends StatefulWidget {
   final SearchConfig config;
@@ -311,7 +312,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       _logger.e('Failed to save search filter: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to apply search: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToApplySearch(e.toString()))),
         );
       }
     }
@@ -374,15 +375,15 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   String _getFilterTitle(String type) {
     switch (type) {
       case 'tag':
-        return 'Tags';
+        return AppLocalizations.of(context)!.tags;
       case 'artist':
-        return 'Artists';
+        return AppLocalizations.of(context)!.artists;
       case 'character':
-        return 'Characters';
+        return AppLocalizations.of(context)!.characters;
       case 'parody':
-        return 'Parodies';
+        return AppLocalizations.of(context)!.parodies;
       case 'group':
-        return 'Groups';
+        return AppLocalizations.of(context)!.groups;
       default:
         return type;
     }
@@ -418,7 +419,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
         // Filter Categories
         if (_multiSelectFilters2.isNotEmpty) ...[
-          _buildSectionTitle('FILTER CATEGORIES'),
+          _buildSectionTitle(AppLocalizations.of(context)!.filterCategories),
           const SizedBox(height: 10),
           _buildFilterCategoryList(colorScheme),
           const SizedBox(height: 20),
@@ -441,13 +442,13 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         ],
 
         // Date Filter
-        _buildSectionTitle('DATE UPLOADED'),
+        _buildSectionTitle(AppLocalizations.of(context)!.dateUploaded),
         const SizedBox(height: 10),
         _buildDateFilter(colorScheme),
         const SizedBox(height: 20),
 
         // Numeric Filters
-        _buildSectionTitle('NUMERIC FILTERS'),
+        _buildSectionTitle(AppLocalizations.of(context)!.numericFilters),
         const SizedBox(height: 10),
         _buildNumericFilters(colorScheme),
         const SizedBox(height: 8),
@@ -516,7 +517,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               controller: _searchController,
               focusNode: _searchFocusNode,
               decoration: InputDecoration(
-                hintText: 'Search by title, ID, or keyword...',
+                hintText: AppLocalizations.of(context)!.searchByTitleHint,
                 hintStyle: TextStyle(
                     color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
                 border: InputBorder.none,
@@ -584,7 +585,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Advanced Filters',
+              AppLocalizations.of(context)!.advancedFilters,
               style: TextStyle(
                 color: _showAdvancedFilters ? cs.primary : cs.onSurface,
                 fontWeight: FontWeight.w500,
@@ -802,7 +803,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       children: [
         // "All" chip
         _singleSelectChip(
-          label: 'All',
+          label: AppLocalizations.of(context)!.all,
           isSelected: selected.isEmpty,
           onTap: () => setState(() {
             if (type == 'language') {
@@ -892,11 +893,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   Widget _buildDateFilter(ColorScheme cs) {
     const presets = [
-      ('Today', '<1d'),
+      (AppLocalizations.of(context)!.today, '<1d'),
       ('7 days', '<7d'),
       ('30 days', '<1m'),
       ('1 year', '<1y'),
-      ('Older', '>1y'),
+      (AppLocalizations.of(context)!.older, '>1y'),
     ];
 
     return Wrap(
@@ -962,14 +963,14 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             Icon(Icons.menu_book_outlined,
                 size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text('Pages', style: TextStyle(fontSize: 13, color: cs.onSurface)),
+            Text(AppLocalizations.of(context)!.pagesLabel2, style: TextStyle(fontSize: 13, color: cs.onSurface)),
             const Spacer(),
-            _numericInput(controller: _pagesMinCtrl, hint: 'Min', cs: cs),
+            _numericInput(controller: _pagesMinCtrl, hint: AppLocalizations.of(context)!.min, cs: cs),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text('–', style: TextStyle(color: cs.onSurfaceVariant)),
             ),
-            _numericInput(controller: _pagesMaxCtrl, hint: 'Max', cs: cs),
+            _numericInput(controller: _pagesMaxCtrl, hint: AppLocalizations.of(context)!.max, cs: cs),
           ],
         ),
         const SizedBox(height: 12),
@@ -979,11 +980,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             Icon(Icons.favorite_border_rounded,
                 size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text('Favorites ≥',
+            Text(AppLocalizations.of(context)!.favoritesGte,
                 style: TextStyle(fontSize: 13, color: cs.onSurface)),
             const Spacer(),
             _numericInput(
-                controller: _favMinCtrl, hint: 'Min', cs: cs, width: 90),
+                controller: _favMinCtrl, hint: AppLocalizations.of(context)!.min, cs: cs, width: 90),
           ],
         ),
       ],
@@ -1039,7 +1040,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       child: FilledButton.icon(
         onPressed: _onSearchSubmitted,
         icon: const Icon(Icons.search_rounded),
-        label: const Text('SEARCH'),
+        label: Text(AppLocalizations.of(context)!.search),
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

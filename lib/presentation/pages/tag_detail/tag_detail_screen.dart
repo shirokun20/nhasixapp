@@ -173,7 +173,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                     ),
                     _buildBadge(
                       icon: Icons.numbers,
-                      label: '${tag.count} galleries',
+                      label: AppLocalizations.of(context)!.nGalleries(tag.count),
                       colorScheme: colorScheme,
                     ),
                   ],
@@ -187,7 +187,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
               tag.description!.trim().isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildSectionCard(
-              title: 'Description',
+              title: AppLocalizations.of(context)!.descriptionLabel,
               child: Text(
                 tag.description!.trim(),
                 style: theme.textTheme.bodyLarge,
@@ -197,7 +197,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
           if (tag.aliases != null && tag.aliases!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildSectionCard(
-              title: 'Aliases',
+              title: AppLocalizations.of(context)!.aliasesLabel,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -217,7 +217,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
           FilledButton.icon(
             onPressed: () => _searchWithTag(tag),
             icon: const Icon(Icons.search),
-            label: const Text('Search Content With This Tag'),
+            label: Text(AppLocalizations.of(context)!.searchContentWithTag),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
@@ -226,7 +226,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
           OutlinedButton.icon(
             onPressed: () => context.pop(),
             icon: const Icon(Icons.arrow_back),
-            label: const Text('Back to Filters'),
+            label: Text(AppLocalizations.of(context)!.backToFilters),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -243,12 +243,12 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            _buildMetaRow('Tag ID', tag.id.toString(), colorScheme),
+            _buildMetaRow(AppLocalizations.of(context)!.tagId, tag.id.toString(), colorScheme),
             const Divider(height: 18),
-            _buildMetaRow('Slug', tag.slug, colorScheme),
+            _buildMetaRow(AppLocalizations.of(context)!.slug, tag.slug, colorScheme),
             if (tag.url != null && tag.url!.trim().isNotEmpty) ...[
               const Divider(height: 18),
-              _buildMetaRow('Path', tag.url!, colorScheme),
+              _buildMetaRow(AppLocalizations.of(context)!.path, tag.url!, colorScheme),
             ],
           ],
         ),
@@ -327,7 +327,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
 
   String _formatTagType(String type) {
     if (type.isEmpty) {
-      return 'Tag';
+      return AppLocalizations.of(context)!.tag;
     }
     return '${type[0].toUpperCase()}${type.substring(1)}';
   }

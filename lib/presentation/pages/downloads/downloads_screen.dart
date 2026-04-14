@@ -177,7 +177,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     .add(const DownloadToggleSelectionModeEvent()),
               ),
               title: Text(
-                '${state.selectedItems.length} selected',
+                AppLocalizations.of(context)!.nSelected(state.selectedItems.length),
                 style: TextStyleConst.headlineSmall.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
@@ -196,12 +196,12 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     onPressed: () => context
                         .read<DownloadBloc>()
                         .add(const DownloadClearSelectionEvent()),
-                    tooltip: 'Clear Selection',
+                    tooltip: AppLocalizations.of(context)!.clearSelection,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => _showBulkDeleteDialog(state),
-                    tooltip: 'Delete',
+                    tooltip: AppLocalizations.of(context)!.delete,
                   ),
                 ],
               ],
@@ -227,13 +227,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       .read<DownloadBloc>()
                       .add(const DownloadRefreshEvent());
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Refreshing downloads...'),
-                      duration: Duration(seconds: 1),
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)!.refreshingDownloads),
+                      duration: const Duration(seconds: 1),
                     ),
                   );
                 },
-                tooltip: 'Refresh',
+                tooltip: AppLocalizations.of(context)!.refresh,
               ),
               IconButton(
                 icon: const Icon(Icons.checklist),
@@ -827,19 +827,19 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          'Bulk Delete',
+          AppLocalizations.of(context)!.bulkDelete,
           style: TextStyleConst.headlineSmall
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'Are you sure you want to delete ${state.selectedItems.length} downloads?',
+          AppLocalizations.of(context)!.bulkDeleteConfirmation(state.selectedItems.length),
           style: TextStyleConst.bodyMedium
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
@@ -849,7 +849,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   .add(DownloadBulkDeleteEvent(state.selectedItems.toList()));
             },
             child: Text(
-              'Delete',
+              AppLocalizations.of(context)!.delete,
               style: TextStyleConst.labelLarge
                   .copyWith(color: Theme.of(context).colorScheme.error),
             ),

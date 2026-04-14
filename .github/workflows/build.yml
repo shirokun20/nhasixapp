@@ -1,20 +1,47 @@
 name: Build and Upload APK
 
-# Trigger only when merged to master branch
-# Send notifications to Telegram Channel (not personal chat)
+# Trigger on:
+# 1. Version tags (e.g. v0.8.0) — for release builds with GitHub Release
+# 2. Manual trigger via GitHub Actions UI — for testing builds on demand
+#
+# ⚠️ Does NOT auto-trigger on every push to master to save Actions minutes.
+# Use "Run workflow" button in Actions tab for on-demand builds.
+#
+# Notifications: Telegram Channel (not personal chat)
 # Setup: Add bot as admin to channel, get channel ID (@channelname or -100XXXXXXXXX)
 on:
   push:
-    # branches: [ master, 'release/*' ]
     tags:
       - 'v*' # Trigger on version tags (e.g. v0.8.0)
+
+  # Manual trigger with configurable options
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+      split_abi:
+        description: 'Split APK per ABI (smaller files, architecture-specific)'
+        required: true
+        default: true
+        type: boolean
+      upload_artifact:
+        description: 'Upload APK as GitHub Artifact (downloadable from Actions tab)'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required for creating releases
 
+      contents: write # Required for creating releases
 
     steps:
       # Checkout repository
@@ -46,10 +73,27 @@ jobs:
           echo "$ANDROID_HOME"
           ls -la "$ANDROID_HOME" || echo "Android SDK not found"
 
+      # Install all project dependencies (including local packages)
+      - name: Get Dependencies
+        run: flutter pub get
+
+      # Generate localization files from ARB sources (lib/l10n/)
+      # This ensures app_localizations.dart is up to date
+      - name: Generate Localizations
+        run: flutter gen-l10n || echo "gen-l10n not configured, skipping"
+
+      # Run build_runner for Freezed/JsonSerializable code generation
+      # Generates .g.dart and .freezed.dart files
+      - name: Run Build Runner
+        run: flutter pub run build_runner build --delete-conflicting-outputs || echo "No build_runner tasks"
+
       # Decode Keystore from Secrets
+      # Only runs if KEYSTORE_BASE64 secret is configured
+      # Skip gracefully for forks without signing setup
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        if: env.KEYSTORE_BASE64 != ''
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           echo "Keystore decoded to android/app/upload-keystore.jks"
@@ -59,13 +103,36 @@ jobs:
         run: chmod +x build_optimized.sh
 
       # Build optimized APK
+      # Respects workflow_dispatch inputs for build type and ABI splitting
+      # Tag-triggered builds always use release + split-per-abi
+      # Falls back to debug build if no keystore secrets configured
       - name: Build APK
         env:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
-          KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/ or resolved by gradle
-        run: ./build_optimized.sh release
+          KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/
+          BUILD_TYPE: ${{ github.event.inputs.build_type || 'release' }}
+          SPLIT_ABI: ${{ github.event.inputs.split_abi || 'true' }}
+        run: |
+          echo "📋 Build config: type=$BUILD_TYPE, split_abi=$SPLIT_ABI"
+
+          # Determine split flag
+          SPLIT_FLAG=""
+          if [ "$SPLIT_ABI" = "true" ]; then
+            SPLIT_FLAG="--split-per-abi"
+            echo "📦 Split per ABI enabled"
+          fi
+
+          if [ -f "android/app/upload-keystore.jks" ]; then
+            echo "🔐 Building signed $BUILD_TYPE APK..."
+            ./build_optimized.sh $BUILD_TYPE
+          else
+            echo "⚠️ No keystore found, building $BUILD_TYPE APK without signing..."
+            flutter build apk --$BUILD_TYPE $SPLIT_FLAG
+            mkdir -p apk-output
+            cp build/app/outputs/flutter-apk/*.apk apk-output/ 2>/dev/null || true
+          fi
 
       # Verify build outputs
       - name: Verify Build Outputs
@@ -74,16 +141,28 @@ jobs:
           ls -la build/app/outputs/flutter-apk/ || echo "No flutter-apk directory"
           echo ""
           echo "=== Checking APK Output Directory ==="
-          ls -lh apk-output/ || echo "No apk-output directory"
+          ls -lh apk-output/ 2>/dev/null || echo "No apk-output directory"
           echo ""
-          echo "=== APK Details ==="
-          for apk in apk-output/*.apk; do
-            if [ -f "$apk" ]; then
-              echo "📱 $(basename "$apk") - $(du -h "$apk" | cut -f1)"
-            fi
-          done
+          echo "=== All APK Files ==="
+          find build/ -name "*.apk" -exec ls -lh {} \; 2>/dev/null || echo "No APK files found"
+
+      # Upload APK as GitHub Artifact
+      # Available for download from the Actions tab (even without a release)
+      # Retained for 30 days — useful for testing and CI verification
+      # Controlled by workflow_dispatch input (always enabled for tag builds)
+      - name: Upload APK Artifacts
+        if: ${{ github.event.inputs.upload_artifact != 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kuron-apk-${{ github.sha }}
+          path: |
+            apk-output/*.apk
+            build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: warn
+          retention-days: 30
 
       # Notify on build failure to Telegram Channel
+      # Only sends if TELEGRAM_BOT_TOKEN secret is configured
       - name: Notify Build Failure
         if: failure()
         env:
@@ -105,6 +184,7 @@ jobs:
           "
 
       # Notify on build success to Telegram Channel
+      # Only sends if TELEGRAM_BOT_TOKEN secret is configured
       - name: Notify Build Success
         if: success()
         env:
@@ -115,7 +195,7 @@ jobs:
           APK_INFO=""
           APK_COUNT=0
           TOTAL_SIZE=0
-          for apk in apk-output/*.apk; do
+          for apk in apk-output/*.apk build/app/outputs/flutter-apk/*.apk; do
             if [ -f "$apk" ]; then
               size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
               size_mb=$((size / 1024 / 1024))
@@ -145,7 +225,7 @@ jobs:
           ⬇️ [Download APK di GitHub Releases](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME})
           "
 
-      # EXTRACT VERSION Step moved here to be available for release
+      # Extract version from pubspec.yaml for release naming
       - name: Read Version
         id: version
         run: |
@@ -153,23 +233,165 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Detected version: $VERSION"
 
+      # Extract release notes from CHANGELOG.md for the current version
+      # Priority: CHANGELOG.md entry > auto-generated formatted notes
+      # Format matches CHANGELOG.md style with emojis, sections, and bullet points
+      - name: Extract Changelog
+        id: changelog
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Get full version from pubspec (e.g., 0.9.16+25)
+          FULL_VERSION=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2)
+          TAG_NAME="${GITHUB_REF_NAME}"
+          echo "Looking for CHANGELOG entry: [$FULL_VERSION]"
+
+          # Extract section between ## [version] and next --- separator
+          NOTES=$(awk -v ver="$FULL_VERSION" '
+            BEGIN { found=0; output="" }
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]") > 0) found=1
+            }
+            found && /^---$/ { exit }
+            found { output = output $0 "\n" }
+            END { printf "%s", output }
+          ' CHANGELOG.md)
+
+          # If no exact match, try version without build number (e.g., 0.9.16)
+          if [ -z "$NOTES" ]; then
+            SHORT_VERSION=$(echo "$FULL_VERSION" | cut -d '+' -f 1)
+            echo "Trying short version: [$SHORT_VERSION]"
+            NOTES=$(awk -v ver="$SHORT_VERSION" '
+              BEGIN { found=0; output="" }
+              /^## \[/ {
+                if (found) exit
+                if (index($0, "[" ver "]") > 0) found=1
+              }
+              found && /^---$/ { exit }
+              found { output = output $0 "\n" }
+              END { printf "%s", output }
+            ' CHANGELOG.md)
+          fi
+
+          if [ -n "$NOTES" ]; then
+            echo "✅ Found CHANGELOG entry ($(echo "$NOTES" | wc -l) lines)"
+            echo "$NOTES" > release_notes.md
+          else
+            echo "⚠️ No CHANGELOG entry found, generating formatted notes..."
+
+            # ─── Generate beautiful formatted release notes from commits ───
+            # Get previous tag for commit range
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+            if [ -n "$PREV_TAG" ]; then
+              RANGE="${PREV_TAG}..HEAD"
+            else
+              RANGE="HEAD~20..HEAD"
+            fi
+
+            # Collect commits by type using conventional commit format
+            FEAT_COMMITS=$(git log "$RANGE" --pretty=format:"%s" --no-merges 2>/dev/null | grep -iE "^feat" | sed 's/^feat[^:]*: //' || true)
+            FIX_COMMITS=$(git log "$RANGE" --pretty=format:"%s" --no-merges 2>/dev/null | grep -iE "^fix" | sed 's/^fix[^:]*: //' || true)
+            REFACTOR_COMMITS=$(git log "$RANGE" --pretty=format:"%s" --no-merges 2>/dev/null | grep -iE "^refactor" | sed 's/^refactor[^:]*: //' || true)
+            DOCS_COMMITS=$(git log "$RANGE" --pretty=format:"%s" --no-merges 2>/dev/null | grep -iE "^docs" | sed 's/^docs[^:]*: //' || true)
+            OTHER_COMMITS=$(git log "$RANGE" --pretty=format:"%s" --no-merges 2>/dev/null | grep -ivE "^(feat|fix|refactor|docs|chore|ci|build|style|test)" || true)
+
+            # Build formatted release notes
+            {
+              echo "## [$FULL_VERSION] - $(date +%Y-%m-%d)"
+              echo ""
+
+              # ✨ Features
+              if [ -n "$FEAT_COMMITS" ]; then
+                echo "### ✨ New Features"
+                echo "$FEAT_COMMITS" | while IFS= read -r line; do
+                  [ -n "$line" ] && echo "- **${line}**"
+                done
+                echo ""
+              fi
+
+              # 🩹 Bug Fixes
+              if [ -n "$FIX_COMMITS" ]; then
+                echo "### 🩹 Bug Fixes"
+                echo "$FIX_COMMITS" | while IFS= read -r line; do
+                  [ -n "$line" ] && echo "- ${line}"
+                done
+                echo ""
+              fi
+
+              # ♻️ Refactor
+              if [ -n "$REFACTOR_COMMITS" ]; then
+                echo "### ♻️ Refactor"
+                echo "$REFACTOR_COMMITS" | while IFS= read -r line; do
+                  [ -n "$line" ] && echo "- ${line}"
+                done
+                echo ""
+              fi
+
+              # 📝 Documentation
+              if [ -n "$DOCS_COMMITS" ]; then
+                echo "### 📝 Documentation"
+                echo "$DOCS_COMMITS" | while IFS= read -r line; do
+                  [ -n "$line" ] && echo "- ${line}"
+                done
+                echo ""
+              fi
+
+              # 🔧 Other Changes
+              if [ -n "$OTHER_COMMITS" ]; then
+                echo "### 🔧 Other Changes"
+                echo "$OTHER_COMMITS" | while IFS= read -r line; do
+                  [ -n "$line" ] && echo "- ${line}"
+                done
+                echo ""
+              fi
+
+              # 📦 APK Info
+              echo "### 📦 Build Artifacts"
+              APK_COUNT=0
+              for apk in apk-output/*.apk build/app/outputs/flutter-apk/*.apk; do
+                if [ -f "$apk" ]; then
+                  filename=$(basename "$apk")
+                  size=$(du -h "$apk" | cut -f1)
+                  echo "- 📱 \`${filename}\` — ${size}"
+                  APK_COUNT=$((APK_COUNT + 1))
+                fi
+              done
+              if [ "$APK_COUNT" -eq 0 ]; then
+                echo "- _APK files available in assets below_"
+              fi
+              echo ""
+
+              # Full Changelog link
+              if [ -n "$PREV_TAG" ]; then
+                echo "**Full Changelog**: [\`${PREV_TAG}...${TAG_NAME}\`](https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG}...${TAG_NAME})"
+              fi
+            } > release_notes.md
+          fi
+
+          echo "📝 Release notes preview:"
+          cat release_notes.md
+          echo "HAS_NOTES=true" >> $GITHUB_ENV
+
       # DISABLED: Upload APK to Telegram Channel (User Request)
       # - name: Upload APK to Telegram Channel
       #   if: success()
       #   ... (disabled)
 
       # Create Release & Upload APK to GitHub
-      # Triggered when a tag (v*) is pushed
+      # Only triggered when a version tag (v*) is pushed
+      # Uses CHANGELOG.md content if available, otherwise formatted commit notes
+      # Both paths produce consistent, emoji-rich markdown release notes
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: apk-output/*.apk
-          generate_release_notes: true
-          # Note: 'draft' defaults to false, so it will be published immediately or as draft if configured
-          draft: false 
+          name: "v${{ env.VERSION }} 🚀"
+          files: |
+            apk-output/*.apk
+            build/app/outputs/flutter-apk/*.apk
+          body_path: release_notes.md
+          draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-

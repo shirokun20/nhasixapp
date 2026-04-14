@@ -103,13 +103,13 @@ class _SearchScreenState extends State<SearchScreen> {
             const Icon(Icons.search_off, size: 48, color: Colors.orange),
             const SizedBox(height: 16),
             Text(
-              'Search configuration unavailable for $sourceId',
+              AppLocalizations.of(context)!.searchConfigUnavailable(sourceId),
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const Text(
-              'Please check your internet connection or try reloading the application.',
+              AppLocalizations.of(context)!.checkInternetOrReload,
               textAlign: TextAlign.center,
             ),
           ],

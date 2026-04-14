@@ -201,9 +201,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
 
                               final label = isLoggedIn
                                   ? (displayName.isNotEmpty
-                                      ? 'Profile ($displayName)'
-                                      : 'Profile')
-                                  : 'Login / Account';
+                                      ? AppLocalizations.of(context)!.profileWithName(displayName)
+                                      : AppLocalizations.of(context)!.profile)
+                                  : AppLocalizations.of(context)!.loginAccount;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,8 +238,8 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         builder: (context, authState) {
                           final isLoggedIn = authState is CrotpediaAuthSuccess;
                           final label = isLoggedIn
-                              ? 'Account (${authState.username})'
-                              : 'Login / Account';
+                              ? AppLocalizations.of(context)!.accountWithName(authState.username)
+                              : AppLocalizations.of(context)!.loginAccount;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
