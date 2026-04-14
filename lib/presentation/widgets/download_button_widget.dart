@@ -76,7 +76,8 @@ class DownloadButtonWidget extends StatelessWidget {
               return _buildButton(
                 context: context,
                 icon: Icons.check_circle,
-                text: AppLocalizations.of(context)!.downloaded,
+                text: AppLocalizations.of(context)!
+                    .downloaded(download.formattedFileSize),
                 onPressed: () => _openDownload(context),
                 color: colorScheme.tertiary,
               );
@@ -101,7 +102,8 @@ class DownloadButtonWidget extends StatelessWidget {
             return _buildButton(
               context: context,
               icon: Icons.check_circle,
-              text: AppLocalizations.of(context)!.downloaded,
+              text: AppLocalizations.of(context)!
+                  .downloaded(download.formattedFileSize),
               onPressed: () => _openDownload(context),
               color: colorScheme.tertiary,
             );

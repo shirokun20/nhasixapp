@@ -657,7 +657,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildBlacklistStatChip(
                       theme: theme,
                       label: AppLocalizations.of(context)!.rules,
-                      value: hasSession ? '${onlineRules.length}' : AppLocalizations.of(context)!.login,
+                      value: hasSession
+                          ? '${onlineRules.length}'
+                          : AppLocalizations.of(context)!.login,
                       icon: Icons.rule_rounded,
                       isLoading: isSyncingRules,
                     ),
@@ -672,7 +674,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (hasSession) ...[
                   const SizedBox(height: 12),
                   Text(
-                    AppLocalizations.of(context)!.onlineRuleDetailsCount(onlineRules.length),
+                    AppLocalizations.of(context)!
+                        .onlineRuleDetailsCount(onlineRules.length),
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -732,7 +735,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     child: Text(
-                      AppLocalizations.of(context)!.activeCoverageDescription(mergedEntries.length),
+                      AppLocalizations.of(context)!
+                          .activeCoverageDescription(mergedEntries.length),
                       style: TextStyleConst.bodySmall.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -997,7 +1001,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localMetadata = backupMetadata;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToSave(e.toString()))),
+                    SnackBar(
+                        content: Text(AppLocalizations.of(context)!
+                            .failedToSave(e.toString()))),
                   );
                 }
                 return;
@@ -1048,7 +1054,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localEntries = backup;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToSave(e.toString()))),
+                    SnackBar(
+                        content: Text(AppLocalizations.of(context)!
+                            .failedToSave(e.toString()))),
                   );
                 }
                 return;
@@ -1080,7 +1088,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 localMetadata = backupMetadata;
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context)!.failedToDelete(e.toString()))),
+                    SnackBar(
+                        content: Text(AppLocalizations.of(context)!
+                            .failedToDelete(e.toString()))),
                   );
                 }
                 return;
@@ -1140,14 +1150,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    AppLocalizations.of(context)!.manageTagBlacklist,
+                                    AppLocalizations.of(context)!
+                                        .manageTagBlacklist,
                                     style: TextStyleConst.headingSmall.copyWith(
                                       color: theme.colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    AppLocalizations.of(context)!.addTagRulesDescription,
+                                    AppLocalizations.of(context)!
+                                        .addTagRulesDescription,
                                     style: TextStyleConst.bodySmall.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -1163,7 +1175,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           minLines: 1,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchExampleHint,
+                            hintText:
+                                AppLocalizations.of(context)!.searchExampleHint,
                             prefixIcon: const Icon(Icons.tag_rounded),
                             filled: true,
                             fillColor:
@@ -1218,7 +1231,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.sync_rounded, size: 18),
-                                label: Text(AppLocalizations.of(context)!.refreshOnline),
+                                label: Text(AppLocalizations.of(context)!
+                                    .refreshOnline),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1226,7 +1240,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: FilledButton.icon(
                                 onPressed: addEntries,
                                 icon: const Icon(Icons.add_rounded, size: 18),
-                                label: Text(AppLocalizations.of(context)!.addRules),
+                                label: Text(
+                                    AppLocalizations.of(context)!.addRules),
                               ),
                             ),
                           ],
@@ -1237,12 +1252,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: OutlinedButton.icon(
                             onPressed: pickFromTags,
                             icon: const Icon(Icons.playlist_add_rounded),
-                            label: Text(AppLocalizations.of(context)!.pickFromTags),
+                            label: Text(
+                                AppLocalizations.of(context)!.pickFromTags),
                           ),
                         ),
                         const SizedBox(height: 18),
                         Text(
-                          AppLocalizations.of(context)!.localRulesCount(localEntries.length),
+                          AppLocalizations.of(context)!
+                              .localRulesCount(localEntries.length),
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1278,8 +1295,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 20),
                         Text(
                           hasSession
-                              ? AppLocalizations.of(context)!.onlineRulesMetadataCount(onlineRules.length)
-                              : AppLocalizations.of(context)!.onlineRulesMetadata,
+                              ? AppLocalizations.of(context)!
+                                  .onlineRulesMetadataCount(onlineRules.length)
+                              : AppLocalizations.of(context)!
+                                  .onlineRulesMetadata,
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1316,7 +1335,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         const SizedBox(height: 20),
                         Text(
-                          AppLocalizations.of(context)!.activeCoverageCount(mergedEntries.length),
+                          AppLocalizations.of(context)!
+                              .activeCoverageCount(mergedEntries.length),
                           style: TextStyleConst.bodyLarge.copyWith(
                             color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
@@ -1326,12 +1346,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (mergedEntries.isEmpty)
                           _buildSheetHint(
                             theme,
-                            AppLocalizations.of(context)!.blacklistGalleriesInfo,
+                            AppLocalizations.of(context)!
+                                .blacklistGalleriesInfo,
                           )
                         else
                           _buildSheetHint(
                             theme,
-                            AppLocalizations.of(context)!.coverageActiveDescription(mergedEntries.length),
+                            AppLocalizations.of(context)!
+                                .coverageActiveDescription(
+                                    mergedEntries.length),
                           ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -1850,7 +1873,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   min: 1,
                   max: 30,
                   divisions: 29,
-                  label: AppLocalizations.of(context)!.timeoutMinutes(settings.timeoutDuration.inMinutes),
+                  label: AppLocalizations.of(context)!
+                      .timeoutMinutes(settings.timeoutDuration.inMinutes),
                   onChanged: (value) {
                     context.read<DownloadBloc>().add(
                           DownloadSettingsUpdateEvent(
@@ -2022,7 +2046,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  AppLocalizations.of(context)!.nSourcesInstalled(state.availableSources.length),
+                  AppLocalizations.of(context)!
+                      .nSourcesInstalled(state.availableSources.length),
                   style: TextStyleConst.bodySmall.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -2104,7 +2129,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (canUninstall) ...[
                           if (isActive) const SizedBox(width: 4),
                           IconButton(
-                            tooltip: AppLocalizations.of(context)!.uninstallSource,
+                            tooltip:
+                                AppLocalizations.of(context)!.uninstallSource,
                             onPressed: () =>
                                 _confirmAndUninstallSource(context, source.id),
                             icon: Icon(
@@ -2218,21 +2244,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() {});
 
+      if (!context.mounted) return;
+
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
+          content:
+              Text(AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
           backgroundColor: Colors.green.shade700,
         ),
       );
     } catch (e, stackTrace) {
       Logger().e('Failed to uninstall source: $e', stackTrace: stackTrace);
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToUninstall(sourceId, e.toString())),
+          content: Text(AppLocalizations.of(context)!
+              .failedToUninstall(sourceId, e.toString())),
           backgroundColor: Colors.red,
         ),
       );
@@ -2406,7 +2436,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (failed.isEmpty) {
         final message = installed.length == 1
             ? l10n.sourceImportInstalledFromZip(installed.first)
-            : AppLocalizations.of(context)!.installedSourcesFromZip(installed.length);
+            : AppLocalizations.of(context)!
+                .installedSourcesFromZip(installed.length);
         messenger.showSnackBar(
           SnackBar(
             content: Text(message),
@@ -2655,7 +2686,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(AppLocalizations.of(context)!.selectSourceFromManifest),
+              title:
+                  Text(AppLocalizations.of(context)!.selectSourceFromManifest),
               subtitle: Text(AppLocalizations.of(context)!.chooseOneSource),
             ),
             Flexible(
@@ -2699,8 +2731,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 ListTile(
-                  title: Text(AppLocalizations.of(context)!.selectSourceFromManifest),
-                  subtitle: Text(AppLocalizations.of(context)!.chooseMultipleSources),
+                  title: Text(
+                      AppLocalizations.of(context)!.selectSourceFromManifest),
+                  subtitle:
+                      Text(AppLocalizations.of(context)!.chooseMultipleSources),
                 ),
                 Expanded(
                   child: ListView.separated(
@@ -2748,7 +2782,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             (entry) => selected.contains(entry))
                                         .toList(growable: false),
                                   ),
-                          child: Text(AppLocalizations.of(context)!.installSelectedCount(selected.length)),
+                          child: Text(AppLocalizations.of(context)!
+                              .installSelectedCount(selected.length)),
                         ),
                       ),
                     ],
@@ -3183,7 +3218,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppLocalizations.of(context)!.selectedSourcesCount(candidates.length)),
+              Text(AppLocalizations.of(context)!
+                  .selectedSourcesCount(candidates.length)),
               const SizedBox(height: 8),
               Flexible(
                 child: ListView.separated(

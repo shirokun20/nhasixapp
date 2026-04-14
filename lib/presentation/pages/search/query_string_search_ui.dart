@@ -15,6 +15,7 @@ import 'package:nhasixapp/domain/usecases/tags/get_tags_by_type_usecase.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 /// Nhentai-style search UI (Query String mode)
 class QueryStringSearchUI extends StatefulWidget {
   final SearchConfig config;
@@ -312,7 +313,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       _logger.e('Failed to save search filter: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.failedToApplySearch(e.toString()))),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!
+                  .failedToApplySearch(e.toString()))),
         );
       }
     }
@@ -892,20 +895,20 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   // ── Date Filter ─────────────────────────────────────────────────────────────
 
   Widget _buildDateFilter(ColorScheme cs) {
-    const presets = [
-      (AppLocalizations.of(context)!.today, '<1d'),
-      ('7 days', '<7d'),
-      ('30 days', '<1m'),
-      ('1 year', '<1y'),
-      (AppLocalizations.of(context)!.older, '>1y'),
+    final presets = [
+      [AppLocalizations.of(context)!.today, '<1d'],
+      ['7 days', '<7d'],
+      ['30 days', '<1m'],
+      ['1 year', '<1y'],
+      [AppLocalizations.of(context)!.older, '>1y'],
     ];
 
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: presets.map((p) {
-        final label = p.$1;
-        final value = p.$2;
+        final label = p[0];
+        final value = p[1];
         final isSelected = _uploadedPreset == value;
         return GestureDetector(
           onTap: () =>
@@ -963,14 +966,21 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             Icon(Icons.menu_book_outlined,
                 size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text(AppLocalizations.of(context)!.pagesLabel2, style: TextStyle(fontSize: 13, color: cs.onSurface)),
+            Text(AppLocalizations.of(context)!.pagesLabel2,
+                style: TextStyle(fontSize: 13, color: cs.onSurface)),
             const Spacer(),
-            _numericInput(controller: _pagesMinCtrl, hint: AppLocalizations.of(context)!.min, cs: cs),
+            _numericInput(
+                controller: _pagesMinCtrl,
+                hint: AppLocalizations.of(context)!.min,
+                cs: cs),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text('–', style: TextStyle(color: cs.onSurfaceVariant)),
             ),
-            _numericInput(controller: _pagesMaxCtrl, hint: AppLocalizations.of(context)!.max, cs: cs),
+            _numericInput(
+                controller: _pagesMaxCtrl,
+                hint: AppLocalizations.of(context)!.max,
+                cs: cs),
           ],
         ),
         const SizedBox(height: 12),
@@ -984,7 +994,10 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
                 style: TextStyle(fontSize: 13, color: cs.onSurface)),
             const Spacer(),
             _numericInput(
-                controller: _favMinCtrl, hint: AppLocalizations.of(context)!.min, cs: cs, width: 90),
+                controller: _favMinCtrl,
+                hint: AppLocalizations.of(context)!.min,
+                cs: cs,
+                width: 90),
           ],
         ),
       ],

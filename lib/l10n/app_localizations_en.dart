@@ -12,9 +12,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Kuron';
 
   @override
-  String get appSubtitle => 'Enhanced Reading Experience';
-
-  @override
   String sourceAuthProfileTitle(String sourceId) {
     return 'Profile $sourceId';
   }
@@ -144,7 +141,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Error loading random gallery. Please try again.';
 
   @override
-  String get randomGalleryUnavailableTitle => 'Feature unavailable';
+  String get randomGalleryUnavailableTitle => 'Feature Unavailable';
 
   @override
   String get randomGalleryUnavailableMessage =>
@@ -157,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
-  String get appDisguise => 'App Disguise';
+  String get appDisguise => 'APP DISGUISE';
 
   @override
   String get disguiseMode => 'Disguise Mode';
@@ -182,13 +179,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thankYouMessage => 'Thank you for your support!';
 
   @override
-  String get searchHint => 'Search content...';
+  String get searchHint => 'Search...';
 
   @override
   String get searchPlaceholder => 'Enter search keywords';
 
   @override
-  String get noResults => 'No results found';
+  String get noResults => 'No Results Found';
 
   @override
   String get searchSuggestions => 'Search Suggestions';
@@ -206,14 +203,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapToLoadContent => 'Tap to load content';
 
   @override
-  String get checkInternetConnection => 'Check your internet connection';
-
-  @override
   String get trySwitchingNetwork =>
-      'Try switching between WiFi and mobile data';
+      'Try switching between Wi-Fi and mobile data';
 
   @override
-  String get restartRouter => 'Restart your router if using WiFi';
+  String get restartRouter => 'Restart your router if using Wi-Fi';
 
   @override
   String get checkWebsiteStatus => 'Check if the website is down';
@@ -238,10 +232,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get searchResults => 'Search Results';
-
-  @override
-  String get failedToOpenBrowser => 'Failed to open browser';
+  String get failedToOpenBrowser => 'Failed to open browser.';
 
   @override
   String get viewDownloads => 'View Downloads';
@@ -288,17 +279,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cleanupInfo => 'Cleanup Info';
 
   @override
-  String get loadingHistory => 'Loading history';
-
-  @override
   String get clearingHistory => 'Clearing history...';
 
   @override
   String get areYouSureClearHistory =>
       'Are you sure you want to clear all reading history? This action cannot be undone.';
-
-  @override
-  String get justNow => 'Just now';
 
   @override
   String get artistCg => 'artist cg';
@@ -365,21 +350,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excludeArtists => 'Exclude Artists';
 
   @override
-  String get noResultsFound => 'No results found';
+  String get noResultsFound => 'No Results Found';
 
   @override
   String get tryAdjustingFilters =>
       'Try adjusting your search filters or search terms.';
 
   @override
-  String get tryDifferentKeywords => 'Try different keywords';
-
-  @override
   String get networkError =>
       'Network error. Please check your connection and try again.';
-
-  @override
-  String get serverError => 'Server error';
 
   @override
   String get accessBlocked => 'Access blocked. Trying to bypass protection...';
@@ -445,26 +424,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknownErrorTitle => 'Unknown Error';
 
   @override
-  String get loadingContent => 'Loading content...';
-
-  @override
   String get refreshingContent => 'Refreshing content...';
 
   @override
   String get loadingMoreContent => 'Loading more content...';
 
   @override
-  String get latestContent => 'Latest Content';
+  String get searchResults => 'Search Results';
 
   @override
-  String get noInternetConnection => 'No internet connection';
+  String get latestContent => 'Latest Content';
 
   @override
   String get serverTemporarilyUnavailable =>
       'Server is temporarily unavailable. Please try again later.';
-
-  @override
-  String get failedToLoadContent => 'Failed to load content';
 
   @override
   String get cloudflareProtectionDetected =>
@@ -484,16 +457,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get removeSomeFilters => 'Remove some filters';
-
-  @override
-  String get checkSpelling => 'Check spelling';
-
-  @override
   String get useGeneralTerms => 'Use more general search terms';
-
-  @override
-  String get browsePopularContent => 'Browse popular content';
 
   @override
   String get tryBrowsingOtherTags => 'Try browsing other tags';
@@ -507,9 +471,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get checkInternetConnectionSuggestion =>
       'Check your internet connection';
-
-  @override
-  String get tryRefreshingPage => 'Try refreshing the page';
 
   @override
   String get browsePopularContentSuggestion => 'Browse popular content';
@@ -538,9 +499,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String invalidSearchFilter(String errors) {
     return 'Invalid search filter: $errors';
   }
-
-  @override
-  String get pages => 'Pages';
 
   @override
   String get tags => 'Tags';
@@ -576,9 +534,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadCompleted => 'Download Completed';
 
   @override
-  String get downloadFailed => 'Download Failed';
-
-  @override
   String get initializing => 'Initializing...';
 
   @override
@@ -594,9 +549,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get content => 'Content';
 
   @override
-  String get view => 'View';
-
-  @override
   String get clearAll => 'Clear All';
 
   @override
@@ -606,13 +558,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unableToCheck => 'Unable to check connection.';
 
   @override
-  String get noContentAvailable => 'No content available';
+  String get noContentAvailable => 'No content available.';
 
   @override
-  String get noContentToDownload => 'No content available to download';
+  String get noContentToDownload => 'No content available to download.';
 
   @override
-  String get noGalleriesFound => 'No galleries found on this page';
+  String get noGalleriesFound => 'No galleries found on this page.';
 
   @override
   String get noContentLoadedToBrowse => 'No content loaded to open in browser';
@@ -633,21 +585,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allGalleriesDownloaded => 'All Galleries Downloaded';
 
   @override
-  String downloadStarted(String title) {
-    return 'Download Started';
-  }
-
-  @override
   String get downloadNewGalleries => 'Download New Galleries';
 
   @override
   String get downloadProgress => 'Download Progress';
-
-  @override
-  String get downloadComplete => 'Download Complete';
-
-  @override
-  String get downloadError => 'Download Error';
 
   @override
   String get verifyingFiles => 'Verifying Files';
@@ -687,30 +628,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get all => 'All';
 
   @override
-  String get active => 'Active';
-
-  @override
   String get completed => 'Completed';
 
   @override
   String get noDownloadsYet => 'No downloads yet';
 
   @override
-  String get noActiveDownloads => 'No active downloads';
+  String get noActiveDownloads => 'No active downloads.';
 
   @override
-  String get noQueuedDownloads => 'No queued downloads';
+  String get noQueuedDownloads => 'No queued downloads.';
 
   @override
-  String get noCompletedDownloads => 'No completed downloads';
+  String get noCompletedDownloads => 'No completed downloads.';
 
   @override
-  String get noFailedDownloads => 'No failed downloads';
-
-  @override
-  String pdfConversionStarted(String contentId) {
-    return 'PDF conversion started for $contentId';
-  }
+  String get noFailedDownloads => 'No failed downloads.';
 
   @override
   String get cancelAllDownloads => 'Cancel All Downloads';
@@ -744,16 +677,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get status => 'Status';
 
   @override
-  String get progress => 'Progress';
-
-  @override
   String get progressPercent => 'Progress %';
-
-  @override
-  String get speed => 'Speed';
-
-  @override
-  String get size => 'Size';
 
   @override
   String get started => 'Started';
@@ -762,19 +686,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ended => 'Ended';
 
   @override
-  String get duration => 'Duration';
-
-  @override
   String get eta => 'ETA';
-
-  @override
-  String get queued => 'Queued';
-
-  @override
-  String get downloaded => 'Downloaded';
-
-  @override
-  String get resume => 'Resume';
 
   @override
   String get failed => 'Failed';
@@ -792,19 +704,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectDownloadRange => 'Select Download Range';
 
   @override
-  String get totalPages => 'Total Pages';
-
-  @override
   String get useSliderToSelectRange => 'Use slider to select range:';
 
   @override
   String get orEnterManually => 'Or enter manually:';
-
-  @override
-  String get startPage => 'Start Page';
-
-  @override
-  String get endPage => 'End Page';
 
   @override
   String get quickSelections => 'Quick selections:';
@@ -896,6 +799,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The service might be under maintenance';
 
   @override
+  String get tryRefreshingPage => 'Try refreshing the page';
+
+  @override
   String get waitForBypass => 'Wait for automatic bypass to complete';
 
   @override
@@ -923,8 +829,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryAgainLater => 'Try again later';
 
   @override
+  String get tryDifferentKeywords => 'Try different keywords';
+
+  @override
   String get serverUnavailable =>
       'The server is currently unavailable. Please try again later.';
+
+  @override
+  String get removeSomeFilters => 'Remove some filters';
+
+  @override
+  String get checkSpelling => 'Check spelling';
 
   @override
   String get useBroaderSearchTerms => 'Use broader search terms';
@@ -987,9 +902,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorLoadingFavorites => 'Error Loading Favorites';
 
   @override
-  String get removeFavorite => 'Remove Favorite';
-
-  @override
   String get removeFavoriteConfirmation =>
       'Are you sure you want to remove this content from favorites?';
 
@@ -1023,23 +935,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String exportFailed(String error) {
-    return 'Export Failed: $error';
-  }
-
-  @override
   String selectedCount(int count) {
     return '$count selected';
   }
 
   @override
   String get selectFavorites => 'Select favorites';
-
-  @override
-  String get exportAction => 'Export';
-
-  @override
-  String get refreshAction => 'Refresh';
 
   @override
   String get deleteSelected => 'Delete selected';
@@ -1049,9 +950,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectAll => 'Select All';
-
-  @override
-  String get clearSelection => 'Clear';
 
   @override
   String get removingFromFavorites => 'Removing from favorites...';
@@ -1140,9 +1038,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetToDefault => 'Reset to Default';
 
   @override
-  String get resetToDefaults => 'Reset to Defaults';
-
-  @override
   String get generalSettings => 'General Settings';
 
   @override
@@ -1198,22 +1093,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingModeLabel => 'Reading Mode: Horizontal Pages';
 
   @override
-  String get keepScreenOnLabel => 'Keep Screen On: Off';
-
-  @override
-  String get showUILabel => 'Show UI: On';
-
-  @override
   String get areYouSure => 'Are you sure you want to proceed?';
 
   @override
   String get readerSettingsResetSuccess =>
       'Reader settings have been reset to defaults.';
-
-  @override
-  String failedToResetSettings(String error) {
-    return 'Failed to reset settings: $error';
-  }
 
   @override
   String get readingHistory => 'Reading History';
@@ -1228,9 +1112,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cleanupSettings => 'Cleanup Settings';
 
   @override
-  String get removeFromHistory => 'Remove from History';
-
-  @override
   String get removeFromHistoryQuestion =>
       'Remove this item from reading history?';
 
@@ -1243,12 +1124,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get manualCleanupConfirmation =>
       'This will perform cleanup based on your current settings. Continue?';
-
-  @override
-  String get noReadingHistory => 'No Reading History';
-
-  @override
-  String get errorLoadingHistory => 'Error Loading History';
 
   @override
   String get nextPage => 'Next Page';
@@ -1278,7 +1153,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unableToCheckConnection => 'Unable to check connection.';
 
   @override
+  String get noInternetConnection => 'No internet connection';
+
+  @override
   String get connectionError => 'Connection error';
+
+  @override
+  String get serverError => 'Server error';
 
   @override
   String get low => 'Low';
@@ -1338,9 +1219,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comfortReading => 'Comfortable Reading';
 
   @override
-  String get sortBy => 'Sort by';
-
-  @override
   String get filterBy => 'Filter by';
 
   @override
@@ -1354,9 +1232,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ok => 'OK';
-
-  @override
-  String get cancel => 'Cancel';
 
   @override
   String get exitApp => 'Exit App';
@@ -1374,15 +1249,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
-  String get loading => 'Loading...';
-
-  @override
-  String get error => 'Error';
-
-  @override
-  String get retry => 'Retry';
-
-  @override
   String get tryAgain => 'Try Again';
 
   @override
@@ -1396,9 +1262,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clear => 'Clear';
-
-  @override
-  String get remove => 'Remove';
 
   @override
   String get share => 'Share';
@@ -1425,41 +1288,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retryAction => 'Retry';
 
   @override
-  String hours(int count) {
-    return '${count}h';
-  }
-
-  @override
-  String days(int count) {
-    return '$count days';
-  }
-
-  @override
   String get unknown => 'Unknown';
-
-  @override
-  String daysAgo(int count, String suffix) {
-    return '$count$suffix ago';
-  }
-
-  @override
-  String hoursAgo(int count, String suffix) {
-    return '$count$suffix ago';
-  }
-
-  @override
-  String minutesAgo(int count, String suffix) {
-    return '$count$suffix ago';
-  }
 
   @override
   String get noData => 'No Data';
 
   @override
-  String get unknownTitle => 'Unknown Title';
-
-  @override
-  String get offlineContentError => 'Offline Content Error';
+  String get downloadError => 'Download Error';
 
   @override
   String get other => 'Other';
@@ -1512,8 +1347,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String days(int count) {
+    return '$count days';
+  }
+
+  @override
   String get analyticsSubtitle =>
       'Helps app development with local data (not shared)';
+
+  @override
+  String get loadingContent => 'Loading content...';
 
   @override
   String get loadingError => 'Loading Error';
@@ -1550,6 +1393,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continuousScroll => 'Continuous Scroll';
 
   @override
+  String get keepScreenOnLabel => 'Keep Screen On: Off';
+
+  @override
+  String get showUILabel => 'Show UI: On';
+
+  @override
   String get keepScreenOn => 'Keep Screen On';
 
   @override
@@ -1566,10 +1415,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get platformNotSupportedInstall =>
       'Please install and run this app on an Android device.';
-
-  @override
-  String get storagePermissionRequired =>
-      'Storage permission is required for downloads. Please grant storage permission in app settings.';
 
   @override
   String get storagePermissionExplanation =>
@@ -1589,11 +1434,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSettings => 'Open Settings';
 
   @override
+  String get noReadingHistory => 'No Reading History';
+
+  @override
   String get readingHistoryMessage =>
       'Your reading history will appear here as you read content.';
 
   @override
   String get startReading => 'Start Reading';
+
+  @override
+  String get browsePopularContent => 'Browse popular content';
 
   @override
   String get searchSomethingInteresting => 'Search for something interesting';
@@ -1653,9 +1504,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pageNumber => 'Page number';
-
-  @override
   String get go => 'Go';
 
   @override
@@ -1688,10 +1536,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fetchingMetadata => 'Fetching metadata and images...';
 
   @override
-  String get thisMayTakeMoments => 'This may take a few moments';
+  String get thisMayTakeMoments => 'This may take a few moments...';
 
   @override
-  String get youAreOffline => 'You are offline. Some features may be limited.';
+  String get youAreOffline => 'You are offline';
 
   @override
   String get goOnline => 'Go Online';
@@ -1715,6 +1563,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statistics => 'Statistics';
 
   @override
+  String get failedToLoadContent => 'Failed to load content';
+
+  @override
   String get shareContent => 'Share Content';
 
   @override
@@ -1730,11 +1581,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewDownloadsAction => 'View';
-
-  @override
-  String failedToStartDownload(String error) {
-    return 'Failed to start download: $error';
-  }
 
   @override
   String get linkCopiedToClipboard => 'Link copied to clipboard';
@@ -1769,19 +1615,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pagesLabel => 'Pages';
 
   @override
-  String get languageLabel => 'Language';
-
-  @override
-  String get artistLabel => 'Artist';
-
-  @override
-  String get charactersLabel => 'Characters';
-
-  @override
-  String get parodiesLabel => 'Parodies';
-
-  @override
-  String get groupsLabel => 'Groups';
+  String artistLabel(String name) {
+    return 'Artist: $name';
+  }
 
   @override
   String get uploadedLabel => 'Uploaded';
@@ -1793,16 +1629,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchChapters => 'Search chapters...';
 
   @override
-  String get noChaptersFound => 'No chapters found';
+  String get noChaptersFound => 'No chapters found.';
 
   @override
   String get favoritesLabel => 'Favorites';
-
-  @override
-  String get tagsLabel => 'Tags';
-
-  @override
-  String get artistsLabel => 'Artists';
 
   @override
   String get relatedLabel => 'Related';
@@ -1834,6 +1664,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteSelectedTooltip => 'Delete selected';
 
   @override
+  String get exportAction => 'Export';
+
+  @override
+  String get refreshAction => 'Refresh';
+
+  @override
   String get selectAllAction => 'Select All';
 
   @override
@@ -1857,7 +1693,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get favoritesDeletedMessage => 'Favorites deleted successfully';
 
   @override
-  String get failedToDeleteFavoritesMessage => 'Failed to delete favorites';
+  String get failedToDeleteFavoritesMessage => 'Failed to delete favorites.';
 
   @override
   String get confirmDeleteFavoritesTitle => 'Delete Favorites';
@@ -1903,19 +1739,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineContentTitle => 'Offline Content';
 
   @override
+  String get offlineContentError => 'Offline Content Error';
+
+  @override
   String get favorited => 'Favorited';
 
   @override
   String get favorite => 'Favorite';
 
   @override
+  String get errorLoadingHistory => 'Error Loading History';
+
+  @override
   String get errorLoadingFavoritesTitle => 'Error Loading Favorites';
 
   @override
   String get filterDataTitle => 'Filter Data';
-
-  @override
-  String get clearAllAction => 'Clear All';
 
   @override
   String searchFilterHint(String filterType) {
@@ -1928,7 +1767,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get errorLoadingFilterDataTitle => 'Error loading filter data';
+  String get errorLoadingFilterDataTitle => 'Error Loading Filter Data';
 
   @override
   String noFilterTypeAvailable(String filterType) {
@@ -1965,7 +1804,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get popularSearchesTitle => 'Popular Searches';
 
   @override
-  String get recentSearchesTitle => 'Recent Searches';
+  String get clearAllAction => 'Clear All';
 
   @override
   String get pressSearchButtonMessage =>
@@ -1986,7 +1825,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchErrorTitle => 'Search Error';
 
   @override
-  String get noResultsFoundTitle => 'No results found';
+  String get noResultsFoundTitle => 'No Results Found';
 
   @override
   String pageText(int pageNumber) {
@@ -2003,6 +1842,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onlineStatus => 'ONLINE';
+
+  @override
+  String get sortBy => 'Sort by';
 
   @override
   String get errorOccurred => 'An error occurred';
@@ -2040,10 +1882,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suggestionTryWifiMobile =>
-      'Try switching between WiFi and mobile data';
+      'Try switching between Wi-Fi and mobile data';
 
   @override
-  String get suggestionRestartRouter => 'Restart your router if using WiFi';
+  String get suggestionRestartRouter => 'Restart your router if using Wi-Fi';
 
   @override
   String get suggestionCheckWebsite => 'Check if the website is down';
@@ -2096,10 +1938,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overallProgress => 'Overall Progress';
 
   @override
-  String get total => 'Total';
+  String get active => 'Active';
 
   @override
-  String get done => 'Done';
+  String get queued => 'Queued';
+
+  @override
+  String get speed => 'Speed';
 
   @override
   String downloadsFailed(int count, String plural) {
@@ -2107,7 +1952,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get view => 'View';
+
+  @override
   String get processing => 'Processing...';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get unknownTitle => 'Unknown Title';
 
   @override
   String get readingCompleted => 'Completed';
@@ -2116,7 +1970,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readAgain => 'Read Again';
 
   @override
-  String get continueReading => 'Continue Reading';
+  String get continueReading => 'Continue';
+
+  @override
+  String get removeFromHistory => 'Remove from History';
 
   @override
   String get lessThanOneMinute => 'Less than 1 minute';
@@ -2131,10 +1988,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pause => 'Pause';
 
   @override
-  String get convertToPdf => 'Convert to PDF';
+  String get resume => 'Resume';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get retry => 'Retry';
 
   @override
   String get details => 'Details';
+
+  @override
+  String get remove => 'Remove';
 
   @override
   String get downloadActionPause => 'Pause';
@@ -2179,6 +2045,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get duration => 'Duration';
+
+  @override
   String get downloadSettingsTitle => 'Download Settings';
 
   @override
@@ -2210,10 +2079,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networkSection => 'Network';
 
   @override
-  String get wifiOnlyLabel => 'WiFi Only';
+  String get wifiOnlyLabel => 'Wi-Fi Only';
 
   @override
-  String get wifiOnlyDescription => 'Only download when connected to WiFi';
+  String get wifiOnlyDescription => 'Only download when connected to Wi-Fi';
 
   @override
   String get downloadTimeoutLabel => 'Download Timeout';
@@ -2247,16 +2116,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortByLabel => 'Sort by';
 
   @override
-  String get categoryLabel => 'Category';
+  String get recentSearchesTitle => 'Recent Searches';
 
   @override
   String get includeTagsLabel => 'Include tags (comma separated)';
 
   @override
   String get includeTagsHint => 'e.g., romance, comedy, school';
-
-  @override
-  String get excludeTagsLabel => 'Exclude Tags';
 
   @override
   String get excludeTagsHint => 'e.g., horror, violence';
@@ -2286,6 +2152,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearAllFilters => 'Clear All';
 
   @override
+  String get appSubtitle => 'Enhanced Reading Experience';
+
+  @override
   String get initializingApp => 'Initializing Application...';
 
   @override
@@ -2306,6 +2175,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get launchingApp => 'Launching main application...';
 
   @override
+  String downloaded(String size) {
+    return '$size downloaded';
+  }
+
+  @override
   String get imageNotAvailable => 'Image not available';
 
   @override
@@ -2314,9 +2188,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pageNumber(int pageNumber) {
+    return 'Page $pageNumber';
+  }
+
+  @override
+  String get checkInternetConnection => 'Check your internet connection';
+
+  @override
   String selectedItemsCount(int count) {
     return '$count selected';
   }
+
+  @override
+  String get removeFavorite => 'Remove Favorite';
 
   @override
   String get noImage => 'No image';
@@ -2329,7 +2214,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some features are limited. Connect to internet for full access.';
 
   @override
-  String get wifi => 'WIFI';
+  String get wifi => 'WI-FI';
 
   @override
   String get ethernet => 'ETHERNET';
@@ -2411,9 +2296,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationMessages => 'Notification Messages';
 
   @override
-  String get convertingToPdf => 'Converting to PDF...';
-
-  @override
   String convertingToPdfWithTitle(String title) {
     return 'Converting $title to PDF...';
   }
@@ -2429,6 +2311,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get progress => 'Progress';
+
+  @override
   String get pdfCreatedSuccessfully => 'PDF Created Successfully';
 
   @override
@@ -2437,13 +2322,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String pdfConversionFailed(String contentId, String error) {
-    return 'PDF conversion failed for $contentId: $error';
-  }
-
-  @override
-  String pdfConversionFailedWithError(String title, String error) {
-    return 'PDF conversion failed for $title: $error';
+  String downloadStarted(String title) {
+    return 'Download Started';
   }
 
   @override
@@ -2457,9 +2337,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get downloadComplete => 'Download Complete';
+
+  @override
   String downloadedWithTitle(String title) {
     return 'Downloaded: $title';
   }
+
+  @override
+  String get downloadFailed => 'Download Failed';
 
   @override
   String downloadFailedWithTitle(String title) {
@@ -2504,9 +2390,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get startPage => 'Start Page';
+
+  @override
+  String get endPage => 'End Page';
+
+  @override
   String invalidPageRange(int start, int end, int total) {
     return 'Invalid page range: $start-$end (total: $total)';
   }
+
+  @override
+  String get storagePermissionRequired =>
+      'Storage permission is required for downloads. Please grant storage permission in app settings.';
 
   @override
   String noDataReceived(String url) {
@@ -2526,8 +2422,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pdfConversionMessages => 'PDF Conversion Service Messages';
 
   @override
+  String pdfConversionStarted(String contentId) {
+    return 'PDF conversion started for $contentId';
+  }
+
+  @override
   String pdfConversionCompleted(String contentId) {
     return 'PDF conversion completed successfully for $contentId';
+  }
+
+  @override
+  String pdfConversionFailed(String contentId, String error) {
+    return 'PDF conversion failed for $contentId: $error';
   }
 
   @override
@@ -2542,6 +2448,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String pdfSplitRequired(int totalParts, int totalPages) {
     return 'Splitting into $totalParts parts ($totalPages pages)';
   }
+
+  @override
+  String get totalPages => 'Total Pages';
 
   @override
   String pdfCreatedFiles(int partsCount, int pageCount) {
@@ -2744,11 +2653,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pages => 'Pages';
+
+  @override
   String get offlineManagerMessages => 'Offline Content Manager Messages';
 
   @override
   String offlineContentAvailable(String contentId, String available) {
-    return 'Content $contentId is available offline: $available';
+    return 'Offline Content Available';
   }
 
   @override
@@ -2805,19 +2717,66 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String daysAgo(int count, String suffix) {
+    return '$count$suffix ago';
+  }
+
+  @override
+  String hoursAgo(int count, String suffix) {
+    return '$count$suffix ago';
+  }
+
+  @override
+  String minutesAgo(int count, String suffix) {
+    return '$count$suffix ago';
+  }
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
   String get queryLabel => 'Query';
+
+  @override
+  String get tagsLabel => 'Tags';
+
+  @override
+  String get excludeTagsLabel => 'Exclude Tags';
+
+  @override
+  String get groupsLabel => 'Groups';
 
   @override
   String get excludeGroupsLabel => 'Exclude Groups';
 
   @override
+  String get charactersLabel => 'Characters';
+
+  @override
   String get excludeCharactersLabel => 'Exclude Characters';
+
+  @override
+  String get parodiesLabel => 'Parodies';
 
   @override
   String get excludeParodiesLabel => 'Exclude Parodies';
 
   @override
+  String get artistsLabel => 'Artists';
+
+  @override
   String get excludeArtistsLabel => 'Exclude Artists';
+
+  @override
+  String get languageLabel => 'Language';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String hours(int count) {
+    return '${count}h';
+  }
 
   @override
   String minutes(int count) {
@@ -2867,6 +2826,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Successfully reset all settings to defaults';
 
   @override
+  String failedToResetSettings(String error) {
+    return 'Failed to reset settings: $error';
+  }
+
+  @override
   String get settingsNotLoaded => 'Settings not loaded';
 
   @override
@@ -2902,6 +2866,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get failedToUpdateSettings =>
       'Failed to update settings. Please try again.';
+
+  @override
+  String get loadingHistory => 'Loading history';
 
   @override
   String get noHistoryFound => 'No history found';
@@ -3091,7 +3058,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get waitingForWifiConnection => 'Waiting for WiFi connection';
+  String get waitingForWifiConnection => 'Waiting for Wi-Fi connection';
 
   @override
   String failedToQueueDownload(String error) {
@@ -3105,6 +3072,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadCancelledByUser => 'Download cancelled by user';
+
+  @override
+  String get pausingAllDownloads => 'Pausing all downloads';
+
+  @override
+  String get resumingAllDownloads => 'Resuming all downloads';
+
+  @override
+  String get cancellingAllDownloads => 'Cancelling all downloads';
+
+  @override
+  String get clearingCompletedDownloads => 'Clearing completed downloads';
+
+  @override
+  String failedToQueueRangeDownload(String error) {
+    return 'Failed to queue range download: $error';
+  }
 
   @override
   String failedToPauseDownload(String error) {
@@ -3142,18 +3126,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pausingAllDownloads => 'Pausing all downloads';
-
-  @override
-  String get resumingAllDownloads => 'Resuming all downloads';
-
-  @override
-  String get cancellingAllDownloads => 'Cancelling all downloads';
-
-  @override
-  String get clearingCompletedDownloads => 'Clearing completed downloads';
-
-  @override
   String failedToPauseAllDownloads(String error) {
     return 'Failed to pause all downloads: $error';
   }
@@ -3166,11 +3138,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String failedToCancelAllDownloads(String error) {
     return 'Failed to cancel all downloads: $error';
-  }
-
-  @override
-  String failedToQueueRangeDownload(String error) {
-    return 'Failed to queue range download: $error';
   }
 
   @override
@@ -3205,6 +3172,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String exportFailed(String error) {
+    return 'Export Failed: $error';
+  }
+
+  @override
   String failedToDeleteDirectory(String path, String error) {
     return 'Failed to delete directory: $path, error: $error';
   }
@@ -3222,11 +3194,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String cannotOpenIncompleteDownload(String contentId) {
     return 'Cannot open - download not completed or path missing for $contentId';
-  }
-
-  @override
-  String errorOpeningDownloadedContent(String error) {
-    return 'Error opening downloaded content: $error';
   }
 
   @override
@@ -3288,6 +3255,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String errorRetryingPdfConversion(String error) {
     return 'Error retrying PDF conversion: $error';
+  }
+
+  @override
+  String errorOpeningDownloadedContent(String error) {
+    return 'Error opening downloaded content: $error';
   }
 
   @override
@@ -3375,11 +3347,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Storage permission required to scan backup folders';
 
   @override
-  String syncResult(int synced, int updated) {
-    return 'Sync Result: $synced imported, $updated updated';
-  }
-
-  @override
   String get exportingLibrary => 'Exporting Library';
 
   @override
@@ -3399,6 +3366,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get size => 'Size';
+
+  @override
   String failedToDeleteContent(String title) {
     return 'Failed to delete $title';
   }
@@ -3413,6 +3383,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cacheManagementDebug => '🚀 Cache Management (Debug)';
+
+  @override
+  String get convertToPdf => 'Convert to PDF';
+
+  @override
+  String get convertingToPdf => 'Converting to PDF...';
+
+  @override
+  String pdfConversionFailedWithError(String title, String error) {
+    return 'PDF conversion failed for $title: $error';
+  }
 
   @override
   String get syncStarted => 'Syncing Backup...';
@@ -3431,11 +3412,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get total => 'Total';
+
+  @override
   String get syncCompleted => 'Sync Completed';
 
   @override
   String syncCompletedMessage(int synced, int updated) {
     return 'Imported: $synced, Updated: $updated';
+  }
+
+  @override
+  String syncResult(int synced, int updated) {
+    return 'Sync Result: $synced imported, $updated updated';
   }
 
   @override
@@ -3681,5 +3670,1342 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sourceImportFailedFromZip(String error) {
     return 'Failed to import ZIP source: $error';
+  }
+
+  @override
+  String get aboutTitle => 'About';
+
+  @override
+  String get appIsUpToDate => 'App is up to date!';
+
+  @override
+  String checkFailedMessage(String message) {
+    return 'Check failed: $message';
+  }
+
+  @override
+  String get updatesSection => 'Updates';
+
+  @override
+  String get communityAndInfo => 'Community & Info';
+
+  @override
+  String get githubRepository => 'GitHub Repository';
+
+  @override
+  String get viewSourceCodeContribute => 'View source code & contribute';
+
+  @override
+  String get openSourceLicenses => 'Open Source Licenses';
+
+  @override
+  String get librariesUsedInApp => 'Libraries used in this app';
+
+  @override
+  String get builtWith => 'Built With';
+
+  @override
+  String get madeWithLoveBy => 'Made with ❤️ by Shirokun20';
+
+  @override
+  String get allRightsReserved => '© 2025 All Rights Reserved';
+
+  @override
+  String get appUpdates => 'App Updates';
+
+  @override
+  String get checkForUpdates => 'Check for updates';
+
+  @override
+  String get checking => 'Checking...';
+
+  @override
+  String get updateAvailable => 'Update Available!';
+
+  @override
+  String get upToDate => 'Up to date';
+
+  @override
+  String get checkFailed => 'Check failed';
+
+  @override
+  String couldNotLaunchUrl(String url) {
+    return 'Could not launch $url';
+  }
+
+  @override
+  String get solveCaptchaTitle => 'Solve CAPTCHA';
+
+  @override
+  String get reloadChallenge => 'Reload challenge';
+
+  @override
+  String get loginToCrotpedia => 'Login to Crotpedia';
+
+  @override
+  String syncedAsUser(String username) {
+    return 'Synced as $username';
+  }
+
+  @override
+  String loggedInAsUser(String username) {
+    return 'Logged in as $username';
+  }
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get loginViaSecureBrowser => 'Login via Secure Browser';
+
+  @override
+  String get loginIncomplete => 'Login incomplete. Please try again.';
+
+  @override
+  String loginFailedError(String error) {
+    return 'Login failed: $error';
+  }
+
+  @override
+  String get doujinListTitle => 'Doujin List (A-Z)';
+
+  @override
+  String get errorLoadingDoujinList => 'Error Loading Doujin List';
+
+  @override
+  String get noDoujinsFound => 'No Doujins Found';
+
+  @override
+  String get doujinListEmpty => 'The doujin list is empty.';
+
+  @override
+  String get searchDoujinsHint => 'Search doujins...';
+
+  @override
+  String cannotParseSlug(String url) {
+    return 'Cannot parse slug from URL: $url';
+  }
+
+  @override
+  String errorParsingUrl(String url) {
+    return 'Error parsing URL: $url';
+  }
+
+  @override
+  String get genreListTitle => 'Genre List';
+
+  @override
+  String get errorLoadingGenres => 'Error Loading Genres';
+
+  @override
+  String get noGenresFound => 'No Genres Found';
+
+  @override
+  String get noGenresAvailable =>
+      'There are no genres available at the moment.';
+
+  @override
+  String get projectRequests => 'Project Requests';
+
+  @override
+  String get errorLoadingRequests => 'Error Loading Requests';
+
+  @override
+  String get noRequestsFound => 'No Requests Found';
+
+  @override
+  String get noProjectRequests =>
+      'There are no project requests at the moment.';
+
+  @override
+  String get manageCollections => 'Manage Collections';
+
+  @override
+  String get addToFavoritesFirst => 'Add to favorites first';
+
+  @override
+  String get favoriteOffline => 'Favorite Offline';
+
+  @override
+  String get favoriteOnline => 'Favorite Online';
+
+  @override
+  String get favoriteBoth => 'Favorite Both';
+
+  @override
+  String get unsupportedGalleryId =>
+      'Unsupported gallery ID for online favorite.';
+
+  @override
+  String get addToFavoritesManageCollections =>
+      'Add to favorites first to manage collections';
+
+  @override
+  String get loginRequiredAction => 'Login required for this action';
+
+  @override
+  String get newCollection => 'New collection';
+
+  @override
+  String get collectionName => 'Collection name';
+
+  @override
+  String failedToCreateCollection(String error) {
+    return 'Failed to create collection: $error';
+  }
+
+  @override
+  String get clearSelection => 'Clear Selection';
+
+  @override
+  String get refreshingDownloads => 'Refreshing downloads...';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String failedToSaveCollection(String error) {
+    return 'Failed to save collection: $error';
+  }
+
+  @override
+  String get renameCollection => 'Rename collection';
+
+  @override
+  String get pressBackToExit => 'Press back again to exit';
+
+  @override
+  String get backToDetail => 'Back to Detail';
+
+  @override
+  String failedToOpenPdf(String error) {
+    return 'Failed to open PDF: $error';
+  }
+
+  @override
+  String get noChaptersAvailable => 'No chapters available';
+
+  @override
+  String failedToApplySearch(String error) {
+    return 'Failed to apply search: $error';
+  }
+
+  @override
+  String get addTag => 'Add tag';
+
+  @override
+  String includeCountLabel(int count) {
+    return 'Include $count';
+  }
+
+  @override
+  String excludeCountLabel(int count) {
+    return 'Exclude $count';
+  }
+
+  @override
+  String get searchTagsHint => 'Search tags...';
+
+  @override
+  String applyWithCounts(int include, int exclude) {
+    return 'Apply ($include / $exclude)';
+  }
+
+  @override
+  String applyWithCount(int count) {
+    return 'Apply ($count)';
+  }
+
+  @override
+  String get searchByTitleHint => 'Search by title, ID, or keyword...';
+
+  @override
+  String get pagesLabel2 => 'Pages';
+
+  @override
+  String get favoritesGte => 'Favorites ≥';
+
+  @override
+  String get manage => 'Manage';
+
+  @override
+  String get local => 'Local';
+
+  @override
+  String get rules => 'Rules';
+
+  @override
+  String failedToSave(String error) {
+    return 'Failed to save: $error';
+  }
+
+  @override
+  String failedToDelete(String error) {
+    return 'Failed to delete: $error';
+  }
+
+  @override
+  String get searchExampleHint => 'romance, artist:example, 12345';
+
+  @override
+  String get refreshOnline => 'Refresh online';
+
+  @override
+  String get addRules => 'Add rules';
+
+  @override
+  String get pickFromTags => 'Pick from tags';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get uninstallSource => 'Uninstall source';
+
+  @override
+  String get uninstallSourceTitle => 'Uninstall Source';
+
+  @override
+  String get uninstall => 'Uninstall';
+
+  @override
+  String failedToUninstall(String sourceId, String error) {
+    return 'Failed to uninstall \"$sourceId\": $error';
+  }
+
+  @override
+  String get chooseOneSource => 'Choose one source to install.';
+
+  @override
+  String get chooseMultipleSources => 'Choose one or more sources to install.';
+
+  @override
+  String installSelectedCount(int count) {
+    return 'Install Selected ($count)';
+  }
+
+  @override
+  String get installSelected => 'Install Selected';
+
+  @override
+  String get offlineModeLabel => 'Offline Mode';
+
+  @override
+  String get descriptionLabel => 'Description';
+
+  @override
+  String get aliasesLabel => 'Aliases';
+
+  @override
+  String get searchContentWithTag => 'Search Content With This Tag';
+
+  @override
+  String get backToFilters => 'Back to Filters';
+
+  @override
+  String get dnsSettings => 'DNS Settings';
+
+  @override
+  String get resetToDefaults => 'Reset to defaults';
+
+  @override
+  String get enableDnsOverHttps => 'Enable DNS-over-HTTPS';
+
+  @override
+  String get dnsServerIp => 'DNS Server IP';
+
+  @override
+  String get primaryDnsAddress => 'Primary DNS server address';
+
+  @override
+  String get dnsOverHttpsUrl => 'DNS-over-HTTPS endpoint URL';
+
+  @override
+  String get resetDnsSettings => 'Reset DNS Settings';
+
+  @override
+  String get syncRefresh => 'Sync/Refresh';
+
+  @override
+  String get importFromBackup => 'Import from Backup';
+
+  @override
+  String get importZipFile => 'Import ZIP File';
+
+  @override
+  String get exportLibrary => 'Export Library';
+
+  @override
+  String get loginRequired => 'Login Required';
+
+  @override
+  String get openPdf => 'Open PDF';
+
+  @override
+  String get maybeLater => 'Maybe Later';
+
+  @override
+  String get noContentAtMoment => 'No content available at the moment.';
+
+  @override
+  String get refreshingContentMsg => 'Refreshing content...';
+
+  @override
+  String get retryingMsg => 'Retrying...';
+
+  @override
+  String get clearingSearchMsg => 'Clearing search...';
+
+  @override
+  String failedToClearSearch(String error) {
+    return 'Failed to clear search results: $error';
+  }
+
+  @override
+  String get searchingContentMsg => 'Searching content...';
+
+  @override
+  String get noContentMatchingSearch =>
+      'No content found matching your search criteria.';
+
+  @override
+  String get loadingPopularContent => 'Loading popular content...';
+
+  @override
+  String get noPopularContent => 'No popular content available at the moment.';
+
+  @override
+  String get loadingContentByTag => 'Loading content by tag...';
+
+  @override
+  String get noContentForTag => 'No content found for this tag.';
+
+  @override
+  String loadingPageNum(int page) {
+    return 'Loading page $page...';
+  }
+
+  @override
+  String get noContentOnPage => 'No content found on this page.';
+
+  @override
+  String get noDownloadableImages => 'This content has no downloadable images.';
+
+  @override
+  String failedToStartDownload(String error) {
+    return 'Failed to start download: $error';
+  }
+
+  @override
+  String get bulkDeleteCompleted => 'Bulk Delete Completed';
+
+  @override
+  String get bulkDeletePartial => 'Bulk Delete Partial';
+
+  @override
+  String get failedToInitSearch => 'Failed to initialize search';
+
+  @override
+  String get searchingMsg => 'Searching...';
+
+  @override
+  String noResultsForQuery(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String get searchingWithFiltersMsg => 'Searching with filters...';
+
+  @override
+  String get noResultsWithFilters => 'No results found with current filters';
+
+  @override
+  String invalidFilterErrors(String errors) {
+    return 'Invalid filter: $errors';
+  }
+
+  @override
+  String get noResultsGeneric => 'No Results Found';
+
+  @override
+  String get loadingConfigMsg => 'Loading configuration...';
+
+  @override
+  String get initTagsDbMsg => 'Initializing tags database...';
+
+  @override
+  String downloadingTagsMsg(String source) {
+    return 'Downloading tags for $source...';
+  }
+
+  @override
+  String initFailedMsg(String error) {
+    return 'Initialization failed: $error';
+  }
+
+  @override
+  String get initBypassMsg => 'Initializing bypass system...';
+
+  @override
+  String get connectingToSite => 'Connecting to nhentai.net...';
+
+  @override
+  String get connectedSuccess => 'Successfully connected to nhentai.net';
+
+  @override
+  String get failedToConnect =>
+      'Failed to connect to nhentai.net. Please try again.';
+
+  @override
+  String failedInitBypass(String error) {
+    return 'Failed to initialize bypass system: $error';
+  }
+
+  @override
+  String get bypassFailed => 'Bypass verification failed. Please try again.';
+
+  @override
+  String get offlineBypassFailed => 'Offline Mode (Bypass Failed)';
+
+  @override
+  String errorBypassResult(String error) {
+    return 'Error processing bypass result: $error';
+  }
+
+  @override
+  String get readyOfflineLimited => 'Ready (Offline Mode - Limited)';
+
+  @override
+  String get downloadingInitConfig => 'Downloading initial configuration...';
+
+  @override
+  String get readyOffline => 'Ready (Offline Mode)';
+
+  @override
+  String get connectingMsg => 'Connecting...';
+
+  @override
+  String failedLoadOffline(String error) {
+    return 'Failed to load offline content: $error';
+  }
+
+  @override
+  String get noInternetCheckOffline =>
+      'No internet connection. Checking offline content...';
+
+  @override
+  String foundOfflineItems(int count) {
+    return 'Found $count offline items. Continuing...';
+  }
+
+  @override
+  String get noInternetNoOffline =>
+      'No internet connection and no offline content available.';
+
+  @override
+  String unableCheckOffline(String error) {
+    return 'Unable to check offline content. $error';
+  }
+
+  @override
+  String get offlineLimitedFeatures => 'Offline Mode (Limited Features)';
+
+  @override
+  String get readyOfflineLimitedFeatures =>
+      'Ready (Offline Mode - Limited Features)';
+
+  @override
+  String failedEnableOffline(String error) {
+    return 'Failed to enable offline mode: $error';
+  }
+
+  @override
+  String failedCheckOffline(String error) {
+    return 'Failed to check offline content: $error';
+  }
+
+  @override
+  String failedOpenChapter(String message) {
+    return 'Failed to open chapter: $message';
+  }
+
+  @override
+  String failedInitFilterData(String error) {
+    return 'Failed to initialize filter data: $error';
+  }
+
+  @override
+  String failedSwitchFilterType(String error) {
+    return 'Failed to switch filter type: $error';
+  }
+
+  @override
+  String get failedMonitorNetwork => 'Failed to monitor network connectivity';
+
+  @override
+  String failedInitNetwork(String error) {
+    return 'Failed to initialize network monitoring: $error';
+  }
+
+  @override
+  String failedUpdateConnection(String error) {
+    return 'Failed to update connection status: $error';
+  }
+
+  @override
+  String failedCheckConnectivity(String error) {
+    return 'Failed to check connectivity: $error';
+  }
+
+  @override
+  String failedSearchOffline(String error) {
+    return 'Failed to search offline content: $error';
+  }
+
+  @override
+  String get failedLoadOfflineContent => 'Failed to load offline content';
+
+  @override
+  String failedScanBackup(String error) {
+    return 'Failed to scan backup folder: $error';
+  }
+
+  @override
+  String failedLoadContentError(String error) {
+    return 'Failed to load content: $error';
+  }
+
+  @override
+  String get chapterNavNotAvailable => 'Chapter navigation not available';
+
+  @override
+  String get unknownChapter => 'Unknown Chapter';
+
+  @override
+  String get failedLoadChapterImages => 'Failed to load chapter images';
+
+  @override
+  String failedLoadChapter(String error) {
+    return 'Failed to load chapter: $error';
+  }
+
+  @override
+  String importFailedError(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String errorImportingZip(String error) {
+    return 'Error importing ZIP: $error';
+  }
+
+  @override
+  String get error => 'Error';
+
+  @override
+  String get lightThemeDesc => 'Light theme with bright colors';
+
+  @override
+  String get darkThemeDesc => 'Dark theme with muted colors';
+
+  @override
+  String get amoledThemeDesc => 'Pure black theme for AMOLED displays';
+
+  @override
+  String get systemThemeDesc => 'Follow system theme settings';
+
+  @override
+  String nItems(int count) {
+    return '$count items';
+  }
+
+  @override
+  String nPages(int count) {
+    return '$count pages';
+  }
+
+  @override
+  String nGalleries(int count) {
+    return '$count galleries';
+  }
+
+  @override
+  String sourceUninstalled(String sourceId) {
+    return 'Source \"$sourceId\" uninstalled.';
+  }
+
+  @override
+  String selectedSourcesCount(int count) {
+    return 'Selected sources: $count';
+  }
+
+  @override
+  String timeoutMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get dohUrlOptional => 'DoH URL (Optional)';
+
+  @override
+  String get dnsEncryptedDescription =>
+      'Use encrypted DNS for enhanced privacy and bypass censorship';
+
+  @override
+  String get usingSystemDns => 'Using system default DNS resolver';
+
+  @override
+  String get dnsProvider => 'DNS Provider';
+
+  @override
+  String get customConfiguration => 'Custom Configuration';
+
+  @override
+  String get aboutDoh => 'About DNS-over-HTTPS';
+
+  @override
+  String get dohDescription =>
+      'DNS-over-HTTPS (DoH) encrypts your DNS queries, preventing ISPs and network administrators from monitoring which websites you visit. It also helps bypass DNS-based censorship and geo-restrictions.';
+
+  @override
+  String get dnsQueriesEncrypted => 'All DNS queries encrypted via HTTPS';
+
+  @override
+  String get enhancedPrivacy => 'Enhanced privacy and security';
+
+  @override
+  String get resetDnsConfirmation =>
+      'This will reset DNS settings to system defaults. Continue?';
+
+  @override
+  String get collections => 'Collections';
+
+  @override
+  String get collectionsUpdatedSuccessfully =>
+      'Collections updated successfully';
+
+  @override
+  String get createCollection => 'Create collection';
+
+  @override
+  String get deleteCollection => 'Delete collection';
+
+  @override
+  String get blacklistMatchWarning =>
+      'This gallery matches blacklist rules. Cover/cards can be blurred in list views.';
+
+  @override
+  String get chapterCompleted => 'Chapter completed';
+
+  @override
+  String continueFromPage(int page) {
+    return 'Continue from page $page';
+  }
+
+  @override
+  String get loginRequiredForContent =>
+      'You need to log in to Crotpedia to view this content.';
+
+  @override
+  String commentsCount(int count) {
+    return 'Comments ($count)';
+  }
+
+  @override
+  String get noCommentsYet => 'No comments yet';
+
+  @override
+  String get failedToLoadComments => 'Failed to load comments';
+
+  @override
+  String nSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get bulkDelete => 'Bulk Delete';
+
+  @override
+  String bulkDeleteConfirmation(int count) {
+    return 'Are you sure you want to delete $count downloads?';
+  }
+
+  @override
+  String exportedFavoritesTo(int count, String path) {
+    return 'Exported favorites only ($count items) to:\n$path';
+  }
+
+  @override
+  String get failedToSaveExportFile => 'Failed to save export file';
+
+  @override
+  String get importFavorites => 'Import Favorites';
+
+  @override
+  String importFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get noOnlineFavoritesSource => 'No online favorites source available.';
+
+  @override
+  String collectionWithCount(String name, int count) {
+    return '$name ($count)';
+  }
+
+  @override
+  String get newLabel => 'New';
+
+  @override
+  String get tryDifferentSearchTerm => 'Try a different search term';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String nItemsInHistory(int count) {
+    return '$count items in history';
+  }
+
+  @override
+  String pageProgress(int lastPage, int totalPages) {
+    return '$lastPage/$totalPages pages';
+  }
+
+  @override
+  String get chapterComplete => 'Chapter Complete!';
+
+  @override
+  String get finishedReading => 'Finished Reading';
+
+  @override
+  String get chapterLabel => 'Chapter';
+
+  @override
+  String get noChapterSelected => 'No chapter selected';
+
+  @override
+  String get preventScreenOff =>
+      'Prevent screen from turning off while reading';
+
+  @override
+  String get chapters => 'Chapters';
+
+  @override
+  String get readerSettingsReset =>
+      'Reader settings have been reset to defaults.';
+
+  @override
+  String get tagInputTip =>
+      'Tip: press Enter or the + button to add a tag. You can type multiple tags using commas or new lines.';
+
+  @override
+  String get loadingOptions => 'Loading options...';
+
+  @override
+  String get filterTags => 'Filter Tags';
+
+  @override
+  String get noOptionsAvailable => 'No options available for this field';
+
+  @override
+  String get failedLoadingOptions =>
+      'Failed loading options. Check connection and try again.';
+
+  @override
+  String get noTagsFound => 'No tags found';
+
+  @override
+  String get previewQuery => 'Preview Query (q)';
+
+  @override
+  String get showLess => 'Show Less';
+
+  @override
+  String showAllCount(int count) {
+    return 'Show All ($count)';
+  }
+
+  @override
+  String get advancedFilters => 'Advanced Filters';
+
+  @override
+  String get min => 'Min';
+
+  @override
+  String get max => 'Max';
+
+  @override
+  String searchConfigUnavailable(String sourceId) {
+    return 'Search configuration unavailable for $sourceId';
+  }
+
+  @override
+  String get checkInternetOrReload =>
+      'Please check your internet connection or try reloading the application.';
+
+  @override
+  String get tagBlacklist => 'Tag blacklist';
+
+  @override
+  String get blacklistDescription =>
+      'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.';
+
+  @override
+  String onlineRuleDetailsCount(int count) {
+    return 'Online rule details ($count)';
+  }
+
+  @override
+  String get noBlacklistRulesYet =>
+      'No blacklist rules yet. Add tag names like romance, artist:foo, or numeric tag IDs.';
+
+  @override
+  String activeCoverageDescription(int count) {
+    return 'Active coverage is enabled for $count tokens (local + online IDs). Hidden here to keep this view human-readable.';
+  }
+
+  @override
+  String get manageTagBlacklist => 'Manage tag blacklist';
+
+  @override
+  String get addTagRulesDescription =>
+      'Add tag names, typed rules like artist:foo, or numeric tag IDs. Separate multiple values with commas or new lines.';
+
+  @override
+  String localRulesCount(int count) {
+    return 'Local rules ($count)';
+  }
+
+  @override
+  String onlineRulesMetadataCount(int count) {
+    return 'Online rules metadata ($count)';
+  }
+
+  @override
+  String get onlineRulesMetadata => 'Online rules metadata';
+
+  @override
+  String activeCoverageCount(int count) {
+    return 'Active coverage ($count)';
+  }
+
+  @override
+  String nSourcesInstalled(int count) {
+    return '$count source(s) installed';
+  }
+
+  @override
+  String removeSourceConfirmation(String sourceId) {
+    return 'Remove \"$sourceId\" from local installed sources?';
+  }
+
+  @override
+  String installedSourcesFromZip(int count) {
+    return 'Installed $count sources from ZIP';
+  }
+
+  @override
+  String get enhancedReadingExperience => 'Enhanced Reading Experience';
+
+  @override
+  String get initializingApplication => 'Initializing Application...';
+
+  @override
+  String get offlineContentAvailableLabel => 'Offline Content Available';
+
+  @override
+  String get offlineModeEnabled => 'Offline Mode Enabled';
+
+  @override
+  String get confirmExit => 'Are you sure you want to exit?';
+
+  @override
+  String get resize => 'Resize';
+
+  @override
+  String get offlineFeaturesLimited =>
+      'Some features are limited. Connect to internet for full access.';
+
+  @override
+  String get downloadSettings => 'Download Settings';
+
+  @override
+  String get higherValuesBandwidth =>
+      'Higher values may consume more bandwidth and device resources';
+
+  @override
+  String get autoRetryFailed => 'Auto Retry Failed Downloads';
+
+  @override
+  String get wifiOnlyDownload => 'Only download when connected to WiFi';
+
+  @override
+  String get downloadTimeout => 'Download Timeout';
+
+  @override
+  String get enableNotifications => 'Enable Notifications';
+
+  @override
+  String get showNotificationsProgress =>
+      'Show notifications for download progress';
+
+  @override
+  String get failedToLoadImage => 'Failed to load image';
+
+  @override
+  String get retrying => 'Retrying...';
+
+  @override
+  String pageAttempt(int pageNumber, int current, int max) {
+    return 'Page $pageNumber • Attempt $current/$max';
+  }
+
+  @override
+  String downloadingNItems(int count) {
+    return 'Downloading $count items';
+  }
+
+  @override
+  String get noOfflineContent => 'No offline content';
+
+  @override
+  String get howToGetStarted => 'How to get started';
+
+  @override
+  String get loadingMore => 'Loading more...';
+
+  @override
+  String get noImagesFound => 'No images found';
+
+  @override
+  String get dontAskAgain => 'Don\'t ask again';
+
+  @override
+  String pageOfTotal(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String loadingPageNumber(int pageNumber) {
+    return 'Loading page $pageNumber...';
+  }
+
+  @override
+  String get recentSearches => 'Recent Searches';
+
+  @override
+  String get pageCountRange => 'Page Count Range';
+
+  @override
+  String nMoreFilters(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get newUpdateAvailable => 'New Update Available!';
+
+  @override
+  String get newVersion => 'New Version: ';
+
+  @override
+  String get whatsNew => 'What\'s New';
+
+  @override
+  String get downloadUpdate => 'Download Update';
+
+  @override
+  String exportPath(String path) {
+    return 'Path: $path';
+  }
+
+  @override
+  String importedContentWithImages(String contentId, int count) {
+    return 'Imported \"$contentId\" with $count images to local folder';
+  }
+
+  @override
+  String failedToLoadCaptcha(String error) {
+    return 'Failed to load CAPTCHA: $error';
+  }
+
+  @override
+  String get turnstileRejected =>
+      'Cloudflare Turnstile rejected the challenge (110200). Please retry or use manual token input.';
+
+  @override
+  String get openingNativeCaptcha => 'Opening native CAPTCHA solver...';
+
+  @override
+  String get tapRefreshToRetry =>
+      'Tap refresh to retry native CAPTCHA challenge.';
+
+  @override
+  String get loginToCrotpediaDescription =>
+      'Login to Crotpedia using the native secure browser to access bookmarks and more.';
+
+  @override
+  String get crotpediaBookmarkLoginPrompt =>
+      'This feature (Bookmarking) requires you to be logged in to Crotpedia.\n\nWould you like to login now?';
+
+  @override
+  String get browseByGenre => 'Browse by Genre';
+
+  @override
+  String nMoreGenres(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get selectSourceFromManifest => 'Select Source from Manifest';
+
+  @override
+  String pagesWithSize(int pageCount, String size) {
+    return '$pageCount pages • $size';
+  }
+
+  @override
+  String get browseComics => '1. Browse comics you like';
+
+  @override
+  String get tapDownloadButton => '2. Tap the download button';
+
+  @override
+  String get accessOffline => '3. Access them here anytime, even offline!';
+
+  @override
+  String get source => 'Source';
+
+  @override
+  String nPagesText(int count) {
+    return '$count pages';
+  }
+
+  @override
+  String checkItOut(String url) {
+    return 'Check it out: $url';
+  }
+
+  @override
+  String get filteredResults => 'Filtered Results';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String crotpediaMaintenance(String reason) {
+    return 'Crotpedia maintenance: $reason';
+  }
+
+  @override
+  String get tapToChangeFilters => 'Tap to change search filters';
+
+  @override
+  String get prevChapter => 'Prev Chapter';
+
+  @override
+  String get nextChapter => 'Next Chapter';
+
+  @override
+  String pageOfContent(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String nChapters(int count) {
+    return '$count chapters';
+  }
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get failedToLoadOptionsTap => 'Failed to load options. Tap to retry.';
+
+  @override
+  String chooseField(String field) {
+    return 'Choose $field';
+  }
+
+  @override
+  String get tapToLoadOptions => 'Tap to load options';
+
+  @override
+  String nSelectedItems(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get tapToChooseTags => 'Tap to choose included/excluded tags';
+
+  @override
+  String includeExcludeCount(int include, int exclude) {
+    return 'Include $include • Exclude $exclude';
+  }
+
+  @override
+  String get searchLabel => 'Search';
+
+  @override
+  String get genreLabel => 'Genre';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get orderBy => 'Order by';
+
+  @override
+  String get authorLabel => 'Author';
+
+  @override
+  String get artistFilterLabel => 'Artist';
+
+  @override
+  String get artists => 'Artists';
+
+  @override
+  String get characters => 'Characters';
+
+  @override
+  String get parodies => 'Parodies';
+
+  @override
+  String get groups => 'Groups';
+
+  @override
+  String get filterCategories => 'FILTER CATEGORIES';
+
+  @override
+  String get dateUploaded => 'DATE UPLOADED';
+
+  @override
+  String get numericFilters => 'NUMERIC FILTERS';
+
+  @override
+  String get older => 'Older';
+
+  @override
+  String get contentFilters => 'CONTENT FILTERS';
+
+  @override
+  String get blurCoversDescription =>
+      'Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.';
+
+  @override
+  String get developerTools => 'DEVELOPER TOOLS';
+
+  @override
+  String get noOnlineRulesYet =>
+      'No online detailed rules returned yet. Pull refresh to fetch /blacklist data.';
+
+  @override
+  String get nothingSavedLocally =>
+      'Nothing saved locally yet. Local rules are always applied, including offline results.';
+
+  @override
+  String get loginRequiredForRules =>
+      'Login required to fetch detailed rule metadata from /blacklist.';
+
+  @override
+  String get syncingOnlineRules => 'Syncing online rule details...';
+
+  @override
+  String get noOnlineRuleDetails =>
+      'No online rule details returned yet. Tap refresh to fetch /blacklist.';
+
+  @override
+  String get blacklistGalleriesInfo =>
+      'Blacklisted galleries will be blurred here once you add local rules or sync online IDs.';
+
+  @override
+  String coverageActiveDescription(int count) {
+    return 'Coverage is active for $count tokens. ID tokens are hidden here by request; only named online rules are shown above.';
+  }
+
+  @override
+  String get availableSources => 'AVAILABLE SOURCES';
+
+  @override
+  String get settingUpConnection =>
+      'Setting up components and checking connection...';
+
+  @override
+  String get tagId => 'Tag ID';
+
+  @override
+  String get slug => 'Slug';
+
+  @override
+  String get path => 'Path';
+
+  @override
+  String get tag => 'Tag';
+
+  @override
+  String profileWithName(String name) {
+    return 'Profile ($name)';
+  }
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get loginAccount => 'Login / Account';
+
+  @override
+  String accountWithName(String name) {
+    return 'Account ($name)';
+  }
+
+  @override
+  String get performance => 'Performance';
+
+  @override
+  String get autoRetry => 'Auto Retry';
+
+  @override
+  String get network => 'Network';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get estimatingProgress => 'Estimating progress...';
+
+  @override
+  String get downloadingImageData => 'Downloading image data...';
+
+  @override
+  String get hideFilters => 'Hide filters';
+
+  @override
+  String get showMoreFilters => 'Show more filters';
+
+  @override
+  String get preparingExport => 'Preparing export...';
+
+  @override
+  String get readingFavorites => 'Reading favorites from database...';
+
+  @override
+  String get encodingFavorites => 'Encoding favorites data...';
+
+  @override
+  String get writingExportFile => 'Writing export file...';
+
+  @override
+  String get finalizingExport => 'Finalizing export...';
+
+  @override
+  String get captchaCancelled => 'CAPTCHA challenge was cancelled or failed.';
+
+  @override
+  String failedToOpenCaptcha(String error) {
+    return 'Failed to open native CAPTCHA solver: $error';
   }
 }

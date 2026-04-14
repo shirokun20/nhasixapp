@@ -396,7 +396,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         child: Text(
                           state is SplashInitializing
                               ? AppLocalizations.of(context)?.initializingApp ??
-                                  AppLocalizations.of(context)!.initializingApplication
+                                  AppLocalizations.of(context)!
+                                      .initializingApplication
                               : (state as SplashBypassInProgress).message,
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
@@ -411,10 +412,12 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         state is SplashInitializing
                             ? AppLocalizations.of(context)
                                     ?.settingUpComponents ??
-                                AppLocalizations.of(context)!.settingUpConnection
+                                AppLocalizations.of(context)!
+                                    .settingUpConnection
                             : AppLocalizations.of(context)
                                     ?.bypassingProtection ??
-                                AppLocalizations.of(context)!.bypassingProtection,
+                                AppLocalizations.of(context)!
+                                    .bypassingProtection,
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -524,7 +527,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        AppLocalizations.of(context)!.offlineContentAvailable,
+                        AppLocalizations.of(context)!
+                            .offlineContentAvailableLabel,
                         style: TextStyleConst.headingMedium.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -584,7 +588,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           ElevatedButton.icon(
                             onPressed: () => _showOfflineOptionsDialog(context),
                             icon: const Icon(Icons.wifi_off),
-                            label: Text(AppLocalizations.of(context)!.offlineModeLabel),
+                            label: Text(
+                                AppLocalizations.of(context)!.offlineModeLabel),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,

@@ -135,7 +135,7 @@ class DownloadStatsWidget extends StatelessWidget {
                     child: _buildInfoRow(
                       context: context,
                       icon: Icons.storage,
-                      label: AppLocalizations.of(context)!.downloaded,
+                      label: AppLocalizations.of(context)!.download,
                       value: state.formattedTotalSize,
                     ),
                   ),

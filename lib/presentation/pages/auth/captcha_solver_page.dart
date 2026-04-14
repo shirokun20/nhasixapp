@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kuron_native/kuron_native.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CaptchaSolverPage extends StatefulWidget {
   final String provider;
   final String siteKey;
@@ -71,7 +72,8 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = AppLocalizations.of(context)!.failedToOpenCaptcha(e.toString());
+        _error =
+            AppLocalizations.of(context)!.failedToOpenCaptcha(e.toString());
         _loading = false;
       });
     }
@@ -110,7 +112,7 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
               width: double.infinity,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.all(12),
-              child: const Text(
+              child: Text(
                 AppLocalizations.of(context)!.turnstileRejected,
               ),
             ),

@@ -273,7 +273,8 @@ class _DetailScreenState extends State<DetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.addToFavoritesManageCollections),
+          content: Text(
+              AppLocalizations.of(context)!.addToFavoritesManageCollections),
         ),
       );
       return;
@@ -670,7 +671,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     // Legacy support or fallback
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(AppLocalizations.of(context)!.loginRequiredAction),
+                        content: Text(
+                            AppLocalizations.of(context)!.loginRequiredAction),
                         action: SnackBarAction(
                           label: AppLocalizations.of(context)!.login,
                           onPressed: () {
@@ -883,7 +885,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                           .onSurface),
                                   const SizedBox(width: 12),
                                   Text(
-                                    AppLocalizations.of(context)!.manageCollections,
+                                    AppLocalizations.of(context)!
+                                        .manageCollections,
                                     style: TextStyleConst.bodyMedium.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -1112,7 +1115,8 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
 
           // Metadata rows with enhanced styling
-          _buildMetadataRow(AppLocalizations.of(context)!.source, content.source, Icons.dns_rounded),
+          _buildMetadataRow(AppLocalizations.of(context)!.source,
+              content.source, Icons.dns_rounded),
           _buildMetadataRow(
               AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
           if (content.chapters != null && content.chapters!.isNotEmpty)
@@ -1124,7 +1128,7 @@ class _DetailScreenState extends State<DetailScreen> {
           _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
               _resolveDisplayLanguage(content), Icons.language),
           if (content.artists.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.artistLabel,
+            _buildMetadataRow(AppLocalizations.of(context)!.artistsLabel,
                 content.artists.join(', '), Icons.person),
           if (content.characters.isNotEmpty)
             _buildMetadataRow(AppLocalizations.of(context)!.charactersLabel,
@@ -1921,8 +1925,13 @@ class _DetailScreenState extends State<DetailScreen> {
                                       Flexible(
                                         child: Text(
                                           isCompleted
-                                              ? AppLocalizations.of(context)!.chapterCompleted
-                                              : AppLocalizations.of(context)!.continueFromPage(chapterHistory[chapter.id]!.lastPage),
+                                              ? AppLocalizations.of(context)!
+                                                  .chapterCompleted
+                                              : AppLocalizations.of(context)!
+                                                  .continueFromPage(
+                                                      chapterHistory[
+                                                              chapter.id]!
+                                                          .lastPage),
                                           style:
                                               TextStyleConst.bodySmall.copyWith(
                                             color: isCompleted
@@ -2070,9 +2079,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       isCompleted
-                                          ? AppLocalizations.of(context)!.readAgain
+                                          ? AppLocalizations.of(context)!
+                                              .readAgain
                                           : isRead
-                                              ? AppLocalizations.of(context)!.continueReading
+                                              ? AppLocalizations.of(context)!
+                                                  .continueReading
                                               : l10n.readChapter,
                                       style:
                                           TextStyleConst.labelMedium.copyWith(
@@ -2844,7 +2855,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final List<String> metadata = [];
 
     if (content.artists.isNotEmpty) {
-      metadata.add(AppLocalizations.of(context)!.artistLabel(content.artists.first));
+      metadata.add(
+          AppLocalizations.of(context)!.artistLabel(content.artists.first));
     }
 
     if (content.pageCount > 0) {
@@ -2986,8 +2998,8 @@ class _DetailScreenState extends State<DetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  AppLocalizations.of(context)!
-                      .failedToStartDownload(AppLocalizations.of(context)!.unknownError),
+                  AppLocalizations.of(context)!.failedToStartDownload(
+                      AppLocalizations.of(context)!.unknownError),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onError,
                   ),
@@ -3286,7 +3298,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           return CheckboxListTile(
                             value: isSelected,
                             title: Text(collection.name),
-                            subtitle: Text(AppLocalizations.of(context)!.nItems(collection.itemCount)),
+                            subtitle: Text(AppLocalizations.of(context)!
+                                .nItems(collection.itemCount)),
                             controlAffinity: ListTileControlAffinity.leading,
                             onChanged: (value) {
                               setSheetState(() {
@@ -3320,7 +3333,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           await _showManageCollectionsSheet(content);
                         },
                         icon: const Icon(Icons.create_new_folder_outlined),
-                        label: Text(AppLocalizations.of(context)!.newCollection),
+                        label:
+                            Text(AppLocalizations.of(context)!.newCollection),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
@@ -3334,8 +3348,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text(
-                                    AppLocalizations.of(context)!.collectionsUpdatedSuccessfully),
+                                content: Text(AppLocalizations.of(context)!
+                                    .collectionsUpdatedSuccessfully),
                                 backgroundColor:
                                     Theme.of(context).colorScheme.primary,
                               ),
@@ -3425,7 +3439,8 @@ class _DetailScreenState extends State<DetailScreen> {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToCreateCollection(e.toString())),
+          content: Text(AppLocalizations.of(context)!
+              .failedToCreateCollection(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

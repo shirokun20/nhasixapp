@@ -575,7 +575,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _showExportDialog() async {
     final progressNotifier = ValueNotifier<double>(0.0);
-    final progressTextNotifier = ValueNotifier<String>(AppLocalizations.of(context)!.preparingExport);
+    final progressTextNotifier =
+        ValueNotifier<String>(AppLocalizations.of(context)!.preparingExport);
 
     unawaited(showDialog<void>(
       context: context,
@@ -619,14 +620,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     try {
       progressNotifier.value = 0.15;
-      progressTextNotifier.value = AppLocalizations.of(context)!.readingFavorites;
+      progressTextNotifier.value =
+          AppLocalizations.of(context)!.readingFavorites;
 
       // Get export data from cubit
       final exportData = await _favoriteCubit.exportFavorites();
       final totalCount = exportData['total_count'] as int;
 
+      if (!mounted) return;
+
       progressNotifier.value = 0.6;
-      progressTextNotifier.value = AppLocalizations.of(context)!.encodingFavorites;
+      progressTextNotifier.value =
+          AppLocalizations.of(context)!.encodingFavorites;
 
       // Convert to JSON string
       final jsonString = jsonEncode(exportData);
@@ -637,8 +642,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       // Use custom storage root from Settings when available.
       final customDirectory = await StorageSettings.getCustomRootPath();
 
+      if (!mounted) return;
+
       progressNotifier.value = 0.85;
-      progressTextNotifier.value = AppLocalizations.of(context)!.writingExportFile;
+      progressTextNotifier.value =
+          AppLocalizations.of(context)!.writingExportFile;
 
       // Save to file
       final filePath = await BackupUtils.exportJson(
@@ -647,8 +655,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         customDirectory: customDirectory,
       );
 
+      if (!mounted) return;
+
       progressNotifier.value = 1.0;
-      progressTextNotifier.value = AppLocalizations.of(context)!.finalizingExport;
+      progressTextNotifier.value =
+          AppLocalizations.of(context)!.finalizingExport;
       await Future<void>.delayed(const Duration(milliseconds: 120));
 
       if (mounted) {
@@ -659,7 +670,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context)!.exportedFavoritesTo(totalCount, filePath),
+                AppLocalizations.of(context)!
+                    .exportedFavoritesTo(totalCount, filePath),
                 style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                     Theme.of(context).colorScheme.onPrimary),
               ),
@@ -759,7 +771,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.successfullyImportedFavorites(importedCount),
+              AppLocalizations.of(context)!
+                  .successfullyImportedFavorites(importedCount),
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onPrimary),
             ),
@@ -1018,8 +1031,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Future<void> _showCreateCollectionDialog({
     FavoriteCollection? collection,
   }) async {
-    final title =
-        collection == null ? 'Create collection' : AppLocalizations.of(context)!.renameCollection;
+    final title = collection == null
+        ? 'Create collection'
+        : AppLocalizations.of(context)!.renameCollection;
 
     TextEditingController? controller;
 
@@ -1090,7 +1104,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToSaveCollection(e.toString())),
+          content: Text(AppLocalizations.of(context)!
+              .failedToSaveCollection(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -1133,7 +1148,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         backgroundColor: Theme.of(dialogContext)
                             .colorScheme
                             .surfaceContainer,
-                        title: Text(AppLocalizations.of(context)!.deleteCollection),
+                        title: Text(
+                            AppLocalizations.of(context)!.deleteCollection),
                         content: Text(
                           'Delete "${collection.name}"? Item favorites stay saved, only the collection grouping is removed.',
                         ),
@@ -1226,7 +1242,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           return CheckboxListTile(
                             value: isSelected,
                             title: Text(collection.name),
-                            subtitle: Text(AppLocalizations.of(context)!.nItems(collection.itemCount)),
+                            subtitle: Text(AppLocalizations.of(context)!
+                                .nItems(collection.itemCount)),
                             controlAffinity: ListTileControlAffinity.leading,
                             onChanged: (value) {
                               setSheetState(() {
@@ -1251,7 +1268,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           _showCreateCollectionDialog();
                         },
                         icon: const Icon(Icons.create_new_folder_outlined),
-                        label: Text(AppLocalizations.of(context)!.newCollection),
+                        label:
+                            Text(AppLocalizations.of(context)!.newCollection),
                       ),
                       const Spacer(),
                       TextButton(
@@ -1702,7 +1720,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       selected: state.activeCollectionId == collection.id,
                       child: ChoiceChip(
                         label: Text(
-                          AppLocalizations.of(context)!.collectionWithCount(collection.name, collection.itemCount),
+                          AppLocalizations.of(context)!.collectionWithCount(
+                              collection.name, collection.itemCount),
                         ),
                         selected: state.activeCollectionId == collection.id,
                         onSelected: (_) =>
@@ -2099,7 +2118,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             content: Text(
               AppLocalizations.of(context)
                       ?.failedToRemoveFavorite(e.toString()) ??
-                  AppLocalizations.of(context)!.failedToRemoveFavorite(e.toString()),
+                  AppLocalizations.of(context)!
+                      .failedToRemoveFavorite(e.toString()),
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                   Theme.of(context).colorScheme.onError),
             ),

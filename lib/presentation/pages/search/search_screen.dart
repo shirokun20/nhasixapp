@@ -108,7 +108,7 @@ class _SearchScreenState extends State<SearchScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               AppLocalizations.of(context)!.checkInternetOrReload,
               textAlign: TextAlign.center,
             ),

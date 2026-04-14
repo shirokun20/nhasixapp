@@ -777,7 +777,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Found ${backupContents.length} backup content items');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'scan backup content');
-      emit(OfflineSearchError(
+      emit(const OfflineSearchError(
         message: 'failedScanBackup',
         query: '',
       ));
