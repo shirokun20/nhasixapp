@@ -79,6 +79,11 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   /// When true, the [AndroidView] is mounted and animation plays.
   bool _isPlaying = false;
 
+  /// Path to the raw WebP file cached on disk by [getThumbnailForWebP].
+  /// Passed to [AnimatedWebPView] as `filePath` so first play loads from disk
+  /// instantly — without a second network download.
+  String? _webpCachePath;
+
   @override
   void initState() {
     super.initState();
@@ -134,11 +139,13 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
       if (widget.autoPlay) {
         setState(() {
           _thumbnailPath = null;
+          _webpCachePath = null;
           _isPlaying = true;
         });
       } else {
         setState(() {
           _thumbnailPath = null;
+          _webpCachePath = null;
           _isPlaying = false;
         });
         _loadThumbnail();
@@ -149,7 +156,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   /// Asks the native plugin to generate/return the JPEG thumbnail.
   Future<void> _loadThumbnail() async {
     try {
-      final path = await _channel.invokeMethod<String>(
+      final raw = await _channel.invokeMethod<Object>(
         'getThumbnailForWebP',
         <String, Object?>{
           'url': widget.url,
@@ -158,8 +165,16 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
       );
       if (mounted) {
         setState(() {
-          if (path != null) {
-            _thumbnailPath = path;
+          if (raw is Map) {
+            _thumbnailPath = raw['thumbnailPath'] as String?;
+            _webpCachePath = raw['webpPath'] as String?;
+            if (_thumbnailPath == null) {
+              // Thumbnail decode failed but webp cached — go straight to play
+              _isPlaying = true;
+            }
+          } else if (raw is String) {
+            // Backward-compat: old native builds return plain String
+            _thumbnailPath = raw;
           } else {
             // Thumbnail unavailable — fall back to native animation.
             _isPlaying = true;
@@ -189,7 +204,12 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
             layoutDirection: TextDirection.ltr,
             creationParams: <String, Object>{
               'url': widget.url,
-              if (widget.filePath != null) 'filePath': widget.filePath!,
+              // Prefer webp cache written during thumbnail load (instant, no re-download).
+              // Fall back to widget.filePath (extended_image disk cache) if available.
+              if (_webpCachePath != null)
+                'filePath': _webpCachePath!
+              else if (widget.filePath != null)
+                'filePath': widget.filePath!,
               'headers': widget.headers,
               if (widget.targetWidth != null)
                 'targetWidth': widget.targetWidth!,

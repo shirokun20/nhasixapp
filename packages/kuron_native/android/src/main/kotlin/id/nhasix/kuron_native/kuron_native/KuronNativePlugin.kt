@@ -170,7 +170,11 @@ class KuronNativePlugin :
      *   filePath – absolute path to an already-cached WebP file (preferred).
      *   url      – fallback HTTP URL to download if filePath is absent.
      *
-     * Returns the absolute path of the generated JPEG, or null on failure.
+     * Returns a map: {"thumbnailPath": <JPEG path>, "webpPath": <raw WebP disk cache path>}
+     * Both values are non-null on success; result.success(null) on failure.
+     *
+     * The raw WebP is cached so [AnimatedWebPView] can load from disk immediately on
+     * first play — no second network download required.
      */
     private fun handleGetWebPThumbnail(call: MethodCall, result: Result) {
         val filePath = call.argument<String>("filePath")
@@ -184,13 +188,20 @@ class KuronNativePlugin :
         val thumbDir = File(context.cacheDir, "webp_thumbnails").also { it.mkdirs() }
         val thumbFile = File(thumbDir, "${Math.abs(cacheKey.hashCode())}.jpg")
 
-        if (thumbFile.exists() && thumbFile.length() > 0) {
-            result.success(thumbFile.absolutePath)
+        val webpDir = File(context.cacheDir, "webp_cache").also { it.mkdirs() }
+        val webpFile = File(webpDir, "${Math.abs(cacheKey.hashCode())}.webp")
+
+        // Fast-path: both files already on disk — no I/O needed.
+        if (thumbFile.exists() && thumbFile.length() > 0 &&
+            webpFile.exists() && webpFile.length() > 0) {
+            result.success(mapOf("thumbnailPath" to thumbFile.absolutePath,
+                                 "webpPath"      to webpFile.absolutePath))
             return
         }
 
         executor.execute {
             try {
+                // Resolve bytes: from existing filePath, webp disk cache, or network.
                 val bytes: ByteArray = when {
                     !filePath.isNullOrEmpty() -> {
                         val f = File(filePath)
@@ -198,8 +209,14 @@ class KuronNativePlugin :
                         else if (url != null) downloadBytesForThumbnail(url)
                         else { mainThread { result.success(null) }; return@execute }
                     }
+                    webpFile.exists() && webpFile.length() > 0 -> webpFile.readBytes()
                     url != null -> downloadBytesForThumbnail(url)
                     else -> { mainThread { result.success(null) }; return@execute }
+                }
+
+                // Persist raw WebP bytes so AnimatedWebPView can load from disk on play.
+                if (!webpFile.exists() || webpFile.length() == 0L) {
+                    webpFile.writeBytes(bytes)
                 }
 
                 // Decode first frame of animated WebP to Bitmap.
@@ -222,7 +239,10 @@ class KuronNativePlugin :
                 }
                 bitmap.recycle()
 
-                mainThread { result.success(thumbFile.absolutePath) }
+                mainThread {
+                    result.success(mapOf("thumbnailPath" to thumbFile.absolutePath,
+                                        "webpPath"      to webpFile.absolutePath))
+                }
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "getThumbnailForWebP failed: ${e.message}")
                 mainThread { result.success(null) }
