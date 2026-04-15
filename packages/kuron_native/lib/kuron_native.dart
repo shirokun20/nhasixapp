@@ -119,6 +119,20 @@ class KuronNative {
     return KuronNativePlatform.instance.clearCookies();
   }
 
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) {
+    return KuronNativePlatform.instance.getThumbnailForWebP(
+      url: url,
+      filePath: filePath,
+      headers: headers,
+      onProgress: onProgress,
+    );
+  }
+
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
     List<String>? successUrlFilters,

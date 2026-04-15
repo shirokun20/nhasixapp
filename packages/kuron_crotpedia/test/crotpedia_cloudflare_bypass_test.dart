@@ -38,6 +38,24 @@ class MockKuronNativePlatform extends Mock
   @override
   Future<Map<Object?, Object?>?> getSystemInfo(String type) =>
       Future.value(null);
+
+  @override
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) {
+    return super.noSuchMethod(
+      Invocation.method(#getThumbnailForWebP, [], {
+        #url: url,
+        #filePath: filePath,
+        #headers: headers,
+        #onProgress: onProgress,
+      }),
+      returnValue: Future.value(null),
+    );
+  }
 }
 
 void main() {

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../kuron_native.dart';
 
 /// Native Android animated-WebP viewer backed by [AnimatedImageDrawable].
 ///
@@ -11,12 +12,13 @@ import 'package:flutter/services.dart';
 /// Instead of immediately creating a [PlatformView] (which starts decoding all
 /// animation frames), this widget first requests a lightweight JPEG thumbnail
 /// (first frame only) from the native side. The list stays at full 60 fps with
-/// zero animation overhead. The full animation starts only when the user taps.
+/// zero animation overhead. Playback starts automatically when the page becomes
+/// the active/visible reader page.
 ///
 /// ## API levels
 /// | API | Behaviour |
 /// |-----|-----------|
-/// | ≥ 28 | Full animated playback via `AnimatedImageDrawable` on tap |
+/// | ≥ 28 | Full animated playback via `AnimatedImageDrawable` when visible |
 /// | < 28 | Static first-frame via `BitmapFactory` |
 /// | Non-Android | [fallback] widget is shown |
 ///
@@ -35,6 +37,7 @@ class AnimatedWebPView extends StatefulWidget {
     this.autoPlay = false,
     this.pageNumber,
     this.visiblePageNotifier,
+    this.loadingBuilder,
     required this.fallback,
   });
 
@@ -50,6 +53,8 @@ class AnimatedWebPView extends StatefulWidget {
   final int? targetWidth;
 
   /// When true, skip the thumbnail step and start animation immediately.
+  /// In reader usage this is combined with [visiblePageNotifier] so only the
+  /// current page auto-plays.
   final bool autoPlay;
 
   /// 1-based page number of this image in the reader.
@@ -58,6 +63,14 @@ class AnimatedWebPView extends StatefulWidget {
   /// Notifier that emits the currently visible page number.
   /// When provided, animation auto-pauses when this page is not visible.
   final ValueNotifier<int>? visiblePageNotifier;
+
+  /// Optional builder for showing byte-level native preload progress.
+  final Widget Function(
+    BuildContext context,
+    int receivedBytes,
+    int? totalBytes,
+  )?
+  loadingBuilder;
 
   /// Widget shown while the thumbnail is loading or on non-Android platforms.
   final Widget fallback;
@@ -71,8 +84,6 @@ class AnimatedWebPView extends StatefulWidget {
 
 class _AnimatedWebPViewState extends State<AnimatedWebPView>
     with WidgetsBindingObserver {
-  static const _channel = MethodChannel('kuron_native');
-
   /// Path to the cached JPEG thumbnail (first frame of the WebP).
   String? _thumbnailPath;
 
@@ -83,17 +94,56 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   /// Passed to [AnimatedWebPView] as `filePath` so first play loads from disk
   /// instantly — without a second network download.
   String? _webpCachePath;
+  bool _isLoadingThumbnail = false;
+  int _thumbnailDownloadedBytes = 0;
+  int? _thumbnailTotalBytes;
+
+  bool get _isCurrentVisiblePage {
+    final notifier = widget.visiblePageNotifier;
+    final pageNumber = widget.pageNumber;
+    if (notifier == null || pageNumber == null) {
+      return false;
+    }
+    return notifier.value == pageNumber;
+  }
+
+  bool get _shouldAutoPlay => widget.autoPlay || _isCurrentVisiblePage;
+
+  bool get _hasPreparedPlaybackSource =>
+      _webpCachePath != null ||
+      widget.filePath != null ||
+      _thumbnailPath != null;
+
+  int? _resolveExistingFileBytes() {
+    for (final candidatePath in <String?>[widget.filePath, _webpCachePath]) {
+      if (candidatePath == null || candidatePath.isEmpty) {
+        continue;
+      }
+
+      try {
+        final file = File(candidatePath);
+        if (!file.existsSync()) {
+          continue;
+        }
+
+        final fileLength = file.lengthSync();
+        if (fileLength > 0) {
+          return fileLength;
+        }
+      } catch (_) {
+        // Ignore file stat failures and fall back to live progress events.
+      }
+    }
+
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.visiblePageNotifier?.addListener(_onVisiblePageChanged);
-    if (widget.autoPlay) {
-      _isPlaying = true;
-    } else {
-      _loadThumbnail();
-    }
+    _loadThumbnail();
   }
 
   @override
@@ -105,9 +155,16 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
 
   /// Auto-pause when this page is no longer the visible page.
   void _onVisiblePageChanged() {
-    final notifier = widget.visiblePageNotifier;
-    if (notifier == null || widget.pageNumber == null) return;
-    if (_isPlaying && notifier.value != widget.pageNumber && mounted) {
+    if (_shouldAutoPlay) {
+      if (!_isPlaying && _hasPreparedPlaybackSource && mounted) {
+        setState(() => _isPlaying = true);
+      } else if (!_isPlaying && !_isLoadingThumbnail) {
+        _loadThumbnail();
+      }
+      return;
+    }
+
+    if (_isPlaying && mounted) {
       setState(() => _isPlaying = false);
       if (_thumbnailPath == null) _loadThumbnail();
     }
@@ -115,7 +172,8 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
 
   /// When app goes to background or becomes inactive, tear down the
   /// [AndroidView] so the native [AnimatedImageDrawable] stops consuming
-  /// CPU/GPU. On resume the user sees the thumbnail + play button.
+  /// CPU/GPU. On resume the current visible page auto-plays again; other pages
+  /// return to their passive thumbnail preview.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -124,6 +182,18 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
         setState(() => _isPlaying = false);
         // Ensure thumbnail is ready for when user returns.
         if (_thumbnailPath == null) _loadThumbnail();
+      }
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed &&
+        _shouldAutoPlay &&
+        !_isPlaying &&
+        mounted) {
+      if (_hasPreparedPlaybackSource) {
+        setState(() => _isPlaying = true);
+      } else if (!_isLoadingThumbnail) {
+        _loadThumbnail();
       }
     }
   }
@@ -136,35 +206,73 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
       widget.visiblePageNotifier?.addListener(_onVisiblePageChanged);
     }
     if (oldWidget.url != widget.url) {
-      if (widget.autoPlay) {
+      setState(() {
+        _thumbnailPath = null;
+        _webpCachePath = null;
+        _isPlaying = false;
+        _thumbnailDownloadedBytes = 0;
+        _thumbnailTotalBytes = null;
+        _isLoadingThumbnail = false;
+      });
+      _loadThumbnail();
+      return;
+    }
+
+    if (oldWidget.filePath != widget.filePath && mounted) {
+      final existingFileBytes = _resolveExistingFileBytes();
+      if (existingFileBytes != null &&
+          (_thumbnailDownloadedBytes != existingFileBytes ||
+              _thumbnailTotalBytes != null)) {
         setState(() {
-          _thumbnailPath = null;
-          _webpCachePath = null;
-          _isPlaying = true;
+          _thumbnailDownloadedBytes = existingFileBytes;
+          _thumbnailTotalBytes = null;
         });
-      } else {
-        setState(() {
-          _thumbnailPath = null;
-          _webpCachePath = null;
-          _isPlaying = false;
-        });
-        _loadThumbnail();
       }
+    }
+
+    if (oldWidget.autoPlay != widget.autoPlay ||
+        oldWidget.pageNumber != widget.pageNumber ||
+        oldWidget.visiblePageNotifier != widget.visiblePageNotifier) {
+      _onVisiblePageChanged();
     }
   }
 
   /// Asks the native plugin to generate/return the JPEG thumbnail.
   Future<void> _loadThumbnail() async {
+    if (_isLoadingThumbnail) return;
+    _isLoadingThumbnail = true;
+    final existingFileBytes = _resolveExistingFileBytes();
+
+    if (mounted) {
+      setState(() {
+        _thumbnailDownloadedBytes = existingFileBytes ?? 0;
+        _thumbnailTotalBytes = null;
+      });
+    } else {
+      _thumbnailDownloadedBytes = existingFileBytes ?? 0;
+      _thumbnailTotalBytes = null;
+    }
+
     try {
-      final raw = await _channel.invokeMethod<Object>(
-        'getThumbnailForWebP',
-        <String, Object?>{
-          'url': widget.url,
-          if (widget.filePath != null) 'filePath': widget.filePath!,
+      final raw = await KuronNative.instance.getThumbnailForWebP(
+        url: widget.url,
+        filePath: widget.filePath,
+        headers: widget.headers,
+        onProgress: (receivedBytes, totalBytes) {
+          if (!mounted) return;
+          if (_thumbnailDownloadedBytes == receivedBytes &&
+              _thumbnailTotalBytes == totalBytes) {
+            return;
+          }
+          setState(() {
+            _thumbnailDownloadedBytes = receivedBytes;
+            _thumbnailTotalBytes = totalBytes;
+          });
         },
       );
       if (mounted) {
         setState(() {
+          _isLoadingThumbnail = false;
           if (raw is Map) {
             _thumbnailPath = raw['thumbnailPath'] as String?;
             _webpCachePath = raw['webpPath'] as String?;
@@ -179,11 +287,23 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
             // Thumbnail unavailable — fall back to native animation.
             _isPlaying = true;
           }
+
+          if (_shouldAutoPlay &&
+              (_webpCachePath != null ||
+                  widget.filePath != null ||
+                  _thumbnailPath != null)) {
+            _isPlaying = true;
+          }
         });
       }
     } catch (_) {
       // Native call failed — show animated view directly so user still sees content.
-      if (mounted) setState(() => _isPlaying = true);
+      if (mounted) {
+        setState(() {
+          _isLoadingThumbnail = false;
+          _isPlaying = _shouldAutoPlay;
+        });
+      }
     }
   }
 
@@ -191,66 +311,42 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   Widget build(BuildContext context) {
     if (!Platform.isAndroid) return widget.fallback;
 
-    // ── Playing: native animated view — double-tap anywhere to pause ─────
+    // ── Playing: native animated view ──────────────────────────────────────
     if (_isPlaying) {
-      return GestureDetector(
-        onDoubleTap: () {
-          setState(() => _isPlaying = false);
-          if (_thumbnailPath == null) _loadThumbnail();
-        },
-        child: SizedBox.expand(
-          child: AndroidView(
-            viewType: 'kuron_animated_webp_view',
-            layoutDirection: TextDirection.ltr,
-            creationParams: <String, Object>{
-              'url': widget.url,
-              // Prefer webp cache written during thumbnail load (instant, no re-download).
-              // Fall back to widget.filePath (extended_image disk cache) if available.
-              if (_webpCachePath != null)
-                'filePath': _webpCachePath!
-              else if (widget.filePath != null)
-                'filePath': widget.filePath!,
-              'headers': widget.headers,
-              if (widget.targetWidth != null)
-                'targetWidth': widget.targetWidth!,
-            },
-            creationParamsCodec: const StandardMessageCodec(),
-            // Don't let AndroidView absorb touches — animation needs no user input.
-            // This allows the GestureDetector parent to receive double-taps.
-            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
-          ),
+      return SizedBox.expand(
+        child: AndroidView(
+          viewType: 'kuron_animated_webp_view',
+          layoutDirection: TextDirection.ltr,
+          creationParams: <String, Object>{
+            'url': widget.url,
+            // Prefer webp cache written during thumbnail load (instant, no re-download).
+            // Fall back to widget.filePath (extended_image disk cache) if available.
+            if (_webpCachePath != null)
+              'filePath': _webpCachePath!
+            else if (widget.filePath != null)
+              'filePath': widget.filePath!,
+            'headers': widget.headers,
+            if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
+          },
+          creationParamsCodec: const StandardMessageCodec(),
+          gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
         ),
       );
     }
 
-    // ── Thumbnail ready: static preview + play button ───────────────────────
+    // ── Thumbnail ready: passive preview until the page becomes visible ────
     if (_thumbnailPath != null) {
-      return GestureDetector(
-        onTap: () => setState(() => _isPlaying = true),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox.expand(
-              child: Image.file(File(_thumbnailPath!), fit: BoxFit.contain),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(12),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 48,
-              ),
-            ),
-          ],
-        ),
+      return SizedBox.expand(
+        child: Image.file(File(_thumbnailPath!), fit: BoxFit.contain),
       );
     }
 
     // ── Still loading thumbnail ─────────────────────────────────────────────
-    return widget.fallback;
+    return widget.loadingBuilder?.call(
+          context,
+          _thumbnailDownloadedBytes,
+          _thumbnailTotalBytes,
+        ) ??
+        widget.fallback;
   }
 }

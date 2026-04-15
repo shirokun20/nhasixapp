@@ -171,6 +171,151 @@ void main() {
     });
   });
 
+  group('shouldUseNativeAnimatedView', () {
+    test('returns false for .webp when image is not heavy yet', () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: 'https://example.com/page.webp',
+          isHeavy: false,
+          nativeViewAvailable: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true for heavy animated webp when native view is available',
+        () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: 'https://example.com/page.webp',
+          isHeavy: true,
+          nativeViewAvailable: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false for heavy non-webp image', () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: 'https://example.com/page.gif',
+          isHeavy: true,
+          nativeViewAvailable: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false when native view is unavailable', () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: 'https://example.com/page.webp',
+          isHeavy: true,
+          nativeViewAvailable: false,
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('shouldAutoPlayAnimatedView', () {
+    test('returns true when there is no visible page notifier', () {
+      expect(
+        ExtendedImageReaderWidget.shouldAutoPlayAnimatedViewForTesting(
+          pageNumber: 3,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns true for the currently visible page', () {
+      expect(
+        ExtendedImageReaderWidget.shouldAutoPlayAnimatedViewForTesting(
+          pageNumber: 3,
+          visiblePageNumber: 3,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false for non-current page', () {
+      expect(
+        ExtendedImageReaderWidget.shouldAutoPlayAnimatedViewForTesting(
+          pageNumber: 3,
+          visiblePageNumber: 2,
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('shouldKeepAlive', () {
+    test('returns false for normal image in continuous scroll', () {
+      expect(
+        ExtendedImageReaderWidget.shouldKeepAliveForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          isHeavy: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true for heavy image in continuous scroll', () {
+      expect(
+        ExtendedImageReaderWidget.shouldKeepAliveForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          isHeavy: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns true for single-page mode even when image is normal', () {
+      expect(
+        ExtendedImageReaderWidget.shouldKeepAliveForTesting(
+          readingMode: ReadingMode.singlePage,
+          isHeavy: false,
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('shouldClearMemoryCacheOnDispose', () {
+    test('returns true for normal continuous-scroll image', () {
+      expect(
+        ExtendedImageReaderWidget.shouldClearMemoryCacheOnDisposeForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          isHeavy: false,
+          isHeavyReaderSource: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false for heavy animated image', () {
+      expect(
+        ExtendedImageReaderWidget.shouldClearMemoryCacheOnDisposeForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          isHeavy: true,
+          isHeavyReaderSource: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false for heavy reader source optimization', () {
+      expect(
+        ExtendedImageReaderWidget.shouldClearMemoryCacheOnDisposeForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          isHeavy: false,
+          isHeavyReaderSource: true,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('heavy image threshold', () {
     test('threshold is 2 MB', () {
       expect(

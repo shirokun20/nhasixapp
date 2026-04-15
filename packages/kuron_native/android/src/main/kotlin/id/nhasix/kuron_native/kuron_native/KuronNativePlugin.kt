@@ -179,6 +179,10 @@ class KuronNativePlugin :
     private fun handleGetWebPThumbnail(call: MethodCall, result: Result) {
         val filePath = call.argument<String>("filePath")
         val url = call.argument<String>("url")
+        val requestId = call.argument<String>("requestId")
+
+        @Suppress("UNCHECKED_CAST")
+        val headers = call.argument<Map<String, String>>("headers") ?: emptyMap()
 
         val cacheKey = filePath ?: url ?: run {
             result.success(null)
@@ -206,11 +210,11 @@ class KuronNativePlugin :
                     !filePath.isNullOrEmpty() -> {
                         val f = File(filePath)
                         if (f.exists()) f.readBytes()
-                        else if (url != null) downloadBytesForThumbnail(url)
+                        else if (url != null) downloadBytesForThumbnail(url, headers, requestId)
                         else { mainThread { result.success(null) }; return@execute }
                     }
                     webpFile.exists() && webpFile.length() > 0 -> webpFile.readBytes()
-                    url != null -> downloadBytesForThumbnail(url)
+                    url != null -> downloadBytesForThumbnail(url, headers, requestId)
                     else -> { mainThread { result.success(null) }; return@execute }
                 }
 
@@ -254,13 +258,68 @@ class KuronNativePlugin :
     private fun mainThread(block: () -> Unit) =
         Handler(Looper.getMainLooper()).post(block)
 
-    private fun downloadBytesForThumbnail(url: String): ByteArray {
+    private fun emitWebPThumbnailProgress(
+        requestId: String,
+        receivedBytes: Long,
+        totalBytes: Long?,
+    ) {
+        mainThread {
+            channel.invokeMethod(
+                "onWebPThumbnailProgress",
+                mapOf(
+                    "requestId" to requestId,
+                    "receivedBytes" to receivedBytes,
+                    "totalBytes" to totalBytes,
+                ),
+            )
+        }
+    }
+
+    private fun downloadBytesForThumbnail(
+        url: String,
+        headers: Map<String, String>,
+        requestId: String?,
+    ): ByteArray {
         val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
         return try {
             conn.connectTimeout = 15_000
             conn.readTimeout = 90_000
             conn.requestMethod = "GET"
-            conn.inputStream.use { it.readBytes() }
+            headers.forEach { (key, value) ->
+                conn.setRequestProperty(key, value)
+            }
+            conn.connect()
+
+            val totalBytes = conn.contentLengthLong.takeIf { it > 0L }
+
+            conn.inputStream.use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var receivedBytes = 0L
+                var lastReportedBytes = 0L
+
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read == -1) break
+
+                    output.write(buffer, 0, read)
+                    receivedBytes += read
+
+                    if (requestId != null &&
+                        (receivedBytes - lastReportedBytes >= 128 * 1024 ||
+                            (totalBytes != null && receivedBytes >= totalBytes))
+                    ) {
+                        emitWebPThumbnailProgress(requestId, receivedBytes, totalBytes)
+                        lastReportedBytes = receivedBytes
+                    }
+                }
+
+                if (requestId != null && receivedBytes > lastReportedBytes) {
+                    emitWebPThumbnailProgress(requestId, receivedBytes, totalBytes)
+                }
+
+                output.toByteArray()
+            }
         } finally {
             conn.disconnect()
         }

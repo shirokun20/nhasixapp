@@ -16,6 +16,12 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Function(int processed, int total, int imageCount, String currentFile)?
   _onZipExtractionProgress;
 
+  /// Progress callbacks for native animated-WebP thumbnail preparation.
+  final Map<String, Function(int receivedBytes, int? totalBytes)>
+  _onWebPThumbnailProgress =
+      <String, Function(int receivedBytes, int? totalBytes)>{};
+  static int _nextWebPThumbnailRequestId = 0;
+
   /// Constructor
   MethodChannelKuronNative() {
     methodChannel.setMethodCallHandler(_handleMethodCall);
@@ -49,6 +55,26 @@ class MethodChannelKuronNative extends KuronNativePlatform {
           // Silently ignore or log if needed
           // print('Error handling onZipExtractionProgress: $e');
         }
+      }
+    } else if (call.method == 'onWebPThumbnailProgress') {
+      try {
+        final args = call.arguments as Map;
+        final requestId = args['requestId'] as String?;
+        if (requestId == null) return;
+
+        final callback = _onWebPThumbnailProgress[requestId];
+        if (callback == null) return;
+
+        final receivedBytes = (args['receivedBytes'] as num?)?.toInt() ?? 0;
+        final totalRaw = args['totalBytes'];
+        final totalBytes = totalRaw is num && totalRaw > 0
+            ? totalRaw.toInt()
+            : null;
+
+        callback(receivedBytes, totalBytes);
+      } catch (e) {
+        // Silently ignore or log if needed
+        // print('Error handling onWebPThumbnailProgress: $e');
       }
     }
   }
@@ -197,6 +223,35 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   @override
   Future<void> clearCookies() async {
     await methodChannel.invokeMethod<void>('clearCookies');
+  }
+
+  @override
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) async {
+    final requestId =
+        'webp_thumb_${DateTime.now().microsecondsSinceEpoch}_${_nextWebPThumbnailRequestId++}';
+    final filePathPayload = filePath != null
+        ? <String, Object>{'filePath': filePath}
+        : null;
+
+    if (onProgress != null) {
+      _onWebPThumbnailProgress[requestId] = onProgress;
+    }
+
+    try {
+      return await methodChannel.invokeMethod<Object>('getThumbnailForWebP', {
+        'url': url,
+        ...?filePathPayload,
+        if (headers.isNotEmpty) 'headers': headers,
+        'requestId': requestId,
+      });
+    } finally {
+      _onWebPThumbnailProgress.remove(requestId);
+    }
   }
 
   @override

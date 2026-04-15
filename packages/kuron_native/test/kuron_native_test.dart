@@ -106,6 +106,17 @@ class MockKuronNativePlatform
   }
 
   @override
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) async {
+    onProgress?.call(0, null);
+    return {'thumbnailPath': filePath, 'webpPath': filePath};
+  }
+
+  @override
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,

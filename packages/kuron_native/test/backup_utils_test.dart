@@ -102,6 +102,17 @@ class MockKuronNativePlatform
 
   @override
   Future<void> clearCookies() async {}
+
+  @override
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) async {
+    onProgress?.call(0, null);
+    return {'thumbnailPath': filePath, 'webpPath': filePath};
+  }
 }
 
 void main() {

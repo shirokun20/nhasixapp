@@ -108,6 +108,17 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('clearCookies() has not been implemented.');
   }
 
+  /// Prepare/generate a thumbnail for an animated WebP while optionally
+  /// reporting byte-level download progress from the native side.
+  Future<Object?> getThumbnailForWebP({
+    required String url,
+    String? filePath,
+    Map<String, String> headers = const {},
+    Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) {
+    throw UnimplementedError('getThumbnailForWebP() has not been implemented.');
+  }
+
   /// Open a PDF file in a native reader/viewer
   Future<void> openPdf({
     required String filePath,
