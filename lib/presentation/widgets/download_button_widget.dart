@@ -259,6 +259,7 @@ class DownloadButtonWidget extends StatelessWidget {
       width: double.infinity,
       height: 48,
       child: Stack(
+        fit: StackFit.expand,
         children: [
           if (progress != null)
             Positioned.fill(
@@ -330,8 +331,10 @@ class DownloadButtonWidget extends StatelessWidget {
     final progressValueColor = progressColor.withValues(alpha: 0.8);
 
     return SizedBox(
+      width: double.infinity,
       height: buttonHeight,
       child: Stack(
+        fit: StackFit.expand,
         children: [
           // Enhanced progress background with rounded corners
           Positioned.fill(
