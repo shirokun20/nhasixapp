@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
+import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -269,20 +270,20 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         _logger.i(
             'SplashBloc: No internet connection during retry, going to offline mode...');
 
-        // Check if there are downloaded contents for offline use
-        final downloadedContents = await _userDataRepository.getAllDownloads(
-            limit:
-                _remoteConfigService.appConfig?.limits?.maxBatchSize ?? 1000);
-        final completedDownloads =
-            downloadedContents.where((d) => d.isCompleted).toList();
+        // Fast path: use DB count first to avoid loading large download lists.
+        final completedCount = await _userDataRepository.getDownloadsCount(
+          state: DownloadState.completed,
+        );
 
-        if (completedDownloads.isNotEmpty) {
-          _logger.i(
-              'SplashBloc: Found ${completedDownloads.length} offline contents');
+        if (completedCount > 0) {
+          _logger.i('SplashBloc: Found $completedCount offline contents');
           AppStateManager().enableOfflineMode();
+          AppStateManager().updateOfflineContentInfo(
+            hasContent: true,
+            contentCount: completedCount,
+          );
           emit(SplashSuccess(
-            message:
-                'Ready (Offline Mode - ${completedDownloads.length} contents)',
+            message: 'readyOffline',
           ));
         } else {
           // No offline content but still force offline mode
@@ -430,45 +431,67 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       // First, show that we're checking offline content
       emit(SplashOfflineDetected(message: 'noInternetCheckOffline'));
 
-      // Get offline content from multiple sources
-      int totalOfflineContent = 0;
-
-      // 1. Check database downloads first
-      List<String> databaseContentIds = [];
+      // Fast path: DB count check first for immediate transition.
+      int databaseContentCount = 0;
       try {
-        final offlineManager = OfflineContentManager(
-          userDataRepository: _userDataRepository,
-          logger: _logger,
+        databaseContentCount = await _userDataRepository.getDownloadsCount(
+          state: DownloadState.completed,
         );
-        databaseContentIds = await offlineManager.getOfflineContentIds();
-        totalOfflineContent += databaseContentIds.length;
+
         _logger.i(
-            'SplashBloc: Found ${databaseContentIds.length} offline items from database');
+            'SplashBloc: Found $databaseContentCount offline items from database count');
       } catch (e) {
         _logger.w('SplashBloc: Error checking database offline content: $e');
       }
 
-      // 2. Check nhasix filesystem folder
+      if (databaseContentCount > 0) {
+        AppStateManager().updateOfflineContentInfo(
+          hasContent: true,
+          contentCount: databaseContentCount,
+        );
+        AppStateManager().enableOfflineMode();
+
+        emit(SplashOfflineReady(
+          offlineContentCount: databaseContentCount,
+          message: 'foundOfflineItems',
+        ));
+
+        // Keep tiny delay so user still sees state change without feeling laggy.
+        await Future.delayed(const Duration(milliseconds: 250));
+        emit(SplashSuccess(message: 'readyOffline'));
+        return;
+      }
+
+      // Slow fallback: scan filesystem for restored/manual content.
+      int totalOfflineContent = 0;
+
+      // Check nhasix filesystem folder with timeout to avoid long startup stalls.
       List<String> filesystemContentIds = [];
       try {
-        final backupPath = await DirectoryUtils.findNhasixBackupFolder();
+        final backupPath =
+            await DirectoryUtils.findNhasixBackupFolder().timeout(
+          const Duration(milliseconds: 1200),
+          onTimeout: () => null,
+        );
+
         if (backupPath != null) {
           final offlineManager = OfflineContentManager(
             userDataRepository: _userDataRepository,
             logger: _logger,
           );
+
           final filesystemContents =
-              await offlineManager.scanBackupFolder(backupPath);
+              await offlineManager.scanBackupFolder(backupPath).timeout(
+                    const Duration(seconds: 2),
+                    onTimeout: () => const [],
+                  );
+
           filesystemContentIds = filesystemContents.map((c) => c.id).toList();
 
-          // Filter out duplicates with database content
-          filesystemContentIds = filesystemContentIds
-              .where((id) => !databaseContentIds.contains(id))
-              .toList();
           totalOfflineContent += filesystemContentIds.length;
 
           _logger.i(
-              'SplashBloc: Found ${filesystemContentIds.length} additional offline items from filesystem');
+              'SplashBloc: Found ${filesystemContentIds.length} offline items from filesystem fallback');
         } else {
           _logger.i('SplashBloc: No nhasix backup folder found');
         }
@@ -487,7 +510,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       if (hasOfflineContent) {
         // ✅ Auto-continue to main app with offline mode
         _logger.i(
-            'SplashBloc: Found $totalOfflineContent offline items total (DB: ${databaseContentIds.length}, FS: ${filesystemContentIds.length}), auto-continuing');
+            'SplashBloc: Found $totalOfflineContent offline items from fallback scan, auto-continuing');
         emit(SplashOfflineReady(
           offlineContentCount: totalOfflineContent,
           message: 'foundOfflineItems',
@@ -496,8 +519,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         // Enable global offline mode
         AppStateManager().enableOfflineMode();
 
-        // Auto-navigate to main after brief delay
-        await Future.delayed(const Duration(seconds: 1));
+        // Keep tiny delay so state transition remains visible but fast.
+        await Future.delayed(const Duration(milliseconds: 250));
         emit(SplashSuccess(message: 'readyOffline'));
       } else {
         // ❌ No offline content - show options
@@ -537,7 +560,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       ));
 
       // Auto-continue to main app
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 250));
       emit(SplashSuccess(message: 'readyOfflineLimitedFeatures'));
     } catch (e, stackTrace) {
       _logger.e('SplashBloc: Error forcing offline mode',
