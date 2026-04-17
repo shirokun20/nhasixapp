@@ -24,6 +24,8 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  bool _isRefreshingSearchConfig = false;
+
   SearchConfig? _buildScraperQueryFallback(Map<String, dynamic>? rawMap) {
     final scraper = rawMap?['scraper'] as Map<String, dynamic>?;
     final urlPatterns = scraper?['urlPatterns'] as Map<String, dynamic>?;
@@ -45,6 +47,27 @@ class _SearchScreenState extends State<SearchScreen> {
       endpoint: endpoint,
       queryParam: 'q',
     );
+  }
+
+  Future<void> _retrySearchConfig(String sourceId) async {
+    if (_isRefreshingSearchConfig) return;
+
+    setState(() {
+      _isRefreshingSearchConfig = true;
+    });
+
+    try {
+      await getIt<RemoteConfigService>().refreshSourceFromConfigUrl(sourceId);
+      if (!mounted) return;
+
+      context.read<SourceCubit>().refreshSources();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshingSearchConfig = false;
+        });
+      }
+    }
   }
 
   @override
@@ -94,6 +117,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildFallbackUI(String sourceId) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -103,14 +128,33 @@ class _SearchScreenState extends State<SearchScreen> {
             const Icon(Icons.search_off, size: 48, color: Colors.orange),
             const SizedBox(height: 16),
             Text(
-              AppLocalizations.of(context)!.searchConfigUnavailable(sourceId),
+              l10n.searchConfigUnavailable(sourceId),
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              AppLocalizations.of(context)!.checkInternetOrReload,
+              l10n.checkInternetOrReload,
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _isRefreshingSearchConfig
+                  ? null
+                  : () => _retrySearchConfig(sourceId),
+              icon: _isRefreshingSearchConfig
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(
+                _isRefreshingSearchConfig ? l10n.retrying : l10n.retrySearch,
+              ),
             ),
           ],
         ),

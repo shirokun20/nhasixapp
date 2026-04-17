@@ -228,6 +228,76 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
     super.dispose();
   }
 
+  String _resolveSplashMessage(
+    BuildContext context,
+    String messageKeyOrText, {
+    int? offlineCount,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final separatorIndex = messageKeyOrText.indexOf(':');
+    final key = separatorIndex == -1
+        ? messageKeyOrText
+        : messageKeyOrText.substring(0, separatorIndex);
+    final payload = separatorIndex == -1
+        ? ''
+        : messageKeyOrText.substring(separatorIndex + 1).trim();
+
+    switch (key) {
+      case 'Initializing...':
+      case 'initializingApplication':
+        return l10n.initializingApplication;
+      case 'Bypassing Cloudflare protection...':
+        return l10n.bypassingProtection;
+      case 'Successfully bypassed Cloudflare protection':
+        return l10n.connectedSuccess;
+      case 'No internet connection. Checking offline content...':
+        return l10n.noInternetCheckOffline;
+      case 'Offline Mode (Limited Features)':
+        return l10n.offlineLimitedFeatures;
+      case 'loadingConfigMsg':
+        return l10n.loadingConfigMsg;
+      case 'initTagsDbMsg':
+        return l10n.initTagsDbMsg;
+      case 'downloadingTagsMsg':
+        return payload.isNotEmpty
+            ? l10n.downloadingTagsMsg(payload)
+            : l10n.loadingConfigMsg;
+      case 'initBypassMsg':
+        return l10n.initBypassMsg;
+      case 'connectingToSite':
+        return l10n.connectingToSite;
+      case 'connectedSuccess':
+        return l10n.connectedSuccess;
+      case 'failedToConnect':
+        return l10n.failedToConnect;
+      case 'bypassFailed':
+        return l10n.bypassFailed;
+      case 'offlineBypassFailed':
+        return l10n.offlineBypassFailed;
+      case 'readyOfflineLimited':
+        return l10n.readyOfflineLimited;
+      case 'downloadingInitConfig':
+        return l10n.downloadingInitConfig;
+      case 'readyOffline':
+        return l10n.readyOffline;
+      case 'connectingMsg':
+        return l10n.connectingMsg;
+      case 'noInternetCheckOffline':
+        return l10n.noInternetCheckOffline;
+      case 'foundOfflineItems':
+        return l10n.foundOfflineItems(offlineCount ?? 0);
+      case 'noInternetNoOffline':
+        return l10n.noInternetNoOffline;
+      case 'offlineLimitedFeatures':
+        return l10n.offlineLimitedFeatures;
+      case 'readyOfflineLimitedFeatures':
+        return l10n.readyOfflineLimitedFeatures;
+      default:
+        return messageKeyOrText;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -307,7 +377,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // App title
                 Text(
-                  AppLocalizations.of(context)?.appTitle ?? 'Kuron',
+                  AppLocalizations.of(context)!.appTitle,
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 1.2,
@@ -395,10 +465,11 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         ),
                         child: Text(
                           state is SplashInitializing
-                              ? AppLocalizations.of(context)?.initializingApp ??
-                                  AppLocalizations.of(context)!
-                                      .initializingApplication
-                              : (state as SplashBypassInProgress).message,
+                              ? _resolveSplashMessage(context, state.message)
+                              : _resolveSplashMessage(
+                                  context,
+                                  (state as SplashBypassInProgress).message,
+                                ),
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -487,7 +558,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          state.message,
+                          _resolveSplashMessage(context, state.message),
                           style: TextStyleConst.headingSmall.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -538,7 +609,11 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          state.message,
+                          _resolveSplashMessage(
+                            context,
+                            state.message,
+                            offlineCount: state.offlineContentCount,
+                          ),
                           style: TextStyleConst.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -573,7 +648,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          state.message,
+                          _resolveSplashMessage(context, state.message),
                           style: TextStyleConst.bodyMedium.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -645,7 +720,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
-                          state.message,
+                          _resolveSplashMessage(context, state.message),
                           style: TextStyleConst.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
@@ -745,7 +820,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Success title
                 Text(
-                  AppLocalizations.of(context)?.readyToGo ?? 'Ready to Go!',
+                  AppLocalizations.of(context)!.readyToGo,
                   style: TextStyleConst.headingMedium.copyWith(
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
@@ -755,7 +830,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
                 // Success message
                 Text(
-                  state.message,
+                  _resolveSplashMessage(context, state.message),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),

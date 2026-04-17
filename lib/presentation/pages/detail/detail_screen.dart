@@ -1374,7 +1374,6 @@ class _DetailScreenState extends State<DetailScreen> {
         children: [
           // Read button - primary action
           Expanded(
-            flex: 2,
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
@@ -1408,6 +1407,7 @@ class _DetailScreenState extends State<DetailScreen> {
               .isFeatureEnabled(content.sourceId, (f) => f.download)) ...[
             const SizedBox(width: 8),
             Expanded(
+              flex: 1,
               child: SizedBox(
                 height: 48,
                 child: DownloadButtonWidget(
@@ -1983,8 +1983,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               if (getIt<RemoteConfigService>().isFeatureEnabled(
                                   content.sourceId, (f) => f.download)) ...[
                                 SizedBox(
-                                  width: 40,
-                                  height: 40,
+                                  width: 44,
+                                  height: 44,
                                   child: DownloadButtonWidget(
                                     content: chapterContent,
                                     size: DownloadButtonSize.small,

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1307,6 +1309,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildOnlineFavoritesContent() {
     final sourceId = _onlineFavoriteSourceId;
+    final settingsState = context.watch<SettingsCubit>().state;
+    final blurThumbnails = settingsState is SettingsLoaded
+        ? settingsState.preferences.blurThumbnails
+        : false;
+
     if (sourceId == null) {
       return Center(
         child: Text(
@@ -1402,6 +1409,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       contentId: id,
                       sourceId: item['source_id']?.toString(),
                       coverUrl: coverUrl,
+                      blurThumbnails: blurThumbnails,
                     ),
                   ),
                 ),
@@ -1642,6 +1650,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       child: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, settingsState) {
+          final blurThumbnails = settingsState is SettingsLoaded
+              ? settingsState.preferences.blurThumbnails
+              : false;
+
           return NotificationListener<ScrollNotification>(
             onNotification: _handleOfflineScrollNotification,
             child: GridView.builder(
@@ -1671,7 +1683,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 final isSelected = _selectedItems.contains(contentId);
 
                 return _buildFavoriteCard(
-                    favorite, isSelected, state.searchQuery);
+                  favorite,
+                  isSelected,
+                  searchQuery: state.searchQuery,
+                  blurThumbnails: blurThumbnails,
+                );
               },
             ),
           );
@@ -1741,8 +1757,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildFavoriteCard(Map<String, dynamic> favorite, bool isSelected,
-      [String? searchQuery]) {
+  Widget _buildFavoriteCard(
+    Map<String, dynamic> favorite,
+    bool isSelected, {
+    String? searchQuery,
+    required bool blurThumbnails,
+  }) {
     final contentId = favorite['id'].toString();
     final coverUrl = favorite['cover_url']?.toString() ?? '';
     final sourceId = favorite['source_id']?.toString();
@@ -1785,6 +1805,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       contentId: contentId,
                       sourceId: sourceId,
                       coverUrl: coverUrl,
+                      blurThumbnails: blurThumbnails,
                     ),
                   ),
                 ),
@@ -2145,11 +2166,13 @@ class _FavoriteCoverImage extends StatefulWidget {
     required this.contentId,
     required this.sourceId,
     required this.coverUrl,
+    required this.blurThumbnails,
   });
 
   final String contentId;
   final String? sourceId;
   final String coverUrl;
+  final bool blurThumbnails;
 
   @override
   State<_FavoriteCoverImage> createState() => _FavoriteCoverImageState();
@@ -2239,11 +2262,20 @@ class _FavoriteCoverImageState extends State<_FavoriteCoverImage> {
             .getSource(widget.sourceId!)
             ?.getImageDownloadHeaders(imageUrl: displayUrl);
 
-    return ContentCard.buildImage(
+    Widget image = ContentCard.buildImage(
       imageUrl: displayUrl,
       fit: BoxFit.cover,
       httpHeaders: headers,
       context: context,
     );
+
+    if (widget.blurThumbnails) {
+      image = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: image,
+      );
+    }
+
+    return image;
   }
 }

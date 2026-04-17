@@ -182,8 +182,8 @@ class DownloadButtonWidget extends StatelessWidget {
     double? progress,
   }) {
     return SizedBox(
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       child: Stack(
         children: [
           if (progress != null)
@@ -195,10 +195,10 @@ class DownloadButtonWidget extends StatelessWidget {
             ),
           IconButton(
             onPressed: onPressed,
-            icon: Icon(icon, size: 16),
+            icon: Icon(icon, size: 18),
             color: color,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
         ],
       ),

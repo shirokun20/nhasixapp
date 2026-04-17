@@ -406,8 +406,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                                 widget.content.sourceId,
                                                 (f) => f.download))
                                           SizedBox(
-                                            width: 36,
-                                            height: 36,
+                                            width: 44,
+                                            height: 44,
                                             child: DownloadButtonWidget(
                                               content: chapterContent,
                                               size: DownloadButtonSize.small,

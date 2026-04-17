@@ -71,8 +71,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
       // CRITICAL FIX: Always load config from assets first (offline-ready)
       // smartInitialize() only loads from bundled assets, no internet required
-      emit(SplashInitializing(
-          message: 'loadingConfigMsg', progress: 0.1));
+      emit(SplashInitializing(message: 'loadingConfigMsg', progress: 0.1));
 
       await _remoteConfigService.smartInitialize(
         isFirstRun: true,
@@ -89,8 +88,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           'SplashBloc: Config synced (Last: ${lastSync?.toIso8601String()})');
 
       // 4. Initialize Tag Data for all sources
-      emit(SplashInitializing(
-          message: 'initTagsDbMsg', progress: 1.0));
+      emit(SplashInitializing(message: 'initTagsDbMsg', progress: 1.0));
 
       // Initialize sources
       // CRITICAL: Access registry AFTER smartInitialize() completes to ensure config is loaded
@@ -139,7 +137,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
         // Check for updates (Blocking if no tags, Background if has tags)
         if (!_tagDataManager.hasTags(source)) {
           emit(SplashInitializing(
-              message: 'downloadingTagsMsg', progress: 1.0));
+              message: 'downloadingTagsMsg:$source', progress: 1.0));
           await _tagDataManager.checkForUpdates(source: source);
         } else {
           _tagDataManager.checkForUpdates(source: source).ignore();
@@ -332,8 +330,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           );
 
           if (result) {
-            emit(SplashSuccess(
-                message: 'connectedSuccess'));
+            emit(SplashSuccess(message: 'connectedSuccess'));
           } else {
             AppStateManager().enableOfflineMode();
             emit(SplashSuccess(message: 'readyOffline'));
@@ -431,8 +428,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   Future<void> _handleOfflineMode(Emitter<SplashState> emit) async {
     try {
       // First, show that we're checking offline content
-      emit(SplashOfflineDetected(
-          message: 'noInternetCheckOffline'));
+      emit(SplashOfflineDetected(message: 'noInternetCheckOffline'));
 
       // Get offline content from multiple sources
       int totalOfflineContent = 0;
