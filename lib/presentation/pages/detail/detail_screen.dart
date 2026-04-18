@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -747,6 +748,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
     final content = state.content;
+    final shouldBlurPrimaryCover = _shouldBlurCover(content);
 
     return Column(children: [
       // Offline banner
@@ -967,6 +969,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ),
                     ),
+                    if (shouldBlurPrimaryCover)
+                      _buildBlacklistedCoverOverlay(compact: false),
                     // Gradient overlay
                     Container(
                       decoration: BoxDecoration(
@@ -1195,6 +1199,69 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  bool _shouldBlurCover(Content content) {
+    final settingsState = context.read<SettingsCubit>().state;
+    if (settingsState is! SettingsLoaded ||
+        !settingsState.preferences.blurThumbnails) {
+      return false;
+    }
+
+    return _tagBlacklistService.isContentBlacklisted(
+      content,
+      localEntries: settingsState.preferences.blacklistedTags,
+    );
+  }
+
+  Widget _buildBlacklistedCoverOverlay({required bool compact}) {
+    final theme = Theme.of(context);
+
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.62),
+            alignment: Alignment.center,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 10 : 12,
+                vertical: compact ? 6 : 8,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off_rounded,
+                    size: compact ? 14 : 16,
+                    color: theme.colorScheme.error,
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      'BLACKLISTED',
+                      style: TextStyleConst.labelSmall.copyWith(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2342,6 +2409,8 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildRelatedContentCard(Content relatedContent) {
+    final shouldBlurRelatedCover = _shouldBlurCover(relatedContent);
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
@@ -2359,38 +2428,46 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: ProgressiveImageWidget(
-                  networkUrl: relatedContent.coverUrl,
-                  contentId: relatedContent.id,
-                  isThumbnail: true,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 320,
-                  memCacheHeight: 400,
-                  httpHeaders: getIt<ContentSourceRegistry>()
-                      .getSource(relatedContent.sourceId)
-                      ?.getImageDownloadHeaders(
-                          imageUrl: relatedContent.coverUrl),
-                  placeholder: Container(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.primary,
-                        strokeWidth: 2,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ProgressiveImageWidget(
+                      networkUrl: relatedContent.coverUrl,
+                      contentId: relatedContent.id,
+                      isThumbnail: true,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 320,
+                      memCacheHeight: 400,
+                      httpHeaders: getIt<ContentSourceRegistry>()
+                          .getSource(relatedContent.sourceId)
+                          ?.getImageDownloadHeaders(
+                              imageUrl: relatedContent.coverUrl),
+                      placeholder: Container(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).colorScheme.primary,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                      errorWidget: Container(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 32,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  errorWidget: Container(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 32,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+                    if (shouldBlurRelatedCover)
+                      _buildBlacklistedCoverOverlay(compact: true),
+                  ],
                 ),
               ),
             ),

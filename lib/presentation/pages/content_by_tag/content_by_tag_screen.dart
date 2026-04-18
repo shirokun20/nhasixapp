@@ -16,6 +16,7 @@ import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/sorting_widget.dart';
 import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
+import 'package:nhasixapp/core/utils/tag_blacklist_utils.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
@@ -45,8 +46,10 @@ class ContentByTagScreen extends StatefulWidget {
 class _ContentByTagScreenState extends State<ContentByTagScreen> {
   late final ContentBloc _contentBloc;
   late final TagBlacklistService _tagBlacklistService;
+  late final Set<String> _screenBlacklistTokens;
   SearchFilter? _currentSearchFilter;
   SortOption _currentSortOption = SortOption.newest;
+  final Set<String> _syncedBlacklistSources = <String>{};
 
   String get _screenTitle {
     final label = widget.displayLabel?.trim();
@@ -84,6 +87,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     );
     _tagBlacklistService = getIt<TagBlacklistService>()
       ..addListener(_handleBlacklistChanged);
+    _screenBlacklistTokens = _buildScreenBlacklistTokens();
     _initializeContent();
     unawaited(_refreshOnlineBlacklist());
   }
@@ -142,7 +146,24 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       return;
     }
 
+    await _syncBlacklistForSource(sourceId);
+  }
+
+  Future<void> _syncBlacklistForSource(String sourceId) async {
+    if (sourceId.isEmpty || _syncedBlacklistSources.contains(sourceId)) {
+      return;
+    }
+
+    _syncedBlacklistSources.add(sourceId);
     await _tagBlacklistService.syncOnlineEntries(sourceId);
+  }
+
+  void _ensureBlacklistForLoadedSource(String sourceId) {
+    if (sourceId.isEmpty || _syncedBlacklistSources.contains(sourceId)) {
+      return;
+    }
+
+    unawaited(_syncBlacklistForSource(sourceId));
   }
 
   @override
@@ -177,6 +198,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       color: Theme.of(context).colorScheme.surface,
       child: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
+          if (state is ContentLoaded && state.contents.isNotEmpty) {
+            _ensureBlacklistForLoadedSource(state.contents.first.sourceId);
+          }
+
           // Show loading indicator when loading
           if (state is ContentLoading) {
             return Column(
@@ -215,6 +240,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
                     onContentTap: _onContentTap,
                     enablePullToRefresh: true,
                     enableInfiniteScroll: false,
+                    blurThumbnails: _isBlurThumbnailsEnabled(),
                     shouldBlurContent: _shouldBlurContent,
                   ),
                 ),
@@ -294,6 +320,20 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Determine if content should be blurred (excluded content)
   bool _shouldBlurContent(Content content) {
+    final settingsState = context.read<SettingsCubit>().state;
+    if (settingsState is! SettingsLoaded) {
+      return false;
+    }
+
+    final localBlacklistEntries = settingsState.preferences.blacklistedTags;
+
+    if (_isCurrentScreenBlacklisted(
+      sourceId: content.sourceId,
+      localBlacklistEntries: localBlacklistEntries,
+    )) {
+      return true;
+    }
+
     if (_currentSearchFilter != null) {
       final filter = _currentSearchFilter!;
 
@@ -333,15 +373,209 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       }
     }
 
-    final settingsState = context.read<SettingsCubit>().state;
-    final localBlacklistEntries = settingsState is SettingsLoaded
-        ? settingsState.preferences.blacklistedTags
-        : const <String>[];
-
     return _tagBlacklistService.isContentBlacklisted(
       content,
       localEntries: localBlacklistEntries,
     );
+  }
+
+  bool _isBlurThumbnailsEnabled() {
+    final settingsState = context.read<SettingsCubit>().state;
+    if (settingsState is! SettingsLoaded) {
+      return false;
+    }
+
+    return settingsState.preferences.blurThumbnails;
+  }
+
+  bool _isCurrentScreenBlacklisted({
+    required String sourceId,
+    required List<String> localBlacklistEntries,
+  }) {
+    if (_screenBlacklistTokens.isEmpty) {
+      return false;
+    }
+
+    final mergedEntries = _tagBlacklistService.getMergedEntries(
+      sourceId: sourceId,
+      localEntries: localBlacklistEntries,
+    );
+
+    if (mergedEntries.isEmpty) {
+      return false;
+    }
+
+    final mergedSet = mergedEntries.toSet();
+    return _screenBlacklistTokens.any(mergedSet.contains);
+  }
+
+  Set<String> _buildScreenBlacklistTokens() {
+    final tokens = <String>{};
+
+    void addToken(String raw) {
+      final normalized = TagBlacklistUtils.normalizeEntry(raw);
+      if (normalized.isNotEmpty) {
+        tokens.add(normalized);
+
+        final dequoted = _stripQuotes(normalized);
+        if (dequoted.isNotEmpty && dequoted != normalized) {
+          tokens.add(dequoted);
+        }
+
+        for (final variant in _valueVariants(dequoted)) {
+          tokens.add(variant);
+        }
+      }
+    }
+
+    final query = widget.tagQuery.trim();
+    if (query.isEmpty) {
+      return tokens;
+    }
+
+    if (query.startsWith('raw:')) {
+      final payload = query.substring(4);
+      try {
+        final params = Uri.splitQueryString(payload);
+        if (params.isEmpty) {
+          addToken(payload);
+          return tokens;
+        }
+
+        for (final entry in params.entries) {
+          final key = entry.key.trim().toLowerCase().replaceAll('[]', '');
+          final value = entry.value.trim();
+          if (value.isEmpty || !_isTagLikeQueryKey(key)) {
+            continue;
+          }
+
+          addToken(value);
+          if (key == 'q') {
+            final parsedIndex = value.indexOf(':');
+            if (parsedIndex > 0 && parsedIndex < value.length - 1) {
+              final parsedType = value.substring(0, parsedIndex).trim();
+              final parsedValue = value.substring(parsedIndex + 1).trim();
+              if (parsedType.isNotEmpty && parsedValue.isNotEmpty) {
+                addToken(parsedValue);
+                _addTypedQueryTokens(tokens, parsedType, parsedValue);
+              }
+            }
+          }
+          _addTypedQueryTokens(tokens, key, value);
+        }
+      } catch (_) {
+        addToken(payload);
+      }
+
+      return tokens;
+    }
+
+    addToken(query);
+    if (!query.contains(':')) {
+      _addTypedQueryTokens(tokens, 'tag', query);
+      _addTypedQueryTokens(tokens, 'genre', query);
+    }
+
+    final separatorIndex = query.indexOf(':');
+    if (separatorIndex > 0 && separatorIndex < query.length - 1) {
+      final key = query.substring(0, separatorIndex).trim().toLowerCase();
+      final value = query.substring(separatorIndex + 1).trim();
+      if (value.isNotEmpty) {
+        addToken(value);
+        _addTypedQueryTokens(tokens, key, value);
+      }
+    }
+
+    return tokens;
+  }
+
+  void _addTypedQueryTokens(
+      Set<String> tokens, String rawType, String rawValue) {
+    final type = TagBlacklistUtils.normalizeEntry(rawType);
+    final value = TagBlacklistUtils.normalizeEntry(rawValue);
+    if (type.isEmpty || value.isEmpty) {
+      return;
+    }
+
+    final valueVariants = _valueVariants(_stripQuotes(value));
+    if (valueVariants.isEmpty) {
+      return;
+    }
+
+    final aliases = _tagTypeAliases(type);
+    for (final variant in valueVariants) {
+      tokens.add('$type:$variant');
+      for (final alias in aliases) {
+        tokens.add('$alias:$variant');
+      }
+    }
+  }
+
+  String _stripQuotes(String input) {
+    return input.replaceAll('"', '').replaceAll("'", '').trim();
+  }
+
+  Set<String> _valueVariants(String input) {
+    final normalized = TagBlacklistUtils.normalizeEntry(input);
+    if (normalized.isEmpty) {
+      return const <String>{};
+    }
+
+    final variants = <String>{normalized};
+    final spaced = normalized.replaceAll('-', ' ');
+    final slugged = normalized.replaceAll(' ', '-');
+    variants.add(spaced);
+    variants.add(slugged);
+    return variants.where((v) => v.isNotEmpty).toSet();
+  }
+
+  Set<String> _tagTypeAliases(String type) {
+    switch (type) {
+      case 'tag':
+      case 'tags':
+        return {'tag', 'tags'};
+      case 'genre':
+      case 'genres':
+        return {'genre', 'genres', 'tag', 'tags'};
+      case 'artist':
+      case 'artists':
+        return {'artist', 'artists'};
+      case 'group':
+      case 'groups':
+        return {'group', 'groups'};
+      case 'character':
+      case 'characters':
+        return {'character', 'characters'};
+      case 'parody':
+      case 'parodies':
+        return {'parody', 'parodies'};
+      default:
+        return {type};
+    }
+  }
+
+  bool _isTagLikeQueryKey(String key) {
+    switch (key) {
+      case 'q':
+      case 'tag':
+      case 'tags':
+      case 'genre':
+      case 'artist':
+      case 'artists':
+      case 'group':
+      case 'groups':
+      case 'character':
+      case 'characters':
+      case 'parody':
+      case 'parodies':
+      case 'language':
+      case 'id':
+      case 'tag_id':
+      case 'tagid':
+        return true;
+      default:
+        return false;
+    }
   }
 
   Widget _buildContentFooter(ContentState state) {

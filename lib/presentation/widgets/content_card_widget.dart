@@ -38,6 +38,7 @@ class ContentCard extends StatelessWidget {
     this.showOfflineIndicator = false,
     this.isHighlighted = false, // NEW: for highlight matching content
     this.highlightReason, // NEW: reason for highlight
+    this.blurThumbnails = false, // NEW: global blur setting
     this.isBlurred = false, // NEW: for blur excluded content
     this.offlineDownloadDate, // NEW: for offline screen - when content was downloaded
     this.offlineSize, // NEW: for offline screen - total file size
@@ -61,6 +62,7 @@ class ContentCard extends StatelessWidget {
   final bool showOfflineIndicator;
   final bool isHighlighted; // NEW: for highlight matching content
   final String? highlightReason; // NEW: reason for highlight
+  final bool blurThumbnails; // NEW: global blur setting
   final bool isBlurred; // NEW: for blur excluded content
   final String?
       offlineDownloadDate; // NEW: formatted download date (e.g., "Nov 27, 2025")
@@ -279,30 +281,41 @@ class ContentCard extends StatelessWidget {
     final headers = source?.getImageDownloadHeaders(imageUrl: content.coverUrl);
 
     return Builder(
-      builder: (context) => Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
-            child: content.coverUrl.isNotEmpty
-                ? ProgressiveThumbnailWidget(
-                    networkUrl: content.coverUrl,
-                    contentId: content.id,
-                    aspectRatio: aspectRatio,
-                    borderRadius: BorderRadius
-                        .zero, // No border radius, handled by parent
-                    showOfflineIndicator:
-                        false, // Disable to prevent duplicate with ContentCard's own indicator
-                    httpHeaders: headers,
-                  )
-                : _buildImageError(),
+      builder: (context) {
+        Widget image = Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
-          if (isBlurred) _buildBlacklistedCoverOverlay(context),
-        ],
-      ),
+          child: content.coverUrl.isNotEmpty
+              ? ProgressiveThumbnailWidget(
+                  networkUrl: content.coverUrl,
+                  contentId: content.id,
+                  aspectRatio: aspectRatio,
+                  borderRadius:
+                      BorderRadius.zero, // No border radius, handled by parent
+                  showOfflineIndicator:
+                      false, // Disable to prevent duplicate with ContentCard's own indicator
+                  httpHeaders: headers,
+                )
+              : _buildImageError(),
+        );
+
+        if (blurThumbnails) {
+          image = ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: image,
+          );
+        }
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            image,
+            if (isBlurred) _buildBlacklistedCoverOverlay(context),
+          ],
+        );
+      },
     );
   }
 

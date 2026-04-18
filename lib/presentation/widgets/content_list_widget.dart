@@ -104,6 +104,7 @@ class ContentListWidget extends StatefulWidget {
     this.enablePullToRefresh = true,
     this.enableInfiniteScroll = false, // Disabled by default for pagination
     this.showHeader = false, // Hidden by default for main screen style
+    this.blurThumbnails = false,
     this.shouldBlurContent, // NEW: Function to determine if content should be blurred
     this.shouldHighlightContent, // NEW: Function to determine if content should be highlighted
     this.highlightReason, // NEW: Function to get highlight reason
@@ -113,6 +114,7 @@ class ContentListWidget extends StatefulWidget {
   final bool enablePullToRefresh;
   final bool enableInfiniteScroll;
   final bool showHeader;
+  final bool blurThumbnails;
   final bool Function(Content content)? shouldBlurContent; // NEW: Blur logic
   final bool Function(Content content)?
       shouldHighlightContent; // NEW: Highlight logic
@@ -339,6 +341,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
             child: FeaturedContentCard(
               content: state.contents.first,
               onTap: () => widget.onContentTap?.call(state.contents.first),
+              blurThumbnails: widget.blurThumbnails,
               isBlurred:
                   widget.shouldBlurContent?.call(state.contents.first) ?? false,
             ),
@@ -372,6 +375,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     return ContentCard(
                       content: content,
                       onTap: () => widget.onContentTap?.call(content),
+                      blurThumbnails: widget.blurThumbnails,
                       // Using default settings (showUploadDate: false) for main screen style
                       // For search/browse screens, set showUploadDate: true
                       // Hide page count for Crotpedia (manga/manhwa) - only show for nhentai

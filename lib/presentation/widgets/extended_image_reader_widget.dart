@@ -150,8 +150,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   );
   static final Map<String, String> _ehentaiResolvedImageCache =
       <String, String>{};
+  static final Map<String, DateTime> _ehentaiResolvedImageCacheTime =
+      <String, DateTime>{};
   static final Map<String, Future<String?>> _ehentaiResolveInFlight =
       <String, Future<String?>>{};
+  static const Duration _ehentaiResolvedImageCacheTtl = Duration(minutes: 2);
   static final Map<String, double> _syntheticProgressByImageKey =
       <String, double>{};
 
@@ -193,6 +196,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
   static const int _maxImageLoadRetries = 3;
+  int _ehentaiResolveRetries = 0;
+  static const int _maxEhentaiResolveRetries = 2;
   Timer? _autoRetryTimer;
   Timer? _syntheticProgressTimer;
   double _syntheticProgressValue = 0.0;
@@ -322,6 +327,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     if (sourceChanged || imageChanged) {
       _hitomiFallbackImageUrl = null;
+      _ehentaiResolveRetries = 0;
       _prepareEhentaiResolveFuture();
     }
   }
@@ -685,6 +691,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             if (_tryHitomiAvifFallback(url)) {
               return _buildLoadingIndicator(context);
             }
+            if (_tryRefreshEhentaiResolvedImageUrl(url)) {
+              return _buildLoadingIndicator(context);
+            }
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
                 _imageLoadRetries < _maxImageLoadRetries) {
@@ -695,6 +704,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             _stopSyntheticProgress(reset: true);
             _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
             _imageLoadRetries = 0; // Reset retries on success
+            _ehentaiResolveRetries = 0;
             if ((widget.sourceId ?? '').toLowerCase() == 'hitomi' &&
                 _hitomiFallbackImageUrl != null) {
               _logger.i(
@@ -967,8 +977,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   Future<String?> _resolveEhentaiImageUrl(String readerPageUrl) async {
     final cached = _ehentaiResolvedImageCache[readerPageUrl];
-    if (cached != null && cached.isNotEmpty) {
-      return cached;
+    final cachedAt = _ehentaiResolvedImageCacheTime[readerPageUrl];
+    if (cached != null && cached.isNotEmpty && cachedAt != null) {
+      final age = DateTime.now().difference(cachedAt);
+      if (age <= _ehentaiResolvedImageCacheTtl) {
+        return cached;
+      }
+      _invalidateEhentaiResolvedImageUrl(readerPageUrl);
     }
 
     final inFlight = _ehentaiResolveInFlight[readerPageUrl];
@@ -1005,11 +1020,50 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       final imageUrl = _extractEhentaiImageUrl(html, readerPageUrl);
       if (imageUrl != null && imageUrl.isNotEmpty) {
         _ehentaiResolvedImageCache[readerPageUrl] = imageUrl;
+        _ehentaiResolvedImageCacheTime[readerPageUrl] = DateTime.now();
       }
       return imageUrl;
     } catch (_) {
       return null;
     }
+  }
+
+  void _invalidateEhentaiResolvedImageUrl(String readerPageUrl) {
+    _ehentaiResolvedImageCache.remove(readerPageUrl);
+    _ehentaiResolvedImageCacheTime.remove(readerPageUrl);
+    _ehentaiResolveInFlight.remove(readerPageUrl);
+  }
+
+  bool _tryRefreshEhentaiResolvedImageUrl(String failedUrl) {
+    if ((widget.sourceId ?? '').toLowerCase() != 'ehentai') {
+      return false;
+    }
+
+    final readerPageUrl = widget.imageUrl;
+    if (!_shouldResolveEhentaiImageUrl(readerPageUrl)) {
+      return false;
+    }
+
+    if (_ehentaiResolveRetries >= _maxEhentaiResolveRetries) {
+      return false;
+    }
+
+    _ehentaiResolveRetries++;
+    _invalidateEhentaiResolvedImageUrl(readerPageUrl);
+    _logger.w(
+      'E-Hentai reader image failed, refreshing tokenized URL '
+      '(attempt $_ehentaiResolveRetries/$_maxEhentaiResolveRetries). '
+      'page=${widget.pageNumber}, failed=$failedUrl',
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _ehentaiResolvedImageFuture = _resolveEhentaiImageUrl(readerPageUrl);
+      });
+    });
+
+    return true;
   }
 
   String? _extractEhentaiImageUrl(String html, String baseUrl) {

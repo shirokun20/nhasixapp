@@ -19,12 +19,14 @@ class FeaturedContentCard extends StatelessWidget {
     required this.content,
     this.onTap,
     this.showBadge = true,
+    this.blurThumbnails = false,
     this.isBlurred = false,
   });
 
   final Content content;
   final VoidCallback? onTap;
   final bool showBadge;
+  final bool blurThumbnails;
   final bool isBlurred;
 
   @override
@@ -53,27 +55,7 @@ class FeaturedContentCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Image
-                      content.coverUrl.isNotEmpty
-                          ? Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ProgressiveThumbnailWidget(
-                                  networkUrl: content.coverUrl,
-                                  contentId: content.id,
-                                  aspectRatio: 0.7,
-                                  borderRadius: BorderRadius.zero,
-                                  showOfflineIndicator: false,
-                                  httpHeaders: getIt<ContentSourceRegistry>()
-                                      .getSource(content.sourceId)
-                                      ?.getImageDownloadHeaders(
-                                          imageUrl: content.coverUrl),
-                                ),
-                                if (isBlurred)
-                                  _buildBlacklistedOverlay(context),
-                              ],
-                            )
-                          : _buildPlaceholder(context),
+                      _buildCoverImage(context),
 
                       // Featured badge
                       if (showBadge)
@@ -309,6 +291,36 @@ class FeaturedContentCard extends StatelessWidget {
       child: Container(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
+    );
+  }
+
+  Widget _buildCoverImage(BuildContext context) {
+    Widget image = content.coverUrl.isNotEmpty
+        ? ProgressiveThumbnailWidget(
+            networkUrl: content.coverUrl,
+            contentId: content.id,
+            aspectRatio: 0.7,
+            borderRadius: BorderRadius.zero,
+            showOfflineIndicator: false,
+            httpHeaders: getIt<ContentSourceRegistry>()
+                .getSource(content.sourceId)
+                ?.getImageDownloadHeaders(imageUrl: content.coverUrl),
+          )
+        : _buildPlaceholder(context);
+
+    if (blurThumbnails) {
+      image = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: image,
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        image,
+        if (isBlurred) _buildBlacklistedOverlay(context),
+      ],
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -15,12 +17,16 @@ class HistoryItemWidget extends StatelessWidget {
     required this.onTap,
     this.onRemove,
     this.showRemoveButton = true,
+    this.blurThumbnails = false,
+    this.isBlurred = false,
   });
 
   final History history;
   final VoidCallback onTap;
   final VoidCallback? onRemove;
   final bool showRemoveButton;
+  final bool blurThumbnails;
+  final bool isBlurred;
 
   @override
   Widget build(BuildContext context) {
@@ -54,30 +60,77 @@ class HistoryItemWidget extends StatelessWidget {
   }
 
   Widget _buildThumbnail(BuildContext context) {
+    final thumbnailContent = history.coverUrl != null
+        ? ProgressiveImageWidget(
+            networkUrl: history.coverUrl!,
+            width: 80,
+            height: 120,
+            fit: BoxFit.cover,
+            borderRadius: BorderRadius.circular(8),
+            httpHeaders: getIt<ContentSourceRegistry>()
+                .getSource(history.sourceId)
+                ?.getImageDownloadHeaders(imageUrl: history.coverUrl!),
+          )
+        : Container(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Icon(
+              Icons.image_not_supported,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 32,
+            ),
+          );
+
+    Widget image = thumbnailContent;
+    if (blurThumbnails) {
+      image = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: image,
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: 80,
         height: 120,
-        child: history.coverUrl != null
-            ? ProgressiveImageWidget(
-                networkUrl: history.coverUrl!,
-                width: 80,
-                height: 120,
-                fit: BoxFit.cover,
-                borderRadius: BorderRadius.circular(8),
-                httpHeaders: getIt<ContentSourceRegistry>()
-                    .getSource(history.sourceId)
-                    ?.getImageDownloadHeaders(imageUrl: history.coverUrl!),
-              )
-            : Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Icon(
-                  Icons.image_not_supported,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 32,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            image,
+            if (isBlurred) _buildBlacklistedThumbnailOverlay(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlacklistedThumbnailOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.62),
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),
               ),
+              child: Icon(
+                Icons.visibility_off_rounded,
+                size: 14,
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -113,7 +166,8 @@ class HistoryItemWidget extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              AppLocalizations.of(context)!.pageProgress(history.lastPage, history.totalPages),
+              AppLocalizations.of(context)!
+                  .pageProgress(history.lastPage, history.totalPages),
               style: TextStyleConst.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -10,12 +13,14 @@ import '../../../services/analytics_service.dart';
 import '../../cubits/history/history_cubit.dart';
 import '../../cubits/history/history_cubit_factory.dart';
 import '../../cubits/history/history_state.dart';
+import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/widgets.dart';
 import '../history/widgets/history_item_widget.dart';
 import '../history/widgets/history_empty_widget.dart';
 import '../history/widgets/history_cleanup_info_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import '../../../domain/entities/history.dart';
+import '../../../services/tag_blacklist_service.dart';
 
 /// Screen for displaying reading history with auto-cleanup features
 class HistoryScreen extends StatefulWidget {
@@ -29,11 +34,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   late final HistoryCubit _historyCubit;
   late final ScrollController _scrollController;
   late final AnalyticsService _analyticsService;
+  late final TagBlacklistService _tagBlacklistService;
 
   @override
   void initState() {
     super.initState();
     _analyticsService = getIt<AnalyticsService>();
+    _tagBlacklistService = getIt<TagBlacklistService>()
+      ..addListener(_handleBlacklistChanged);
     _historyCubit = HistoryCubitFactory.create();
     _scrollController = ScrollController();
 
@@ -42,6 +50,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     // Track screen view
     _trackScreenView();
+
+    // Keep online blacklist IDs current for history blur checks.
+    unawaited(_tagBlacklistService.syncAllAvailableSources());
 
     // Load initial history
     _historyCubit.loadHistory();
@@ -58,9 +69,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   void dispose() {
+    _tagBlacklistService.removeListener(_handleBlacklistChanged);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleBlacklistChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   void _onScroll() {
@@ -148,6 +169,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildBody(BuildContext context, HistoryState state) {
+    // Rebuild list when blur preferences change.
+    context.watch<SettingsCubit>().state;
+
     if (state is HistoryLoading) {
       return const ListShimmer(itemCount: 8);
     }
@@ -181,6 +205,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildHistoryList(BuildContext context, HistoryLoaded state) {
+    final settingsState = context.read<SettingsCubit>().state;
+    final blurThumbnails = settingsState is SettingsLoaded
+        ? settingsState.preferences.blurThumbnails
+        : false;
+    final localBlacklistEntries = settingsState is SettingsLoaded
+        ? settingsState.preferences.blacklistedTags
+        : const <String>[];
+
     return Column(
       children: [
         // History count info
@@ -217,11 +249,48 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 onTap: () => _navigateToContent(context, historyItem),
                 onRemove: () =>
                     _removeHistoryItem(context, historyItem.contentId),
+                blurThumbnails: blurThumbnails,
+                isBlurred: _isHistoryItemBlacklisted(
+                  historyItem,
+                  localBlacklistEntries: localBlacklistEntries,
+                ),
               );
             },
           ),
         ),
       ],
+    );
+  }
+
+  bool _isHistoryItemBlacklisted(
+    History historyItem, {
+    required List<String> localBlacklistEntries,
+  }) {
+    final contentId = (historyItem.isChapterMode &&
+            historyItem.parentId != null &&
+            historyItem.parentId!.isNotEmpty)
+        ? historyItem.parentId!
+        : historyItem.contentId;
+
+    final minimalContent = Content(
+      id: contentId,
+      sourceId: historyItem.sourceId,
+      title: historyItem.title ?? contentId,
+      coverUrl: historyItem.coverUrl ?? '',
+      tags: const [],
+      artists: const [],
+      characters: const [],
+      parodies: const [],
+      groups: const [],
+      language: '',
+      pageCount: historyItem.totalPages,
+      imageUrls: const [],
+      uploadDate: historyItem.lastViewed,
+    );
+
+    return _tagBlacklistService.isContentBlacklisted(
+      minimalContent,
+      localEntries: localBlacklistEntries,
     );
   }
 
