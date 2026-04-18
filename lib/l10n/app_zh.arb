@@ -3508,6 +3508,33 @@
   "writingExportFile": "正在写入导出文件...",
   "finalizingExport": "正在完成导出...",
   "renameCollection": "重命名合集",
+  "readerContinuousDisabledHeavyImage": "已禁用连续滚动：检测到高负载动画图片。请使用水平/垂直模式。",
+  "readerContinuousOffHeavyImage": "连续滚动已关闭（重型图片）",
+  "chapterCurrentBadge": "当前",
+  "readerDaysAgoShort": "{count}天前",
+  "@readerDaysAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerWeeksAgoShort": "{count}周前",
+  "@readerWeeksAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerMonthsAgoShort": "{count}个月前",
+  "@readerMonthsAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "captchaCancelled": "验证码挑战已取消或失败。",
   "failedToOpenCaptcha": "无法打开原生验证码求解器：{error}"
 }

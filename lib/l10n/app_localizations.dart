@@ -8526,6 +8526,42 @@ abstract class AppLocalizations {
   /// **'Finalizing export...'**
   String get finalizingExport;
 
+  /// No description provided for @readerContinuousDisabledHeavyImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Scroll disabled: heavy animated image detected. Use Horizontal/Vertical mode.'**
+  String get readerContinuousDisabledHeavyImage;
+
+  /// No description provided for @readerContinuousOffHeavyImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous off (heavy image)'**
+  String get readerContinuousOffHeavyImage;
+
+  /// No description provided for @chapterCurrentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'NOW'**
+  String get chapterCurrentBadge;
+
+  /// No description provided for @readerDaysAgoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String readerDaysAgoShort(int count);
+
+  /// No description provided for @readerWeeksAgoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}w ago'**
+  String readerWeeksAgoShort(int count);
+
+  /// No description provided for @readerMonthsAgoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}mo ago'**
+  String readerMonthsAgoShort(int count);
+
   /// No description provided for @captchaCancelled.
   ///
   /// In en, this message translates to:

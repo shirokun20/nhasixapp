@@ -3931,6 +3931,34 @@
   "finalizingExport": "Finalizing export...",
   "renameCollection": "Rename collection",
 
+  "readerContinuousDisabledHeavyImage": "Continuous Scroll disabled: heavy animated image detected. Use Horizontal/Vertical mode.",
+  "readerContinuousOffHeavyImage": "Continuous off (heavy image)",
+  "chapterCurrentBadge": "NOW",
+  "readerDaysAgoShort": "{count}d ago",
+  "@readerDaysAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerWeeksAgoShort": "{count}w ago",
+  "@readerWeeksAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerMonthsAgoShort": "{count}mo ago",
+  "@readerMonthsAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
   "captchaCancelled": "CAPTCHA challenge was cancelled or failed.",
   "failedToOpenCaptcha": "Failed to open native CAPTCHA solver: {error}",
   "@failedToOpenCaptcha": {

@@ -2912,6 +2912,33 @@
   "writingExportFile": "Menulis file ekspor...",
   "finalizingExport": "Menyelesaikan ekspor...",
   "renameCollection": "Ubah nama koleksi",
+  "readerContinuousDisabledHeavyImage": "Mode baca full vertical dinonaktifkan: gambar animasi berat terdeteksi. Gunakan mode Horizontal/Vertikal.",
+  "readerContinuousOffHeavyImage": "Mode baca full vertical nonaktif (gambar berat)",
+  "chapterCurrentBadge": "AKTIF",
+  "readerDaysAgoShort": "{count}h lalu",
+  "@readerDaysAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerWeeksAgoShort": "{count}mgg lalu",
+  "@readerWeeksAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerMonthsAgoShort": "{count}bln lalu",
+  "@readerMonthsAgoShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "captchaCancelled": "Tantangan CAPTCHA dibatalkan atau gagal.",
   "failedToOpenCaptcha": "Gagal membuka pemecah CAPTCHA bawaan: {error}"
 }

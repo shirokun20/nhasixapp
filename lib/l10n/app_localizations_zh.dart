@@ -4864,6 +4864,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get finalizingExport => '正在完成导出...';
 
   @override
+  String get readerContinuousDisabledHeavyImage =>
+      '已禁用连续滚动：检测到高负载动画图片。请使用水平/垂直模式。';
+
+  @override
+  String get readerContinuousOffHeavyImage => '连续滚动已关闭（重型图片）';
+
+  @override
+  String get chapterCurrentBadge => '当前';
+
+  @override
+  String readerDaysAgoShort(int count) {
+    return '$count天前';
+  }
+
+  @override
+  String readerWeeksAgoShort(int count) {
+    return '$count周前';
+  }
+
+  @override
+  String readerMonthsAgoShort(int count) {
+    return '$count个月前';
+  }
+
+  @override
   String get captchaCancelled => '验证码挑战已取消或失败。';
 
   @override

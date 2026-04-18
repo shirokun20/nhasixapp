@@ -5026,6 +5026,32 @@ class AppLocalizationsId extends AppLocalizations {
   String get finalizingExport => 'Menyelesaikan ekspor...';
 
   @override
+  String get readerContinuousDisabledHeavyImage =>
+      'Mode baca full vertical dinonaktifkan: gambar animasi berat terdeteksi. Gunakan mode Horizontal/Vertikal.';
+
+  @override
+  String get readerContinuousOffHeavyImage =>
+      'Mode baca full vertical nonaktif (gambar berat)';
+
+  @override
+  String get chapterCurrentBadge => 'AKTIF';
+
+  @override
+  String readerDaysAgoShort(int count) {
+    return '${count}h lalu';
+  }
+
+  @override
+  String readerWeeksAgoShort(int count) {
+    return '${count}mgg lalu';
+  }
+
+  @override
+  String readerMonthsAgoShort(int count) {
+    return '${count}bln lalu';
+  }
+
+  @override
   String get captchaCancelled => 'Tantangan CAPTCHA dibatalkan atau gagal.';
 
   @override

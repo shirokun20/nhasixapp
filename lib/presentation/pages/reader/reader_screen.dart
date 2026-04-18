@@ -499,13 +499,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _readerCubit.changeReadingMode(ReadingMode.singlePage);
 
     // Inform user that continuous mode is disabled for this content.
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Continuous Scroll dinonaktifkan: gambar animasi berat terdeteksi. Gunakan mode Horizontal/Vertical.',
-        ),
-        duration: Duration(seconds: 5),
+      SnackBar(
+        content: Text(l10n.readerContinuousDisabledHeavyImage),
+        duration: const Duration(seconds: 5),
       ),
     );
   }
@@ -931,7 +930,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (state is ReaderError) {
       return Center(
         child: AppErrorWidget(
-          title: AppLocalizations.of(context)?.loadingError ?? 'Loading Error',
+          title: AppLocalizations.of(context)!.loadingError,
           message: state.message ?? '',
           onRetry: () => _readerCubit.loadContent(
             widget.contentId,
@@ -1478,9 +1477,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              (AppLocalizations.of(context)?.offline ??
-                                      'OFFLINE')
-                                  .toUpperCase(),
+                              AppLocalizations.of(context)!.offlineStatus,
                               style: TextStyleConst.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontSize: 10,
@@ -1715,7 +1712,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              AppLocalizations.of(context)?.cancel ?? 'Cancel',
+              AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1737,7 +1734,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               }
             },
             child: Text(
-              AppLocalizations.of(context)?.jump ?? 'Jump',
+              AppLocalizations.of(context)!.jump,
               style: TextStyleConst.buttonMedium.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -1788,14 +1785,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Reading mode
               ListTile(
                 title: Text(
-                  AppLocalizations.of(context)?.readingMode ?? 'Reading Mode',
+                  AppLocalizations.of(context)!.readingMode,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   _isContinuousScrollDisabledForCurrentContent()
-                      ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • Continuous off (heavy image)'
+                      ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • ${AppLocalizations.of(context)!.readerContinuousOffHeavyImage}'
                       : _getReadingModeLabel(
                           currentState.readingMode ?? ReadingMode.singlePage),
                   style: TextStyleConst.bodySmall.copyWith(
@@ -1858,15 +1855,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Keep screen on
               ListTile(
                 title: Text(
-                  AppLocalizations.of(context)?.keepScreenOn ??
-                      AppLocalizations.of(context)!.keepScreenOn,
+                  AppLocalizations.of(context)!.keepScreenOn,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
-                  AppLocalizations.of(context)?.keepScreenOnDescription ??
-                      AppLocalizations.of(context)!.preventScreenOff,
+                  AppLocalizations.of(context)!.keepScreenOnDescription,
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1890,8 +1885,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   label: Text(
-                    AppLocalizations.of(context)?.resetToDefaults ??
-                        AppLocalizations.of(context)!.resetToDefaults,
+                    AppLocalizations.of(context)!.resetToDefaults,
                     style: TextStyleConst.buttonMedium.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -1926,13 +1920,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   String _getReadingModeLabel(ReadingMode mode) {
     switch (mode) {
       case ReadingMode.singlePage:
-        return AppLocalizations.of(context)?.horizontalPages ??
-            AppLocalizations.of(context)!.horizontalPages;
+        return AppLocalizations.of(context)!.horizontalPages;
       case ReadingMode.verticalPage:
-        return AppLocalizations.of(context)?.verticalPages ?? 'Vertical Pages';
+        return AppLocalizations.of(context)!.verticalPages;
       case ReadingMode.continuousScroll:
-        return AppLocalizations.of(context)?.continuousScroll ??
-            AppLocalizations.of(context)!.continuousScroll;
+        return AppLocalizations.of(context)!.continuousScroll;
     }
   }
 
@@ -2111,7 +2103,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                   Text(
                                     activeLanguage != null &&
                                             effectiveChapters.isNotEmpty
-                                        ? '${effectiveChapters.length} chapters • ${activeLanguage.toUpperCase()}'
+                                        ? '${AppLocalizations.of(context)!.nChapters(effectiveChapters.length)} • ${activeLanguage.toUpperCase()}'
                                         : AppLocalizations.of(context)!
                                             .nChapters(
                                                 effectiveChapters.length),
@@ -2281,7 +2273,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                               BorderRadius.circular(8),
                                         ),
                                         child: Text(
-                                          'NOW',
+                                          AppLocalizations.of(context)!
+                                              .chapterCurrentBadge,
                                           style: TextStyleConst.labelSmall
                                               .copyWith(
                                             color: Theme.of(context)
@@ -2324,9 +2317,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final diff = now.difference(date);
     if (diff.inDays == 0) return AppLocalizations.of(context)!.today;
     if (diff.inDays == 1) return AppLocalizations.of(context)!.yesterday;
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
-    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    if (diff.inDays < 7) {
+      return AppLocalizations.of(context)!.readerDaysAgoShort(diff.inDays);
+    }
+    if (diff.inDays < 30) {
+      return AppLocalizations.of(context)!
+          .readerWeeksAgoShort((diff.inDays / 7).floor());
+    }
+    if (diff.inDays < 365) {
+      return AppLocalizations.of(context)!
+          .readerMonthsAgoShort((diff.inDays / 30).floor());
+    }
     return '${date.day}/${date.month}/${date.year}';
   }
 
@@ -2381,7 +2382,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             action: SnackBarAction(
-              label: AppLocalizations.of(context)?.retry ?? 'Retry',
+              label: AppLocalizations.of(context)!.retry,
               textColor: Theme.of(context).colorScheme.onError,
               onPressed: () => _resetReaderSettings(),
             ),

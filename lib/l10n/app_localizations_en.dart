@@ -5002,6 +5002,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get finalizingExport => 'Finalizing export...';
 
   @override
+  String get readerContinuousDisabledHeavyImage =>
+      'Continuous Scroll disabled: heavy animated image detected. Use Horizontal/Vertical mode.';
+
+  @override
+  String get readerContinuousOffHeavyImage => 'Continuous off (heavy image)';
+
+  @override
+  String get chapterCurrentBadge => 'NOW';
+
+  @override
+  String readerDaysAgoShort(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String readerWeeksAgoShort(int count) {
+    return '${count}w ago';
+  }
+
+  @override
+  String readerMonthsAgoShort(int count) {
+    return '${count}mo ago';
+  }
+
+  @override
   String get captchaCancelled => 'CAPTCHA challenge was cancelled or failed.';
 
   @override
