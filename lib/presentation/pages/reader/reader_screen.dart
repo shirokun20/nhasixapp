@@ -68,8 +68,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
 
-  // 🎬 Heavy-image auto-switch guard: content IDs already switched to singlePage.
-  // Static so it persists across reader navigations within the same session.
+  // 🎬 Heavy-image guard: content IDs where continuous-scroll is disabled.
+  // Static so the lock persists across reader navigations in the same session.
   static final Set<String> _autoSwitchedContentIds = <String>{};
 
   // Throttle expensive continuous-scroll computations.
@@ -486,32 +486,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// Called when an [ExtendedImageReaderWidget] at an early page detects a
   /// heavy animated WebP (\u2265 2 MB) while in continuous-scroll mode.
   ///
-  /// Automatically switches to single-page mode so only one animation is
-  /// rendered at a time, eliminating concurrent-decode frame drops.
-  /// Shows a dismissible [SnackBar] so the user knows what happened.
+  /// Automatically disables continuous-scroll and switches to single-page
+  /// mode so only one animation is rendered at a time, eliminating
+  /// concurrent-decode frame drops.
   void _onHeavyImageDetected() {
     if (!mounted) return;
     final contentId = widget.contentId;
     if (_autoSwitchedContentIds.contains(contentId)) return;
     _autoSwitchedContentIds.add(contentId);
 
-    // Switch to single-page mode.
+    // Force to single-page mode.
     _readerCubit.changeReadingMode(ReadingMode.singlePage);
 
-    // Inform user with an undo action.
+    // Inform user that continuous mode is disabled for this content.
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Mode diubah ke Satu Halaman \u2014 gambar animasi berat terdeteksi',
+      const SnackBar(
+        content: Text(
+          'Continuous Scroll dinonaktifkan: gambar animasi berat terdeteksi. Gunakan mode Horizontal/Vertical.',
         ),
-        action: SnackBarAction(
-          label: 'Batalkan',
-          onPressed: () {
-            _autoSwitchedContentIds.remove(contentId);
-            _readerCubit.changeReadingMode(ReadingMode.continuousScroll);
-          },
-        ),
-        duration: const Duration(seconds: 5),
+        duration: Duration(seconds: 5),
       ),
     );
   }
@@ -660,6 +654,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   bool _isHeavyPrefetchSource(String? sourceId) {
     return sourceId == 'hentainexus';
+  }
+
+  bool _isContinuousScrollDisabledForCurrentContent() {
+    return _autoSwitchedContentIds.contains(widget.contentId);
+  }
+
+  ReadingMode _getNextReadingMode(
+    ReadingMode currentMode, {
+    required bool disableContinuousScroll,
+  }) {
+    if (!disableContinuousScroll) {
+      switch (currentMode) {
+        case ReadingMode.singlePage:
+          return ReadingMode.verticalPage;
+        case ReadingMode.verticalPage:
+          return ReadingMode.continuousScroll;
+        case ReadingMode.continuousScroll:
+          return ReadingMode.singlePage;
+      }
+    }
+
+    // Continuous-scroll is locked for heavy-image content.
+    switch (currentMode) {
+      case ReadingMode.singlePage:
+        return ReadingMode.verticalPage;
+      case ReadingMode.verticalPage:
+        return ReadingMode.singlePage;
+      case ReadingMode.continuousScroll:
+        return ReadingMode.singlePage;
+    }
   }
 
   void _syncControllersWithState(ReaderState state) {
@@ -818,6 +842,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               prevImageCount != currImageCount;
         },
         listener: (context, state) {
+          if (_isContinuousScrollDisabledForCurrentContent() &&
+              state.readingMode == ReadingMode.continuousScroll) {
+            _readerCubit.changeReadingMode(ReadingMode.singlePage);
+            return;
+          }
+
           _syncControllersWithState(state);
 
           // 🎬 Toggle immersive mode based on UI visibility
@@ -1501,19 +1531,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           IconButton(
             onPressed: () {
               final currentMode = state.readingMode ?? ReadingMode.singlePage;
-              ReadingMode newMode;
-
-              switch (currentMode) {
-                case ReadingMode.singlePage:
-                  newMode = ReadingMode.verticalPage;
-                  break;
-                case ReadingMode.verticalPage:
-                  newMode = ReadingMode.continuousScroll;
-                  break;
-                case ReadingMode.continuousScroll:
-                  newMode = ReadingMode.singlePage;
-                  break;
-              }
+              final newMode = _getNextReadingMode(
+                currentMode,
+                disableContinuousScroll:
+                    _isContinuousScrollDisabledForCurrentContent(),
+              );
 
               _readerCubit.changeReadingMode(newMode);
             },
@@ -1772,8 +1794,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  _getReadingModeLabel(
-                      currentState.readingMode ?? ReadingMode.singlePage),
+                  _isContinuousScrollDisabledForCurrentContent()
+                      ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • Continuous off (heavy image)'
+                      : _getReadingModeLabel(
+                          currentState.readingMode ?? ReadingMode.singlePage),
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1782,19 +1806,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   onPressed: () {
                     final currentMode =
                         currentState.readingMode ?? ReadingMode.singlePage;
-                    ReadingMode newMode;
-
-                    switch (currentMode) {
-                      case ReadingMode.singlePage:
-                        newMode = ReadingMode.verticalPage;
-                        break;
-                      case ReadingMode.verticalPage:
-                        newMode = ReadingMode.continuousScroll;
-                        break;
-                      case ReadingMode.continuousScroll:
-                        newMode = ReadingMode.singlePage;
-                        break;
-                    }
+                    final newMode = _getNextReadingMode(
+                      currentMode,
+                      disableContinuousScroll:
+                          _isContinuousScrollDisabledForCurrentContent(),
+                    );
 
                     _readerCubit.changeReadingMode(newMode);
                   },
