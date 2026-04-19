@@ -25,6 +25,7 @@
 | **komiktap_migration** | `..........` | 0% | Pending |
 | **komiktap_navigation_lists** | `..........` | 0% | Pending |
 | **local_collection_categories** | `..........` | 0% | Pending |
+| **pin_biometric_app_lock** | `..........` | 0% | Pending |
 | **premium_enhancements** | `..........` | 0% | Pending |
 | **reader-ads** | `..........` | 0% | Pending |
 
@@ -36,6 +37,7 @@
 ## ✅ Success
 | Project Name | Progress | % | Status |
 |---|---|---|---|
+| **blur_recent_apps_privacy** | `██████████` | 100% | ✅ Ready |
 | **chapter_reading_history_navigation** | `██████████` | 100% | ✅ Ready |
 | **crotpedia_ui_modernization** | `██████████` | 100% | ✅ Ready |
 | **doujin_search_highlight** | `██████████` | 100% | ✅ Ready |

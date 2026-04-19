@@ -3,6 +3,7 @@ package id.nhasix.app
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.NonNull
@@ -20,9 +21,15 @@ class MainActivity: FlutterActivity() {
         Log.d("AppDisguise", "MainActivity onCreate called")
         Log.d("AppDisguise", "Intent action: ${intent?.action}")
         Log.d("AppDisguise", "Component: ${intent?.component}")
+        configureRecentsPrivacy()
         
         // Check for notification tap intent
         handleNotificationIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        configureRecentsPrivacy()
     }
     
     override fun onNewIntent(intent: Intent) {
@@ -89,6 +96,15 @@ class MainActivity: FlutterActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    private fun configureRecentsPrivacy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(false)
+            Log.d("MainActivity", "Recent-app screenshots disabled (API 33+ native fallback active)")
+        } else {
+            Log.d("MainActivity", "Recent-app screenshots use Flutter blur fallback on API < 33")
+        }
     }
 
     private fun setAppDisguise(mode: String) {

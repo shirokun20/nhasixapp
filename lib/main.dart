@@ -9,6 +9,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
+import 'package:nhasixapp/presentation/widgets/app_privacy_overlay_gate.dart';
 import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dart';
 import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/services/analytics_service.dart';
@@ -139,7 +140,9 @@ class MyApp extends StatelessWidget {
                         PlatformNotSupportedDialog.show(context);
                       });
                     }
-                    return child ?? const SizedBox.shrink();
+                    return AppPrivacyOverlayGate(
+                      child: child ?? const SizedBox.shrink(),
+                    );
                   },
                 );
               },

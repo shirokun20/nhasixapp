@@ -116,6 +116,7 @@ import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
 import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -221,6 +222,10 @@ void _setupCore() {
 
 /// Setup services
 void _setupServices() {
+  getIt.registerLazySingleton<AppPrivacyOverlayService>(
+    () => AppPrivacyOverlayService(),
+  );
+
   // Notification Service
   getIt.registerLazySingleton<NotificationService>(
       () => NotificationService(logger: getIt<Logger>()));

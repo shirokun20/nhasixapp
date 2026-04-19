@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
 import '../../services/workers/download_lifecycle_mixin.dart';
 import '../blocs/download/download_bloc.dart';
 
@@ -19,9 +21,12 @@ class LifecycleWatcher extends StatefulWidget {
 
 class _LifecycleWatcherState extends State<LifecycleWatcher>
     with WidgetsBindingObserver, DownloadLifecycleMixin {
+  late final AppPrivacyOverlayService _privacyOverlayService;
+
   @override
   void initState() {
     super.initState();
+    _privacyOverlayService = getIt<AppPrivacyOverlayService>();
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -34,6 +39,8 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
+
+    _privacyOverlayService.updateForLifecycleState(state);
 
     // Get current download state
     final downloadState = context.read<DownloadBloc>().state;
