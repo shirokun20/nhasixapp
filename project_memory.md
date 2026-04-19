@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.16+25 |
+| **Version** | 0.9.17+26 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -181,6 +181,8 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-19 | Codex | Blur recent apps privacy execution | ✅ Done | Created a focused execution package under `projects/onprogress-plan/blur_recent_apps_privacy/` and implemented a lightweight root-level privacy blur overlay for recent-apps snapshots. Added `AppPrivacyOverlayService`, wired it through `LifecycleWatcher` and `MaterialApp.builder`, kept background downloads untouched by leaving `DownloadLifecycleMixin` / native worker scheduling unchanged, then hardened Recents privacy with an Android 13+ native fallback in `MainActivity` plus a dedicated privacy window background. Verified with targeted service/widget tests, focused `flutter analyze`, and successful `./gradlew app:compileDebugKotlin`. |
+| 2026-04-19 | Codex | PIN + biometric app lock analysis | ✅ Done | Audited the current settings, lifecycle, routing, storage, and Android host setup and confirmed the repo has no existing PIN/biometric lock foundation. Created a new analysis package under `projects/analysis-plan/pin_biometric_app_lock/` that defines the MVP scope, the recommended global `AppLockGate` + `AppLockCubit` architecture, Android host requirements, and a native-only biometric option via `kuron_native` MethodChannel instead of `local_auth`, then expanded the plan to include a lightweight root-level privacy blur overlay when the app enters inactive/paused so recent-apps snapshots are obscured. |
 | 2026-04-19 | Codex | MP4 conversion feasibility clarification | ✅ Done | Confirmed the app currently has no MP4/video conversion or playback pipeline in the repo; the only built-in document conversion path is PDF. Clarified that MP4 is technically possible as a video export for animated assets, but it would no longer behave like a paged document and would lose the app's page-based reader semantics. |
 | 2026-04-19 | Codex | Document conversion animated-format clarification | ✅ Done | Clarified that the app's current document-conversion path is PDF-only and does not preserve animation. The PDF pipeline preprocesses page assets into static image bytes (including JPEG re-encoding in `pdf_service`) and embeds them into `pw.MemoryImage` / `pw.Image` PDF pages, so animated WebP/GIF content is flattened to a single static page image during conversion. |
 | 2026-04-19 | Codex | Animated reader format support clarification | ✅ Done | Clarified the current reader capability matrix from source code: the dedicated pause-aware animated reader is `AnimatedWebPView`, which is specifically for animated WebP on Android (API 28+ full playback, <28 first-frame fallback, non-Android fallback widget). General image file support in the native download/offline path includes `jpg/jpeg/png/gif/webp/avif/bmp`, but GIF/AVIF/JPG/PNG are not routed through the special animated reader logic, and PDF remains a separate non-animated renderer via `PdfReaderActivity`. |
@@ -343,27 +345,58 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 
 ## 🆕 Latest Session — 2026-04-19
 
-### E-Hentai Download Extension Normalization + Offline Animated Reader Fix ✅
+### Blur Recent Apps Privacy Execution ✅
 
-- Device evidence:
-  - Hitomi sample `3484982` ("About the New President of the Disciplinary Committee's Huge Tits Part 2") was stored as proper `page_XXX.webp`.
-  - Newest E-Hentai sample `4dgvweluk` (`Carlotta (Animated WEBP)`) was stored as `page_XXX.jpg` even though the file header begins with `RIFF....WEBPVP8X` and includes animated WebP markers.
-- Root causes:
-  - `AnimatedWebPView` kept `autoPlay=true` as a persistent override, so a heavy animated page built while visible could keep animating after it scrolled off-screen.
-  - `DownloadWorker.kt` named E-Hentai downloads from the reader page URL (`/s/...`) before the actual image was resolved, so animated WebP files defaulted to `.jpg`.
-- Fixes:
-  - `AnimatedWebPView` now treats `visiblePageNotifier` as the source of truth whenever page visibility is available, so off-screen animated pages return to the passive thumbnail state correctly.
-  - `ExtendedImageReaderWidget` now sniffs local/cached file headers to confirm animated WebP bytes, allowing misnamed files (e.g. `.jpg` containing animated WebP) to still route to the native pause-aware renderer.
-  - `DownloadWorker.kt` now normalizes the saved file extension after each E-Hentai page download, so actual WebP bytes are persisted as `.webp` for future downloads.
-- Added regression coverage:
-  - `packages/kuron_native/test/animated_webp_view_test.dart`
-  - `test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
-- Validation:
-  - `fvm flutter test test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
-  - `fvm flutter analyze lib/presentation/widgets/extended_image_reader_widget.dart test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
-  - `fvm flutter test test/animated_webp_view_test.dart`
-  - `fvm flutter analyze lib/widgets/animated_webp_view.dart test/animated_webp_view_test.dart`
+- Execution package created:
+  - `projects/onprogress-plan/blur_recent_apps_privacy/blur_recent_apps_privacy_2026-04-19.md`
+  - `projects/onprogress-plan/blur_recent_apps_privacy/progress.md`
+- Implemented app-side privacy obfuscation:
+  - added `AppPrivacyOverlayService` to own a lightweight UI-only obscured state
+  - added `AppPrivacyOverlayGate` at `MaterialApp.builder` so the routed UI can be blurred and scrimmed before Android captures the recent-apps snapshot
+  - updated `LifecycleWatcher` to toggle the overlay on `inactive` / `paused` and clear it on `resumed`
+- Added native stability fallback:
+  - updated `MainActivity` to apply Android 13+ recent-apps privacy fallback during `onCreate` / `onResume`
+  - added `privacy_recent_background.xml` and wired `NormalTheme` window background so the native fallback has a deliberate privacy-safe preview
+  - retained the Flutter blur path for lower Android versions and as best-effort UI obfuscation while the app is transitioning
+- Download safety:
+  - kept the existing `DownloadLifecycleMixin` background scheduling path untouched
+  - no native worker/download code was changed, so ongoing downloads continue to hand off to WorkManager as before when the app goes to background
+- Verification completed:
+  - `fvm flutter test test/services/app_privacy_overlay_service_test.dart test/widget/presentation/widgets/app_privacy_overlay_gate_test.dart`
+  - `fvm flutter analyze lib/services/app_privacy_overlay_service.dart lib/presentation/widgets/app_privacy_overlay_gate.dart lib/core/di/service_locator.dart lib/presentation/widgets/lifecycle_watcher.dart lib/main.dart test/services/app_privacy_overlay_service_test.dart test/widget/presentation/widgets/app_privacy_overlay_gate_test.dart`
   - `./gradlew app:compileDebugKotlin`
+  - adb device verification on SDK 35 confirmed the recent-apps card is privacy-obscured after opening Recents and capturing a device screenshot
+- Remaining manual validation:
+  - verify an active download keeps progressing while the app sits in recent apps
+
+---
+
+### PIN + Biometric App Lock Analysis ✅
+
+- Confirmed current foundation:
+  - no existing PIN, fingerprint, biometric, or app-lock implementation exists in the repo
+  - reusable hooks already exist in `SettingsScreen`, `PreferencesService`, `UserPreferences`, `LifecycleWatcher`, and `MaterialApp.builder`
+  - Android host is not yet ready for `local_auth` because `MainActivity` still extends `FlutterActivity`, launch themes are not AppCompat-based, and `USE_BIOMETRIC` is missing from the manifest
+- Analysis deliverables created:
+  - `projects/analysis-plan/pin_biometric_app_lock/pin_biometric_app_lock_2026-04-19.md`
+- Recommended MVP architecture:
+  - store lock flags in `SharedPreferences` via `UserPreferences`
+  - store only salted/hash PIN material in `FlutterSecureStorage`
+  - keep app PIN flow in Flutter/Dart, but prefer exposing fingerprint/biometric prompt from `kuron_native` instead of adding `local_auth`
+  - add an app-wide `AppLockCubit` plus fullscreen `AppLockGate` overlay at `MaterialApp.builder`
+  - trigger re-lock from the existing lifecycle watcher when the app returns from background
+  - trigger a lightweight privacy blur/scrim overlay on `inactive`/`paused` so recent-apps previews capture an obscured frame
+- Proposed execution scope:
+  - enable/disable app lock from Settings
+  - set, confirm, change, and remove PIN
+  - optional biometric unlock when supported
+  - cold-start and resume lock coverage
+  - lightweight privacy blur in recent apps without interrupting the existing background download flow
+  - targeted service/cubit/widget tests
+- Approval gate captured in the analysis:
+  - relock timing recommended as immediate on resume
+  - PIN format recommended as numeric-only, 6 digits
+  - biometric remains optional and always keeps PIN as fallback
 
 ---
 

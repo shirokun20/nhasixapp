@@ -16,7 +16,7 @@ void main() {
       // Arrange
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('id.nhasix.app/pdf_reader'),
+        const MethodChannel('kuron_native'),
         (MethodCall methodCall) async {
           if (methodCall.method == 'openPdf') {
             return null; // Success
@@ -37,7 +37,7 @@ void main() {
       Map<String, dynamic>? receivedArgs;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('id.nhasix.app/pdf_reader'),
+        const MethodChannel('kuron_native'),
         (MethodCall methodCall) async {
           if (methodCall.method == 'openPdf') {
             receivedArgs = Map<String, dynamic>.from(methodCall.arguments);
@@ -64,7 +64,7 @@ void main() {
       // Arrange
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('id.nhasix.app/pdf_reader'),
+        const MethodChannel('kuron_native'),
         (MethodCall methodCall) async {
           throw PlatformException(
             code: 'PDF_OPEN_FAILED',
@@ -83,7 +83,7 @@ void main() {
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('id.nhasix.app/pdf_reader'),
+        const MethodChannel('kuron_native'),
         null,
       );
     });

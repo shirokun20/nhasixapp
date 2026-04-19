@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/domain/entities/crotpedia/crotpedia_entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -13,16 +14,35 @@ import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
+class MockContentSource extends Mock implements ContentSource {}
 
 void main() {
   late MockCrotpediaFeatureCubit mockCubit;
+  late MockContentSource mockContentSource;
 
   setUp(() {
     mockCubit = MockCrotpediaFeatureCubit();
+    mockContentSource = MockContentSource();
+
     if (GetIt.instance.isRegistered<CrotpediaFeatureCubit>()) {
       GetIt.instance.unregister<CrotpediaFeatureCubit>();
     }
+    if (GetIt.instance.isRegistered<ContentSourceRegistry>()) {
+      GetIt.instance.unregister<ContentSourceRegistry>();
+    }
+
+    final registry = ContentSourceRegistry();
+    when(() => mockContentSource.id).thenReturn(SourceType.crotpedia.id);
+    when(
+      () => mockContentSource.getImageDownloadHeaders(
+        imageUrl: any(named: 'imageUrl'),
+        cookies: null,
+      ),
+    ).thenReturn(const <String, String>{});
+    registry.register(mockContentSource);
+
     GetIt.instance.registerFactory<CrotpediaFeatureCubit>(() => mockCubit);
+    GetIt.instance.registerSingleton<ContentSourceRegistry>(registry);
   });
 
   tearDown(() {

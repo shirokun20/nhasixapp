@@ -84,6 +84,24 @@ View online favorites in **Favorites → Online** tab.
 
 ---
 
+**Q: Can I post comments on nhentai?**
+
+Yes. If you're logged in, supported nhentai gallery pages now let you write and submit comments directly from the detail screen.
+- Comment length must stay within the in-app validation limits.
+- You may be asked to solve a CAPTCHA again before the comment is accepted.
+- Successful comments are inserted back into the current discussion immediately.
+
+---
+
+**Q: Why does the app preview look blurred in recent apps?**
+
+Kuron obscures the recent-apps preview on purpose to protect your privacy when the app goes into the background.
+- The blur/scrim overlay is applied as soon as the app transitions away from the foreground.
+- On Android 13 and newer, an additional native fallback is used so the Recents preview is more reliable.
+- This privacy behavior is separate from the reader itself and is designed not to interrupt normal background handoff behavior.
+
+---
+
 **Q: What is the Tag Blacklist?**
 
 The Tag Blacklist lets you hide unwanted content by blurring thumbnails in all feeds.
@@ -154,8 +172,8 @@ You can either:
 
 Go to **About → Check for Updates**. You'll be notified when a new version is available on GitHub.
 
-Current latest release: **v0.9.16+25**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25
+Current latest release: **v0.9.17+26**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.17%2B26
 
 ---
 

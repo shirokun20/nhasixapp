@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/domain/entities/crotpedia/crotpedia_entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
@@ -14,16 +15,32 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
+class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 
 void main() {
   late MockCrotpediaFeatureCubit mockCubit;
+  late MockRemoteConfigService mockRemoteConfigService;
 
   setUp(() {
     mockCubit = MockCrotpediaFeatureCubit();
+    mockRemoteConfigService = MockRemoteConfigService();
     if (GetIt.instance.isRegistered<CrotpediaFeatureCubit>()) {
       GetIt.instance.unregister<CrotpediaFeatureCubit>();
     }
+    if (GetIt.instance.isRegistered<RemoteConfigService>()) {
+      GetIt.instance.unregister<RemoteConfigService>();
+    }
+
+    when(() => mockRemoteConfigService.getRawConfig('crotpedia')).thenReturn(
+      <String, dynamic>{
+        'navigation': <String, dynamic>{'genreQueryPrefix': 'genre:'},
+      },
+    );
+
     GetIt.instance.registerFactory<CrotpediaFeatureCubit>(() => mockCubit);
+    GetIt.instance.registerSingleton<RemoteConfigService>(
+      mockRemoteConfigService,
+    );
   });
 
   tearDown(() {

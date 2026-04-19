@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.17+26] - 2026-04-19
+
+### ✨ Highlights
+
+#### 💬 Nhentai Comments & Auth Polish
+- **Submit Comments**: Logged-in nhentai users can now post comments directly from gallery detail pages with inline validation, CAPTCHA fallback, and immediate prepend on success.
+- **Auth User-Agent**: Standardized authenticated nhentai requests to `Kuron/<version> (+https://github.com/shirokun20/nhasixapp)` across the config-driven auth and comment flow.
+
+#### 🖼 Reader & Download Reliability
+- **Animated WebP Visibility Control**: Fixed the offline/native animated reader so off-screen pages pause correctly instead of continuing to play after the page is no longer current.
+- **Original File Extension Preservation**: E-Hentai downloads now save pages using the detected real image format (`.webp`, `.png`, `.gif`, etc.) instead of forcing `.jpg`, improving offline animated-WebP support.
+- **Legacy Detection Hardening**: The reader now sniffs local file bytes so older misnamed animated WebP downloads can still route to the native animated renderer.
+
+#### 🛡 Privacy
+- **Recent Apps Privacy Overlay**: Added a root-level blur + scrim overlay when the app transitions to background-facing lifecycle states.
+- **Android 13+ Native Fallback**: Added a Recents-specific native fallback plus privacy-safe window background to make the recent-apps preview more reliable on modern Android.
+
+### 🩹 Stability & UX
+- **Continuous Scroll Cache Regression**: Restored selective image retention so normal non-animated pages recycle properly again in continuous scroll.
+- **Native Loader Feedback**: Improved animated WebP native thumbnail preparation so cached files can still show meaningful loading progress.
+- **Documentation Sync**: Updated README and FAQ documentation to reflect comment posting and recent-apps privacy behavior.
+
+---
+
+
 ## [0.9.16+25] - 2026-04-12
 
 ### ✨ Highlights

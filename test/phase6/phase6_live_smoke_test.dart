@@ -9,6 +9,9 @@ import 'package:kuron_special/kuron_special.dart';
 import 'package:logger/logger.dart';
 
 void main() {
+  final liveSmokeEnabled =
+      Platform.environment['ENABLE_PHASE6_LIVE_SMOKE'] == 'true';
+
   group('Phase 6 live smoke', () {
     test(
       'captures real outputs for search/detail/reading/non-chapter',
@@ -44,12 +47,15 @@ void main() {
             reason: 'No Phase 6 provider returned live data');
       },
       timeout: const Timeout(Duration(minutes: 8)),
+      skip: liveSmokeEnabled
+          ? false
+          : 'Set ENABLE_PHASE6_LIVE_SMOKE=true to run live provider smoke tests.',
     );
   });
 }
 
 Future<Map<String, dynamic>> _probeEHentai() async {
-  final raw = _loadConfig('app/config/ehentai-config.json');
+  final raw = _loadConfig('ehentai-config.json');
   final dio = _buildDio(raw);
   final jarPath = await Directory.systemTemp.createTemp('ehentai-cookies-');
   final cookieJar = PersistCookieJar(storage: FileStorage(jarPath.path));
@@ -64,7 +70,7 @@ Future<Map<String, dynamic>> _probeEHentai() async {
 }
 
 Future<Map<String, dynamic>> _probeHentaiNexus() async {
-  final raw = _loadConfig('app/config/hentainexus-config.json');
+  final raw = _loadConfig('hentainexus-config.json');
   final dio = _buildDio(raw);
 
   final source = HentaiNexusSourceFactory(
@@ -77,7 +83,7 @@ Future<Map<String, dynamic>> _probeHentaiNexus() async {
 }
 
 Future<Map<String, dynamic>> _probeHitomi() async {
-  final raw = _loadConfig('app/config/hitomi-config.json');
+  final raw = _loadConfig('hitomi-config.json');
   final dio = _buildDio(raw);
 
   final source = HitomiSourceFactory(
@@ -156,8 +162,15 @@ Future<Map<String, dynamic>> _probeSource({
   }
 }
 
-Map<String, dynamic> _loadConfig(String path) {
-  final file = File(path);
+Map<String, dynamic> _loadConfig(String fileName) {
+  final candidatePaths = <String>[
+    'assets/configs/$fileName',
+    'app/config/$fileName',
+  ];
+
+  final file = candidatePaths
+      .map(File.new)
+      .firstWhere((candidate) => candidate.existsSync());
   final raw = file.readAsStringSync();
   return jsonDecode(raw) as Map<String, dynamic>;
 }

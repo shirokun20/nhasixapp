@@ -1,7 +1,7 @@
 name: nhasixapp
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.9.16+25
+version: 0.9.17+26
 
 environment:
   sdk: ^3.5.4

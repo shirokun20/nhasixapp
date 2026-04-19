@@ -84,6 +84,24 @@ Lihat favorit online di tab **Favorit → Online**.
 
 ---
 
+**Q: Bisakah saya mengirim komentar di nhentai?**
+
+Bisa. Jika Anda sudah login, halaman detail galeri nhentai yang didukung sekarang memungkinkan Anda menulis dan mengirim komentar langsung dari layar detail.
+- Panjang komentar harus mengikuti batas validasi di aplikasi.
+- Anda mungkin diminta menyelesaikan CAPTCHA lagi sebelum komentar diterima.
+- Komentar yang berhasil dikirim akan langsung dimasukkan kembali ke diskusi yang sedang terbuka.
+
+---
+
+**Q: Mengapa preview aplikasi terlihat blur di recent apps?**
+
+Kuron memang mengaburkan preview di recent apps untuk menjaga privasi ketika aplikasi masuk ke background.
+- Overlay blur/scrim diterapkan segera saat aplikasi berpindah dari foreground.
+- Di Android 13 ke atas, ada fallback native tambahan agar preview Recents lebih konsisten terlindungi.
+- Perilaku privasi ini terpisah dari reader dan dirancang agar tidak mengganggu handoff background normal.
+
+---
+
 **Q: Apa itu Tag Blacklist?**
 
 Tag Blacklist memungkinkan Anda menyembunyikan konten yang tidak diinginkan dengan memblur thumbnail di semua feed.
@@ -154,8 +172,8 @@ Anda bisa:
 
 Pergi ke **Tentang → Periksa Pembaruan**. Anda akan diberi tahu ketika versi baru tersedia di GitHub.
 
-Rilis terbaru saat ini: **v0.9.16+25**
-https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25
+Rilis terbaru saat ini: **v0.9.17+26**
+https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.17%2B26
 
 ---
 

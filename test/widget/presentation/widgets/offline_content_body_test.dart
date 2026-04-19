@@ -5,13 +5,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
+import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
 
 // Mocks
@@ -28,12 +31,38 @@ class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 
 class MockOfflineContentManager extends Mock implements OfflineContentManager {}
 
+class MockTagBlacklistService extends Mock implements TagBlacklistService {}
+
+class MockContentSource extends Mock implements ContentSource {}
+
+final _fallbackContent = Content(
+  id: 'fallback',
+  title: 'Fallback',
+  coverUrl: '',
+  sourceId: 'nhentai',
+  tags: [],
+  artists: [],
+  characters: [],
+  parodies: [],
+  groups: [],
+  language: 'en',
+  pageCount: 1,
+  imageUrls: [],
+  uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
+);
+
 void main() {
   late MockOfflineSearchCubit mockOfflineSearchCubit;
   late MockDownloadBloc mockDownloadBloc;
   late MockSettingsCubit mockSettingsCubit;
   late MockRemoteConfigService mockRemoteConfigService;
   late MockOfflineContentManager mockOfflineContentManager;
+  late MockTagBlacklistService mockTagBlacklistService;
+  late MockContentSource mockContentSource;
+
+  setUpAll(() {
+    registerFallbackValue(_fallbackContent);
+  });
 
   setUp(() {
     mockOfflineSearchCubit = MockOfflineSearchCubit();
@@ -41,16 +70,41 @@ void main() {
     mockSettingsCubit = MockSettingsCubit();
     mockRemoteConfigService = MockRemoteConfigService();
     mockOfflineContentManager = MockOfflineContentManager();
+    mockTagBlacklistService = MockTagBlacklistService();
+    mockContentSource = MockContentSource();
 
     // Setup GetIt
     final getIt = GetIt.instance;
     getIt.reset();
+    final registry = ContentSourceRegistry();
+    final languageService = LanguageService(logger: Logger());
+
+    when(() => mockContentSource.id).thenReturn('nhentai');
+    when(
+      () => mockContentSource.getImageDownloadHeaders(
+        imageUrl: any(named: 'imageUrl'),
+        cookies: null,
+      ),
+    ).thenReturn(const <String, String>{});
+    registry.register(mockContentSource);
+
     getIt.registerSingleton<OfflineSearchCubit>(mockOfflineSearchCubit);
+    getIt.registerSingleton<ContentSourceRegistry>(registry);
+    getIt.registerSingleton<LanguageService>(languageService);
     getIt.registerSingleton<RemoteConfigService>(mockRemoteConfigService);
     getIt.registerSingleton<OfflineContentManager>(mockOfflineContentManager);
+    getIt.registerSingleton<TagBlacklistService>(mockTagBlacklistService);
 
     // Default Stubs
     when(() => mockRemoteConfigService.getAllSourceConfigs()).thenReturn([]);
+    when(() => mockTagBlacklistService.syncAllAvailableSources())
+        .thenAnswer((_) async {});
+    when(
+      () => mockTagBlacklistService.isContentBlacklisted(
+        any(),
+        localEntries: any(named: 'localEntries'),
+      ),
+    ).thenReturn(false);
     when(() => mockSettingsCubit.state).thenReturn(const SettingsInitial());
     when(() => mockSettingsCubit.getColumnsForOrientation(any())).thenReturn(2);
     when(() => mockDownloadBloc.state).thenReturn(const DownloadInitial());

@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.16-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.17-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
@@ -19,7 +19,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.16+25**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.16%2B25)
+[📦 **Download v0.9.17+26**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.17%2B26)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
@@ -30,11 +30,12 @@
 
 ## ✨ **Fitur Utama**
 
-### � **Login Nhentai & Sinkronisasi Online **
+### � **Login Nhentai, Sinkronisasi & Komentar**
 - **Login Akun**: Masuk dengan akun nhentai langsung di aplikasi (Drawer → Login).
 - **CAPTCHA Solver**: Native Android WebView untuk menyelesaikan Turnstile / hCaptcha dengan mulus.
 - **Favorit Online**: Sinkronkan favorit dengan akun nhentai — pilih Offline, Online, atau Keduanya per galeri.
 - **Sinkronisasi Tag Blacklist**: Gabungkan blacklist server nhentai dengan aturan lokal; thumbnail di-blur di semua feed.
+- **Kirim Komentar**: Pengguna yang login sekarang bisa menulis komentar langsung dari halaman detail galeri, dengan fallback CAPTCHA saat dibutuhkan.
 - **Galeri Acak**: Temukan konten acak dengan satu ketukan dari layar utama.
 
 ### 💬 **Dukungan Multi-Provider (v0.9.14)**
@@ -46,7 +47,7 @@
 > ⚠️ **Source Premium**: E-Hentai, HentaiNexus, Hitomi, dan source pihak ketiga lainnya adalah **source lanjutan/premium** yang memerlukan instalasi manual melalui **Pengaturan → Sources → Add via Link atau Import ZIP**. nhentai adalah source gratis default yang sudah tersedia.
 
 ### 💬 **Interaksi Komunitas**
-- **Lihat Komentar**: Baca diskusi langsung di halaman detail.
+- **Lihat & Kirim Komentar**: Baca diskusi dan kirim komentar langsung di halaman detail saat login.
 - **Tampilan Modern**: UI komentar berbentuk kartu yang rapi di mode Terang & Gelap.
 - **Data Realtime**: Menggunakan API resmi untuk data komentar yang akurat dan cepat.
 
@@ -57,6 +58,7 @@
 
 ### 🛡️ **Privasi & Offline**
 - **App Disguise**: Samarkan aplikasi menjadi Kalkulator, Catatan, atau Cuaca.
+- **Privasi Recent Apps**: Preview aplikasi di recent apps akan di-obscure otomatis, dengan fallback native yang lebih kuat di Android 13+.
 - **Download Pribadi**: Konten tersembunyi dari galeri HP (`.nomedia`).
 - **Offline First**: Baca tanpa internet dengan download di latar belakang.
 - **Export Library**: Backup seluruh koleksi beserta database untuk dibagikan atau dipulihkan.
