@@ -181,6 +181,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-19 | Codex | Release prep v0.9.17+26 | ✅ Done | Bumped app version to `0.9.17+26`, added a new changelog section for nhentai comment posting, animated WebP/offline reader fixes, E-Hentai original-format preservation, and recent-apps privacy. Updated `README.md`, `README_ID.md`, and FAQ docs under `docs/en` + `docs/id` to match the release, then synchronized stale tests so the full suite passes again. Verified with `fvm flutter analyze` and `fvm flutter test`, with the live Phase 6 smoke test now opt-in via `ENABLE_PHASE6_LIVE_SMOKE=true`. |
 | 2026-04-19 | Codex | Blur recent apps privacy execution | ✅ Done | Created a focused execution package under `projects/onprogress-plan/blur_recent_apps_privacy/` and implemented a lightweight root-level privacy blur overlay for recent-apps snapshots. Added `AppPrivacyOverlayService`, wired it through `LifecycleWatcher` and `MaterialApp.builder`, kept background downloads untouched by leaving `DownloadLifecycleMixin` / native worker scheduling unchanged, then hardened Recents privacy with an Android 13+ native fallback in `MainActivity` plus a dedicated privacy window background. Verified with targeted service/widget tests, focused `flutter analyze`, and successful `./gradlew app:compileDebugKotlin`. |
 | 2026-04-19 | Codex | PIN + biometric app lock analysis | ✅ Done | Audited the current settings, lifecycle, routing, storage, and Android host setup and confirmed the repo has no existing PIN/biometric lock foundation. Created a new analysis package under `projects/analysis-plan/pin_biometric_app_lock/` that defines the MVP scope, the recommended global `AppLockGate` + `AppLockCubit` architecture, Android host requirements, and a native-only biometric option via `kuron_native` MethodChannel instead of `local_auth`, then expanded the plan to include a lightweight root-level privacy blur overlay when the app enters inactive/paused so recent-apps snapshots are obscured. |
 | 2026-04-19 | Codex | MP4 conversion feasibility clarification | ✅ Done | Confirmed the app currently has no MP4/video conversion or playback pipeline in the repo; the only built-in document conversion path is PDF. Clarified that MP4 is technically possible as a video export for animated assets, but it would no longer behave like a paged document and would lose the app's page-based reader semantics. |
@@ -344,6 +345,24 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 ---
 
 ## 🆕 Latest Session — 2026-04-19
+
+### Release Prep v0.9.17+26 ✅
+
+- Release metadata updated:
+  - bumped `pubspec.yaml` version from `0.9.16+25` to `0.9.17+26`
+  - added a new `CHANGELOG.md` release section covering nhentai comment posting, recent-apps privacy, and animated-WebP / E-Hentai download fixes
+- Documentation sync completed before tagging:
+  - updated `README.md` and `README_ID.md` release badge, download link, and feature bullets
+  - updated `docs/en/FAQ.md` and `docs/id/FAQ.md` with the new latest-release link plus entries for nhentai comment posting and recent-apps privacy blur behavior
+- Release verification completed:
+  - `fvm flutter analyze`
+  - `fvm flutter test`
+  - updated stale widget/service tests so the default suite passes again
+  - changed `test/phase6/phase6_live_smoke_test.dart` to be opt-in via `ENABLE_PHASE6_LIVE_SMOKE=true` and to read configs from `assets/configs/` first
+- Source-control caveat:
+  - GitHub tag creation is still pending because a tag created before committing these changes would point at the previous commit instead of this release candidate
+
+---
 
 ### Blur Recent Apps Privacy Execution ✅
 
