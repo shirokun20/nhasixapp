@@ -200,14 +200,20 @@ class DownloadWorker(
                  if (index == 0) Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
             }
 
-            downloadedFiles.add(fileName)
+            val storedFile = if (isEhentaiReaderPageUrl(url)) {
+                normalizeDownloadedFileExtension(destFile)
+            } else {
+                destFile
+            }
+
+            downloadedFiles.add(storedFile.name)
             
             
             val progress = ((index + 1).toFloat() / imageUrls.size * 100).toInt()
             
             // Add current file size to total for speed calculation
-            if (destFile.exists()) {
-                totalBytesDownloaded += destFile.length()
+            if (storedFile.exists()) {
+                totalBytesDownloaded += storedFile.length()
             }
             
             setProgress(workDataOf(
@@ -531,6 +537,101 @@ class DownloadWorker(
             normalizedPath.endsWith(".jpeg") -> ".jpeg"
             normalizedPath.endsWith(".jpg") -> ".jpg"
             else -> ".jpg"
+        }
+    }
+
+    private fun normalizeDownloadedFileExtension(file: File): File {
+        if (!file.exists() || file.length() == 0L) {
+            return file
+        }
+
+        val actualExtension = detectActualFileExtension(file) ?: return file
+        if (file.name.lowercase().endsWith(actualExtension)) {
+            return file
+        }
+
+        val renamedFile = File(file.parentFile, "${file.nameWithoutExtension}$actualExtension")
+        if (renamedFile.absolutePath == file.absolutePath) {
+            return file
+        }
+
+        if (renamedFile.exists() && renamedFile.length() > 0L) {
+            Log.w(
+                TAG,
+                "Detected existing normalized file ${renamedFile.name}; removing stale ${file.name}"
+            )
+            file.delete()
+            return renamedFile
+        }
+
+        val renamed = file.renameTo(renamedFile)
+        if (renamed) {
+            Log.i(
+                TAG,
+                "Normalized downloaded file extension: ${file.name} -> ${renamedFile.name}"
+            )
+            return renamedFile
+        }
+
+        Log.w(
+            TAG,
+            "Failed to normalize downloaded file extension for ${file.absolutePath}"
+        )
+        return file
+    }
+
+    private fun detectActualFileExtension(file: File): String? {
+        return try {
+            file.inputStream().use { input ->
+                val header = ByteArray(64)
+                val bytesRead = input.read(header)
+                if (bytesRead <= 0) {
+                    return null
+                }
+
+                if (bytesRead >= 12 &&
+                    header[0] == 'R'.code.toByte() &&
+                    header[1] == 'I'.code.toByte() &&
+                    header[2] == 'F'.code.toByte() &&
+                    header[3] == 'F'.code.toByte() &&
+                    header[8] == 'W'.code.toByte() &&
+                    header[9] == 'E'.code.toByte() &&
+                    header[10] == 'B'.code.toByte() &&
+                    header[11] == 'P'.code.toByte()
+                ) {
+                    return ".webp"
+                }
+
+                if (bytesRead >= 3 &&
+                    header[0] == 'G'.code.toByte() &&
+                    header[1] == 'I'.code.toByte() &&
+                    header[2] == 'F'.code.toByte()
+                ) {
+                    return ".gif"
+                }
+
+                if (bytesRead >= 8 &&
+                    header[0] == 0x89.toByte() &&
+                    header[1] == 'P'.code.toByte() &&
+                    header[2] == 'N'.code.toByte() &&
+                    header[3] == 'G'.code.toByte()
+                ) {
+                    return ".png"
+                }
+
+                if (bytesRead >= 3 &&
+                    header[0] == 0xFF.toByte() &&
+                    header[1] == 0xD8.toByte() &&
+                    header[2] == 0xFF.toByte()
+                ) {
+                    return ".jpg"
+                }
+
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to detect actual file extension for ${file.absolutePath}", e)
+            null
         }
     }
 

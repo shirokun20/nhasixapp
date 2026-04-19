@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
@@ -100,9 +101,10 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required String url,
     required bool isHeavy,
     required bool nativeViewAvailable,
+    bool confirmedAnimatedWebP = false,
   }) {
-    if (!nativeViewAvailable) return false;
-    return isLikelyAnimatedWebPForTesting(url: url, isHeavy: isHeavy);
+    if (!nativeViewAvailable || !isHeavy) return false;
+    return confirmedAnimatedWebP || _looksLikeAnimatedWebPUrl(url);
   }
 
   @visibleForTesting
@@ -135,6 +137,10 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     final path = url.toLowerCase().split('?').first;
     return path.endsWith('.webp') || path.contains('-wbp');
   }
+
+  @visibleForTesting
+  static bool isAnimatedWebPHeaderForTesting(Uint8List bytes) =>
+      _ExtendedImageReaderWidgetState._looksLikeAnimatedWebPHeader(bytes);
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
@@ -172,6 +178,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// the native [AnimatedWebPView] can load from disk instead of re-downloading.
   static final Map<String, String> _cachedFilePathByUrl = <String, String>{};
 
+  /// URLs confirmed to contain animated WebP bytes.
+  /// Separate from [_heavyImageUrls] because some sources can pre-seed "heavy"
+  /// based on payload size before the final file format is known.
+  static final Set<String> _confirmedAnimatedWebPUrls = <String>{};
+
   /// Files ≥ 2 MB are treated as heavy (animated WebP, large scans, etc.).
   /// These are kept in memory between scroll-outs to avoid expensive re-decode.
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
@@ -187,6 +198,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// [wantKeepAlive], [clearMemoryCacheWhenDispose], and native-view routing
   /// are always in sync.
   bool _isHeavyImage = false;
+
+  /// Whether this image was positively identified as animated WebP bytes,
+  /// even if the source URL or local filename uses a misleading extension.
+  bool _isConfirmedAnimatedWebP = false;
 
   /// Path to the extended_image disk-cache file for this URL.
   /// Populated after [LoadState.completed] via [getCachedImageFile].
@@ -246,6 +261,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // routing are applied immediately on the first build — and the native view
     // reads from disk instead of re-downloading on every scroll-back.
     _isHeavyImage = _heavyImageUrls.contains(widget.imageUrl);
+    _isConfirmedAnimatedWebP =
+        _confirmedAnimatedWebPUrls.contains(widget.imageUrl);
     _cachedFilePath = _cachedFilePathByUrl[widget.imageUrl];
 
     if (_isLocalFilePath(widget.imageUrl)) {
@@ -261,7 +278,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // expensive raster-thread decode entirely and go straight to native view.
     if (!_isHeavyImage &&
         AnimatedWebPView.isAvailable &&
-        !_isLocalFilePath(widget.imageUrl)) {
+        !_isLocalFilePath(widget.imageUrl) &&
+        _shouldInspectCachedFileForAnimatedWebP(widget.imageUrl)) {
       _preCheckDiskCacheForHeavy();
     }
 
@@ -271,19 +289,19 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
   /// seed the static maps and trigger a rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
-    if (!ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(widget.imageUrl)) {
-      return;
-    }
-
     getCachedImageFile(widget.imageUrl).then((file) {
       if (file == null) return;
       final size = file.lengthSync();
-      if (size >= _heavyImageThresholdBytes) {
-        _heavyImageUrls.add(widget.imageUrl);
-        _cachedFilePathByUrl[widget.imageUrl] = file.path;
+      if (size >= _heavyImageThresholdBytes &&
+          _looksLikeAnimatedWebPFileSync(file)) {
+        _markConfirmedAnimatedWebP(
+          cacheKey: widget.imageUrl,
+          cachedFilePath: file.path,
+        );
         if (!mounted) return;
         setState(() {
           _isHeavyImage = true;
+          _isConfirmedAnimatedWebP = true;
           _cachedFilePath = file.path;
         });
         updateKeepAlive();
@@ -306,10 +324,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       return;
     }
 
-    if (!ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(localPath)) {
-      return;
-    }
-
     try {
       final file = File(localPath);
       if (!file.existsSync()) {
@@ -317,13 +331,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       }
 
       final fileSize = file.lengthSync();
-      if (fileSize < _heavyImageThresholdBytes) {
+      if (fileSize < _heavyImageThresholdBytes ||
+          !_looksLikeAnimatedWebPFileSync(file)) {
         return;
       }
 
-      _heavyImageUrls.add(widget.imageUrl);
-      _cachedFilePathByUrl[widget.imageUrl] = localPath;
+      _markConfirmedAnimatedWebP(
+        cacheKey: widget.imageUrl,
+        cachedFilePath: localPath,
+      );
       _isHeavyImage = true;
+      _isConfirmedAnimatedWebP = true;
       _cachedFilePath = localPath;
       _logger.i(
         '[NativeWebP] Local pre-check HIT: heavy WebP '
@@ -356,6 +374,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   bool _isLikelyAnimatedUrl(String url) {
+    if (_isConfirmedAnimatedWebP) {
+      return true;
+    }
     return ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
       url: url,
       isHeavy: _isHeavyImage,
@@ -367,6 +388,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       url: url,
       isHeavy: _isHeavyImage,
       nativeViewAvailable: AnimatedWebPView.isAvailable,
+      confirmedAnimatedWebP: _isConfirmedAnimatedWebP,
     );
   }
 
@@ -608,34 +630,32 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               }
 
               if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
-                final couldBeAnimatedWebP =
-                    ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(
-                        normalizedLocalPath);
-                if (couldBeAnimatedWebP) {
-                  try {
-                    final file = File(normalizedLocalPath);
-                    if (file.existsSync()) {
-                      final fileSize = file.lengthSync();
-                      if (fileSize >= _heavyImageThresholdBytes) {
-                        _heavyImageUrls.add(widget.imageUrl);
-                        _cachedFilePathByUrl[widget.imageUrl] =
-                            normalizedLocalPath;
-                        setState(() {
-                          _isHeavyImage = true;
-                          _cachedFilePath = normalizedLocalPath;
-                        });
-                        updateKeepAlive();
-                        _maybeNotifyHeavyImageDetected();
-                        _logger.i(
-                          '[NativeWebP] Local complete => native '
-                          'page=${widget.pageNumber} '
-                          'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
-                        );
-                      }
+                try {
+                  final file = File(normalizedLocalPath);
+                  if (file.existsSync()) {
+                    final fileSize = file.lengthSync();
+                    if (fileSize >= _heavyImageThresholdBytes &&
+                        _looksLikeAnimatedWebPFileSync(file)) {
+                      _markConfirmedAnimatedWebP(
+                        cacheKey: widget.imageUrl,
+                        cachedFilePath: normalizedLocalPath,
+                      );
+                      setState(() {
+                        _isHeavyImage = true;
+                        _isConfirmedAnimatedWebP = true;
+                        _cachedFilePath = normalizedLocalPath;
+                      });
+                      updateKeepAlive();
+                      _maybeNotifyHeavyImageDetected();
+                      _logger.i(
+                        '[NativeWebP] Local complete => native '
+                        'page=${widget.pageNumber} '
+                        'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
+                      );
                     }
-                  } catch (e) {
-                    _logger.w('[NativeWebP] Local file stat error: $e');
                   }
+                } catch (e) {
+                  _logger.w('[NativeWebP] Local file stat error: $e');
                 }
               }
 
@@ -834,58 +854,59 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             //   2. getCachedImageFile → stat file size ≥ 2 MB
             //   3. setState → _isHeavyImage = true, _cachedFilePath = path
             //   4. Next build routes straight to AnimatedWebPView (disk read, no re-download)
-            if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
-              final urlPath = url.toLowerCase().split('?').first;
-              final couldBeAnimatedWebP =
-                  ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(urlPath);
-              if (couldBeAnimatedWebP) {
-                getCachedImageFile(url).then((cacheFile) {
-                  // Check file size BEFORE mounted check so _heavyImageUrls
-                  // is seeded even if this widget instance is already unmounted
-                  // (e.g. user switched reading mode while download was in flight).
-                  // Future widget instances created by the mode switch will then
-                  // find the URL in the set and go straight to native view.
-                  if (cacheFile == null) return;
-                  final fileSize = cacheFile.lengthSync();
-                  _logger.d(
-                    '[NativeWebP] WebP cached=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
-                    'threshold=${(_heavyImageThresholdBytes / 1024 / 1024).toStringAsFixed(0)} MB '
-                    'page=${widget.pageNumber}',
+            if (!_isConfirmedAnimatedWebP &&
+                AnimatedWebPView.isAvailable &&
+                _shouldInspectCachedFileForAnimatedWebP(url)) {
+              getCachedImageFile(url).then((cacheFile) {
+                // Check file size BEFORE mounted check so the animated-WebP
+                // cache is seeded even if this widget instance is already
+                // unmounted (e.g. user switched reading mode mid-download).
+                if (cacheFile == null) return;
+                final fileSize = cacheFile.lengthSync();
+                _logger.d(
+                  '[NativeWebP] Cached file=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
+                  'threshold=${(_heavyImageThresholdBytes / 1024 / 1024).toStringAsFixed(0)} MB '
+                  'page=${widget.pageNumber}',
+                );
+                if (fileSize >= _heavyImageThresholdBytes &&
+                    _looksLikeAnimatedWebPFileSync(cacheFile)) {
+                  _markConfirmedAnimatedWebP(
+                    cacheKey: url,
+                    cachedFilePath: cacheFile.path,
                   );
-                  if (fileSize >= _heavyImageThresholdBytes) {
-                    // ✅ Seed BEFORE mounted check so scroll-back widgets
-                    //    immediately get _isHeavyImage=true and read from disk.
-                    _heavyImageUrls.add(url);
-                    _cachedFilePathByUrl[url] = cacheFile.path;
 
-                    // 🔥 Evict from ExtendedImage memory cache so Flutter's
-                    // MultiFrameImageStreamCompleter stops decoding animated
-                    // frames on the raster thread. The native view takes over.
-                    clearMemoryImageCache(url);
+                  // 🔥 Evict from ExtendedImage memory cache so Flutter's
+                  // MultiFrameImageStreamCompleter stops decoding animated
+                  // frames on the raster thread. The native view takes over.
+                  clearMemoryImageCache(url);
 
-                    // Only call setState if our widget is still alive.
-                    if (!mounted) return;
-                    setState(() {
-                      _isHeavyImage = true;
-                      _cachedFilePath = cacheFile.path;
-                    });
-                    updateKeepAlive();
-                    _maybeNotifyHeavyImageDetected();
-                    _logger.i(
-                      '[NativeWebP] => AnimatedImageDrawable: '
-                      'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
-                      ' path=${cacheFile.path}',
-                    );
-                  } else {
-                    _logger.d(
-                      '[NativeWebP] WebP too small for native (${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
-                      'keep Flutter renderer page=${widget.pageNumber}',
-                    );
-                  }
-                }).catchError((Object e) {
-                  _logger.w('[NativeWebP] getCachedImageFile error: $e');
-                });
-              }
+                  if (!mounted) return;
+                  setState(() {
+                    _isHeavyImage = true;
+                    _isConfirmedAnimatedWebP = true;
+                    _cachedFilePath = cacheFile.path;
+                  });
+                  updateKeepAlive();
+                  _maybeNotifyHeavyImageDetected();
+                  _logger.i(
+                    '[NativeWebP] => AnimatedImageDrawable: '
+                    'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
+                    ' path=${cacheFile.path}',
+                  );
+                } else if (fileSize >= _heavyImageThresholdBytes) {
+                  _logger.d(
+                    '[NativeWebP] Heavy file is not animated WebP, '
+                    'keep Flutter renderer page=${widget.pageNumber}',
+                  );
+                } else {
+                  _logger.d(
+                    '[NativeWebP] File too small for native (${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
+                    'keep Flutter renderer page=${widget.pageNumber}',
+                  );
+                }
+              }).catchError((Object e) {
+                _logger.w('[NativeWebP] getCachedImageFile error: $e');
+              });
             }
 
             return _buildCompletedImage(
@@ -1018,6 +1039,84 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   bool _isHeavyReaderSource() {
     return widget.sourceId == 'hentainexus';
+  }
+
+  bool _shouldInspectCachedFileForAnimatedWebP(String url) {
+    return (widget.sourceId ?? '').toLowerCase() == 'ehentai' ||
+        ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(url);
+  }
+
+  void _markConfirmedAnimatedWebP({
+    required String cacheKey,
+    required String cachedFilePath,
+  }) {
+    _heavyImageUrls.add(cacheKey);
+    _confirmedAnimatedWebPUrls.add(cacheKey);
+    _cachedFilePathByUrl[cacheKey] = cachedFilePath;
+  }
+
+  static bool _looksLikeAnimatedWebPFileSync(File file) {
+    RandomAccessFile? raf;
+    try {
+      raf = file.openSync(mode: FileMode.read);
+      final length = raf.lengthSync();
+      if (length < 16) {
+        return false;
+      }
+
+      final sampleLength = length < 64 ? length : 64;
+      final bytes = raf.readSync(sampleLength);
+      return _looksLikeAnimatedWebPHeader(bytes);
+    } catch (_) {
+      return false;
+    } finally {
+      raf?.closeSync();
+    }
+  }
+
+  static bool _looksLikeAnimatedWebPHeader(Uint8List bytes) {
+    const riff = <int>[0x52, 0x49, 0x46, 0x46];
+    const webp = <int>[0x57, 0x45, 0x42, 0x50];
+    const vp8x = <int>[0x56, 0x50, 0x38, 0x58];
+    const anim = <int>[0x41, 0x4E, 0x49, 0x4D];
+
+    if (!_matchesBytes(bytes, 0, riff) || !_matchesBytes(bytes, 8, webp)) {
+      return false;
+    }
+
+    if (_matchesBytes(bytes, 12, vp8x) &&
+        bytes.length > 20 &&
+        (bytes[20] & 0x02) != 0) {
+      return true;
+    }
+
+    return _containsBytes(bytes, anim);
+  }
+
+  static bool _matchesBytes(Uint8List bytes, int offset, List<int> expected) {
+    if (bytes.length < offset + expected.length) {
+      return false;
+    }
+
+    for (var i = 0; i < expected.length; i++) {
+      if (bytes[offset + i] != expected[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _containsBytes(Uint8List bytes, List<int> needle) {
+    if (needle.isEmpty || bytes.length < needle.length) {
+      return false;
+    }
+
+    for (var start = 0; start <= bytes.length - needle.length; start++) {
+      if (_matchesBytes(bytes, start, needle)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   int? _targetDecodeWidth(

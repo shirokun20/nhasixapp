@@ -53,8 +53,8 @@ class AnimatedWebPView extends StatefulWidget {
   final int? targetWidth;
 
   /// When true, skip the thumbnail step and start animation immediately.
-  /// In reader usage this is combined with [visiblePageNotifier] so only the
-  /// current page auto-plays.
+  /// In reader usage, [visiblePageNotifier] takes precedence so only the
+  /// current visible page keeps animating after scroll changes.
   final bool autoPlay;
 
   /// 1-based page number of this image in the reader.
@@ -78,6 +78,18 @@ class AnimatedWebPView extends StatefulWidget {
   /// Whether [AnimatedWebPView] can render on the current platform.
   static bool get isAvailable => Platform.isAndroid;
 
+  @visibleForTesting
+  static bool shouldAutoPlayForTesting({
+    required bool autoPlay,
+    int? pageNumber,
+    int? visiblePageNumber,
+  }) {
+    if (pageNumber != null && visiblePageNumber != null) {
+      return visiblePageNumber == pageNumber;
+    }
+    return autoPlay;
+  }
+
   @override
   State<AnimatedWebPView> createState() => _AnimatedWebPViewState();
 }
@@ -98,16 +110,11 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   int _thumbnailDownloadedBytes = 0;
   int? _thumbnailTotalBytes;
 
-  bool get _isCurrentVisiblePage {
-    final notifier = widget.visiblePageNotifier;
-    final pageNumber = widget.pageNumber;
-    if (notifier == null || pageNumber == null) {
-      return false;
-    }
-    return notifier.value == pageNumber;
-  }
-
-  bool get _shouldAutoPlay => widget.autoPlay || _isCurrentVisiblePage;
+  bool get _shouldAutoPlay => AnimatedWebPView.shouldAutoPlayForTesting(
+    autoPlay: widget.autoPlay,
+    pageNumber: widget.pageNumber,
+    visiblePageNumber: widget.visiblePageNotifier?.value,
+  );
 
   bool get _hasPreparedPlaybackSource =>
       _webpCachePath != null ||

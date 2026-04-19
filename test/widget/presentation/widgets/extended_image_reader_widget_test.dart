@@ -216,6 +216,59 @@ void main() {
         isFalse,
       );
     });
+
+    test('returns true for confirmed animated webp bytes despite jpg filename',
+        () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: '/storage/emulated/0/Asix/nhasix/ehentai/foo/page_001.jpg',
+          isHeavy: true,
+          nativeViewAvailable: true,
+          confirmedAnimatedWebP: true,
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('animated webp header detection', () {
+    test('detects animated webp bytes from VP8X animation flag', () {
+      final bytes = Uint8List.fromList(const <int>[
+        0x52, 0x49, 0x46, 0x46, // RIFF
+        0x00, 0x00, 0x00, 0x00,
+        0x57, 0x45, 0x42, 0x50, // WEBP
+        0x56, 0x50, 0x38, 0x58, // VP8X
+        0x0A, 0x00, 0x00, 0x00,
+        0x12, 0x00, 0x00, 0x00, // animation flag set
+      ]);
+
+      expect(
+        ExtendedImageReaderWidget.isAnimatedWebPHeaderForTesting(bytes),
+        isTrue,
+      );
+    });
+
+    test('does not misclassify jpeg bytes as animated webp', () {
+      final bytes = Uint8List.fromList(const <int>[
+        0xFF,
+        0xD8,
+        0xFF,
+        0xE0,
+        0x00,
+        0x10,
+        0x4A,
+        0x46,
+        0x49,
+        0x46,
+        0x00,
+        0x01,
+      ]);
+
+      expect(
+        ExtendedImageReaderWidget.isAnimatedWebPHeaderForTesting(bytes),
+        isFalse,
+      );
+    });
   });
 
   group('shouldAutoPlayAnimatedView', () {
