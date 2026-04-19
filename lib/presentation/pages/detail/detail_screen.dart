@@ -2404,6 +2404,7 @@ class _DetailScreenState extends State<DetailScreen> {
     // 3) Feature enabled and available — show normally
     return CommentsSectionWidget(
       contentId: content.id,
+      sourceId: sourceId,
       preloadedComments: preloadedComments,
     );
   }

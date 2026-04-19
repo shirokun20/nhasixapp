@@ -2681,6 +2681,10 @@
   "unknownError": "Kesalahan tidak diketahui",
 
   "commentsCount": "Komentar ({count})",
+  "postComment": "Kirim Komentar",
+  "commentInputHint": "Tulis komentar. Markdown didukung. 10-1000 karakter.",
+  "commentPosted": "Komentar berhasil dikirim",
+  "commentLengthRequirement": "Komentar harus 10-1000 karakter.",
   "noCommentsYet": "Belum ada komentar",
   "failedToLoadComments": "Gagal memuat komentar",
 

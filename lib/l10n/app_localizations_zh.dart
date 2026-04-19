@@ -4291,6 +4291,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get postComment => '发布评论';
+
+  @override
+  String get commentInputHint => '写下评论，支持 Markdown。10-1000 个字符。';
+
+  @override
+  String get commentPosted => '评论已发布';
+
+  @override
+  String get commentLengthRequirement => '评论必须为 10-1000 个字符。';
+
+  @override
   String get noCommentsYet => '暂无评论';
 
   @override

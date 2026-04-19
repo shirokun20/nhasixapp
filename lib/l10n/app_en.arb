@@ -3333,6 +3333,10 @@
       }
     }
   },
+  "postComment": "Post Comment",
+  "commentInputHint": "Write a comment. Markdown supported. 10-1000 characters.",
+  "commentPosted": "Comment posted",
+  "commentLengthRequirement": "Comment must be 10-1000 characters.",
   "noCommentsYet": "No comments yet",
   "failedToLoadComments": "Failed to load comments",
 

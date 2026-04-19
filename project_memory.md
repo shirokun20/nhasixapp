@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.15+24 |
+| **Version** | 0.9.16+25 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Synced from `projects/README.md` — Last updated: 2026-03-07
+> Synced from `projects/README.md` — Last updated: 2026-04-19
 
 ### ✅ Completed (12)
 - chapter_reading_history_navigation
@@ -88,7 +88,7 @@ lib/
 
 ### 🚧 In Progress (2)
 - local_collection_categories
-- qol_enhancements ✨ **NEAR COMPLETE** (Submit Comments remaining, all other tasks done)
+- qol_enhancements ✨ **SCOPE COMPLETE** (submit comments shipped, execution docs updated, archive pending)
 
 ### 📋 Analysis Phase (5)
 - app_audit_hardcode_ui_desktop
@@ -181,6 +181,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-19 | Codex | Nhentai submit comments + app user-agent wiring | ✅ Done | Implemented authenticated nhentai comment submission on the detail screen by extending the config-driven token auth stack with a `galleryComments` endpoint, comment-specific PoW action, and create-comment client/service methods. Added an inline composer that reuses the existing login session, opens the native CAPTCHA solver when needed, and prepends successful comments immediately to the visible list. Also centralized the auth/client `User-Agent` to `Kuron/<version> (+https://github.com/shirokun20/nhasixapp)` using runtime package info. Verified with `fvm flutter gen-l10n`, targeted `config_driven_api_auth_client_test.dart`, and focused `flutter analyze`. |
 | 2026-04-16 | Codex | Reader continuous-scroll cache regression fix | ✅ Done | Investigated the new non-animated scroll jank and confirmed a regression introduced by the native animated-WebP work: `ExtendedImageReaderWidget` had been changed to keep every continuous-scroll page alive and never clear network image memory cache. Restored selective retention so only heavy/native pages stay warm, while normal pages in continuous scroll can recycle again. Added testing helpers covering keep-alive and cache-clear decisions, then verified with targeted `fvm dart analyze` and the reader widget regression test. |
 | 2026-04-16 | Codex | Reader native cache loader progress polish | ✅ Done | Audited the animated reader loading flow and confirmed `ExtendedImage.network` still exposes real chunk progress; the plain `Memuat...` state was coming from `AnimatedWebPView` when the native thumbnail was being prepared from an already-cached local WebP file. Seeded the native loader with the cached file size so `_buildLoadingIndicator` now shows real byte information instead of an empty loading label during native cache preparation. Verified with targeted `fvm dart analyze` in `packages/kuron_native` and the existing reader widget regression test. |
 | 2026-04-15 | Codex | Reader animated WebP loader/routing/autoplay fix | ✅ Done | Fixed `ExtendedImageReaderWidget` so `_buildNativeAnimatedWebP` now uses the shared `_buildLoadingIndicator`, native animated rendering no longer hijacks every `.webp/.gif/-wbp` URL before heavy detection, and current visible animated pages auto-play through `AnimatedWebPView` while off-screen pages pause back to thumbnail mode. Follow-up polish removed manual tap/double-tap controls so the native animation flow is fully visibility-driven with a passive thumbnail preview, and native thumbnail preload now reports real byte progress back to Flutter so the loader can show actual downloaded size/percent on the native path too. Added helper-based regression tests for native routing + autoplay decisions. Verified with targeted `fvm flutter test` and `fvm dart analyze` in both app root and `packages/kuron_native`. |

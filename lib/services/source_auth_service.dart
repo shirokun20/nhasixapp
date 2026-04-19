@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_special/kuron_special.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
 
 class SourceAuthBootstrap {
   final String sourceId;
@@ -71,6 +72,33 @@ class SourceAuthService {
     final galleryFavoriteEndpoint =
         endpoints?['galleryFavorite']?.toString().trim() ?? '';
     return galleryFavoriteEndpoint.isNotEmpty;
+  }
+
+  bool supportsCommentSubmission(String sourceId) {
+    if (!supportsTokenApiAuth(sourceId)) return false;
+
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return false;
+
+    final features = raw['features'] as Map<String, dynamic>?;
+    if (features?['comments'] != true) return false;
+
+    final endpoints = (raw['auth'] as Map<String, dynamic>?)?['endpoints']
+        as Map<String, dynamic>?;
+    final galleryCommentsEndpoint =
+        endpoints?['galleryComments']?.toString().trim() ?? '';
+    final powEndpoint = endpoints?['pow']?.toString().trim() ?? '';
+    final captchaEndpoint = endpoints?['captcha']?.toString().trim() ?? '';
+    final commentPowAction =
+        (raw['auth'] as Map<String, dynamic>?)?['commentPowAction']
+                ?.toString()
+                .trim() ??
+            '';
+
+    return galleryCommentsEndpoint.isNotEmpty &&
+        powEndpoint.isNotEmpty &&
+        captchaEndpoint.isNotEmpty &&
+        commentPowAction.isNotEmpty;
   }
 
   bool supportsOnlineBlacklistRead(String sourceId) {
@@ -174,6 +202,32 @@ class SourceAuthService {
     );
   }
 
+  Future<SourceAuthBootstrap> getCaptchaBootstrap(String sourceId) async {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) {
+      throw StateError('Missing config for source: $sourceId');
+    }
+
+    final config = ApiAuthConfig.fromSourceConfig(raw);
+    final client = ConfigDrivenApiAuthClient(
+      dio: _dio,
+      config: config,
+      logger: _logger,
+    );
+
+    final captcha = await client.getCaptchaConfig();
+
+    return SourceAuthBootstrap(
+      sourceId: sourceId,
+      captchaProvider: captcha.provider,
+      captchaSiteKey: captcha.siteKey,
+      captchaBaseUrl: _resolveCaptchaBaseUrl(
+        rawConfig: raw,
+        apiBase: config.apiBase,
+      ),
+    );
+  }
+
   Future<void> login({
     required String sourceId,
     required String username,
@@ -188,7 +242,7 @@ class SourceAuthService {
 
     final client = _buildClient(sourceId);
     final powAction = _getPowAction(sourceId);
-    final pow = await client.getPowChallenge();
+    final pow = await client.getPowChallenge(action: powAction);
     final nonce = await client.solvePowNonceInIsolate(
       challenge: pow.challenge,
       difficulty: pow.difficulty,
@@ -267,6 +321,33 @@ class SourceAuthService {
     return client.removeFavorite(galleryId);
   }
 
+  Future<Comment> createComment({
+    required String sourceId,
+    required int galleryId,
+    required String body,
+    required String captchaResponse,
+  }) async {
+    final commentPowAction = _getCommentPowAction(sourceId);
+    if (commentPowAction == null || commentPowAction.isEmpty) {
+      throw StateError('Comment PoW action is not configured');
+    }
+
+    final client = _buildClient(sourceId);
+    await client.attachSessionHeaderFromStorage();
+
+    final raw = await client.createComment(
+      galleryId: galleryId,
+      body: body,
+      captchaResponse: captchaResponse,
+      powAction: commentPowAction,
+    );
+
+    return _mapComment(
+      sourceId: sourceId,
+      rawComment: raw,
+    );
+  }
+
   Future<Map<String, dynamic>> getUserProfile(String sourceId) async {
     final client = _buildClient(sourceId);
     await client.attachSessionHeaderFromStorage();
@@ -307,6 +388,14 @@ class SourceAuthService {
     return auth?['powAction']?.toString().trim();
   }
 
+  String? _getCommentPowAction(String sourceId) {
+    final raw = _configService.getRawConfig(sourceId);
+    if (raw == null) return null;
+
+    final auth = raw['auth'] as Map<String, dynamic>?;
+    return auth?['commentPowAction']?.toString().trim();
+  }
+
   String? _resolveCaptchaBaseUrl({
     required Map<String, dynamic> rawConfig,
     required String apiBase,
@@ -326,5 +415,53 @@ class SourceAuthService {
     }
 
     return uri.origin;
+  }
+
+  Comment _mapComment({
+    required String sourceId,
+    required Map<String, dynamic> rawComment,
+  }) {
+    final rawPoster = rawComment['poster'];
+    final poster = rawPoster is Map
+        ? rawPoster.map(
+            (key, value) => MapEntry(key.toString(), value),
+          )
+        : const <String, dynamic>{};
+    final sourceConfig = _configService.getRawConfig(sourceId);
+    final avatarBaseUrl = sourceConfig?['avatarBaseUrl']?.toString();
+    final username = poster['username']?.toString().trim();
+
+    return Comment(
+      id: rawComment['id']?.toString() ?? '',
+      username: (username == null || username.isEmpty) ? 'Anonymous' : username,
+      body: rawComment['body']?.toString() ?? '',
+      avatarUrl: _resolveAvatarUrl(
+        poster['avatar_url']?.toString(),
+        avatarBaseUrl,
+      ),
+      postDate: _parseUnixSeconds(rawComment['post_date']),
+    );
+  }
+
+  String? _resolveAvatarUrl(String? rawAvatarUrl, String? avatarBaseUrl) {
+    final value = rawAvatarUrl?.trim();
+    if (value == null || value.isEmpty) return null;
+    if (value.startsWith('https://') || value.startsWith('http://')) {
+      return value;
+    }
+    if (value.startsWith('//')) return 'https:$value';
+
+    final base = (avatarBaseUrl ?? '').replaceAll(RegExp(r'/+$'), '');
+    if (value.startsWith('/')) {
+      return base.isNotEmpty ? '$base$value' : 'https:/$value';
+    }
+
+    return base.isNotEmpty ? '$base/$value' : value;
+  }
+
+  DateTime? _parseUnixSeconds(dynamic rawValue) {
+    final seconds = int.tryParse(rawValue?.toString() ?? '');
+    if (seconds == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 }

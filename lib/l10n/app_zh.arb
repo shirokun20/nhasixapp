@@ -3277,6 +3277,10 @@
   "unknownError": "未知错误",
 
   "commentsCount": "评论 ({count})",
+  "postComment": "发布评论",
+  "commentInputHint": "写下评论，支持 Markdown。10-1000 个字符。",
+  "commentPosted": "评论已发布",
+  "commentLengthRequirement": "评论必须为 10-1000 个字符。",
   "noCommentsYet": "暂无评论",
   "failedToLoadComments": "加载评论失败",
 

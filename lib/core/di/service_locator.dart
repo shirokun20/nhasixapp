@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
@@ -22,6 +23,7 @@ import 'package:kuron_native/kuron_native.dart';
 
 // Core Network
 import 'package:nhasixapp/core/network/http_client_manager.dart';
+import 'package:nhasixapp/core/network/kuron_user_agent.dart';
 
 // Core Utils
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
@@ -136,6 +138,9 @@ Future<void> _setupExternalDependencies() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
+  final packageInfo = await PackageInfo.fromPlatform();
+  getIt.registerSingleton<PackageInfo>(packageInfo);
+
   // PreferencesService - Wrapper for SharedPreferences
   getIt.registerLazySingleton<PreferencesService>(() => PreferencesService(
         getIt<SharedPreferences>(),
@@ -164,8 +169,10 @@ void _setupCore() {
   // HTTP Client (Dio) - Using singleton manager
   // DNS-over-HTTPS is DISABLED because it's incompatible with HTTPS/SSL
   // (SNI and certificate validation fail when using IP addresses)
+  final packageInfo = getIt<PackageInfo>();
   final dio = HttpClientManager.initializeHttpClient(
     logger: logger,
+    userAgent: KuronUserAgent.fromPackageInfo(packageInfo),
     // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
   );
   getIt.registerSingleton<Dio>(dio);

@@ -48,6 +48,7 @@ class ApiAuthConfig {
   final String apiBase;
   final String authorizationScheme;
   final String? powAction;
+  final String? commentPowAction;
   final String? powEndpoint;
   final String? captchaEndpoint;
   final String loginEndpoint;
@@ -55,11 +56,13 @@ class ApiAuthConfig {
   final String? logoutEndpoint;
   final String? favoritesEndpoint;
   final String? galleryFavoriteEndpoint;
+  final String? galleryCommentsEndpoint;
   final String? blacklistEndpoint;
   final String? blacklistIdsEndpoint;
   final String? userEndpoint;
   final String usernameField;
   final String passwordField;
+  final String commentBodyField;
   final String captchaField;
   final String challengeField;
   final String nonceField;
@@ -75,6 +78,7 @@ class ApiAuthConfig {
     required this.loginEndpoint,
     required this.usernameField,
     required this.passwordField,
+    required this.commentBodyField,
     required this.captchaField,
     required this.challengeField,
     required this.nonceField,
@@ -84,12 +88,14 @@ class ApiAuthConfig {
     required this.expiresInField,
     required this.tokenTypeField,
     this.powAction,
+    this.commentPowAction,
     this.powEndpoint,
     this.captchaEndpoint,
     this.refreshEndpoint,
     this.logoutEndpoint,
     this.favoritesEndpoint,
     this.galleryFavoriteEndpoint,
+    this.galleryCommentsEndpoint,
     this.blacklistEndpoint,
     this.blacklistIdsEndpoint,
     this.userEndpoint,
@@ -119,6 +125,7 @@ class ApiAuthConfig {
       authorizationScheme:
           (auth['authorizationScheme'] as String?)?.trim() ?? 'User',
       powAction: (auth['powAction'] as String?)?.trim(),
+      commentPowAction: (auth['commentPowAction'] as String?)?.trim(),
       powEndpoint: (endpoints['pow'] as String?)?.trim(),
       captchaEndpoint: (endpoints['captcha'] as String?)?.trim(),
       loginEndpoint: loginEndpoint,
@@ -127,11 +134,14 @@ class ApiAuthConfig {
       favoritesEndpoint: (endpoints['favorites'] as String?)?.trim(),
       galleryFavoriteEndpoint:
           (endpoints['galleryFavorite'] as String?)?.trim(),
+      galleryCommentsEndpoint:
+          (endpoints['galleryComments'] as String?)?.trim(),
       blacklistEndpoint: (endpoints['blacklist'] as String?)?.trim(),
       blacklistIdsEndpoint: (endpoints['blacklistIds'] as String?)?.trim(),
       userEndpoint: (endpoints['user'] as String?)?.trim(),
       usernameField: (fields['username'] as String?)?.trim() ?? 'username',
       passwordField: (fields['password'] as String?)?.trim() ?? 'password',
+      commentBodyField: (fields['commentBody'] as String?)?.trim() ?? 'body',
       captchaField:
           (fields['captchaResponse'] as String?)?.trim() ?? 'captcha_response',
       challengeField:

@@ -44,6 +44,18 @@ class ConfigDrivenApiAuthClient {
     return _resolveUrl(endpoint);
   }
 
+  String _resolveGalleryCommentsUrl(int galleryId) {
+    final endpointTemplate = _config.galleryCommentsEndpoint;
+    if (endpointTemplate == null || endpointTemplate.isEmpty) {
+      throw StateError('gallery comments endpoint is not configured');
+    }
+
+    final endpoint = endpointTemplate
+        .replaceAll('{gallery_id}', galleryId.toString())
+        .replaceAll('{id}', galleryId.toString());
+    return _resolveUrl(endpoint);
+  }
+
   Map<String, dynamic> _toJsonMap(dynamic raw) {
     if (raw is Map<String, dynamic>) return raw;
 
@@ -83,17 +95,19 @@ class ConfigDrivenApiAuthClient {
     return const [];
   }
 
-  Future<ApiPowChallenge> getPowChallenge() async {
+  Future<ApiPowChallenge> getPowChallenge({String? action}) async {
     final endpoint = _config.powEndpoint;
     if (endpoint == null || endpoint.isEmpty) {
       throw StateError('pow endpoint is not configured');
     }
 
+    final normalizedAction = (action ?? _config.powAction)?.trim();
+
     final response = await _dio.get<dynamic>(
       _resolveUrl(endpoint),
-      queryParameters: _config.powAction == null || _config.powAction!.isEmpty
+      queryParameters: normalizedAction == null || normalizedAction.isEmpty
           ? null
-          : <String, dynamic>{'action': _config.powAction},
+          : <String, dynamic>{'action': normalizedAction},
     );
     final data = _toJsonMap(response.data);
     return ApiPowChallenge(
@@ -409,6 +423,53 @@ class ConfigDrivenApiAuthClient {
       if (_isUnauthorized(e)) {
         await _clearSessionLocally();
       }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createComment({
+    required int galleryId,
+    required String body,
+    String? captchaResponse,
+    String? powAction,
+  }) async {
+    final normalizedBody = body.trim();
+    if (normalizedBody.isEmpty) {
+      throw StateError('Comment body cannot be empty');
+    }
+
+    final pow = await getPowChallenge(action: powAction);
+    final nonce = await solvePowNonceInIsolate(
+      challenge: pow.challenge,
+      difficulty: pow.difficulty,
+      action: powAction,
+    );
+
+    final normalizedCaptcha = captchaResponse?.trim();
+    final payload = <String, dynamic>{
+      _config.commentBodyField: normalizedBody,
+      _config.challengeField: pow.challenge,
+      _config.nonceField: nonce,
+      if (normalizedCaptcha != null && normalizedCaptcha.isNotEmpty)
+        _config.captchaField: normalizedCaptcha,
+    };
+
+    try {
+      final response = await _dio.post<dynamic>(
+        _resolveGalleryCommentsUrl(galleryId),
+        data: payload,
+      );
+      return _toJsonMap(response.data);
+    } on DioException catch (e) {
+      if (_isUnauthorized(e)) {
+        await _clearSessionLocally();
+      }
+
+      final reason = _extractErrorReason(e.response?.data);
+      if (reason != null && reason.isNotEmpty) {
+        throw StateError('Comment failed: $reason');
+      }
+
       rethrow;
     }
   }

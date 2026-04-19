@@ -4412,6 +4412,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get postComment => 'Post Comment';
+
+  @override
+  String get commentInputHint =>
+      'Write a comment. Markdown supported. 10-1000 characters.';
+
+  @override
+  String get commentPosted => 'Comment posted';
+
+  @override
+  String get commentLengthRequirement => 'Comment must be 10-1000 characters.';
+
+  @override
   String get noCommentsYet => 'No comments yet';
 
   @override

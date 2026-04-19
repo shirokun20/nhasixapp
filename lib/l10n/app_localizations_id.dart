@@ -4433,6 +4433,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get postComment => 'Kirim Komentar';
+
+  @override
+  String get commentInputHint =>
+      'Tulis komentar. Markdown didukung. 10-1000 karakter.';
+
+  @override
+  String get commentPosted => 'Komentar berhasil dikirim';
+
+  @override
+  String get commentLengthRequirement => 'Komentar harus 10-1000 karakter.';
+
+  @override
   String get noCommentsYet => 'Belum ada komentar';
 
   @override

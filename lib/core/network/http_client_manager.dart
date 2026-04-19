@@ -25,6 +25,7 @@ class HttpClientManager {
     Logger? logger,
     DnsResolver? dnsResolver,
     Duration? timeout,
+    String? userAgent,
   }) {
     _logger = logger ?? Logger();
 
@@ -40,8 +41,8 @@ class HttpClientManager {
 
     // Configure default options
     _httpClient!.options.headers = {
-      'User-Agent':
-          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+      'User-Agent': userAgent ??
+          'Kuron/unknown (+https://github.com/shirokun20/nhasixapp)',
       'Accept':
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9',

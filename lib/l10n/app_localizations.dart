@@ -7542,6 +7542,30 @@ abstract class AppLocalizations {
   /// **'Comments ({count})'**
   String commentsCount(int count);
 
+  /// No description provided for @postComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Post Comment'**
+  String get postComment;
+
+  /// No description provided for @commentInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment. Markdown supported. 10-1000 characters.'**
+  String get commentInputHint;
+
+  /// No description provided for @commentPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment posted'**
+  String get commentPosted;
+
+  /// No description provided for @commentLengthRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment must be 10-1000 characters.'**
+  String get commentLengthRequirement;
+
   /// No description provided for @noCommentsYet.
   ///
   /// In en, this message translates to:
