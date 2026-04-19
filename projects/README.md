@@ -31,7 +31,6 @@
 ## 🚧 On Progress
 | Project Name | Progress | % | Status |
 |---|---|---|---|
-| **local_collection_categories** | `██████████` | 100% | ✅ Ready |
 | **premium_enhancements** | `..........` | 0% | Pending |
 
 ## ✅ Success
@@ -43,6 +42,7 @@
 | **favorites_bug_fix** | `██████████` | 100% | ✅ Ready |
 | **fix_app_drawer_transparency_on_list_screens** | `██████████` | 100% | ✅ Ready |
 | **komiktap_navigation_lists** | `██████████` | 100% | ✅ Merged |
+| **local_collection_categories** | `██████████` | 100% | ✅ Ready |
 | **multi_provider_integration** | `██████████` | 95% | 🔥 Hot |
 | **offline_search_highlight** | `██████████` | 100% | ✅ Ready |
 | **qol_enhancements** | `██████████` | 100% | ✅ Ready |
