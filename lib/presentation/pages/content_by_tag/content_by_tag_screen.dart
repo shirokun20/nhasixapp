@@ -212,7 +212,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
                 Expanded(
                   child: Center(
                     child: AppProgressIndicator(
-                      message: state.message,
+                      message: _resolveLoadingMessage(
+                        state.message,
+                        pageNumber: state.pageNumber,
+                      ),
                       size: 40,
                     ),
                   ),
@@ -253,6 +256,32 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
         },
       ),
     );
+  }
+
+  String _resolveLoadingMessage(String message, {int? pageNumber}) {
+    final l10n = AppLocalizations.of(context)!;
+
+    switch (message) {
+      case 'loadingPageNum':
+      case 'loadingPageNumber':
+        return pageNumber != null
+            ? l10n.loadingPageNum(pageNumber)
+            : l10n.loading;
+      case 'refreshingContentMsg':
+        return l10n.refreshingContentMsg;
+      case 'searchingContentMsg':
+        return l10n.searchingContentMsg;
+      case 'loadingPopularContent':
+        return l10n.loadingPopularContent;
+      case 'loadingContentByTag':
+        return l10n.loadingContentByTag;
+      case 'clearingSearchMsg':
+        return l10n.clearingSearchMsg;
+      case 'retryingMsg':
+        return l10n.retryingMsg;
+      default:
+        return message.isNotEmpty ? message : l10n.loading;
+    }
   }
 
   /// Handle content tap to navigate to detail screen

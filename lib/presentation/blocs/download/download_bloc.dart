@@ -40,6 +40,9 @@ part 'download_state.dart';
 
 /// BLoC for managing downloads with queue system and concurrent downloads
 class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
+  static const String _ehentaiSourceId = 'ehentai';
+  static const String _ehentaiChunkPrefix = '__ehchunk__';
+
   DownloadBloc({
     required DownloadContentUseCase downloadContentUseCase,
     required GetContentDetailUseCase getContentDetailUseCase,
@@ -136,6 +139,69 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
 
     return ''; // Unknown source
+  }
+
+  bool _isEhentaiSource(String? sourceId) {
+    if (sourceId == null || sourceId.isEmpty) {
+      return false;
+    }
+    return sourceId.toLowerCase() == _ehentaiSourceId;
+  }
+
+  bool _isEhentaiChunkId(String chapterId) {
+    return chapterId.startsWith(_ehentaiChunkPrefix);
+  }
+
+  Future<List<String>> _collectEhentaiChapterImages({
+    required String initialChapterId,
+    required String sourceId,
+  }) async {
+    const maxChunks = 150;
+
+    final mergedImages = <String>[];
+    final seenUrls = <String>{};
+
+    String? nextChapterId = initialChapterId;
+    var chunkCount = 0;
+
+    while (nextChapterId != null &&
+        nextChapterId.isNotEmpty &&
+        chunkCount < maxChunks) {
+      final chunkData = await _getChapterImagesUseCase.call(
+        GetChapterImagesParams.fromString(
+          nextChapterId,
+          sourceId: sourceId,
+        ),
+      );
+
+      chunkCount++;
+
+      for (final imageUrl in chunkData.images) {
+        if (seenUrls.add(imageUrl)) {
+          mergedImages.add(imageUrl);
+        }
+      }
+
+      final candidateNextId = chunkData.nextChapterId;
+      if (candidateNextId == null ||
+          candidateNextId.isEmpty ||
+          candidateNextId == nextChapterId ||
+          !_isEhentaiChunkId(candidateNextId)) {
+        break;
+      }
+
+      nextChapterId = candidateNextId;
+    }
+
+    if (chunkCount >= maxChunks) {
+      _logger.w(
+          'DownloadBloc: EHentai chunk aggregation reached safety limit ($maxChunks) for $initialChapterId');
+    }
+
+    _logger.i(
+        'DownloadBloc: EHentai chunk aggregation complete for $initialChapterId with ${mergedImages.length} images across $chunkCount chunks');
+
+    return mergedImages;
   }
 
   /// Helper method to get localized string with fallback
@@ -754,24 +820,40 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
       }
 
-      // Fallback chapter image logic
-      if (content.imageUrls.isEmpty) {
-        _logger.i(
-            'DownloadBloc: Content has empty images, trying getChapterImages fallback for ${event.contentId} (source: ${updatedDownload.sourceId})');
-        try {
-          // FIX: Pass sourceId so the correct source (e.g. komiktap) is used,
-          // not the currently active source which may be different.
-          final chapterData = await _getChapterImagesUseCase.call(
-            GetChapterImagesParams.fromString(
-              event.contentId,
-              sourceId: updatedDownload.sourceId,
-            ),
-          );
+      final effectiveSourceId = updatedDownload.sourceId ?? content.sourceId;
+      final shouldFetchChapterImages =
+          content.imageUrls.isEmpty || _isEhentaiSource(effectiveSourceId);
 
-          if (chapterData.images.isNotEmpty) {
+      // Fallback chapter image logic
+      if (shouldFetchChapterImages) {
+        _logger.i(
+            'DownloadBloc: Fetching chapter images for ${event.contentId} (source: $effectiveSourceId)');
+        try {
+          List<String> resolvedImages = const [];
+
+          if (_isEhentaiSource(effectiveSourceId)) {
+            // EHentai uses chunk pagination (`nextChapterId`) for load-more pages.
+            // Aggregate all chunks before passing URLs to native downloader.
+            resolvedImages = await _collectEhentaiChapterImages(
+              initialChapterId: event.contentId,
+              sourceId: effectiveSourceId,
+            );
+          } else {
+            // FIX: Pass sourceId so the correct source (e.g. komiktap) is used,
+            // not the currently active source which may be different.
+            final chapterData = await _getChapterImagesUseCase.call(
+              GetChapterImagesParams.fromString(
+                event.contentId,
+                sourceId: updatedDownload.sourceId,
+              ),
+            );
+            resolvedImages = chapterData.images;
+          }
+
+          if (resolvedImages.isNotEmpty) {
             content = content.copyWith(
-              imageUrls: chapterData.images,
-              pageCount: chapterData.images.length,
+              imageUrls: resolvedImages,
+              pageCount: resolvedImages.length,
               // If URL is still empty after chapter fetch (unlikely but possible), try again
               url: (content.url?.isEmpty ?? true)
                   ? _generateFallbackUrl(
@@ -781,7 +863,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
             // Update total pages
             updatedDownload = updatedDownload.copyWith(
-              totalPages: chapterData.images.length,
+              totalPages: resolvedImages.length,
               sourceId: updatedDownload.sourceId,
             );
             await _userDataRepository.saveDownloadStatus(updatedDownload);
@@ -804,18 +886,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // FIX: Restore the correct title from updatedDownload since getDetail might fail or return junk for chapters
-      final hasValidStoredTitle = updatedDownload.title != null && updatedDownload.title!.isNotEmpty;
-      final isFetchedTitleInvalid = content.title.isEmpty || content.title == event.contentId || content.title != updatedDownload.title;
+      final hasValidStoredTitle =
+          updatedDownload.title != null && updatedDownload.title!.isNotEmpty;
+      final isFetchedTitleInvalid = content.title.isEmpty ||
+          content.title == event.contentId ||
+          content.title != updatedDownload.title;
 
       if (hasValidStoredTitle && isFetchedTitleInvalid) {
         content = content.copyWith(
           title: updatedDownload.title!,
           // Also restore cover if it was lost during fallback
-          coverUrl: updatedDownload.coverUrl != null && updatedDownload.coverUrl!.isNotEmpty
+          coverUrl: updatedDownload.coverUrl != null &&
+                  updatedDownload.coverUrl!.isNotEmpty
               ? updatedDownload.coverUrl!
               : content.coverUrl,
         );
-        _logger.d('DownloadBloc: Restored correct title from pending download status: ${content.title}');
+        _logger.d(
+            'DownloadBloc: Restored correct title from pending download status: ${content.title}');
       }
 
       // Create download task

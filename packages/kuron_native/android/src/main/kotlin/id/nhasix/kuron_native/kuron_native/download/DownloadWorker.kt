@@ -262,6 +262,11 @@ class DownloadWorker(
     }
 
     private fun downloadImage(url: String, destFile: File) {
+        if (isEhentaiReaderPageUrl(url)) {
+            downloadEhentaiReaderPage(url, destFile)
+            return
+        }
+
         val initialHeaders = customHeaders.toMutableMap()
         val attempts = buildHeaderAttempts(url, initialHeaders)
 
@@ -288,6 +293,124 @@ class DownloadWorker(
         }
 
         throw IOException("HTTP $lastCode for URL: $url")
+    }
+
+    private fun isEhentaiReaderPageUrl(url: String): Boolean {
+        return try {
+            val uri = URI(url)
+            val host = uri.host?.lowercase() ?: return false
+            val path = uri.path ?: return false
+
+            (host == "e-hentai.org" || host == "exhentai.org") && path.startsWith("/s/")
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun downloadEhentaiReaderPage(readerPageUrl: String, destFile: File) {
+        val baseHeaders = customHeaders.toMutableMap()
+        val readerHtml = fetchEhentaiReaderHtml(readerPageUrl, baseHeaders)
+        val resolvedImageUrl = extractEhentaiImageUrl(readerHtml)
+            ?: throw IOException("Unable to resolve EHentai image URL from reader page: $readerPageUrl")
+
+        val imageHeaders = baseHeaders.toMutableMap().apply {
+            this["Referer"] = readerPageUrl
+            this["referer"] = readerPageUrl
+            try {
+                val uri = URI(readerPageUrl)
+                val origin = "${uri.scheme}://${uri.host}"
+                this["Origin"] = origin
+                this["origin"] = origin
+            } catch (_: Exception) {
+                remove("Origin")
+                remove("origin")
+            }
+        }
+
+        val attempts = buildHeaderAttempts(resolvedImageUrl, imageHeaders)
+        var lastCode = -1
+
+        for ((index, headers) in attempts.withIndex()) {
+            val code = executeDownloadRequest(resolvedImageUrl, headers, destFile)
+            if (code in 200..299) {
+                if (index > 0) {
+                    Log.i(TAG, "EHentai image download succeeded on retry attempt=${index + 1} code=$code")
+                }
+                return
+            }
+
+            lastCode = code
+            if (code != 403) {
+                break
+            }
+        }
+
+        throw IOException(
+            "HTTP $lastCode for EHentai image URL: $resolvedImageUrl (reader: $readerPageUrl)"
+        )
+    }
+
+    private fun fetchEhentaiReaderHtml(
+        readerPageUrl: String,
+        baseHeaders: Map<String, String>
+    ): String {
+        val attempts = buildHeaderAttempts(readerPageUrl, baseHeaders)
+        var lastCode = -1
+
+        for ((index, headers) in attempts.withIndex()) {
+            val requestBuilder = Request.Builder().url(readerPageUrl)
+            headers.forEach { (name, value) -> requestBuilder.header(name, value) }
+            val request = requestBuilder.build()
+
+            var shouldRetry = false
+            okHttpClient.newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                if (response.isSuccessful && body.isNotBlank()) {
+                    if (index > 0) {
+                        Log.i(
+                            TAG,
+                            "EHentai reader page resolved on retry attempt=${index + 1} code=${response.code}"
+                        )
+                    }
+                    return body
+                }
+
+                lastCode = response.code
+                shouldRetry = response.code == 403
+            }
+
+            if (!shouldRetry) {
+                break
+            }
+        }
+
+        throw IOException("HTTP $lastCode while loading EHentai reader page: $readerPageUrl")
+    }
+
+    private fun extractEhentaiImageUrl(readerHtml: String): String? {
+        val patterns = listOf(
+            Regex("""<img[^>]*id=["']img["'][^>]*src=["']([^"']+)["']""", RegexOption.IGNORE_CASE),
+            Regex("""<img[^>]*src=["']([^"']+)["'][^>]*id=["']img["']""", RegexOption.IGNORE_CASE)
+        )
+
+        for (pattern in patterns) {
+            val candidate = pattern.find(readerHtml)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.trim()
+            if (!candidate.isNullOrEmpty()) {
+                return decodeHtmlEntities(candidate)
+            }
+        }
+
+        return null
+    }
+
+    private fun decodeHtmlEntities(value: String): String {
+        return value
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
     }
 
     private fun buildHeaderAttempts(
