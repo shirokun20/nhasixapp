@@ -359,8 +359,9 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
   - `fvm flutter test`
   - updated stale widget/service tests so the default suite passes again
   - changed `test/phase6/phase6_live_smoke_test.dart` to be opt-in via `ENABLE_PHASE6_LIVE_SMOKE=true` and to read configs from `assets/configs/` first
-- Source-control caveat:
-  - GitHub tag creation is still pending because a tag created before committing these changes would point at the previous commit instead of this release candidate
+- Release finalization:
+  - prepared a dedicated follow-up release-memory commit so the final annotated tag can point to a clean `0.9.17+26` snapshot instead of an older commit
+  - target release tag: `v0.9.17+26`
 
 ---
 
