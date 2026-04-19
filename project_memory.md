@@ -181,6 +181,8 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-04-19 | Codex | E-Hentai download extension normalization + offline reader animated WebP detection | ✅ Done | Confirmed via device storage that the newest E-Hentai sample (`Carlotta (Animated WEBP)`) was being saved as `page_XXX.jpg` even though the file bytes start with `RIFF....WEBPVP8X` and carry the animation flag, while Hitomi saved the same class of content as proper `.webp`. Fixed the reader to sniff local/cached file headers so confirmed animated WebP bytes still route to the native pause-aware renderer even when filenames are misleading, and hardened `DownloadWorker.kt` to normalize saved filenames to the actual downloaded format after each E-Hentai page finishes. Verified with the extended reader widget test/analyze suite and a successful `./gradlew app:compileDebugKotlin` build in `packages/kuron_native/example/android`. |
+| 2026-04-19 | Codex | Offline reader animated pause regression fix | ✅ Done | Traced an offline reader regression to `AnimatedWebPView`: pages that were built while visible kept `autoPlay=true` and never paused after scrolling away because visibility was OR-ed with the initial autoplay flag. Updated the native widget so `visiblePageNotifier` wins whenever page visibility is available, added a focused regression test for the stale-autoplay case, and verified with targeted `fvm flutter test` + `fvm flutter analyze` inside `packages/kuron_native`. |
 | 2026-04-19 | Codex | Nhentai submit comments + app user-agent wiring | ✅ Done | Implemented authenticated nhentai comment submission on the detail screen by extending the config-driven token auth stack with a `galleryComments` endpoint, comment-specific PoW action, and create-comment client/service methods. Added an inline composer that reuses the existing login session, opens the native CAPTCHA solver when needed, and prepends successful comments immediately to the visible list. Also centralized the auth/client `User-Agent` to `Kuron/<version> (+https://github.com/shirokun20/nhasixapp)` using runtime package info. Verified with `fvm flutter gen-l10n`, targeted `config_driven_api_auth_client_test.dart`, and focused `flutter analyze`. |
 | 2026-04-16 | Codex | Reader continuous-scroll cache regression fix | ✅ Done | Investigated the new non-animated scroll jank and confirmed a regression introduced by the native animated-WebP work: `ExtendedImageReaderWidget` had been changed to keep every continuous-scroll page alive and never clear network image memory cache. Restored selective retention so only heavy/native pages stay warm, while normal pages in continuous scroll can recycle again. Added testing helpers covering keep-alive and cache-clear decisions, then verified with targeted `fvm dart analyze` and the reader widget regression test. |
 | 2026-04-16 | Codex | Reader native cache loader progress polish | ✅ Done | Audited the animated reader loading flow and confirmed `ExtendedImage.network` still exposes real chunk progress; the plain `Memuat...` state was coming from `AnimatedWebPView` when the native thumbnail was being prepared from an already-cached local WebP file. Seeded the native loader with the cached file size so `_buildLoadingIndicator` now shows real byte information instead of an empty loading label during native cache preparation. Verified with targeted `fvm dart analyze` in `packages/kuron_native` and the existing reader widget regression test. |
@@ -336,30 +338,29 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
 
 ---
 
-## 🆕 Latest Session — 2026-04-12
+## 🆕 Latest Session — 2026-04-19
 
-### Local Collection Categories MVP Execution ✅
+### E-Hentai Download Extension Normalization + Offline Animated Reader Fix ✅
 
-- Moved `local_collection_categories` into execution with a dedicated `progress.md`.
-- Implemented SQLite migration for:
-  - `favorite_collections`
-  - `favorite_collection_items`
-- Added the new `FavoriteCollection` entity and extended user-data contracts for:
-  - collection CRUD
-  - favorite-to-collection membership management
-  - collection-aware favorites queries
-- Updated offline favorites behavior:
-  - collection filter chips (`All` + custom collections)
-  - create collection action
-  - rename/delete collection via long-press
-  - assign favorite item to one or more collections from the card UI
-- Kept backward compatibility:
-  - base `favorites` table remains the saved-items registry
-  - removing a favorite also removes collection memberships via DB-level cascade
-  - export/import schema now carries collections and collection memberships in addition to flat favorites
+- Device evidence:
+  - Hitomi sample `3484982` ("About the New President of the Disciplinary Committee's Huge Tits Part 2") was stored as proper `page_XXX.webp`.
+  - Newest E-Hentai sample `4dgvweluk` (`Carlotta (Animated WEBP)`) was stored as `page_XXX.jpg` even though the file header begins with `RIFF....WEBPVP8X` and includes animated WebP markers.
+- Root causes:
+  - `AnimatedWebPView` kept `autoPlay=true` as a persistent override, so a heavy animated page built while visible could keep animating after it scrolled off-screen.
+  - `DownloadWorker.kt` named E-Hentai downloads from the reader page URL (`/s/...`) before the actual image was resolved, so animated WebP files defaulted to `.jpg`.
+- Fixes:
+  - `AnimatedWebPView` now treats `visiblePageNotifier` as the source of truth whenever page visibility is available, so off-screen animated pages return to the passive thumbnail state correctly.
+  - `ExtendedImageReaderWidget` now sniffs local/cached file headers to confirm animated WebP bytes, allowing misnamed files (e.g. `.jpg` containing animated WebP) to still route to the native pause-aware renderer.
+  - `DownloadWorker.kt` now normalizes the saved file extension after each E-Hentai page download, so actual WebP bytes are persisted as `.webp` for future downloads.
+- Added regression coverage:
+  - `packages/kuron_native/test/animated_webp_view_test.dart`
+  - `test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
 - Validation:
-  - `fvm dart run build_runner build --delete-conflicting-outputs`
-  - targeted `fvm dart analyze ...` on touched files → **No issues found**
+  - `fvm flutter test test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
+  - `fvm flutter analyze lib/presentation/widgets/extended_image_reader_widget.dart test/widget/presentation/widgets/extended_image_reader_widget_test.dart`
+  - `fvm flutter test test/animated_webp_view_test.dart`
+  - `fvm flutter analyze lib/widgets/animated_webp_view.dart test/animated_webp_view_test.dart`
+  - `./gradlew app:compileDebugKotlin`
 
 ---
 
