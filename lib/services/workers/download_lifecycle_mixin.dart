@@ -65,10 +65,10 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
             totalImages: download.totalImages,
             currentProgress: download.currentProgress,
           );
-        } else {
-          // Use stored resume state
-          await DownloadWorkerManager.scheduleResume(download.contentId);
         }
+        // Native WorkManager downloads already continue in background.
+        // Avoid scheduling the legacy Flutter worker from partial resume state,
+        // because it can reconstruct stale URLs and conflict with native jobs.
       }
     }
   }

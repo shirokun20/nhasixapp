@@ -169,5 +169,37 @@ void main() {
         ),
       ],
     );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'ignores regressive progress updates from retried workers',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: testContentId,
+            state: DownloadState.downloading,
+            downloadedPages: 4,
+            totalPages: 8,
+            title: 'Test Manga',
+            sourceId: 'src',
+          ),
+        ],
+        settings: DownloadSettings.defaultSettings(),
+        lastUpdated: DateTime.now(),
+      ),
+      act: (bloc) => bloc.add(const DownloadProgressUpdateEvent(
+        contentId: testContentId,
+        downloadedPages: 2,
+        totalPages: 8,
+      )),
+      expect: () => <DownloadBlocState>[],
+      verify: (_) {
+        verifyNever(() => mockRepo.saveDownloadStatus(any(
+              that: predicate<DownloadStatus>(
+                (d) => d.contentId == testContentId && d.downloadedPages == 2,
+              ),
+            )));
+      },
+    );
   });
 }

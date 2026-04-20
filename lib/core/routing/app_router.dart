@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
+import 'package:nhasixapp/core/routing/reader_route_extra.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_pdf_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
@@ -163,21 +164,16 @@ class AppRouter {
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
           final forceStartFromBeginning =
               state.uri.queryParameters['forceStartFromBeginning'] == 'true';
+          final extra = asReaderRouteExtra(state.extra);
 
           // Extract content, imageMetadata, and chapterData from extra
-          Content? content;
-          List<ImageMetadata>? imageMetadata;
-          ChapterData? chapterData;
-
-          if (state.extra is Map<String, dynamic>) {
-            final extra = state.extra as Map<String, dynamic>;
-            content = extra['content'] as Content?;
-            imageMetadata = extra['imageMetadata'] as List<ImageMetadata>?;
-            chapterData = extra['chapterData'] as ChapterData?;
-          } else {
-            // Backward compatibility: if extra is Content directly
-            content = state.extra as Content?;
-          }
+          final content = readReaderContent(extra?['content'] ?? state.extra);
+          final imageMetadata =
+              readReaderImageMetadata(extra?['imageMetadata']);
+          final chapterData = readReaderChapterData(extra?['chapterData']);
+          final parentContent = readReaderContent(extra?['parentContent']);
+          final allChapters = readReaderChapters(extra?['allChapters']);
+          final currentChapter = readReaderChapter(extra?['currentChapter']);
 
           return ReaderScreen(
             contentId: contentId,
@@ -186,6 +182,9 @@ class AppRouter {
             preloadedContent: content,
             imageMetadata: imageMetadata,
             chapterData: chapterData,
+            parentContent: parentContent,
+            allChapters: allChapters,
+            currentChapter: currentChapter,
           );
         },
       ),
@@ -476,14 +475,14 @@ class AppRouter {
     final encodedContentId = Uri.encodeComponent(contentId);
     return context.push(
         '/reader/$encodedContentId?page=$page&forceStartFromBeginning=$forceStartFromBeginning',
-        extra: {
-          'content': content,
-          'imageMetadata': imageMetadata,
-          'chapterData': chapterData,
-          'parentContent': parentContent,
-          'allChapters': allChapters,
-          'currentChapter': currentChapter,
-        });
+        extra: buildReaderRouteExtra(
+          content: content,
+          imageMetadata: imageMetadata,
+          chapterData: chapterData,
+          parentContent: parentContent,
+          allChapters: allChapters,
+          currentChapter: currentChapter,
+        ));
   }
 
   static void goToReaderPdf(BuildContext context,

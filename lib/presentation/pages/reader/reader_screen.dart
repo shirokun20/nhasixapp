@@ -7,6 +7,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
+import '../../../core/routing/reader_route_extra.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../data/models/reader_settings_model.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -174,40 +175,49 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (_preloadedContent != null) return; // Already initialized
 
     // Get preloaded content and metadata from route extra if available
-    final routeExtra = GoRouterState.of(context).extra;
+    final rawRouteExtra = GoRouterState.of(context).extra;
+    final routeExtra = asReaderRouteExtra(rawRouteExtra);
 
     // 🔍 DEBUG LOGGING - What did we receive from router?
     Logger().i('📥 ReaderScreen._initializeFromRouteExtra - Received:');
-    Logger().i('  routeExtra type: ${routeExtra.runtimeType}');
+    Logger().i('  routeExtra type: ${rawRouteExtra.runtimeType}');
 
-    if (routeExtra is Map<String, dynamic>) {
+    if (routeExtra != null) {
       Logger().i('  Map keys: ${routeExtra.keys.toList()}');
 
-      if (routeExtra['content'] is Content && widget.preloadedContent == null) {
-        _preloadedContent = routeExtra['content'] as Content;
+      final parsedContent = readReaderContent(routeExtra['content']);
+      if (parsedContent != null && widget.preloadedContent == null) {
+        _preloadedContent = parsedContent;
         Logger().i('  ✓ content: ${_preloadedContent?.title}');
       }
-      if (routeExtra['imageMetadata'] is List<ImageMetadata> &&
-          widget.imageMetadata == null) {
-        _preloadedImageMetadata =
-            routeExtra['imageMetadata'] as List<ImageMetadata>;
+
+      final parsedImageMetadata = readReaderImageMetadata(
+        routeExtra['imageMetadata'],
+      );
+      if (parsedImageMetadata != null && widget.imageMetadata == null) {
+        _preloadedImageMetadata = parsedImageMetadata;
         Logger()
             .i('  ✓ imageMetadata: ${_preloadedImageMetadata?.length} items');
       }
-      if (routeExtra['chapterData'] is ChapterData &&
-          widget.chapterData == null) {
-        _preloadedChapterData = routeExtra['chapterData'] as ChapterData;
+
+      final parsedChapterData =
+          readReaderChapterData(routeExtra['chapterData']);
+      if (parsedChapterData != null && widget.chapterData == null) {
+        _preloadedChapterData = parsedChapterData;
         Logger().i(
             '  ✓ chapterData: prev=${_preloadedChapterData?.prevChapterId}, next=${_preloadedChapterData?.nextChapterId}');
       }
-      if (routeExtra['parentContent'] is Content &&
-          widget.parentContent == null) {
-        _preloadedParentContent = routeExtra['parentContent'] as Content;
+
+      final parsedParentContent =
+          readReaderContent(routeExtra['parentContent']);
+      if (parsedParentContent != null && widget.parentContent == null) {
+        _preloadedParentContent = parsedParentContent;
         Logger().i('  ✓ parentContent: ${_preloadedParentContent?.title}');
       }
-      if (routeExtra['allChapters'] is List<Chapter> &&
-          widget.allChapters == null) {
-        _preloadedAllChapters = routeExtra['allChapters'] as List<Chapter>;
+
+      final parsedAllChapters = readReaderChapters(routeExtra['allChapters']);
+      if (parsedAllChapters != null && widget.allChapters == null) {
+        _preloadedAllChapters = parsedAllChapters;
         Logger()
             .i('  ✓ allChapters: ${_preloadedAllChapters?.length} chapters');
         if (_preloadedAllChapters != null &&
@@ -215,19 +225,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
           Logger().i('    First: ${_preloadedAllChapters!.first.title}');
           Logger().i('    Last: ${_preloadedAllChapters!.last.title}');
         }
-      } else {
-        Logger().e('  ❌ allChapters NOT received or wrong type!');
-        Logger().e('    Type: ${routeExtra['allChapters'].runtimeType}');
       }
-      if (routeExtra['currentChapter'] is Chapter &&
-          widget.currentChapter == null) {
-        _preloadedCurrentChapter = routeExtra['currentChapter'] as Chapter;
+
+      final parsedCurrentChapter =
+          readReaderChapter(routeExtra['currentChapter']);
+      if (parsedCurrentChapter != null && widget.currentChapter == null) {
+        _preloadedCurrentChapter = parsedCurrentChapter;
         Logger().i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
       }
-    } else if (routeExtra is Content && widget.preloadedContent == null) {
+    } else if (widget.preloadedContent == null) {
       // Fallback for direct Content object (backward compatibility)
-      _preloadedContent = routeExtra;
-      Logger().i('  ✓ Direct Content: ${_preloadedContent?.title}');
+      final parsedDirectContent = readReaderContent(rawRouteExtra);
+      if (parsedDirectContent != null) {
+        _preloadedContent = parsedDirectContent;
+        Logger().i('  ✓ Direct Content: ${_preloadedContent?.title}');
+      }
     }
   }
 

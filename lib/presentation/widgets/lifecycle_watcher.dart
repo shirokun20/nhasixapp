@@ -53,7 +53,8 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
           isInProgress: true, // Only active ones are here
           currentProgress: download.progressPercentage,
           totalImages: download.totalPages,
-          // Other fields omitted, will rely on saved resume state
+          // Native WorkManager already owns active downloads in background.
+          // We intentionally avoid reconstructing legacy resume payloads here.
         );
       }).toList();
 

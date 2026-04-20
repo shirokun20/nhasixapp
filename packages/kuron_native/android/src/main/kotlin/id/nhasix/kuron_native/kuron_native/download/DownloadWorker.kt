@@ -177,52 +177,82 @@ class DownloadWorker(
         } else {
              Log.d(TAG, "Images Dir already exists")
         }
+
+        val existingFilesByPage = buildExistingPageFileMap(imagesDir, imageUrls.size)
+        var completedCount = existingFilesByPage.size
+        totalBytesDownloaded = existingFilesByPage.values.fold(0L) { acc, file ->
+            acc + file.length()
+        }
+
+        if (completedCount > 0) {
+            setProgress(workDataOf(
+                KEY_PROGRESS to calculateProgressPercent(completedCount, imageUrls.size),
+                "downloadedCount" to completedCount,
+                "totalCount" to imageUrls.size,
+                "downloadedBytes" to totalBytesDownloaded,
+                KEY_CONTENT_ID to contentId
+            ))
+        }
         
         imageUrls.forEachIndexed { index, url ->
             if (isStopped) throw CancellationException("Work cancelled")
             
             val pageNumber = index + 1
-            val extension = resolveFileExtension(url)
-            val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
-            val destFile = File(imagesDir, fileName)
-            
-            // Skip if already exists (resume capability)
-            if (!destFile.exists() || destFile.length() == 0L) {
+            val existingFile = existingFilesByPage[pageNumber]
+
+            val storedFile = if (existingFile != null &&
+                existingFile.exists() &&
+                existingFile.length() > 0L
+            ) {
                 if (index == 0) {
                     Log.d(
                         TAG,
-                        "Downloading first file to: ${destFile.absolutePath} (source=${shortUrl(url)})"
+                        "Skipping first file (already exists): ${existingFile.absolutePath}"
                     )
                 }
-                downloadImage(url, destFile)
-                if (index == 0 && destFile.exists()) Log.d(TAG, "First file created successfully: size=${destFile.length()}")
+                existingFile
             } else {
-                 if (index == 0) Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
-            }
+                val extension = resolveFileExtension(url)
+                val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
+                val destFile = File(imagesDir, fileName)
 
-            val storedFile = if (isEhentaiReaderPageUrl(url)) {
-                normalizeDownloadedFileExtension(destFile)
-            } else {
-                destFile
+                if (!destFile.exists() || destFile.length() == 0L) {
+                    if (index == 0) {
+                        Log.d(
+                            TAG,
+                            "Downloading first file to: ${destFile.absolutePath} (source=${shortUrl(url)})"
+                        )
+                    }
+                    downloadImage(url, destFile)
+                    if (index == 0 && destFile.exists()) {
+                        Log.d(TAG, "First file created successfully: size=${destFile.length()}")
+                    }
+                } else if (index == 0) {
+                    Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
+                }
+
+                val normalizedFile = if (isEhentaiReaderPageUrl(url)) {
+                    normalizeDownloadedFileExtension(destFile)
+                } else {
+                    destFile
+                }
+
+                existingFilesByPage[pageNumber] = normalizedFile
+                completedCount += 1
+                totalBytesDownloaded += normalizedFile.length()
+
+                setProgress(workDataOf(
+                    KEY_PROGRESS to calculateProgressPercent(completedCount, imageUrls.size),
+                    "downloadedCount" to completedCount,
+                    "totalCount" to imageUrls.size,
+                    "downloadedBytes" to totalBytesDownloaded,
+                    KEY_CONTENT_ID to contentId
+                ))
+
+                normalizedFile
             }
 
             downloadedFiles.add(storedFile.name)
-            
-            
-            val progress = ((index + 1).toFloat() / imageUrls.size * 100).toInt()
-            
-            // Add current file size to total for speed calculation
-            if (storedFile.exists()) {
-                totalBytesDownloaded += storedFile.length()
-            }
-            
-            setProgress(workDataOf(
-                KEY_PROGRESS to progress,
-                "downloadedCount" to (index + 1),
-                "totalCount" to imageUrls.size,
-                "downloadedBytes" to totalBytesDownloaded,
-                KEY_CONTENT_ID to contentId
-            ))
         }
 
         return downloadedFiles
@@ -538,6 +568,49 @@ class DownloadWorker(
             normalizedPath.endsWith(".jpg") -> ".jpg"
             else -> ".jpg"
         }
+    }
+
+    private fun buildExistingPageFileMap(imagesDir: File, totalPages: Int): MutableMap<Int, File> {
+        val existingFiles = mutableMapOf<Int, File>()
+
+        for (pageNumber in 1..totalPages) {
+            val existing = findExistingDownloadedPage(imagesDir, pageNumber)
+            if (existing != null) {
+                existingFiles[pageNumber] = existing
+            }
+        }
+
+        return existingFiles
+    }
+
+    private fun findExistingDownloadedPage(imagesDir: File, pageNumber: Int): File? {
+        val baseName = "page_${pageNumber.toString().padStart(3, '0')}"
+        val supportedExtensions = listOf(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".avif",
+            ".gif",
+            ".bmp"
+        )
+
+        for (extension in supportedExtensions) {
+            val candidate = File(imagesDir, "$baseName$extension")
+            if (candidate.exists() && candidate.length() > 0L) {
+                return candidate
+            }
+        }
+
+        return null
+    }
+
+    private fun calculateProgressPercent(downloadedCount: Int, totalCount: Int): Int {
+        if (totalCount <= 0) {
+            return 0
+        }
+
+        return ((downloadedCount.toFloat() / totalCount) * 100).toInt()
     }
 
     private fun normalizeDownloadedFileExtension(file: File): File {

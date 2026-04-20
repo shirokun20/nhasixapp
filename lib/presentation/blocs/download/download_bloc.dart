@@ -1808,20 +1808,35 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // Create updated download with new progress
-      final updatedDownload = currentDownload.copyWith(
-        downloadedPages: event.downloadedPages,
-        totalPages: event
-            .totalPages, // ✅ Update totalPages from event (crucial for Crotpedia)
-        speed: event.downloadSpeed,
-      );
+      final resolvedTotalPages = event.totalPages > 0
+          ? (event.totalPages > currentDownload.totalPages
+              ? event.totalPages
+              : currentDownload.totalPages)
+          : currentDownload.totalPages;
+
+      if (event.downloadedPages < currentDownload.downloadedPages) {
+        _logger.w(
+          'DownloadBloc: Ignoring regressive progress update for '
+          '${event.contentId}: ${event.downloadedPages}/${event.totalPages} '
+          '(current ${currentDownload.downloadedPages}/${currentDownload.totalPages})',
+        );
+        return;
+      }
 
       // ✅ FIXED: Only update if progress actually changed to prevent unnecessary updates
-      if (currentDownload.downloadedPages == event.downloadedPages) {
+      if (currentDownload.downloadedPages == event.downloadedPages &&
+          currentDownload.totalPages == resolvedTotalPages) {
         _logger.d(
             'DownloadBloc: Ignoring duplicate progress update for ${event.contentId}');
         return;
       }
+
+      // Create updated download with new progress
+      final updatedDownload = currentDownload.copyWith(
+        downloadedPages: event.downloadedPages,
+        totalPages: resolvedTotalPages,
+        speed: event.downloadSpeed,
+      );
 
       // ✅ FIXED: Check if download should be completed (progress = 100%)
       // This helps handle completion status immediately
