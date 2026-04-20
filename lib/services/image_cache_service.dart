@@ -87,35 +87,49 @@ class ImageCacheService {
   /// Returns a cached File of the static JPG
   Future<File?> getOrProcessStaticGif(
       String url, Map<String, String>? headers) async {
+    return getOrProcessStaticImage(url, headers: headers);
+  }
+
+  /// Get or process a static first-frame preview for a remote or local image.
+  ///
+  /// This is primarily used for thumbnail surfaces where animated payloads
+  /// should stay lightweight and deterministic.
+  Future<File?> getOrProcessStaticImage(
+    String source, {
+    Map<String, String>? headers,
+    bool isLocalFile = false,
+  }) async {
     try {
       // 1. Check if we already have the static version cached
-      final cachedFile = await getCachedImage(url, isStaticGif: true);
+      final cachedFile = await getCachedImage(source, isStaticGif: true);
       if (cachedFile != null) return cachedFile;
 
-      // 2. Download the original GIF
-      final file =
-          await DefaultCacheManager().getSingleFile(url, headers: headers);
-      final bytes = await file.readAsBytes();
+      // 2. Read the original bytes from local disk or network cache
+      final bytes = isLocalFile
+          ? await File(source).readAsBytes()
+          : await (await DefaultCacheManager()
+                  .getSingleFile(source, headers: headers))
+              .readAsBytes();
 
-      // 3. Convert to static JPG in isolate
-      final staticBytes = await compute(_decodeGifToStaticImage, bytes);
+      // 3. Convert to a static JPG in isolate
+      final staticBytes = await compute(_decodeImageToStaticImage, bytes);
       if (staticBytes == null) return null;
 
       // 4. Cache the result
-      await cacheImage(url, staticBytes, isStaticGif: true);
+      await cacheImage(source, staticBytes, isStaticGif: true);
 
       // 5. Return the newly cached file
-      return await getCachedImage(url, isStaticGif: true);
+      return await getCachedImage(source, isStaticGif: true);
     } catch (e) {
-      _logger.e('Error processing GIF: $e');
+      _logger.e('Error processing static image preview: $e');
       return null;
     }
   }
 
   /// Static function for isolate processing
-  static Future<Uint8List?> _decodeGifToStaticImage(Uint8List bytes) async {
+  static Future<Uint8List?> _decodeImageToStaticImage(Uint8List bytes) async {
     try {
-      // Decode the image (GIF or otherwise)
+      // Decode the image (GIF/WebP/AVIF/etc.) and keep only the first frame.
       final image = img.decodeImage(bytes);
       if (image == null) return null;
 
@@ -123,7 +137,7 @@ class ImageCacheService {
       // This strips animation frames and returns just the first frame
       return Uint8List.fromList(img.encodeJpg(image, quality: 85));
     } catch (e) {
-      debugPrint('Error decoding GIF in isolate: $e');
+      debugPrint('Error decoding static image preview in isolate: $e');
       return null;
     }
   }

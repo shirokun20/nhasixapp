@@ -3589,6 +3589,53 @@
   "failedToLoadImage": "Failed to load image",
   "retrying": "Retrying...",
   "failedToLoad": "Failed to load",
+  "readerRedownloadImage": "Redownload page",
+  "readerRepairingImage": "Repairing image...",
+  "readerOpenSourcePage": "Open source page",
+  "readerOpeningSourcePage": "Opening source page...",
+  "readerImageRepairSuccess": "Page {pageNumber} was redownloaded successfully.",
+  "@readerImageRepairSuccess": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairHttpStatus": "Could not redownload page {pageNumber}. Server returned HTTP {statusCode}.",
+  "@readerImageRepairHttpStatus": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      },
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairInvalidImage": "Could not redownload page {pageNumber} because the response was not a valid image.",
+  "@readerImageRepairInvalidImage": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairUnavailable": "Page {pageNumber} could not be redownloaded from the source.",
+  "@readerImageRepairUnavailable": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairFailed": "Failed to redownload page {pageNumber}.",
+  "@readerImageRepairFailed": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
   "pageAttempt": "Page {pageNumber} • Attempt {current}/{max}",
   "@pageAttempt": {
     "placeholders": {

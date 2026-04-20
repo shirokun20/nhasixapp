@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -13,7 +17,9 @@ import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../core/models/image_metadata.dart';
+import '../../../core/config/remote_config_service.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/local_image_preloader.dart';
 import '../network/network_cubit.dart';
@@ -21,9 +27,22 @@ import '../../../core/utils/webtoon_detector.dart';
 
 part 'reader_state.dart';
 
+typedef ReaderImageRepairResult = ({
+  bool success,
+  String reason,
+  int? statusCode,
+});
+
+typedef ReaderManualRepairContext = ({
+  String sourceId,
+  String sourcePageUrl,
+  String? initialCookie,
+});
+
 /// Simple cubit for managing reader functionality with offline support
 class ReaderCubit extends Cubit<ReaderState> {
   static const String _ehentaiChunkPrefix = '__ehchunk__';
+  static const int _maxEhentaiRepairChunks = 150;
 
   ReaderCubit({
     required this.getContentDetailUseCase,
@@ -34,6 +53,10 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.offlineContentManager,
     required this.networkCubit,
     required this.imageMetadataService,
+    required this.httpClient,
+    required this.contentSourceRegistry,
+    required this.ehentaiCookieJar,
+    required this.remoteConfigService,
   }) : super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
@@ -44,6 +67,10 @@ class ReaderCubit extends Cubit<ReaderState> {
   final OfflineContentManager offlineContentManager;
   final NetworkCubit networkCubit;
   final ImageMetadataService imageMetadataService;
+  final Dio httpClient;
+  final ContentSourceRegistry contentSourceRegistry;
+  final PersistCookieJar ehentaiCookieJar;
+  final RemoteConfigService remoteConfigService;
   final Logger _logger = Logger();
 
   Timer? _readingTimer;
@@ -55,7 +82,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   // Chapter navigation context
   Content? _parentContent; // Parent series for chapter navigation
   List<Chapter>? _allChapters; // All chapters available for navigation
-  int _lastTrackedPage = 1; // Tracks current page for persistence even when state is silent
+  int _lastTrackedPage =
+      1; // Tracks current page for persistence even when state is silent
 
   // Public getters for chapter navigation
   Content? get parentContent => _parentContent;
@@ -1102,6 +1130,834 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  Future<ReaderImageRepairResult> repairBrokenImage(int pageNumber) async {
+    final currentContent = state.content;
+    if (currentContent == null) {
+      return (success: false, reason: 'content_unavailable', statusCode: null);
+    }
+
+    final sourceId = currentContent.sourceId.trim();
+    if (sourceId.isEmpty) {
+      return (success: false, reason: 'provider_unavailable', statusCode: null);
+    }
+
+    if (!networkCubit.isConnected) {
+      return (success: false, reason: 'no_connection', statusCode: null);
+    }
+
+    final source = contentSourceRegistry.getSource(sourceId);
+    if (source == null) {
+      return (success: false, reason: 'provider_unavailable', statusCode: null);
+    }
+
+    if (pageNumber <= 0 || pageNumber > currentContent.imageUrls.length) {
+      return (success: false, reason: 'page_unavailable', statusCode: null);
+    }
+
+    final currentImagePath =
+        normalizeLocalReaderImagePath(currentContent.imageUrls[pageNumber - 1]);
+    if (!isLocalReaderImagePath(currentImagePath)) {
+      return (success: false, reason: 'page_unavailable', statusCode: null);
+    }
+
+    return _repairBrokenImageInternal(
+      currentContent: currentContent,
+      sourceId: sourceId,
+      pageNumber: pageNumber,
+      currentImagePath: currentImagePath,
+    );
+  }
+
+  Future<ReaderImageRepairResult> _repairBrokenImageInternal({
+    required Content currentContent,
+    required String sourceId,
+    required int pageNumber,
+    required String currentImagePath,
+    _ReaderRepairTarget? overrideTarget,
+  }) async {
+    try {
+      final repairTarget = overrideTarget ??
+          await _resolveRepairTarget(
+            content: currentContent,
+            sourceId: sourceId,
+            pageNumber: pageNumber,
+          );
+      if (repairTarget == null) {
+        return (
+          success: false,
+          reason: 'remote_unavailable',
+          statusCode: null,
+        );
+      }
+
+      final headers = _buildRepairHeaders(
+        sourceId: sourceId,
+        imageUrl: repairTarget.requestUrl,
+        readerPageUrl: repairTarget.readerPageUrl,
+      );
+
+      final response = await httpClient.get<List<int>>(
+        repairTarget.requestUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: headers,
+          followRedirects: true,
+          validateStatus: (_) => true,
+        ),
+      );
+
+      final statusCode = response.statusCode;
+      if (statusCode != 200) {
+        _logger.w(
+          'Reader repair rejected for page $pageNumber: '
+          'status=$statusCode url=${repairTarget.requestUrl}',
+        );
+        return (
+          success: false,
+          reason: 'http_status',
+          statusCode: statusCode,
+        );
+      }
+
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        return (
+          success: false,
+          reason: 'invalid_image',
+          statusCode: statusCode,
+        );
+      }
+
+      final extension = inferImageExtension(
+        bytes: bytes,
+        contentType: response.headers.value(Headers.contentTypeHeader),
+        sourceUrl: repairTarget.requestUrl,
+      );
+      if (extension == null || extension.isEmpty) {
+        _logger.w(
+          'Reader repair rejected non-image payload for page $pageNumber '
+          'from ${repairTarget.requestUrl}',
+        );
+        return (
+          success: false,
+          reason: 'invalid_image',
+          statusCode: statusCode,
+        );
+      }
+
+      final repairedImagePath = buildReplacementImagePath(
+        currentImagePath: currentImagePath,
+        extension: extension,
+      );
+
+      await _persistRepairedImage(
+        currentImagePath: currentImagePath,
+        repairedImagePath: repairedImagePath,
+        bytes: bytes,
+      );
+
+      final updatedImageUrls = List<String>.from(currentContent.imageUrls);
+      updatedImageUrls[pageNumber - 1] = repairedImagePath;
+
+      final updatedContent = currentContent.copyWith(
+        coverUrl:
+            pageNumber == 1 && isLocalReaderImagePath(currentContent.coverUrl)
+                ? repairedImagePath
+                : currentContent.coverUrl,
+        imageUrls: updatedImageUrls,
+      );
+
+      emit(ReaderLoaded(state.copyWith(content: updatedContent)));
+
+      _logger.i(
+        'Reader repair succeeded for ${currentContent.id} '
+        'page=$pageNumber -> $repairedImagePath',
+      );
+      return (success: true, reason: 'success', statusCode: statusCode);
+    } catch (e, stackTrace) {
+      _logger.e(
+        'Reader repair failed for ${currentContent.id} page $pageNumber',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return (success: false, reason: 'failed', statusCode: null);
+    }
+  }
+
+  Future<ReaderManualRepairContext?> prepareManualRepairContext(
+    int pageNumber,
+  ) async {
+    final currentContent = state.content;
+    if (currentContent == null) {
+      return null;
+    }
+
+    final sourceId = currentContent.sourceId.trim();
+    if (sourceId.isEmpty ||
+        !supportsSourcePageManualRepair(
+          remoteConfigService.getRawConfig(sourceId),
+        )) {
+      return null;
+    }
+
+    if (pageNumber <= 0 || pageNumber > currentContent.imageUrls.length) {
+      return null;
+    }
+
+    try {
+      final repairTarget = await _resolveRepairTarget(
+        content: currentContent,
+        sourceId: sourceId,
+        pageNumber: pageNumber,
+      );
+      if (repairTarget == null) {
+        return null;
+      }
+
+      final sourcePageUrl = repairTarget.readerPageUrl;
+      if (sourcePageUrl == null || sourcePageUrl.trim().isEmpty) {
+        return null;
+      }
+
+      return (
+        sourceId: sourceId,
+        sourcePageUrl: sourcePageUrl,
+        initialCookie: await _buildCookieHeaderForUrl(sourceId, sourcePageUrl),
+      );
+    } catch (e) {
+      _logger.w(
+        'Failed to prepare manual repair context for '
+        '${currentContent.id} page $pageNumber: $e',
+      );
+      return null;
+    }
+  }
+
+  Future<ReaderImageRepairResult> retryRepairAfterManualSession({
+    required int pageNumber,
+    required String sourcePageUrl,
+    String? sessionUrl,
+    String? resolvedImageUrl,
+    List<String> rawCookies = const <String>[],
+    String? userAgent,
+  }) async {
+    final effectiveSessionUrl = sessionUrl?.trim().isNotEmpty == true
+        ? sessionUrl!.trim()
+        : sourcePageUrl;
+
+    try {
+      final currentSourceId = state.content?.sourceId.trim();
+      if (rawCookies.isNotEmpty &&
+          currentSourceId != null &&
+          currentSourceId.isNotEmpty) {
+        await _saveRawSourceCookies(
+          currentSourceId,
+          rawCookies,
+          effectiveSessionUrl,
+        );
+      }
+
+      final normalizedUserAgent = userAgent?.trim();
+      if (normalizedUserAgent != null && normalizedUserAgent.isNotEmpty) {
+        httpClient.options.headers['User-Agent'] = normalizedUserAgent;
+      }
+    } catch (e) {
+      _logger.w(
+        'Failed to refresh manual repair session for page $pageNumber: $e',
+      );
+    }
+
+    final directImageUrl = resolvedImageUrl?.trim();
+    if (directImageUrl != null && directImageUrl.isNotEmpty) {
+      final currentContent = state.content;
+      if (currentContent == null) {
+        return (
+          success: false,
+          reason: 'content_unavailable',
+          statusCode: null,
+        );
+      }
+
+      final sourceId = currentContent.sourceId.trim();
+      if (sourceId.isEmpty) {
+        return (
+          success: false,
+          reason: 'provider_unavailable',
+          statusCode: null,
+        );
+      }
+
+      if (!networkCubit.isConnected) {
+        return (success: false, reason: 'no_connection', statusCode: null);
+      }
+
+      if (contentSourceRegistry.getSource(sourceId) == null) {
+        return (
+          success: false,
+          reason: 'provider_unavailable',
+          statusCode: null,
+        );
+      }
+
+      if (pageNumber <= 0 || pageNumber > currentContent.imageUrls.length) {
+        return (
+          success: false,
+          reason: 'page_unavailable',
+          statusCode: null,
+        );
+      }
+
+      final currentImagePath = normalizeLocalReaderImagePath(
+        currentContent.imageUrls[pageNumber - 1],
+      );
+      if (!isLocalReaderImagePath(currentImagePath)) {
+        return (success: false, reason: 'page_unavailable', statusCode: null);
+      }
+
+      return _repairBrokenImageInternal(
+        currentContent: currentContent,
+        sourceId: sourceId,
+        pageNumber: pageNumber,
+        currentImagePath: currentImagePath,
+        overrideTarget: _ReaderRepairTarget(
+          requestUrl: directImageUrl,
+          readerPageUrl: _resolveManualRepairReferer(
+            sourcePageUrl: sourcePageUrl,
+            sessionUrl: effectiveSessionUrl,
+          ),
+        ),
+      );
+    }
+
+    return repairBrokenImage(pageNumber);
+  }
+
+  Future<_ReaderRepairTarget?> _resolveRepairTarget({
+    required Content content,
+    required String sourceId,
+    required int pageNumber,
+  }) async {
+    final metadata = _metadataForPage(pageNumber);
+    if (metadata != null) {
+      final resolved = await _normalizeRepairTarget(
+        sourceId: sourceId,
+        candidateUrl: metadata.imageUrl,
+      );
+      if (resolved != null) {
+        return resolved;
+      }
+    }
+
+    final currentPageUrl = content.imageUrls[pageNumber - 1];
+    if (!isLocalReaderImagePath(currentPageUrl)) {
+      final resolved = await _normalizeRepairTarget(
+        sourceId: sourceId,
+        candidateUrl: currentPageUrl,
+      );
+      if (resolved != null) {
+        return resolved;
+      }
+    }
+
+    final fetchTargetId = state.currentChapter?.id ?? content.id;
+    final chapterTarget = await _resolveRepairTargetFromChapterImages(
+      chapterId: fetchTargetId,
+      sourceId: sourceId,
+      pageNumber: pageNumber,
+    );
+    if (chapterTarget != null) {
+      return chapterTarget;
+    }
+
+    try {
+      final detail = await getContentDetailUseCase(
+        GetContentDetailParams.fromString(content.id, sourceId: sourceId),
+      );
+      if (pageNumber <= detail.imageUrls.length) {
+        return _normalizeRepairTarget(
+          sourceId: sourceId,
+          candidateUrl: detail.imageUrls[pageNumber - 1],
+        );
+      }
+    } catch (e) {
+      _logger.w(
+        'Reader repair detail fallback failed for ${content.id} '
+        'page $pageNumber: $e',
+      );
+    }
+
+    return null;
+  }
+
+  Future<_ReaderRepairTarget?> _resolveRepairTargetFromChapterImages({
+    required String chapterId,
+    required String sourceId,
+    required int pageNumber,
+  }) async {
+    try {
+      if (sourceId.toLowerCase() == 'ehentai') {
+        return _resolveEhentaiRepairTarget(
+          chapterId: chapterId,
+          sourceId: sourceId,
+          pageNumber: pageNumber,
+        );
+      }
+
+      final chapterData = await getChapterImagesUseCase(
+        GetChapterImagesParams.fromString(
+          chapterId,
+          sourceId: sourceId,
+        ),
+      );
+      if (pageNumber <= 0 || pageNumber > chapterData.images.length) {
+        return null;
+      }
+
+      return _normalizeRepairTarget(
+        sourceId: sourceId,
+        candidateUrl: chapterData.images[pageNumber - 1],
+      );
+    } catch (e) {
+      _logger.w(
+        'Reader repair chapter-image lookup failed for $chapterId '
+        'page $pageNumber: $e',
+      );
+      return null;
+    }
+  }
+
+  Future<_ReaderRepairTarget?> _resolveEhentaiRepairTarget({
+    required String chapterId,
+    required String sourceId,
+    required int pageNumber,
+  }) async {
+    String? nextChapterId = chapterId;
+    final seenUrls = <String>{};
+    var mergedIndex = 0;
+    var chunkCount = 0;
+
+    while (nextChapterId != null &&
+        nextChapterId.isNotEmpty &&
+        chunkCount < _maxEhentaiRepairChunks) {
+      final chunkData = await getChapterImagesUseCase(
+        GetChapterImagesParams.fromString(
+          nextChapterId,
+          sourceId: sourceId,
+        ),
+      );
+      chunkCount++;
+
+      for (final candidateUrl in chunkData.images) {
+        if (!seenUrls.add(candidateUrl)) {
+          continue;
+        }
+
+        mergedIndex++;
+        if (mergedIndex == pageNumber) {
+          return _normalizeRepairTarget(
+            sourceId: sourceId,
+            candidateUrl: candidateUrl,
+          );
+        }
+      }
+
+      final candidateNextId = chunkData.nextChapterId;
+      if (candidateNextId == null ||
+          candidateNextId.isEmpty ||
+          candidateNextId == nextChapterId ||
+          !candidateNextId.startsWith(_ehentaiChunkPrefix)) {
+        break;
+      }
+      nextChapterId = candidateNextId;
+    }
+
+    if (chunkCount >= _maxEhentaiRepairChunks) {
+      _logger.w(
+        'Reader repair EHentai chunk lookup hit safety limit '
+        'for $chapterId page $pageNumber',
+      );
+    }
+
+    return null;
+  }
+
+  Future<_ReaderRepairTarget?> _normalizeRepairTarget({
+    required String sourceId,
+    required String candidateUrl,
+  }) async {
+    final trimmed = candidateUrl.trim();
+    if (trimmed.isEmpty || isLocalReaderImagePath(trimmed)) {
+      return null;
+    }
+
+    final rawConfig = remoteConfigService.getRawConfig(sourceId);
+    if (!supportsSourcePageManualRepair(rawConfig)) {
+      return _ReaderRepairTarget(requestUrl: trimmed);
+    }
+
+    if (!_shouldResolveSourceReaderPage(
+      sourceId: sourceId,
+      url: trimmed,
+      rawConfig: rawConfig,
+    )) {
+      return _ReaderRepairTarget(requestUrl: trimmed);
+    }
+
+    final resolvedImageUrl = await _resolveSourceReaderImageUrl(
+      sourceId: sourceId,
+      readerPageUrl: trimmed,
+      rawConfig: rawConfig,
+    );
+    if (resolvedImageUrl == null || resolvedImageUrl.isEmpty) {
+      return null;
+    }
+
+    return _ReaderRepairTarget(
+      requestUrl: resolvedImageUrl,
+      readerPageUrl: trimmed,
+    );
+  }
+
+  Map<String, String> _buildRepairHeaders({
+    required String sourceId,
+    required String imageUrl,
+    String? readerPageUrl,
+  }) {
+    final headers = <String, String>{};
+    final source = contentSourceRegistry.getSource(sourceId);
+    if (source != null) {
+      headers.addAll(source.getImageDownloadHeaders(imageUrl: imageUrl));
+    }
+    if (readerPageUrl != null && readerPageUrl.isNotEmpty) {
+      headers['Referer'] = readerPageUrl;
+    }
+    return headers;
+  }
+
+  bool _shouldResolveSourceReaderPage({
+    required String sourceId,
+    required String url,
+    Map<String, dynamic>? rawConfig,
+  }) {
+    if (!supportsSourcePageManualRepair(rawConfig)) {
+      return false;
+    }
+
+    final lowered = url.toLowerCase();
+    if (lowered.startsWith('/')) {
+      return !looksLikeDirectImagePath(lowered);
+    }
+
+    if (lowered.startsWith('/s/') || lowered.startsWith('/fullimg/')) {
+      return true;
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+
+    final host = uri.host.toLowerCase();
+    if (!_isSourceRepairHost(
+      sourceId: sourceId,
+      host: host,
+      rawConfig: rawConfig,
+    )) {
+      return false;
+    }
+
+    final loweredPath = uri.path.toLowerCase();
+    if (loweredPath.contains('/s/') || loweredPath.contains('/fullimg/')) {
+      return true;
+    }
+
+    return !looksLikeDirectImagePath(loweredPath);
+  }
+
+  Future<String?> _resolveSourceReaderImageUrl({
+    required String sourceId,
+    required String readerPageUrl,
+    Map<String, dynamic>? rawConfig,
+  }) async {
+    try {
+      final headers = _buildRepairHeaders(
+        sourceId: sourceId,
+        imageUrl: readerPageUrl,
+        readerPageUrl: readerPageUrl,
+      );
+
+      final response = await httpClient.get<dynamic>(
+        readerPageUrl,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: headers,
+          followRedirects: true,
+          validateStatus: (status) => (status ?? 0) < 400,
+        ),
+      );
+
+      final html = response.data?.toString() ?? '';
+      if (html.isEmpty) {
+        return null;
+      }
+
+      return extractSourceImageUrlFromHtml(
+        html,
+        readerPageUrl,
+        rawConfig: rawConfig ?? remoteConfigService.getRawConfig(sourceId),
+      );
+    } catch (e) {
+      _logger.w(
+        'Reader repair source-page resolve failed for '
+        '$sourceId $readerPageUrl: $e',
+      );
+      return null;
+    }
+  }
+
+  Future<void> _persistRepairedImage({
+    required String currentImagePath,
+    required String repairedImagePath,
+    required List<int> bytes,
+  }) async {
+    final repairedFile = File(repairedImagePath);
+    final repairDirectory = repairedFile.parent;
+    if (!await repairDirectory.exists()) {
+      await repairDirectory.create(recursive: true);
+    }
+
+    final tempFile = File('$repairedImagePath.repairing');
+    if (await tempFile.exists()) {
+      await tempFile.delete();
+    }
+
+    await tempFile.writeAsBytes(bytes, flush: true);
+    await _deleteRepairConflicts(
+      currentImagePath: currentImagePath,
+      repairedImagePath: repairedImagePath,
+    );
+
+    if (await repairedFile.exists()) {
+      await repairedFile.delete();
+    }
+
+    await tempFile.rename(repairedImagePath);
+  }
+
+  Future<String?> _buildCookieHeaderForUrl(String sourceId, String url) async {
+    if (sourceId.toLowerCase() != 'ehentai') {
+      return null;
+    }
+
+    try {
+      final cookies = await ehentaiCookieJar.loadForRequest(Uri.parse(url));
+      if (cookies.isEmpty) {
+        return null;
+      }
+
+      return cookies
+          .map((cookie) => '${cookie.name}=${cookie.value}')
+          .join('; ');
+    } catch (e) {
+      _logger.w('Failed to build cookie header for $url: $e');
+      return null;
+    }
+  }
+
+  Future<void> _saveRawSourceCookies(
+    String sourceId,
+    List<String> rawCookies,
+    String url,
+  ) async {
+    if (sourceId.toLowerCase() != 'ehentai') {
+      return;
+    }
+
+    if (rawCookies.isEmpty) {
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    final cookiesToSave = <Cookie>[];
+
+    for (final rawCookie in rawCookies) {
+      final separatorIndex = rawCookie.indexOf('=');
+      if (separatorIndex <= 0) {
+        continue;
+      }
+
+      final name = rawCookie.substring(0, separatorIndex).trim();
+      final value = rawCookie.substring(separatorIndex + 1).trim();
+      if (name.isEmpty) {
+        continue;
+      }
+
+      cookiesToSave.add(
+        Cookie(name, value)
+          ..domain = uri.host
+          ..path = '/',
+      );
+    }
+
+    if (cookiesToSave.isEmpty) {
+      return;
+    }
+
+    await ehentaiCookieJar.saveFromResponse(uri, cookiesToSave);
+    _logger.d(
+      'Saved ${cookiesToSave.length} manual repair cookies for ${uri.host}',
+    );
+  }
+
+  String _resolveManualRepairReferer({
+    required String sourcePageUrl,
+    required String sessionUrl,
+  }) {
+    final normalizedSessionUrl = sessionUrl.trim();
+    if (normalizedSessionUrl.isEmpty) {
+      return sourcePageUrl;
+    }
+
+    final currentSourceId = state.content?.sourceId.trim();
+    if ((currentSourceId != null &&
+            currentSourceId.isNotEmpty &&
+            _shouldResolveSourceReaderPage(
+              sourceId: currentSourceId,
+              url: normalizedSessionUrl,
+              rawConfig: remoteConfigService.getRawConfig(currentSourceId),
+            )) ||
+        !looksLikeDirectImagePath(normalizedSessionUrl)) {
+      return normalizedSessionUrl;
+    }
+
+    return sourcePageUrl;
+  }
+
+  bool _isSourceRepairHost({
+    required String sourceId,
+    required String host,
+    Map<String, dynamic>? rawConfig,
+  }) {
+    final normalizedHost = host.trim().toLowerCase();
+    if (normalizedHost.isEmpty) {
+      return false;
+    }
+
+    final config = rawConfig ?? remoteConfigService.getRawConfig(sourceId);
+    final networkConfig = _asDynamicMap(config?['network']);
+    final uiConfig = _asDynamicMap(config?['ui']);
+    final allowedHosts = <String>{
+      ..._extractRepairHostsFromValue(config?['baseUrl']),
+      ..._extractRepairHostsFromValue(networkConfig['exBaseUrl']),
+      ..._extractRepairHostsFromValue(uiConfig['openInBrowserUrl']),
+    };
+
+    if (allowedHosts.isEmpty) {
+      return true;
+    }
+
+    for (final allowedHost in allowedHosts) {
+      if (normalizedHost == allowedHost ||
+          normalizedHost.endsWith('.$allowedHost')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  Set<String> _extractRepairHostsFromValue(dynamic value) {
+    if (value == null) {
+      return const <String>{};
+    }
+
+    final candidates = <String>{};
+    if (value is String && value.trim().isNotEmpty) {
+      candidates.add(value.trim());
+    } else if (value is Iterable) {
+      for (final entry in value) {
+        final stringValue = entry?.toString().trim();
+        if (stringValue != null && stringValue.isNotEmpty) {
+          candidates.add(stringValue);
+        }
+      }
+    }
+
+    final hosts = <String>{};
+    for (final candidate in candidates) {
+      final normalizedCandidate =
+          candidate.contains('://') ? candidate : 'https://$candidate';
+      final uri = Uri.tryParse(normalizedCandidate);
+      if (uri != null && uri.host.isNotEmpty) {
+        hosts.add(uri.host.toLowerCase());
+      }
+    }
+    return hosts;
+  }
+
+  Map<String, dynamic> _asDynamicMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is Map) {
+      return value.map(
+        (key, entry) => MapEntry(key.toString(), entry),
+      );
+    }
+    return <String, dynamic>{};
+  }
+
+  Future<void> _deleteRepairConflicts({
+    required String currentImagePath,
+    required String repairedImagePath,
+  }) async {
+    final directory = Directory(path.dirname(currentImagePath));
+    if (!await directory.exists()) {
+      return;
+    }
+
+    final targetBasename = path.basenameWithoutExtension(currentImagePath);
+    await for (final entity in directory.list()) {
+      if (entity is! File) {
+        continue;
+      }
+
+      if (entity.path == '$repairedImagePath.repairing') {
+        continue;
+      }
+
+      final extension = path.extension(entity.path).toLowerCase();
+      if (!kReaderRepairSupportedImageExtensions.contains(extension)) {
+        continue;
+      }
+
+      if (path.basenameWithoutExtension(entity.path) != targetBasename) {
+        continue;
+      }
+
+      try {
+        await entity.delete();
+      } catch (e) {
+        _logger.w('Failed to delete stale repaired image ${entity.path}: $e');
+      }
+    }
+  }
+
+  ImageMetadata? _metadataForPage(int pageNumber) {
+    final metadataList = state.imageMetadata;
+    if (metadataList == null) {
+      return null;
+    }
+
+    for (final metadata in metadataList) {
+      if (metadata.pageNumber == pageNumber) {
+        return metadata;
+      }
+    }
+
+    return null;
+  }
+
   /// Debug: Log image URL mapping for current content
   void _logImageUrlMapping(Content content) {
     if (content.imageUrls.isEmpty) {
@@ -1344,8 +2200,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         _logger.d('📖 NON-CHAPTER MODE: contentId=$historyContentId');
       }
 
-      final safePage =
-          _lastTrackedPage.clamp(1, state.content!.pageCount);
+      final safePage = _lastTrackedPage.clamp(1, state.content!.pageCount);
 
       final params = AddToHistoryParams.fromString(
         historyContentId,
@@ -1491,6 +2346,16 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     return super.close();
   }
+}
+
+class _ReaderRepairTarget {
+  const _ReaderRepairTarget({
+    required this.requestUrl,
+    this.readerPageUrl,
+  });
+
+  final String requestUrl;
+  final String? readerPageUrl;
 }
 
 class _ChapterOrder {

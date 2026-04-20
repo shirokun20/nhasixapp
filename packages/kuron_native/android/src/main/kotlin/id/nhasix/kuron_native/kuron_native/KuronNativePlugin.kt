@@ -10,7 +10,6 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.os.Build
-import java.nio.ByteBuffer
 import android.net.Uri
 import android.os.Environment
 import android.os.Handler
@@ -195,47 +194,45 @@ class KuronNativePlugin :
         val webpDir = File(context.cacheDir, "webp_cache").also { it.mkdirs() }
         val webpFile = File(webpDir, "${Math.abs(cacheKey.hashCode())}.webp")
 
-        // Fast-path: both files already on disk — no I/O needed.
-        if (thumbFile.exists() && thumbFile.length() > 0 &&
-            webpFile.exists() && webpFile.length() > 0) {
-            result.success(mapOf("thumbnailPath" to thumbFile.absolutePath,
-                                 "webpPath"      to webpFile.absolutePath))
+        val localSourceFile = filePath
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(::File)
+            ?.takeIf { it.exists() && it.length() > 0L }
+        val cachedSourceFile = webpFile.takeIf { it.exists() && it.length() > 0L }
+        val preferredSourceFile = localSourceFile ?: cachedSourceFile
+
+        // Fast-path: thumbnail already exists and we have a usable source file.
+        if (thumbFile.exists() && thumbFile.length() > 0 && preferredSourceFile != null) {
+            result.success(
+                mapOf(
+                    "thumbnailPath" to thumbFile.absolutePath,
+                    "webpPath" to preferredSourceFile.absolutePath,
+                ),
+            )
             return
         }
 
         executor.execute {
             try {
-                // Resolve bytes: from existing filePath, webp disk cache, or network.
-                val bytes: ByteArray = when {
-                    !filePath.isNullOrEmpty() -> {
-                        val f = File(filePath)
-                        if (f.exists()) f.readBytes()
-                        else if (url != null) downloadBytesForThumbnail(url, headers, requestId)
-                        else { mainThread { result.success(null) }; return@execute }
+                val sourceFile: File = when {
+                    localSourceFile != null -> localSourceFile
+                    cachedSourceFile != null -> cachedSourceFile
+                    url != null -> {
+                        val bytes = downloadBytesForThumbnail(url, headers, requestId)
+                        if (!webpFile.exists() || webpFile.length() == 0L) {
+                            webpFile.writeBytes(bytes)
+                        }
+                        webpFile
                     }
-                    webpFile.exists() && webpFile.length() > 0 -> webpFile.readBytes()
-                    url != null -> downloadBytesForThumbnail(url, headers, requestId)
-                    else -> { mainThread { result.success(null) }; return@execute }
+                    else -> {
+                        mainThread { result.success(null) }
+                        return@execute
+                    }
                 }
 
-                // Persist raw WebP bytes so AnimatedWebPView can load from disk on play.
-                if (!webpFile.exists() || webpFile.length() == 0L) {
-                    webpFile.writeBytes(bytes)
-                }
-
-                // Decode first frame of animated WebP to Bitmap.
-                // API 28+: ImageDecoder.decodeBitmap is reliable for animated WebP.
-                // API < 28: BitmapFactory fallback (decodes first frame only).
-                val bitmap: android.graphics.Bitmap? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    try {
-                        val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
-                        ImageDecoder.decodeBitmap(source)
-                    } catch (_: Exception) {
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    }
-                } else {
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                }
+                // Decode first frame directly from file so large offline WebP files
+                // do not need to be copied into a giant ByteArray just to build the preview.
+                val bitmap = decodeWebPPreviewBitmap(sourceFile)
                 if (bitmap == null) { mainThread { result.success(null) }; return@execute }
 
                 FileOutputStream(thumbFile).use { fos ->
@@ -244,13 +241,30 @@ class KuronNativePlugin :
                 bitmap.recycle()
 
                 mainThread {
-                    result.success(mapOf("thumbnailPath" to thumbFile.absolutePath,
-                                        "webpPath"      to webpFile.absolutePath))
+                    result.success(
+                        mapOf(
+                            "thumbnailPath" to thumbFile.absolutePath,
+                            "webpPath" to sourceFile.absolutePath,
+                        ),
+                    )
                 }
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "getThumbnailForWebP failed: ${e.message}")
                 mainThread { result.success(null) }
             }
+        }
+    }
+
+    private fun decodeWebPPreviewBitmap(file: File): Bitmap? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                val source = ImageDecoder.createSource(file)
+                ImageDecoder.decodeBitmap(source)
+            } catch (_: Exception) {
+                BitmapFactory.decodeFile(file.absolutePath)
+            }
+        } else {
+            BitmapFactory.decodeFile(file.absolutePath)
         }
     }
 
@@ -674,9 +688,11 @@ class KuronNativePlugin :
         val successFilters = call.argument<List<String>>("successUrlFilters")
         val userAgent = call.argument<String>("userAgent")
         val initialCookie = call.argument<String>("initialCookie")
-
         val autoCloseOnCookie = call.argument<String>("autoCloseOnCookie")
         val ssoRedirectUrl = call.argument<String>("ssoRedirectUrl")
+        val domImageSelectors = call.argument<List<String>>("domImageSelectors")
+        val domImageAttributes = call.argument<List<String>>("domImageAttributes")
+        val domLinkSelectors = call.argument<List<String>>("domLinkSelectors")
         val enableAdBlock = call.argument<Boolean>("enableAdBlock") ?: false
 
         if (url == null) {
@@ -706,6 +722,9 @@ class KuronNativePlugin :
                 initialCookie,
                 autoCloseOnCookie,
                 ssoRedirectUrl,
+                domImageSelectors,
+                domImageAttributes,
+                domLinkSelectors,
                 enableAdBlock,
                 call.argument<Boolean>("clearCookies") ?: false
             )
@@ -764,10 +783,14 @@ class KuronNativePlugin :
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     val cookies = data.getStringArrayListExtra(WebViewActivity.RESULT_COOKIES)
                     val userAgent = data.getStringExtra(WebViewActivity.RESULT_USER_AGENT)
+                    val currentUrl = data.getStringExtra(WebViewActivity.RESULT_CURRENT_URL)
+                    val resolvedImageUrl = data.getStringExtra(WebViewActivity.RESULT_RESOLVED_IMAGE_URL)
                     
                     val resultMap = HashMap<String, Any?>()
                     resultMap["cookies"] = cookies
                     resultMap["userAgent"] = userAgent
+                    resultMap["currentUrl"] = currentUrl
+                    resultMap["resolvedImageUrl"] = resolvedImageUrl
                     resultMap["success"] = true
                     
                     pendingResult?.success(resultMap)

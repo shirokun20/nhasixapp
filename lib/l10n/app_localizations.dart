@@ -7968,6 +7968,60 @@ abstract class AppLocalizations {
   /// **'Retrying...'**
   String get retrying;
 
+  /// No description provided for @readerRedownloadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Redownload page'**
+  String get readerRedownloadImage;
+
+  /// No description provided for @readerRepairingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Repairing image...'**
+  String get readerRepairingImage;
+
+  /// No description provided for @readerOpenSourcePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source page'**
+  String get readerOpenSourcePage;
+
+  /// No description provided for @readerOpeningSourcePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening source page...'**
+  String get readerOpeningSourcePage;
+
+  /// No description provided for @readerImageRepairSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {pageNumber} was redownloaded successfully.'**
+  String readerImageRepairSuccess(int pageNumber);
+
+  /// No description provided for @readerImageRepairHttpStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not redownload page {pageNumber}. Server returned HTTP {statusCode}.'**
+  String readerImageRepairHttpStatus(int pageNumber, int statusCode);
+
+  /// No description provided for @readerImageRepairInvalidImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not redownload page {pageNumber} because the response was not a valid image.'**
+  String readerImageRepairInvalidImage(int pageNumber);
+
+  /// No description provided for @readerImageRepairUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {pageNumber} could not be redownloaded from the source.'**
+  String readerImageRepairUnavailable(int pageNumber);
+
+  /// No description provided for @readerImageRepairFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to redownload page {pageNumber}.'**
+  String readerImageRepairFailed(int pageNumber);
+
   /// No description provided for @pageAttempt.
   ///
   /// In en, this message translates to:

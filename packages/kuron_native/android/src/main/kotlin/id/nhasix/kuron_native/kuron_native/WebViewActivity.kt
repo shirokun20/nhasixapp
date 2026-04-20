@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import org.json.JSONArray
+import org.json.JSONObject
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -26,12 +28,15 @@ class WebViewActivity : AppCompatActivity() {
         const val EXTRA_AUTO_CLOSE_ON_COOKIE = "extra_auto_close_on_cookie"
         const val EXTRA_SSO_REDIRECT_URL = "extra_sso_redirect_url"
         const val EXTRA_ENABLE_AD_BLOCK = "extra_enable_ad_block"
-
         const val EXTRA_CLEAR_COOKIES = "extra_clear_cookies"
-
+        const val EXTRA_DOM_IMAGE_SELECTORS = "extra_dom_image_selectors"
+        const val EXTRA_DOM_IMAGE_ATTRIBUTES = "extra_dom_image_attributes"
+        const val EXTRA_DOM_LINK_SELECTORS = "extra_dom_link_selectors"
 
         const val RESULT_COOKIES = "result_cookies" // ArrayList<String>
         const val RESULT_USER_AGENT = "result_user_agent"
+        const val RESULT_CURRENT_URL = "result_current_url"
+        const val RESULT_RESOLVED_IMAGE_URL = "result_resolved_image_url"
         
         fun createIntent(
             context: Context, 
@@ -41,6 +46,9 @@ class WebViewActivity : AppCompatActivity() {
             initialCookie: String?,
             autoCloseOnCookie: String? = null,
             ssoRedirectUrl: String? = null,
+            domImageSelectors: List<String>? = null,
+            domImageAttributes: List<String>? = null,
+            domLinkSelectors: List<String>? = null,
             enableAdBlock: Boolean = false,
             clearCookies: Boolean = false
         ): Intent {
@@ -51,6 +59,9 @@ class WebViewActivity : AppCompatActivity() {
                 if (initialCookie != null) putExtra(EXTRA_INITIAL_COOKIE, initialCookie)
                 if (autoCloseOnCookie != null) putExtra(EXTRA_AUTO_CLOSE_ON_COOKIE, autoCloseOnCookie)
                 if (ssoRedirectUrl != null) putExtra(EXTRA_SSO_REDIRECT_URL, ssoRedirectUrl)
+                if (domImageSelectors != null) putStringArrayListExtra(EXTRA_DOM_IMAGE_SELECTORS, ArrayList(domImageSelectors))
+                if (domImageAttributes != null) putStringArrayListExtra(EXTRA_DOM_IMAGE_ATTRIBUTES, ArrayList(domImageAttributes))
+                if (domLinkSelectors != null) putStringArrayListExtra(EXTRA_DOM_LINK_SELECTORS, ArrayList(domLinkSelectors))
                 putExtra(EXTRA_ENABLE_AD_BLOCK, enableAdBlock)
                 if (clearCookies) putExtra(EXTRA_CLEAR_COOKIES, true)
             }
@@ -62,6 +73,10 @@ class WebViewActivity : AppCompatActivity() {
     private var autoCloseOnCookie: String? = null
     private var ssoRedirectUrl: String? = null
     private var enableAdBlock: Boolean = false
+    private var domImageSelectors: List<String> = emptyList()
+    private var domImageAttributes: List<String> = emptyList()
+    private var domLinkSelectors: List<String> = emptyList()
+    private var hasFinishedResult = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,6 +145,9 @@ class WebViewActivity : AppCompatActivity() {
         autoCloseOnCookie = intent.getStringExtra(EXTRA_AUTO_CLOSE_ON_COOKIE)
         ssoRedirectUrl = intent.getStringExtra(EXTRA_SSO_REDIRECT_URL)
         enableAdBlock = intent.getBooleanExtra(EXTRA_ENABLE_AD_BLOCK, false)
+        domImageSelectors = intent.getStringArrayListExtra(EXTRA_DOM_IMAGE_SELECTORS) ?: emptyList()
+        domImageAttributes = intent.getStringArrayListExtra(EXTRA_DOM_IMAGE_ATTRIBUTES) ?: emptyList()
+        domLinkSelectors = intent.getStringArrayListExtra(EXTRA_DOM_LINK_SELECTORS) ?: emptyList()
 
         // Sync Initial Cookies if provided
         val cookieManager = CookieManager.getInstance()
@@ -261,6 +279,30 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     private fun finishWithSuccess(currentUrl: String) {
+        if (hasFinishedResult) {
+            return
+        }
+        hasFinishedResult = true
+
+        val fallbackCurrentUrl = if (currentUrl.isBlank()) webView.url ?: "" else currentUrl
+
+        try {
+            webView.evaluateJavascript(buildImageExtractionScript()) { rawResult ->
+                val extraction = parseImageExtractionResult(rawResult)
+                completeWithSuccessResult(
+                    currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
+                    resolvedImageUrl = extraction.imageUrl,
+                )
+            }
+        } catch (_: Exception) {
+            completeWithSuccessResult(
+                currentUrl = fallbackCurrentUrl,
+                resolvedImageUrl = null,
+            )
+        }
+    }
+
+    private fun completeWithSuccessResult(currentUrl: String, resolvedImageUrl: String?) {
         val cookieManager = CookieManager.getInstance()
         cookieManager.flush() // Ensure sync
         
@@ -281,9 +323,127 @@ class WebViewActivity : AppCompatActivity() {
         }
         
         resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
+        resultIntent.putExtra(RESULT_CURRENT_URL, currentUrl)
+        if (!resolvedImageUrl.isNullOrBlank()) {
+            resultIntent.putExtra(RESULT_RESOLVED_IMAGE_URL, resolvedImageUrl)
+        }
         
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
+    }
+
+    private fun buildImageExtractionScript(): String {
+        val selectorsJson = JSONArray(domImageSelectors).toString()
+        val attributesJson = JSONArray(domImageAttributes).toString()
+        val linkSelectorsJson = JSONArray(domLinkSelectors).toString()
+
+        return """
+            (function() {
+              const imageSelectors = $selectorsJson;
+              const imageAttributes = $attributesJson;
+              const linkSelectors = $linkSelectorsJson;
+              const toAbsolute = (value) => {
+                if (!value) return '';
+                try {
+                  return new URL(value, window.location.href).toString();
+                } catch (_) {
+                  return value;
+                }
+              };
+              const firstSrcSet = (value) => {
+                if (!value) return '';
+                const first = value.split(',')[0] || '';
+                return first.trim().split(' ')[0] || '';
+              };
+              const nearestAnchorHref = (node) => {
+                let current = node;
+                while (current) {
+                  if ((current.tagName || '').toLowerCase() === 'a') {
+                    const href = current.getAttribute('href');
+                    if (href) return toAbsolute(href.trim());
+                  }
+                  current = current.parentElement;
+                }
+                return '';
+              };
+              const extractFromNode = (node) => {
+                if (!node) return '';
+                const candidates = [node];
+                if (typeof node.querySelectorAll === 'function') {
+                  node.querySelectorAll('img').forEach((img) => candidates.push(img));
+                }
+                for (const candidate of candidates) {
+                  if (!candidate || typeof candidate.getAttribute !== 'function') continue;
+                  for (const attr of imageAttributes) {
+                    const value = candidate.getAttribute(attr);
+                    if (value) return toAbsolute(value.trim());
+                  }
+                  const srcSet = firstSrcSet(candidate.getAttribute('srcset'));
+                  if (srcSet) return toAbsolute(srcSet);
+                  const wrappedLink = nearestAnchorHref(candidate);
+                  if (wrappedLink) return wrappedLink;
+                }
+                const directHref = typeof node.getAttribute === 'function' ? node.getAttribute('href') : '';
+                if (directHref) return toAbsolute(directHref.trim());
+                const nestedLink = typeof node.querySelector === 'function' ? node.querySelector('a[href]') : null;
+                const nestedHref = nestedLink && typeof nestedLink.getAttribute === 'function'
+                  ? nestedLink.getAttribute('href')
+                  : '';
+                if (nestedHref) return toAbsolute(nestedHref.trim());
+                return '';
+              };
+
+              let imageUrl = '';
+              for (const selector of imageSelectors) {
+                try {
+                  const node = document.querySelector(selector);
+                  imageUrl = extractFromNode(node);
+                  if (imageUrl) break;
+                } catch (_) {}
+              }
+
+              if (!imageUrl) {
+                for (const selector of linkSelectors) {
+                  try {
+                    const node = document.querySelector(selector);
+                    const href = node && typeof node.getAttribute === 'function'
+                      ? node.getAttribute('href')
+                      : '';
+                    if (href) {
+                      imageUrl = toAbsolute(href.trim());
+                      break;
+                    }
+                  } catch (_) {}
+                }
+              }
+
+              return {
+                currentUrl: window.location.href || '',
+                imageUrl: imageUrl || '',
+              };
+            })();
+        """.trimIndent()
+    }
+
+    private fun parseImageExtractionResult(rawResult: String?): ImageExtractionResult {
+        if (rawResult.isNullOrBlank() || rawResult == "null") {
+            return ImageExtractionResult()
+        }
+
+        return try {
+            val normalized = if (rawResult.startsWith("\"")) {
+                JSONObject("""{"value":$rawResult}""").optString("value")
+            } else {
+                rawResult
+            }
+            val json = JSONObject(normalized)
+            ImageExtractionResult(
+                currentUrl = json.optString("currentUrl").takeIf { it.isNotBlank() },
+                imageUrl = json.optString("imageUrl").takeIf { it.isNotBlank() },
+            )
+        } catch (_: Exception) {
+            ImageExtractionResult()
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -304,4 +464,9 @@ class WebViewActivity : AppCompatActivity() {
             finishWithSuccess(webView.url ?: "")
         }
     }
+
+    private data class ImageExtractionResult(
+        val currentUrl: String? = null,
+        val imageUrl: String? = null,
+    )
 }

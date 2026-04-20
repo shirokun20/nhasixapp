@@ -3377,6 +3377,53 @@
   "failedToLoadImage": "加载图片失败",
   "retrying": "正在重试...",
   "failedToLoad": "加载失败",
+  "readerRedownloadImage": "重新下载此页",
+  "readerRepairingImage": "正在修复图片...",
+  "readerOpenSourcePage": "打开源页面",
+  "readerOpeningSourcePage": "正在打开源页面...",
+  "readerImageRepairSuccess": "第 {pageNumber} 页已成功重新下载。",
+  "@readerImageRepairSuccess": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairHttpStatus": "无法重新下载第 {pageNumber} 页。服务器返回了 HTTP {statusCode}。",
+  "@readerImageRepairHttpStatus": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      },
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairInvalidImage": "无法重新下载第 {pageNumber} 页，因为返回内容不是有效图片。",
+  "@readerImageRepairInvalidImage": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairUnavailable": "无法从源站重新下载第 {pageNumber} 页。",
+  "@readerImageRepairUnavailable": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairFailed": "重新下载第 {pageNumber} 页失败。",
+  "@readerImageRepairFailed": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
   "pageAttempt": "第 {pageNumber} 页 • 第 {current}/{max} 次尝试",
   "pageNumber": "第 {pageNumber} 页",
   "downloadingNItems": "正在下载 {count} 项",

@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/utils/source_config_display_utils.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
@@ -132,6 +134,7 @@ class SourceSelector extends StatelessWidget {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final sourceLoader = getIt<SourceLoader>();
+    final remoteConfig = getIt<RemoteConfigService>();
     String searchQuery = '';
 
     showModalBottomSheet<String>(
@@ -145,6 +148,12 @@ class SourceSelector extends StatelessWidget {
       elevation: 8,
       builder: (sheetContext) {
         final activeSource = state.activeSource;
+        final activeSourceInfo = activeSource == null
+            ? null
+            : resolveSourceConfigDisplayInfo(
+                remoteConfigService: remoteConfig,
+                sourceId: activeSource.id,
+              );
 
         return StatefulBuilder(
           builder: (statefulContext, setSheetState) {
@@ -258,7 +267,11 @@ class SourceSelector extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        l10n.sourceSelectorActiveSource,
+                                        activeSourceInfo == null
+                                            ? l10n.sourceSelectorActiveSource
+                                            : '${activeSourceInfo.idWithVersion} • ${l10n.sourceSelectorActiveSource}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style:
                                             TextStyleConst.bodySmall.copyWith(
                                           color: colorScheme.onSurfaceVariant,
@@ -331,11 +344,17 @@ class SourceSelector extends StatelessWidget {
                                     source.id == state.activeSource?.id;
                                 final isUnderMaintenance =
                                     sourceLoader.isUnderMaintenance(source.id);
+                                final sourceInfo =
+                                    resolveSourceConfigDisplayInfo(
+                                  remoteConfigService: remoteConfig,
+                                  sourceId: source.id,
+                                );
 
                                 return _buildSourceSheetItem(
                                   context: sheetContext,
                                   colorScheme: colorScheme,
                                   source: source,
+                                  sourceInfo: sourceInfo,
                                   isActive: isActive,
                                   isUnderMaintenance: isUnderMaintenance,
                                   underMaintenanceLabel:
@@ -373,6 +392,7 @@ class SourceSelector extends StatelessWidget {
     required BuildContext context,
     required ColorScheme colorScheme,
     required dynamic source,
+    required SourceConfigDisplayInfo sourceInfo,
     required bool isActive,
     required bool isUnderMaintenance,
     required String underMaintenanceLabel,
@@ -435,8 +455,17 @@ class SourceSelector extends StatelessWidget {
                           color: titleColor,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        sourceInfo.idWithVersion,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       if (isUnderMaintenance) ...[
-                        const SizedBox(height: 4),
                         Text(
                           underMaintenanceLabel,
                           style: TextStyleConst.bodySmall.copyWith(
@@ -445,7 +474,6 @@ class SourceSelector extends StatelessWidget {
                           ),
                         ),
                       ] else ...[
-                        const SizedBox(height: 4),
                         Text(
                           isActive ? currentlySelectedLabel : tapToSwitchLabel,
                           style: TextStyleConst.bodySmall.copyWith(

@@ -510,7 +510,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
     }
 
     // Return reader page URLs quickly.
-    // Reader widget resolves each /s/... page to #img lazily per visible page.
+    // Reader widget resolves each /s/... page lazily using the installed
+    // E-Hentai config's image selector rules.
     return ChapterData(
       images: pages,
       nextChapterId: nextChunkId,

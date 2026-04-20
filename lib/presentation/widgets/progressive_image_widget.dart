@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
@@ -12,6 +13,12 @@ import '../../services/image_cache_service.dart';
 import '../../services/local_image_preloader.dart';
 import '../../core/utils/performance_monitor.dart';
 import '../../core/di/service_locator.dart';
+
+enum _LocalThumbnailPreviewMode {
+  original,
+  animatedPlaceholder,
+  heavyPlaceholder,
+}
 
 /// Progressive Image Widget with enhanced local file priority
 ///
@@ -44,6 +51,7 @@ class ProgressiveImageWidget extends StatefulWidget {
     this.fadeInDuration = const Duration(milliseconds: 300),
     this.fadeOutDuration = const Duration(milliseconds: 100),
     this.httpHeaders,
+    this.preferStaticPreview = false,
   });
 
   final String networkUrl;
@@ -61,6 +69,49 @@ class ProgressiveImageWidget extends StatefulWidget {
   final Duration fadeInDuration;
   final Duration fadeOutDuration;
   final Map<String, String>? httpHeaders;
+  final bool preferStaticPreview;
+
+  @visibleForTesting
+  static int get heavyAnimatedThumbnailThresholdBytesForTesting =>
+      _ProgressiveImageWidgetState._heavyAnimatedThumbnailThresholdBytes;
+
+  @visibleForTesting
+  static bool shouldSuppressOfflineThumbnailForTesting({
+    required String localPath,
+    required int fileBytes,
+    required bool isAnimated,
+  }) {
+    return _computeLocalThumbnailPreviewMode(
+          localPath: localPath,
+          fileBytes: fileBytes,
+          isAnimated: isAnimated,
+        ) !=
+        _LocalThumbnailPreviewMode.original;
+  }
+
+  static _LocalThumbnailPreviewMode _computeLocalThumbnailPreviewMode({
+    required String localPath,
+    required int fileBytes,
+    required bool isAnimated,
+  }) {
+    if (isAnimated) {
+      return _LocalThumbnailPreviewMode.animatedPlaceholder;
+    }
+
+    final lowered = localPath.toLowerCase();
+    final fileName = path.basename(lowered);
+    final hasDedicatedCoverName = fileName.startsWith('cover.') ||
+        fileName.startsWith('thumbnail.') ||
+        fileName.startsWith('thumb.');
+    if (fileBytes >=
+            _ProgressiveImageWidgetState
+                ._heavyAnimatedThumbnailThresholdBytes &&
+        !hasDedicatedCoverName) {
+      return _LocalThumbnailPreviewMode.heavyPlaceholder;
+    }
+
+    return _LocalThumbnailPreviewMode.original;
+  }
 
   @override
   State<ProgressiveImageWidget> createState() => _ProgressiveImageWidgetState();
@@ -70,6 +121,10 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   static final Logger _logger = Logger();
   static final Map<String, String?> _pathCache =
       {}; // ✅ Cache for resolved paths
+  static const int _heavyAnimatedThumbnailThresholdBytes =
+      10 * 1024 * 1024; // 10 MB
+  static final Map<String, _LocalThumbnailPreviewMode>
+      _localThumbnailPreviewModeCache = <String, _LocalThumbnailPreviewMode>{};
 
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
@@ -200,6 +255,43 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return _buildNetworkImage();
   }
 
+  Future<_LocalThumbnailPreviewMode> _resolveLocalThumbnailPreviewMode(
+    String localPath,
+  ) async {
+    final cachedMode = _localThumbnailPreviewModeCache[localPath];
+    if (cachedMode != null) {
+      return cachedMode;
+    }
+
+    try {
+      final file = File(localPath);
+      if (!await file.exists()) {
+        _localThumbnailPreviewModeCache[localPath] =
+            _LocalThumbnailPreviewMode.original;
+        return _LocalThumbnailPreviewMode.original;
+      }
+
+      final fileBytes = await file.length();
+      final isAnimated = await _isAnimatedLocalThumbnail(
+        localPath: localPath,
+        file: file,
+      );
+      final mode = ProgressiveImageWidget._computeLocalThumbnailPreviewMode(
+        localPath: localPath,
+        fileBytes: fileBytes,
+        isAnimated: isAnimated,
+      );
+
+      _localThumbnailPreviewModeCache[localPath] = mode;
+      return mode;
+    } catch (e) {
+      _logger.w('Error resolving local thumbnail preview mode: $e');
+      _localThumbnailPreviewModeCache[localPath] =
+          _LocalThumbnailPreviewMode.original;
+      return _LocalThumbnailPreviewMode.original;
+    }
+  }
+
   /// Get local image path based on type (thumbnail or page)
   Future<String?> _getLocalImagePath() async {
     if (widget.contentId == null) return null;
@@ -230,6 +322,12 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       _logger.d('📸 Using local image: $localPath');
     }
 
+    if (widget.preferStaticPreview &&
+        widget.isThumbnail &&
+        _shouldUseStaticPreview(localPath)) {
+      return _buildManagedLocalThumbnail(localPath);
+    }
+
     Widget imageWidget = Image.file(
       File(localPath),
       width: widget.width,
@@ -251,6 +349,186 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     );
 
     // Apply border radius if specified
+    if (widget.borderRadius != null) {
+      imageWidget = ClipRRect(
+        borderRadius: widget.borderRadius!,
+        child: imageWidget,
+      );
+    }
+
+    return imageWidget;
+  }
+
+  bool _shouldUseStaticPreview(String localPath) {
+    final lowered = localPath.toLowerCase();
+    return lowered.endsWith('.gif') ||
+        lowered.endsWith('.webp') ||
+        lowered.endsWith('.avif');
+  }
+
+  Widget _buildManagedLocalThumbnail(String localPath) {
+    return FutureBuilder<_LocalThumbnailPreviewMode>(
+      future: _resolveLocalThumbnailPreviewMode(localPath),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return widget.placeholder ?? _buildPlaceholder();
+        }
+
+        switch (snapshot.data ?? _LocalThumbnailPreviewMode.original) {
+          case _LocalThumbnailPreviewMode.animatedPlaceholder:
+            return _buildThumbnailPlaceholder(
+              icon: Icons.animation_rounded,
+              label: 'ANIMATED',
+            );
+          case _LocalThumbnailPreviewMode.heavyPlaceholder:
+            return _buildThumbnailPlaceholder(
+              icon: Icons.photo_size_select_large_rounded,
+              label: 'HEAVY',
+            );
+          case _LocalThumbnailPreviewMode.original:
+            return _buildImageFile(localPath);
+        }
+      },
+    );
+  }
+
+  Widget _buildThumbnailPlaceholder({
+    required IconData icon,
+    required String label,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: widget.borderRadius,
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: Icon(
+              icon,
+              size: widget.isThumbnail ? 28 : 40,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.bolt_rounded,
+                    size: 12,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: colorScheme.onSurface,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _isAnimatedLocalThumbnail({
+    required String localPath,
+    required File file,
+  }) async {
+    final lowered = localPath.toLowerCase();
+    if (lowered.endsWith('.gif')) {
+      return true;
+    }
+
+    if (!lowered.endsWith('.webp')) {
+      return false;
+    }
+
+    try {
+      final raf = await file.open();
+      try {
+        final length = await raf.length();
+        final sampleLength = length < 64 ? length : 64;
+        final bytes = await raf.read(sampleLength);
+        return _looksLikeAnimatedWebP(bytes);
+      } finally {
+        await raf.close();
+      }
+    } catch (e) {
+      _logger.w('Error probing local thumbnail animation state: $e');
+      return false;
+    }
+  }
+
+  bool _looksLikeAnimatedWebP(List<int> bytes) {
+    if (bytes.length < 21) {
+      return false;
+    }
+
+    if (!_matchesBytes(bytes, 0, const <int>[0x52, 0x49, 0x46, 0x46]) ||
+        !_matchesBytes(bytes, 8, const <int>[0x57, 0x45, 0x42, 0x50])) {
+      return false;
+    }
+
+    if (!_matchesBytes(bytes, 12, const <int>[0x56, 0x50, 0x38, 0x58])) {
+      return false;
+    }
+
+    return (bytes[20] & 0x02) != 0;
+  }
+
+  bool _matchesBytes(List<int> bytes, int offset, List<int> expected) {
+    if (bytes.length < offset + expected.length) {
+      return false;
+    }
+
+    for (var index = 0; index < expected.length; index++) {
+      if (bytes[offset + index] != expected[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Widget _buildImageFile(String filePath) {
+    Widget imageWidget = Image.file(
+      File(filePath),
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      errorBuilder: (context, error, stackTrace) =>
+          widget.errorWidget ?? _buildErrorWidget(),
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          return child;
+        }
+        return widget.placeholder ?? _buildPlaceholder();
+      },
+    );
+
     if (widget.borderRadius != null) {
       imageWidget = ClipRRect(
         borderRadius: widget.borderRadius!,
@@ -781,6 +1059,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.showOfflineIndicator = false,
     this.httpHeaders,
+    this.preferStaticPreview = false,
   });
 
   final String networkUrl;
@@ -789,6 +1068,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
   final BorderRadius borderRadius;
   final bool showOfflineIndicator;
   final Map<String, String>? httpHeaders;
+  final bool preferStaticPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -807,6 +1087,7 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
             memCacheWidth: 400,
             memCacheHeight: 600,
             httpHeaders: httpHeaders,
+            preferStaticPreview: preferStaticPreview,
           ),
 
           // Offline indicator overlay

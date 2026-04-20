@@ -43,6 +43,7 @@ class ContentCard extends StatelessWidget {
     this.offlineDownloadDate, // NEW: for offline screen - when content was downloaded
     this.offlineSize, // NEW: for offline screen - total file size
     this.highlightQuery, // NEW: for search highlighting
+    this.preferStaticCover = false,
   });
 
   final Content content;
@@ -68,6 +69,7 @@ class ContentCard extends StatelessWidget {
       offlineDownloadDate; // NEW: formatted download date (e.g., "Nov 27, 2025")
   final String? offlineSize; // NEW: formatted file size (e.g., "45.2 MB")
   final String? highlightQuery; // NEW: text to highlight in title
+  final bool preferStaticCover;
 
   @override
   Widget build(BuildContext context) {
@@ -297,6 +299,7 @@ class ContentCard extends StatelessWidget {
                   showOfflineIndicator:
                       false, // Disable to prevent duplicate with ContentCard's own indicator
                   httpHeaders: headers,
+                  preferStaticPreview: preferStaticCover,
                 )
               : _buildImageError(),
         );

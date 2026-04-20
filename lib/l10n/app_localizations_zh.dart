@@ -4540,6 +4540,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retrying => '正在重试...';
 
   @override
+  String get readerRedownloadImage => '重新下载此页';
+
+  @override
+  String get readerRepairingImage => '正在修复图片...';
+
+  @override
+  String get readerOpenSourcePage => '打开源页面';
+
+  @override
+  String get readerOpeningSourcePage => '正在打开源页面...';
+
+  @override
+  String readerImageRepairSuccess(int pageNumber) {
+    return '第 $pageNumber 页已成功重新下载。';
+  }
+
+  @override
+  String readerImageRepairHttpStatus(int pageNumber, int statusCode) {
+    return '无法重新下载第 $pageNumber 页。服务器返回了 HTTP $statusCode。';
+  }
+
+  @override
+  String readerImageRepairInvalidImage(int pageNumber) {
+    return '无法重新下载第 $pageNumber 页，因为返回内容不是有效图片。';
+  }
+
+  @override
+  String readerImageRepairUnavailable(int pageNumber) {
+    return '无法从源站重新下载第 $pageNumber 页。';
+  }
+
+  @override
+  String readerImageRepairFailed(int pageNumber) {
+    return '重新下载第 $pageNumber 页失败。';
+  }
+
+  @override
   String pageAttempt(int pageNumber, int current, int max) {
     return '第 $pageNumber 页 • 第 $current/$max 次尝试';
   }

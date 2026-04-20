@@ -89,6 +89,9 @@ class MockKuronNativePlatform
     String? userAgent,
     String? autoCloseOnCookie,
     String? ssoRedirectUrl,
+    List<String>? domImageSelectors,
+    List<String>? domImageAttributes,
+    List<String>? domLinkSelectors,
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) => Future.value({'success': true, 'cookies': []});

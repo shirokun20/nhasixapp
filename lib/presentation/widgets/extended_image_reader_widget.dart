@@ -7,6 +7,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
 // import '../../core/utils/webtoon_detector.dart';
+import '../../core/utils/reader_image_repair_utils.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -27,12 +28,15 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required this.pageNumber,
     required this.readingMode,
     this.sourceId,
+    this.sourceRawConfig,
     this.httpHeaders,
     this.enableZoom = true,
     this.onLoadError,
     this.onImageLoaded,
     this.visiblePageNotifier,
     this.onHeavyImageDetected,
+    this.onRepairBrokenImage,
+    this.onOpenSourcePageForRepair,
   });
 
   final String imageUrl;
@@ -40,9 +44,12 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   final int pageNumber;
   final ReadingMode readingMode;
   final String? sourceId;
+  final Map<String, dynamic>? sourceRawConfig;
   final Map<String, String>? httpHeaders;
   final bool enableZoom;
   final VoidCallback? onLoadError;
+  final Future<bool> Function()? onRepairBrokenImage;
+  final Future<bool> Function()? onOpenSourcePageForRepair;
 
   /// 🎯 PHASE 1: Callback when image loads with actual dimensions
   final Function(int pageNumber, Size imageSize)? onImageLoaded;
@@ -84,6 +91,12 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   @visibleForTesting
   static int get heavyImageThresholdBytesForTesting =>
       _ExtendedImageReaderWidgetState._heavyImageThresholdBytes;
+
+  /// Exposes the ultra-heavy threshold used for more aggressive native
+  /// animated-WebP downsampling.
+  @visibleForTesting
+  static int get ultraHeavyAnimatedImageThresholdBytesForTesting =>
+      _ExtendedImageReaderWidgetState._ultraHeavyAnimatedImageThresholdBytes;
 
   /// Exposes the `_isLikelyAnimatedWebP` heuristic for unit testing
   /// without needing to build a full widget tree.
@@ -133,6 +146,24 @@ class ExtendedImageReaderWidget extends StatefulWidget {
         !(isHeavy || isHeavyReaderSource);
   }
 
+  @visibleForTesting
+  static int resolveNativeAnimatedDecodeWidthForTesting({
+    required double logicalWidth,
+    required double devicePixelRatio,
+    int? imageBytes,
+  }) {
+    final viewportPx = logicalWidth * devicePixelRatio;
+    final isUltraHeavy = imageBytes != null &&
+        imageBytes >=
+            _ExtendedImageReaderWidgetState
+                ._ultraHeavyAnimatedImageThresholdBytes;
+    final factor = isUltraHeavy ? 0.58 : 0.78;
+    final capPx = isUltraHeavy ? 720.0 : 900.0;
+    final minPx = viewportPx < 360.0 ? viewportPx : 360.0;
+    final maxPx = viewportPx < capPx ? viewportPx : capPx;
+    return (viewportPx * factor).clamp(minPx, maxPx).round();
+  }
+
   static bool _looksLikeAnimatedWebPUrl(String url) {
     final path = url.toLowerCase().split('?').first;
     return path.endsWith('.webp') || path.contains('-wbp');
@@ -141,6 +172,10 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   @visibleForTesting
   static bool isAnimatedWebPHeaderForTesting(Uint8List bytes) =>
       _ExtendedImageReaderWidgetState._looksLikeAnimatedWebPHeader(bytes);
+
+  @visibleForTesting
+  static bool isSupportedImageHeaderForTesting(Uint8List bytes) =>
+      inferImageExtension(bytes: bytes) != null;
 }
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
@@ -187,6 +222,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// These are kept in memory between scroll-outs to avoid expensive re-decode.
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
 
+  /// Files ≥ 10 MB get a more aggressive native target width because the
+  /// offline reader otherwise pays twice: thumbnail prep + animated playback.
+  static const int _ultraHeavyAnimatedImageThresholdBytes =
+      10 * 1024 * 1024; // 10 MB
+
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
@@ -216,6 +256,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   Timer? _autoRetryTimer;
   Timer? _syntheticProgressTimer;
   double _syntheticProgressValue = 0.0;
+  bool _isRepairingBrokenImage = false;
+  bool _isOpeningSourcePage = false;
+  bool _shouldBypassLocalDecode = false;
 
   String get _imageProgressKey => '${widget.contentId}_${widget.pageNumber}';
 
@@ -269,7 +312,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       final localPath = _normalizeLocalPath(widget.imageUrl);
       _cachedFilePath = localPath;
       _cachedFilePathByUrl[widget.imageUrl] = localPath;
-      _preCheckLocalFileForHeavySync(localPath);
+      _shouldBypassLocalDecode = _hasInvalidLocalImagePayloadSync(localPath);
+      if (!_shouldBypassLocalDecode) {
+        _preCheckLocalFileForHeavySync(localPath);
+      }
     }
 
     // Pre-check: for .webp URLs not yet identified as heavy, query the disk
@@ -410,6 +456,52 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _hitomiFallbackImageUrl = null;
       _ehentaiResolveRetries = 0;
       _prepareEhentaiResolveFuture();
+
+      if (_isLocalFilePath(widget.imageUrl)) {
+        final localPath = _normalizeLocalPath(widget.imageUrl);
+        _cachedFilePath = localPath;
+        _cachedFilePathByUrl[widget.imageUrl] = localPath;
+        _shouldBypassLocalDecode = _hasInvalidLocalImagePayloadSync(localPath);
+        if (!_shouldBypassLocalDecode) {
+          _preCheckLocalFileForHeavySync(localPath);
+        }
+      } else {
+        _shouldBypassLocalDecode = false;
+      }
+    }
+  }
+
+  void _markLocalDecodeAsBroken() {
+    if (_shouldBypassLocalDecode) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _shouldBypassLocalDecode) {
+        return;
+      }
+
+      setState(() {
+        _shouldBypassLocalDecode = true;
+      });
+    });
+  }
+
+  void _retryBrokenLocalImage() {
+    final localPath = _normalizeLocalPath(widget.imageUrl);
+    final shouldBypass = _hasInvalidLocalImagePayloadSync(localPath);
+
+    if (!mounted) {
+      _shouldBypassLocalDecode = shouldBypass;
+      return;
+    }
+
+    setState(() {
+      _shouldBypassLocalDecode = shouldBypass;
+    });
+
+    if (!shouldBypass) {
+      _preCheckLocalFileForHeavySync(localPath);
     }
   }
 
@@ -554,6 +646,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final isLocalFile = _isLocalFilePath(widget.imageUrl);
 
     if (isLocalFile) {
+      if (_shouldBypassLocalDecode) {
+        return _buildErrorWidget(
+          context,
+          onRetry: _retryBrokenLocalImage,
+        );
+      }
+
       if (_shouldUseNativeAnimatedView(normalizedLocalPath)) {
         return _buildNativeAnimatedWebP(
           normalizedLocalPath,
@@ -612,7 +711,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               return _buildLoadingIndicator(context, state: state);
             case LoadState.failed:
               _stopSyntheticProgress(reset: true);
-              return _buildErrorWidget(context, state);
+              _markLocalDecodeAsBroken();
+              return _buildErrorWidget(
+                context,
+                onRetry: _retryBrokenLocalImage,
+              );
             case LoadState.completed:
               _stopSyntheticProgress(reset: true);
               // 🎯 PHASE 1: Report image dimensions when loaded
@@ -819,7 +922,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 _imageLoadRetries < _maxImageLoadRetries) {
               _scheduleAutoRetry(state);
             }
-            return _buildErrorWidget(context, state);
+            return _buildErrorWidget(context, state: state);
           case LoadState.completed:
             _stopSyntheticProgress(reset: true);
             _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
@@ -1119,6 +1222,27 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return false;
   }
 
+  bool _hasInvalidLocalImagePayloadSync(String localPath) {
+    RandomAccessFile? raf;
+    try {
+      final file = File(localPath);
+      if (!file.existsSync() || file.lengthSync() <= 0) {
+        return true;
+      }
+
+      final fileLength = file.lengthSync();
+      final sampleLength = fileLength < 64 ? fileLength : 64;
+      raf = file.openSync(mode: FileMode.read);
+      final bytes = raf.readSync(sampleLength);
+      return inferImageExtension(bytes: bytes) == null;
+    } catch (e) {
+      _logger.w('[LocalImage] Failed to validate local payload: $localPath');
+      return false;
+    } finally {
+      raf?.closeSync();
+    }
+  }
+
   int? _targetDecodeWidth(
     BuildContext context, {
     String? imageUrl,
@@ -1156,12 +1280,48 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   /// Target decode width for the native [AnimatedWebPView] Kotlin renderer.
   ///
-  /// Uses full viewport width × devicePixelRatio so the animation fills the
-  /// screen width at native resolution. This is typically ~500-600px on a
-  /// 1080p phone, vs the original 1416px — a ~65% reduction in decode area.
+  /// Uses a viewport-relative width with caps so very large offline animated
+  /// WebP files do not decode close to full-resolution in the native player.
+  /// This keeps RenderThread work and transient heap spikes lower on 10-20 MB
+  /// files while preserving enough detail for reader usage.
   int _nativeDecodeWidth(BuildContext context) {
     final mq = MediaQuery.of(context);
-    return (mq.size.width * mq.devicePixelRatio).round();
+    return ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
+      logicalWidth: mq.size.width,
+      devicePixelRatio: mq.devicePixelRatio,
+      imageBytes: _resolveNativeAnimatedImageBytes(),
+    );
+  }
+
+  int? _resolveNativeAnimatedImageBytes() {
+    final candidates = <String?>[
+      _cachedFilePath,
+      _isLocalFilePath(widget.imageUrl)
+          ? _normalizeLocalPath(widget.imageUrl)
+          : null,
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate == null || candidate.isEmpty) {
+        continue;
+      }
+
+      try {
+        final file = File(candidate);
+        if (!file.existsSync()) {
+          continue;
+        }
+
+        final length = file.lengthSync();
+        if (length > 0) {
+          return length;
+        }
+      } catch (_) {
+        // Ignore stat failures and fall back to viewport-only sizing.
+      }
+    }
+
+    return null;
   }
 
   Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {
@@ -1222,7 +1382,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return null;
       }
 
-      final imageUrl = _extractEhentaiImageUrl(html, readerPageUrl);
+      final imageUrl = extractEhentaiImageUrlFromHtml(
+        html,
+        readerPageUrl,
+        rawConfig: widget.sourceRawConfig,
+      );
       if (imageUrl != null && imageUrl.isNotEmpty) {
         _ehentaiResolvedImageCache[readerPageUrl] = imageUrl;
         _ehentaiResolvedImageCacheTime[readerPageUrl] = DateTime.now();
@@ -1269,61 +1433,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     });
 
     return true;
-  }
-
-  String? _extractEhentaiImageUrl(String html, String baseUrl) {
-    final srcOrDataSrc = RegExp(
-      '<img[^>]*id=["\']img["\'][^>]*(?:src|data-src)=["\']([^"\']+)["\']',
-      caseSensitive: false,
-    ).firstMatch(html)?.group(1);
-
-    if (srcOrDataSrc != null && srcOrDataSrc.trim().isNotEmpty) {
-      return _toAbsoluteUrl(srcOrDataSrc.trim(), baseUrl);
-    }
-
-    final srcSet = RegExp(
-      '<img[^>]*id=["\']img["\'][^>]*srcset=["\']([^"\']+)["\']',
-      caseSensitive: false,
-    ).firstMatch(html)?.group(1);
-    if (srcSet != null && srcSet.trim().isNotEmpty) {
-      final first = srcSet.split(',').first.trim().split(' ').first.trim();
-      if (first.isNotEmpty) {
-        return _toAbsoluteUrl(first, baseUrl);
-      }
-    }
-
-    final wrappedAnchorHref = RegExp(
-      r'''<a[^>]*href=["']([^"']+)["'][^>]*>\s*<img[^>]*id=["']img["']''',
-      caseSensitive: false,
-    ).firstMatch(html)?.group(1);
-    if (wrappedAnchorHref != null && wrappedAnchorHref.trim().isNotEmpty) {
-      return _toAbsoluteUrl(wrappedAnchorHref.trim(), baseUrl);
-    }
-
-    final fullImageHref = RegExp(
-      '<a[^>]*href=["\']([^"\']*?/fullimg/[^"\']+)["\']',
-      caseSensitive: false,
-    ).firstMatch(html)?.group(1);
-    if (fullImageHref != null && fullImageHref.trim().isNotEmpty) {
-      return _toAbsoluteUrl(fullImageHref.trim(), baseUrl);
-    }
-
-    return null;
-  }
-
-  String _toAbsoluteUrl(String value, String baseUrl) {
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return value;
-    }
-    if (value.startsWith('//')) {
-      return 'https:$value';
-    }
-
-    try {
-      return Uri.parse(baseUrl).resolve(value).toString();
-    } catch (_) {
-      return value;
-    }
   }
 
   String _formatByteSize(int bytes) {
@@ -1491,13 +1600,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   /// Build error widget with logo and retry option
-  Widget _buildErrorWidget(BuildContext context, ExtendedImageState state) {
+  Widget _buildErrorWidget(
+    BuildContext context, {
+    ExtendedImageState? state,
+    VoidCallback? onRetry,
+  }) {
     // Responsive sizing based on reading mode
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
     final double cardSize = isContinuousScroll ? 250 : 200;
     final double logoSize = isContinuousScroll ? 100 : 100;
     final double iconSize = isContinuousScroll ? 24 : 32;
+    final l10n = AppLocalizations.of(context)!;
+    final isRetrying = _autoRetryTimer?.isActive ?? false;
+    final isRepairing = _isRepairingBrokenImage;
+    final isOpeningSourcePage = _isOpeningSourcePage;
+    final isActionBusy = isRepairing || isOpeningSourcePage;
+    final retryAction = onRetry ?? state?.reLoadImage;
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
@@ -1559,11 +1678,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 // Error message or auto-retry indicator
                 Text(
-                  (_autoRetryTimer?.isActive ?? false)
-                      ? AppLocalizations.of(context)!.retrying
-                      : AppLocalizations.of(context)!.failedToLoad,
+                  isRepairing
+                      ? l10n.readerRepairingImage
+                      : isOpeningSourcePage
+                          ? l10n.readerOpeningSourcePage
+                          : (isRetrying ? l10n.retrying : l10n.failedToLoad),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: (_autoRetryTimer?.isActive ?? false)
+                        color: (isRetrying || isActionBusy)
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
@@ -1573,13 +1694,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 // Page number and retry count
                 Text(
-                  (_autoRetryTimer?.isActive ?? false)
-                      ? AppLocalizations.of(context)!.pageAttempt(
+                  isRetrying
+                      ? l10n.pageAttempt(
                           widget.pageNumber,
                           _imageLoadRetries,
-                          _maxImageLoadRetries)
-                      : AppLocalizations.of(context)!
-                          .pageNumber(widget.pageNumber),
+                          _maxImageLoadRetries,
+                        )
+                      : l10n.pageNumber(widget.pageNumber),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1588,16 +1709,138 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 const SizedBox(height: 12),
 
+                if (!isRetrying && widget.onOpenSourcePageForRepair != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isActionBusy
+                          ? null
+                          : () async {
+                              setState(() {
+                                _isOpeningSourcePage = true;
+                              });
+
+                              bool repaired = false;
+                              try {
+                                repaired = await widget
+                                    .onOpenSourcePageForRepair!
+                                    .call();
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isOpeningSourcePage = false;
+                                  });
+                                }
+                              }
+
+                              if (repaired && mounted) {
+                                if (state != null) {
+                                  state.reLoadImage();
+                                } else {
+                                  _retryBrokenLocalImage();
+                                }
+                              }
+                            },
+                      icon: isOpeningSourcePage
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          : const Icon(Icons.language, size: 16),
+                      label: Text(
+                        isOpeningSourcePage
+                            ? l10n.readerOpeningSourcePage
+                            : l10n.readerOpenSourcePage,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                if (!isRetrying && widget.onOpenSourcePageForRepair != null)
+                  const SizedBox(height: 8),
+
+                if (!isRetrying && widget.onRepairBrokenImage != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isActionBusy
+                          ? null
+                          : () async {
+                              setState(() {
+                                _isRepairingBrokenImage = true;
+                              });
+
+                              bool repaired = false;
+                              try {
+                                repaired =
+                                    await widget.onRepairBrokenImage!.call();
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isRepairingBrokenImage = false;
+                                  });
+                                }
+                              }
+
+                              if (repaired && mounted) {
+                                if (state != null) {
+                                  state.reLoadImage();
+                                } else {
+                                  _retryBrokenLocalImage();
+                                }
+                              }
+                            },
+                      icon: isRepairing
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          : const Icon(Icons.download_for_offline_outlined,
+                              size: 16),
+                      label: Text(
+                        isRepairing
+                            ? l10n.readerRepairingImage
+                            : l10n.readerRedownloadImage,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                if (!isRetrying && widget.onRepairBrokenImage != null)
+                  const SizedBox(height: 8),
+
                 // Retry button (hidden if already retrying)
-                if (!(_autoRetryTimer?.isActive ?? false))
+                if (!isRetrying)
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        state.reLoadImage();
-                      },
+                      onPressed: isActionBusy ? null : retryAction,
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: Text(AppLocalizations.of(context)!.retry),
+                      label: Text(l10n.retry),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor:

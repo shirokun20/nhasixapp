@@ -271,6 +271,39 @@ void main() {
     });
   });
 
+  group('supported local image payload detection', () {
+    test('accepts valid webp payload even without matching filename', () {
+      final bytes = Uint8List.fromList(const <int>[
+        0x52,
+        0x49,
+        0x46,
+        0x46,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x57,
+        0x45,
+        0x42,
+        0x50,
+      ]);
+
+      expect(
+        ExtendedImageReaderWidget.isSupportedImageHeaderForTesting(bytes),
+        isTrue,
+      );
+    });
+
+    test('rejects html/error payloads for local file validation', () {
+      final bytes = Uint8List.fromList('<html>blocked</html>'.codeUnits);
+
+      expect(
+        ExtendedImageReaderWidget.isSupportedImageHeaderForTesting(bytes),
+        isFalse,
+      );
+    });
+  });
+
   group('shouldAutoPlayAnimatedView', () {
     test('returns true when there is no visible page notifier', () {
       expect(
@@ -375,6 +408,48 @@ void main() {
         ExtendedImageReaderWidget.heavyImageThresholdBytesForTesting,
         equals(2 * 1024 * 1024),
       );
+    });
+
+    test('ultra-heavy animated threshold is 10 MB', () {
+      expect(
+        ExtendedImageReaderWidget
+            .ultraHeavyAnimatedImageThresholdBytesForTesting,
+        equals(10 * 1024 * 1024),
+      );
+    });
+  });
+
+  group('resolveNativeAnimatedDecodeWidth', () {
+    test('downsamples heavy animated WebP below full viewport width', () {
+      expect(
+        ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
+          logicalWidth: 360,
+          devicePixelRatio: 3,
+          imageBytes:
+              ExtendedImageReaderWidget.heavyImageThresholdBytesForTesting,
+        ),
+        equals(842),
+      );
+    });
+
+    test('uses a smaller target width for ultra-heavy offline files', () {
+      final normal =
+          ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
+        logicalWidth: 360,
+        devicePixelRatio: 3,
+        imageBytes:
+            ExtendedImageReaderWidget.heavyImageThresholdBytesForTesting,
+      );
+      final ultraHeavy =
+          ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
+        logicalWidth: 360,
+        devicePixelRatio: 3,
+        imageBytes: ExtendedImageReaderWidget
+            .ultraHeavyAnimatedImageThresholdBytesForTesting,
+      );
+
+      expect(ultraHeavy, equals(626));
+      expect(ultraHeavy, lessThan(normal));
     });
   });
 

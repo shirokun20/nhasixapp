@@ -4671,6 +4671,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retrying => 'Retrying...';
 
   @override
+  String get readerRedownloadImage => 'Redownload page';
+
+  @override
+  String get readerRepairingImage => 'Repairing image...';
+
+  @override
+  String get readerOpenSourcePage => 'Open source page';
+
+  @override
+  String get readerOpeningSourcePage => 'Opening source page...';
+
+  @override
+  String readerImageRepairSuccess(int pageNumber) {
+    return 'Page $pageNumber was redownloaded successfully.';
+  }
+
+  @override
+  String readerImageRepairHttpStatus(int pageNumber, int statusCode) {
+    return 'Could not redownload page $pageNumber. Server returned HTTP $statusCode.';
+  }
+
+  @override
+  String readerImageRepairInvalidImage(int pageNumber) {
+    return 'Could not redownload page $pageNumber because the response was not a valid image.';
+  }
+
+  @override
+  String readerImageRepairUnavailable(int pageNumber) {
+    return 'Page $pageNumber could not be redownloaded from the source.';
+  }
+
+  @override
+  String readerImageRepairFailed(int pageNumber) {
+    return 'Failed to redownload page $pageNumber.';
+  }
+
+  @override
   String pageAttempt(int pageNumber, int current, int max) {
     return 'Page $pageNumber • Attempt $current/$max';
   }

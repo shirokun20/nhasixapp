@@ -24,6 +24,7 @@ import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
 import '../mixins/offline_management_mixin.dart';
 import 'permission_request_sheet.dart';
+import 'progressive_image_widget.dart';
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -569,6 +570,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         offlineSize: state.offlineSizes[content.id],
                         highlightQuery:
                             state.query, // Pass search query for highlighting
+                        preferStaticCover: true,
                       );
                     },
                   ),
@@ -654,39 +656,25 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: content.coverUrl.startsWith('http')
-                          ? Image.network(
-                              content.coverUrl,
-                              width: 50,
-                              height: 70,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                width: 50,
-                                height: 70,
-                                color: colorScheme.surfaceContainerHighest,
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            )
-                          : Image.file(
-                              File(content.coverUrl),
-                              width: 50,
-                              height: 70,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                width: 50,
-                                height: 70,
-                                color: colorScheme.surfaceContainerHighest,
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
+                      child: ProgressiveImageWidget(
+                        networkUrl: content.coverUrl,
+                        contentId: content.id,
+                        isThumbnail: true,
+                        width: 50,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(4),
+                        preferStaticPreview: true,
+                        errorWidget: Container(
+                          width: 50,
+                          height: 70,
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.broken_image,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -997,7 +985,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
 
     // Fallback to Image Reader
     if (context.mounted) {
-      await AppRouter.goToReader(context, content.id, content: content);
+      await AppRouter.goToReader(
+        context,
+        content.id,
+        content: content,
+        forceStartFromBeginning: true,
+      );
     }
   }
 

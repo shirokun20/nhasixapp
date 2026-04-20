@@ -140,6 +140,9 @@ class KuronNative {
     String? userAgent,
     String? autoCloseOnCookie,
     String? ssoRedirectUrl,
+    List<String>? domImageSelectors,
+    List<String>? domImageAttributes,
+    List<String>? domLinkSelectors,
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
@@ -150,6 +153,9 @@ class KuronNative {
       userAgent: userAgent,
       autoCloseOnCookie: autoCloseOnCookie,
       ssoRedirectUrl: ssoRedirectUrl,
+      domImageSelectors: domImageSelectors,
+      domImageAttributes: domImageAttributes,
+      domLinkSelectors: domLinkSelectors,
       enableAdBlock: enableAdBlock,
       clearCookies: clearCookies,
     );

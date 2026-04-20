@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/text_style_const.dart';
+import '../../../core/config/remote_config_service.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/routing/reader_route_extra.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../data/models/reader_settings_model.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
@@ -1249,11 +1252,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Pass enableZoom as parameter instead of reading from state
     if (isContinuous) {
       final zoom = enableZoom ?? true;
+      final canRepairImage = _canRepairBrokenImage(
+        imageUrl: imageUrl,
+        sourceId: sourceId,
+      );
+      final canOpenSourcePage = _canOpenSourcePageForRepair(
+        imageUrl: imageUrl,
+        sourceId: sourceId,
+      );
       final headers = sourceId == null
           ? null
           : getIt<ContentSourceRegistry>()
               .getSource(sourceId)
               ?.getImageDownloadHeaders(imageUrl: imageUrl);
+      final sourceRawConfig = _getSourceRawConfig(sourceId);
       // 🐛 FIX: Use cached height (or viewport fallback) to prevent scroll
       // jumping when items are rebuilt during scroll-up.
       final cachedHeight = _cachedImageHeights[pageNumber];
@@ -1271,10 +1283,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
             pageNumber: pageNumber,
             readingMode: ReadingMode.continuousScroll,
             sourceId: sourceId,
+            sourceRawConfig: sourceRawConfig,
             httpHeaders: headers,
             enableZoom: zoom,
             visiblePageNotifier: _visiblePageNotifier,
             onHeavyImageDetected: _onHeavyImageDetected,
+            onRepairBrokenImage:
+                canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
+            onOpenSourcePageForRepair: canOpenSourcePage
+                ? () => _openSourcePageForRepair(pageNumber)
+                : null,
             onImageLoaded: (int page, Size imageSize) {
               // Cache rendered height: image scaled to screen width
               final screenWidth = MediaQuery.of(context).size.width;
@@ -1302,11 +1320,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context, state) {
         final zoom = enableZoom ?? state.enableZoom ?? true;
         final resolvedSourceId = sourceId ?? state.content?.sourceId;
+        final canRepairImage = _canRepairBrokenImage(
+          imageUrl: imageUrl,
+          sourceId: resolvedSourceId,
+        );
+        final canOpenSourcePage = _canOpenSourcePageForRepair(
+          imageUrl: imageUrl,
+          sourceId: resolvedSourceId,
+        );
         final headers = resolvedSourceId == null
             ? null
             : getIt<ContentSourceRegistry>()
                 .getSource(resolvedSourceId)
                 ?.getImageDownloadHeaders(imageUrl: imageUrl);
+        final sourceRawConfig = _getSourceRawConfig(resolvedSourceId);
 
         // 🚀 FEATURE FLAG: Toggle between ExtendedImage (new) and PhotoView (legacy)
         const bool useExtendedImage = true; // Set to false for rollback
@@ -1319,9 +1346,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
             pageNumber: pageNumber,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
             sourceId: resolvedSourceId,
+            sourceRawConfig: sourceRawConfig,
             httpHeaders: headers,
             enableZoom: zoom,
             visiblePageNotifier: _visiblePageNotifier,
+            onRepairBrokenImage:
+                canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
+            onOpenSourcePageForRepair: canOpenSourcePage
+                ? () => _openSourcePageForRepair(pageNumber)
+                : null,
             onImageLoaded:
                 _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
           );
@@ -1329,6 +1362,154 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         // 📦 LEGACY: PhotoView fallback (for rollback)
       },
+    );
+  }
+
+  bool _canRepairBrokenImage({
+    required String imageUrl,
+    required String? sourceId,
+  }) {
+    if (!_readerCubit.networkCubit.isConnected) {
+      return false;
+    }
+
+    if (!imageUrl.startsWith('/') && !imageUrl.startsWith('file://')) {
+      return false;
+    }
+
+    if (sourceId == null || sourceId.trim().isEmpty) {
+      return false;
+    }
+
+    return getIt<ContentSourceRegistry>().getSource(sourceId) != null;
+  }
+
+  Map<String, dynamic>? _getSourceRawConfig(String? sourceId) {
+    if (sourceId == null || sourceId.trim().isEmpty) {
+      return null;
+    }
+    return getIt<RemoteConfigService>().getRawConfig(sourceId);
+  }
+
+  bool _canOpenSourcePageForRepair({
+    required String imageUrl,
+    required String? sourceId,
+  }) {
+    if (!_canRepairBrokenImage(imageUrl: imageUrl, sourceId: sourceId)) {
+      return false;
+    }
+
+    return supportsSourcePageManualRepair(_getSourceRawConfig(sourceId));
+  }
+
+  Future<bool> _repairBrokenImage(int pageNumber) async {
+    final result = await _readerCubit.repairBrokenImage(pageNumber);
+    if (!mounted) {
+      return result.success;
+    }
+
+    _showRepairSnackBar(pageNumber, result);
+
+    return result.success;
+  }
+
+  Future<bool> _openSourcePageForRepair(int pageNumber) async {
+    final manualContext = await _readerCubit.prepareManualRepairContext(
+      pageNumber,
+    );
+    if (manualContext == null) {
+      if (mounted) {
+        _showRepairSnackBar(
+          pageNumber,
+          (success: false, reason: 'remote_unavailable', statusCode: null),
+        );
+      }
+      return false;
+    }
+
+    final sourceRules = resolveSourceImageResolutionRules(
+      _getSourceRawConfig(manualContext.sourceId),
+    );
+    final webViewResult = await KuronNative.instance.showLoginWebView(
+      url: manualContext.sourcePageUrl,
+      successUrlFilters: const <String>[],
+      initialCookie: manualContext.initialCookie,
+      userAgent: null,
+      domImageSelectors: sourceRules.imageSelectors,
+      domImageAttributes: sourceRules.imageAttributes,
+      domLinkSelectors: sourceRules.linkSelectors,
+      clearCookies: false,
+    );
+
+    if (!mounted) {
+      return false;
+    }
+
+    final launched = (webViewResult?['success'] as bool?) == true;
+    if (!launched) {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final l10n = AppLocalizations.of(context)!;
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(l10n.failedToOpenBrowser),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return false;
+    }
+
+    final rawCookies =
+        (webViewResult?['cookies'] as List<dynamic>?)?.cast<String>() ??
+            const <String>[];
+    final userAgent = webViewResult?['userAgent'] as String?;
+    final sessionUrl = webViewResult?['currentUrl'] as String?;
+    final resolvedImageUrl = webViewResult?['resolvedImageUrl'] as String?;
+
+    final result = await _readerCubit.retryRepairAfterManualSession(
+      pageNumber: pageNumber,
+      sourcePageUrl: manualContext.sourcePageUrl,
+      sessionUrl: sessionUrl,
+      resolvedImageUrl: resolvedImageUrl,
+      rawCookies: rawCookies,
+      userAgent: userAgent,
+    );
+
+    if (mounted) {
+      _showRepairSnackBar(pageNumber, result);
+    }
+
+    return result.success;
+  }
+
+  void _showRepairSnackBar(int pageNumber, ReaderImageRepairResult result) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    final message = switch (result.reason) {
+      'success' => l10n.readerImageRepairSuccess(pageNumber),
+      'no_connection' => l10n.noInternetConnection,
+      'http_status' => l10n.readerImageRepairHttpStatus(
+          pageNumber,
+          result.statusCode ?? 0,
+        ),
+      'invalid_image' => l10n.readerImageRepairInvalidImage(pageNumber),
+      'provider_unavailable' ||
+      'remote_unavailable' ||
+      'page_unavailable' ||
+      'content_unavailable' =>
+        l10n.readerImageRepairUnavailable(pageNumber),
+      _ => l10n.readerImageRepairFailed(pageNumber),
+    };
+
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: result.success
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
+      ),
     );
   }
 

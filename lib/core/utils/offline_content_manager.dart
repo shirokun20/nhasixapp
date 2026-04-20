@@ -834,21 +834,10 @@ class OfflineContentManager {
       final imageUrls = await getOfflineImageUrls(contentId);
       if (imageUrls.isEmpty) return null;
 
-      // Create cover URL from first image
-      String coverUrl = '';
-      if (imageUrls.isNotEmpty) {
-        final firstImageFile = File(imageUrls.first);
-        if (await firstImageFile.exists() &&
-            await firstImageFile.length() > 0) {
-          coverUrl = imageUrls.first;
-        } else if (imageUrls.length > 1) {
-          final secondImageFile = File(imageUrls[1]);
-          if (await secondImageFile.exists() &&
-              await secondImageFile.length() > 0) {
-            coverUrl = imageUrls[1];
-          }
-        }
-      }
+      final coverUrl = await _resolveOfflineCoverUrl(
+        contentPath: contentPath,
+        imageUrls: imageUrls,
+      );
 
       return Content(
         sourceId: sourceId,
@@ -872,6 +861,52 @@ class OfflineContentManager {
       _logger.e('Error creating offline content for $contentId',
           error: e, stackTrace: stackTrace);
       return null;
+    }
+  }
+
+  Future<String> _resolveOfflineCoverUrl({
+    required String contentPath,
+    required List<String> imageUrls,
+  }) async {
+    final preferredNames = <String>[
+      'cover.jpg',
+      'cover.jpeg',
+      'cover.png',
+      'cover.webp',
+      'cover.avif',
+      'thumbnail.jpg',
+      'thumbnail.jpeg',
+      'thumbnail.png',
+      'thumbnail.webp',
+      'thumbnail.avif',
+      'thumb.jpg',
+      'thumb.jpeg',
+      'thumb.png',
+      'thumb.webp',
+      'thumb.avif',
+    ];
+
+    final candidates = <String>[
+      for (final name in preferredNames) path.join(contentPath, name),
+      for (final name in preferredNames) path.join(contentPath, 'images', name),
+      ...imageUrls.take(2),
+    ];
+
+    for (final candidate in candidates) {
+      if (await _isValidOfflineCoverCandidate(candidate)) {
+        return candidate;
+      }
+    }
+
+    return '';
+  }
+
+  Future<bool> _isValidOfflineCoverCandidate(String filePath) async {
+    try {
+      final file = File(filePath);
+      return await file.exists() && await file.length() > 0;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -1022,21 +1057,10 @@ class OfflineContentManager {
 
       final imageUrls = imageFiles.map((f) => f.path).toList();
 
-      // Create Content object
-      String coverUrl = '';
-      if (imageUrls.isNotEmpty) {
-        final firstImageFile = File(imageUrls.first);
-        if (await firstImageFile.exists() &&
-            await firstImageFile.length() > 0) {
-          coverUrl = imageUrls.first;
-        } else if (imageUrls.length > 1) {
-          final secondImageFile = File(imageUrls[1]);
-          if (await secondImageFile.exists() &&
-              await secondImageFile.length() > 0) {
-            coverUrl = imageUrls[1];
-          }
-        }
-      }
+      final coverUrl = await _resolveOfflineCoverUrl(
+        contentPath: entity.path,
+        imageUrls: imageUrls,
+      );
 
       final content = Content(
         sourceId: sourceId,
@@ -1289,11 +1313,10 @@ class OfflineContentManager {
         }
       }
 
-      // Create Content object
-      String coverUrl = '';
-      if (imageUrls.isNotEmpty) {
-        coverUrl = imageUrls.first;
-      }
+      final coverUrl = await _resolveOfflineCoverUrl(
+        contentPath: entity.path,
+        imageUrls: imageUrls,
+      );
 
       final content = Content(
         sourceId: sourceId,

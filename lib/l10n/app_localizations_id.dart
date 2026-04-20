@@ -4693,6 +4693,43 @@ class AppLocalizationsId extends AppLocalizations {
   String get retrying => 'Mencoba ulang...';
 
   @override
+  String get readerRedownloadImage => 'Unduh ulang halaman';
+
+  @override
+  String get readerRepairingImage => 'Memperbaiki gambar...';
+
+  @override
+  String get readerOpenSourcePage => 'Buka halaman sumber';
+
+  @override
+  String get readerOpeningSourcePage => 'Membuka halaman sumber...';
+
+  @override
+  String readerImageRepairSuccess(int pageNumber) {
+    return 'Halaman $pageNumber berhasil diunduh ulang.';
+  }
+
+  @override
+  String readerImageRepairHttpStatus(int pageNumber, int statusCode) {
+    return 'Halaman $pageNumber tidak bisa diunduh ulang. Server mengembalikan HTTP $statusCode.';
+  }
+
+  @override
+  String readerImageRepairInvalidImage(int pageNumber) {
+    return 'Halaman $pageNumber tidak bisa diunduh ulang karena responsnya bukan file gambar yang valid.';
+  }
+
+  @override
+  String readerImageRepairUnavailable(int pageNumber) {
+    return 'Halaman $pageNumber tidak bisa diunduh ulang dari sumber.';
+  }
+
+  @override
+  String readerImageRepairFailed(int pageNumber) {
+    return 'Gagal mengunduh ulang halaman $pageNumber.';
+  }
+
+  @override
   String pageAttempt(int pageNumber, int current, int max) {
     return 'Halaman $pageNumber • Percobaan $current/$max';
   }

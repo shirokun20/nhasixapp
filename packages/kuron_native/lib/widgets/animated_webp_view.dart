@@ -79,6 +79,10 @@ class AnimatedWebPView extends StatefulWidget {
   static bool get isAvailable => Platform.isAndroid;
 
   @visibleForTesting
+  static const int largeLocalFileSkipThumbnailThresholdBytes =
+      _AnimatedWebPViewState._largeLocalFileSkipThumbnailThresholdBytes;
+
+  @visibleForTesting
   static bool shouldAutoPlayForTesting({
     required bool autoPlay,
     int? pageNumber,
@@ -90,12 +94,29 @@ class AnimatedWebPView extends StatefulWidget {
     return autoPlay;
   }
 
+  @visibleForTesting
+  static bool shouldSkipThumbnailForTesting({
+    required bool shouldAutoPlay,
+    int? fileBytes,
+  }) {
+    if (!shouldAutoPlay) {
+      return false;
+    }
+
+    return fileBytes != null &&
+        fileBytes >=
+            _AnimatedWebPViewState._largeLocalFileSkipThumbnailThresholdBytes;
+  }
+
   @override
   State<AnimatedWebPView> createState() => _AnimatedWebPViewState();
 }
 
 class _AnimatedWebPViewState extends State<AnimatedWebPView>
     with WidgetsBindingObserver {
+  static const int _largeLocalFileSkipThumbnailThresholdBytes =
+      10 * 1024 * 1024;
+
   /// Path to the cached JPEG thumbnail (first frame of the WebP).
   String? _thumbnailPath;
 
@@ -145,11 +166,23 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     return null;
   }
 
+  bool get _shouldSkipThumbnailForLargeLocalFile =>
+      AnimatedWebPView.shouldSkipThumbnailForTesting(
+        shouldAutoPlay: _shouldAutoPlay,
+        fileBytes: _resolveExistingFileBytes(),
+      );
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.visiblePageNotifier?.addListener(_onVisiblePageChanged);
+    if (_shouldSkipThumbnailForLargeLocalFile) {
+      _thumbnailDownloadedBytes = _resolveExistingFileBytes() ?? 0;
+      _thumbnailTotalBytes = null;
+      _isPlaying = true;
+      return;
+    }
     _loadThumbnail();
   }
 
@@ -165,6 +198,14 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     if (_shouldAutoPlay) {
       if (!_isPlaying && _hasPreparedPlaybackSource && mounted) {
         setState(() => _isPlaying = true);
+      } else if (!_isPlaying &&
+          _shouldSkipThumbnailForLargeLocalFile &&
+          mounted) {
+        setState(() {
+          _thumbnailDownloadedBytes = _resolveExistingFileBytes() ?? 0;
+          _thumbnailTotalBytes = null;
+          _isPlaying = true;
+        });
       } else if (!_isPlaying && !_isLoadingThumbnail) {
         _loadThumbnail();
       }
@@ -197,7 +238,13 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
         _shouldAutoPlay &&
         !_isPlaying &&
         mounted) {
-      if (_hasPreparedPlaybackSource) {
+      if (_shouldSkipThumbnailForLargeLocalFile) {
+        setState(() {
+          _thumbnailDownloadedBytes = _resolveExistingFileBytes() ?? 0;
+          _thumbnailTotalBytes = null;
+          _isPlaying = true;
+        });
+      } else if (_hasPreparedPlaybackSource) {
         setState(() => _isPlaying = true);
       } else if (!_isLoadingThumbnail) {
         _loadThumbnail();
@@ -221,7 +268,15 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
         _thumbnailTotalBytes = null;
         _isLoadingThumbnail = false;
       });
-      _loadThumbnail();
+      if (_shouldSkipThumbnailForLargeLocalFile) {
+        setState(() {
+          _thumbnailDownloadedBytes = _resolveExistingFileBytes() ?? 0;
+          _thumbnailTotalBytes = null;
+          _isPlaying = true;
+        });
+      } else {
+        _loadThumbnail();
+      }
       return;
     }
 
@@ -234,6 +289,10 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
           _thumbnailDownloadedBytes = existingFileBytes;
           _thumbnailTotalBytes = null;
         });
+      }
+
+      if (_shouldSkipThumbnailForLargeLocalFile && !_isPlaying) {
+        setState(() => _isPlaying = true);
       }
     }
 

@@ -143,10 +143,12 @@ class AnimatedWebPView(
                     }
                     return@thread
                 }
-                val bytes = file.readBytes()
-                Log.i(TAG, "Loaded ${bytes.size} bytes from disk cache")
                 if (disposed) return@thread
-                renderBytes(bytes)
+                Log.i(
+                    TAG,
+                    "Decoding from disk source: ${file.path} (${file.length()} bytes)",
+                )
+                renderFile(file)
             } catch (e: Exception) {
                 Log.e(TAG, "loadFromFile failed: ${e.message}")
                 if (fallbackUrl != null) {
@@ -166,6 +168,51 @@ class AnimatedWebPView(
             } catch (_: Exception) {
                 // Silently swallow – Flutter's ExtendedImage error UI is shown on top
                 // if this widget never renders.
+            }
+        }
+    }
+
+    /** Decodes directly from [file] to avoid copying very large offline WebP files into memory. */
+    private fun renderFile(file: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(file)
+            val drawable = ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
+                val tw = targetWidth
+                if (tw != null && tw > 0 && tw < info.size.width) {
+                    val scale = tw.toFloat() / info.size.width
+                    decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                    Log.i(
+                        TAG,
+                        "Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
+                            "(original: ${info.size.width}×${info.size.height})",
+                    )
+                }
+            }
+
+            if (drawable is AnimatedImageDrawable) {
+                cacheKey?.let { key ->
+                    drawableCache.put(key, drawable)
+                    Log.i(TAG, "Cached decoded drawable: ${key.takeLast(40)}")
+                }
+            }
+
+            imageView.post {
+                if (disposed) return@post
+                if (drawable is AnimatedImageDrawable) {
+                    drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                    animatedDrawable = drawable
+                    Log.i(TAG, "AnimatedImageDrawable started (API ${Build.VERSION.SDK_INT})")
+                } else {
+                    Log.i(TAG, "Non-animated drawable rendered (API ${Build.VERSION.SDK_INT})")
+                }
+                imageView.setImageDrawable(drawable)
+                (drawable as? AnimatedImageDrawable)?.start()
+            }
+        } else {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            imageView.post {
+                if (disposed) return@post
+                imageView.setImageBitmap(bitmap)
             }
         }
     }

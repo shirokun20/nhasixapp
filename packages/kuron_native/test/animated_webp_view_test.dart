@@ -46,4 +46,39 @@ void main() {
       );
     });
   });
+
+  group('AnimatedWebPView.shouldSkipThumbnailForTesting', () {
+    test('returns false when autoplay is disabled', () {
+      expect(
+        AnimatedWebPView.shouldSkipThumbnailForTesting(
+          shouldAutoPlay: false,
+          fileBytes:
+              AnimatedWebPView.largeLocalFileSkipThumbnailThresholdBytes + 1,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false for files below the large-local threshold', () {
+      expect(
+        AnimatedWebPView.shouldSkipThumbnailForTesting(
+          shouldAutoPlay: true,
+          fileBytes:
+              AnimatedWebPView.largeLocalFileSkipThumbnailThresholdBytes - 1,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true for autoplaying local files above 10 MB', () {
+      expect(
+        AnimatedWebPView.shouldSkipThumbnailForTesting(
+          shouldAutoPlay: true,
+          fileBytes:
+              AnimatedWebPView.largeLocalFileSkipThumbnailThresholdBytes + 1,
+        ),
+        isTrue,
+      );
+    });
+  });
 }

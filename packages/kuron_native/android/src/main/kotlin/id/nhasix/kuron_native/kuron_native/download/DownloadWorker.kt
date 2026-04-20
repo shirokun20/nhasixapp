@@ -51,6 +51,7 @@ class DownloadWorker(
         const val KEY_PROGRESS = "progress"
         
         private const val TAG = "DownloadWorker"
+        private const val INVALID_IMAGE_RESPONSE_CODE = 598
         private val ALLOWED_COOKIE_DOMAINS = setOf("crotpedia.net", "crotpedia.com")
     }
     
@@ -216,7 +217,18 @@ class DownloadWorker(
                 val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
                 val destFile = File(imagesDir, fileName)
 
-                if (!destFile.exists() || destFile.length() == 0L) {
+                val hasValidDestinationFile = destFile.exists() &&
+                    destFile.length() > 0L &&
+                    isValidDownloadedImageFile(destFile)
+
+                if (!hasValidDestinationFile) {
+                    if (destFile.exists() && destFile.length() > 0L) {
+                        Log.w(
+                            TAG,
+                            "Replacing invalid existing page file ${destFile.absolutePath}"
+                        )
+                        destFile.delete()
+                    }
                     if (index == 0) {
                         Log.d(
                             TAG,
@@ -323,7 +335,7 @@ class DownloadWorker(
             }
 
             lastCode = code
-            if (code != 403) {
+            if (code != 403 && code != INVALID_IMAGE_RESPONSE_CODE) {
                 break
             }
         }
@@ -376,7 +388,7 @@ class DownloadWorker(
             }
 
             lastCode = code
-            if (code != 403) {
+            if (code != 403 && code != INVALID_IMAGE_RESPONSE_CODE) {
                 break
             }
         }
@@ -542,12 +554,40 @@ class DownloadWorker(
                 return response.code
             }
 
+            val tempFile = File(destFile.parentFile, "${destFile.name}.part")
             response.body?.byteStream()?.use { input ->
-                destFile.outputStream().use { output ->
+                tempFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
+            } ?: run {
+                tempFile.delete()
+                Log.w(TAG, "Successful response had empty body for ${shortUrl(url)}")
+                return INVALID_IMAGE_RESPONSE_CODE
             }
+
+            if (!isValidDownloadedImageFile(tempFile)) {
+                Log.w(
+                    TAG,
+                    "Rejecting invalid image payload for ${shortUrl(url)} -> ${destFile.name} size=${tempFile.length()}"
+                )
+                tempFile.delete()
+                return INVALID_IMAGE_RESPONSE_CODE
+            }
+
+            replaceDownloadedFile(tempFile, destFile)
             return response.code
+        }
+    }
+
+    private fun replaceDownloadedFile(sourceFile: File, destFile: File) {
+        if (destFile.exists() && !destFile.delete()) {
+            Log.w(TAG, "Failed to delete stale destination file ${destFile.absolutePath}")
+        }
+
+        val renamed = sourceFile.renameTo(destFile)
+        if (!renamed) {
+            sourceFile.copyTo(destFile, overwrite = true)
+            sourceFile.delete()
         }
     }
 
@@ -597,7 +637,10 @@ class DownloadWorker(
 
         for (extension in supportedExtensions) {
             val candidate = File(imagesDir, "$baseName$extension")
-            if (candidate.exists() && candidate.length() > 0L) {
+            if (candidate.exists() &&
+                candidate.length() > 0L &&
+                isValidDownloadedImageFile(candidate)
+            ) {
                 return candidate
             }
         }
@@ -653,6 +696,14 @@ class DownloadWorker(
         return file
     }
 
+    private fun isValidDownloadedImageFile(file: File): Boolean {
+        if (!file.exists() || file.length() == 0L) {
+            return false
+        }
+
+        return detectActualFileExtension(file) != null
+    }
+
     private fun detectActualFileExtension(file: File): String? {
         return try {
             file.inputStream().use { input ->
@@ -698,6 +749,25 @@ class DownloadWorker(
                     header[2] == 0xFF.toByte()
                 ) {
                     return ".jpg"
+                }
+
+                if (bytesRead >= 2 &&
+                    header[0] == 0x42.toByte() &&
+                    header[1] == 0x4D.toByte()
+                ) {
+                    return ".bmp"
+                }
+
+                if (bytesRead >= 16 &&
+                    header[4] == 'f'.code.toByte() &&
+                    header[5] == 't'.code.toByte() &&
+                    header[6] == 'y'.code.toByte() &&
+                    header[7] == 'p'.code.toByte()
+                ) {
+                    val brand = String(header, 8, 4)
+                    if (brand == "avif" || brand == "avis" || brand == "mif1") {
+                        return ".avif"
+                    }
                 }
 
                 null

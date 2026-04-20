@@ -2781,6 +2781,53 @@
   "failedToLoadImage": "Gagal memuat gambar",
   "retrying": "Mencoba ulang...",
   "failedToLoad": "Gagal memuat",
+  "readerRedownloadImage": "Unduh ulang halaman",
+  "readerRepairingImage": "Memperbaiki gambar...",
+  "readerOpenSourcePage": "Buka halaman sumber",
+  "readerOpeningSourcePage": "Membuka halaman sumber...",
+  "readerImageRepairSuccess": "Halaman {pageNumber} berhasil diunduh ulang.",
+  "@readerImageRepairSuccess": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairHttpStatus": "Halaman {pageNumber} tidak bisa diunduh ulang. Server mengembalikan HTTP {statusCode}.",
+  "@readerImageRepairHttpStatus": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      },
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairInvalidImage": "Halaman {pageNumber} tidak bisa diunduh ulang karena responsnya bukan file gambar yang valid.",
+  "@readerImageRepairInvalidImage": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairUnavailable": "Halaman {pageNumber} tidak bisa diunduh ulang dari sumber.",
+  "@readerImageRepairUnavailable": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerImageRepairFailed": "Gagal mengunduh ulang halaman {pageNumber}.",
+  "@readerImageRepairFailed": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
   "pageAttempt": "Halaman {pageNumber} • Percobaan {current}/{max}",
   "pageNumber": "Halaman {pageNumber}",
   "downloadingNItems": "Mengunduh {count} item",

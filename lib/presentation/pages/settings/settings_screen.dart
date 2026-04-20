@@ -22,6 +22,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../domain/entities/search_filter.dart' as search_filter;
 import '../../../domain/entities/user_preferences.dart';
 import '../../../core/utils/tag_blacklist_utils.dart';
+import '../../../core/utils/source_config_display_utils.dart';
 import '../../../services/tag_blacklist_service.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
@@ -2068,12 +2069,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final isActive = state.activeSource?.id == source.id;
                   final canUninstall = source.id != 'nhentai';
                   final remoteConfig = getIt<RemoteConfigService>();
-                  final rawConfig = remoteConfig.getRawConfig(source.id);
-                  final meta = rawConfig?['meta'] as Map<String, dynamic>?;
-                  final ui = rawConfig?['ui'] as Map<String, dynamic>?;
-                  final description =
-                      (meta?['description'] as String?)?.trim() ??
-                          (ui?['description'] as String?)?.trim();
+                  final sourceInfo = resolveSourceConfigDisplayInfo(
+                    remoteConfigService: remoteConfig,
+                    sourceId: source.id,
+                  );
+                  final description = sourceInfo.description;
+                  final subtitle =
+                      (description != null && description.isNotEmpty)
+                          ? '$description\n${sourceInfo.idWithVersion}'
+                          : sourceInfo.idWithVersion;
                   return ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -2095,9 +2099,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      (description != null && description.isNotEmpty)
-                          ? '$description\n${source.id}'
-                          : source.id,
+                      subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyleConst.bodySmall.copyWith(

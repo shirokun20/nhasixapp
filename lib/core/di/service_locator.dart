@@ -823,6 +823,10 @@ void _setupCubits() {
         offlineContentManager: getIt<OfflineContentManager>(),
         networkCubit: getIt<NetworkCubit>(),
         imageMetadataService: getIt<ImageMetadataService>(),
+        httpClient: getIt<Dio>(),
+        contentSourceRegistry: getIt<ContentSourceRegistry>(),
+        ehentaiCookieJar: getIt<PersistCookieJar>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
       ));
 
   // OfflineSearchCubit - Offline content search (Singleton to persist state)

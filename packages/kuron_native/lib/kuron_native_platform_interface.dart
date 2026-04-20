@@ -136,7 +136,9 @@ abstract class KuronNativePlatform extends PlatformInterface {
   /// [userAgent] Optional user agent string.
   ///
   // ignore: unintended_html_in_doc_comment
-  /// Returns a Map with 'cookies' (List<String>), 'userAgent' (String), and 'success' (bool).
+  /// Returns a Map with 'cookies' (List<String>), 'userAgent' (String),
+  /// optional DOM-derived fields like `currentUrl` / `resolvedImageUrl`,
+  /// and 'success' (bool).
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
     List<String>? successUrlFilters,
@@ -144,6 +146,9 @@ abstract class KuronNativePlatform extends PlatformInterface {
     String? userAgent,
     String? autoCloseOnCookie,
     String? ssoRedirectUrl, // NEW
+    List<String>? domImageSelectors,
+    List<String>? domImageAttributes,
+    List<String>? domLinkSelectors,
     bool enableAdBlock = false, // NEW
     bool clearCookies = false,
   }) {
