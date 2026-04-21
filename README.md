@@ -46,6 +46,11 @@
 
 > ⚠️ **Premium Sources**: E-Hentai, HentaiNexus, Hitomi, and other third-party sources are **advanced/premium** and require manual installation via **Settings → Sources → Add via Link or Import ZIP**. nhentai is the default free source.
 
+### 🧪 **Tachiyomi Extensions for Kuron — Status**
+- Repository: [`shirokun20/tachiyomi-extensions-for-kuron`](https://github.com/shirokun20/tachiyomi-extensions-for-kuron)
+- Current status: **under analysis** for NhasixApp/Kuron application requirements.
+- Want to help? Please contact via the email listed on: [shirokun20.github.io](https://shirokun20.github.io)
+
 ### 💬 **Community Interaction**
 - **View & Submit Comments**: Read discussions and post replies directly on detail pages when logged in.
 - **Modern UI**: Clean, card-based layout optimized for both Light & Dark modes.
