@@ -30,6 +30,8 @@ Widget _buildWidget({
   ReadingMode mode = ReadingMode.continuousScroll,
   String sourceId = 'nhentai',
   Map<String, String>? headers,
+  Future<bool> Function()? onRepairBrokenImage,
+  Future<bool> Function()? onOpenSourcePageForRepair,
 }) =>
     _wrap(
       ExtendedImageReaderWidget(
@@ -39,6 +41,8 @@ Widget _buildWidget({
         readingMode: mode,
         sourceId: sourceId,
         httpHeaders: headers,
+        onRepairBrokenImage: onRepairBrokenImage,
+        onOpenSourcePageForRepair: onOpenSourcePageForRepair,
       ),
     );
 
@@ -268,6 +272,44 @@ void main() {
         ExtendedImageReaderWidget.isAnimatedWebPHeaderForTesting(bytes),
         isFalse,
       );
+    });
+  });
+
+  group('failed page placeholder actions', () {
+    testWidgets(
+        'shows redownload button for failed placeholders when repair is available',
+        (tester) async {
+      await tester.pumpWidget(
+        _buildWidget(
+          url: '__failed__:https://e-hentai.org/s/example/123-1',
+          onRepairBrokenImage: () async => true,
+        ),
+      );
+
+      final context = tester.element(find.byType(ExtendedImageReaderWidget));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(find.text(l10n.readerPageNotDownloaded(1)), findsOneWidget);
+      expect(find.text(l10n.readerRedownloadImage), findsOneWidget);
+      expect(find.text(l10n.readerOpenSourcePage), findsNothing);
+    });
+
+    testWidgets(
+        'shows source-page fallback button for failed placeholders when available',
+        (tester) async {
+      await tester.pumpWidget(
+        _buildWidget(
+          url: '__failed__:https://e-hentai.org/s/example/123-1',
+          onRepairBrokenImage: () async => true,
+          onOpenSourcePageForRepair: () async => true,
+        ),
+      );
+
+      final context = tester.element(find.byType(ExtendedImageReaderWidget));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(find.text(l10n.readerRedownloadImage), findsOneWidget);
+      expect(find.text(l10n.readerOpenSourcePage), findsOneWidget);
     });
   });
 

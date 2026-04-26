@@ -1154,46 +1154,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       return (success: false, reason: 'page_unavailable', statusCode: null);
     }
 
-    final rawUrl = currentContent.imageUrls[pageNumber - 1];
-
-    // 🐛 FIX: Handle failed-page placeholders (__failed__:{originalUrl}).
-    // These pages were skipped during download (timeout/error). We treat them
-    // as a fresh download: derive the destination path from the content
-    // directory and use the embedded original URL as the repair target.
-    if (OfflineContentManager.isFailedPagePlaceholder(rawUrl)) {
-      final originalUrl =
-          OfflineContentManager.extractOriginalUrlFromPlaceholder(rawUrl);
-      if (originalUrl == null || originalUrl.isEmpty) {
-        return (success: false, reason: 'page_unavailable', statusCode: null);
-      }
-
-      // Determine where the file should be saved (same images/ dir as siblings)
-      final contentPath =
-          await offlineContentManager.getOfflineContentPath(currentContent.id);
-      if (contentPath == null) {
-        return (success: false, reason: 'page_unavailable', statusCode: null);
-      }
-      final imagesDir = '$contentPath/images';
-      final placeholderPath =
-          '$imagesDir/page_${pageNumber.toString().padLeft(3, '0')}.jpg';
-
-      return _repairBrokenImageInternal(
-        currentContent: currentContent,
-        sourceId: sourceId,
-        pageNumber: pageNumber,
-        // Use a synthetic local path so _repairBrokenImageInternal writes to
-        // the right directory and updates imageUrls correctly.
-        currentImagePath: placeholderPath,
-        overrideTarget: _ReaderRepairTarget(
-          requestUrl: originalUrl,
-          readerPageUrl: null,
-        ),
-      );
-    }
-
-    final currentImagePath =
-        normalizeLocalReaderImagePath(rawUrl);
-    if (!isLocalReaderImagePath(currentImagePath)) {
+    final currentImagePath = await _resolveCurrentImagePathForRepair(
+      content: currentContent,
+      pageNumber: pageNumber,
+    );
+    if (currentImagePath == null) {
       return (success: false, reason: 'page_unavailable', statusCode: null);
     }
 
@@ -1444,10 +1409,11 @@ class ReaderCubit extends Cubit<ReaderState> {
         );
       }
 
-      final currentImagePath = normalizeLocalReaderImagePath(
-        currentContent.imageUrls[pageNumber - 1],
+      final currentImagePath = await _resolveCurrentImagePathForRepair(
+        content: currentContent,
+        pageNumber: pageNumber,
       );
-      if (!isLocalReaderImagePath(currentImagePath)) {
+      if (currentImagePath == null) {
         return (success: false, reason: 'page_unavailable', statusCode: null);
       }
 
@@ -1485,8 +1451,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
     }
 
-    final currentPageUrl = content.imageUrls[pageNumber - 1];
-    if (!isLocalReaderImagePath(currentPageUrl)) {
+    final currentPageUrl = _extractRepairCandidateUrl(
+      content.imageUrls[pageNumber - 1],
+    );
+    if (currentPageUrl != null && !isLocalReaderImagePath(currentPageUrl)) {
       final resolved = await _normalizeRepairTarget(
         sourceId: sourceId,
         candidateUrl: currentPageUrl,
@@ -1524,6 +1492,61 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
 
     return null;
+  }
+
+  String? _extractRepairCandidateUrl(String rawUrl) {
+    if (!OfflineContentManager.isFailedPagePlaceholder(rawUrl)) {
+      return rawUrl;
+    }
+
+    final originalUrl =
+        OfflineContentManager.extractOriginalUrlFromPlaceholder(rawUrl);
+    if (originalUrl == null || originalUrl.trim().isEmpty) {
+      return null;
+    }
+
+    return originalUrl.trim();
+  }
+
+  Future<String?> _resolveCurrentImagePathForRepair({
+    required Content content,
+    required int pageNumber,
+  }) async {
+    final rawUrl = content.imageUrls[pageNumber - 1];
+    if (!OfflineContentManager.isFailedPagePlaceholder(rawUrl)) {
+      final currentImagePath = normalizeLocalReaderImagePath(rawUrl);
+      if (!isLocalReaderImagePath(currentImagePath)) {
+        return null;
+      }
+      return currentImagePath;
+    }
+
+    for (final candidateUrl in content.imageUrls) {
+      final normalizedCandidate = normalizeLocalReaderImagePath(candidateUrl);
+      if (isLocalReaderImagePath(normalizedCandidate)) {
+        final siblingDirectory = path.dirname(normalizedCandidate);
+        return path.join(
+          siblingDirectory,
+          'page_${pageNumber.toString().padLeft(3, '0')}.jpg',
+        );
+      }
+    }
+
+    final contentPath = await offlineContentManager.getOfflineContentPath(
+      content.id,
+    );
+    if (contentPath == null || contentPath.trim().isEmpty) {
+      return null;
+    }
+
+    final imagesDir = path.join(contentPath, 'images');
+    final targetDirectory =
+        await Directory(imagesDir).exists() ? imagesDir : contentPath;
+
+    return path.join(
+      targetDirectory,
+      'page_${pageNumber.toString().padLeft(3, '0')}.jpg',
+    );
   }
 
   Future<_ReaderRepairTarget?> _resolveRepairTargetFromChapterImages({

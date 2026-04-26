@@ -1373,15 +1373,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return false;
     }
 
-    if (!imageUrl.startsWith('/') && !imageUrl.startsWith('file://')) {
-      return false;
-    }
-
     if (sourceId == null || sourceId.trim().isEmpty) {
       return false;
     }
 
-    return getIt<ContentSourceRegistry>().getSource(sourceId) != null;
+    if (getIt<ContentSourceRegistry>().getSource(sourceId) == null) {
+      return false;
+    }
+
+    if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
+      final originalUrl =
+          OfflineContentManager.extractOriginalUrlFromPlaceholder(imageUrl);
+      return originalUrl != null && originalUrl.trim().isNotEmpty;
+    }
+
+    if (!imageUrl.startsWith('/') && !imageUrl.startsWith('file://')) {
+      return false;
+    }
+
+    return isLocalReaderImagePath(normalizeLocalReaderImagePath(imageUrl));
   }
 
   Map<String, dynamic>? _getSourceRawConfig(String? sourceId) {
