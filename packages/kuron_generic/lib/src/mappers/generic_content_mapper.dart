@@ -87,12 +87,28 @@ class GenericContentMapper {
         ? chapters.length
         : (rawPageCount > 0 ? rawPageCount : imageUrls.length);
 
+    // Inject uploader as a typed Tag so detail screens can display and
+    // navigate to uploader search (e.g. E-Hentai f_search=uploader:name).
+    var resolvedTags = tagsResolved.tags;
+    final uploaderName = _str(fields, 'uploader').trim();
+    if (uploaderName.isNotEmpty) {
+      final alreadyPresent = resolvedTags.any(
+        (t) => t.type == 'uploader' && t.name.toLowerCase() == uploaderName.toLowerCase(),
+      );
+      if (!alreadyPresent) {
+        resolvedTags = [
+          ...resolvedTags,
+          Tag(id: 0, name: uploaderName, type: 'uploader', count: 0),
+        ];
+      }
+    }
+
     return Content(
       id: id,
       sourceId: sourceId,
       title: _extractTitle(fields),
       coverUrl: coverUrl,
-      tags: tagsResolved.tags,
+      tags: resolvedTags,
       artists: tagsResolved.artists.isNotEmpty
           ? tagsResolved.artists
           : _strListAny(fields, const ['artists', 'artist']),

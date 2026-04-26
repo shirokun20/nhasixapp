@@ -2745,6 +2745,17 @@ class _DetailScreenState extends State<DetailScreen> {
       case 'language':
         // Use primary for language in light mode since onSurfaceVariant is too light
         return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.primary;
+      case 'uploader':
+        return isDarkMode
+            ? const Color(0xFFFFB74D) // amber-300
+            : const Color(0xFFE65100); // deep-orange-900
+      case 'female':
+        return const Color(0xFFE91E63); // pink
+      case 'male':
+        return const Color(0xFF1565C0); // blue-800
+      case 'other':
+      case 'misc':
+        return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onSurface.withValues(alpha: 0.6);
       case 'tag':
       default:
         // Use onSurface for default tags in light mode for better visibility

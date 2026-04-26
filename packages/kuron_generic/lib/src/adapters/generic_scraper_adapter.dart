@@ -1361,9 +1361,33 @@ class GenericScraperAdapter implements GenericAdapter {
               .where((v) => v.isNotEmpty)
               .toList();
         }
-        _logger.d(
-            '$_sourceId: extracted field "${entry.key}" (multi): ${values.length} values = $values');
-        result[entry.key] = values;
+
+        // 🆕 parseTagNamespace: split "namespace:name" strings into typed Tags
+        // Used by sources like E-Hentai where tag title attributes carry the
+        // full "namespace:tagname" string (e.g. "artist:john", "other:ai generated").
+        final parseNamespace = defMap['parseTagNamespace'] as bool? ?? false;
+        if (parseNamespace && entry.key == 'tags') {
+          final tagObjects = <Tag>[];
+          for (final raw in values) {
+            final colonIdx = raw.indexOf(':');
+            if (colonIdx > 0 && colonIdx < raw.length - 1) {
+              final ns = raw.substring(0, colonIdx).trim().toLowerCase();
+              final name = raw.substring(colonIdx + 1).trim();
+              if (ns.isNotEmpty && name.isNotEmpty) {
+                tagObjects.add(Tag(id: 0, name: name, type: ns, count: 0));
+                continue;
+              }
+            }
+            tagObjects.add(Tag(id: 0, name: raw, type: 'tag', count: 0));
+          }
+          _logger.d(
+              '$_sourceId: parsed ${tagObjects.length} namespace-typed tags for "${entry.key}"');
+          result[entry.key] = tagObjects;
+        } else {
+          _logger.d(
+              '$_sourceId: extracted field "${entry.key}" (multi): ${values.length} values = $values');
+          result[entry.key] = values;
+        }
       } else {
         var value = _parser.extractString(doc, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
