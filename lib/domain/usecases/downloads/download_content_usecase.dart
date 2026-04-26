@@ -172,11 +172,12 @@ class DownloadContentUseCase
       final effectiveStartPage = startPage ?? 1;
       final effectiveEndPage = endPage ?? allImageUrls.length;
       final isRangeDownload = startPage != null || endPage != null;
+      final totalAvailablePages = allImageUrls.length;
 
       // Validate range bounds
-      final clampedStart = effectiveStartPage.clamp(1, allImageUrls.length);
+      final clampedStart = effectiveStartPage.clamp(1, totalAvailablePages);
       final clampedEnd =
-          effectiveEndPage.clamp(clampedStart, allImageUrls.length);
+          effectiveEndPage.clamp(clampedStart, totalAvailablePages);
 
       // Slice URLs: convert 1-based page numbers to 0-based indices
       final rangeImageUrls = allImageUrls.sublist(clampedStart - 1, clampedEnd);
@@ -199,7 +200,7 @@ class DownloadContentUseCase
         coverUrl: content.coverUrl,
         url: content.url,
         language: content.language,
-        totalImages: rangeImageUrls.length, // Use range count, not total
+        totalImages: totalAvailablePages,
       );
 
       // Start Native Download (Fire and Forget)
@@ -215,6 +216,9 @@ class DownloadContentUseCase
         url: content.url,
         coverUrl: content.coverUrl,
         language: content.language,
+        startPage: clampedStart,
+        endPage: clampedEnd,
+        totalPages: totalAvailablePages,
         enableNotifications: enableNotifications,
         backupFolderName: AppStorage.backupFolderName, // ✅ Pass from config
       );

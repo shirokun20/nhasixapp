@@ -428,10 +428,20 @@ class OfflineContentManager {
       final raw = json.decode(await metadataFile.readAsString());
       if (raw is! Map<String, dynamic>) return diskUrls;
 
-      final totalPages = raw['total_pages'] as int?;
+      final totalPages = (raw['total_pages'] as num?)?.toInt();
+      final isRangeDownload = raw['is_range_download'] == true;
+      final rangeStart = (raw['start_page'] as num?)?.toInt() ?? 1;
+      final rangeEnd = (raw['end_page'] as num?)?.toInt() ?? totalPages;
+      final effectiveStartPage = isRangeDownload ? rangeStart : 1;
+      final effectiveEndPage = isRangeDownload ? rangeEnd : totalPages;
+      final expectedVisiblePages = switch (effectiveEndPage) {
+        final int end when end >= effectiveStartPage =>
+          end - effectiveStartPage + 1,
+        _ => totalPages,
+      };
       final failedPagesRaw = raw['failed_pages'];
-      if (totalPages == null ||
-          totalPages <= diskUrls.length ||
+      if (expectedVisiblePages == null ||
+          expectedVisiblePages <= diskUrls.length ||
           failedPagesRaw == null) {
         return diskUrls;
       }
@@ -453,10 +463,14 @@ class OfflineContentManager {
       if (failedMap.isEmpty) return diskUrls;
 
       // Rebuild the full list by interleaving disk files and placeholders
-      // at their correct 1-based positions.
+      // at their correct positions. Range downloads keep original gallery page
+      // numbers in metadata, but the reader should only render the selected
+      // slice (`start_page..end_page`).
       final result = <String>[];
       var diskIndex = 0;
-      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+      for (var pageNum = effectiveStartPage;
+          pageNum <= effectiveEndPage!;
+          pageNum++) {
         if (failedMap.containsKey(pageNum)) {
           result.add('$kFailedPagePrefix${failedMap[pageNum]}');
         } else if (diskIndex < diskUrls.length) {

@@ -20,12 +20,16 @@ class NativeDownloadService {
     required List<String> imageUrls,
     required String destinationPath,
     Map<String, String>? cookies,
-    Map<String, String>? headers, // Source-specific HTTP headers (e.g. Referer for Hitomi)
+    Map<String, String>?
+        headers, // Source-specific HTTP headers (e.g. Referer for Hitomi)
     // Metadata v2.1 fields
     String? title,
     String? url,
     String? coverUrl,
     String? language,
+    int? startPage,
+    int? endPage,
+    int? totalPages,
     bool enableNotifications = true,
     String backupFolderName = 'nhasix', // ✅ NEW: Configurable backup folder
     // Feature C: Parallel download config
@@ -40,12 +44,16 @@ class NativeDownloadService {
         'imageUrls': imageUrls,
         'destinationPath': destinationPath,
         'cookies': cookies,
-        'headers': headers, // Source-specific headers (Referer, User-Agent, etc.)
+        'headers':
+            headers, // Source-specific headers (Referer, User-Agent, etc.)
         // Metadata v2.1
         'title': title,
         'url': url,
         'coverUrl': coverUrl,
         'language': language,
+        'startPage': startPage,
+        'endPage': endPage,
+        'totalPages': totalPages,
         'enableNotifications': enableNotifications,
         'backupFolderName': backupFolderName, // ✅ NEW: Pass to native
         // Feature C: Parallel download config

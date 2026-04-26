@@ -56,6 +56,9 @@ class DownloadWorker(
         const val KEY_URL = "url"
         const val KEY_COVER_URL = "cover_url"
         const val KEY_LANGUAGE = "language"
+        const val KEY_START_PAGE = "start_page"
+        const val KEY_END_PAGE = "end_page"
+        const val KEY_TOTAL_PAGES = "total_pages"
         const val KEY_BACKUP_FOLDER = "backup_folder" // ✅ NEW: Configurable folder name
         const val KEY_PROGRESS = "progress"
         // Feature C: Parallel download config
@@ -119,12 +122,30 @@ class DownloadWorker(
         } else {
             inputData.getStringArray(KEY_IMAGE_URLS)?.toList() ?: return@withContext Result.failure()
         }
+
+        val startPage = inputData.getInt(KEY_START_PAGE, 1).coerceAtLeast(1)
+        val fallbackEndPage = startPage + imageUrls.size - 1
+        val requestedEndPage = inputData.getInt(KEY_END_PAGE, fallbackEndPage)
+        val endPage = if (requestedEndPage >= startPage) requestedEndPage else fallbackEndPage
+        val requestedTotalPages = inputData.getInt(KEY_TOTAL_PAGES, 0)
+        val totalPages = if (requestedTotalPages > 0) {
+            requestedTotalPages
+        } else {
+            maxOf(endPage, fallbackEndPage)
+        }
         
         Log.d(TAG, "Starting download for $contentId from $sourceId with ${imageUrls.size} images (Native Notifications Disabled)")
         
         try {
             val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-            val result = downloadImages(contentId, sourceId, imageUrls, destinationPath)
+            val result = downloadImages(
+                contentId = contentId,
+                sourceId = sourceId,
+                imageUrls = imageUrls,
+                destinationPath = destinationPath,
+                startPage = startPage,
+                endPage = endPage,
+            )
             
             // Create metadata and .nomedia after successful download
             val title = inputData.getString(KEY_TITLE) ?: "Unknown"
@@ -142,7 +163,9 @@ class DownloadWorker(
                 language,
                 result.downloadedFiles,
                 result.failedPages,
-                result.totalPages,
+                startPage,
+                endPage,
+                totalPages,
             )
             createNoMediaFile(downloadDir)
             
@@ -183,7 +206,9 @@ class DownloadWorker(
         contentId: String, 
         sourceId: String, 
         imageUrls: List<String>, 
-        destinationPath: String?
+        destinationPath: String?,
+        startPage: Int,
+        endPage: Int,
     ): DownloadImagesResult {
         val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
         // Create /images/ subfolder to match Flutter pattern
@@ -203,7 +228,7 @@ class DownloadWorker(
              Log.d(TAG, "Images Dir already exists")
         }
 
-        val existingFilesByPage = buildExistingPageFileMap(imagesDir, imageUrls.size)
+        val existingFilesByPage = buildExistingPageFileMap(imagesDir, startPage, endPage)
         val completedCount = AtomicInteger(existingFilesByPage.size)
         totalBytesDownloaded.set(existingFilesByPage.values.fold(0L) { acc, file ->
             acc + file.length()
@@ -229,12 +254,15 @@ class DownloadWorker(
 
         // Thread-safe map for results (pageNumber -> filename)
         val resultFileNames = Array<String?>(imageUrls.size) { null }
-        // Track failed pages: index (0-based) -> original URL
-        val failedPageIndices = java.util.concurrent.ConcurrentHashMap<Int, String>()
+        // Track failed pages in original gallery numbering.
+        val failedPageNumbers = java.util.concurrent.ConcurrentHashMap<Int, String>()
 
         // Pre-fill already-downloaded pages
         existingFilesByPage.forEach { (pageNumber, file) ->
-            resultFileNames[pageNumber - 1] = file.name
+            val resultIndex = pageNumber - startPage
+            if (resultIndex in resultFileNames.indices) {
+                resultFileNames[resultIndex] = file.name
+            }
         }
 
         val semaphore = Semaphore(maxParallel)
@@ -244,7 +272,7 @@ class DownloadWorker(
                 async(Dispatchers.IO) {
                     if (isStopped) return@async
 
-                    val pageNumber = index + 1
+                    val pageNumber = startPage + index
 
                     // Skip already-downloaded pages
                     if (existingFilesByPage.containsKey(pageNumber)) {
@@ -284,13 +312,13 @@ class DownloadWorker(
                                 // Timeout — skip this image, record as failed
                                 Log.w(TAG, "⏱️ Timeout downloading page $pageNumber (${shortUrl(url)}) — skipping")
                                 destFile.delete() // Clean up any partial file
-                                failedPageIndices[index] = url
+                                failedPageNumbers[pageNumber] = url
                                 return@withPermit
                             }
 
                             if (downloadResult == false) {
                                 // Download error — record as failed
-                                failedPageIndices[index] = url
+                                failedPageNumbers[pageNumber] = url
                                 return@withPermit
                             }
                         }
@@ -302,7 +330,7 @@ class DownloadWorker(
                         }
 
                         if (normalizedFile.exists() && normalizedFile.length() > 0L) {
-                            resultFileNames[index] = normalizedFile.name
+                            resultFileNames[pageNumber - startPage] = normalizedFile.name
                             val newCount = completedCount.incrementAndGet()
                             totalBytesDownloaded.addAndGet(normalizedFile.length())
 
@@ -315,7 +343,7 @@ class DownloadWorker(
                             ))
                         } else {
                             // File didn't end up valid after download
-                            failedPageIndices[index] = url
+                            failedPageNumbers[pageNumber] = url
                         }
                     }
                 }
@@ -325,9 +353,9 @@ class DownloadWorker(
 
         if (isStopped) throw CancellationException("Work cancelled")
 
-        val failedPages = failedPageIndices.entries
+        val failedPages = failedPageNumbers.entries
             .sortedBy { it.key }
-            .map { (index, url) -> Pair(index + 1, url) } // convert to 1-based
+            .map { (pageNumber, url) -> Pair(pageNumber, url) }
 
         if (failedPages.isNotEmpty()) {
             Log.w(TAG, "⚠️ ${failedPages.size} page(s) failed to download for $contentId: ${failedPages.map { it.first }}")
@@ -680,10 +708,10 @@ class DownloadWorker(
         }
     }
 
-    private fun buildExistingPageFileMap(imagesDir: File, totalPages: Int): MutableMap<Int, File> {
+    private fun buildExistingPageFileMap(imagesDir: File, startPage: Int, endPage: Int): MutableMap<Int, File> {
         val existingFiles = mutableMapOf<Int, File>()
 
-        for (pageNumber in 1..totalPages) {
+        for (pageNumber in startPage..endPage) {
             val existing = findExistingDownloadedPage(imagesDir, pageNumber)
             if (existing != null) {
                 existingFiles[pageNumber] = existing
@@ -936,9 +964,12 @@ class DownloadWorker(
         language: String,
         imageFiles: List<String>,
         failedPages: List<Pair<Int, String>> = emptyList(),
+        startPage: Int = 1,
+        endPage: Int = imageFiles.size,
         totalPages: Int = imageFiles.size,
     ) {
         try {
+            val isRangeDownload = startPage > 1 || endPage < totalPages
             val failedPagesJson = org.json.JSONArray().apply {
                 failedPages.forEach { (page, originalUrl) ->
                     put(org.json.JSONObject().apply {
@@ -966,9 +997,9 @@ class DownloadWorker(
                 "failed_pages" to failedPagesJson,
                 "language" to language,
                 "cover_url" to coverUrl,
-                "is_range_download" to false,
-                "start_page" to 1,
-                "end_page" to totalPages,
+                "is_range_download" to isRangeDownload,
+                "start_page" to startPage,
+                "end_page" to endPage,
                 "pages_downloaded" to imageFiles.size
             )
             

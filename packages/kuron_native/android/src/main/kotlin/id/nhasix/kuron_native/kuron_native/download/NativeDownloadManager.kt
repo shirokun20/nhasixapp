@@ -28,6 +28,9 @@ class NativeDownloadManager(private val context: Context) {
         url: String = "",
         coverUrl: String = "",
         language: String = "unknown",
+        startPage: Int = 1,
+        endPage: Int = imageUrls.size,
+        totalPages: Int = imageUrls.size,
         backupFolderName: String = "nhasix",  // ✅ NEW: Configurable backup folder name
         // Feature C: Parallel download config
         maxParallelImages: Int = 3,
@@ -68,6 +71,9 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_URL to url,
                 DownloadWorker.KEY_COVER_URL to coverUrl,
                 DownloadWorker.KEY_LANGUAGE to language,
+                DownloadWorker.KEY_START_PAGE to startPage,
+                DownloadWorker.KEY_END_PAGE to endPage,
+                DownloadWorker.KEY_TOTAL_PAGES to totalPages,
                 // ✅ NEW: Pass backup folder name for fallback path construction
                 DownloadWorker.KEY_BACKUP_FOLDER to backupFolderName,
                 // Feature C: Parallel download config

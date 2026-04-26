@@ -223,6 +223,9 @@ class DownloadHandler(
             val url = call.argument<String>("url") ?: ""
             val coverUrl = call.argument<String>("coverUrl") ?: ""
             val language = call.argument<String>("language") ?: "unknown"
+            val startPage = call.argument<Int>("startPage") ?: 1
+            val endPage = call.argument<Int>("endPage") ?: imageUrls.size
+            val totalPages = call.argument<Int>("totalPages") ?: imageUrls.size
             // ✅ NEW: Extract backup folder name from Flutter (default: "nhasix")
             val backupFolderName = call.argument<String>("backupFolderName") ?: "nhasix"
             // Feature C: Parallel download config
@@ -240,6 +243,9 @@ class DownloadHandler(
                 url,
                 coverUrl,
                 language,
+                startPage,
+                endPage,
+                totalPages,
                 backupFolderName,  // ✅ NEW: Pass to download manager
                 maxParallelImages,
                 imageTimeoutMs,
