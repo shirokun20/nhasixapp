@@ -7980,6 +7980,24 @@ abstract class AppLocalizations {
   /// **'Repairing image...'**
   String get readerRepairingImage;
 
+  /// No description provided for @readerPageNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {pageNumber} not downloaded'**
+  String readerPageNotDownloaded(int pageNumber);
+
+  /// No description provided for @readerPageSkippedDuringDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'This page was skipped during download (timeout or error). Tap below to download it now.'**
+  String get readerPageSkippedDuringDownload;
+
+  /// No description provided for @readerPageDownloadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded successfully'**
+  String get readerPageDownloadSuccess;
+
   /// No description provided for @readerOpenSourcePage.
   ///
   /// In en, this message translates to:

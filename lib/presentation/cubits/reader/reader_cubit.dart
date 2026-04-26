@@ -1154,8 +1154,45 @@ class ReaderCubit extends Cubit<ReaderState> {
       return (success: false, reason: 'page_unavailable', statusCode: null);
     }
 
+    final rawUrl = currentContent.imageUrls[pageNumber - 1];
+
+    // 🐛 FIX: Handle failed-page placeholders (__failed__:{originalUrl}).
+    // These pages were skipped during download (timeout/error). We treat them
+    // as a fresh download: derive the destination path from the content
+    // directory and use the embedded original URL as the repair target.
+    if (OfflineContentManager.isFailedPagePlaceholder(rawUrl)) {
+      final originalUrl =
+          OfflineContentManager.extractOriginalUrlFromPlaceholder(rawUrl);
+      if (originalUrl == null || originalUrl.isEmpty) {
+        return (success: false, reason: 'page_unavailable', statusCode: null);
+      }
+
+      // Determine where the file should be saved (same images/ dir as siblings)
+      final contentPath =
+          await offlineContentManager.getOfflineContentPath(currentContent.id);
+      if (contentPath == null) {
+        return (success: false, reason: 'page_unavailable', statusCode: null);
+      }
+      final imagesDir = '$contentPath/images';
+      final placeholderPath =
+          '$imagesDir/page_${pageNumber.toString().padLeft(3, '0')}.jpg';
+
+      return _repairBrokenImageInternal(
+        currentContent: currentContent,
+        sourceId: sourceId,
+        pageNumber: pageNumber,
+        // Use a synthetic local path so _repairBrokenImageInternal writes to
+        // the right directory and updates imageUrls correctly.
+        currentImagePath: placeholderPath,
+        overrideTarget: _ReaderRepairTarget(
+          requestUrl: originalUrl,
+          readerPageUrl: null,
+        ),
+      );
+    }
+
     final currentImagePath =
-        normalizeLocalReaderImagePath(currentContent.imageUrls[pageNumber - 1]);
+        normalizeLocalReaderImagePath(rawUrl);
     if (!isLocalReaderImagePath(currentImagePath)) {
       return (success: false, reason: 'page_unavailable', statusCode: null);
     }

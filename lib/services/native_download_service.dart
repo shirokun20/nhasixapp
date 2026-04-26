@@ -28,6 +28,9 @@ class NativeDownloadService {
     String? language,
     bool enableNotifications = true,
     String backupFolderName = 'nhasix', // ✅ NEW: Configurable backup folder
+    // Feature C: Parallel download config
+    int maxParallelImages = 3,
+    int imageTimeoutMs = 60000,
   }) async {
     try {
       final workId =
@@ -45,6 +48,9 @@ class NativeDownloadService {
         'language': language,
         'enableNotifications': enableNotifications,
         'backupFolderName': backupFolderName, // ✅ NEW: Pass to native
+        // Feature C: Parallel download config
+        'maxParallelImages': maxParallelImages,
+        'imageTimeoutMs': imageTimeoutMs,
       });
       return workId ?? '';
     } on PlatformException catch (e) {

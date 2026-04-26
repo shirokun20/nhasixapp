@@ -44,6 +44,21 @@ class OfflineContentManager {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
+  /// Invalidate all caches for a specific content ID.
+  /// Call this whenever a download is removed, cancelled, or deleted so the
+  /// reader does not serve stale offline paths or image URL lists.
+  void invalidateCacheFor(String contentId) {
+    _pathCache.remove(contentId);
+    _imageUrlsCache.remove(contentId);
+    _imageUrlsCacheTime.remove(contentId);
+    _metadataCache.remove(contentId);
+    _metadataCacheTime.remove(contentId);
+    // Also bust the global offline-IDs list so the next check re-queries the DB.
+    _cachedOfflineIds = null;
+    _offlineIdsCacheTime = null;
+    _logger.d('🗑️ Invalidated offline cache for $contentId');
+  }
+
   /// Check if content is available offline
   Future<bool> isContentAvailableOffline(String contentId) async {
     // _logger.d("🔍 Checking offline availability for $contentId");
@@ -55,6 +70,18 @@ class OfflineContentManager {
       if (downloadStatus?.state == DownloadState.completed) {
         // _logger.d("✅ Content $contentId is marked as COMPLETED in DB");
         return true;
+      }
+
+      // 🐛 FIX Bug A: If the download is actively in-progress (queued/downloading/paused),
+      // do NOT fall through to the filesystem scan.  Partial files already exist on disk
+      // and would cause the reader to enter offline mode with an incomplete page set.
+      if (downloadStatus != null &&
+          (downloadStatus.state == DownloadState.downloading ||
+              downloadStatus.state == DownloadState.queued ||
+              downloadStatus.state == DownloadState.paused)) {
+        _logger.d(
+            '⏳ Content $contentId is ${downloadStatus.state} — skipping filesystem fallback');
+        return false;
       }
 
       // _logger.d("⚠️ Content $contentId not COMPLETED in DB (status: ${downloadStatus?.state}), checking filesystem...");
@@ -299,7 +326,26 @@ class OfflineContentManager {
     }
   }
 
-  /// Get offline image URLs for content
+  /// Prefix used to mark a page that failed to download.
+  /// Format: `__failed__:{originalUrl}`
+  static const String kFailedPagePrefix = '__failed__:';
+
+  /// Returns true if [url] is a failed-page placeholder injected by
+  /// [getOfflineImageUrls] for a page that was skipped during download.
+  static bool isFailedPagePlaceholder(String url) =>
+      url.startsWith(kFailedPagePrefix);
+
+  /// Extracts the original remote URL from a failed-page placeholder.
+  static String? extractOriginalUrlFromPlaceholder(String url) {
+    if (!isFailedPagePlaceholder(url)) return null;
+    return url.substring(kFailedPagePrefix.length);
+  }
+
+  /// Get offline image URLs for content.
+  ///
+  /// Pages that failed to download are represented as placeholder strings
+  /// with the prefix [kFailedPagePrefix] so the reader can show a retry card
+  /// at the correct position instead of silently dropping the page.
   Future<List<String>> getOfflineImageUrls(String contentId) async {
     try {
       // 🚀 OPTIMIZATION: Check cache first
@@ -345,7 +391,14 @@ class OfflineContentManager {
       imageFiles.sort((a, b) =>
           _extractPageNumber(a.path).compareTo(_extractPageNumber(b.path)));
 
-      final urls = imageFiles.map((file) => file.path).toList();
+      final diskUrls = imageFiles.map((file) => file.path).toList();
+
+      // Read failed_pages from metadata.json and inject placeholders so the
+      // reader shows a retry card at the correct position.
+      final urls = await _injectFailedPagePlaceholders(
+        contentPath: contentPath,
+        diskUrls: diskUrls,
+      );
 
       // 🚀 OPTIMIZATION: Update cache
       if (urls.isNotEmpty) {
@@ -358,6 +411,69 @@ class OfflineContentManager {
       _logger.e('Error getting offline image URLs for $contentId',
           error: e, stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// Reads `failed_pages` from `metadata.json` and inserts placeholder entries
+  /// at the correct 1-based positions so the reader page count matches the
+  /// original download total.
+  Future<List<String>> _injectFailedPagePlaceholders({
+    required String contentPath,
+    required List<String> diskUrls,
+  }) async {
+    try {
+      final metadataFile = File(path.join(contentPath, 'metadata.json'));
+      if (!await metadataFile.exists()) return diskUrls;
+
+      final raw = json.decode(await metadataFile.readAsString());
+      if (raw is! Map<String, dynamic>) return diskUrls;
+
+      final totalPages = raw['total_pages'] as int?;
+      final failedPagesRaw = raw['failed_pages'];
+      if (totalPages == null ||
+          totalPages <= diskUrls.length ||
+          failedPagesRaw == null) {
+        return diskUrls;
+      }
+
+      // Parse failed_pages: [{page: 14, url: "..."}]
+      final failedMap = <int, String>{}; // 1-based page → original URL
+      if (failedPagesRaw is List) {
+        for (final entry in failedPagesRaw) {
+          if (entry is Map) {
+            final page = entry['page'] as int?;
+            final url = entry['url'] as String?;
+            if (page != null && url != null && url.isNotEmpty) {
+              failedMap[page] = url;
+            }
+          }
+        }
+      }
+
+      if (failedMap.isEmpty) return diskUrls;
+
+      // Rebuild the full list by interleaving disk files and placeholders
+      // at their correct 1-based positions.
+      final result = <String>[];
+      var diskIndex = 0;
+      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+        if (failedMap.containsKey(pageNum)) {
+          result.add('$kFailedPagePrefix${failedMap[pageNum]}');
+        } else if (diskIndex < diskUrls.length) {
+          result.add(diskUrls[diskIndex++]);
+        }
+      }
+      // Append any remaining disk files (safety net)
+      while (diskIndex < diskUrls.length) {
+        result.add(diskUrls[diskIndex++]);
+      }
+
+      _logger.d(
+          '📋 Injected ${failedMap.length} failed-page placeholder(s) for content at $contentPath');
+      return result;
+    } catch (e) {
+      _logger.w('Failed to inject failed-page placeholders: $e');
+      return diskUrls;
     }
   }
 

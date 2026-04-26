@@ -19,6 +19,13 @@ import id.nhasix.kuron_native.kuron_native.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -28,6 +35,8 @@ import java.io.File
 import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class DownloadWorker(
     context: Context,
@@ -49,10 +58,17 @@ class DownloadWorker(
         const val KEY_LANGUAGE = "language"
         const val KEY_BACKUP_FOLDER = "backup_folder" // ✅ NEW: Configurable folder name
         const val KEY_PROGRESS = "progress"
-        
+        // Feature C: Parallel download config
+        const val KEY_MAX_PARALLEL_IMAGES = "max_parallel_images"   // default 3
+        const val KEY_IMAGE_TIMEOUT_MS = "image_timeout_ms"         // default 60_000 ms
+
         private const val TAG = "DownloadWorker"
         private const val INVALID_IMAGE_RESPONSE_CODE = 598
         private val ALLOWED_COOKIE_DOMAINS = setOf("crotpedia.net", "crotpedia.com")
+
+        // Defaults for parallel download
+        private const val DEFAULT_MAX_PARALLEL = 3
+        private const val DEFAULT_IMAGE_TIMEOUT_MS = 60_000L
     }
     
     // Parse cookies from inputData and create HTTP client with authentication
@@ -73,8 +89,8 @@ class DownloadWorker(
         builder.build()
     }
 
-    // Track total bytes for speed calculation
-    private var totalBytesDownloaded: Long = 0L
+    // Track total bytes for speed calculation (AtomicLong for parallel safety)
+    private val totalBytesDownloaded = AtomicLong(0L)
 
     override suspend fun doWork(): ListenableWorker.Result = withContext(Dispatchers.IO) {
         val contentId = inputData.getString(KEY_CONTENT_ID) ?: return@withContext Result.failure()
@@ -108,7 +124,7 @@ class DownloadWorker(
         
         try {
             val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
-            val downloadedFiles = downloadImages(contentId, sourceId, imageUrls, destinationPath)
+            val result = downloadImages(contentId, sourceId, imageUrls, destinationPath)
             
             // Create metadata and .nomedia after successful download
             val title = inputData.getString(KEY_TITLE) ?: "Unknown"
@@ -124,7 +140,9 @@ class DownloadWorker(
                 url,
                 coverUrl,
                 language,
-                downloadedFiles
+                result.downloadedFiles,
+                result.failedPages,
+                result.totalPages,
             )
             createNoMediaFile(downloadDir)
             
@@ -153,16 +171,23 @@ class DownloadWorker(
         }
     }
     
+    // Result of downloadImages: downloaded file names + failed page entries
+    data class DownloadImagesResult(
+        val downloadedFiles: List<String>,
+        // List of (1-based page index, original URL) for pages that failed/timed out
+        val failedPages: List<Pair<Int, String>>,
+        val totalPages: Int,
+    )
+
     private suspend fun downloadImages(
         contentId: String, 
         sourceId: String, 
         imageUrls: List<String>, 
         destinationPath: String?
-    ): List<String> {
+    ): DownloadImagesResult {
         val downloadDir = getDownloadDirectory(sourceId, contentId, destinationPath)
         // Create /images/ subfolder to match Flutter pattern
         val imagesDir = File(downloadDir, "images")
-        val downloadedFiles = mutableListOf<String>()
         
         Log.d(TAG, "Target Download Dir: ${downloadDir.absolutePath}")
         Log.d(TAG, "Target Images Dir: ${imagesDir.absolutePath}")
@@ -171,7 +196,6 @@ class DownloadWorker(
             val created = imagesDir.mkdirs()
             Log.d(TAG, "Created Images Dir: $created")
             if (!created) {
-                // Try creating one by one for debugging
                 Log.e(TAG, "Failed to create dir! Checking parent: ${downloadDir.exists()}")
                 throw IOException("Failed to create directory: ${imagesDir.absolutePath}")
             }
@@ -180,94 +204,140 @@ class DownloadWorker(
         }
 
         val existingFilesByPage = buildExistingPageFileMap(imagesDir, imageUrls.size)
-        var completedCount = existingFilesByPage.size
-        totalBytesDownloaded = existingFilesByPage.values.fold(0L) { acc, file ->
+        val completedCount = AtomicInteger(existingFilesByPage.size)
+        totalBytesDownloaded.set(existingFilesByPage.values.fold(0L) { acc, file ->
             acc + file.length()
-        }
+        })
 
-        if (completedCount > 0) {
+        if (completedCount.get() > 0) {
             setProgress(workDataOf(
-                KEY_PROGRESS to calculateProgressPercent(completedCount, imageUrls.size),
-                "downloadedCount" to completedCount,
+                KEY_PROGRESS to calculateProgressPercent(completedCount.get(), imageUrls.size),
+                "downloadedCount" to completedCount.get(),
                 "totalCount" to imageUrls.size,
-                "downloadedBytes" to totalBytesDownloaded,
+                "downloadedBytes" to totalBytesDownloaded.get(),
                 KEY_CONTENT_ID to contentId
             ))
         }
-        
-        imageUrls.forEachIndexed { index, url ->
-            if (isStopped) throw CancellationException("Work cancelled")
-            
-            val pageNumber = index + 1
-            val existingFile = existingFilesByPage[pageNumber]
 
-            val storedFile = if (existingFile != null &&
-                existingFile.exists() &&
-                existingFile.length() > 0L
-            ) {
-                if (index == 0) {
-                    Log.d(
-                        TAG,
-                        "Skipping first file (already exists): ${existingFile.absolutePath}"
-                    )
-                }
-                existingFile
-            } else {
-                val extension = resolveFileExtension(url)
-                val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
-                val destFile = File(imagesDir, fileName)
+        // Feature C: Read parallel config from inputData
+        val maxParallel = inputData.getInt(KEY_MAX_PARALLEL_IMAGES, DEFAULT_MAX_PARALLEL)
+            .coerceIn(1, 6)
+        val imageTimeoutMs = inputData.getLong(KEY_IMAGE_TIMEOUT_MS, DEFAULT_IMAGE_TIMEOUT_MS)
+            .coerceAtLeast(10_000L)
 
-                val hasValidDestinationFile = destFile.exists() &&
-                    destFile.length() > 0L &&
-                    isValidDownloadedImageFile(destFile)
+        Log.d(TAG, "Parallel download: maxParallel=$maxParallel, timeoutMs=$imageTimeoutMs")
 
-                if (!hasValidDestinationFile) {
-                    if (destFile.exists() && destFile.length() > 0L) {
-                        Log.w(
-                            TAG,
-                            "Replacing invalid existing page file ${destFile.absolutePath}"
-                        )
-                        destFile.delete()
-                    }
-                    if (index == 0) {
-                        Log.d(
-                            TAG,
-                            "Downloading first file to: ${destFile.absolutePath} (source=${shortUrl(url)})"
-                        )
-                    }
-                    downloadImage(url, destFile)
-                    if (index == 0 && destFile.exists()) {
-                        Log.d(TAG, "First file created successfully: size=${destFile.length()}")
-                    }
-                } else if (index == 0) {
-                    Log.d(TAG, "Skipping first file (already exists): ${destFile.absolutePath}")
-                }
+        // Thread-safe map for results (pageNumber -> filename)
+        val resultFileNames = Array<String?>(imageUrls.size) { null }
+        // Track failed pages: index (0-based) -> original URL
+        val failedPageIndices = java.util.concurrent.ConcurrentHashMap<Int, String>()
 
-                val normalizedFile = if (isEhentaiReaderPageUrl(url)) {
-                    normalizeDownloadedFileExtension(destFile)
-                } else {
-                    destFile
-                }
-
-                existingFilesByPage[pageNumber] = normalizedFile
-                completedCount += 1
-                totalBytesDownloaded += normalizedFile.length()
-
-                setProgress(workDataOf(
-                    KEY_PROGRESS to calculateProgressPercent(completedCount, imageUrls.size),
-                    "downloadedCount" to completedCount,
-                    "totalCount" to imageUrls.size,
-                    "downloadedBytes" to totalBytesDownloaded,
-                    KEY_CONTENT_ID to contentId
-                ))
-
-                normalizedFile
-            }
-
-            downloadedFiles.add(storedFile.name)
+        // Pre-fill already-downloaded pages
+        existingFilesByPage.forEach { (pageNumber, file) ->
+            resultFileNames[pageNumber - 1] = file.name
         }
 
-        return downloadedFiles
+        val semaphore = Semaphore(maxParallel)
+
+        coroutineScope {
+            val jobs = imageUrls.mapIndexed { index, url ->
+                async(Dispatchers.IO) {
+                    if (isStopped) return@async
+
+                    val pageNumber = index + 1
+
+                    // Skip already-downloaded pages
+                    if (existingFilesByPage.containsKey(pageNumber)) {
+                        return@async
+                    }
+
+                    semaphore.withPermit {
+                        if (isStopped) return@withPermit
+
+                        val extension = resolveFileExtension(url)
+                        val fileName = "page_${pageNumber.toString().padStart(3, '0')}$extension"
+                        val destFile = File(imagesDir, fileName)
+
+                        val hasValidDestinationFile = destFile.exists() &&
+                            destFile.length() > 0L &&
+                            isValidDownloadedImageFile(destFile)
+
+                        if (!hasValidDestinationFile) {
+                            if (destFile.exists() && destFile.length() > 0L) {
+                                Log.w(TAG, "Replacing invalid existing page file ${destFile.absolutePath}")
+                                destFile.delete()
+                            }
+
+                            // Feature C: Per-image timeout — skip slow images instead of blocking
+                            val downloadResult = withTimeoutOrNull(imageTimeoutMs) {
+                                try {
+                                    downloadImage(url, destFile)
+                                    true
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    Log.w(TAG, "Failed to download page $pageNumber: ${e.message}")
+                                    false
+                                }
+                            }
+
+                            if (downloadResult == null) {
+                                // Timeout — skip this image, record as failed
+                                Log.w(TAG, "⏱️ Timeout downloading page $pageNumber (${shortUrl(url)}) — skipping")
+                                destFile.delete() // Clean up any partial file
+                                failedPageIndices[index] = url
+                                return@withPermit
+                            }
+
+                            if (downloadResult == false) {
+                                // Download error — record as failed
+                                failedPageIndices[index] = url
+                                return@withPermit
+                            }
+                        }
+
+                        val normalizedFile = if (isEhentaiReaderPageUrl(url)) {
+                            normalizeDownloadedFileExtension(destFile)
+                        } else {
+                            destFile
+                        }
+
+                        if (normalizedFile.exists() && normalizedFile.length() > 0L) {
+                            resultFileNames[index] = normalizedFile.name
+                            val newCount = completedCount.incrementAndGet()
+                            totalBytesDownloaded.addAndGet(normalizedFile.length())
+
+                            setProgress(workDataOf(
+                                KEY_PROGRESS to calculateProgressPercent(newCount, imageUrls.size),
+                                "downloadedCount" to newCount,
+                                "totalCount" to imageUrls.size,
+                                "downloadedBytes" to totalBytesDownloaded.get(),
+                                KEY_CONTENT_ID to contentId
+                            ))
+                        } else {
+                            // File didn't end up valid after download
+                            failedPageIndices[index] = url
+                        }
+                    }
+                }
+            }
+            jobs.awaitAll()
+        }
+
+        if (isStopped) throw CancellationException("Work cancelled")
+
+        val failedPages = failedPageIndices.entries
+            .sortedBy { it.key }
+            .map { (index, url) -> Pair(index + 1, url) } // convert to 1-based
+
+        if (failedPages.isNotEmpty()) {
+            Log.w(TAG, "⚠️ ${failedPages.size} page(s) failed to download for $contentId: ${failedPages.map { it.first }}")
+        }
+
+        return DownloadImagesResult(
+            downloadedFiles = resultFileNames.filterNotNull(),
+            failedPages = failedPages,
+            totalPages = imageUrls.size,
+        )
     }
     
     private fun getDownloadDirectory(sourceId: String, contentId: String, destinationPath: String?): File {
@@ -864,9 +934,20 @@ class DownloadWorker(
         url: String,
         coverUrl: String,
         language: String,
-        imageFiles: List<String>
+        imageFiles: List<String>,
+        failedPages: List<Pair<Int, String>> = emptyList(),
+        totalPages: Int = imageFiles.size,
     ) {
         try {
+            val failedPagesJson = org.json.JSONArray().apply {
+                failedPages.forEach { (page, originalUrl) ->
+                    put(org.json.JSONObject().apply {
+                        put("page", page)
+                        put("url", originalUrl)
+                    })
+                }
+            }
+
             val metadata = mapOf(
                 "schemaVersion" to "2.1",
                 "source" to sourceId,
@@ -879,20 +960,21 @@ class DownloadWorker(
                 ).apply {
                     timeZone = java.util.TimeZone.getTimeZone("UTC")
                 }.format(java.util.Date()),
-                "total_pages" to imageFiles.size,
+                "total_pages" to totalPages,
                 "downloaded_files" to imageFiles.size,
                 "files" to imageFiles,
+                "failed_pages" to failedPagesJson,
                 "language" to language,
                 "cover_url" to coverUrl,
                 "is_range_download" to false,
                 "start_page" to 1,
-                "end_page" to imageFiles.size,
+                "end_page" to totalPages,
                 "pages_downloaded" to imageFiles.size
             )
             
             val metadataFile = File(downloadDir, "metadata.json")
             metadataFile.writeText(org.json.JSONObject(metadata).toString(2))
-            Log.d(TAG, "Created v2.1 metadata file for $contentId")
+            Log.d(TAG, "Created v2.1 metadata file for $contentId (${imageFiles.size}/${totalPages} pages, ${failedPages.size} failed)")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to create metadata file", e)
             // Non-critical, don't fail download

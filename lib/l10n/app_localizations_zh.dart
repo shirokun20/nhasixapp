@@ -4546,6 +4546,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerRepairingImage => '正在修复图片...';
 
   @override
+  String readerPageNotDownloaded(int pageNumber) {
+    return '第 $pageNumber 页未下载';
+  }
+
+  @override
+  String get readerPageSkippedDuringDownload => '此页在下载时被跳过（超时或错误）。点击下方立即下载。';
+
+  @override
+  String get readerPageDownloadSuccess => '下载成功';
+
+  @override
   String get readerOpenSourcePage => '打开源页面';
 
   @override

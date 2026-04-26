@@ -2783,6 +2783,16 @@
   "failedToLoad": "Gagal memuat",
   "readerRedownloadImage": "Unduh ulang halaman",
   "readerRepairingImage": "Memperbaiki gambar...",
+  "readerPageNotDownloaded": "Halaman {pageNumber} belum diunduh",
+  "@readerPageNotDownloaded": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPageSkippedDuringDownload": "Halaman ini dilewati saat pengunduhan (timeout atau error). Ketuk di bawah untuk mengunduhnya sekarang.",
+  "readerPageDownloadSuccess": "Berhasil diunduh",
   "readerOpenSourcePage": "Buka halaman sumber",
   "readerOpeningSourcePage": "Membuka halaman sumber...",
   "readerImageRepairSuccess": "Halaman {pageNumber} berhasil diunduh ulang.",

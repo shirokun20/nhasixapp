@@ -4677,6 +4677,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerRepairingImage => 'Repairing image...';
 
   @override
+  String readerPageNotDownloaded(int pageNumber) {
+    return 'Page $pageNumber not downloaded';
+  }
+
+  @override
+  String get readerPageSkippedDuringDownload =>
+      'This page was skipped during download (timeout or error). Tap below to download it now.';
+
+  @override
+  String get readerPageDownloadSuccess => 'Downloaded successfully';
+
+  @override
   String get readerOpenSourcePage => 'Open source page';
 
   @override

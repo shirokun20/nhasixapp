@@ -3591,6 +3591,16 @@
   "failedToLoad": "Failed to load",
   "readerRedownloadImage": "Redownload page",
   "readerRepairingImage": "Repairing image...",
+  "readerPageNotDownloaded": "Page {pageNumber} not downloaded",
+  "@readerPageNotDownloaded": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPageSkippedDuringDownload": "This page was skipped during download (timeout or error). Tap below to download it now.",
+  "readerPageDownloadSuccess": "Downloaded successfully",
   "readerOpenSourcePage": "Open source page",
   "readerOpeningSourcePage": "Opening source page...",
   "readerImageRepairSuccess": "Page {pageNumber} was redownloaded successfully.",

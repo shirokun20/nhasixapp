@@ -640,6 +640,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // 🚀 OPTIMIZATION: Call super.build for AutomaticKeepAliveClientMixin
     super.build(context);
 
+    // 🐛 FIX: Failed-page placeholder — page was skipped during download.
+    // Show the repair/redownload card immediately without attempting to load.
+    if (widget.imageUrl.startsWith('__failed__:')) {
+      return _buildFailedPagePlaceholderWidget(context);
+    }
+
     final normalizedLocalPath = _normalizeLocalPath(widget.imageUrl);
 
     // Check if imageUrl is a local file path
@@ -1463,6 +1469,57 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
+  /// Build a card for a page that was skipped during download (timeout/error).
+  /// Shows the page number and a "Download page" button that calls [onRepairBrokenImage].
+  Widget _buildFailedPagePlaceholderWidget(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool hasRepair = widget.onRepairBrokenImage != null;
+
+    return Container(
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_download_outlined,
+                size: 48,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.readerPageNotDownloaded(widget.pageNumber),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.readerPageSkippedDuringDownload,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              if (hasRepair) ...[
+                const SizedBox(height: 16),
+                _FailedPageDownloadButton(
+                  onRepair: widget.onRepairBrokenImage!,
+                  l10n: l10n,
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Build loading indicator with download progress.
   ///
   /// Note: PNG/JPG progressive partial rendering is format/server dependent.
@@ -1987,5 +2044,82 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         state.reLoadImage();
       }
     });
+  }
+}
+
+/// Stateful button for downloading a failed page, with loading state.
+class _FailedPageDownloadButton extends StatefulWidget {
+  const _FailedPageDownloadButton({
+    required this.onRepair,
+    required this.l10n,
+    required this.colorScheme,
+  });
+
+  final Future<bool> Function() onRepair;
+  final AppLocalizations l10n;
+  final ColorScheme colorScheme;
+
+  @override
+  State<_FailedPageDownloadButton> createState() =>
+      _FailedPageDownloadButtonState();
+}
+
+class _FailedPageDownloadButtonState extends State<_FailedPageDownloadButton> {
+  bool _isDownloading = false;
+  bool _succeeded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_succeeded) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_outline,
+              color: widget.colorScheme.primary, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            widget.l10n.readerPageDownloadSuccess,
+            style: TextStyle(color: widget.colorScheme.primary),
+          ),
+        ],
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _isDownloading
+            ? null
+            : () async {
+                setState(() => _isDownloading = true);
+                bool ok = false;
+                try {
+                  ok = await widget.onRepair();
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isDownloading = false;
+                      _succeeded = ok;
+                    });
+                  }
+                }
+              },
+        icon: _isDownloading
+            ? SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: widget.colorScheme.onPrimary,
+                ),
+              )
+            : const Icon(Icons.download_outlined, size: 18),
+        label: Text(
+          _isDownloading
+              ? widget.l10n.readerRepairingImage
+              : widget.l10n.readerRedownloadImage,
+        ),
+      ),
+    );
   }
 }

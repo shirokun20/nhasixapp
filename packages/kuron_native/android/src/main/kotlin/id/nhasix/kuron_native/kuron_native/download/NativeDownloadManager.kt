@@ -28,7 +28,10 @@ class NativeDownloadManager(private val context: Context) {
         url: String = "",
         coverUrl: String = "",
         language: String = "unknown",
-        backupFolderName: String = "nhasix"  // ✅ NEW: Configurable backup folder name
+        backupFolderName: String = "nhasix",  // ✅ NEW: Configurable backup folder name
+        // Feature C: Parallel download config
+        maxParallelImages: Int = 3,
+        imageTimeoutMs: Long = 60_000L,
     ): String {
         // Convert cookies Map to JSON string for WorkManager Data
         val cookiesJson = cookies?.let { map -> JSONObject(map).toString() }
@@ -66,7 +69,10 @@ class NativeDownloadManager(private val context: Context) {
                 DownloadWorker.KEY_COVER_URL to coverUrl,
                 DownloadWorker.KEY_LANGUAGE to language,
                 // ✅ NEW: Pass backup folder name for fallback path construction
-                DownloadWorker.KEY_BACKUP_FOLDER to backupFolderName
+                DownloadWorker.KEY_BACKUP_FOLDER to backupFolderName,
+                // Feature C: Parallel download config
+                DownloadWorker.KEY_MAX_PARALLEL_IMAGES to maxParallelImages,
+                DownloadWorker.KEY_IMAGE_TIMEOUT_MS to imageTimeoutMs,
             ))
             .setConstraints(Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

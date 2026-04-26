@@ -3379,6 +3379,16 @@
   "failedToLoad": "加载失败",
   "readerRedownloadImage": "重新下载此页",
   "readerRepairingImage": "正在修复图片...",
+  "readerPageNotDownloaded": "第 {pageNumber} 页未下载",
+  "@readerPageNotDownloaded": {
+    "placeholders": {
+      "pageNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPageSkippedDuringDownload": "此页在下载时被跳过（超时或错误）。点击下方立即下载。",
+  "readerPageDownloadSuccess": "下载成功",
   "readerOpenSourcePage": "打开源页面",
   "readerOpeningSourcePage": "正在打开源页面...",
   "readerImageRepairSuccess": "第 {pageNumber} 页已成功重新下载。",

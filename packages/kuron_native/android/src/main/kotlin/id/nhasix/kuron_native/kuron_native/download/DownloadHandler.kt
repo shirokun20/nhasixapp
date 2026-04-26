@@ -225,6 +225,9 @@ class DownloadHandler(
             val language = call.argument<String>("language") ?: "unknown"
             // ✅ NEW: Extract backup folder name from Flutter (default: "nhasix")
             val backupFolderName = call.argument<String>("backupFolderName") ?: "nhasix"
+            // Feature C: Parallel download config
+            val maxParallelImages = call.argument<Int>("maxParallelImages") ?: 3
+            val imageTimeoutMs = call.argument<Int>("imageTimeoutMs")?.toLong() ?: 60_000L
 
             val workId = downloadManager.queueDownload(
                 contentId, 
@@ -237,7 +240,9 @@ class DownloadHandler(
                 url,
                 coverUrl,
                 language,
-                backupFolderName  // ✅ NEW: Pass to download manager
+                backupFolderName,  // ✅ NEW: Pass to download manager
+                maxParallelImages,
+                imageTimeoutMs,
             )
             result.success(workId)
         } catch (e: Exception) {

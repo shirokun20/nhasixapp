@@ -4699,6 +4699,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerRepairingImage => 'Memperbaiki gambar...';
 
   @override
+  String readerPageNotDownloaded(int pageNumber) {
+    return 'Halaman $pageNumber belum diunduh';
+  }
+
+  @override
+  String get readerPageSkippedDuringDownload =>
+      'Halaman ini dilewati saat pengunduhan (timeout atau error). Ketuk di bawah untuk mengunduhnya sekarang.';
+
+  @override
+  String get readerPageDownloadSuccess => 'Berhasil diunduh';
+
+  @override
   String get readerOpenSourcePage => 'Buka halaman sumber';
 
   @override

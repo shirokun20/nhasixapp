@@ -24,6 +24,8 @@ const List<String> kEhentaiDefaultLinkSelectors = <String>[
 ];
 
 bool isLocalReaderImagePath(String value) {
+  // Failed-page placeholders are NOT local paths — they embed a remote URL
+  if (value.startsWith('__failed__:')) return false;
   return value.startsWith('/') ||
       value.startsWith('\\') ||
       value.startsWith('file://') ||

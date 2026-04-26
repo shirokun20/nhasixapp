@@ -23,6 +23,7 @@ import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../services/native_pdf_reader_service.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/utils/offline_content_manager.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/download_manager.dart';
 import '../../../services/pdf_conversion_service.dart';
@@ -1591,6 +1592,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Invalidate download status cache to ensure UI reflects removal
       ContentDownloadCache.invalidateCache(event.contentId);
 
+      // 🐛 FIX Bug B: Invalidate OfflineContentManager path/image cache so the
+      // reader does not serve stale offline paths after the files are deleted.
+      try {
+        getIt<OfflineContentManager>().invalidateCacheFor(event.contentId);
+      } catch (_) {}
+
       // Refresh downloads
       add(const DownloadRefreshEvent());
 
@@ -3071,6 +3078,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
           // Invalidate download status cache
           ContentDownloadCache.invalidateCache(contentId);
+
+          // 🐛 FIX Bug B: Invalidate OfflineContentManager cache for each deleted item
+          try {
+            getIt<OfflineContentManager>().invalidateCacheFor(contentId);
+          } catch (_) {}
 
           successCount++;
           _logger.d('DownloadBloc: Successfully deleted $contentId');
