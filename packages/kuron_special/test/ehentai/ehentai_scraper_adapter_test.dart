@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,14 +52,32 @@ void main() {
                 'attribute': 'src',
               },
               'tags': {
-                'selector': 'div.gt',
-                'attribute': 'title',
+                'selector': '#taglist div[id^=td_] a',
+                'attribute': 'onclick',
+                'regex': r"toggle_tagmenu\([^,]+,'([^']+)'",
                 'multi': true,
+                'parseTagNamespace': true,
+              },
+              'uploader': {
+                'selector': '#gdn a',
               },
             },
             'imageUrls': {
               'imageSelector': '#img',
             },
+          },
+        },
+      },
+      'searchForm': {
+        'urlPattern': 'search',
+        'params': {
+          'query': {
+            'queryParam': 'f_search',
+            'type': 'text',
+          },
+          'page': {
+            'queryParam': 'page',
+            'type': 'page',
           },
         },
       },
@@ -68,6 +87,7 @@ void main() {
 <html><body>
   <h1 id="gn">Sample EHentai Title</h1>
   <div id="gd1"><img src="https://cover.example/1.jpg"></div>
+  <div id="gdn"><a href="https://e-hentai.org/uploader/TestUploader">TestUploader</a></div>
   <div id="taglist">
     <table><tbody>
       <tr>
@@ -100,6 +120,12 @@ void main() {
         <td class="tc">male:</td>
         <td>
           <div id="td_male:tanline" class="gtl"><a href="https://e-hentai.org/tag/male:tanline">tanline</a></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="tc">other:</td>
+        <td>
+          <div id="td_other:ai_generated" class="gtl"><a href="https://e-hentai.org/tag/other:ai+generated">ai generated</a></div>
         </td>
       </tr>
     </tbody></table>
@@ -253,7 +279,35 @@ void main() {
       }
       expect(
         result.content.tags.map((t) => t.name),
-        containsAll(['big breasts', 'bikini', 'tanline']),
+        containsAll(['big breasts', 'bikini', 'tanline', 'ai generated']),
+      );
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>((tag) =>
+            tag.name == 'TestUploader' &&
+            tag.type == 'uploader' &&
+            tag.slug == 'TestUploader')),
+      );
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>((tag) =>
+            tag.name == 'big breasts' &&
+            tag.type == 'female' &&
+            tag.slug == 'female:big breasts')),
+      );
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>((tag) =>
+            tag.name == 'tanline' &&
+            tag.type == 'male' &&
+            tag.slug == 'male:tanline')),
+      );
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>((tag) =>
+            tag.name == 'ai generated' &&
+            tag.type == 'other' &&
+            tag.slug == 'other:ai generated')),
       );
       if (languageTag.isNotEmpty) {
         expect(languageTag.first.name, 'english');
@@ -265,6 +319,58 @@ void main() {
         expect(result.content.groups, contains('test circle'));
       }
       expect(result.content.language, isNotEmpty);
+    });
+
+    test('fetchDetail parses reported live fixture namespace tags and uploader',
+        () async {
+      final packageFixture =
+          File('test/fixtures/ehentai/detail_3906586_ai_generated.html');
+      final rootFixture = File(
+          'packages/kuron_special/test/fixtures/ehentai/detail_3906586_ai_generated.html');
+      final html = (packageFixture.existsSync() ? packageFixture : rootFixture)
+          .readAsStringSync();
+
+      mock.onGet(
+        'https://e-hentai.org/g/3906586/971a6d4051/',
+        (server) => server.reply(200, html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/3906586/971a6d4051',
+        (server) => server.reply(200, html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/3906586%2F971a6d4051/',
+        (server) => server.reply(200, html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/3906586%2F971a6d4051',
+        (server) => server.reply(200, html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/3906586%252F971a6d4051/',
+        (server) => server.reply(200, html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/3906586%252F971a6d4051',
+        (server) => server.reply(200, html),
+      );
+
+      final result = await adapter.fetchDetail('3906586/971a6d4051', config);
+
+      expect(result.content.title, isNotEmpty);
+      expect(result.content.pageCount, 54);
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>(
+            (tag) => tag.name == 'Demonicaa143143' && tag.type == 'uploader')),
+      );
+      expect(
+        result.content.tags,
+        contains(predicate<Tag>((tag) =>
+            tag.name == 'ai generated' &&
+            tag.type == 'other' &&
+            tag.slug == 'other:ai generated')),
+      );
     });
 
     test('fetchDetail handles absolute reader links and style cover fallback',
@@ -460,6 +566,44 @@ void main() {
       expect(covers, contains('https://thumb.example/a.webp'));
       expect(covers, contains('https://thumb.example/b.webp'));
       expect(covers, contains('https://thumb.example/c.webp'));
+    });
+
+    test('search raw namespace query keeps quoted E-Hentai syntax', () async {
+      mock.onGet(
+        'https://e-hentai.org/?f_search=other%3A%22ai%20generated%22',
+        (server) => server.reply(
+          200,
+          homeHtmlWithMixedThumbs,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+      mock.onGet(
+        'https://e-hentai.org/?f_search=other%3A%22ai+generated%22&page=1',
+        (server) => server.reply(
+          200,
+          homeHtmlWithMixedThumbs,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:f_search=other:"ai generated"', page: 1),
+        config,
+      );
+
+      expect(result.items.length, 3);
+      expect(
+        result.items.map((item) => item.coverUrl),
+        containsAll([
+          'https://thumb.example/a.webp',
+          'https://thumb.example/b.webp',
+          'https://thumb.example/c.webp',
+        ]),
+      );
     });
 
     test(

@@ -802,6 +802,13 @@ class EHentaiScraperAdapter implements GenericAdapter {
         tags = parsedTags;
       }
     }
+    final uploaderTag = _extractUploaderTag(html);
+    if (uploaderTag != null &&
+        !tags.any((tag) =>
+            tag.type == uploaderTag.type &&
+            tag.name.toLowerCase() == uploaderTag.name.toLowerCase())) {
+      tags = <Tag>[...tags, uploaderTag];
+    }
 
     // Extract upload date
     final uploadDate = _extractUploadDate(html);
@@ -867,6 +874,27 @@ class EHentaiScraperAdapter implements GenericAdapter {
     }
 
     return styleUrlRaw.trim().replaceAll(RegExp(r'^["]|["]$'), '');
+  }
+
+  Tag? _extractUploaderTag(String html) {
+    final match = RegExp(
+      r'<div[^>]*id="gdn"[^>]*>\s*<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)</a>',
+      caseSensitive: false,
+    ).firstMatch(html);
+    if (match == null) return null;
+
+    final name = _cleanHtmlText(match.group(2) ?? '');
+    if (name.isEmpty) return null;
+
+    final href = (match.group(1) ?? '').trim();
+    return Tag(
+      id: 0,
+      name: name,
+      type: 'uploader',
+      count: 0,
+      url: href,
+      slug: name,
+    );
   }
 
   List<Tag> _extractTags(String html) {
@@ -1013,7 +1041,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
       case 'category':
         return TagType.category;
       default:
-        return TagType.tag;
+        return rawType.isEmpty ? TagType.tag : rawType;
     }
   }
 
