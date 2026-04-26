@@ -1269,6 +1269,12 @@ class ReaderCubit extends Cubit<ReaderState> {
         imageUrls: updatedImageUrls,
       );
 
+      // Update metadata.json to remove the failed_pages entry so it doesn't inject placeholder again
+      await offlineContentManager.removeFailedPageFromMetadata(
+        currentContent.id,
+        pageNumber,
+      );
+
       emit(ReaderLoaded(state.copyWith(content: updatedContent)));
 
       _logger.i(

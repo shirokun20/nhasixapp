@@ -462,6 +462,10 @@ class OfflineContentManager {
 
       if (failedMap.isEmpty) return diskUrls;
 
+      // Create a set of physically downloaded page numbers to avoid injecting placeholders
+      // if the page has actually been redownloaded but metadata.json wasn't updated yet.
+      final downloadedPages = diskUrls.map((url) => _extractPageNumber(url)).toSet();
+
       // Rebuild the full list by interleaving disk files and placeholders
       // at their correct positions. Range downloads keep original gallery page
       // numbers in metadata, but the reader should only render the selected
@@ -471,7 +475,7 @@ class OfflineContentManager {
       for (var pageNum = effectiveStartPage;
           pageNum <= effectiveEndPage!;
           pageNum++) {
-        if (failedMap.containsKey(pageNum)) {
+        if (failedMap.containsKey(pageNum) && !downloadedPages.contains(pageNum)) {
           result.add('$kFailedPagePrefix${failedMap[pageNum]}');
         } else if (diskIndex < diskUrls.length) {
           result.add(diskUrls[diskIndex++]);
@@ -488,6 +492,45 @@ class OfflineContentManager {
     } catch (e) {
       _logger.w('Failed to inject failed-page placeholders: $e');
       return diskUrls;
+    }
+  }
+
+  /// Removes a successfully repaired page from `failed_pages` in `metadata.json`
+  Future<void> removeFailedPageFromMetadata(String contentId, int pageNumber) async {
+    try {
+      final contentPath = await getOfflineContentPath(contentId);
+      if (contentPath == null) return;
+
+      final metadataFile = File(path.join(contentPath, 'metadata.json'));
+      if (!await metadataFile.exists()) return;
+
+      final raw = json.decode(await metadataFile.readAsString());
+      if (raw is! Map<String, dynamic>) return;
+
+      final failedPagesRaw = raw['failed_pages'];
+      if (failedPagesRaw is! List) return;
+
+      // Filter out the repaired page
+      final newFailedPages = [];
+      for (final entry in failedPagesRaw) {
+        if (entry is Map) {
+          final page = entry['page'] as int?;
+          if (page != null && page != pageNumber) {
+            newFailedPages.add(entry);
+          }
+        } else {
+          newFailedPages.add(entry);
+        }
+      }
+
+      // Only update if there's a change
+      if (newFailedPages.length < failedPagesRaw.length) {
+        raw['failed_pages'] = newFailedPages;
+        await metadataFile.writeAsString(json.encode(raw));
+        _logger.i('Removed page $pageNumber from failed_pages in metadata.json for $contentId');
+      }
+    } catch (e) {
+      _logger.w('Failed to remove repaired page from metadata.json: $e');
     }
   }
 
