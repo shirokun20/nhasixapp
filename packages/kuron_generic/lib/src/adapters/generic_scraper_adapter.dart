@@ -256,7 +256,9 @@ class GenericScraperAdapter implements GenericAdapter {
     basePath = basePath.replaceAll('{page}', page.toString());
 
     // Merge template query defaults with raw params (raw params take priority).
-    // This keeps mandatory but empty params from template, e.g. `title=`.
+    // This keeps mandatory params from template, e.g. `title=value`.
+    // Only merge raw params that have non-empty values to avoid overwriting
+    // template defaults like `post_type=manga` with `post_type=`.
     final mergedParams = <String, List<String>>{};
     if (templateQuery.isNotEmpty) {
       for (final pair in templateQuery.split('&')) {
@@ -264,10 +266,16 @@ class GenericScraperAdapter implements GenericAdapter {
         final idx = pair.indexOf('=');
         final key = idx < 0 ? pair : pair.substring(0, idx);
         if (key.isEmpty) continue;
-        mergedParams[key] = <String>[''];
+        final value = idx < 0 ? '' : pair.substring(idx + 1);
+        mergedParams[key] = <String>[value];
       }
     }
-    mergedParams.addAll(rawMap);
+    // Only add raw params with non-empty values
+    rawMap.forEach((key, values) {
+      if (values.isNotEmpty && values.first.isNotEmpty) {
+        mergedParams[key] = values;
+      }
+    });
 
     // Pagination is controlled by adapter/page argument. Avoid carrying a
     // stale `page` query from saved raw filters to prevent duplicate params.
@@ -386,7 +394,7 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       // Some WAFs (for example Sucuri) may respond with redirect status but no
-      // Location header when client fingerprint looks suspicious. In that case,
+      // Location header when client fingerLogger().i looks suspicious. In that case,
       // retry once with an isolated clean Dio instance so inherited global
       // headers from other sources do not leak into this request.
       if (location == null || location.isEmpty) {
@@ -557,20 +565,29 @@ class GenericScraperAdapter implements GenericAdapter {
     final urlPatternsCfg =
         (scraper?['urlPatterns'] as Map<String, dynamic>?) ?? {};
     final detailTemplate = _patternUrl(urlPatternsCfg, 'detail');
+    Logger().i(
+        '[$_sourceId] getDetail: contentId=$contentId, detailTemplate=$detailTemplate');
     if (detailTemplate.isEmpty) {
+      Logger().i('[$_sourceId] ERROR: no detail URL pattern configured');
       _logger.w('$_sourceId: no scraper detail URL pattern configured');
       return AdapterDetailResult(
           content: _emptyContent(contentId), imageUrls: []);
     }
 
     final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
+    Logger().i('[$_sourceId] getDetail: fetching URL=$url');
     _logger.d('$_sourceId scraper detail: $url');
 
     try {
+      Logger().i('[$_sourceId] getDetail: about to fetch...');
       final response = await _dio.get<String>(
         url,
         options: Options(responseType: ResponseType.plain),
       );
+      Logger().i(
+          '[$_sourceId] getDetail: response received, status=${response.statusCode}');
+      Logger().i(
+          '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, value=$response.data');
       final doc = _parser.parse(response.data ?? '');
 
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
@@ -578,7 +595,12 @@ class GenericScraperAdapter implements GenericAdapter {
       final fieldsConfig =
           (detailCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
 
+      Logger().i(
+          '[$_sourceId] getDetail: fieldsConfig keys=${fieldsConfig.keys.toList()}');
+
       final fields = _extractDocumentFields(doc, fieldsConfig);
+      Logger().i(
+          '[$_sourceId] getDetail: extracted fields=${fields.keys.toList()}');
 
       // ── Chapters ──────────────────────────────────────────────────────────
       List<Chapter>? chapters;
@@ -612,7 +634,10 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       return AdapterDetailResult(content: content, imageUrls: const []);
-    } on DioException catch (e) {
+    } on DioException catch (e, stack) {
+      Logger().i(
+          '[$_sourceId] getDetail ERROR (DioException): ${e.message}, statusCode=${e.response?.statusCode}');
+      Logger().i('[$_sourceId] stack: $stack');
       // 🚀 Re-throw Cloudflare 403 so WebViewSessionAdapter can handle it
       if (e.response?.statusCode == 403) {
         final cfMitigated = e.response?.headers.value('cf-mitigated');
@@ -625,7 +650,9 @@ class GenericScraperAdapter implements GenericAdapter {
       _logger.e('$_sourceId scraper detail failed for $contentId', error: e);
       return AdapterDetailResult(
           content: _emptyContent(contentId), imageUrls: []);
-    } catch (e) {
+    } catch (e, stack) {
+      Logger().e('[$_sourceId] getDetail ERROR (Exception): $e');
+      Logger().e('[$_sourceId] stack: $stack');
       _logger.e('$_sourceId scraper detail failed for $contentId', error: e);
       return AdapterDetailResult(
           content: _emptyContent(contentId), imageUrls: []);
@@ -1540,7 +1567,8 @@ class GenericScraperAdapter implements GenericAdapter {
     if (link == null) return false;
 
     final href = (link.attributes['href'] ?? '').trim();
-    if (href.isEmpty || href == '#') return false;
+    final hxGet = (link.attributes['hx-get'] ?? '').trim();
+    if ((href.isEmpty || href == '#') && hxGet.isEmpty) return false;
 
     final parentClass = link.parent?.attributes['class'] ?? '';
     if (parentClass.contains('disabled')) return false;

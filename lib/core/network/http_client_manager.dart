@@ -78,7 +78,23 @@ class HttpClientManager {
         onError: (error, handler) {
           final uri = error.requestOptions.uri;
           final target = _redactedTarget(uri);
-          _logger?.e('HTTP Error: ${error.message} ($target)');
+          final rawError = error.error?.toString() ?? '';
+
+          // Some sites return malformed Set-Cookie headers (e.g. invalid date),
+          // which can fail cookie persistence even when HTTP status is 2xx.
+          if (rawError.contains('CookieManagerSaveException') &&
+              error.response != null) {
+            _logger?.w(
+              'Ignoring malformed Set-Cookie and continuing with response ($target)',
+            );
+            handler.resolve(error.response!);
+            return;
+          }
+
+          final message = (error.message?.trim().isNotEmpty ?? false)
+              ? error.message
+              : error.error?.toString() ?? 'Unknown Dio error';
+          _logger?.e('HTTP Error: $message ($target)');
           handler.next(error);
         },
         onRequest: (options, handler) {

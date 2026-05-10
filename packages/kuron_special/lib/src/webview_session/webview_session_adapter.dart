@@ -109,8 +109,12 @@ class WebViewSessionAdapter {
         _baseUrl = baseUrl,
         _secureStorage = secureStorage ?? const FlutterSecureStorage(),
         _logger = logger ?? Logger() {
-    // Attach CookieManager to Dio
-    _dio.interceptors.add(CookieManager(_cookieJar));
+    // Avoid stacking duplicate cookie interceptors when adapter is recreated.
+    final hasCookieManager =
+        _dio.interceptors.whereType<CookieManager>().isNotEmpty;
+    if (!hasCookieManager) {
+      _dio.interceptors.add(CookieManager(_cookieJar));
+    }
   }
 
   // ============ Getters ============
