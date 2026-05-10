@@ -1,0 +1,22 @@
+[mcp_servers.context7]
+args = [
+    "-y",
+    "@upstash/context7-mcp",
+    "--api-key",
+    "ctx7sk-aaef7574-7095-4725-a7f9-0e45d1b7ed2c",
+]
+command = "npx"
+
+[mcp_servers.docfork]
+url = "https://mcp.docfork.com/mcp"
+
+[mcp_servers.docfork.http_headers]
+DOCFORK_API_KEY = "docf_966sHXmJvtDyK2eVhe6BFCSCXTfieXcyq9rzXNqRBYnap2R1MaSh3Ay"
+DOCFORK_CABINET = "general"
+
+[mcp_servers.sequential-thinking]
+args = [
+    "-y",
+    "@modelcontextprotocol/server-sequential-thinking",
+]
+command = "npx"

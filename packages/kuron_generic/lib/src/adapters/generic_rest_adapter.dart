@@ -483,10 +483,13 @@ class GenericRestAdapter implements GenericAdapter {
         // For direct mode, images are returned as array of strings (not array of objects)
         // Use extractList which returns List<String> directly
         try {
-          final images = _parser.extractList(data, FieldSelector(selector: itemsSelector));
-          
+          var images = _parser.extractList(data, FieldSelector(selector: itemsSelector));
+
           _logger.d('$_sourceId extracted ${images.length} direct images via extractList');
-          
+
+          // Apply proxy URL transformation if configured
+          images = _applyImageProxy(images, imagesCfg);
+
           if (images.isNotEmpty) {
             return ChapterData(
               images: images,
@@ -495,18 +498,21 @@ class GenericRestAdapter implements GenericAdapter {
         } catch (e) {
           _logger.w('$_sourceId failed to extract images via extractList: $e');
         }
-        
+
         // Fallback: try extractItems (for array of objects)
         final rawImages = _parser.extractItems(data, FieldSelector(selector: itemsSelector));
         _logger.d('$_sourceId raw images extracted (selector: $itemsSelector): ${rawImages.length} items');
-        
-        final images = rawImages
+
+        var images = rawImages
             .map((e) => e.toString())
             .where((e) => e.isNotEmpty)
             .toList();
-        
+
+        // Apply proxy URL transformation if configured
+        images = _applyImageProxy(images, imagesCfg);
+
         _logger.d('$_sourceId extracted ${images.length} direct images (fallback)');
-        
+
         return ChapterData(
           images: images,
         );
@@ -2041,6 +2047,35 @@ class GenericRestAdapter implements GenericAdapter {
       return _removeLanguagePlaceholderParam(url);
     }
     return url.replaceAll('{language}', language);
+  }
+
+  /// Apply proxy URL transformation to image URLs if configured.
+  ///
+  /// The proxy URL template should contain `{url}` placeholder which will be
+  /// replaced with the URL-encoded original image URL.
+  ///
+  /// Example config:
+  /// ```json
+  /// "images": {
+  ///   "proxyUrl": "https://v2.doujindesu.fun/api/image-proxy?url={url}"
+  /// }
+  /// ```
+  List<String> _applyImageProxy(
+    List<String> images,
+    Map<String, dynamic> imagesCfg,
+  ) {
+    final proxyUrl = imagesCfg['proxyUrl'] as String?;
+    if (proxyUrl == null || proxyUrl.isEmpty) {
+      return images;
+    }
+
+    _logger.d('$_sourceId applying image proxy: $proxyUrl');
+
+    return images.map((imageUrl) {
+      // URL-encode the original image URL
+      final encodedUrl = Uri.encodeComponent(imageUrl);
+      return proxyUrl.replaceAll('{url}', encodedUrl);
+    }).toList();
   }
 
   String _resolveLanguageCode({
