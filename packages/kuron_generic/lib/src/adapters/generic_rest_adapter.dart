@@ -162,30 +162,45 @@ class GenericRestAdapter implements GenericAdapter {
 
     if (rawParams != null && rawParams.isNotEmpty) {
       final rawMap = _parseRawQueryParams(rawParams);
-      final tagIdValues = rawMap['tag_id'] ?? const <String>[];
-      final tagId = tagIdValues.isNotEmpty ? tagIdValues.first.trim() : '';
       final tagSearchTemplate = endpoints['tagSearch'] ?? '';
 
-      if (tagId.isNotEmpty && tagSearchTemplate.isNotEmpty) {
-        final page = adjustedFilter.page > 0 ? adjustedFilter.page : 1;
-        final baseTaggedUrl = _urlBuilder.resolve(tagSearchTemplate, {
-          'tagId': tagId,
-          'page': page.toString(),
-          'sort': sortValue,
-          'query': '',
-        });
-
-        final mergedParams = _parseUrlQueryParams(baseTaggedUrl);
-        for (final entry in rawMap.entries) {
-          mergedParams[entry.key] = entry.value;
+      // Check if we have a tagSearch endpoint and any raw params
+      if (tagSearchTemplate.isNotEmpty && rawMap.isNotEmpty) {
+        // Try to find a tag-like parameter (tag_id, genre, category, etc.)
+        String? tagValue;
+        
+        // Priority order: tag_id (nhentai), genre (doujindesu), category, tag
+        for (final paramName in ['tag_id', 'genre', 'category', 'tag']) {
+          final values = rawMap[paramName] ?? const <String>[];
+          if (values.isNotEmpty) {
+            tagValue = values.first.trim();
+            break;
+          }
         }
 
-        if (sortValue.isNotEmpty &&
-            !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ?? false)) {
-          mergedParams['sort'] = [sortValue];
-        }
+        if (tagValue != null && tagValue.isNotEmpty) {
+          final page = adjustedFilter.page > 0 ? adjustedFilter.page : 1;
+          final baseTaggedUrl = _urlBuilder.resolve(tagSearchTemplate, {
+            'tagId': tagValue,
+            'page': page.toString(),
+            'sort': sortValue,
+            'query': '',
+          });
 
-        url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
+          final mergedParams = _parseUrlQueryParams(baseTaggedUrl);
+          for (final entry in rawMap.entries) {
+            mergedParams[entry.key] = entry.value;
+          }
+
+          if (sortValue.isNotEmpty &&
+              !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ?? false)) {
+            mergedParams['sort'] = [sortValue];
+          }
+
+          url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
+        } else {
+          url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
+        }
       } else {
         url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
       }
@@ -355,7 +370,9 @@ class GenericRestAdapter implements GenericAdapter {
     if (imagesCfg == null) return null;
 
     final mode = imagesCfg['mode'] as String?;
+    
     if (mode == 'atHome') {
+      // Existing atHome mode implementation
       final endpoint = imagesCfg['atHomeEndpoint'] as String?;
       if (endpoint == null) return null;
 
@@ -401,6 +418,100 @@ class GenericRestAdapter implements GenericAdapter {
       } catch (e, st) {
         _logger.e('$_sourceId fetchChapterImages (atHome) failed',
             error: e, stackTrace: st);
+      }
+    } else if (mode == 'direct') {
+      // Direct image URLs mode (e.g., DoujinDesu v2)
+      _logger.d('$_sourceId REST direct images mode');
+      
+      try {
+        final itemsSelector = imagesCfg['items'] as String?;
+        final urlPath = imagesCfg['urlPath'] as String?;
+        
+        if (itemsSelector == null || urlPath == null) {
+          _logger.w('$_sourceId direct images missing items or urlPath');
+          return null;
+        }
+        
+        // Fetch chapter content to get images
+        final chapterEndpoint = rawConfig['api']?['endpoints']?['images'] as String?;
+        if (chapterEndpoint == null) {
+          _logger.w('$_sourceId images endpoint not configured');
+          return null;
+        }
+        
+        final baseApiUrl = _getBaseUrl(rawConfig);
+        final fullPath = chapterEndpoint.startsWith('/') ? chapterEndpoint : '/$chapterEndpoint';
+        
+        // For DoujinDesu v2, the format is /api/read/{id}/{chapter}
+        // Chapter ID can be:
+        // - Single-chapter: just {mangaSlug} (e.g., "intermammary-shitai-houdai")
+        // - Multi-chapter: {mangaSlug}/{chapterSlug} (e.g., "do-you-want-to-join-the-company/do-you-want-to-join-the-company-chapter-32")
+        var imageUrl = '$baseApiUrl$fullPath';
+        
+        // Handle both single-chapter and multi-chapter formats
+        if (chapterId.contains('/')) {
+          // Multi-chapter format: {mangaSlug}/{chapterSlug}
+          final parts = chapterId.split('/');
+          if (parts.length >= 2) {
+            imageUrl = imageUrl.replaceAll('{id}', parts[0]);
+            imageUrl = imageUrl.replaceAll('{chapter}', parts[1]);
+            _logger.d('$_sourceId multi-chapter format: id=${parts[0]}, chapter=${parts[1]}');
+          } else {
+            imageUrl = imageUrl.replaceAll('{id}', chapterId);
+            imageUrl = imageUrl.replaceAll('{chapter}', chapterId);
+          }
+        } else {
+          // Single-chapter format: just {mangaSlug}
+          imageUrl = imageUrl.replaceAll('{id}', chapterId);
+          imageUrl = imageUrl.replaceAll('{chapter}', chapterId);
+          _logger.d('$_sourceId single-chapter format: $chapterId');
+        }
+        
+        imageUrl = _applyLanguagePlaceholder(imageUrl, rawConfig);
+        
+        _logger.d('$_sourceId direct images request: $imageUrl');
+        
+        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+        final response = await _dio.get<dynamic>(imageUrl);
+        final data = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+        
+        // Debug: Log the data structure
+        _logger.d('$_sourceId images response data keys: ${data is Map ? data.keys : 'not a map'}');
+        
+        // For direct mode, images are returned as array of strings (not array of objects)
+        // Use extractList which returns List<String> directly
+        try {
+          final images = _parser.extractList(data, FieldSelector(selector: itemsSelector));
+          
+          _logger.d('$_sourceId extracted ${images.length} direct images via extractList');
+          
+          if (images.isNotEmpty) {
+            return ChapterData(
+              images: images,
+            );
+          }
+        } catch (e) {
+          _logger.w('$_sourceId failed to extract images via extractList: $e');
+        }
+        
+        // Fallback: try extractItems (for array of objects)
+        final rawImages = _parser.extractItems(data, FieldSelector(selector: itemsSelector));
+        _logger.d('$_sourceId raw images extracted (selector: $itemsSelector): ${rawImages.length} items');
+        
+        final images = rawImages
+            .map((e) => e.toString())
+            .where((e) => e.isNotEmpty)
+            .toList();
+        
+        _logger.d('$_sourceId extracted ${images.length} direct images (fallback)');
+        
+        return ChapterData(
+          images: images,
+        );
+      } catch (e) {
+        _logger.w('$_sourceId fetchChapterImages (direct) failed: $e');
       }
     }
 
@@ -536,13 +647,47 @@ class GenericRestAdapter implements GenericAdapter {
 
     final rawParams = _extractRawSearchParams(filter.query);
     final sortValue = _resolveSearchSortValue(filter, rawConfig);
-    String url = rawParams != null
-        ? _buildRawSearchUrl(template, rawParams, filter)
-        : _urlBuilder.buildSearchUrl(
-            template,
-            filter,
-            sortValue: sortValue,
-          );
+    String url;
+
+    if (rawParams != null && rawParams.isNotEmpty) {
+      final rawMap = _parseRawQueryParams(rawParams);
+      final tagSearchTemplate = endpoints['tagSearch'] ?? '';
+
+      // Check if we have a tagSearch endpoint and any raw params
+      if (tagSearchTemplate.isNotEmpty && rawMap.isNotEmpty) {
+        // Try to find a tag-like parameter (tag_id, genre, category, etc.)
+        String? tagValue;
+        
+        // Priority order: tag_id (nhentai), genre (doujindesu), category, tag
+        for (final paramName in ['tag_id', 'genre', 'category', 'tag']) {
+          final values = rawMap[paramName] ?? const <String>[];
+          if (values.isNotEmpty) {
+            tagValue = values.first.trim();
+            break;
+          }
+        }
+
+        if (tagValue != null && tagValue.isNotEmpty) {
+          final page = filter.page > 0 ? filter.page : 1;
+          url = _urlBuilder.resolve(tagSearchTemplate, {
+            'tagId': tagValue,
+            'page': page.toString(),
+            'sort': sortValue,
+            'query': '',
+          });
+        } else {
+          url = _buildRawSearchUrl(template, rawParams, filter);
+        }
+      } else {
+        url = _buildRawSearchUrl(template, rawParams, filter);
+      }
+    } else {
+      url = _urlBuilder.buildSearchUrl(
+        template,
+        filter,
+        sortValue: sortValue,
+      );
+    }
     final paginationCfg =
         (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
@@ -731,7 +876,10 @@ class GenericRestAdapter implements GenericAdapter {
       final chaptersCfg = apiDetail['chapters'] as Map<String, dynamic>?;
       if (chaptersCfg != null) {
         final chapterEndpoint = chaptersCfg['endpoint'] as String?;
+        final itemsSelector = chaptersCfg['items'] as String?;
+        
         if (chapterEndpoint != null) {
+          // Fetch chapters from separate endpoint (existing behavior)
           final baseApiUrl = _getBaseUrl(rawConfig);
           final fullPath = chapterEndpoint.startsWith('/')
               ? chapterEndpoint
@@ -744,7 +892,6 @@ class GenericRestAdapter implements GenericAdapter {
           chapterUrl = _applyQueryRules(chapterUrl, chapterQueryRules);
 
           try {
-            final itemsSelector = chaptersCfg['items'] as String?;
             if (itemsSelector != null) {
               final cFields =
                   (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
@@ -760,6 +907,22 @@ class GenericRestAdapter implements GenericAdapter {
             }
           } catch (e) {
             _logger.w('$_sourceId detail chapters fetch failed: $e');
+          }
+        } else if (itemsSelector != null) {
+          // Parse chapters inline from detail response (NEW: for sources like DoujinDesu v2)
+          try {
+            final cFields =
+                (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+            chapters = _parseChaptersInline(
+              data,
+              contentId: contentId,
+              itemsSelector: itemsSelector,
+              cFields: cFields,
+              rawConfig: rawConfig,
+            );
+            _logger.d('$_sourceId: Parsed ${chapters?.length ?? 0} chapters inline from detail response');
+          } catch (e) {
+            _logger.w('$_sourceId detail inline chapters parse failed: $e');
           }
         }
       }
@@ -1601,6 +1764,14 @@ class GenericRestAdapter implements GenericAdapter {
     return _selectorOrNull(selectors, key) ?? fallback;
   }
 
+  /// Extract string value from fields map, returning null if not found or empty.
+  String? _str(Map<String, dynamic> fields, String key) {
+    final value = fields[key];
+    if (value == null) return null;
+    final str = value.toString().trim();
+    return str.isEmpty ? null : str;
+  }
+
   Content _emptyContent(String id) => Content(
         id: id,
         sourceId: _sourceId,
@@ -1950,6 +2121,49 @@ class GenericRestAdapter implements GenericAdapter {
         );
         break;
       }
+    }
+
+    return chapters;
+  }
+
+  /// Parse chapters inline from the detail response (no separate API call needed).
+  /// Used for sources like DoujinDesu v2 that include chapters in the detail response.
+  /// 
+  /// For multi-chapter works, chapter ID is formatted as: {mangaSlug}/{chapterSlug}
+  /// to support the API endpoint: /api/read/{id}/{chapter}
+  List<Chapter>? _parseChaptersInline(
+    dynamic data, {
+    required String contentId,
+    required String itemsSelector,
+    required Map<String, dynamic> cFields,
+    required Map<String, dynamic> rawConfig,
+  }) {
+    if (data is! Map<String, dynamic>) return null;
+
+    final rawChapters =
+        _parser.extractItems(data, FieldSelector(selector: itemsSelector));
+    if (rawChapters.isEmpty) return null;
+
+    final chapters = <Chapter>[];
+    for (final c in rawChapters) {
+      final cFieldsExtracted = _extractRestFields(c, cFields);
+      
+      // For multi-chapter works, prepend manga slug to chapter slug
+      // Format: {mangaSlug}/{chapterSlug}
+      final originalId = _str(cFieldsExtracted, 'id');
+      if (originalId != null && originalId.isNotEmpty) {
+        final chapterSlug = originalId;
+        final mangaSlug = contentId;
+        
+        // If chapter slug is DIFFERENT from manga slug, it's a multi-chapter work
+        // Format chapter ID as: {mangaSlug}/{chapterSlug}
+        if (chapterSlug != mangaSlug) {
+          cFieldsExtracted['id'] = '$mangaSlug/$chapterSlug';
+          _logger.d('$_sourceId: Multi-chapter detected, chapter ID: ${cFieldsExtracted['id']}');
+        }
+      }
+      
+      chapters.add(GenericContentMapper.toChapter(cFieldsExtracted));
     }
 
     return chapters;

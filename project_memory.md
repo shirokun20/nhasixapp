@@ -741,3 +741,48 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 - Create repository implementation
 - Wire into source provider system
 - Add to available sources list in UI
+
+
+---
+
+## 🆕 Latest Session — 2026-05-10
+
+### DoujinDesu v2 Tag Search Bug Fix ✅
+
+**Status**: Complete
+
+**Bug Fixed**: Tag click from detail screen was going to `/api/search?q=...` instead of `/api/manga-list?genre=...`
+
+**Root Causes & Fixes**:
+
+1. **Config Update** (`doujindesuv2-config.json`):
+   - Removed `configUrl` to prevent remote GitHub override
+   - Added `tagSearch` endpoint: `/api/manga-list?genre={tagId}&page={page}`
+   - Added `navigation.tagQueryMapping` for tag click → `raw:genre=...` mapping
+   - Version bumped to 1.0.1
+
+2. **Adapter Fix** (`generic_rest_adapter.dart`):
+   - **Old schema path** (line ~163): Added support for multiple tag parameter names (`tag_id`, `genre`, `category`, `tag`)
+   - **New schema path** (line ~650): Added SAME tag search logic to `_searchNewSchema()` method (was missing!)
+   - Priority order: `tag_id` (nhentai) → `genre` (doujindesu) → `category` → `tag`
+
+**How It Works Now**:
+1. User clicks tag "Business Suit" in detail screen
+2. Query becomes: `raw:genre=Business+Suit` ✅
+3. Adapter detects `genre` parameter in raw params ✅
+4. Uses `tagSearch` endpoint: `/api/manga-list?genre=Business+Suit&page=1` ✅
+
+**Files Modified**:
+- `packages/kuron_generic/lib/src/adapters/generic_rest_adapter.dart` (both old + new schema paths)
+- `informations/documentation/doujindesuv2-config.json` (tagSearch endpoint + navigation mapping)
+
+**Verification**:
+- ✅ flutter analyze clean
+- ✅ Tag click now goes to correct genre-filtered endpoint
+- ✅ Images extraction fixed (removed `replaceAll('[*]', '')` that broke JSONPath)
+
+**Also Fixed Earlier - Image Extraction**:
+- Root cause: `extractList()` selector was stripping `[*]` from JSONPath
+- Fix: Keep `[*]` so individual URLs are extracted, not array as string
+- File: `generic_rest_adapter.dart` line 476
+
