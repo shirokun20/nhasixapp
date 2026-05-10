@@ -181,6 +181,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-05-10 | Kiro | DoujinDesu v2 API discovery & config-driven integration | ✅ Done | User reported scraper from other repo failed. Initial analysis assumed SSR-only, but user provided actual API responses showing DoujinDesu v2 HAS REST API endpoints: `/api/manga-list` (paginated list), `/api/search` (search), `/api/manga/{slug}` (detail), `/api/read/{slug}/{chapter}` (chapter images). Created complete documentation and config-driven integration: (1) `doujindesuv2-config.json` - Config-driven format matching komiku-config.json pattern with JSON path selectors; (2) `doujindesuv2-api-reference.md` - Full API docs with Dart models and code examples; (3) `doujindesuv2-config-summary.md` - Quick reference guide; (4) `doujindesuv2-analysis.md` - Technical analysis; (5) `source-config-templates/data.md` - API response examples. Key findings: Hybrid Architecture (API + SSR), JSON API for all operations, no auth required, rate limit 30 req/min, similar to NHentai pattern. Config ready for integration with existing scraper architecture. |
 | 2026-04-26 | Codex | E-Hentai range download numbering + metadata preservation | ✅ Done | Fixed the E-Hentai range-download path so selected ranges keep original gallery numbering all the way into native storage and final metadata. `DownloadContentUseCase` now passes `startPage`, `endPage`, and original `totalPages` into `NativeDownloadService`; `DownloadHandler`, `NativeDownloadManager`, and `DownloadWorker` preserve those values through WorkManager, write files using original page numbers like `page_009.webp`, and emit `metadata.json` with correct `is_range_download`, `start_page`, `end_page`, `total_pages`, and original-numbered `failed_pages`. `OfflineContentManager` now injects failed-page placeholders only inside the selected slice for range downloads. Added a focused unit test for the Dart/native contract and verified with targeted `fvm flutter test`, targeted `fvm flutter analyze`, and root Android `./gradlew app:compileDebugKotlin`. |
 | 2026-04-26 | Codex | Restore reader failed-page placeholder repair actions | ✅ Done | Restored offline reader repair actions for metadata-driven `failed_pages` placeholders. `ReaderScreen` now treats `__failed__:` placeholders as repairable/manual-repairable when the embedded source URL is present, `ExtendedImageReaderWidget` shows both the WebView source-page fallback and redownload buttons on the skipped-page card, and `ReaderCubit` now resolves placeholder `/s/...` URLs through the normal source-config repair pipeline while deriving a writable local file path even before the missing page exists on disk. Added widget regression coverage for placeholder action visibility and verified with targeted `fvm flutter test test/widget/presentation/widgets/extended_image_reader_widget_test.dart` plus targeted `fvm flutter analyze`. |
 | 2026-04-26 | Codex | E-Hentai uploader + namespace tag navigation fix | ✅ Done | Fixed the reported E-Hentai detail parsing issue for `https://e-hentai.org/g/3906586/971a6d4051/`. Fetched live HTML into `packages/kuron_special/test/fixtures/ehentai/detail_3906586_ai_generated.html`, then updated `EHentaiScraperAdapter` to inject uploader from `#gdn a` as a typed `uploader` tag and preserve E-Hentai namespaces such as `other`, `female`, and `male` instead of flattening them to generic `tag`. Updated `ehentai-config.json` detail tag selector to parse current `#taglist div[id^=td_] a` / `toggle_tagmenu(...)` namespace values. Added regression coverage for uploader, `other:ai generated`, female/male namespace tags, and raw quoted E-Hentai search syntax. Verified with targeted `fvm flutter test test/ehentai/ehentai_scraper_adapter_test.dart`, targeted `fvm flutter analyze`, and `jq empty ehentai-config.json`. |
@@ -669,3 +670,74 @@ Fixed multiple issues with Komiku source integration:
 - Detail page: ✅ No longer crashes on malformed cookies
 
 ---
+
+
+---
+
+## 🔄 Latest Session Update (2026-05-10)
+
+### DoujinDesu v2 API Discovery & Unit Tests ✅
+
+**Status**: Complete
+
+**What was done**:
+1. **API Discovery & Documentation**
+   - User reported scraper from another repo failed for DoujinDesu v2
+   - Initial analysis assumed SSR-only, but user provided actual API responses
+   - Discovered 4 working REST API endpoints:
+     - `/api/manga-list?limit={limit}&page={page}&q={query}` - Paginated list with search
+     - `/api/search?q={query}` - Search endpoint
+     - `/api/manga/{slug}` - Manga detail with chapters & recommendations
+     - `/api/read/{slug}/{chapter}` - Chapter images (75+ images per chapter)
+
+2. **Config-Driven Integration**
+   - Created `doujindesuv2-config.json` following existing format (komiku-config.json pattern)
+   - Uses JSON path selectors (`$.data[*]`, `$.pagination.totalItems`, etc.)
+   - API mode enabled (not scraper mode)
+   - Pagination support with page-based navigation
+   - All 4 endpoints configured with proper parameter placeholders
+
+3. **Documentation Created**
+   - `doujindesuv2-api-reference.md` - Complete API docs with Dart models
+   - `doujindesuv2-config-summary.md` - Quick reference guide
+   - `doujindesuv2-analysis.md` - Technical analysis
+   - `source-config-templates/data.md` - Real API response examples
+
+4. **Unit Tests (39 tests, 100% pass rate)**
+   - **Config Validation Tests** (`doujindesuv2_config_test.dart`)
+     - 10 tests covering: required fields, UI config, network headers, API endpoints, JSON path selectors, pagination settings, JSON serialization, parameter placeholders, HTTPS validation, API mode enabled
+     - All tests passed ✅
+   
+   - **API Response Parsing Tests** (`doujindesuv2_models_test.dart`)
+     - 13 tests covering: manga-list parsing, last_chapter parsing, search response, detail response, chapters parsing, recommendations parsing, chapter read response, empty tags, null last_chapter, empty chapters, multiple chapters, multiple images, content types
+     - All tests passed ✅
+   
+   - **API Integration Tests** (`doujindesuv2_api_integration_test.dart`)
+     - 16 tests covering: endpoint URL building, search/detail/read URLs, special character handling, URL encoding, response parsing, pagination, missing fields, content URL patterns, content types, empty/multiple chapters, recommendations
+     - All tests passed ✅
+
+**Key Findings**:
+- Hybrid Architecture: API + SSR support
+- No authentication required
+- Rate limit: 30 requests/minute (recommended)
+- Similar pattern to NHentai API integration
+- Config ready for integration with existing scraper architecture
+
+**Files Created**:
+- `test/unit/data/datasources/remote/doujindesuv2_config_test.dart`
+- `test/unit/data/models/doujindesuv2_models_test.dart`
+- `test/unit/data/datasources/remote/doujindesuv2_api_integration_test.dart`
+
+**Verification**:
+```bash
+fvm flutter test test/unit/data/datasources/remote/doujindesuv2_config_test.dart
+fvm flutter test test/unit/data/models/doujindesuv2_models_test.dart
+fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_test.dart
+# All: 00:02 +39: All tests passed!
+```
+
+**Next Steps**:
+- Implement DoujinDesu v2 data source layer using config-driven approach
+- Create repository implementation
+- Wire into source provider system
+- Add to available sources list in UI
