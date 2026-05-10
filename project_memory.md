@@ -529,3 +529,143 @@ Siap dieksekusi ke `onprogress-plan/` pada sesi berikutnya.
   - `fvm dart analyze ...` for touched Dart files passed with `No issues found!`
 - Operational note:
   - previously downloaded Hitomi galleries that already contain wrongly named `.jpg` files may need re-download or manual cleanup to fully normalize old data.
+
+---
+
+## Current Session — 2026-05-10
+
+### Tachiyomi Extensions Integration ✅
+
+Implemented 6 Tachiyomi extensions as config-driven sources:
+
+**Sources Added:**
+- DoujinDesu (scraper, Indonesian doujin)
+- DoujinDesu v2 (scraper, Indonesian doujin)
+- Komiku (scraper, Indonesian manga)
+- MangaFire (API, English manga)
+- Uncensored Manhwa (scraper, English manhwa)
+- Hentai Cosplay (API, English image sets)
+
+**Implementation:**
+- Created 6 config files in `assets/configs/`:
+  - `doujindesu-config.json` (3.8 KB)
+  - `doujindesuv2-config.json` (3.8 KB)
+  - `komiku-config.json` (3.7 KB)
+  - `mangafire-config.json` (2.8 KB)
+  - `uncensoredmanhwa-config.json` (3.8 KB)
+  - `hentaicosplay-config.json` (2.3 KB)
+
+- Updated `lib/core/config/remote_config_service.dart`:
+  - Added 6 sources to `_bundledAssetPaths` map
+  - Added 6 sources to `_bundledSourceIds` set
+  - Sources auto-load via `smartInitialize()` on app startup
+
+- Configs follow existing patterns:
+  - Scraper mode: CSS selectors for HTML parsing (4 sources)
+  - API mode: JSON endpoints with pagination (2 sources)
+  - Both support search, detail, chapters, and image extraction
+
+**Architecture:**
+- Leverages existing `GenericHttpSource` infrastructure
+- No custom Dart code needed per source
+- Config-driven approach enables easy updates when sites change
+- All sources bundled in APK via `assets/configs/` in pubspec.yaml
+
+**Project Tracking:**
+- Created `projects/onprogress-plan/tachiyomi_extensions_integration/`
+- Progress: Phase 1-2 complete, Phase 3-4 pending
+- Next: Build APK to verify bundling, run integration tests
+
+**Files Modified:**
+- `lib/core/config/remote_config_service.dart` (added 6 sources to bundled registry)
+
+**Files Created:**
+- `assets/configs/doujindesu-config.json`
+- `assets/configs/doujindesuv2-config.json`
+- `assets/configs/komiku-config.json`
+- `assets/configs/mangafire-config.json`
+- `assets/configs/uncensoredmanhwa-config.json`
+- `assets/configs/hentaicosplay-config.json`
+- `projects/onprogress-plan/tachiyomi_extensions_integration/progress.md`
+- `projects/onprogress-plan/tachiyomi_extensions_integration/tachiyomi_extensions_integration_2026-05-10.md`
+
+---
+
+## Current Session — 2026-05-10
+
+### Tachiyomi Extensions Integration (External Config-Driven)
+
+Implemented 6 Tachiyomi extensions as **external config-driven sources** (NOT bundled):
+
+**Sources Added:**
+- DoujinDesu (scraper, Indonesian doujin) - doujindesu.fun
+- DoujinDesu v2 (scraper, Indonesian doujin) - v2.doujindesu.fun
+- Komiku (scraper, Indonesian manga) - komiku.id
+- MangaFire (API, English manga) - mangafire.to
+- Uncensored Manhwa (scraper, English manhwa) - uncensoredmanhwa.com
+- Hentai Cosplay (API, English cosplay) - hentaicosplay.com
+
+**Implementation:**
+- Created 6 config files (ready to deploy):
+  - `/tmp/doujindesu-config.json`
+  - `/tmp/doujindesuv2-config.json`
+  - `/tmp/komiku-config.json`
+  - `/tmp/mangafire-config.json`
+  - `/tmp/uncensoredmanhwa-config.json`
+  - `/tmp/hentaicosplay-config.json`
+
+- **NO code changes** in app — RemoteConfigService already supports external config loading
+- **Reverted** earlier changes that bundled configs (incorrect approach)
+- Follows same pattern as komiktap, crotpedia, mangadex (external kuron-config-providers)
+
+**Deployment Required:**
+1. Copy 6 config files to `kurun-config-providers/config/`
+2. Update `manifest.json` with 6 new entries
+3. Commit & push to repo
+
+**Project Tracking:**
+- `projects/onprogress-plan/tachiyomi_extensions_integration/`
+- Config creation ✅, App integration ✅, Deployment pending
+
+---
+
+## Current Session — 2026-05-10
+
+### Komiku Source Integration Bug Fixes ✅
+
+Fixed multiple issues with Komiku source integration:
+
+**Issue 1: Search results showing "untitled" + missing `post_type=manga` parameter**
+- Root cause: `_searchRaw()` in `generic_scraper_adapter.dart` was overwriting template query params (like `post_type=manga`) with empty raw params (like `post_type=`)
+- Fix: Modified merge logic to only add non-empty raw params, preserving template defaults
+- File: `packages/kuron_generic/lib/src/adapters/generic_scraper_adapter.dart` lines 258-277
+
+**Issue 2: Detail page empty in release build but works in debug**
+- Root cause: Dio `CookieManagerSaveException` caused by invalid cookie date header from komiku.org (`Expires: Sun` without full date)
+- HTTP 200 response succeeded, but Dio crashed when trying to save malformed cookie
+- Fix: Added cookie exception handler in `HttpClientManager` interceptor to ignore malformed Set-Cookie headers and continue with response
+- File: `lib/core/network/http_client_manager.dart` lines 75-113
+- Error message: `CookieManagerSaveException: HttpException: Invalid cookie date Sun`
+
+**Issue 3: HTMX pagination not detected**
+- Root cause: `_hasEnabledLink()` only checked `href` attribute, but Komiku uses `hx-get` attribute on span elements for infinite scroll
+- Fix: Modified method to also check `hx-get` attribute
+- File: `packages/kuron_generic/lib/src/adapters/generic_scraper_adapter.dart` lines 1538-1549
+
+**Config Updates:**
+- Bumped version from `1.0.0` to `1.0.1` in `komiku-config.json`
+- Added `"inherits": "home"` to `homePage` pattern for proper pagination support
+
+**Files Modified:**
+- `komiku-config.json` (version bump + pagination fix)
+- `packages/kuron_generic/lib/src/adapters/generic_scraper_adapter.dart` (search params + HTMX pagination)
+- `lib/core/network/http_client_manager.dart` (cookie exception handler)
+
+**Verification:**
+- Debug mode: ✅ Working
+- Release mode: ✅ Fixed after cookie exception handler
+- Search: ✅ Titles display correctly with `post_type=manga`
+- Pagination: ✅ HTMX infinite scroll detected
+- Detail page: ✅ No longer crashes on malformed cookies
+
+---
