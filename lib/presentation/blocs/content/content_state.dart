@@ -373,26 +373,25 @@ class ContentEmpty extends ContentState {
     }
   }
 
-  /// Get suggestions for empty state
+  /// Get suggestions for empty state (returns l10n keys)
   List<String> get suggestions {
     if (searchFilter != null && searchFilter!.hasFilters) {
       return [
-        'Try removing some filters',
-        'Check your spelling',
-        'Use more general search terms',
-        'Browse popular content instead',
+        'tryAdjustingFilters',
+        'tryBrowsingOtherTags',
+        'checkPopularContent',
       ];
     } else if (tag != null) {
       return [
-        'Try browsing other tags',
-        'Check popular content',
-        'Use the search function',
+        'tryBrowsingOtherTags',
+        'checkPopularContent',
+        'tryADifferentSearchTerm',
       ];
     } else {
       return [
-        'Check your internet connection',
-        'Try refreshing the page',
-        'Browse popular content',
+        'checkInternetConnectionSuggestion',
+        'tryADifferentSearchTerm',
+        'checkPopularContent',
       ];
     }
   }

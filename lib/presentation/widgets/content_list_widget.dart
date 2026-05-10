@@ -176,6 +176,44 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         }
 
         if (state is ContentEmpty) {
+          final l10n = AppLocalizations.of(context)!;
+
+          // Resolve l10n key from message
+          String getDisplayMessage(String key) {
+            switch (key) {
+              case 'noContentAtMoment':
+                return l10n.noContentAtMoment;
+              case 'noContentMatchingSearch':
+                return l10n.noContentMatchingSearch;
+              case 'noPopularContent':
+                return l10n.noPopularContent;
+              case 'noContentForTag':
+                return l10n.noContentForTag;
+              case 'noContentOnPage':
+                return l10n.noContentOnPage;
+              default:
+                return key;
+            }
+          }
+
+          // Resolve suggestion keys to l10n
+          List<String> getSuggestions(List<String> keys) {
+            return keys.map((key) {
+              switch (key) {
+                case 'tryRemovingSomeFilters':
+                  return l10n.tryAdjustingFilters;
+                case 'tryBrowsingOtherTags':
+                  return l10n.tryBrowsingOtherTags;
+                case 'checkPopularContent':
+                  return l10n.checkPopularContent;
+                case 'checkInternetConnection':
+                  return l10n.checkInternetConnectionSuggestion;
+                default:
+                  return key;
+              }
+            }).toList();
+          }
+
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -190,7 +228,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  state.contextualMessage,
+                  getDisplayMessage(state.message),
                   textAlign: TextAlign.center,
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
@@ -199,13 +237,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 const SizedBox(height: 8),
                 if (state.suggestions.isNotEmpty) ...[
                   Text(
-                    AppLocalizations.of(context)!.suggestions,
+                    l10n.suggestions,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  ...state.suggestions.map((suggestion) => Text(
+                  ...getSuggestions(state.suggestions).map((suggestion) => Text(
                         '• $suggestion',
                         style: TextStyleConst.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -220,7 +258,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                           .read<ContentBloc>()
                           .add(const ContentRetryEvent());
                     },
-                    child: Text(AppLocalizations.of(context)!.tryAgain),
+                    child: Text(l10n.tryAgain),
                   ),
                 ],
               ],
