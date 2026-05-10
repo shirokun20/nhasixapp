@@ -142,7 +142,7 @@ class _AboutContentState extends State<_AboutContent>
                             ],
                           ),
                           child: const Image(
-                            image: AssetImage('assets/icons/Frame.png'),
+                            image: AssetImage('assets/icons/logo_app.png'),
                           ),
                         ),
                       );
@@ -480,7 +480,9 @@ class _AboutContentState extends State<_AboutContent>
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.couldNotLaunchUrl(urlString))),
+          SnackBar(
+              content: Text(
+                  AppLocalizations.of(context)!.couldNotLaunchUrl(urlString))),
         );
       }
     }

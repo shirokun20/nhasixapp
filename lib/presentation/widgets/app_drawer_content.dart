@@ -201,7 +201,8 @@ class _AppDrawerContentState extends State<AppDrawerContent>
 
                               final label = isLoggedIn
                                   ? (displayName.isNotEmpty
-                                      ? AppLocalizations.of(context)!.profileWithName(displayName)
+                                      ? AppLocalizations.of(context)!
+                                          .profileWithName(displayName)
                                       : AppLocalizations.of(context)!.profile)
                                   : AppLocalizations.of(context)!.loginAccount;
 
@@ -238,7 +239,8 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         builder: (context, authState) {
                           final isLoggedIn = authState is CrotpediaAuthSuccess;
                           final label = isLoggedIn
-                              ? AppLocalizations.of(context)!.accountWithName(authState.username)
+                              ? AppLocalizations.of(context)!
+                                  .accountWithName(authState.username)
                               : AppLocalizations.of(context)!.loginAccount;
 
                           return Column(
@@ -560,7 +562,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     backgroundColor: theme.colorScheme.surface,
                     child: const CircleAvatar(
                       radius: 38,
-                      backgroundImage: AssetImage('assets/icons/Frame.png'),
+                      backgroundImage: AssetImage('assets/icons/logo_app.png'),
                     ),
                   ),
                 ),
