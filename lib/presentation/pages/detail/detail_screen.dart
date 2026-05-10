@@ -1375,7 +1375,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color:
-                        _getTagColor(context, tag.type).withValues(alpha: 0.5),
+                        _getTagColor(context, tag.type).withValues(alpha: 0.8),
                   ),
                 ),
                 child: Row(
@@ -2755,7 +2755,9 @@ class _DetailScreenState extends State<DetailScreen> {
         return const Color(0xFF1565C0); // blue-800
       case 'other':
       case 'misc':
-        return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onSurface.withValues(alpha: 0.6);
+        return isDarkMode
+            ? colorScheme.outline
+            : colorScheme.onSurface.withValues(alpha: 0.6);
       case 'tag':
       default:
         // Use onSurface for default tags in light mode for better visibility

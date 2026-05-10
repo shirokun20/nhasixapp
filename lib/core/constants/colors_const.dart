@@ -3,34 +3,37 @@ import 'package:flutter/material.dart';
 /// Brand colors extracted from Frame.svg
 class AppColors {
   // Core brand colors
-  static const Color brandCoral = Color(0xFFF1958E);      // #F1958E - Main coral
-  static const Color brandMuted = Color(0xFFE0827E);       // #E0827E - Muted coral
-  static const Color brandDusty = Color(0xFF9D555B);      // #9D555B - Dusty rose
-  static const Color brandDark = Color(0xFF1A1A1F);       // #1A1A1F - Near black
+  static const Color brandCoral = Color(0xFFF1958E); // #F1958E - Main coral
+  static const Color brandMuted = Color(0xFFE0827E); // #E0827E - Muted coral
+  static const Color brandDusty = Color(0xFF9D555B); // #9D555B - Dusty rose
+  static const Color brandDark = Color(0xFF1A1A1F); // #1A1A1F - Near black
 
   // Light theme - warm, elegant, readable
-  static const Color lightBg = Color(0xFFFBF9F7);          // Warm off-white
-  static const Color lightSurface = Color(0xFFF3F0EC);    // Cream
-  static const Color lightCard = Color(0xFFFFFFFF);        // Pure white
-  static const Color lightElevated = Color(0xFFFAF8F5);   // Slight warm tint
-  static const Color lightBorder = Color(0xFFE8E2DA);      // Warm gray
-  static const Color lightText = Color(0xFF2C2926);       // Warm black
-  static const Color lightTextSub = Color(0xFF7A716A);    // Muted brown
+  static const Color lightBg = Color(0xFFFBF9F7); // Warm off-white
+  static const Color lightSurface = Color(0xFFF3F0EC); // Cream
+  static const Color lightCard = Color(0xFFFFFFFF); // Pure white
+  static const Color lightElevated = Color(0xFFFAF8F5); // Slight warm tint
+  static const Color lightBorder =
+      Color.fromARGB(255, 255, 190, 105); // Warm gray
+  static const Color lightText = Color(0xFF2C2926); // Warm black
+  static const Color lightTextSub = Color(0xFF7A716A); // Muted brown
 
   // Dark theme - deep, rich, comfortable
-  static const Color darkBg = Color(0xFF121215);         // Deep dark
-  static const Color darkSurface = Color(0xFF1A1A1F);     // Surface from brand
-  static const Color darkCard = Color(0xFF222228);        // Slightly elevated
-  static const Color darkElevated = Color(0xFF2A2A32);    // Cards
-  static const Color darkBorder = Color(0xFF333340);       // Subtle borders
-  static const Color darkText = Color(0xFFF5F3F0);        // Warm white
-  static const Color darkTextSub = Color(0xFF9A9590);     // Muted
+  static const Color darkBg = Color(0xFF121215); // Deep dark
+  static const Color darkSurface = Color(0xFF1A1A1F); // Surface from brand
+  static const Color darkCard = Color(0xFF222228); // Slightly elevated
+  static const Color darkElevated = Color(0xFF2A2A32); // Cards
+  static const Color darkBorder =
+      Color.fromARGB(255, 89, 55, 52); // Subtle borders
+  static const Color darkText =
+      Color.fromARGB(255, 255, 255, 255); // Warm white
+  static const Color darkTextSub = Color(0xFF9A9590); // Muted
 
   // AMOLED - pure black, coral accents
-  static const Color amoledBg = Color(0xFF000000);       // Pure black
-  static const Color amoledSurface = Color(0xFF0A0A0F);  // Slight tint
-  static const Color amoledCard = Color(0xFF141418);      // Card
-  static const Color amoledBorder = Color(0xFF282830);    // Border
+  static const Color amoledBg = Color(0xFF000000); // Pure black
+  static const Color amoledSurface = Color(0xFF0A0A0F); // Slight tint
+  static const Color amoledCard = Color(0xFF141418); // Card
+  static const Color amoledBorder = Color(0xFF282830); // Border
 
   // Semantic - derived from brand palette
   static const Color primary = brandCoral;
