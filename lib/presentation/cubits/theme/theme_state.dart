@@ -28,33 +28,35 @@ class ThemeState {
   static ThemeData _createDefaultDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: ColorsConst.primaryColor,
-      scaffoldBackgroundColor: ColorsConst.background,
+      primaryColor: AppColors.brandCoral,
+      scaffoldBackgroundColor: AppColors.darkBg,
       appBarTheme: const AppBarTheme(
-        backgroundColor: ColorsConst.surface,
-        foregroundColor: ColorsConst.darkTextPrimary,
+        backgroundColor: AppColors.darkBg,
+        foregroundColor: AppColors.darkText,
         elevation: 0,
         centerTitle: false,
       ),
       cardTheme: const CardThemeData(
-        color: ColorsConst.surface,
+        color: AppColors.darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           side: BorderSide(
-            color: ColorsConst.borderDefault,
+            color: AppColors.darkBorder,
             width: 1,
           ),
         ),
       ),
       listTileTheme: const ListTileThemeData(
-        tileColor: ColorsConst.surface,
-        textColor: ColorsConst.darkTextPrimary,
+        tileColor: AppColors.darkCard,
+        textColor: AppColors.darkText,
       ),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: ColorsConst.primaryColor,
+        seedColor: AppColors.brandCoral,
         brightness: Brightness.dark,
-        surface: ColorsConst.surface,
+        surface: AppColors.darkSurface,
+        onSurface: AppColors.darkText,
+        onSurfaceVariant: AppColors.darkTextSub,
       ),
       useMaterial3: true,
     );
