@@ -369,7 +369,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   child: const Image(
                     height: 200,
                     width: 200,
-                    image: AssetImage('assets/icons/logo_app.png'),
+                    image: AssetImage('assets/icons/Frame.png'),
                   ),
                 ),
 

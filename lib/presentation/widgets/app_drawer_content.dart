@@ -560,7 +560,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     backgroundColor: theme.colorScheme.surface,
                     child: const CircleAvatar(
                       radius: 38,
-                      backgroundImage: AssetImage('assets/icons/logo_app.png'),
+                      backgroundImage: AssetImage('assets/icons/Frame.png'),
                     ),
                   ),
                 ),

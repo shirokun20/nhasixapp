@@ -142,7 +142,7 @@ class _AboutContentState extends State<_AboutContent>
                             ],
                           ),
                           child: const Image(
-                            image: AssetImage('assets/icons/logo_app.png'),
+                            image: AssetImage('assets/icons/Frame.png'),
                           ),
                         ),
                       );
@@ -208,7 +208,7 @@ class _AboutContentState extends State<_AboutContent>
                       applicationName: l10n.appTitle,
                       applicationVersion: _version,
                       applicationIcon: const Image(
-                        image: AssetImage('assets/icons/logo_app.png'),
+                        image: AssetImage('assets/icons/Frame.png'),
                         height: 48,
                         width: 48,
                       ),
