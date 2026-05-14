@@ -168,7 +168,7 @@ class GenericRestAdapter implements GenericAdapter {
       if (tagSearchTemplate.isNotEmpty && rawMap.isNotEmpty) {
         // Try to find a tag-like parameter (tag_id, genre, category, etc.)
         String? tagValue;
-        
+
         // Priority order: tag_id (nhentai), genre (doujindesu), category, tag
         for (final paramName in ['tag_id', 'genre', 'category', 'tag']) {
           final values = rawMap[paramName] ?? const <String>[];
@@ -193,7 +193,8 @@ class GenericRestAdapter implements GenericAdapter {
           }
 
           if (sortValue.isNotEmpty &&
-              !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ?? false)) {
+              !(mergedParams['sort']?.any((v) => v.trim().isNotEmpty) ??
+                  false)) {
             mergedParams['sort'] = [sortValue];
           }
 
@@ -370,7 +371,7 @@ class GenericRestAdapter implements GenericAdapter {
     if (imagesCfg == null) return null;
 
     final mode = imagesCfg['mode'] as String?;
-    
+
     if (mode == 'atHome') {
       // Existing atHome mode implementation
       final endpoint = imagesCfg['atHomeEndpoint'] as String?;
@@ -422,32 +423,35 @@ class GenericRestAdapter implements GenericAdapter {
     } else if (mode == 'direct') {
       // Direct image URLs mode (e.g., DoujinDesu v2)
       _logger.d('$_sourceId REST direct images mode');
-      
+
       try {
         final itemsSelector = imagesCfg['items'] as String?;
         final urlPath = imagesCfg['urlPath'] as String?;
-        
+
         if (itemsSelector == null || urlPath == null) {
           _logger.w('$_sourceId direct images missing items or urlPath');
           return null;
         }
-        
+
         // Fetch chapter content to get images
-        final chapterEndpoint = rawConfig['api']?['endpoints']?['images'] as String?;
+        final chapterEndpoint =
+            rawConfig['api']?['endpoints']?['images'] as String?;
         if (chapterEndpoint == null) {
           _logger.w('$_sourceId images endpoint not configured');
           return null;
         }
-        
+
         final baseApiUrl = _getBaseUrl(rawConfig);
-        final fullPath = chapterEndpoint.startsWith('/') ? chapterEndpoint : '/$chapterEndpoint';
-        
+        final fullPath = chapterEndpoint.startsWith('/')
+            ? chapterEndpoint
+            : '/$chapterEndpoint';
+
         // For DoujinDesu v2, the format is /api/read/{id}/{chapter}
         // Chapter ID can be:
         // - Single-chapter: just {mangaSlug} (e.g., "intermammary-shitai-houdai")
         // - Multi-chapter: {mangaSlug}/{chapterSlug} (e.g., "do-you-want-to-join-the-company/do-you-want-to-join-the-company-chapter-32")
         var imageUrl = '$baseApiUrl$fullPath';
-        
+
         // Handle both single-chapter and multi-chapter formats
         if (chapterId.contains('/')) {
           // Multi-chapter format: {mangaSlug}/{chapterSlug}
@@ -455,7 +459,8 @@ class GenericRestAdapter implements GenericAdapter {
           if (parts.length >= 2) {
             imageUrl = imageUrl.replaceAll('{id}', parts[0]);
             imageUrl = imageUrl.replaceAll('{chapter}', parts[1]);
-            _logger.d('$_sourceId multi-chapter format: id=${parts[0]}, chapter=${parts[1]}');
+            _logger.d(
+                '$_sourceId multi-chapter format: id=${parts[0]}, chapter=${parts[1]}');
           } else {
             imageUrl = imageUrl.replaceAll('{id}', chapterId);
             imageUrl = imageUrl.replaceAll('{chapter}', chapterId);
@@ -466,26 +471,29 @@ class GenericRestAdapter implements GenericAdapter {
           imageUrl = imageUrl.replaceAll('{chapter}', chapterId);
           _logger.d('$_sourceId single-chapter format: $chapterId');
         }
-        
+
         imageUrl = _applyLanguagePlaceholder(imageUrl, rawConfig);
-        
+
         _logger.d('$_sourceId direct images request: $imageUrl');
-        
+
         await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
         final response = await _dio.get<dynamic>(imageUrl);
         final data = response.data is String
             ? jsonDecode(response.data as String)
             : response.data;
-        
+
         // Debug: Log the data structure
-        _logger.d('$_sourceId images response data keys: ${data is Map ? data.keys : 'not a map'}');
-        
+        _logger.d(
+            '$_sourceId images response data keys: ${data is Map ? data.keys : 'not a map'}');
+
         // For direct mode, images are returned as array of strings (not array of objects)
         // Use extractList which returns List<String> directly
         try {
-          var images = _parser.extractList(data, FieldSelector(selector: itemsSelector));
+          var images =
+              _parser.extractList(data, FieldSelector(selector: itemsSelector));
 
-          _logger.d('$_sourceId extracted ${images.length} direct images via extractList');
+          _logger.d(
+              '$_sourceId extracted ${images.length} direct images via extractList');
 
           // Apply proxy URL transformation if configured
           images = _applyImageProxy(images, imagesCfg);
@@ -500,8 +508,10 @@ class GenericRestAdapter implements GenericAdapter {
         }
 
         // Fallback: try extractItems (for array of objects)
-        final rawImages = _parser.extractItems(data, FieldSelector(selector: itemsSelector));
-        _logger.d('$_sourceId raw images extracted (selector: $itemsSelector): ${rawImages.length} items');
+        final rawImages =
+            _parser.extractItems(data, FieldSelector(selector: itemsSelector));
+        _logger.d(
+            '$_sourceId raw images extracted (selector: $itemsSelector): ${rawImages.length} items');
 
         var images = rawImages
             .map((e) => e.toString())
@@ -511,7 +521,8 @@ class GenericRestAdapter implements GenericAdapter {
         // Apply proxy URL transformation if configured
         images = _applyImageProxy(images, imagesCfg);
 
-        _logger.d('$_sourceId extracted ${images.length} direct images (fallback)');
+        _logger.d(
+            '$_sourceId extracted ${images.length} direct images (fallback)');
 
         return ChapterData(
           images: images,
@@ -663,7 +674,7 @@ class GenericRestAdapter implements GenericAdapter {
       if (tagSearchTemplate.isNotEmpty && rawMap.isNotEmpty) {
         // Try to find a tag-like parameter (tag_id, genre, category, etc.)
         String? tagValue;
-        
+
         // Priority order: tag_id (nhentai), genre (doujindesu), category, tag
         for (final paramName in ['tag_id', 'genre', 'category', 'tag']) {
           final values = rawMap[paramName] ?? const <String>[];
@@ -883,7 +894,7 @@ class GenericRestAdapter implements GenericAdapter {
       if (chaptersCfg != null) {
         final chapterEndpoint = chaptersCfg['endpoint'] as String?;
         final itemsSelector = chaptersCfg['items'] as String?;
-        
+
         if (chapterEndpoint != null) {
           // Fetch chapters from separate endpoint (existing behavior)
           final baseApiUrl = _getBaseUrl(rawConfig);
@@ -926,7 +937,8 @@ class GenericRestAdapter implements GenericAdapter {
               cFields: cFields,
               rawConfig: rawConfig,
             );
-            _logger.d('$_sourceId: Parsed ${chapters?.length ?? 0} chapters inline from detail response');
+            _logger.d(
+                '$_sourceId: Parsed ${chapters?.length ?? 0} chapters inline from detail response');
           } catch (e) {
             _logger.w('$_sourceId detail inline chapters parse failed: $e');
           }
@@ -2054,10 +2066,14 @@ class GenericRestAdapter implements GenericAdapter {
   /// The proxy URL template should contain `{url}` placeholder which will be
   /// replaced with the URL-encoded original image URL.
   ///
+  /// If `proxyPatterns` is specified, only URLs matching those patterns will be proxied.
+  /// If `proxyPatterns` is empty or not specified, all URLs will be proxied.
+  ///
   /// Example config:
   /// ```json
   /// "images": {
-  ///   "proxyUrl": "https://v2.doujindesu.fun/api/image-proxy?url={url}"
+  ///   "proxyUrl": "https://v2.doujindesu.fun/api/image-proxy?url={url}",
+  ///   "proxyPatterns": ["desu.photos", "cdn.doujindesu"]
   /// }
   /// ```
   List<String> _applyImageProxy(
@@ -2071,8 +2087,20 @@ class GenericRestAdapter implements GenericAdapter {
 
     _logger.d('$_sourceId applying image proxy: $proxyUrl');
 
+    final proxyPatterns = (imagesCfg['proxyPatterns'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
     return images.map((imageUrl) {
-      // URL-encode the original image URL
+      final shouldProxy = proxyPatterns.isEmpty ||
+          proxyPatterns.any((pattern) => imageUrl.contains(pattern));
+
+      if (!shouldProxy) {
+        _logger.d('$_sourceId skipping proxy for: $imageUrl');
+        return imageUrl;
+      }
+
       final encodedUrl = Uri.encodeComponent(imageUrl);
       return proxyUrl.replaceAll('{url}', encodedUrl);
     }).toList();
@@ -2163,7 +2191,7 @@ class GenericRestAdapter implements GenericAdapter {
 
   /// Parse chapters inline from the detail response (no separate API call needed).
   /// Used for sources like DoujinDesu v2 that include chapters in the detail response.
-  /// 
+  ///
   /// For multi-chapter works, chapter ID is formatted as: {mangaSlug}/{chapterSlug}
   /// to support the API endpoint: /api/read/{id}/{chapter}
   List<Chapter>? _parseChaptersInline(
@@ -2182,22 +2210,23 @@ class GenericRestAdapter implements GenericAdapter {
     final chapters = <Chapter>[];
     for (final c in rawChapters) {
       final cFieldsExtracted = _extractRestFields(c, cFields);
-      
+
       // For multi-chapter works, prepend manga slug to chapter slug
       // Format: {mangaSlug}/{chapterSlug}
       final originalId = _str(cFieldsExtracted, 'id');
       if (originalId != null && originalId.isNotEmpty) {
         final chapterSlug = originalId;
         final mangaSlug = contentId;
-        
+
         // If chapter slug is DIFFERENT from manga slug, it's a multi-chapter work
         // Format chapter ID as: {mangaSlug}/{chapterSlug}
         if (chapterSlug != mangaSlug) {
           cFieldsExtracted['id'] = '$mangaSlug/$chapterSlug';
-          _logger.d('$_sourceId: Multi-chapter detected, chapter ID: ${cFieldsExtracted['id']}');
+          _logger.d(
+              '$_sourceId: Multi-chapter detected, chapter ID: ${cFieldsExtracted['id']}');
         }
       }
-      
+
       chapters.add(GenericContentMapper.toChapter(cFieldsExtracted));
     }
 
