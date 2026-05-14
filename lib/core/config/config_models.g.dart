@@ -91,9 +91,7 @@ ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
       endpoints: (json['endpoints'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ),
-      images: (json['images'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ),
+      images: json['images'] as Map<String, dynamic>?,
       extensionMapping:
           (json['extensionMapping'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
