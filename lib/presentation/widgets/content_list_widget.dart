@@ -200,6 +200,8 @@ class _ContentListWidgetState extends State<ContentListWidget> {
           List<String> getSuggestions(List<String> keys) {
             return keys.map((key) {
               switch (key) {
+                case 'tryAdjustingFilters':
+                  return l10n.tryAdjustingFilters;
                 case 'tryRemovingSomeFilters':
                   return l10n.tryAdjustingFilters;
                 case 'tryBrowsingOtherTags':
@@ -208,6 +210,10 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   return l10n.checkPopularContent;
                 case 'checkInternetConnection':
                   return l10n.checkInternetConnectionSuggestion;
+                case 'checkInternetConnectionSuggestion':
+                  return l10n.checkInternetConnectionSuggestion;
+                case 'tryADifferentSearchTerm':
+                  return l10n.tryADifferentSearchTerm;
                 default:
                   return key;
               }

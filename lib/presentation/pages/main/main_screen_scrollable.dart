@@ -649,6 +649,26 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build empty state UI
   Widget _buildEmptyState(ContentEmpty state) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Translate l10n key to actual message
+    String getDisplayMessage(String key) {
+      switch (key) {
+        case 'noContentAtMoment':
+          return l10n.noContentAtMoment;
+        case 'noContentMatchingSearch':
+          return l10n.noContentMatchingSearch;
+        case 'noPopularContent':
+          return l10n.noPopularContent;
+        case 'noContentForTag':
+          return l10n.noContentForTag;
+        case 'noContentOnPage':
+          return l10n.noContentOnPage;
+        default:
+          return key;
+      }
+    }
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -661,21 +681,41 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           ),
           const SizedBox(height: 16),
           Text(
-            state.contextualMessage,
+            getDisplayMessage(state.contextualMessage),
             textAlign: TextAlign.center,
             style: TextStyleConst.bodyMedium,
           ),
           const SizedBox(height: 8),
           if (state.suggestions.isNotEmpty) ...[
             Text(
-              AppLocalizations.of(context)?.suggestions ?? 'Suggestions:',
+              l10n.suggestions,
               style: TextStyleConst.bodyMedium,
             ),
             const SizedBox(height: 4),
-            ...state.suggestions.map((suggestion) => Text(
-                  '• $suggestion',
-                  style: TextStyleConst.bodyMedium,
-                )),
+            ...state.suggestions.map((suggestionKey) {
+              // Translate suggestion l10n key
+              String getSuggestionText(String key) {
+                switch (key) {
+                  case 'tryAdjustingFilters':
+                    return l10n.tryAdjustingFilters;
+                  case 'tryBrowsingOtherTags':
+                    return l10n.tryBrowsingOtherTags;
+                  case 'checkPopularContent':
+                    return l10n.checkPopularContent;
+                  case 'checkInternetConnectionSuggestion':
+                    return l10n.checkInternetConnectionSuggestion;
+                  case 'tryADifferentSearchTerm':
+                    return l10n.tryADifferentSearchTerm;
+                  default:
+                    return key;
+                }
+              }
+              
+              return Text(
+                '• ${getSuggestionText(suggestionKey)}',
+                style: TextStyleConst.bodyMedium,
+              );
+            }),
           ],
           if (state.canRetry) ...[
             const SizedBox(height: 16),

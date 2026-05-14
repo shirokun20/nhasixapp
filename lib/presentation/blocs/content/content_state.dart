@@ -362,12 +362,12 @@ class ContentEmpty extends ContentState {
         timeframe,
       ];
 
-  /// Get appropriate empty message based on context
+  /// Get appropriate empty message based on context (returns l10n key)
   String get contextualMessage {
     if (searchFilter != null && searchFilter!.hasFilters) {
-      return 'No content found matching your search criteria. Try adjusting your filters.';
+      return 'noContentMatchingSearch';
     } else if (tag != null) {
-      return 'No content found for tag "${tag!.name}".';
+      return 'noContentForTag';
     } else {
       return message;
     }
