@@ -169,4 +169,36 @@ abstract class KuronNativePlatform extends PlatformInterface {
   }) {
     throw UnimplementedError('showCaptchaWebView() has not been implemented.');
   }
+
+  /// Set DNS over HTTPS provider.
+  /// Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  Future<bool> setDohProvider(int provider) {
+    throw UnimplementedError('setDohProvider() has not been implemented.');
+  }
+
+  /// Get current DNS over HTTPS provider.
+  /// Returns: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  Future<int> getDohProvider() {
+    throw UnimplementedError('getDohProvider() has not been implemented.');
+  }
+
+  /// Make HTTP request using native OkHttp with DoH support.
+  /// Returns map with 'statusCode', 'body', and 'headers'.
+  Future<Map<String, dynamic>> makeHttpRequest({
+    required String url,
+    String method = 'GET',
+    Map<String, String>? headers,
+    String? body,
+  }) {
+    throw UnimplementedError('makeHttpRequest() has not been implemented.');
+  }
+
+  /// Download binary data (images, files) using native OkHttp with DoH support.
+  /// Returns raw bytes.
+  Future<Uint8List> downloadBinary({
+    required String url,
+    Map<String, String>? headers,
+  }) {
+    throw UnimplementedError('downloadBinary() has not been implemented.');
+  }
 }

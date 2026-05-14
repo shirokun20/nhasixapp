@@ -4,6 +4,7 @@ import 'dart:typed_data';
 export 'utils/backup_utils.dart'; // Export for users
 export 'widgets/kuron_widgets.dart'; // Export Widgets
 export 'widgets/animated_webp_view.dart'; // Export native animated-WebP viewer
+export 'src/doh_provider.dart'; // Export DoH provider constants
 
 class KuronNative {
   /// Singleton instance
@@ -182,6 +183,46 @@ class KuronNative {
       filePath: filePath,
       title: title,
       startPage: startPage,
+    );
+  }
+
+  /// Set DNS over HTTPS provider.
+  /// Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  Future<bool> setDohProvider(int provider) {
+    return KuronNativePlatform.instance.setDohProvider(provider);
+  }
+
+  /// Get current DNS over HTTPS provider.
+  /// Returns: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  Future<int> getDohProvider() {
+    return KuronNativePlatform.instance.getDohProvider();
+  }
+
+  /// Make HTTP request using native OkHttp with DoH support.
+  /// Returns map with 'statusCode', 'body', and 'headers'.
+  Future<Map<String, dynamic>> makeHttpRequest({
+    required String url,
+    String method = 'GET',
+    Map<String, String>? headers,
+    String? body,
+  }) {
+    return KuronNativePlatform.instance.makeHttpRequest(
+      url: url,
+      method: method,
+      headers: headers,
+      body: body,
+    );
+  }
+
+  /// Download binary data (images, files) using native OkHttp with DoH support.
+  /// Returns raw bytes.
+  Future<Uint8List> downloadBinary({
+    required String url,
+    Map<String, String>? headers,
+  }) {
+    return KuronNativePlatform.instance.downloadBinary(
+      url: url,
+      headers: headers,
     );
   }
 }

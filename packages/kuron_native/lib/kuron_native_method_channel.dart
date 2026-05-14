@@ -297,4 +297,55 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     );
     return result;
   }
+
+  @override
+  Future<bool> setDohProvider(int provider) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'setDohProvider',
+      {'provider': provider},
+    );
+    return result ?? false;
+  }
+
+  @override
+  Future<int> getDohProvider() async {
+    final result = await methodChannel.invokeMethod<int>(
+      'getDohProvider',
+    );
+    return result ?? -1;
+  }
+
+  @override
+  Future<Map<String, dynamic>> makeHttpRequest({
+    required String url,
+    String method = 'GET',
+    Map<String, String>? headers,
+    String? body,
+  }) async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'makeHttpRequest',
+      {
+        'url': url,
+        'method': method,
+        'headers': headers,
+        'body': body,
+      },
+    );
+    return result ?? {};
+  }
+
+  @override
+  Future<Uint8List> downloadBinary({
+    required String url,
+    Map<String, String>? headers,
+  }) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'downloadBinary',
+      {
+        'url': url,
+        'headers': headers,
+      },
+    );
+    return result ?? Uint8List(0);
+  }
 }

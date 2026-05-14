@@ -130,6 +130,30 @@ class MockKuronNativePlatform
     'imageCount': 0,
     'destinationPath': destinationPath,
   };
+
+  @override
+  Future<bool> setDohProvider(int provider) async => true;
+
+  @override
+  Future<int> getDohProvider() async => -1;
+
+  @override
+  Future<Map<String, dynamic>> makeHttpRequest({
+    required String url,
+    String method = 'GET',
+    Map<String, String>? headers,
+    String? body,
+  }) async => {
+    'statusCode': 200,
+    'body': '{"mock": true}',
+    'headers': {},
+  };
+
+  @override
+  Future<Uint8List> downloadBinary({
+    required String url,
+    Map<String, String>? headers,
+  }) async => Uint8List.fromList([1, 2, 3, 4, 5]);
 }
 
 void main() {

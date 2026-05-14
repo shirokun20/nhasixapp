@@ -32,6 +32,7 @@ import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
+import okhttp3.MediaType.Companion.toMediaType
 
 /** KuronNativePlugin */
 class KuronNativePlugin :
@@ -50,6 +51,7 @@ class KuronNativePlugin :
     private var pendingCaptchaResult: Result? = null
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     private var zipImportHandler: ZipImportHandler? = null
+    private lateinit var dnsResolver: id.nhasix.kuron_native.kuron_native.network.DnsResolver
 
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
@@ -72,10 +74,14 @@ class KuronNativePlugin :
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "kuron_native")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
-        
+
         // Initialize download event channel and handler
         downloadEventChannel = io.flutter.plugin.common.EventChannel(flutterPluginBinding.binaryMessenger, "kuron_native/download_progress")
         downloadHandler = id.nhasix.kuron_native.kuron_native.download.DownloadHandler(context, downloadEventChannel)
+
+        // Initialize DNS resolver
+        val prefs = context.getSharedPreferences("kuron_dns", Context.MODE_PRIVATE)
+        dnsResolver = id.nhasix.kuron_native.kuron_native.network.DnsResolver(context, prefs)
 
         // Register native animated-WebP PlatformView.
         // AnimatedWebPView guards API level internally:
@@ -150,6 +156,18 @@ class KuronNativePlugin :
             }
             "getThumbnailForWebP" -> {
                 handleGetWebPThumbnail(call, result)
+            }
+            "setDohProvider" -> {
+                handleSetDohProvider(call, result)
+            }
+            "getDohProvider" -> {
+                handleGetDohProvider(result)
+            }
+            "makeHttpRequest" -> {
+                handleMakeHttpRequest(call, result)
+            }
+            "downloadBinary" -> {
+                handleDownloadBinary(call, result)
             }
             else -> {
                 result.notImplemented()
@@ -660,6 +678,7 @@ class KuronNativePlugin :
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
         downloadHandler.dispose()
+        dnsResolver.clearCache()
     }
 
     // ActivityAware Implementation
@@ -1086,5 +1105,132 @@ class KuronNativePlugin :
         }
 
         zipImportHandler?.extractZipFile(contentUri, destinationPath, channel, result)
+    }
+
+    // ──────────────────────────────────────────────────
+    // DNS over HTTPS
+    // ──────────────────────────────────────────────────
+
+    private fun handleSetDohProvider(call: MethodCall, result: Result) {
+        val provider = call.argument<Int>("provider")
+        if (provider == null) {
+            result.error("INVALID_ARGS", "provider is required", null)
+            return
+        }
+
+        try {
+            dnsResolver.setDohProvider(provider)
+            result.success(true)
+        } catch (e: Exception) {
+            result.error("SET_DOH_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleGetDohProvider(result: Result) {
+        try {
+            val provider = dnsResolver.getDohProvider()
+            result.success(provider)
+        } catch (e: Exception) {
+            result.error("GET_DOH_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleMakeHttpRequest(call: MethodCall, result: Result) {
+        val url = call.argument<String>("url")
+        val method = call.argument<String>("method") ?: "GET"
+        @Suppress("UNCHECKED_CAST")
+        val headers = call.argument<Map<String, String>>("headers") ?: emptyMap()
+        val body = call.argument<String>("body")
+
+        if (url == null) {
+            result.error("INVALID_ARGS", "url is required", null)
+            return
+        }
+
+        executor.execute {
+            try {
+                val client = dnsResolver.getHttpClient()
+                val requestBuilder = okhttp3.Request.Builder().url(url)
+
+                headers.forEach { (key, value) ->
+                    requestBuilder.addHeader(key, value)
+                }
+
+                when (method.uppercase()) {
+                    "GET" -> requestBuilder.get()
+                    "POST" -> {
+                        val requestBody = okhttp3.RequestBody.create(
+                            "application/json; charset=utf-8".toMediaType(),
+                            body ?: ""
+                        )
+                        requestBuilder.post(requestBody)
+                    }
+                    "PUT" -> {
+                        val requestBody = okhttp3.RequestBody.create(
+                            "application/json; charset=utf-8".toMediaType(),
+                            body ?: ""
+                        )
+                        requestBuilder.put(requestBody)
+                    }
+                    "DELETE" -> requestBuilder.delete()
+                    else -> {
+                        mainThread { result.error("INVALID_METHOD", "Unsupported HTTP method: $method", null) }
+                        return@execute
+                    }
+                }
+
+                val response = client.newCall(requestBuilder.build()).execute()
+                val responseBody = response.body?.string()
+
+                mainThread {
+                    result.success(mapOf(
+                        "statusCode" to response.code,
+                        "body" to responseBody,
+                        "headers" to response.headers.toMultimap()
+                    ))
+                }
+            } catch (e: Exception) {
+                mainThread {
+                    result.error("HTTP_REQUEST_FAILED", e.message, null)
+                }
+            }
+        }
+    }
+
+    private fun handleDownloadBinary(call: MethodCall, result: Result) {
+        val url = call.argument<String>("url")
+        @Suppress("UNCHECKED_CAST")
+        val headers = call.argument<Map<String, String>>("headers") ?: emptyMap()
+
+        if (url == null) {
+            result.error("INVALID_ARGS", "url is required", null)
+            return
+        }
+
+        executor.execute {
+            try {
+                val client = dnsResolver.getHttpClient()
+                val requestBuilder = okhttp3.Request.Builder().url(url)
+
+                headers.forEach { (key, value) ->
+                    requestBuilder.addHeader(key, value)
+                }
+
+                val response = client.newCall(requestBuilder.build()).execute()
+                val bytes = response.body?.bytes()
+
+                mainThread {
+                    if (bytes != null) {
+                        result.success(bytes)
+                    } else {
+                        result.error("DOWNLOAD_FAILED", "Empty response body", null)
+                    }
+                }
+            } catch (e: Exception) {
+                mainThread {
+                    result.error("DOWNLOAD_FAILED", e.message, null)
+                }
+            }
+        }
     }
 }

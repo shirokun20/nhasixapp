@@ -100,3 +100,29 @@ Ensure your `AndroidManifest.xml` includes:
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
+
+## DNS over HTTPS (DoH)
+
+Bypass DNS censorship using native OkHttp with DoH support.
+
+```dart
+import 'package:kuron_native/kuron_native.dart';
+
+// Enable Cloudflare DoH
+await KuronNative.instance.setDohProvider(DohProvider.cloudflare);
+
+// Make request with DoH
+final response = await KuronNative.instance.makeHttpRequest(
+  url: 'https://example.com/api',
+  method: 'GET',
+);
+```
+
+**Available Providers:**
+- `DohProvider.disabled` - System DNS (default)
+- `DohProvider.cloudflare` - Cloudflare (1.1.1.1)
+- `DohProvider.google` - Google (8.8.8.8)
+- `DohProvider.adguard` - AdGuard (unfiltered)
+- `DohProvider.quad9` - Quad9 (9.9.9.9)
+
+See [DOH_IMPLEMENTATION.md](DOH_IMPLEMENTATION.md) for detailed usage.

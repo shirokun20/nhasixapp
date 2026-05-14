@@ -28,6 +28,7 @@ import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/tag_detail/tag_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:nhasixapp/presentation/pages/settings/doh_test_page.dart';
 
 class AppRouter {
   /// Global navigator key untuk Cloudflare bypass dialog
@@ -328,6 +329,18 @@ class AppRouter {
           context,
           state,
           const AboutScreen(),
+          type: RouteTransitionType.fadeSlide,
+        ),
+      ),
+
+      // DoH Test Screen
+      GoRoute(
+        path: AppRoute.dohTest,
+        name: AppRoute.dohTestName,
+        pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
+          context,
+          state,
+          const DohTestPage(),
           type: RouteTransitionType.fadeSlide,
         ),
       ),
