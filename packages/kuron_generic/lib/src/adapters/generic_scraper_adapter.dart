@@ -251,9 +251,65 @@ class GenericScraperAdapter implements GenericAdapter {
       templateQuery = basePath.substring(qIdx + 1);
       basePath = basePath.substring(0, qIdx);
     }
+
+    // Resolve path placeholders from raw params for templates like
+    // /search/keyword/{query}/ and /search/tag/{tag}/.
+    String? firstRawValue(String key) {
+      final values = rawMap[key];
+      if (values == null || values.isEmpty) return null;
+      final value = values.first.trim();
+      return value.isEmpty ? null : value;
+    }
+
+    final queryParamName =
+        ((formParamsCfg['query'] as Map<String, dynamic>?)?['queryParam']
+                as String?) ??
+            'query';
+    final tagParamName =
+        ((formParamsCfg['tag'] as Map<String, dynamic>?)?['queryParam']
+                as String?) ??
+            'tag';
+
+    final queryInPathTemplate = basePath.contains('{query}');
+    final tagInPathTemplate = basePath.contains('{tag}');
+
+    final rawQueryValue = firstRawValue(queryParamName) ?? firstRawValue('query');
+    final rawTagValue = firstRawValue(tagParamName) ?? firstRawValue('tag');
+
+    if (rawQueryValue != null) {
+      basePath =
+          basePath.replaceAll('{query}', Uri.encodeQueryComponent(rawQueryValue));
+    }
+    if (rawTagValue != null) {
+      final normalizedTag = rawTagValue.toLowerCase().replaceAll(' ', '-');
+      basePath =
+          basePath.replaceAll('{tag}', Uri.encodeQueryComponent(normalizedTag));
+    }
+
+    if (queryInPathTemplate) {
+      rawMap.remove(queryParamName);
+      rawMap.remove('query');
+    }
+    if (tagInPathTemplate) {
+      rawMap.remove(tagParamName);
+      rawMap.remove('tag');
+    }
+
     final hasPageInPathTemplate = basePath.contains('{page}');
     // Substitute {page} if present in path (some sources embed page in path).
     basePath = basePath.replaceAll('{page}', page.toString());
+
+    // Clean unreplaced placeholders in path to avoid `%7Bquery%7D` leak.
+    basePath = basePath.replaceAll('{query}', '');
+    basePath = basePath.replaceAll('{tag}', '');
+    basePath = basePath.replaceAll('//', '/');
+    if (!basePath.startsWith('/')) {
+      basePath = '/$basePath';
+    } else {
+      while (basePath.contains('//')) {
+        basePath = basePath.replaceAll('//', '/');
+      }
+    }
 
     // Merge template query defaults with raw params (raw params take priority).
     // This keeps mandatory params from template, e.g. `title=value`.
@@ -633,7 +689,34 @@ class GenericScraperAdapter implements GenericAdapter {
         content = content.copyWith(language: defaultLang);
       }
 
-      return AdapterDetailResult(content: content, imageUrls: const []);
+      final readerConfig = selectors['reader'] as Map<String, dynamic>?;
+      List<String> detailImageUrls = const [];
+      if (readerConfig != null) {
+        final imagesDef = readerConfig['images'];
+        final defMap = _toDefMap(imagesDef);
+        if (defMap != null) {
+          final sel = _fieldDefToSelector(defMap);
+          if (sel != null) {
+            final seen = <String>{};
+            detailImageUrls = _parser
+                .extractList(doc, sel)
+                .map((u) => u.trim())
+                .where((u) => u.isNotEmpty)
+                .map((u) => _urlBuilder.resolve(u, const {}))
+                .where((u) => seen.add(u))
+                .toList();
+          }
+        }
+      }
+
+      if (detailImageUrls.isNotEmpty) {
+        content = content.copyWith(
+          imageUrls: detailImageUrls,
+          pageCount: detailImageUrls.length,
+        );
+      }
+
+      return AdapterDetailResult(content: content, imageUrls: detailImageUrls);
     } on DioException catch (e, stack) {
       Logger().i(
           '[$_sourceId] getDetail ERROR (DioException): ${e.message}, statusCode=${e.response?.statusCode}');
@@ -1273,9 +1356,10 @@ class GenericScraperAdapter implements GenericAdapter {
       return ('', null);
     }
 
+    final rawQuery = filter.query == '{query}' ? '' : filter.query;
     final params = <String, String>{
       'page': filter.page.toString(),
-      'query': Uri.encodeQueryComponent(filter.query),
+      'query': Uri.encodeQueryComponent(rawQuery),
       'tag': filter.includeTags.isNotEmpty
           ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
           : '',
@@ -1315,24 +1399,84 @@ class GenericScraperAdapter implements GenericAdapter {
           (listConfig['fields'] as Map?)?.cast<String, dynamic>() ?? {};
       final paginationConfig =
           (listConfig['pagination'] as Map<String, dynamic>?) ?? {};
+      final sectionFilterConfig =
+          (listConfig['sectionFilter'] as Map<String, dynamic>?) ?? {};
+      final sectionFilterEnabled = sectionFilterConfig['enabled'] == true;
+      final allowedSectionTitles =
+          (sectionFilterConfig['allowedTitleContains'] as List?)
+                  ?.map((e) => e.toString().toLowerCase().trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList() ??
+              const <String>[];
+      final idFallbackSelectors = (listConfig['idFallbackSelectors'] as List?)
+              ?.map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const <String>[];
 
       final items = <Content>[];
       if (container != null) {
-        for (final el in _parser.selectAll(doc, container)) {
+        final elements = _parser.selectAll(doc, container);
+        _logger.i(
+            '$_sourceId list parse: container="$container" matched ${elements.length} elements for $url');
+
+        var index = 0;
+        for (final el in elements) {
+          if (sectionFilterEnabled && allowedSectionTitles.isNotEmpty) {
+            final sectionTitle = el
+                    .parent
+                    ?.parent
+                    ?.previousElementSibling
+                    ?.text
+                    .trim()
+                    .toLowerCase() ??
+                '';
+            final isAllowed = allowedSectionTitles
+                .any((needle) => sectionTitle.contains(needle));
+            if (sectionTitle.isNotEmpty && !isAllowed) {
+              continue;
+            }
+          }
+
           final fields = _extractElementFields(el, fieldsConfig);
           var item =
               GenericContentMapper.toListItem(fields, sourceId: _sourceId);
+          if (item.id.isEmpty && idFallbackSelectors.isNotEmpty) {
+            String fallbackHref = '';
+            for (final selector in idFallbackSelectors) {
+              final href = (el.querySelector(selector)?.attributes['href'] ?? '').trim();
+              if (href.isNotEmpty) {
+                fallbackHref = href;
+                break;
+              }
+            }
+            final fallbackId = _extractSlugFromUrl(fallbackHref);
+            if (fallbackId.isNotEmpty) {
+              item = item.copyWith(id: fallbackId);
+            }
+          }
           if (defaultLanguage != null &&
               (item.language.isEmpty || item.language == 'unknown')) {
             item = item.copyWith(language: defaultLanguage);
           }
-          if (item.id.isNotEmpty) items.add(item);
+          if (item.id.isNotEmpty) {
+            items.add(item);
+          } else if (index < 5) {
+            _logger.w(
+                '$_sourceId list parse drop[$index]: empty id. fields=$fields');
+          }
+          index++;
         }
+        _logger.i(
+            '$_sourceId list parse: mapped ${items.length}/${elements.length} items for $url');
+      } else {
+        _logger.w('$_sourceId list parse: container null for $url');
       }
 
       final nextSel = paginationConfig['next'] as String?;
       final altSel = paginationConfig['alt'] as String?;
       final linksSel = paginationConfig['links'] as String?;
+      final lastSel = paginationConfig['last'] as String?;
 
       final hasNext = (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
           (altSel != null && _hasEnabledLink(doc, altSel));
@@ -1343,6 +1487,30 @@ class GenericScraperAdapter implements GenericAdapter {
         for (final link in pageLinks) {
           final pageText = link.text.trim();
           final pageNum = int.tryParse(pageText);
+          if (pageNum != null && (totalPages == null || pageNum > totalPages)) {
+            totalPages = pageNum;
+          }
+        }
+      }
+
+      if (totalPages == null && lastSel != null && lastSel.isNotEmpty) {
+        final lastHref = _parser.extractString(
+          doc,
+          FieldSelector(selector: lastSel, attribute: 'href'),
+        );
+        if (lastHref != null && lastHref.isNotEmpty) {
+          final match = RegExp(r'/page/(\d+)/').firstMatch(lastHref);
+          totalPages = int.tryParse(match?.group(1) ?? '');
+        }
+      }
+
+      if (totalPages == null) {
+        final pageLinks = _parser.selectAll(doc, 'a[href]');
+        for (final link in pageLinks) {
+          final href = (link.attributes['href'] ?? '').trim();
+          if (href.isEmpty) continue;
+          final match = RegExp(r'/page/(\d+)/').firstMatch(href);
+          final pageNum = int.tryParse(match?.group(1) ?? '');
           if (pageNum != null && (totalPages == null || pageNum > totalPages)) {
             totalPages = pageNum;
           }
@@ -1388,6 +1556,9 @@ class GenericScraperAdapter implements GenericAdapter {
               .where((v) => v.isNotEmpty)
               .toList();
         }
+
+        final seenValues = <String>{};
+        values = values.where((v) => seenValues.add(v)).toList();
 
         // 🆕 parseTagNamespace: split "namespace:name" strings into typed Tags
         // Used by sources like E-Hentai where tag title attributes carry the

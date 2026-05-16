@@ -526,6 +526,10 @@ class AppRouter {
     context.go(AppRoute.settings);
   }
 
+  static void goToDohTest(BuildContext context) {
+    context.push(AppRoute.dohTest);
+  }
+
   static void goToTags(BuildContext context) {
     context.go(AppRoute.tags);
   }

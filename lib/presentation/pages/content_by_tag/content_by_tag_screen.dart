@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
@@ -98,10 +99,30 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       // Load saved sorting preference
       final userDataRepository = getIt<UserDataRepository>();
       _currentSortOption = await userDataRepository.getSortingPreference();
+      if (!mounted) return;
+
+      final sourceId = context.read<SourceCubit>().state.activeSource?.id;
+      final rawConfig = sourceId == null
+          ? null
+          : getIt<RemoteConfigService>().getRawConfig(sourceId);
+      final hasTagRoute =
+          ((rawConfig?['scraper'] as Map<String, dynamic>?)?['urlPatterns']
+                  as Map<String, dynamic>?)
+              ?.containsKey('tag') ??
+          false;
+
+      final normalizedTag = widget.tagQuery.trim().toLowerCase();
+      final includeTag = hasTagRoute &&
+              normalizedTag.isNotEmpty &&
+              !normalizedTag.startsWith('raw:') &&
+              !normalizedTag.contains(':')
+          ? [FilterItem.include(normalizedTag.replaceAll(' ', '-'))]
+          : const <FilterItem>[];
 
       // Create search filter for the tag
       final searchFilter = SearchFilter(
-        query: widget.tagQuery,
+        query: widget.tagQuery == '{query}' ? '' : widget.tagQuery,
+        tags: includeTag,
         sortBy: _currentSortOption,
         source: SearchSource.detailScreen,
       );
@@ -114,7 +135,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       Logger().e('ContentByTagScreen: Error initializing content: $e');
       // Fallback to simple tag search
       final searchFilter = SearchFilter(
-        query: widget.tagQuery,
+        query: widget.tagQuery == '{query}' ? '' : widget.tagQuery,
         sortBy: _currentSortOption,
         source: SearchSource.detailScreen,
       );

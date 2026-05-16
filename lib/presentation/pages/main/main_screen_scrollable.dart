@@ -276,8 +276,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         final savedFilter = SearchFilter.fromJson(savedFilterData);
 
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
+          final sanitizedQuery = savedFilter.query == '{query}'
+              ? ''
+              : savedFilter.query;
           _currentSearchFilter =
-              savedFilter.copyWith(sortBy: _currentSortOption);
+              savedFilter.copyWith(query: sanitizedQuery, sortBy: _currentSortOption);
           _isShowingSearchResults = true;
           _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
 

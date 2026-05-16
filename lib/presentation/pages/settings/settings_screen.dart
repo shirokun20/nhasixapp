@@ -6,7 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart' show kDebugMode, listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
@@ -345,6 +345,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           _buildSettingsCard([
+            if (kDebugMode) ...[
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const Icon(Icons.dns_outlined),
+                title: const Text('DoH Test'),
+                subtitle: const Text('Test DNS-over-HTTPS resolver and responses'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => AppRouter.goToDohTest(context),
+              ),
+              _buildDivider(theme),
+            ],
             _buildActionTile(
               title: l10n.testCacheClearing,
               subtitle: l10n.testCacheClearingDescription,
