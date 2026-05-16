@@ -1,6 +1,10 @@
 {
     "mcpServers": {
-        
+        "playwright": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["-y", "@executeautomation/playwright-mcp-server"]
+        },
         "sequential-thinking": {
             "type": "stdio",
             "command": "npx",
