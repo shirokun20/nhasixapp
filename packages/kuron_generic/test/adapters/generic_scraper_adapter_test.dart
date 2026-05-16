@@ -209,6 +209,61 @@ const _hentaiNexusConfig = {
   },
 };
 
+const _crotpediaRawConfig = {
+  'source': 'crotpedia',
+  'baseUrl': 'https://crotpedia.net',
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': '/advanced-search/?title={query}&order=latest&genre[]={tag}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 'title',
+        'type': 'text',
+      },
+      'tag': {
+        'queryParam': 'genre[]',
+        'type': 'tag',
+      },
+      'page': {
+        'queryParam': 'page',
+        'type': 'page',
+      },
+    },
+  },
+};
+
+GenericScraperAdapter _buildCrotpediaAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: 'https://crotpedia.net'),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'crotpedia',
+  );
+}
+
+Dio _buildCrotpediaDio() =>
+    Dio(BaseOptions(baseUrl: 'https://crotpedia.net'));
+
 // ── Fake HTML pages ───────────────────────────────────────────────────────────
 
 /// Home page with 2 content items + a next-page link.
@@ -737,6 +792,35 @@ void main() {
 
       expect(result.items, hasLength(2));
       expect(result.items.first.title, 'Search Result One');
+    });
+  });
+
+
+  group('GenericScraperAdapter.search() — Crotpedia placeholder cleanup', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildCrotpediaDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildCrotpediaAdapter(dio);
+    });
+
+    test('empty query and tag do not leak encoded placeholders', () async {
+      dioAdapter.onGet(
+        'https://crotpedia.net/advanced-search/?title=&order=latest&genre[]=',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: '', page: 1),
+        _crotpediaRawConfig,
+      );
+
+      expect(result.items, hasLength(2));
     });
   });
 

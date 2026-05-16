@@ -322,7 +322,10 @@ class GenericScraperAdapter implements GenericAdapter {
         final idx = pair.indexOf('=');
         final key = idx < 0 ? pair : pair.substring(0, idx);
         if (key.isEmpty) continue;
-        final value = idx < 0 ? '' : pair.substring(idx + 1);
+        var value = idx < 0 ? '' : pair.substring(idx + 1);
+        if (value == '{query}' || value == '{tag}') {
+          value = '';
+        }
         mergedParams[key] = <String>[value];
       }
     }
