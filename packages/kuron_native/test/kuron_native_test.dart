@@ -33,6 +33,9 @@ class MockKuronNativePlatform
   Future<Uint8List?> readZipBytes(String contentUri) => Future.value(null);
 
   @override
+  Future<String?> getZipDisplayName(String contentUri) => Future.value(null);
+
+  @override
   Future<String?> startDownload({
     required String url,
     required String fileName,

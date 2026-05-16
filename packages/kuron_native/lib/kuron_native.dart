@@ -47,6 +47,11 @@ class KuronNative {
     return KuronNativePlatform.instance.readZipBytes(contentUri);
   }
 
+  /// Resolve ZIP display name from content URI.
+  Future<String?> getZipDisplayName(String contentUri) {
+    return KuronNativePlatform.instance.getZipDisplayName(contentUri);
+  }
+
   /// Extract ZIP file natively to destination directory with progress notifications.
   ///
   /// This is a native Android implementation that:

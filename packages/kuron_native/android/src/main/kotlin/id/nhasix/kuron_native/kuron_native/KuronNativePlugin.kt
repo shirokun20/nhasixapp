@@ -140,6 +140,9 @@ class KuronNativePlugin :
             "readZipBytes" -> {
                 handleReadZipBytes(call, result)
             }
+            "getZipDisplayName" -> {
+                handleGetZipDisplayName(call, result)
+            }
             "extractZipFile" -> {
                 handleExtractZipFile(call, result)
             }
@@ -1083,6 +1086,26 @@ class KuronNativePlugin :
         }
 
         zipImportHandler?.readZipBytes(contentUri, result)
+    }
+
+    private fun handleGetZipDisplayName(call: MethodCall, result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        val contentUri = call.argument<String>("contentUri")
+        if (contentUri == null) {
+            result.error("INVALID_ARGUMENT", "contentUri is required", null)
+            return
+        }
+
+        if (zipImportHandler == null) {
+            zipImportHandler = ZipImportHandler(activity)
+        }
+
+        zipImportHandler?.getZipDisplayName(contentUri, result)
     }
 
     private fun handleExtractZipFile(call: MethodCall, result: Result) {

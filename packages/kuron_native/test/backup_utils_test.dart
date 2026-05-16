@@ -30,6 +30,9 @@ class MockKuronNativePlatform
   Future<Uint8List?> readZipBytes(String contentUri) async => null;
 
   @override
+  Future<String?> getZipDisplayName(String contentUri) async => null;
+
+  @override
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,

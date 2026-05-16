@@ -3,6 +3,7 @@ package id.nhasix.kuron_native.kuron_native
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,24 @@ class ZipImportHandler(private val activity: Activity) {
         } catch (e: Exception) {
             pendingResult = null
             result.error("PICK_FAILED", "Failed to open file picker: ${e.message}", null)
+        }
+    }
+
+    fun getZipDisplayName(contentUri: String, result: MethodChannel.Result) {
+        try {
+            val uri = Uri.parse(contentUri)
+            var displayName: String? = null
+
+            activity.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex >= 0 && cursor.moveToFirst()) {
+                    displayName = cursor.getString(nameIndex)
+                }
+            }
+
+            result.success(displayName)
+        } catch (e: Exception) {
+            result.error("READ_NAME_FAILED", "Failed to read ZIP display name: ${e.message}", null)
         }
     }
 

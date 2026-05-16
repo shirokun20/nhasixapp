@@ -53,9 +53,13 @@ class ImportZipUseCase {
 
       _logger.i('ZIP file selected: $zipUri');
 
-      // Step 2: Extract ZIP file name for content ID
-      final zipFileName = _extractFileNameFromUri(zipUri);
-      final contentId = _sanitizeContentId(zipFileName);
+      // Step 2: Resolve ZIP display name and build unique content ID
+      final zipDisplayName = await _kuronNative.getZipDisplayName(zipUri);
+      final zipFileName = (zipDisplayName != null && zipDisplayName.trim().isNotEmpty)
+          ? zipDisplayName.trim()
+          : _extractFileNameFromUri(zipUri);
+      final baseContentId = _sanitizeContentId(zipFileName);
+      final contentId = await _ensureUniqueContentId(baseContentId, sourceId: 'local');
 
       _logger.i('Content ID: $contentId');
 
@@ -216,6 +220,24 @@ class ImportZipUseCase {
     return cleaned.isNotEmpty
         ? cleaned
         : 'imported-${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  Future<String> _ensureUniqueContentId(
+    String baseContentId, {
+    required String sourceId,
+  }) async {
+    var candidate = baseContentId;
+    var suffix = 2;
+
+    while (true) {
+      final existingDir =
+          await DownloadStorageUtils.getContentDirectory(candidate, sourceId: sourceId);
+      if (!await Directory(existingDir).exists()) {
+        return candidate;
+      }
+      candidate = '$baseContentId-$suffix';
+      suffix++;
+    }
   }
 
   /// Formats content ID into a readable title

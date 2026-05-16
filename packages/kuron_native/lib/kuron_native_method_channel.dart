@@ -133,6 +133,14 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<String?> getZipDisplayName(String contentUri) async {
+    final name = await methodChannel.invokeMethod<String>('getZipDisplayName', {
+      'contentUri': contentUri,
+    });
+    return name;
+  }
+
+  @override
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,
