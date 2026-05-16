@@ -19,7 +19,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.18+27**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.18%2B27)
+[📦 **Download v0.9.18+28**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.18%2B28)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|

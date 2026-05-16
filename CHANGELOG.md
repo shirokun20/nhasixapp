@@ -6,48 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.9.18+27] - 2026-05-10
+## [0.9.18+28] - 2026-05-16
 
 ### ✨ Highlights
 
-#### 📦 DoujinDesuV2 Integration
-- **New Source**: Added DoujinDesuV2 API integration with full search, detail, and reader support.
-- **Tag Search Fix**: Fixed tag search endpoint and image extraction bug.
-
-#### 🚀 Source Expansion
-- **6 New Config-Driven Sources**: Integrated Tachiyomi-style external sources via configuration.
-- **Komiku Fix**: Fixed issues with Komiku source implementation.
-
-#### 🛠 Dependency Updates
-- **Deprecated Packages Removal**: Cleaned up deprecated packages for better performance.
-
-#### 🎨 UI/UX Improvements
-- **Icon Updates**: Replaced Frame.png with logo_app.png across the application for consistent branding.
-- **Tag Visibility Fix**: Adjusted tag border opacity from `0.5` to `0.8` on detail screen for better contrast.
-- **Tag Color Handling**: Fixed "other" tag case to use `colorScheme.outline` for dark mode.
-- **Theme Refactor**: Refactored color constants to use AppColors in ThemeCubit and ThemeState.
-
-#### 🌐 Localization
-- **Empty State Suggestions**: Enhanced empty state suggestions with localized keys for better i18n support.
-
-#### 📥 Download & Offline
-- **Range Download**: Implemented range download with original page numbering and metadata preservation.
-- **Offline Content Enhancement**: Improved metadata handling by removing repaired pages from failed_pages.
-- **Failed Page Placeholders**: Enhanced offline reader with failed-page placeholders and cache invalidation.
-
-#### 📖 Reader Improvements
-- **Image Repair Handling**: Enhanced image repair handling with source page fallback options.
-- **Reader Routing**: Improved reader routing and download management with new route extra handling.
-
-#### 🏷️ Tag & Metadata
-- **Uploader Tag**: Added uploader tag extraction and enhanced tag parsing for E-Hentai.
-- **Namespace-Typed Tags**: Added namespace-typed tags and uploader tag injection for generic scraper.
-
-#### 🧩 Architecture
-- **Code Refactor**: Refactored code structure for improved readability and maintainability.
-- **HTTP Client Fix**: Improved error handling for malformed Set-Cookie headers.
-- **WebView Session**: Prevented duplicate CookieManager interceptors in Dio.
-- **Parameter Merging**: Enhanced generic scraper parameter merging logic for clarity.
+#### 🧭 Hentai Cosplay Scraper Reliability
+- **Raw Search URL Fix**: Fixed duplicate raw query appending (`?query=...`) when query/tag already resolved in path templates.
+- **Primary Section Filtering**: Added config-driven section filtering so only `Search Results`/`New Images` blocks are parsed.
+- **Pagination Accuracy**: Added config-based `pagination.last` support and improved total-page fallback extraction.
+- **ID Fallback Config**: Added `idFallbackSelectors` in source config to avoid hardcoded list-item fallback selectors.
+- **List Parsing Robustness**: Improved list mapping resilience and diagnostics for empty-list cases.
 
 ---
 

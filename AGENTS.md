@@ -44,6 +44,7 @@
 - **Codegen**: `flutter pub run build_runner build --delete-conflicting-outputs`
 - **Format**: `dart format .`
 - **Release**: `./build_release.sh` (Custom) | `flutter build ipa` (iOS)
+- **Packages Pub Get**: `./scripts/pub_get_all.sh` | Run `fvm flutter pub get` on all packages
 
 ## 📜 Development Scripts
 
@@ -54,6 +55,7 @@ Located in `scripts/` folder. **ALWAYS run after project changes:**
 | **Project Status** | `dart scripts/project_status.dart` | After creating issue, moving project phase, or updating progress |
 | **Create Feature** | `dart scripts/create_feature.dart [name]` | Scaffold new feature structure |
 | **Smart Search** | `./scripts/smart_search.sh <mode> <pattern>` | Code search, audit, violations |
+| **Pub Get All** | `./scripts/pub_get_all.sh` | Run `fvm flutter pub get` on all packages at once |
 
 **Note**: `project_status.dart` auto-updates all README dashboards with progress bars and statistics.
 
