@@ -251,6 +251,52 @@ const _crotpediaRawConfig = {
   },
 };
 
+const _absoluteRawConfig = {
+  'source': 'komiku',
+  'baseUrl': 'https://komiku.org',
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': 'https://api.komiku.org/?post_type=manga&s={query}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 's',
+        'type': 'text',
+      },
+    },
+  },
+};
+
+GenericScraperAdapter _buildAbsoluteRawAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: 'https://komiku.org'),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'komiku',
+  );
+}
+
+Dio _buildAbsoluteRawDio() => Dio(BaseOptions(baseUrl: 'https://komiku.org'));
+
 GenericScraperAdapter _buildCrotpediaAdapter(Dio dio) {
   return GenericScraperAdapter(
     dio: dio,
@@ -261,8 +307,7 @@ GenericScraperAdapter _buildCrotpediaAdapter(Dio dio) {
   );
 }
 
-Dio _buildCrotpediaDio() =>
-    Dio(BaseOptions(baseUrl: 'https://crotpedia.net'));
+Dio _buildCrotpediaDio() => Dio(BaseOptions(baseUrl: 'https://crotpedia.net'));
 
 // ── Fake HTML pages ───────────────────────────────────────────────────────────
 
@@ -795,7 +840,6 @@ void main() {
     });
   });
 
-
   group('GenericScraperAdapter.search() — Crotpedia placeholder cleanup', () {
     late Dio dio;
     late DioAdapter dioAdapter;
@@ -821,6 +865,35 @@ void main() {
       );
 
       expect(result.items, hasLength(2));
+    });
+  });
+
+  group('GenericScraperAdapter.search() — absolute raw search URLs', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildAbsoluteRawDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAbsoluteRawAdapter(dio);
+    });
+
+    test('preserves absolute template URL in raw search mode', () async {
+      dioAdapter.onGet(
+        'https://api.komiku.org/?post_type=manga&s=the',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:s=the', page: 1),
+        _absoluteRawConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
     });
   });
 

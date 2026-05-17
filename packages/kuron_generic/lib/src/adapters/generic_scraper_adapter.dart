@@ -261,24 +261,23 @@ class GenericScraperAdapter implements GenericAdapter {
       return value.isEmpty ? null : value;
     }
 
-    final queryParamName =
-        ((formParamsCfg['query'] as Map<String, dynamic>?)?['queryParam']
-                as String?) ??
-            'query';
-    final tagParamName =
-        ((formParamsCfg['tag'] as Map<String, dynamic>?)?['queryParam']
-                as String?) ??
-            'tag';
+    final queryParamName = ((formParamsCfg['query']
+            as Map<String, dynamic>?)?['queryParam'] as String?) ??
+        'query';
+    final tagParamName = ((formParamsCfg['tag']
+            as Map<String, dynamic>?)?['queryParam'] as String?) ??
+        'tag';
 
     final queryInPathTemplate = basePath.contains('{query}');
     final tagInPathTemplate = basePath.contains('{tag}');
 
-    final rawQueryValue = firstRawValue(queryParamName) ?? firstRawValue('query');
+    final rawQueryValue =
+        firstRawValue(queryParamName) ?? firstRawValue('query');
     final rawTagValue = firstRawValue(tagParamName) ?? firstRawValue('tag');
 
     if (rawQueryValue != null) {
-      basePath =
-          basePath.replaceAll('{query}', Uri.encodeQueryComponent(rawQueryValue));
+      basePath = basePath.replaceAll(
+          '{query}', Uri.encodeQueryComponent(rawQueryValue));
     }
     if (rawTagValue != null) {
       final normalizedTag = rawTagValue.toLowerCase().replaceAll(' ', '-');
@@ -302,12 +301,16 @@ class GenericScraperAdapter implements GenericAdapter {
     // Clean unreplaced placeholders in path to avoid `%7Bquery%7D` leak.
     basePath = basePath.replaceAll('{query}', '');
     basePath = basePath.replaceAll('{tag}', '');
-    basePath = basePath.replaceAll('//', '/');
-    if (!basePath.startsWith('/')) {
-      basePath = '/$basePath';
-    } else {
-      while (basePath.contains('//')) {
-        basePath = basePath.replaceAll('//', '/');
+
+    final isAbsolutePath = Uri.tryParse(basePath)?.hasScheme ?? false;
+    if (!isAbsolutePath) {
+      basePath = basePath.replaceAll('//', '/');
+      if (!basePath.startsWith('/')) {
+        basePath = '/$basePath';
+      } else {
+        while (basePath.contains('//')) {
+          basePath = basePath.replaceAll('//', '/');
+        }
       }
     }
 
@@ -1426,11 +1429,7 @@ class GenericScraperAdapter implements GenericAdapter {
         var index = 0;
         for (final el in elements) {
           if (sectionFilterEnabled && allowedSectionTitles.isNotEmpty) {
-            final sectionTitle = el
-                    .parent
-                    ?.parent
-                    ?.previousElementSibling
-                    ?.text
+            final sectionTitle = el.parent?.parent?.previousElementSibling?.text
                     .trim()
                     .toLowerCase() ??
                 '';
@@ -1447,7 +1446,8 @@ class GenericScraperAdapter implements GenericAdapter {
           if (item.id.isEmpty && idFallbackSelectors.isNotEmpty) {
             String fallbackHref = '';
             for (final selector in idFallbackSelectors) {
-              final href = (el.querySelector(selector)?.attributes['href'] ?? '').trim();
+              final href =
+                  (el.querySelector(selector)?.attributes['href'] ?? '').trim();
               if (href.isNotEmpty) {
                 fallbackHref = href;
                 break;
