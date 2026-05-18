@@ -74,7 +74,18 @@
       "Bash(rg -rn \"noContent\\\\|empty\\\\|offline\" /Users/asix/Documents/learn_flutter/nhasixapp/lib/presentation/widgets/ --type dart)",
       "Bash(rg -rn \"\\\\.state\\\\b\" /Users/asix/Documents/learn_flutter/nhasixapp/lib/presentation/pages/main/main_screen_scrollable.dart)",
       "Bash(rg -rn \"ContentBloc\\\\b\" /Users/asix/Documents/learn_flutter/nhasixapp/lib/presentation/ --type dart)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(gh api *)",
+      "WebSearch",
+      "Bash(curl -s \"https://api.github.com/search/code?q=repo:jobobby04/TachiyomiSY+dns+language:kotlin\")",
+      "Bash(./gradlew :kuron_native:assembleDebug)",
+      "Bash(flutter test *)",
+      "Bash(rtk curl *)",
+      "Bash(rtk rg *)",
+      "Bash(dart analyze *)",
+      "Bash(git tag *)",
+      "Bash(rtk dart *)",
+      "Bash(rtk flutter *)"
     ]
   }
 }

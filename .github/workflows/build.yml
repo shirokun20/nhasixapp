@@ -35,11 +35,6 @@ on:
         required: true
         default: true
         type: boolean
-      enable_adi_registration:
-        description: 'Inject ADI registration token file for Google package ownership verification'
-        required: true
-        default: false
-        type: boolean
 
 jobs:
   build:
@@ -116,16 +111,11 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
-          ADI_REGISTRATION_TOKEN: ${{ secrets.ADI_REGISTRATION_TOKEN }}
-          ENABLE_ADI_REGISTRATION: ${{ github.event.inputs.enable_adi_registration || 'false' }}
           KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/
           BUILD_TYPE: ${{ github.event.inputs.build_type || 'release' }}
           SPLIT_ABI: ${{ github.event.inputs.split_abi || 'true' }}
         run: |
           echo "📋 Build config: type=$BUILD_TYPE, split_abi=$SPLIT_ABI"
-          if [ "$ENABLE_ADI_REGISTRATION" = "true" ]; then
-            echo "🪪 ADI registration mode enabled"
-          fi
 
           # Determine split flag
           SPLIT_FLAG=""
