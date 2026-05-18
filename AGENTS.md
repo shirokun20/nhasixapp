@@ -5,7 +5,7 @@
 **App**: Kuron (repo: nhasixapp) — Mobile reading app with privacy features.
 
 ## 📝 Project Memory
-**CRITICAL**: Read `project_memory.md` at project root for full context. Update it after every session.
+**CRITICAL**: Read `MEMORY.md` at project root for full context. Update it after every session.
 
 ## 🤖 AI Tool Compatibility
 
@@ -35,7 +35,7 @@
 - Reuse existing project rules instead of creating parallel rule sets.
 - Keep `.github/copilot-instructions.md` aligned with this file; if guidance overlaps, follow the stricter local project rule.
 - Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions to emulate directly unless explicit sub-agent delegation is requested.
-- Startup sequence: `project_memory.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
+- Startup sequence: `MEMORY.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
 
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
@@ -104,7 +104,7 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 
 #### 🧭 Active Steering (Automatic Context)
 **CRITICAL**: At the start of every session, YOU MUST:
-1. Read `project_memory.md` for cross-session context.
+1. Read `MEMORY.md` for cross-session context.
 2. Check `projects/onprogress-plan/`.
 3. If a project exists there, READ its `progress.md` and main Spec file immediately.
 4. **Treat `progress.md` as the Master Plan**. Do not implement features not listed there.

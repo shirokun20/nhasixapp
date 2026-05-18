@@ -60,3 +60,8 @@ projects/*
 /docs/technical/*
 /docs/assets/*
 /informations/documentation/all/*
+.kiro/
+.claude/
+.codex/
+.air/
+.opencode/

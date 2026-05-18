@@ -2,7 +2,7 @@
 
 ## Project Context
 Kuron (repo: nhasixapp) is a Flutter Android reading app built with **Clean Architecture**.
-Read `project_memory.md` in root for full context.
+Read `MEMORY.md` in root for full context.
 
 ## 🚀 RTK - Rust Token Killer (Core Rule)
 Selalu gunakan awalan `rtk` untuk setiap perintah terminal yang menghasilkan output besar (git, flutter, npm, ls, dll) untuk menghemat 60-90% token. Gunakan `rtk gain` untuk cek penghematan. / *Always use `rtk` prefix for terminal commands with large output to save 60-90% tokens.*
@@ -47,6 +47,6 @@ Selalu gunakan awalan `rtk` untuk setiap perintah terminal yang menghasilkan out
 - Branches: `master` (prod), `develop`, `feature/*`
 
 ## Reference Files
-- `project_memory.md` — Full project context and session log
+- `MEMORY.md` — Full project context and session log
 - `AGENTS.md` — Agent rules and skills reference
 - `projects/README.md` — Project dashboard

@@ -7,7 +7,7 @@
 ## Startup Sequence
 
 At the start of every session:
-1. Read `project_memory.md` for cross-session context.
+1. Read `MEMORY.md` for cross-session context.
 2. Check `projects/onprogress-plan/` for active work.
 3. If a project exists, read its `progress.md` and main spec file.
 4. Treat `progress.md` as the Master Plan — do not implement features not listed.
