@@ -19,6 +19,8 @@
 ///   dart test packages/kuron_generic/test/adapters/generic_scraper_adapter_test.dart
 library;
 
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -439,6 +441,33 @@ const _detailHtml = '''
 </body></html>
 ''';
 
+const _detailHtmlWithUnrelatedImages = '''
+<html><body>
+<h1 class="entry-title">The Full Title</h1>
+<div class="thumb"><img src="https://cdn.example.com/detail-cover.jpg"></div>
+<div class="comments">
+  <img src="https://cdn.example.com/avatar-1.jpg">
+  <img src="https://cdn.example.com/avatar-2.jpg">
+</div>
+<ul id="chapterlist">
+  <li>
+    <div class="chbox">
+      <div class="eph-num"><a href="https://komiktap.info/manga-slug-one-chapter-5/">Ch 5 Link</a></div>
+      <div class="chapternum">Chapter 5</div>
+      <div class="chapterdate">March 1, 2024</div>
+    </div>
+  </li>
+  <li>
+    <div class="chbox">
+      <div class="eph-num"><a href="https://komiktap.info/manga-slug-one-chapter-1/">Ch 1 Link</a></div>
+      <div class="chapternum">Chapter 1</div>
+      <div class="chapterdate">January 1, 2024</div>
+    </div>
+  </li>
+</ul>
+</body></html>
+''';
+
 /// Chapter page for "manga-slug-one-chapter-5" — uses ts_reader JSON.
 const _chapterHtml = '''
 <html><body>
@@ -479,6 +508,22 @@ String _buildHomeHtmlWithLinks(List<String> hrefs) {
   }).join();
 
   return '<html><body>$items</body></html>';
+}
+
+String _readFixtureFile(String relativePath) {
+  final candidates = [
+    relativePath,
+    'packages/kuron_generic/$relativePath',
+  ];
+
+  for (final path in candidates) {
+    final file = File(path);
+    if (file.existsSync()) {
+      return file.readAsStringSync();
+    }
+  }
+
+  throw StateError('Fixture not found: $relativePath');
 }
 
 String _buildDetailHtmlWithTitle(String title) => '''
@@ -1346,6 +1391,46 @@ void main() {
       final result = await adapter.fetchDetail('manga-slug-one', _config);
       expect(result.content.chapters, isNotNull);
       expect(result.content.chapters, hasLength(2));
+    });
+
+    test(
+        'does not treat detail-page img tags as reader images when chapters exist',
+        () async {
+      dioAdapter.onGet(
+        '$_baseUrl/manga/manga-slug-one/',
+        (s) => s.reply(200, _detailHtmlWithUnrelatedImages, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchDetail('manga-slug-one', _config);
+      expect(result.content.chapters, hasLength(2));
+      expect(result.content.pageCount, 2,
+          reason: 'chapter-based detail should keep pageCount from chapters');
+      expect(result.content.imageUrls, isEmpty,
+          reason: 'reader.images belongs to chapter pages, not detail pages');
+      expect(result.imageUrls, isEmpty);
+    });
+
+    test('extracts chapters from saved live KomikTap detail HTML', () async {
+      final liveHtml = _readFixtureFile(
+        'test/fixtures/komiktap/you-wont-break-me-detail.html',
+      );
+
+      dioAdapter.onGet(
+        '$_baseUrl/manga/you-wont-break-me/',
+        (s) => s.reply(200, liveHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchDetail('you-wont-break-me', _config);
+      expect(result.content.title, 'You Won’t Break Me');
+      expect(result.content.chapters, isNotNull);
+      expect(result.content.chapters, isNotEmpty);
+      expect(result.content.chapters!.length, 37);
+      expect(result.content.chapters!.first.id, 'you-wont-break-me-chapter-37');
+      expect(result.content.chapters!.last.id, 'you-wont-break-me-chapter-1');
     });
 
     test('chapter id is slug (not raw URL)', () async {

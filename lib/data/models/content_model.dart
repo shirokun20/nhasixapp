@@ -51,6 +51,7 @@ class ContentModel extends Content {
       englishTitle: content.englishTitle,
       japaneseTitle: content.japaneseTitle,
       relatedContent: content.relatedContent,
+      chapters: content.chapters,
       cachedAt: DateTime.now(),
     );
   }
@@ -253,6 +254,7 @@ class ContentModel extends Content {
       englishTitle: englishTitle,
       japaneseTitle: japaneseTitle,
       relatedContent: relatedContent,
+      chapters: chapters,
     );
   }
 

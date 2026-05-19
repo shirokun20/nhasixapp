@@ -697,7 +697,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       List<String> detailImageUrls = const [];
-      if (readerConfig != null) {
+      final hasChapters = chapters?.isNotEmpty == true;
+      if (readerConfig != null && !hasChapters) {
         final imagesDef = readerConfig['images'];
         final defMap = _toDefMap(imagesDef);
         if (defMap != null) {
