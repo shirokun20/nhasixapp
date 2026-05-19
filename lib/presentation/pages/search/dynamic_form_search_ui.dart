@@ -13,6 +13,7 @@ import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 /// Generic search form UI driven entirely by [SearchFormConfig].
 ///
 /// Renders form fields based on the `searchForm.params` block in the source
@@ -325,7 +326,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       _logger.e('DynamicFormSearchUI: failed to save filter: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.failedToApplySearch(e.toString()))),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!
+                  .failedToApplySearch(e.toString()))),
         );
       }
     }
@@ -598,12 +601,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           ? (isLoading
                               ? AppLocalizations.of(context)!.loadingOptions
                               : hasLoadError
-                                  ? AppLocalizations.of(context)!.failedToLoadOptionsTap
+                                  ? AppLocalizations.of(context)!
+                                      .failedToLoadOptionsTap
                                   : hasCachedOptions
                                       ? (field.placeholder ??
-                                          AppLocalizations.of(context)!.chooseField(_labelFor(name)))
-                                      : AppLocalizations.of(context)!.tapToLoadOptions)
-                          : AppLocalizations.of(context)!.nSelectedItems(selected.length),
+                                          AppLocalizations.of(context)!
+                                              .chooseField(_labelFor(name)))
+                                      : AppLocalizations.of(context)!
+                                          .tapToLoadOptions)
+                          : AppLocalizations.of(context)!
+                              .nSelectedItems(selected.length),
                       style: selected.isEmpty
                           ? null
                           : TextStyle(
@@ -730,11 +737,15 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           ? (isLoading
                               ? AppLocalizations.of(context)!.loadingOptions
                               : hasLoadError
-                                  ? AppLocalizations.of(context)!.failedToLoadOptionsTap
+                                  ? AppLocalizations.of(context)!
+                                      .failedToLoadOptionsTap
                                   : hasCachedOptions
-                                      ? AppLocalizations.of(context)!.tapToChooseTags
-                                      : AppLocalizations.of(context)!.tapToLoadOptions)
-                          : AppLocalizations.of(context)!.includeExcludeCount(included.length, excluded.length),
+                                      ? AppLocalizations.of(context)!
+                                          .tapToChooseTags
+                                      : AppLocalizations.of(context)!
+                                          .tapToLoadOptions)
+                          : AppLocalizations.of(context)!.includeExcludeCount(
+                              included.length, excluded.length),
                     ),
                   ),
                   if (isLoading)
@@ -956,19 +967,22 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           Icon(Icons.add_circle_outline,
                               size: 16, color: includeColor),
                           const SizedBox(width: 4),
-                          Text(AppLocalizations.of(context)!.includeCountLabel(includeCount)),
+                          Text(AppLocalizations.of(context)!
+                              .includeCountLabel(includeCount)),
                           const SizedBox(width: 12),
                           Icon(Icons.remove_circle_outline,
                               size: 16, color: excludeColor),
                           const SizedBox(width: 4),
-                          Text(AppLocalizations.of(context)!.excludeCountLabel(excludeCount)),
+                          Text(AppLocalizations.of(context)!
+                              .excludeCountLabel(excludeCount)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: AppLocalizations.of(context)!.searchTagsHint,
+                          hintText:
+                              AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1022,6 +1036,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                                     .outlineVariant;
 
                                         return FilterChip(
+                                          showCheckmark: false,
                                           label: Text(option.label),
                                           selected: isInclude || isExclude,
                                           avatar: isInclude
@@ -1102,7 +1117,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               ),
                             );
                           },
-                          child: Text(AppLocalizations.of(context)!.applyWithCounts(includeCount, excludeCount)),
+                          child: Text(AppLocalizations.of(context)!
+                              .applyWithCounts(includeCount, excludeCount)),
                         ),
                       ),
                     ],
@@ -1276,7 +1292,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: AppLocalizations.of(context)!.searchTagsHint,
+                          hintText:
+                              AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1381,7 +1398,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                 .toList();
                             Navigator.of(context).pop(applied);
                           },
-                          child: Text(AppLocalizations.of(context)!.applyWithCount(selectedValues.length)),
+                          child: Text(AppLocalizations.of(context)!
+                              .applyWithCount(selectedValues.length)),
                         ),
                       ),
                     ],
