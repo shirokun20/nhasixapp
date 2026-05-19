@@ -66,3 +66,6 @@ projects/*
 .air/
 .opencode/
 /informations/
+/openspec/
+.github/prompts/
+.github/skills/
