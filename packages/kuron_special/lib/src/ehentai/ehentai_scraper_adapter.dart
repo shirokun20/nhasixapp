@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:kuron_core/kuron_core.dart';
@@ -118,7 +120,10 @@ class EHentaiScraperAdapter implements GenericAdapter {
     final isQueryMode = resolvedQuery.isNotEmpty;
 
     if ((!isHomeMode && !isQueryMode) || filter.page <= 1) {
-      return _SearchContext(filter: filter, config: rawConfig);
+      return _SearchContext(
+        filter: filter.copyWith(query: resolvedQuery),
+        config: rawConfig,
+      );
     }
 
     final pageUrl = await _resolveListPageUrl(
@@ -1232,10 +1237,10 @@ class EHentaiScraperAdapter implements GenericAdapter {
       final idx = pair.indexOf('=');
       if (idx < 0) continue;
 
-      final key = Uri.decodeComponent(pair.substring(0, idx));
+      final key = _safeDecodeComponent(pair.substring(0, idx));
       if (key != queryParamName) continue;
 
-      return Uri.decodeComponent(pair.substring(idx + 1)).trim();
+      return _safeDecodeComponent(pair.substring(idx + 1)).trim();
     }
 
     return '';
@@ -1251,6 +1256,58 @@ class EHentaiScraperAdapter implements GenericAdapter {
       return configured;
     }
     return 'f_search';
+  }
+
+  String _safeDecodeComponent(String value) {
+    if (value.isEmpty || !value.contains('%')) {
+      return value;
+    }
+
+    try {
+      return Uri.decodeComponent(value);
+    } catch (_) {
+      return _decodePercentEncodedSegments(value) ?? value;
+    }
+  }
+
+  String? _decodePercentEncodedSegments(String value) {
+    final buffer = StringBuffer();
+    var index = 0;
+
+    while (index < value.length) {
+      if (value.codeUnitAt(index) != 0x25) {
+        buffer.writeCharCode(value.codeUnitAt(index));
+        index += 1;
+        continue;
+      }
+
+      final bytes = <int>[];
+      var cursor = index;
+
+      while (cursor + 2 < value.length && value.codeUnitAt(cursor) == 0x25) {
+        final hex = value.substring(cursor + 1, cursor + 3);
+        final byte = int.tryParse(hex, radix: 16);
+        if (byte == null) {
+          break;
+        }
+        bytes.add(byte);
+        cursor += 3;
+      }
+
+      if (bytes.isEmpty) {
+        return null;
+      }
+
+      try {
+        buffer.write(utf8.decode(bytes));
+      } on FormatException {
+        return null;
+      }
+
+      index = cursor;
+    }
+
+    return buffer.toString();
   }
 
   _ResolvedListPattern? _resolveListPattern({

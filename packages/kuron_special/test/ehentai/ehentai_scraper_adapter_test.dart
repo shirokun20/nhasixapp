@@ -606,6 +606,58 @@ void main() {
       );
     });
 
+    test('search raw uploader query tolerates percent-encoded unicode',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/?f_search=uploader%3A%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5&page=1',
+        (server) => server.reply(
+          200,
+          homeHtmlWithMixedThumbs,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query:
+              'raw:f_search=uploader:%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5',
+          page: 1,
+        ),
+        config,
+      );
+
+      expect(result.items.length, 3);
+      expect(result.items.first.id, '/g/111/aaa/');
+    });
+
+    test(
+        'search raw uploader query preserves malformed percent without throwing',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/?f_search=uploader%3A%25E7%25B1%25B3%25ZZ&page=1',
+        (server) => server.reply(
+          200,
+          homeHtmlWithMixedThumbs,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: 'raw:f_search=uploader:%E7%B1%B3%ZZ',
+          page: 1,
+        ),
+        config,
+      );
+
+      expect(result.items.length, 3);
+      expect(result.items.first.title, 'Item A');
+    });
+
     test(
         'search home handles lazy-loaded images with data-src and data: URI placeholders',
         () async {

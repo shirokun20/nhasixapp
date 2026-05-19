@@ -1095,6 +1095,23 @@ void main() {
       expect(result.items, hasLength(2));
       expect(result.items.first.title, 'Search Result One');
     });
+
+    test('tolerates malformed percent sequences in raw q value', () async {
+      dioAdapter.onGet(
+        '$_hentaiNexusBaseUrl/?q=%25E7%25B1%25B3%25ZZ',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:q=%E7%B1%B3%ZZ', page: 1),
+        _hentaiNexusConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
   });
 
   group('GenericScraperAdapter.search() — Crotpedia placeholder cleanup', () {

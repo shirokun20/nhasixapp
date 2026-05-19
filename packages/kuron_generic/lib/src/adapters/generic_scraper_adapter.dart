@@ -206,8 +206,8 @@ class GenericScraperAdapter implements GenericAdapter {
       if (pair.isEmpty) continue;
       final idx = pair.indexOf('=');
       if (idx < 0) continue;
-      final key = Uri.decodeComponent(pair.substring(0, idx));
-      final value = Uri.decodeComponent(pair.substring(idx + 1));
+      final key = _safeDecodeComponent(pair.substring(0, idx));
+      final value = _safeDecodeComponent(pair.substring(idx + 1));
       rawMap.putIfAbsent(key, () => <String>[]).add(value);
     }
 
@@ -382,6 +382,18 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return Uri.encodeComponent(value);
+  }
+
+  String _safeDecodeComponent(String value) {
+    if (value.isEmpty || !value.contains('%')) {
+      return value;
+    }
+
+    try {
+      return Uri.decodeComponent(value);
+    } catch (_) {
+      return _decodePercentEncodedSegments(value) ?? value;
+    }
   }
 
   Future<Response<String>> _getWithRedirectFallback(
