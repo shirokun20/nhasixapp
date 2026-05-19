@@ -424,6 +424,10 @@ class ContentRepositoryImpl implements ContentRepository {
     String? requestedSourceId,
   }) {
     final source = (requestedSourceId ?? content.sourceId).toLowerCase();
+    if (_isChapterCacheIncomplete(source, content)) {
+      return true;
+    }
+
     // Backward-compat cache healing: older nhentai detail cache entries were
     // saved before favorites mapping was fixed, so force refresh when zero.
     if (source == 'nhentai' && content.favorites == 0) {
@@ -440,6 +444,16 @@ class ContentRepositoryImpl implements ContentRepository {
 
     return content.imageUrls
         .any((url) => url.contains('gold-usergeneratedcontent.net'));
+  }
+
+  bool _isChapterCacheIncomplete(String source, Content content) {
+    final hasChapterFeature =
+        remoteConfigService.isFeatureEnabled(source, (f) => f.chapters);
+    if (!hasChapterFeature) {
+      return false;
+    }
+
+    return content.chapters == null;
   }
 
   core.SearchFilter _mapToCoreSearchFilter(SearchFilter appFilter) {
