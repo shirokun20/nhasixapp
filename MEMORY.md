@@ -786,3 +786,48 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 - Root cause: `extractList()` selector was stripping `[*]` from JSONPath
 - Fix: Keep `[*]` so individual URLs are extracted, not array as string
 - File: `generic_rest_adapter.dart` line 476
+
+## 🆕 Latest Session — 2026-05-19
+
+### KomikTap Chapter Debug + Generic Scraper Hardening ✅
+
+**Status**: In Progress / Root cause narrowed
+
+**Findings**:
+
+1. **Generic scraper chapter parsing works on current KomikTap HTML**
+   - Saved live fixture `you-wont-break-me` detail page parses **37 chapters**
+   - Selector path `#chapterlist li` + `.chbox .eph-num a` is valid against current site
+
+2. **Confirmed bug in `generic_scraper_adapter.dart`**
+   - `fetchDetail()` was reading `reader.images` directly from the **detail page**
+   - For chapter-based sources like KomikTap, this incorrectly treated unrelated `<img>` tags
+     (cover/avatar/etc.) as page images
+   - Fix: only extract detail-page reader images when **no chapters** were found
+
+3. **Confirmed cache serialization bug in `ContentModel`**
+   - `ContentModel.fromEntity()` and `toEntity()` were dropping `chapters`
+   - Fix: preserve `chapters` during entity <-> cache model conversion
+
+4. **Added repository-side stale cache bypass**
+   - `ContentRepositoryImpl.getContentDetail()` now bypasses cached detail when:
+     - source feature `chapters == true`, and
+     - cached content still has `chapters == null`
+   - This heals old SharedPreferences/detail cache entries created before the cache model fix
+
+**Files Modified**:
+- `packages/kuron_generic/lib/src/adapters/generic_scraper_adapter.dart`
+- `packages/kuron_generic/test/adapters/generic_scraper_adapter_test.dart`
+- `packages/kuron_generic/test/fixtures/komiktap/you-wont-break-me-detail.html`
+- `lib/data/models/content_model.dart`
+- `lib/data/repositories/content_repository_impl.dart`
+- `test/unit/data/models/content_model_test.dart`
+- `test/unit/data/repositories/content_repository_impl_test.dart`
+
+**Verification**:
+- ✅ `fvm dart test` targeted adapter tests in `packages/kuron_generic`
+- ✅ Live KomikTap fixture test proves adapter extracts 37 chapters
+- ✅ `fvm flutter test test/unit/data/models/content_model_test.dart`
+- ✅ `fvm flutter test test/unit/data/repositories/content_repository_impl_test.dart`
+- ✅ `fvm flutter analyze lib/data/models/content_model.dart test/unit/data/models/content_model_test.dart`
+- ✅ `fvm flutter analyze lib/data/repositories/content_repository_impl.dart test/unit/data/repositories/content_repository_impl_test.dart`
