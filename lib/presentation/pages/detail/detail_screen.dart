@@ -113,6 +113,48 @@ class _DetailScreenState extends State<DetailScreen> {
     return null;
   }
 
+  String _quoteEhentaiSearchValue(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '';
+    if (!trimmed.contains(' ') && !trimmed.contains('"')) {
+      return trimmed;
+    }
+
+    final escaped = trimmed.replaceAll('"', r'\"');
+    return '"$escaped"';
+  }
+
+  String? _buildEhentaiTagQuery({
+    required String tagName,
+    String? tagId,
+    String? tagType,
+  }) {
+    final normalizedType = (tagType ?? '').toLowerCase().trim();
+    final slug = (tagId ?? '').trim();
+    final name = tagName.trim();
+
+    if (normalizedType == 'uploader' && name.isNotEmpty) {
+      return 'raw:f_search=uploader:${_quoteEhentaiSearchValue(name)}';
+    }
+
+    if (slug.contains(':')) {
+      final separatorIndex = slug.indexOf(':');
+      final namespace = slug.substring(0, separatorIndex).trim();
+      final value = slug.substring(separatorIndex + 1).trim();
+      if (namespace.isNotEmpty && value.isNotEmpty) {
+        return 'raw:f_search=$namespace:${_quoteEhentaiSearchValue(value)}';
+      }
+    }
+
+    if (normalizedType.isNotEmpty &&
+        !const {'tag', 'category'}.contains(normalizedType) &&
+        name.isNotEmpty) {
+      return 'raw:f_search=$normalizedType:${_quoteEhentaiSearchValue(name)}';
+    }
+
+    return null;
+  }
+
   Future<void> _onFavoritePressed(DetailLoaded detailState) async {
     final sourceId = detailState.content.sourceId;
     final remoteConfig = getIt<RemoteConfigService>();
@@ -519,6 +561,15 @@ class _DetailScreenState extends State<DetailScreen> {
 
       if (mappedQuery != null && mappedQuery.isNotEmpty) {
         query = mappedQuery;
+      } else if (actualSourceId == 'ehentai') {
+        final ehentaiQuery = _buildEhentaiTagQuery(
+          tagName: tagName,
+          tagId: tagId,
+          tagType: tagType,
+        );
+        if (ehentaiQuery != null && ehentaiQuery.isNotEmpty) {
+          query = ehentaiQuery;
+        }
       } else if (actualSourceId == 'nhentai') {
         // Prefer API v2 tagged endpoint when a numeric tag ID is available.
         final numericTagId = (tagId ?? '').trim();

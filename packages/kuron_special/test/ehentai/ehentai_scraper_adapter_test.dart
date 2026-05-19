@@ -879,5 +879,69 @@ void main() {
       expect(
           result.items.first.coverUrl, 'https://thumb.example/search-p2.webp');
     });
+
+    test('search uploader page 2 follows uploader path token pagination',
+        () async {
+      const uploaderQuery =
+          'uploader:%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5';
+      const uploaderNextUrl =
+          'https://e-hentai.org/?f_search=uploader:%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5&next=3943532';
+      const uploaderLastUrl =
+          'https://e-hentai.org/?f_search=uploader:%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5&prev=1';
+
+      mock.onGet(
+        'https://e-hentai.org/?f_search=$uploaderQuery',
+        (server) => server.reply(
+          200,
+          '''
+<html><body>
+  <div class="searchnav">
+    <div></div>
+    <div><span id="dfirst">&lt;&lt; First</span></div>
+    <div><span id="dprev">&lt; Prev</span></div>
+    <div id="djumpbox" class="jumpbox"><a id="djump" href="javascript:enable_jump_mode('d')">Jump/Seek</a></div>
+    <div><a id="dnext" href="$uploaderNextUrl">Next &gt;</a></div>
+    <div><a id="dlast" href="$uploaderLastUrl">Last &gt;&gt;</a></div>
+    <div></div>
+  </div>
+  <table class="itg gltc">
+    <tr>
+      <td class="gl2c"><img src="https://thumb.example/search-p1.webp"></td>
+      <td class="gl3c glname"><a href="/g/111/aaa/"><span class="glink">P1</span></a></td>
+    </tr>
+  </table>
+</body></html>
+''',
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+      mock.onGet(
+        uploaderNextUrl,
+        (server) => server.reply(
+          200,
+          searchPage2TokenHtml,
+          headers: {
+            'content-type': ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query:
+              'raw:f_search=uploader:%E7%B1%B3%E5%87%AF%E6%8B%89%E7%9A%84%E5%8D%AB%E5%85%B5',
+          page: 2,
+        ),
+        config,
+      );
+
+      expect(result.items.length, 1);
+      expect(result.items.first.id, '/g/222/bbb/');
+      expect(result.items.first.title, 'P2');
+      expect(
+          result.items.first.coverUrl, 'https://thumb.example/search-p2.webp');
+    });
   });
 }

@@ -182,10 +182,17 @@ class EHentaiScraperAdapter implements GenericAdapter {
       }
     }
 
-    final currentQuery = normalizedQuery.isEmpty
-        ? '/?page=1'
-        : '/?f_search=${Uri.encodeQueryComponent(normalizedQuery)}';
-    var currentUrl = _urlBuilder.resolve(currentQuery, const {});
+    final seedPaths = _buildSearchSeedPaths(normalizedQuery);
+    final firstPage = await _fetchFirstSeedPage(
+      seedPaths: seedPaths,
+      rawConfig: rawConfig,
+    );
+    if (firstPage == null) {
+      return null;
+    }
+
+    var currentUrl = firstPage.url;
+    var currentHtml = firstPage.html;
     if (targetPage <= 1) {
       if (allowCache) {
         _pageUrlCache[queryKey] = currentUrl;
@@ -194,25 +201,29 @@ class EHentaiScraperAdapter implements GenericAdapter {
     }
 
     for (var page = 2; page <= targetPage; page++) {
+      final nextUrl = _extractNextPageUrl(currentHtml);
+      if (nextUrl == null || nextUrl.isEmpty) {
+        // Parse prev nav too so search-page pagination handling stays
+        // symmetric with next/prev token formats.
+        _extractPreviousPageUrl(currentHtml);
+        return null;
+      }
+
+      currentUrl = nextUrl;
+      if (page == targetPage) {
+        break;
+      }
+
       try {
         await _throttle(rawConfig);
         final response = await _dio.get<String>(
           currentUrl,
           options: Options(responseType: ResponseType.plain),
         );
-        final html = response.data ?? '';
-        if (html.isEmpty) {
+        currentHtml = response.data ?? '';
+        if (currentHtml.isEmpty) {
           return null;
         }
-
-        final nextUrl = _extractNextPageUrl(html);
-        if (nextUrl == null || nextUrl.isEmpty) {
-          // Parse prev nav too so search-page pagination handling stays
-          // symmetric with next/prev token formats.
-          _extractPreviousPageUrl(html);
-          return null;
-        }
-        currentUrl = nextUrl;
       } catch (_) {
         return null;
       }
@@ -222,6 +233,76 @@ class EHentaiScraperAdapter implements GenericAdapter {
       _pageUrlCache[queryKey] = currentUrl;
     }
     return currentUrl;
+  }
+
+  List<String> _buildSearchSeedPaths(String normalizedQuery) {
+    if (normalizedQuery.isEmpty) {
+      return const ['/', '/?page=1'];
+    }
+
+    final encodedVariants = <String>{
+      _encodeSearchQueryValue(normalizedQuery),
+      Uri.encodeQueryComponent(normalizedQuery),
+    }.where((value) => value.isNotEmpty).toList();
+
+    final seedPaths = <String>[];
+    for (final encoded in encodedVariants) {
+      seedPaths.add('/?f_search=$encoded');
+      seedPaths.add('/?f_search=$encoded&page=1');
+    }
+    return seedPaths;
+  }
+
+  Future<_ListSeedPage?> _fetchFirstSeedPage({
+    required List<String> seedPaths,
+    required Map<String, dynamic> rawConfig,
+  }) async {
+    for (final seedPath in seedPaths) {
+      final seedUrl = _urlBuilder.resolve(seedPath, const {});
+      try {
+        await _throttle(rawConfig);
+        final response = await _dio.get<String>(
+          seedUrl,
+          options: Options(responseType: ResponseType.plain),
+        );
+        final html = response.data ?? '';
+        if (html.isEmpty) {
+          continue;
+        }
+        return _ListSeedPage(url: seedUrl, html: html);
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  String _encodeSearchQueryValue(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+
+    final buffer = StringBuffer();
+    var index = 0;
+    while (index < value.length) {
+      if (value.codeUnitAt(index) == 0x25 && index + 2 < value.length) {
+        final hex = value.substring(index + 1, index + 3);
+        if (int.tryParse(hex, radix: 16) != null) {
+          buffer.write('%${hex.toUpperCase()}');
+          index += 3;
+          continue;
+        }
+      }
+
+      final char = value[index];
+      if (char == ':') {
+        buffer.write(':');
+      } else {
+        buffer.write(Uri.encodeQueryComponent(char));
+      }
+      index += 1;
+    }
+    return buffer.toString();
   }
 
   String? _extractNextPageUrl(String html) {
@@ -1507,6 +1588,16 @@ class _SearchContext {
   _SearchContext({
     required this.filter,
     required this.config,
+  });
+}
+
+class _ListSeedPage {
+  final String url;
+  final String html;
+
+  _ListSeedPage({
+    required this.url,
+    required this.html,
   });
 }
 
