@@ -22,6 +22,7 @@ library;
 import 'package:dio/dio.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_generic/src/adapters/generic_adapter.dart';
 import 'package:kuron_generic/src/adapters/generic_scraper_adapter.dart';
 import 'package:kuron_generic/src/parsers/generic_html_parser.dart';
 import 'package:kuron_generic/src/url_builder/generic_url_builder.dart';
@@ -285,6 +286,51 @@ const _absoluteRawConfig = {
   },
 };
 
+const _komikuUnicodeConfig = {
+  'source': 'komiku',
+  'baseUrl': 'https://komiku.org',
+  'scraper': {
+    'urlPatterns': {
+      'home': {
+        'url': '/',
+        'list': {
+          'container': '.utao',
+          'fields': {
+            'id': {
+              'selector': 'a.series',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.luf > a > h4'},
+          },
+        },
+      },
+      'detail': '/manga/{id}/',
+      'chapter': '/{id}/',
+    },
+    'selectors': {
+      'detail': {
+        'fields': {
+          'title': {'selector': '.entry-title'},
+        },
+      },
+      'reader': {
+        'tsReaderRegex': r'ts_reader\.run\((.*?)\);',
+        'container': '#readerarea',
+        'images': {'selector': 'img', 'attribute': 'src'},
+        'nav': {
+          'next': '.nextprev a.next',
+          'prev': '.nextprev a.prev',
+        },
+      },
+    },
+  },
+};
+
+const _komikuWaveDashSlug =
+    'nishuume-cheat-no-tensei-madoushi-〜saikyou-ga-1000-nengo-ni-tensei-shitara-jinsei-yoyu-sugimashita〜';
+const _komikuWaveDashUrl = 'https://komiku.org/manga/$_komikuWaveDashSlug/';
+
 GenericScraperAdapter _buildAbsoluteRawAdapter(Dio dio) {
   return GenericScraperAdapter(
     dio: dio,
@@ -414,6 +460,43 @@ const _chapterHtmlNoTsReader = '''
   <a class="next" href="https://komiktap.info/manga-slug-one-chapter-6/">Next</a>
   <a class="prev" href="https://komiktap.info/manga-slug-one-chapter-4/">Prev</a>
 </div>
+</body></html>
+''';
+
+String _buildHomeHtmlWithLinks(List<String> hrefs) {
+  final items = hrefs.asMap().entries.map((entry) {
+    final index = entry.key + 1;
+    final href = entry.value;
+    return '''
+<div class="utao">
+  <a class="series" href="$href"></a>
+  <div class="luf">
+    <a href="$href"><h4>Item $index</h4></a>
+  </div>
+  <img class="ts-post-image" src="https://cdn.example.com/item-$index.jpg">
+</div>
+''';
+  }).join();
+
+  return '<html><body>$items</body></html>';
+}
+
+String _buildDetailHtmlWithTitle(String title) => '''
+<html><body>
+<h1 class="entry-title">$title</h1>
+</body></html>
+''';
+
+String _buildTsReaderHtml({
+  required String prevUrl,
+  required String nextUrl,
+}) =>
+    '''
+<html><body>
+<script>
+ts_reader.run({"sources":[{"server":"s1","images":["https://img.example.com/1.jpg"]}],"prevUrl":"$prevUrl","nextUrl":"$nextUrl"});
+</script>
+<div id="readerarea"><img src="https://img.example.com/1.jpg"></div>
 </body></html>
 ''';
 
@@ -696,6 +779,135 @@ void main() {
     });
   });
 
+  group('GenericScraperAdapter.search() — Unicode and edge-case slugs', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAdapter(dio);
+    });
+
+    Future<AdapterSearchResult> runHomeSearch(List<String> hrefs) async {
+      dioAdapter.onGet(
+        '$_baseUrl/',
+        (s) => s.reply(200, _buildHomeHtmlWithLinks(hrefs), headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      return adapter.search(
+        const SearchFilter(query: '', page: 1),
+        _config,
+      );
+    }
+
+    test('extracts wave dash slug from manga URL', () async {
+      final result = await runHomeSearch([
+        _komikuWaveDashUrl,
+      ]);
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.id, _komikuWaveDashSlug);
+    });
+
+    test('extracts long dash slug from manga URL', () async {
+      const slug = 'one-piece-ー-new-world';
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/$slug/',
+      ]);
+
+      expect(result.items.first.id, slug);
+    });
+
+    test('extracts multiple special characters from a single manga URL',
+        () async {
+      const slug = 'title-〜-part-ー-final';
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/$slug/',
+      ]);
+
+      expect(result.items.first.id, slug);
+    });
+
+    test('extracts mixed ASCII and Unicode slug from manga URL', () async {
+      const slug = 'one-piece-〜-arc-42';
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/$slug/',
+      ]);
+
+      expect(result.items.first.id, slug);
+    });
+
+    test('decodes URL-encoded wave dash slugs', () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/title-%E3%80%9Cspecial%E3%80%9C/',
+      ]);
+
+      expect(result.items.first.id, 'title-〜special〜');
+    });
+
+    test('decodes mixed encoded and raw special characters', () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/title-%E3%80%9C-raw-〜/',
+      ]);
+
+      expect(result.items.first.id, 'title-〜-raw-〜');
+    });
+
+    test('keeps malformed or partially encoded slugs unchanged', () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/title-%E3%80%9C-bad%ZZ/',
+      ]);
+
+      expect(result.items.first.id, 'title-%E3%80%9C-bad%ZZ');
+    });
+
+    test('preserves ASCII-only slugs with numbers and hyphens', () async {
+      const slug = 'attack-on-titan-chapter-139';
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/$slug/',
+      ]);
+
+      expect(result.items.first.id, slug);
+    });
+
+    test('ignores trailing slash variations and query parameters', () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/manga/one-piece',
+        'https://komiku.org/manga/one-piece/?ref=home&utm_source=test',
+      ]);
+
+      expect(result.items.map((item) => item.id).toList(),
+          ['one-piece', 'one-piece']);
+    });
+
+    test('falls back to the last valid segment when /manga/ is absent',
+        () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/about/',
+      ]);
+
+      expect(result.items.first.id, 'about');
+    });
+
+    test('filters out empty URL strings', () async {
+      final result = await runHomeSearch(['']);
+
+      expect(result.items, isEmpty);
+    });
+
+    test('filters out domain-only URLs', () async {
+      final result = await runHomeSearch([
+        'https://komiku.org/',
+      ]);
+
+      expect(result.items, isEmpty);
+    });
+  });
+
   // ─────────────────────────────────────────────────────────────────────────
   // search() — inherits (homePage → home)
   // ─────────────────────────────────────────────────────────────────────────
@@ -894,6 +1106,86 @@ void main() {
 
       expect(result.items, hasLength(2));
       expect(result.items.first.id, 'search-result-one');
+    });
+  });
+
+  group('GenericScraperAdapter — Komiku Unicode slug integration', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildAbsoluteRawDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAbsoluteRawAdapter(dio);
+    });
+
+    test('navigates from a real Komiku URL with 〜 to the detail request',
+        () async {
+      const detailUrl = 'https://komiku.org/manga/$_komikuWaveDashSlug/';
+      final encodedDetailUrl = Uri.encodeFull(detailUrl);
+      final detailHtml = _buildDetailHtmlWithTitle('Komiku Unicode Detail');
+
+      dioAdapter.onGet(
+        'https://komiku.org/',
+        (s) => s.reply(200, _buildHomeHtmlWithLinks([_komikuWaveDashUrl]),
+            headers: {
+              Headers.contentTypeHeader: ['text/html; charset=utf-8']
+            }),
+      );
+      dioAdapter.onGet(
+        detailUrl,
+        (s) => s.reply(200, detailHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      if (encodedDetailUrl != detailUrl) {
+        dioAdapter.onGet(
+          encodedDetailUrl,
+          (s) => s.reply(200, detailHtml, headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8']
+          }),
+        );
+      }
+
+      final searchResult = await adapter.search(
+        const SearchFilter(query: '', page: 1),
+        _komikuUnicodeConfig,
+      );
+      expect(searchResult.items, hasLength(1));
+      expect(searchResult.items.first.id, _komikuWaveDashSlug);
+
+      final detail = await adapter.fetchDetail(
+          searchResult.items.first.id, _komikuUnicodeConfig);
+      expect(detail.content.id, _komikuWaveDashSlug);
+      expect(detail.content.title, 'Komiku Unicode Detail');
+    });
+
+    test('extracts Unicode and standard chapter slugs from reader navigation',
+        () async {
+      const readerSlug = 'reader-slug-chapter-2';
+      const prevSlug = 'nishuume-cheat-〜-chapter-1';
+      const nextSlug = 'one-piece-chapter-1000';
+
+      dioAdapter.onGet(
+        'https://komiku.org/$readerSlug/',
+        (s) => s.reply(
+          200,
+          _buildTsReaderHtml(
+            prevUrl: 'https://komiku.org/$prevSlug/',
+            nextUrl: 'https://komiku.org/$nextSlug/',
+          ),
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8']
+          },
+        ),
+      );
+
+      final result =
+          await adapter.fetchChapterImages(readerSlug, _komikuUnicodeConfig);
+      expect(result, isNotNull);
+      expect(result!.prevChapterId, prevSlug);
+      expect(result.nextChapterId, nextSlug);
     });
   });
 

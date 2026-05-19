@@ -23,6 +23,7 @@ import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:nhasixapp/core/utils/uri_component_utils.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
@@ -140,7 +141,7 @@ class AppRouter {
         name: AppRoute.contentDetailName,
         pageBuilder: (context, state) {
           final encodedId = state.pathParameters['id']!;
-          final contentId = Uri.decodeComponent(encodedId);
+          final contentId = UriComponentUtils.safeDecode(encodedId);
           final sourceId = state.uri.queryParameters['sourceId'];
           return AppAnimations.animatedPageBuilder(
             context,
@@ -160,7 +161,7 @@ class AppRouter {
         name: AppRoute.readerName,
         builder: (context, state) {
           final contentId =
-              Uri.decodeComponent(state.pathParameters['id'] ?? '');
+              UriComponentUtils.safeDecode(state.pathParameters['id'] ?? '');
           final page =
               int.tryParse(state.uri.queryParameters['page'] ?? '1') ?? 1;
           final forceStartFromBeginning =

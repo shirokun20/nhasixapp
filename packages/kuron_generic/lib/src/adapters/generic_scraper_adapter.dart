@@ -1701,26 +1701,100 @@ class GenericScraperAdapter implements GenericAdapter {
       );
 
   /// Extract the last meaningful path slug from a URL.
+  ///
+  /// We match the common `/manga/<slug>` and `/<slug>-chapter-<number>`
+  /// shapes before attempting [Uri.parse]. Regex matching tolerates raw
+  /// Unicode path characters such as `〜` and `ー`, which can appear in source
+  /// URLs and may throw inside `Uri.parse` when the path is not already
+  /// percent-encoded.
+  ///
+  /// Examples:
+  /// - `https://komiku.org/manga/one-piece/` -> `one-piece`
+  /// - `https://komiku.org/manga/title-%E3%80%9Cspecial%E3%80%9C/` ->
+  ///   `title-〜special〜`
+  /// - `https://komiku.org/nishuume-cheat-〜-chapter-1/` ->
+  ///   `nishuume-cheat-〜-chapter-1`
   String _extractSlugFromUrl(String url) {
     if (url.isEmpty) return '';
+
+    final patterns = <RegExp>[
+      RegExp(r'/manga/([^/?#]+)'),
+      RegExp(r'/([^/?#]+?-chapter-[\d.-]+)(?:/|[?#]|$)'),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(url);
+      final slug = match?.group(1);
+      if (slug != null && slug.isNotEmpty) {
+        return _decodeSlugComponent(slug);
+      }
+    }
+
     try {
       final uri = Uri.parse(url);
       final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
       if (segments.isNotEmpty) {
         final mangaIndex = segments.indexOf('manga');
-        if (mangaIndex != -1 && mangaIndex + 1 < segments.length) {
-          return segments[mangaIndex + 1];
-        }
-        return segments.last;
+        final slug = mangaIndex != -1 && mangaIndex + 1 < segments.length
+            ? segments[mangaIndex + 1]
+            : segments.last;
+        return _decodeSlugComponent(slug);
       }
     } catch (_) {}
-    final mangaRegex = RegExp(r'/manga/([^/]+)');
-    final chapterRegex = RegExp(r'/([^/]+?-chapter-[\d.-]+)');
-    var match = mangaRegex.firstMatch(url);
-    if (match != null) return match.group(1) ?? '';
-    match = chapterRegex.firstMatch(url);
-    if (match != null) return match.group(1) ?? '';
     return '';
+  }
+
+  /// Decode percent-encoded slugs without turning malformed inputs into errors.
+  String _decodeSlugComponent(String slug) {
+    if (!slug.contains('%')) return slug;
+    try {
+      return Uri.decodeComponent(slug);
+    } catch (_) {
+      return _decodePercentEncodedSegments(slug) ?? slug;
+    }
+  }
+
+  /// Decode only valid `%HH` sequences so mixed raw+encoded Unicode survives.
+  String? _decodePercentEncodedSegments(String slug) {
+    bool isHexDigit(int codeUnit) =>
+        (codeUnit >= 0x30 && codeUnit <= 0x39) ||
+        (codeUnit >= 0x41 && codeUnit <= 0x46) ||
+        (codeUnit >= 0x61 && codeUnit <= 0x66);
+
+    final output = StringBuffer();
+    var index = 0;
+    while (index < slug.length) {
+      final current = slug.codeUnitAt(index);
+      if (current != 0x25) {
+        output.writeCharCode(current);
+        index++;
+        continue;
+      }
+
+      if (index + 2 >= slug.length ||
+          !isHexDigit(slug.codeUnitAt(index + 1)) ||
+          !isHexDigit(slug.codeUnitAt(index + 2))) {
+        return null;
+      }
+
+      final bytes = <int>[];
+      while (index + 2 < slug.length && slug.codeUnitAt(index) == 0x25) {
+        final first = slug.codeUnitAt(index + 1);
+        final second = slug.codeUnitAt(index + 2);
+        if (!isHexDigit(first) || !isHexDigit(second)) {
+          return null;
+        }
+        bytes.add(int.parse(slug.substring(index + 1, index + 3), radix: 16));
+        index += 3;
+      }
+
+      try {
+        output.write(utf8.decode(bytes));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return output.toString();
   }
 
   /// Apply a regex pattern to extract a substring.

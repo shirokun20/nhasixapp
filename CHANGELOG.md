@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### 🩹 Bug Fixes
+
+- **Generic Scraper Unicode Slugs**: Fixed slug extraction for raw and percent-encoded manga/chapter URLs containing Unicode path characters such as `〜` and `ー`, while preserving malformed encodings safely.
+- **Reader Route Decode Guard**: Hardened GoRouter content/detail route decoding so literal `%` and malformed percent-encoded IDs no longer crash navigation with `Illegal percent encoding in URI`.
+
 ## [0.9.18+28] - 2026-05-16
 
 ### ✨ Highlights
