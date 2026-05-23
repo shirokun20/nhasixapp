@@ -170,6 +170,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required String sourceId,
   }) async {
     const maxChunks = 150;
+    final shouldFollowLinkedSegments = !_isEhentaiPartId(initialChapterId);
 
     final mergedImages = <String>[];
     final seenUrls = <String>{};
@@ -196,7 +197,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       final candidateNextId = chunkData.nextChapterId;
-      if (candidateNextId == null ||
+      if (!shouldFollowLinkedSegments ||
+          candidateNextId == null ||
           candidateNextId.isEmpty ||
           candidateNextId == nextChapterId ||
           !_isEhentaiVirtualChapterId(candidateNextId)) {

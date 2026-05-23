@@ -3,12 +3,15 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:kuron_core/kuron_core.dart'
+    show ChapterData, Content, ContentSourceRegistry;
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/repositories/repositories.dart'
     hide DownloadSettings;
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
@@ -17,6 +20,7 @@ import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/services/download_manager.dart'; // Import DownloadManager
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Mocks
 class MockDownloadContentUseCase extends Mock
@@ -49,12 +53,22 @@ class MockPdfConversionQueueManager extends Mock
     implements PdfConversionQueueManager {} // Add MockDownloadManager
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   group('DownloadBloc Completion Logic', () {
     late DownloadBloc downloadBloc;
+    late MockDownloadContentUseCase mockDownloadContentUseCase;
+    late MockGetContentDetailUseCase mockGetContentDetailUseCase;
+    late MockGetChapterImagesUseCase mockGetChapterImagesUseCase;
     late MockUserDataRepository mockRepo;
+    late MockConnectivity mockConnectivity;
     late MockNotificationService mockNotificationService;
+    late MockPdfConversionService mockPdfConversionService;
+    late MockRemoteConfigService mockRemoteConfigService;
     late MockDownloadManager mockDownloadManager; // Add MockDownloadManager
     late MockOfflineContentManager mockOfflineContentManager;
+    late MockPdfConversionQueueManager mockPdfConversionQueueManager;
     late MockLogger mockLogger;
 
     // Stream controller for DownloadManager progress
@@ -71,12 +85,46 @@ void main() {
     );
 
     setUp(() async {
+      mockDownloadContentUseCase = MockDownloadContentUseCase();
+      mockGetContentDetailUseCase = MockGetContentDetailUseCase();
+      mockGetChapterImagesUseCase = MockGetChapterImagesUseCase();
       mockRepo = MockUserDataRepository();
+      mockConnectivity = MockConnectivity();
       mockNotificationService = MockNotificationService();
+      mockPdfConversionService = MockPdfConversionService();
+      mockRemoteConfigService = MockRemoteConfigService();
       mockDownloadManager = MockDownloadManager();
       mockOfflineContentManager = MockOfflineContentManager();
+      mockPdfConversionQueueManager = MockPdfConversionQueueManager();
       mockLogger = MockLogger();
       progressController = StreamController<DownloadProgressUpdate>.broadcast();
+
+      registerFallbackValue(
+        GetContentDetailParams.fromString('fallback-content-id'),
+      );
+      registerFallbackValue(
+        GetChapterImagesParams.fromString('fallback-chapter-id'),
+      );
+      registerFallbackValue(
+        DownloadContentParams.immediate(
+          Content(
+            id: 'fallback-content-id',
+            sourceId: 'fallback-source',
+            title: 'Fallback Content',
+            coverUrl: '',
+            tags: const [],
+            artists: const [],
+            characters: const [],
+            parodies: const [],
+            groups: const [],
+            language: 'en',
+            pageCount: 1,
+            imageUrls: const ['https://example.com/page-1.jpg'],
+            uploadDate: DateTime(2026, 1, 1),
+          ),
+          savePath: '/tmp/fallback-content',
+        ),
+      );
 
       // Stub DownloadManager properties
       when(() => mockDownloadManager.progressStream)
@@ -115,35 +163,51 @@ void main() {
             title: any(named: 'title'),
             downloadPath: any(named: 'downloadPath'),
           )).thenAnswer((_) async => {});
+      when(() => mockNotificationService.showDownloadStarted(
+            contentId: any(named: 'contentId'),
+            title: any(named: 'title'),
+          )).thenAnswer((_) async => {});
       when(() => mockOfflineContentManager
               .reconcileChapterMetadataForCompletedDownload(
             contentId: any(named: 'contentId'),
             contentPath: any(named: 'contentPath'),
           )).thenAnswer((_) async => {});
+      when(() => mockRemoteConfigService.getRawConfig(any())).thenReturn({
+        'network': {
+          'headers': {
+            'User-Agent': 'UnitTest',
+            'Referer': 'https://e-hentai.org/',
+          },
+        },
+      });
+
+      await getIt.reset();
+      getIt.registerSingleton<RemoteConfigService>(mockRemoteConfigService);
+      getIt.registerSingleton<ContentSourceRegistry>(ContentSourceRegistry());
 
       downloadBloc = DownloadBloc(
-        downloadContentUseCase: MockDownloadContentUseCase(),
-        getContentDetailUseCase: MockGetContentDetailUseCase(),
-        getChapterImagesUseCase: MockGetChapterImagesUseCase(),
+        downloadContentUseCase: mockDownloadContentUseCase,
+        getContentDetailUseCase: mockGetContentDetailUseCase,
+        getChapterImagesUseCase: mockGetChapterImagesUseCase,
         userDataRepository: mockRepo,
         offlineContentManager: mockOfflineContentManager,
         logger: mockLogger,
-        connectivity: MockConnectivity(),
+        connectivity: mockConnectivity,
         notificationService: mockNotificationService,
-        pdfConversionService: MockPdfConversionService(),
-        remoteConfigService: MockRemoteConfigService(),
+        pdfConversionService: mockPdfConversionService,
+        remoteConfigService: mockRemoteConfigService,
         downloadManager: mockDownloadManager,
-        pdfConversionQueueManager:
-            MockPdfConversionQueueManager(), // Inject MockDownloadManager
+        pdfConversionQueueManager: mockPdfConversionQueueManager,
       );
 
       // Initialize to get into Loaded state
       // Instead of async setup, we will use seed in blocTest
     });
 
-    tearDown(() {
-      progressController.close();
-      downloadBloc.close();
+    tearDown(() async {
+      await progressController.close();
+      await downloadBloc.close();
+      await getIt.reset();
     });
 
     blocTest<DownloadBloc, DownloadBlocState>(
@@ -184,6 +248,7 @@ void main() {
           'download state',
           DownloadState.completed,
         ),
+        isA<DownloadLoaded>(),
       ],
     );
 
@@ -216,6 +281,127 @@ void main() {
                 (d) => d.contentId == testContentId && d.downloadedPages == 2,
               ),
             )));
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'downloads only the selected EHentai part instead of traversing next parts',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: '__ehpart__:123456:tokenabc:0',
+            state: DownloadState.queued,
+            totalPages: 0,
+            title: 'Part 1',
+            sourceId: 'ehentai',
+            downloadPath: '/tmp/ehentai-part-1',
+          ),
+        ],
+        settings: const DownloadSettings(
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 5, 23),
+      ),
+      setUp: () {
+        when(() => mockGetContentDetailUseCase.call(any())).thenAnswer(
+          (_) async => Content(
+            id: '__ehpart__:123456:tokenabc:0',
+            sourceId: 'ehentai',
+            title: 'Gallery Title',
+            coverUrl: 'https://example.com/cover.jpg',
+            tags: const [],
+            artists: const [],
+            characters: const [],
+            parodies: const [],
+            groups: const [],
+            language: 'en',
+            pageCount: 0,
+            imageUrls: const [],
+            uploadDate: DateTime(2026, 5, 23),
+            url: 'https://e-hentai.org/g/123456/tokenabc/',
+          ),
+        );
+        when(() => mockGetChapterImagesUseCase.call(any()))
+            .thenAnswer((inv) async {
+          final params =
+              inv.positionalArguments.single as GetChapterImagesParams;
+          final chapterId = params.chapterId.value;
+          if (chapterId == '__ehpart__:123456:tokenabc:0') {
+            return const ChapterData(
+              images: [
+                'https://img.e-hentai.org/part-1-page-1.jpg',
+                'https://img.e-hentai.org/part-1-page-2.jpg',
+              ],
+              nextChapterId: '__ehpart__:123456:tokenabc:1',
+              nextChapterTitle: 'Part 2',
+            );
+          }
+          if (chapterId == '__ehpart__:123456:tokenabc:1') {
+            return const ChapterData(
+              images: ['https://img.e-hentai.org/part-2-page-1.jpg'],
+            );
+          }
+          throw StateError('Unexpected chapter id: $chapterId');
+        });
+        when(() => mockDownloadContentUseCase.call(any())).thenAnswer(
+          (_) async => const DownloadStatus(
+            contentId: '__ehpart__:123456:tokenabc:0',
+            state: DownloadState.downloading,
+            totalPages: 2,
+            title: 'Part 1',
+            sourceId: 'ehentai',
+          ),
+        );
+      },
+      act: (bloc) =>
+          bloc.add(const DownloadStartEvent('__ehpart__:123456:tokenabc:0')),
+      verify: (_) {
+        verify(
+          () => mockGetChapterImagesUseCase.call(
+            any(
+              that: predicate<GetChapterImagesParams>(
+                (params) =>
+                    params.chapterId.value == '__ehpart__:123456:tokenabc:0' &&
+                    params.sourceId == 'ehentai',
+              ),
+            ),
+          ),
+        ).called(1);
+        verifyNever(
+          () => mockGetChapterImagesUseCase.call(
+            any(
+              that: predicate<GetChapterImagesParams>(
+                (params) =>
+                    params.chapterId.value == '__ehpart__:123456:tokenabc:1',
+              ),
+            ),
+          ),
+        );
+
+        final captured = verify(
+          () => mockDownloadContentUseCase.call(captureAny()),
+        ).captured.single as DownloadContentParams;
+
+        expect(captured.content.imageUrls, const [
+          'https://img.e-hentai.org/part-1-page-1.jpg',
+          'https://img.e-hentai.org/part-1-page-2.jpg',
+        ]);
+        expect(captured.content.pageCount, 2);
+        expect(captured.content.title, 'Part 1');
+
+        verify(
+          () => mockRepo.saveDownloadStatus(
+            any(
+              that: predicate<DownloadStatus>(
+                (status) =>
+                    status.contentId == '__ehpart__:123456:tokenabc:0' &&
+                    status.totalPages == 2,
+              ),
+            ),
+          ),
+        ).called(1);
       },
     );
   });
