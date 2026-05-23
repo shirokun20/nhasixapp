@@ -144,6 +144,18 @@ void main() {
       );
     });
 
+    test(
+        'returns false for .avif when heavy (URL heuristic no longer routes AVIF; brand check post-download handles avis)',
+        () {
+      expect(
+        ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
+          url: 'https://example.com/page.avif',
+          isHeavy: true,
+        ),
+        isFalse,
+      );
+    });
+
     test('returns false for .jpg even when heavy', () {
       expect(
         ExtendedImageReaderWidget.isLikelyAnimatedWebPForTesting(
@@ -196,6 +208,19 @@ void main() {
           nativeViewAvailable: true,
         ),
         isTrue,
+      );
+    });
+
+    test(
+        'returns false for heavy avif via URL (routing deferred to post-download brand check)',
+        () {
+      expect(
+        ExtendedImageReaderWidget.shouldUseNativeAnimatedViewForTesting(
+          url: 'https://example.com/page.avif',
+          isHeavy: true,
+          nativeViewAvailable: true,
+        ),
+        isFalse,
       );
     });
 
@@ -556,6 +581,18 @@ void main() {
       await tester.pump();
 
       expect(find.byType(AndroidView), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'heavy avif URL uses Flutter codec (native routing via post-download brand check)',
+        (tester) async {
+      const url = 'https://example.com/page.avif';
+      _markHeavy(url);
+
+      await tester.pumpWidget(_buildWidget(url: url));
+      await tester.pump();
+
       expect(tester.takeException(), isNull);
     });
 

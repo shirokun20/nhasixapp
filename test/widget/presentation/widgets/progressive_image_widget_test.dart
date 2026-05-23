@@ -53,4 +53,45 @@ void main() {
       );
     });
   });
+
+  group(
+    'ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting',
+    () {
+      test('returns true for webp URL', () {
+        expect(
+          ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
+            'https://cdn.manga18.club/manga/title/cover/cover_thumb_2.webp',
+          ),
+          isTrue,
+        );
+      });
+
+      test('returns true for avif URL with query string', () {
+        expect(
+          ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
+            'https://example.com/image.avif?token=123',
+          ),
+          isTrue,
+        );
+      });
+
+      test('returns false for jpeg URL', () {
+        expect(
+          ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
+            'https://example.com/image.jpg',
+          ),
+          isFalse,
+        );
+      });
+
+      test('returns false for malformed URL', () {
+        expect(
+          ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
+            'not a valid url',
+          ),
+          isFalse,
+        );
+      });
+    },
+  );
 }

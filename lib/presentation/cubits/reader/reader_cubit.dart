@@ -1062,13 +1062,23 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Change reading mode
-  Future<void> changeReadingMode(ReadingMode mode) async {
+  Future<void> changeReadingMode(
+    ReadingMode mode, {
+    bool persistPreference = true,
+    bool resetWebtoonDetection = true,
+  }) async {
     if (!isClosed) {
       emit(state.copyWith(readingMode: mode));
     }
 
-    // Reset webtoon detection if user manually changes mode
-    _hasDetectedWebtoon = false;
+    if (resetWebtoonDetection) {
+      // Reset webtoon detection for manual mode changes.
+      _hasDetectedWebtoon = false;
+    }
+
+    if (!persistPreference) {
+      return;
+    }
 
     // Save to preferences with error handling
     try {

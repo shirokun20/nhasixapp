@@ -48,6 +48,12 @@ class ReaderScreen extends StatefulWidget {
   final List<Chapter>? allChapters; // All chapters
   final Chapter? currentChapter; // Current chapter
 
+  @visibleForTesting
+  static bool shouldSkipHeavyImageAutoSwitchForSource(String? sourceId) {
+    final normalized = (sourceId ?? '').toLowerCase();
+    return normalized == 'manga18.club';
+  }
+
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
@@ -506,12 +512,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// concurrent-decode frame drops.
   void _onHeavyImageDetected() {
     if (!mounted) return;
+    final sourceId = _readerCubit.state.content?.sourceId;
+    if (ReaderScreen.shouldSkipHeavyImageAutoSwitchForSource(sourceId)) {
+      return;
+    }
+
     final contentId = widget.contentId;
     if (_autoSwitchedContentIds.contains(contentId)) return;
     _autoSwitchedContentIds.add(contentId);
 
     // Force to single-page mode.
-    _readerCubit.changeReadingMode(ReadingMode.singlePage);
+    _readerCubit.changeReadingMode(
+      ReadingMode.singlePage,
+      persistPreference: false,
+      resetWebtoonDetection: false,
+    );
 
     // Inform user that continuous mode is disabled for this content.
     final l10n = AppLocalizations.of(context)!;
@@ -858,7 +873,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         listener: (context, state) {
           if (_isContinuousScrollDisabledForCurrentContent() &&
               state.readingMode == ReadingMode.continuousScroll) {
-            _readerCubit.changeReadingMode(ReadingMode.singlePage);
+            _readerCubit.changeReadingMode(
+              ReadingMode.singlePage,
+              persistPreference: false,
+              resetWebtoonDetection: false,
+            );
             return;
           }
 
@@ -2078,6 +2097,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
               const SizedBox(height: 24),
 
+              // Clear image cache button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _clearReaderImageCache,
+                  icon: Icon(
+                    Icons.delete_sweep_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  label: Text(
+                    'Clear Image Cache',
+                    style: TextStyleConst.buttonMedium.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
               // Reset settings button
               SizedBox(
                 width: double.infinity,
@@ -2532,6 +2576,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
           .readerMonthsAgoShort((diff.inDays / 30).floor());
     }
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Future<void> _clearReaderImageCache() async {
+    Navigator.of(context).pop(); // close settings sheet
+    await ExtendedImageReaderWidget.clearNativeAnimatedCache();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Image cache cleared. Scroll to reload pages.'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _resetReaderSettings() async {

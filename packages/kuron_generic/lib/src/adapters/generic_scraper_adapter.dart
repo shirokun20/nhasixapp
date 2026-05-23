@@ -1255,6 +1255,10 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       if (imageUrls.isEmpty) {
+        imageUrls = _extractScriptSlidesImageUrls(htmlContent);
+      }
+
+      if (imageUrls.isEmpty) {
         final containerSel = readerConfig['container'] as String?;
         if (containerSel != null) {
           final imagesDef = readerConfig['images'];
@@ -1270,26 +1274,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
       // 3. DOM fallback for navigation via reader.nav.{next,prev}.
       final navCfg = readerConfig['nav'] as Map<String, dynamic>?;
-      if (nextId == null) {
-        final nextSel = navCfg?['next'] as String?;
-        if (nextSel != null) {
-          final href = _parser.extractString(
-              doc, FieldSelector(selector: nextSel, attribute: 'href'));
-          if (href != null && href.isNotEmpty && !href.startsWith('#')) {
-            nextId = _extractSlugFromUrl(href);
-          }
-        }
-      }
-      if (prevId == null) {
-        final prevSel = navCfg?['prev'] as String?;
-        if (prevSel != null) {
-          final href = _parser.extractString(
-              doc, FieldSelector(selector: prevSel, attribute: 'href'));
-          if (href != null && href.isNotEmpty && !href.startsWith('#')) {
-            prevId = _extractSlugFromUrl(href);
-          }
-        }
-      }
+      nextId ??= _extractNavChapterId(doc, navCfg?['next']);
+      prevId ??= _extractNavChapterId(doc, navCfg?['prev']);
 
       return ChapterData(
         images: imageUrls,
@@ -1821,6 +1807,88 @@ class GenericScraperAdapter implements GenericAdapter {
       _logger.w('$_sourceId: regex pattern error: $pattern', error: e);
       return null;
     }
+  }
+
+  String? _extractNavChapterId(dom.Document doc, dynamic navDef) {
+    if (navDef is String) {
+      final href = _parser.extractString(
+        doc,
+        FieldSelector(selector: navDef, attribute: 'href'),
+      );
+      if (href == null || href.isEmpty || href.startsWith('#')) {
+        return null;
+      }
+      return _extractSlugFromUrl(href);
+    }
+
+    final defMap = _toDefMap(navDef);
+    if (defMap == null) return null;
+
+    final transform = defMap['transform'] as String?;
+    final selector = _fieldDefToSelector(defMap);
+    if (selector == null) return null;
+
+    var value = _parser.extractString(doc, selector)?.trim() ?? '';
+    if (value.isEmpty || value == '#') return null;
+    if (transform == 'slug') {
+      value = _extractSlugFromUrl(value);
+    }
+
+    return value.isEmpty ? null : value;
+  }
+
+  List<String> _extractScriptSlidesImageUrls(String htmlContent) {
+    final slidesMatch = RegExp(
+      r'slides_p_path\s*=\s*\[(.*?)\]\s*;',
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(htmlContent);
+    if (slidesMatch == null) {
+      return const [];
+    }
+
+    final rawArray = slidesMatch.group(1);
+    if (rawArray == null || rawArray.isEmpty) {
+      return const [];
+    }
+
+    final encodedItems = RegExp(r"""["']([^"']+)["']""")
+        .allMatches(rawArray)
+        .map((match) => match.group(1))
+        .whereType<String>()
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+    if (encodedItems.isEmpty) {
+      return const [];
+    }
+
+    final decodedUrls = <String>[];
+    for (final item in encodedItems) {
+      final decoded = _decodeMaybeBase64Url(item);
+      if (decoded != null) {
+        decodedUrls.add(decoded);
+      }
+    }
+
+    return decodedUrls;
+  }
+
+  String? _decodeMaybeBase64Url(String value) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    try {
+      final decoded = utf8.decode(base64.decode(value)).trim();
+      if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
+        return decoded;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
   }
 
   bool _hasEnabledLink(dom.Document doc, String selector) {

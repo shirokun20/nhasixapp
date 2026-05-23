@@ -89,6 +89,14 @@ class ProgressiveImageWidget extends StatefulWidget {
         _LocalThumbnailPreviewMode.original;
   }
 
+  @visibleForTesting
+  static bool shouldUseStaticNetworkDecodeFallbackForTesting(
+      String networkUrl) {
+    return _ProgressiveImageWidgetState._shouldUseStaticNetworkDecodeFallback(
+      networkUrl,
+    );
+  }
+
   static _LocalThumbnailPreviewMode _computeLocalThumbnailPreviewMode({
     required String localPath,
     required int fileBytes,
@@ -366,6 +374,16 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         lowered.endsWith('.avif');
   }
 
+  static bool _shouldUseStaticNetworkDecodeFallback(String networkUrl) {
+    final uri = Uri.tryParse(networkUrl);
+    if (uri == null) {
+      return false;
+    }
+
+    final lowered = uri.path.toLowerCase();
+    return lowered.endsWith('.webp') || lowered.endsWith('.avif');
+  }
+
   Widget _buildManagedLocalThumbnail(String localPath) {
     return FutureBuilder<_LocalThumbnailPreviewMode>(
       future: _resolveLocalThumbnailPreviewMode(localPath),
@@ -592,8 +610,17 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       memCacheHeight:
           widget.memCacheHeight ?? (widget.isThumbnail ? 600 : 1200),
       placeholder: (context, url) => widget.placeholder ?? _buildPlaceholder(),
-      errorWidget: (context, url, error) =>
-          widget.errorWidget ?? _buildErrorWidget(),
+      errorWidget: (context, url, error) {
+        if (kDebugMode) {
+          _logger.w('Network image load failed for $url: $error');
+        }
+
+        if (_shouldUseStaticNetworkDecodeFallback(url)) {
+          return _buildStaticNetworkDecodeFallback();
+        }
+
+        return widget.errorWidget ?? _buildErrorWidget();
+      },
       fadeInDuration: widget.fadeInDuration,
       fadeOutDuration: widget.fadeOutDuration,
       httpHeaders: widget.httpHeaders,
@@ -608,6 +635,37 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     }
 
     return imageWidget;
+  }
+
+  Widget _buildStaticNetworkDecodeFallback() {
+    return FutureBuilder<File?>(
+      future: getIt<ImageCacheService>().getOrProcessStaticImage(
+        widget.networkUrl,
+        headers: widget.httpHeaders,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return widget.placeholder ?? _buildPlaceholder();
+        }
+
+        final file = snapshot.data;
+        if (snapshot.hasError || file == null) {
+          if (kDebugMode) {
+            _logger.e(
+              'Static network decode fallback failed for ${widget.networkUrl}: ${snapshot.error}',
+            );
+          }
+          return widget.errorWidget ?? _buildErrorWidget();
+        }
+
+        if (kDebugMode) {
+          _logger.d(
+            'Using static network decode fallback for ${widget.networkUrl}: ${file.path}',
+          );
+        }
+        return _buildImageFile(file.path);
+      },
+    );
   }
 
   /// Build shimmer placeholder

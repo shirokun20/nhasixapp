@@ -82,6 +82,17 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   static bool isHeavyUrlForTesting(String url) =>
       _ExtendedImageReaderWidgetState._heavyImageUrls.contains(url);
 
+  /// Clears all in-memory native-animated routing state and the ExtendedImage
+  /// disk cache. Call this when cached animated AVIF/WebP files are stuck in
+  /// the Flutter codec pipeline and are not showing correctly.
+  static Future<void> clearNativeAnimatedCache() async {
+    _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
+    _ExtendedImageReaderWidgetState._confirmedAnimatedWebPUrls.clear();
+    _ExtendedImageReaderWidgetState._cachedFilePathByUrl.clear();
+    _ExtendedImageReaderWidgetState._syntheticProgressByImageKey.clear();
+    await clearDiskCachedImages();
+  }
+
   /// Clears the heavy-image set. Call in [tearDown] to isolate tests.
   @visibleForTesting
   static void clearHeavyUrlsForTesting() =>
@@ -98,7 +109,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   static int get ultraHeavyAnimatedImageThresholdBytesForTesting =>
       _ExtendedImageReaderWidgetState._ultraHeavyAnimatedImageThresholdBytes;
 
-  /// Exposes the `_isLikelyAnimatedWebP` heuristic for unit testing
+  /// Exposes the native animated-image routing heuristic for unit testing
   /// without needing to build a full widget tree.
   @visibleForTesting
   static bool isLikelyAnimatedWebPForTesting({
@@ -106,7 +117,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     required bool isHeavy,
   }) {
     if (!isHeavy) return false;
-    return _looksLikeAnimatedWebPUrl(url);
+    return _looksLikeNativeAnimatedCapableUrl(url);
   }
 
   @visibleForTesting
@@ -117,7 +128,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     bool confirmedAnimatedWebP = false,
   }) {
     if (!nativeViewAvailable || !isHeavy) return false;
-    return confirmedAnimatedWebP || _looksLikeAnimatedWebPUrl(url);
+    return confirmedAnimatedWebP || _looksLikeNativeAnimatedCapableUrl(url);
   }
 
   @visibleForTesting
@@ -164,8 +175,14 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     return (viewportPx * factor).clamp(minPx, maxPx).round();
   }
 
-  static bool _looksLikeAnimatedWebPUrl(String url) {
+  static bool _looksLikeNativeAnimatedCapableUrl(String url) {
     final path = url.toLowerCase().split('?').first;
+    // Note: .avif is intentionally excluded from URL-based heuristic.
+    // Whether an AVIF file is animated (avis brand) vs static/tiled (avif/mif1
+    // brand) cannot be determined from the URL alone. Static tiled AVIFs crash
+    // HeifDecoderImpl on some OEM devices. The post-download file-brand check
+    // in _inferNativeAnimatedCapableExtensionFromFileSync handles animated AVIF
+    // routing after the file is cached.
     return path.endsWith('.webp') || path.contains('-wbp');
   }
 
@@ -260,6 +277,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   bool _isOpeningSourcePage = false;
   bool _shouldBypassLocalDecode = false;
 
+  /// Whether the one-shot AVIF-decode-failure async re-check has already run.
+  /// Prevents an infinite loop: on the second decode failure for the same
+  /// widget instance we give up and show the error widget instead of retrying.
+  bool _avifDecodeRetried = false;
+
+  /// potentially-animated AVIF URL. Prevents ExtendedImage from attempting
+  /// to decode the file before we have a chance to route it to the native
+  /// view, which avoids the "getPixels failed with error invalid input" crash
+  /// from Android's ImageDecoder attempting to decode an avis sequence.
+  bool _awaitingNativeCheck = false;
+
   String get _imageProgressKey => '${widget.contentId}_${widget.pageNumber}';
 
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
@@ -326,6 +354,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         AnimatedWebPView.isAvailable &&
         !_isLocalFilePath(widget.imageUrl) &&
         _shouldInspectCachedFileForAnimatedWebP(widget.imageUrl)) {
+      // For AVIF URLs: block ExtendedImage from rendering until we know
+      // whether the cached file is animated (→ native) or static (→ Flutter).
+      // This prevents Android's ImageDecoder from attempting avis sequences.
+      if (widget.imageUrl.toLowerCase().split('?').first.endsWith('.avif')) {
+        _awaitingNativeCheck = true;
+      }
       _preCheckDiskCacheForHeavy();
     }
 
@@ -338,21 +372,24 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     getCachedImageFile(widget.imageUrl).then((file) {
       if (file == null) return;
       final size = file.lengthSync();
-      if (size >= _heavyImageThresholdBytes &&
-          _looksLikeAnimatedWebPFileSync(file)) {
-        _markConfirmedAnimatedWebP(
+      final animatedCapableFormat =
+          _inferNativeAnimatedCapableExtensionFromFileSync(file);
+      if (animatedCapableFormat != null) {
+        _markHeavyNativeAnimatedImage(
           cacheKey: widget.imageUrl,
           cachedFilePath: file.path,
+          confirmedAnimatedWebP: true,
         );
         if (!mounted) return;
         setState(() {
           _isHeavyImage = true;
           _isConfirmedAnimatedWebP = true;
           _cachedFilePath = file.path;
+          _awaitingNativeCheck = false;
         });
         updateKeepAlive();
         _logger.i(
-          '[NativeWebP] Pre-check HIT: heavy WebP from disk cache '
+          '[NativeWebP] Pre-check HIT: heavy $animatedCapableFormat from disk cache '
           'page=${widget.pageNumber} '
           'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
         );
@@ -360,6 +397,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       }
     }).catchError((Object e) {
       _logger.w('[NativeWebP] Pre-check error: $e');
+    }).whenComplete(() {
+      // Always unblock the render, whether the file was found, not found,
+      // or not animated. ExtendedImage will take over for static AVIF.
+      if (mounted && _awaitingNativeCheck) {
+        setState(() => _awaitingNativeCheck = false);
+      }
     });
   }
 
@@ -377,20 +420,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       }
 
       final fileSize = file.lengthSync();
-      if (fileSize < _heavyImageThresholdBytes ||
-          !_looksLikeAnimatedWebPFileSync(file)) {
+      final animatedCapableFormat =
+          _inferNativeAnimatedCapableExtensionFromFileSync(file);
+      if (animatedCapableFormat == null) {
         return;
       }
 
-      _markConfirmedAnimatedWebP(
+      _markHeavyNativeAnimatedImage(
         cacheKey: widget.imageUrl,
         cachedFilePath: localPath,
+        confirmedAnimatedWebP:
+            true, // true for both webp and avif native formats
       );
       _isHeavyImage = true;
       _isConfirmedAnimatedWebP = true;
       _cachedFilePath = localPath;
       _logger.i(
-        '[NativeWebP] Local pre-check HIT: heavy WebP '
+        '[NativeWebP] Local pre-check HIT: heavy $animatedCapableFormat '
         'page=${widget.pageNumber} '
         'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
       );
@@ -427,6 +473,64 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       url: url,
       isHeavy: _isHeavyImage,
     );
+  }
+
+  bool _tryNativeAnimatedFallback(String failedUrl) {
+    if (!AnimatedWebPView.isAvailable) {
+      return false;
+    }
+
+    // AVIF: URL heuristic cannot confirm animation (brand is in the file header,
+    // not the URL). On decode failure, trigger a ONE-SHOT async file inspection.
+    // If the cached file is animated AVIF it will be routed to native view;
+    // if static/not-cached or inspection already ran, fall through to error.
+    if (!_isLocalFilePath(failedUrl) &&
+        failedUrl.toLowerCase().split('?').first.endsWith('.avif')) {
+      if (_avifDecodeRetried) {
+        // Already tried once — stop the loop and show error widget.
+        return false;
+      }
+      _avifDecodeRetried = true;
+      _logger.w(
+        '[NativeWebP] AVIF decode failed, re-inspecting cache: '
+        'page=${widget.pageNumber}',
+      );
+      clearMemoryImageCache(failedUrl);
+      _awaitingNativeCheck = true;
+      _preCheckDiskCacheForHeavy();
+      return true; // show loading indicator while inspection runs
+    }
+
+    if (!ExtendedImageReaderWidget._looksLikeNativeAnimatedCapableUrl(
+      failedUrl,
+    )) {
+      return false;
+    }
+
+    _logger.w(
+      '[NativeWebP] Fallback to native animated view after decode failure: '
+      'page=${widget.pageNumber}, url=$failedUrl',
+    );
+
+    if (!_isLocalFilePath(failedUrl)) {
+      clearMemoryImageCache(failedUrl);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _preSeedHeavyImageUrl();
+        _isHeavyImage = true;
+        _cachedFilePath =
+            _cachedFilePathByUrl[widget.imageUrl] ?? _cachedFilePath;
+      });
+      updateKeepAlive();
+      _maybeNotifyHeavyImageDetected();
+    });
+    return true;
   }
 
   bool _shouldUseNativeAnimatedView(String url) {
@@ -717,6 +821,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               return _buildLoadingIndicator(context, state: state);
             case LoadState.failed:
               _stopSyntheticProgress(reset: true);
+              if (_tryNativeAnimatedFallback(normalizedLocalPath)) {
+                return _buildLoadingIndicator(context);
+              }
               _markLocalDecodeAsBroken();
               return _buildErrorWidget(
                 context,
@@ -743,11 +850,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   final file = File(normalizedLocalPath);
                   if (file.existsSync()) {
                     final fileSize = file.lengthSync();
-                    if (fileSize >= _heavyImageThresholdBytes &&
-                        _looksLikeAnimatedWebPFileSync(file)) {
-                      _markConfirmedAnimatedWebP(
+                    final animatedCapableFormat =
+                        _inferNativeAnimatedCapableExtensionFromFileSync(file);
+                    if (animatedCapableFormat != null) {
+                      _markHeavyNativeAnimatedImage(
                         cacheKey: widget.imageUrl,
                         cachedFilePath: normalizedLocalPath,
+                        confirmedAnimatedWebP: true,
                       );
                       setState(() {
                         _isHeavyImage = true;
@@ -757,7 +866,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       updateKeepAlive();
                       _maybeNotifyHeavyImageDetected();
                       _logger.i(
-                        '[NativeWebP] Local complete => native '
+                        '[NativeWebP] Local complete => native ($animatedCapableFormat) '
                         'page=${widget.pageNumber} '
                         'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
                       );
@@ -830,6 +939,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final isLikelyAnimatedUrl = _isLikelyAnimatedUrl(url);
     if (_shouldUseNativeAnimatedView(url)) {
       return _buildNativeAnimatedWebP(url, headers);
+    }
+
+    // Block ExtendedImage from decoding while the async native-format check
+    // is in flight. Prevents "getPixels failed: invalid input" when Android's
+    // ImageDecoder encounters an avis animated-AVIF sequence.
+    if (_awaitingNativeCheck) {
+      return _buildLoadingIndicator(context);
     }
 
     final decodeWidth = _targetDecodeWidth(
@@ -923,6 +1039,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             if (_tryRefreshEhentaiResolvedImageUrl(url)) {
               return _buildLoadingIndicator(context);
             }
+            if (_tryNativeAnimatedFallback(url)) {
+              return _buildLoadingIndicator(context);
+            }
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
                 _imageLoadRetries < _maxImageLoadRetries) {
@@ -974,14 +1093,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 final fileSize = cacheFile.lengthSync();
                 _logger.d(
                   '[NativeWebP] Cached file=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
-                  'threshold=${(_heavyImageThresholdBytes / 1024 / 1024).toStringAsFixed(0)} MB '
                   'page=${widget.pageNumber}',
                 );
-                if (fileSize >= _heavyImageThresholdBytes &&
-                    _looksLikeAnimatedWebPFileSync(cacheFile)) {
-                  _markConfirmedAnimatedWebP(
+                final animatedCapableFormat =
+                    _inferNativeAnimatedCapableExtensionFromFileSync(cacheFile);
+                if (animatedCapableFormat != null) {
+                  _markHeavyNativeAnimatedImage(
                     cacheKey: url,
                     cachedFilePath: cacheFile.path,
+                    confirmedAnimatedWebP: true,
                   );
 
                   // 🔥 Evict from ExtendedImage memory cache so Flutter's
@@ -992,24 +1112,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   if (!mounted) return;
                   setState(() {
                     _isHeavyImage = true;
-                    _isConfirmedAnimatedWebP = true;
+                    _isConfirmedAnimatedWebP = true; // stops re-inspection loop
                     _cachedFilePath = cacheFile.path;
                   });
                   updateKeepAlive();
                   _maybeNotifyHeavyImageDetected();
                   _logger.i(
-                    '[NativeWebP] => AnimatedImageDrawable: '
+                    '[NativeWebP] => AnimatedImageDrawable ($animatedCapableFormat): '
                     'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
                     ' path=${cacheFile.path}',
                   );
-                } else if (fileSize >= _heavyImageThresholdBytes) {
-                  _logger.d(
-                    '[NativeWebP] Heavy file is not animated WebP, '
-                    'keep Flutter renderer page=${widget.pageNumber}',
-                  );
                 } else {
                   _logger.d(
-                    '[NativeWebP] File too small for native (${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
+                    '[NativeWebP] Not a native-animated candidate '
+                    '(${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
                     'keep Flutter renderer page=${widget.pageNumber}',
                   );
                 }
@@ -1151,33 +1267,97 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   bool _shouldInspectCachedFileForAnimatedWebP(String url) {
+    // Always inspect AVIF files after download — brand (avis vs avif/mif1)
+    // and image height (≤ 4096 vs > 4096) cannot be determined from the URL.
+    // _inferNativeAnimatedCapableExtensionFromFileSync handles the precise check.
+    final path = url.toLowerCase().split('?').first;
     return (widget.sourceId ?? '').toLowerCase() == 'ehentai' ||
-        ExtendedImageReaderWidget._looksLikeAnimatedWebPUrl(url);
+        ExtendedImageReaderWidget._looksLikeNativeAnimatedCapableUrl(url) ||
+        path.endsWith('.avif');
   }
 
-  void _markConfirmedAnimatedWebP({
+  void _markHeavyNativeAnimatedImage({
     required String cacheKey,
     required String cachedFilePath,
+    required bool confirmedAnimatedWebP,
   }) {
     _heavyImageUrls.add(cacheKey);
-    _confirmedAnimatedWebPUrls.add(cacheKey);
     _cachedFilePathByUrl[cacheKey] = cachedFilePath;
+    if (confirmedAnimatedWebP) {
+      _confirmedAnimatedWebPUrls.add(cacheKey);
+    }
   }
 
-  static bool _looksLikeAnimatedWebPFileSync(File file) {
+  static String? _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
     RandomAccessFile? raf;
     try {
       raf = file.openSync(mode: FileMode.read);
       final length = raf.lengthSync();
       if (length < 16) {
-        return false;
+        return null;
       }
 
-      final sampleLength = length < 64 ? length : 64;
+      // Read 512 bytes — enough to reach the ispe box (~byte 203 in typical AVIF).
+      final sampleLength = length < 512 ? length : 512;
       final bytes = raf.readSync(sampleLength);
-      return _looksLikeAnimatedWebPHeader(bytes);
+      final ext = inferImageExtension(bytes: bytes);
+      if (ext == 'webp') return 'webp';
+      if (ext == 'avif') {
+        // Route to native AnimatedWebPView only for avis-brand AVIF within the
+        // hardware AV1 decoder's dimension limit.
+        //
+        // Background:
+        //   manga18.club encodes manga pages as tiled AVIF sequences (brand:
+        //   avis + msf1). Both working and failing files share identical ftyp
+        //   brands — the only discriminator is image HEIGHT.
+        //
+        //   MIUI HeifDecoderImpl uses a hardware AV1 decoder capped at ~4096px.
+        //   Images taller than that crash with "videoFrame is a nullptr".
+        //   Flutter's libavif uses software AV1 (dav1d/aom) with no size limit.
+        //
+        //   Verified:
+        //     04.avif  1440×3444  (≤ 4096) → native  ✓ works
+        //     26.avif  1440×5044  (> 4096) → Flutter ✓ works
+        //
+        // Step 1: check major brand — only avis targets native view.
+        if (bytes.length < 12) return null;
+        const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
+        if (bytes[8] != kAvis0 ||
+            bytes[9] != kAvis1 ||
+            bytes[10] != kAvis2 ||
+            bytes[11] != kAvis3) {
+          return null; // avif / mif1 brand → Flutter codec
+        }
+
+        // Step 2: parse the ispe (image spatial extents) box for image height.
+        //
+        // ispe box layout:
+        //   [4B box-size][4B 'ispe'][4B version+flags][4B width][4B height]
+        //    ^box_start  ^i         i+4                i+8       i+12
+        //
+        // The ispe box for manga18.club AVIF files sits at byte ~203, well within
+        // the 512-byte sample. Search for the 'ispe' marker and read height.
+        const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
+        const kMaxHardwareHeight = 4096;
+
+        for (int i = 0; i <= bytes.length - 16; i++) {
+          if (_matchesBytes(bytes, i, kIspe)) {
+            final int height = ((bytes[i + 12] & 0xFF) << 24) |
+                ((bytes[i + 13] & 0xFF) << 16) |
+                ((bytes[i + 14] & 0xFF) << 8) |
+                (bytes[i + 15] & 0xFF);
+            if (height > kMaxHardwareHeight) {
+              return null; // too tall for hardware AV1 decoder → Flutter
+            }
+            break;
+          }
+        }
+
+        return 'avif'; // avis + height ≤ 4096 → native AnimatedWebPView
+      }
+      return null;
     } catch (_) {
-      return false;
+      return null;
     } finally {
       raf?.closeSync();
     }
@@ -1997,6 +2177,31 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       ),
                     ),
                   ),
+
+                // Open in WebView button — only for network URLs
+                if (!isRetrying && !_isLocalFilePath(widget.imageUrl)) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isActionBusy
+                          ? null
+                          : () => KuronNative.instance
+                              .openWebView(url: widget.imageUrl),
+                      icon: const Icon(Icons.open_in_browser, size: 16),
+                      label: const Text('Open in WebView'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

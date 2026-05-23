@@ -60,6 +60,12 @@ class AnimatedWebPView(
          * so scroll-back is instant (no re-decode of 10+ MB files).
          */
         private val drawableCache = LruCache<String, AnimatedImageDrawable>(3)
+
+        /**
+         * URLs/paths that failed animated decode on this runtime/device.
+         * Subsequent renders skip animated decode and go directly to static frame.
+         */
+        private val failedAnimatedDecodeKeys = mutableSetOf<String>()
     }
 
     private val container = FrameLayout(context).also {
@@ -103,8 +109,10 @@ class AnimatedWebPView(
 
         cacheKey = url ?: filePath
 
+        val shouldSkipAnimatedDecode = cacheKey?.let { failedAnimatedDecodeKeys.contains(it) } == true
+
         // 1️⃣ LruCache check — instant, no I/O, no decode
-        val cached = cacheKey?.let { drawableCache.get(it) }
+        val cached = if (!shouldSkipAnimatedDecode) cacheKey?.let { drawableCache.get(it) } else null
         if (cached != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             Log.i(TAG, "Cache HIT: ${cacheKey?.takeLast(40)}")
             animatedDrawable = cached
@@ -116,7 +124,16 @@ class AnimatedWebPView(
             when {
                 !filePath.isNullOrEmpty() -> {
                     Log.i(TAG, "Loading from disk cache: $filePath")
-                    loadFromFile(File(filePath), fallbackUrl = url, fallbackHeaders = headers)
+                    var renderedStaticFromKnownFailure = false
+                    if (shouldSkipAnimatedDecode) {
+                        renderedStaticFromKnownFailure = renderStaticBitmapFromFile(File(filePath))
+                        if (renderedStaticFromKnownFailure) {
+                            Log.i(TAG, "Skipping animated decode (known unsupported), rendered static from disk")
+                        }
+                    }
+                    if (!renderedStaticFromKnownFailure) {
+                        loadFromFile(File(filePath), fallbackUrl = url, fallbackHeaders = headers)
+                    }
                 }
                 url != null -> {
                     Log.i(TAG, "Downloading from network: $url")
@@ -151,6 +168,14 @@ class AnimatedWebPView(
                 renderFile(file)
             } catch (e: Exception) {
                 Log.e(TAG, "loadFromFile failed: ${e.message}")
+                cacheKey?.let { failedAnimatedDecodeKeys.add(it) }
+                // Some OEM decoders fail to create AnimatedImageDrawable for
+                // valid AVIF sequences. Fall back to a static first frame
+                // from the same local cache file before retrying network.
+                if (renderStaticBitmapFromFile(file)) {
+                    Log.w(TAG, "Rendered static fallback from disk after animated decode failure")
+                    return@thread
+                }
                 if (fallbackUrl != null) {
                     Log.i(TAG, "Falling back to network after error: $fallbackUrl")
                     loadAsync(fallbackUrl, fallbackHeaders)
@@ -161,13 +186,20 @@ class AnimatedWebPView(
 
     private fun loadAsync(url: String, headers: Map<String, String>) {
         thread(name = "AnimatedWebP-Loader", isDaemon = true) {
+            var downloadedBytes: ByteArray? = null
             try {
-                val bytes = fetchBytes(url, headers)
+                downloadedBytes = fetchBytes(url, headers)
                 if (disposed) return@thread
-                renderBytes(bytes)
-            } catch (_: Exception) {
+                renderBytes(downloadedBytes)
+            } catch (e: Exception) {
+                cacheKey?.let { failedAnimatedDecodeKeys.add(it) }
+                if (renderStaticBitmapFromBytes(downloadedBytes)) {
+                    Log.w(TAG, "Rendered static fallback from network bytes after animated decode failure")
+                    return@thread
+                }
                 // Silently swallow – Flutter's ExtendedImage error UI is shown on top
                 // if this widget never renders.
+                Log.e(TAG, "loadAsync failed: ${e.message}")
             }
         }
     }
@@ -175,17 +207,37 @@ class AnimatedWebPView(
     /** Decodes directly from [file] to avoid copying very large offline WebP files into memory. */
     private fun renderFile(file: File) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(file)
-            val drawable = ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
-                val tw = targetWidth
-                if (tw != null && tw > 0 && tw < info.size.width) {
-                    val scale = tw.toFloat() / info.size.width
-                    decoder.setTargetSize(tw, (info.size.height * scale).toInt())
-                    Log.i(
-                        TAG,
-                        "Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
-                            "(original: ${info.size.width}×${info.size.height})",
-                    )
+            val drawable = try {
+                val source = ImageDecoder.createSource(file)
+                ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
+                    val tw = targetWidth
+                    if (tw != null && tw > 0 && tw < info.size.width) {
+                        val scale = tw.toFloat() / info.size.width
+                        decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                        Log.i(
+                            TAG,
+                            "Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
+                                "(original: ${info.size.width}×${info.size.height})",
+                        )
+                    }
+                }
+            } catch (hardwareE: Exception) {
+                // Hardware HEIF/AV1 decoder failed (e.g. OEM codec bug for tiled AVIF).
+                // Retry with software allocator — slower but bypasses broken HW driver.
+                Log.w(TAG, "Hardware decode failed (${hardwareE.message}), retrying with software allocator")
+                val source2 = ImageDecoder.createSource(file)
+                ImageDecoder.decodeDrawable(source2) { decoder, info, _ ->
+                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    val tw = targetWidth
+                    if (tw != null && tw > 0 && tw < info.size.width) {
+                        val scale = tw.toFloat() / info.size.width
+                        decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                        Log.i(
+                            TAG,
+                            "SW Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
+                                "(original: ${info.size.width}×${info.size.height})",
+                        )
+                    }
                 }
             }
 
@@ -220,40 +272,62 @@ class AnimatedWebPView(
     /** Decodes [bytes] and sets the image on the [ImageView] on the main thread. */
     private fun renderBytes(bytes: ByteArray) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // API 28+: full animated decode via ImageDecoder
-            val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
-            val drawable = ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
-                // 🔥 Target-size optimisation: decode at viewport resolution
-                // instead of full original (e.g. 1416×1608 → ~500×568).
-                // Reduces per-frame RGBA memory ~75% and decode time ~3-4×.
-                val tw = targetWidth
-                if (tw != null && tw > 0 && tw < info.size.width) {
-                    val scale = tw.toFloat() / info.size.width
-                    decoder.setTargetSize(tw, (info.size.height * scale).toInt())
-                    Log.i(TAG, "Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
-                            "(original: ${info.size.width}×${info.size.height})")
+            try {
+                // API 28+: full animated decode via ImageDecoder.
+                // Try hardware first; on failure retry with software allocator to bypass
+                // OEM codec bugs (e.g. tiled AVIF crashing hardware HeifDecoder).
+                val drawable = try {
+                    val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+                    ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
+                        // 🔥 Target-size optimisation: decode at viewport resolution
+                        // instead of full original (e.g. 1416×1608 → ~500×568).
+                        // Reduces per-frame RGBA memory ~75% and decode time ~3-4×.
+                        val tw = targetWidth
+                        if (tw != null && tw > 0 && tw < info.size.width) {
+                            val scale = tw.toFloat() / info.size.width
+                            decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                            Log.i(TAG, "Decode targetSize: ${tw}×${(info.size.height * scale).toInt()} " +
+                                    "(original: ${info.size.width}×${info.size.height})")
+                        }
+                    }
+                } catch (hardwareE: Exception) {
+                    Log.w(TAG, "renderBytes hardware decode failed (${hardwareE.message}), retrying with software allocator")
+                    val source2 = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+                    ImageDecoder.decodeDrawable(source2) { decoder, info, _ ->
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                        val tw = targetWidth
+                        if (tw != null && tw > 0 && tw < info.size.width) {
+                            val scale = tw.toFloat() / info.size.width
+                            decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                        }
+                    }
                 }
-            }
 
-            // Cache decoded drawable immediately (before posting to main thread)
-            if (drawable is AnimatedImageDrawable) {
-                cacheKey?.let { key ->
-                    drawableCache.put(key, drawable)
-                    Log.i(TAG, "Cached decoded drawable: ${key.takeLast(40)}")
-                }
-            }
-
-            imageView.post {
-                if (disposed) return@post
+                // Cache decoded drawable immediately (before posting to main thread)
                 if (drawable is AnimatedImageDrawable) {
-                    drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                    animatedDrawable = drawable
-                    Log.i(TAG, "AnimatedImageDrawable started (API ${Build.VERSION.SDK_INT})")
-                } else {
-                    Log.i(TAG, "Non-animated drawable rendered (API ${Build.VERSION.SDK_INT})")
+                    cacheKey?.let { key ->
+                        drawableCache.put(key, drawable)
+                        Log.i(TAG, "Cached decoded drawable: ${key.takeLast(40)}")
+                    }
                 }
-                imageView.setImageDrawable(drawable)
-                (drawable as? AnimatedImageDrawable)?.start()
+
+                imageView.post {
+                    if (disposed) return@post
+                    if (drawable is AnimatedImageDrawable) {
+                        drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                        animatedDrawable = drawable
+                        Log.i(TAG, "AnimatedImageDrawable started (API ${Build.VERSION.SDK_INT})")
+                    } else {
+                        Log.i(TAG, "Non-animated drawable rendered (API ${Build.VERSION.SDK_INT})")
+                    }
+                    imageView.setImageDrawable(drawable)
+                    (drawable as? AnimatedImageDrawable)?.start()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "renderBytes animated decode failed: ${e.message}")
+                if (!renderStaticBitmapFromBytes(bytes)) {
+                    throw e
+                }
             }
         } else {
             // API < 28: static first-frame fallback via BitmapFactory
@@ -278,6 +352,73 @@ class AnimatedWebPView(
             conn.inputStream.use { it.readBytes() }
         } finally {
             conn.disconnect()
+        }
+    }
+
+    private fun renderStaticBitmapFromFile(file: File): Boolean {
+        return try {
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                // Try software allocator first (static fallback path is already a last resort;
+                // software is safer than hardware for OEM codec bugs on tiled AVIF files).
+                try {
+                    val source = ImageDecoder.createSource(file)
+                    ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                        val tw = targetWidth
+                        if (tw != null && tw > 0 && tw < info.size.width) {
+                            val scale = tw.toFloat() / info.size.width
+                            decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Absolute last resort: BitmapFactory (different code path, may succeed
+                    // where ImageDecoder fails for certain AVIF encodings).
+                    Log.w(TAG, "ImageDecoder static decode failed (${e.message}), trying BitmapFactory")
+                    BitmapFactory.decodeFile(file.absolutePath)
+                }
+            } else {
+                BitmapFactory.decodeFile(file.absolutePath)
+            } ?: return false
+
+            imageView.post {
+                if (disposed) return@post
+                imageView.setImageBitmap(bitmap)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun renderStaticBitmapFromBytes(bytes: ByteArray?): Boolean {
+        if (bytes == null || bytes.isEmpty()) return false
+        return try {
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                try {
+                    val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+                    ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                        val tw = targetWidth
+                        if (tw != null && tw > 0 && tw < info.size.width) {
+                            val scale = tw.toFloat() / info.size.width
+                            decoder.setTargetSize(tw, (info.size.height * scale).toInt())
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "ImageDecoder bytes static decode failed (${e.message}), trying BitmapFactory")
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                }
+            } else {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            } ?: return false
+
+            imageView.post {
+                if (disposed) return@post
+                imageView.setImageBitmap(bitmap)
+            }
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 
