@@ -265,6 +265,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// When set, the native [AnimatedWebPView] reads from disk (no re-download).
   String? _cachedFilePath;
 
+  /// Image dimensions parsed from the file header (e.g., `ispe` box for AVIF).
+  /// Used to set correct [AspectRatio] in webtoon/continuous-scroll mode so the
+  /// ListView item has the right height rather than collapsing to zero.
+  Size? _nativeImageSize;
+
   // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
   static const int _maxImageLoadRetries = 3;
@@ -372,28 +377,39 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     getCachedImageFile(widget.imageUrl).then((file) {
       if (file == null) return;
       final size = file.lengthSync();
-      final animatedCapableFormat =
+      final (:format, :width, :height) =
           _inferNativeAnimatedCapableExtensionFromFileSync(file);
-      if (animatedCapableFormat != null) {
+      if (format != null) {
         _markHeavyNativeAnimatedImage(
           cacheKey: widget.imageUrl,
           cachedFilePath: file.path,
           confirmedAnimatedWebP: true,
         );
         if (!mounted) return;
+        final nativeSize = (width != null && height != null)
+            ? Size(width.toDouble(), height.toDouble())
+            : null;
         setState(() {
           _isHeavyImage = true;
           _isConfirmedAnimatedWebP = true;
           _cachedFilePath = file.path;
           _awaitingNativeCheck = false;
+          if (nativeSize != null) _nativeImageSize = nativeSize;
         });
         updateKeepAlive();
         _logger.i(
-          '[NativeWebP] Pre-check HIT: heavy $animatedCapableFormat from disk cache '
+          '[NativeWebP] Pre-check HIT: heavy $format from disk cache '
           'page=${widget.pageNumber} '
           'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
         );
         _maybeNotifyHeavyImageDetected();
+        if (nativeSize != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+            }
+          });
+        }
       }
     }).catchError((Object e) {
       _logger.w('[NativeWebP] Pre-check error: $e');
@@ -420,9 +436,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       }
 
       final fileSize = file.lengthSync();
-      final animatedCapableFormat =
+      final (:format, :width, :height) =
           _inferNativeAnimatedCapableExtensionFromFileSync(file);
-      if (animatedCapableFormat == null) {
+      if (format == null) {
         return;
       }
 
@@ -435,8 +451,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _isHeavyImage = true;
       _isConfirmedAnimatedWebP = true;
       _cachedFilePath = localPath;
+      if (width != null && height != null) {
+        _nativeImageSize = Size(width.toDouble(), height.toDouble());
+      }
       _logger.i(
-        '[NativeWebP] Local pre-check HIT: heavy $animatedCapableFormat '
+        '[NativeWebP] Local pre-check HIT: heavy $format '
         'page=${widget.pageNumber} '
         'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
       );
@@ -850,23 +869,35 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   final file = File(normalizedLocalPath);
                   if (file.existsSync()) {
                     final fileSize = file.lengthSync();
-                    final animatedCapableFormat =
+                    final (:format, :width, :height) =
                         _inferNativeAnimatedCapableExtensionFromFileSync(file);
-                    if (animatedCapableFormat != null) {
+                    if (format != null) {
                       _markHeavyNativeAnimatedImage(
                         cacheKey: widget.imageUrl,
                         cachedFilePath: normalizedLocalPath,
                         confirmedAnimatedWebP: true,
                       );
+                      final nativeSize = (width != null && height != null)
+                          ? Size(width.toDouble(), height.toDouble())
+                          : null;
                       setState(() {
                         _isHeavyImage = true;
                         _isConfirmedAnimatedWebP = true;
                         _cachedFilePath = normalizedLocalPath;
+                        if (nativeSize != null) _nativeImageSize = nativeSize;
                       });
                       updateKeepAlive();
                       _maybeNotifyHeavyImageDetected();
+                      if (nativeSize != null) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            widget.onImageLoaded
+                                ?.call(widget.pageNumber, nativeSize);
+                          }
+                        });
+                      }
                       _logger.i(
-                        '[NativeWebP] Local complete => native ($animatedCapableFormat) '
+                        '[NativeWebP] Local complete => native ($format) '
                         'page=${widget.pageNumber} '
                         'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
                       );
@@ -1095,9 +1126,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   '[NativeWebP] Cached file=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
                   'page=${widget.pageNumber}',
                 );
-                final animatedCapableFormat =
+                final (:format, :width, :height) =
                     _inferNativeAnimatedCapableExtensionFromFileSync(cacheFile);
-                if (animatedCapableFormat != null) {
+                if (format != null) {
                   _markHeavyNativeAnimatedImage(
                     cacheKey: url,
                     cachedFilePath: cacheFile.path,
@@ -1110,15 +1141,27 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   clearMemoryImageCache(url);
 
                   if (!mounted) return;
+                  final nativeSize = (width != null && height != null)
+                      ? Size(width.toDouble(), height.toDouble())
+                      : null;
                   setState(() {
                     _isHeavyImage = true;
                     _isConfirmedAnimatedWebP = true; // stops re-inspection loop
                     _cachedFilePath = cacheFile.path;
+                    if (nativeSize != null) _nativeImageSize = nativeSize;
                   });
                   updateKeepAlive();
                   _maybeNotifyHeavyImageDetected();
+                  if (nativeSize != null) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        widget.onImageLoaded
+                            ?.call(widget.pageNumber, nativeSize);
+                      }
+                    });
+                  }
                   _logger.i(
-                    '[NativeWebP] => AnimatedImageDrawable ($animatedCapableFormat): '
+                    '[NativeWebP] => AnimatedImageDrawable ($format): '
                     'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
                     ' path=${cacheFile.path}',
                   );
@@ -1148,23 +1191,34 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   ///
   /// Wraps [AnimatedWebPView] in a [RepaintBoundary] so the continuously
   /// animating native layer does not invalidate the surrounding Flutter tree.
+  ///
+  /// In continuous-scroll (webtoon) mode, the ListView item has no intrinsic
+  /// height because [SizedBox.expand] inside [AnimatedWebPView] has none.
+  /// When [_nativeImageSize] is known we wrap the view with [AspectRatio] so
+  /// the ListView gives it the correct proportional height.
   Widget _buildNativeAnimatedWebP(
     String url,
     Map<String, String>? headers, {
     String? filePathOverride,
   }) {
     final resolvedFilePath = filePathOverride ?? _cachedFilePath;
+    final playInlineInContinuousScroll =
+        widget.readingMode == ReadingMode.continuousScroll;
 
-    return RepaintBoundary(
+    Widget nativeView = RepaintBoundary(
       child: AnimatedWebPView(
         key: ValueKey('native_webp_${widget.contentId}_${widget.pageNumber}'),
         url: url,
         filePath: resolvedFilePath,
         headers: headers ?? const {},
         targetWidth: _nativeDecodeWidth(context),
-        autoPlay: _shouldAutoPlayAnimatedView,
+        // Continuous-scroll page estimation uses average item height, which is
+        // too coarse for mixed-height webtoon pages and can leave the on-screen
+        // native animated image stuck on its static thumbnail.
+        autoPlay: playInlineInContinuousScroll || _shouldAutoPlayAnimatedView,
         pageNumber: widget.pageNumber,
-        visiblePageNotifier: widget.visiblePageNotifier,
+        visiblePageNotifier:
+            playInlineInContinuousScroll ? null : widget.visiblePageNotifier,
         loadingBuilder: (context, receivedBytes, totalBytes) =>
             _buildLoadingIndicator(
           context,
@@ -1174,6 +1228,21 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         fallback: _buildLoadingIndicator(context),
       ),
     );
+
+    // In webtoon/continuous-scroll mode, ListView items have no intrinsic
+    // height so SizedBox.expand inside AnimatedWebPView collapses to zero.
+    // Apply AspectRatio so the list item gets the correct proportional height.
+    if (widget.readingMode == ReadingMode.continuousScroll &&
+        _nativeImageSize != null &&
+        _nativeImageSize!.width > 0 &&
+        _nativeImageSize!.height > 0) {
+      nativeView = AspectRatio(
+        aspectRatio: _nativeImageSize!.width / _nativeImageSize!.height,
+        child: nativeView,
+      );
+    }
+
+    return nativeView;
   }
 
   bool _shouldResolveEhentaiImageUrl(String url) {
@@ -1288,20 +1357,36 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  static String? _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
+  /// Returns `(format, width, height)` if the file is a native-renderable
+  /// animated image, or `(null, null, null)` if Flutter codec should be used.
+  ///
+  /// `width` and `height` are extracted from the `ispe` box for AVIF files so
+  /// the caller can compute the correct aspect ratio for webtoon/scroll layout.
+  /// For WebP, dimensions are not parsed (returns `null` for width/height).
+  static ({String? format, int? width, int? height})
+      _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
+    const _empty = (format: null, width: null, height: null);
     RandomAccessFile? raf;
     try {
       raf = file.openSync(mode: FileMode.read);
       final length = raf.lengthSync();
       if (length < 16) {
-        return null;
+        return _empty;
       }
 
       // Read 512 bytes — enough to reach the ispe box (~byte 203 in typical AVIF).
       final sampleLength = length < 512 ? length : 512;
       final bytes = raf.readSync(sampleLength);
       final ext = inferImageExtension(bytes: bytes);
-      if (ext == 'webp') return 'webp';
+      if (ext == 'webp') {
+        // Only route to native AnimatedWebPView if the header confirms animation.
+        // Static WebP files (thumbnails, cover images, etc.) must stay on the
+        // Flutter codec path — returning non-null here marks the image as heavy
+        // which prevents normal keep-alive recycling and forces native rendering.
+        return _looksLikeAnimatedWebPHeader(bytes)
+            ? (format: 'webp', width: null, height: null)
+            : _empty;
+      }
       if (ext == 'avif') {
         // Route to native AnimatedWebPView only for avis-brand AVIF within the
         // hardware AV1 decoder's dimension limit.
@@ -1320,16 +1405,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         //     26.avif  1440×5044  (> 4096) → Flutter ✓ works
         //
         // Step 1: check major brand — only avis targets native view.
-        if (bytes.length < 12) return null;
+        if (bytes.length < 12) return _empty;
         const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
         if (bytes[8] != kAvis0 ||
             bytes[9] != kAvis1 ||
             bytes[10] != kAvis2 ||
             bytes[11] != kAvis3) {
-          return null; // avif / mif1 brand → Flutter codec
+          return _empty; // avif / mif1 brand → Flutter codec
         }
 
-        // Step 2: parse the ispe (image spatial extents) box for image height.
+        // Step 2: parse the ispe (image spatial extents) box for image dimensions.
         //
         // ispe box layout:
         //   [4B box-size][4B 'ispe'][4B version+flags][4B width][4B height]
@@ -1342,22 +1427,35 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
         for (int i = 0; i <= bytes.length - 16; i++) {
           if (_matchesBytes(bytes, i, kIspe)) {
+            final int width = ((bytes[i + 8] & 0xFF) << 24) |
+                ((bytes[i + 9] & 0xFF) << 16) |
+                ((bytes[i + 10] & 0xFF) << 8) |
+                (bytes[i + 11] & 0xFF);
             final int height = ((bytes[i + 12] & 0xFF) << 24) |
                 ((bytes[i + 13] & 0xFF) << 16) |
                 ((bytes[i + 14] & 0xFF) << 8) |
                 (bytes[i + 15] & 0xFF);
             if (height > kMaxHardwareHeight) {
-              return null; // too tall for hardware AV1 decoder → Flutter
+              return _empty; // too tall for hardware AV1 decoder → Flutter
             }
-            break;
+            // avis + height ≤ 4096 → native AnimatedWebPView
+            return (
+              format: 'avif',
+              width: width > 0 ? width : null,
+              height: height > 0 ? height : null,
+            );
           }
         }
 
-        return 'avif'; // avis + height ≤ 4096 → native AnimatedWebPView
+        return (
+          format: 'avif',
+          width: null,
+          height: null
+        ); // avis, no ispe found
       }
-      return null;
+      return _empty;
     } catch (_) {
-      return null;
+      return _empty;
     } finally {
       raf?.closeSync();
     }
