@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:logger/logger.dart';
@@ -11,6 +12,7 @@ import '../../domain/entities/download_status.dart';
 import '../../domain/repositories/user_data_repository.dart';
 import '../constants/app_constants.dart';
 import 'download_storage_utils.dart';
+import 'reader_image_repair_utils.dart';
 import 'storage_settings.dart';
 
 /// Manager for offline content detection and operations
@@ -38,6 +40,7 @@ class OfflineContentManager {
   final Map<String, String> _pathCache = {};
   final Map<String, List<String>> _imageUrlsCache = {};
   final Map<String, DateTime> _imageUrlsCacheTime = {};
+  final Map<String, Future<void>> _chapterMetadataWriteQueue = {};
 
   static const Duration _urlCacheDuration = Duration(minutes: 5);
 
@@ -464,7 +467,8 @@ class OfflineContentManager {
 
       // Create a set of physically downloaded page numbers to avoid injecting placeholders
       // if the page has actually been redownloaded but metadata.json wasn't updated yet.
-      final downloadedPages = diskUrls.map((url) => _extractPageNumber(url)).toSet();
+      final downloadedPages =
+          diskUrls.map((url) => _extractPageNumber(url)).toSet();
 
       // Rebuild the full list by interleaving disk files and placeholders
       // at their correct positions. Range downloads keep original gallery page
@@ -475,7 +479,8 @@ class OfflineContentManager {
       for (var pageNum = effectiveStartPage;
           pageNum <= effectiveEndPage!;
           pageNum++) {
-        if (failedMap.containsKey(pageNum) && !downloadedPages.contains(pageNum)) {
+        if (failedMap.containsKey(pageNum) &&
+            !downloadedPages.contains(pageNum)) {
           result.add('$kFailedPagePrefix${failedMap[pageNum]}');
         } else if (diskIndex < diskUrls.length) {
           result.add(diskUrls[diskIndex++]);
@@ -495,43 +500,282 @@ class OfflineContentManager {
     }
   }
 
-  /// Removes a successfully repaired page from `failed_pages` in `metadata.json`
-  Future<void> removeFailedPageFromMetadata(String contentId, int pageNumber) async {
-    try {
-      final contentPath = await getOfflineContentPath(contentId);
-      if (contentPath == null) return;
+  /// Removes a successfully repaired page from `failed_pages` in `metadata.json`.
+  ///
+  /// This now uses the shared chapter-scoped reconciliation contract so all
+  /// metadata writers apply the same merge rules.
+  Future<void> removeFailedPageFromMetadata(String contentId, int pageNumber) {
+    return reconcileChapterMetadataPage(
+      contentId: contentId,
+      pageNumber: pageNumber,
+    );
+  }
 
-      final metadataFile = File(path.join(contentPath, 'metadata.json'));
-      if (!await metadataFile.exists()) return;
+  /// Reconciles metadata for a touched page using deterministic merge rules:
+  /// if a valid page file exists, stale failed marker is removed.
+  Future<void> reconcileChapterMetadataPage({
+    required String contentId,
+    required int pageNumber,
+    String? sourceUrl,
+  }) async {
+    if (pageNumber <= 0) {
+      return;
+    }
 
-      final raw = json.decode(await metadataFile.readAsString());
-      if (raw is! Map<String, dynamic>) return;
+    final contentPath = await getOfflineContentPath(contentId);
+    if (contentPath == null || contentPath.trim().isEmpty) {
+      return;
+    }
 
-      final failedPagesRaw = raw['failed_pages'];
-      if (failedPagesRaw is! List) return;
+    await _reconcileChapterMetadataAtPath(
+      contentPath: contentPath,
+      touchedPages: <int>{pageNumber},
+      sourceUrlByPage: sourceUrl == null || sourceUrl.trim().isEmpty
+          ? const <int, String>{}
+          : <int, String>{pageNumber: sourceUrl.trim()},
+    );
+    invalidateCacheFor(contentId);
+  }
 
-      // Filter out the repaired page
-      final newFailedPages = [];
-      for (final entry in failedPagesRaw) {
+  /// Reconciles stale failed-page markers for the completed chapter only.
+  /// This is used after native/background download completion.
+  Future<void> reconcileChapterMetadataForCompletedDownload({
+    required String contentId,
+    String? contentPath,
+  }) async {
+    final resolvedContentPath = (contentPath != null && contentPath.isNotEmpty)
+        ? contentPath
+        : await getOfflineContentPath(contentId);
+    if (resolvedContentPath == null || resolvedContentPath.trim().isEmpty) {
+      return;
+    }
+
+    final metadataPath = path.join(resolvedContentPath, 'metadata.json');
+    final metadata = await _readMetadataJson(metadataPath);
+    if (metadata == null) {
+      return;
+    }
+
+    final touchedPages = <int>{};
+    final failedPages = metadata['failed_pages'];
+    if (failedPages is List) {
+      for (final entry in failedPages) {
         if (entry is Map) {
-          final page = entry['page'] as int?;
-          if (page != null && page != pageNumber) {
-            newFailedPages.add(entry);
+          final dynamic rawPage = entry['page'];
+          final page = rawPage is num
+              ? rawPage.toInt()
+              : int.tryParse(rawPage?.toString() ?? '');
+          if (page != null && page > 0) {
+            touchedPages.add(page);
           }
-        } else {
-          newFailedPages.add(entry);
         }
       }
-
-      // Only update if there's a change
-      if (newFailedPages.length < failedPagesRaw.length) {
-        raw['failed_pages'] = newFailedPages;
-        await metadataFile.writeAsString(json.encode(raw));
-        _logger.i('Removed page $pageNumber from failed_pages in metadata.json for $contentId');
-      }
-    } catch (e) {
-      _logger.w('Failed to remove repaired page from metadata.json: $e');
     }
+
+    if (touchedPages.isEmpty) {
+      return;
+    }
+
+    await _reconcileChapterMetadataAtPath(
+      contentPath: resolvedContentPath,
+      touchedPages: touchedPages,
+      sourceUrlByPage: const <int, String>{},
+    );
+    invalidateCacheFor(contentId);
+  }
+
+  Future<void> _reconcileChapterMetadataAtPath({
+    required String contentPath,
+    required Set<int> touchedPages,
+    required Map<int, String> sourceUrlByPage,
+  }) async {
+    if (touchedPages.isEmpty) {
+      return;
+    }
+
+    final metadataPath = path.join(contentPath, 'metadata.json');
+    await _serializeChapterMetadataWrite(
+      metadataPath,
+      () async {
+        final metadata = await _readMetadataJson(metadataPath);
+        if (metadata == null) {
+          return;
+        }
+
+        final failedRaw = metadata['failed_pages'];
+        final originalFailed = failedRaw is List
+            ? failedRaw
+                .map((entry) => entry is Map
+                    ? Map<String, dynamic>.from(
+                        entry.map(
+                          (key, value) => MapEntry(key.toString(), value),
+                        ),
+                      )
+                    : <String, dynamic>{'raw': entry})
+                .toList()
+            : <Map<String, dynamic>>[];
+
+        final mergedByPage = <int, Map<String, dynamic>>{};
+        for (final entry in originalFailed) {
+          final dynamic rawPage = entry['page'];
+          final page = rawPage is num
+              ? rawPage.toInt()
+              : int.tryParse(rawPage?.toString() ?? '');
+          if (page != null && page > 0) {
+            mergedByPage[page] = entry;
+          }
+        }
+
+        for (final page in touchedPages) {
+          final hasValidPage = await _hasValidPageFile(
+            contentPath: contentPath,
+            pageNumber: page,
+          );
+          if (hasValidPage) {
+            mergedByPage.remove(page);
+            continue;
+          }
+
+          final sourceUrl = sourceUrlByPage[page];
+          if (sourceUrl != null && sourceUrl.isNotEmpty) {
+            mergedByPage[page] = <String, dynamic>{
+              'page': page,
+              'url': sourceUrl,
+            };
+          }
+        }
+
+        final nextFailedPages = mergedByPage.values.toList()
+          ..sort((a, b) {
+            final left = (a['page'] as num?)?.toInt() ?? 0;
+            final right = (b['page'] as num?)?.toInt() ?? 0;
+            return left.compareTo(right);
+          });
+
+        final changed =
+            !_failedPagesEquivalent(originalFailed, nextFailedPages);
+        if (!changed) {
+          return;
+        }
+
+        metadata['failed_pages'] = nextFailedPages;
+        await File(metadataPath).writeAsString(json.encode(metadata));
+        _logger.i(
+          'Reconciled metadata failed_pages for chapter at $contentPath '
+          '(pages: ${touchedPages.toList()..sort()})',
+        );
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>?> _readMetadataJson(String metadataPath) async {
+    final metadataFile = File(metadataPath);
+    if (!await metadataFile.exists()) {
+      return null;
+    }
+
+    final decoded = json.decode(await metadataFile.readAsString());
+    if (decoded is! Map) {
+      return null;
+    }
+
+    return decoded.map(
+      (key, value) => MapEntry(key.toString(), value),
+    );
+  }
+
+  bool _failedPagesEquivalent(
+    List<Map<String, dynamic>> left,
+    List<Map<String, dynamic>> right,
+  ) {
+    if (left.length != right.length) {
+      return false;
+    }
+
+    for (var index = 0; index < left.length; index++) {
+      final leftEntry = left[index];
+      final rightEntry = right[index];
+      final leftPage = (leftEntry['page'] as num?)?.toInt() ??
+          int.tryParse(leftEntry['page']?.toString() ?? '');
+      final rightPage = (rightEntry['page'] as num?)?.toInt() ??
+          int.tryParse(rightEntry['page']?.toString() ?? '');
+      final leftUrl = leftEntry['url']?.toString() ?? '';
+      final rightUrl = rightEntry['url']?.toString() ?? '';
+
+      if (leftPage != rightPage || leftUrl != rightUrl) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  Future<bool> _hasValidPageFile({
+    required String contentPath,
+    required int pageNumber,
+  }) async {
+    final pageCandidates = <String>[
+      path.join(contentPath, 'images'),
+      contentPath,
+    ];
+
+    for (final directoryPath in pageCandidates) {
+      final directory = Directory(directoryPath);
+      if (!await directory.exists()) {
+        continue;
+      }
+
+      await for (final entity in directory.list()) {
+        if (entity is! File) {
+          continue;
+        }
+
+        if (_extractPageNumber(entity.path) != pageNumber) {
+          continue;
+        }
+
+        final extension = path.extension(entity.path).toLowerCase();
+        if (!kReaderRepairSupportedImageExtensions.contains(extension)) {
+          continue;
+        }
+
+        try {
+          if (await entity.length() <= 0) {
+            continue;
+          }
+          final bytes = await entity.openRead(0, 16).fold<List<int>>(
+            <int>[],
+            (acc, value) => acc..addAll(value),
+          );
+          final inferred = inferImageExtension(bytes: bytes);
+          if (inferred != null && inferred.isNotEmpty) {
+            return true;
+          }
+        } catch (_) {
+          continue;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<void> _serializeChapterMetadataWrite(
+    String metadataPath,
+    Future<void> Function() action,
+  ) {
+    final previous = _chapterMetadataWriteQueue[metadataPath];
+    final chained = (previous ?? Future<void>.value())
+        .catchError((_) {})
+        .then((_) => action());
+
+    _chapterMetadataWriteQueue[metadataPath] = chained;
+    return chained.whenComplete(() {
+      final queued = _chapterMetadataWriteQueue[metadataPath];
+      if (identical(queued, chained)) {
+        _chapterMetadataWriteQueue.remove(metadataPath);
+      }
+    });
   }
 
   /// Get offline first image path (fast, for cover display)

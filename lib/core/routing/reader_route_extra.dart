@@ -1,5 +1,6 @@
 import 'package:kuron_core/kuron_core.dart' show Chapter, ChapterData, Content;
 import 'package:nhasixapp/core/models/image_metadata.dart';
+import 'package:nhasixapp/core/utils/uri_component_utils.dart';
 
 Map<String, dynamic> buildReaderRouteExtra({
   Content? content,
@@ -83,8 +84,8 @@ ChapterData? readReaderChapterData(Object? value) {
 
   return ChapterData(
     images: images,
-    prevChapterId: _readString(map['prevChapterId']),
-    nextChapterId: _readString(map['nextChapterId']),
+    prevChapterId: _readIdentifier(map['prevChapterId']),
+    nextChapterId: _readIdentifier(map['nextChapterId']),
     prevChapterTitle: _readString(map['prevChapterTitle']),
     nextChapterTitle: _readString(map['nextChapterTitle']),
   );
@@ -128,9 +129,9 @@ Chapter? readReaderChapter(Object? value) {
     return null;
   }
 
-  final id = _readString(map['id']);
+  final id = _readIdentifier(map['id']);
   final title = _readString(map['title']);
-  final url = _readString(map['url']);
+  final url = _readIdentifier(map['url']);
 
   if (id == null || title == null || url == null) {
     return null;
@@ -209,6 +210,14 @@ List<String>? _readStringList(Object? value) {
 
 String? _readString(Object? value) {
   return value is String ? value : null;
+}
+
+String? _readIdentifier(Object? value) {
+  final raw = _readString(value);
+  if (raw == null || raw.isEmpty) {
+    return raw;
+  }
+  return UriComponentUtils.safeDecode(raw);
 }
 
 DateTime? _readDateTime(Object? value) {

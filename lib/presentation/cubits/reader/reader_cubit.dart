@@ -41,6 +41,7 @@ typedef ReaderManualRepairContext = ({
 
 /// Simple cubit for managing reader functionality with offline support
 class ReaderCubit extends Cubit<ReaderState> {
+  static const String _ehentaiPartPrefix = '__ehpart__';
   static const String _ehentaiChunkPrefix = '__ehchunk__';
   static const int _maxEhentaiRepairChunks = 150;
 
@@ -431,6 +432,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       return;
     }
 
+    if (_isEhentaiPartId(nextChapterId)) {
+      await loadChapter(nextChapterId);
+      return;
+    }
+
     if (_isEhentaiChunkId(nextChapterId)) {
       await _appendEhentaiChunk(nextChapterId);
       return;
@@ -449,6 +455,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       return;
     }
 
+    if (_isEhentaiPartId(previousChapterId)) {
+      await loadChapter(previousChapterId);
+      return;
+    }
+
     if (_isEhentaiChunkId(previousChapterId)) {
       _logger.d('Previous EHentai chunk navigation is not enabled');
       return;
@@ -457,7 +468,13 @@ class ReaderCubit extends Cubit<ReaderState> {
     await loadChapter(previousChapterId);
   }
 
+  bool _isEhentaiPartId(String id) => id.startsWith(_ehentaiPartPrefix);
+
   bool _isEhentaiChunkId(String id) => id.startsWith(_ehentaiChunkPrefix);
+
+  bool _isEhentaiVirtualChapterId(String id) {
+    return _isEhentaiPartId(id) || _isEhentaiChunkId(id);
+  }
 
   Future<void> _appendEhentaiChunk(String chunkId) async {
     if (state.content == null) {
@@ -1631,7 +1648,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       if (candidateNextId == null ||
           candidateNextId.isEmpty ||
           candidateNextId == nextChapterId ||
-          !candidateNextId.startsWith(_ehentaiChunkPrefix)) {
+          !_isEhentaiVirtualChapterId(candidateNextId)) {
         break;
       }
       nextChapterId = candidateNextId;

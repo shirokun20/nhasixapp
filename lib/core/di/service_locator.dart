@@ -731,6 +731,7 @@ void _setupBlocs() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
+        offlineContentManager: getIt<OfflineContentManager>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
         notificationService: getIt<NotificationService>(),

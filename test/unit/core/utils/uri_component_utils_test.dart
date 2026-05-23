@@ -41,5 +41,19 @@ void main() {
         '100%-real-content',
       );
     });
+
+    test('decodes E-Hentai virtual part identifier safely', () {
+      expect(
+        UriComponentUtils.safeDecode('__ehpart__%3A3906586%3A971a6d4051%3A2'),
+        '__ehpart__:3906586:971a6d4051:2',
+      );
+    });
+
+    test('preserves malformed E-Hentai internal identifier', () {
+      expect(
+        UriComponentUtils.safeDecode('__ehchunk__:%ZZ:bad'),
+        '__ehchunk__:%ZZ:bad',
+      );
+    });
   });
 }

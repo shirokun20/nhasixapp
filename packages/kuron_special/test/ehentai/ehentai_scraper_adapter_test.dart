@@ -198,6 +198,65 @@ void main() {
 </body></html>
 ''';
 
+    const partModeDetailPage0Html = '''
+<html><body>
+  <h1 id="gn">Part Mode Sample</h1>
+  <td class="gdt2">6 pages</td>
+  <div id="gdt">
+    <a href="/s/hash-a/123-1">p1</a>
+    <a href="/s/hash-b/123-2">p2</a>
+  </div>
+  <div class="ptt">
+    <a href="/g/123/abc/?p=0">1</a>
+    <a href="/g/123/abc/?p=1">2</a>
+    <a href="/g/123/abc/?p=2">3</a>
+  </div>
+</body></html>
+''';
+
+    const partModeDetailPage1Html = '''
+<html><body>
+  <h1 id="gn">Part Mode Sample</h1>
+  <td class="gdt2">6 pages</td>
+  <div id="gdt">
+    <a href="/s/hash-c/123-3">p3</a>
+    <a href="/s/hash-d/123-4">p4</a>
+  </div>
+  <div class="ptt">
+    <a href="/g/123/abc/?p=0">1</a>
+    <a href="/g/123/abc/?p=1">2</a>
+    <a href="/g/123/abc/?p=2">3</a>
+  </div>
+</body></html>
+''';
+
+    const partModeDetailPage2Html = '''
+<html><body>
+  <h1 id="gn">Part Mode Sample</h1>
+  <td class="gdt2">6 pages</td>
+  <div id="gdt">
+    <a href="/s/hash-e/123-5">p5</a>
+    <a href="/s/hash-f/123-6">p6</a>
+  </div>
+  <div class="ptt">
+    <a href="/g/123/abc/?p=0">1</a>
+    <a href="/g/123/abc/?p=1">2</a>
+    <a href="/g/123/abc/?p=2">3</a>
+  </div>
+</body></html>
+''';
+
+    const singlePartDetailHtml = '''
+<html><body>
+  <h1 id="gn">Single Part Sample</h1>
+  <td class="gdt2">2 pages</td>
+  <div id="gdt">
+    <a href="/s/hash-x/321-1">p1</a>
+    <a href="/s/hash-y/321-2">p2</a>
+  </div>
+</body></html>
+''';
+
     setUp(() {
       dio = Dio();
       mock = DioAdapter(dio: dio);
@@ -264,7 +323,10 @@ void main() {
       if (result.imageUrls.isNotEmpty) {
         expect(result.content.pageCount, result.imageUrls.length);
       }
-      expect(result.content.chapters, isNull);
+      expect(result.content.chapters, isNotNull);
+      expect(result.content.chapters, hasLength(1));
+      expect(result.content.chapters!.first.id, '__ehpart__:123:abc:0');
+      expect(result.content.chapters!.first.title, 'Part 1');
 
       final artistTag = result.content.tags.where((t) => t.type == 'artist');
       final languageTag =
@@ -942,6 +1004,90 @@ void main() {
       expect(result.items.first.title, 'P2');
       expect(
           result.items.first.coverUrl, 'https://thumb.example/search-p2.webp');
+    });
+
+    test('fetchDetail exposes ordered Part chapters from gallery pagination',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/g/123/abc/',
+        (server) => server.reply(200, partModeDetailPage0Html),
+      );
+
+      final result = await adapter.fetchDetail('123/abc', config);
+
+      expect(result.content.chapters, isNotNull);
+      expect(result.content.chapters, hasLength(3));
+      expect(
+        result.content.chapters!.map((chapter) => chapter.title).toList(),
+        ['Part 1', 'Part 2', 'Part 3'],
+      );
+      expect(
+        result.content.chapters!.map((chapter) => chapter.id).toList(),
+        [
+          '__ehpart__:123:abc:0',
+          '__ehpart__:123:abc:1',
+          '__ehpart__:123:abc:2',
+        ],
+      );
+    });
+
+    test('fetchDetail falls back to single part when no ?p= pagination',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/g/321/xyz/',
+        (server) => server.reply(200, singlePartDetailHtml),
+      );
+
+      final result = await adapter.fetchDetail('321/xyz', config);
+
+      expect(result.content.chapters, isNotNull);
+      expect(result.content.chapters, hasLength(1));
+      expect(result.content.chapters!.first.id, '__ehpart__:321:xyz:0');
+      expect(result.content.chapters!.first.title, 'Part 1');
+    });
+
+    test('fetchChapterImages uses part IDs with next/prev part labels',
+        () async {
+      mock.onGet(
+        'https://e-hentai.org/g/123/abc/',
+        (server) => server.reply(200, partModeDetailPage0Html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/123/abc/?p=1',
+        (server) => server.reply(200, partModeDetailPage1Html),
+      );
+      mock.onGet(
+        'https://e-hentai.org/g/123/abc/?p=2',
+        (server) => server.reply(200, partModeDetailPage2Html),
+      );
+
+      final part1 =
+          await adapter.fetchChapterImages('__ehpart__:123:abc:0', config);
+      final part2 =
+          await adapter.fetchChapterImages('__ehpart__:123:abc:1', config);
+      final part3 =
+          await adapter.fetchChapterImages('__ehpart__:123:abc:2', config);
+
+      expect(part1, isNotNull);
+      expect(part1!.images, hasLength(2));
+      expect(part1.prevChapterId, isNull);
+      expect(part1.prevChapterTitle, isNull);
+      expect(part1.nextChapterId, '__ehpart__:123:abc:1');
+      expect(part1.nextChapterTitle, 'Part 2');
+
+      expect(part2, isNotNull);
+      expect(part2!.images, hasLength(2));
+      expect(part2.prevChapterId, '__ehpart__:123:abc:0');
+      expect(part2.prevChapterTitle, 'Part 1');
+      expect(part2.nextChapterId, '__ehpart__:123:abc:2');
+      expect(part2.nextChapterTitle, 'Part 3');
+
+      expect(part3, isNotNull);
+      expect(part3!.images, hasLength(2));
+      expect(part3.prevChapterId, '__ehpart__:123:abc:1');
+      expect(part3.prevChapterTitle, 'Part 2');
+      expect(part3.nextChapterId, isNull);
+      expect(part3.nextChapterTitle, isNull);
     });
   });
 }

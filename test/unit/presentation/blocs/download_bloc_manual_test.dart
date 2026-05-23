@@ -15,6 +15,7 @@ import 'package:nhasixapp/domain/usecases/downloads/download_content_usecase.dar
 import 'package:nhasixapp/domain/usecases/content/get_content_detail_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart'; // Was network/
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
 import 'package:logger/logger.dart';
 
@@ -110,6 +111,8 @@ class MockGetChapterImagesUseCase extends Fake
 
 class MockPdfConversionService extends Fake implements PdfConversionService {}
 
+class MockOfflineContentManager extends Fake implements OfflineContentManager {}
+
 class MockLogger extends Fake implements Logger {
   @override
   void i(dynamic message,
@@ -146,6 +149,7 @@ void main() {
       downloadContentUseCase: MockDownloadContentUseCase(),
       getContentDetailUseCase: MockGetContentDetailUseCase(),
       getChapterImagesUseCase: MockGetChapterImagesUseCase(),
+      offlineContentManager: MockOfflineContentManager(),
       connectivity: MockConnectivity(),
       notificationService: MockNotificationService(),
       remoteConfigService: MockRemoteConfigService(),

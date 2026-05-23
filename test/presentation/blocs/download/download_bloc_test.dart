@@ -14,6 +14,7 @@ import 'package:nhasixapp/services/notification_service.dart';
 import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/services/pdf_conversion_service.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/services/download_manager.dart'; // Import DownloadManager
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -42,6 +43,8 @@ class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 class MockDownloadManager extends Mock
     implements DownloadManager {} // Add MockDownloadManager
 
+class MockOfflineContentManager extends Mock implements OfflineContentManager {}
+
 class MockPdfConversionQueueManager extends Mock
     implements PdfConversionQueueManager {} // Add MockDownloadManager
 
@@ -51,6 +54,7 @@ void main() {
     late MockUserDataRepository mockRepo;
     late MockNotificationService mockNotificationService;
     late MockDownloadManager mockDownloadManager; // Add MockDownloadManager
+    late MockOfflineContentManager mockOfflineContentManager;
     late MockLogger mockLogger;
 
     // Stream controller for DownloadManager progress
@@ -70,6 +74,7 @@ void main() {
       mockRepo = MockUserDataRepository();
       mockNotificationService = MockNotificationService();
       mockDownloadManager = MockDownloadManager();
+      mockOfflineContentManager = MockOfflineContentManager();
       mockLogger = MockLogger();
       progressController = StreamController<DownloadProgressUpdate>.broadcast();
 
@@ -110,12 +115,18 @@ void main() {
             title: any(named: 'title'),
             downloadPath: any(named: 'downloadPath'),
           )).thenAnswer((_) async => {});
+      when(() => mockOfflineContentManager
+              .reconcileChapterMetadataForCompletedDownload(
+            contentId: any(named: 'contentId'),
+            contentPath: any(named: 'contentPath'),
+          )).thenAnswer((_) async => {});
 
       downloadBloc = DownloadBloc(
         downloadContentUseCase: MockDownloadContentUseCase(),
         getContentDetailUseCase: MockGetContentDetailUseCase(),
         getChapterImagesUseCase: MockGetChapterImagesUseCase(),
         userDataRepository: mockRepo,
+        offlineContentManager: mockOfflineContentManager,
         logger: mockLogger,
         connectivity: MockConnectivity(),
         notificationService: mockNotificationService,
@@ -151,6 +162,12 @@ void main() {
                 d.contentId == testContentId &&
                 d.state == DownloadState.completed &&
                 d.endTime != null)))).called(1);
+
+        verify(() => mockOfflineContentManager
+                .reconcileChapterMetadataForCompletedDownload(
+              contentId: testContentId,
+              contentPath: any(named: 'contentPath'),
+            )).called(1);
 
         // Verify notification
         verify(() => mockNotificationService.showDownloadCompleted(

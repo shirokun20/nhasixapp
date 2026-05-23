@@ -42,6 +42,7 @@ part 'download_state.dart';
 /// BLoC for managing downloads with queue system and concurrent downloads
 class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   static const String _ehentaiSourceId = 'ehentai';
+  static const String _ehentaiPartPrefix = '__ehpart__';
   static const String _ehentaiChunkPrefix = '__ehchunk__';
 
   DownloadBloc({
@@ -49,6 +50,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required GetContentDetailUseCase getContentDetailUseCase,
     required GetChapterImagesUseCase getChapterImagesUseCase,
     required UserDataRepository userDataRepository,
+    required OfflineContentManager offlineContentManager,
     required Logger logger,
     required Connectivity connectivity,
     required NotificationService notificationService,
@@ -61,6 +63,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _getContentDetailUseCase = getContentDetailUseCase,
         _getChapterImagesUseCase = getChapterImagesUseCase,
         _userDataRepository = userDataRepository,
+        _offlineContentManager = offlineContentManager,
         _logger = logger,
         _connectivity = connectivity,
         _notificationService = notificationService,
@@ -114,6 +117,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final GetContentDetailUseCase _getContentDetailUseCase;
   final GetChapterImagesUseCase _getChapterImagesUseCase;
   final UserDataRepository _userDataRepository;
+  final OfflineContentManager _offlineContentManager;
   final Logger _logger;
   final Connectivity _connectivity;
   final NotificationService _notificationService;
@@ -153,6 +157,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     return chapterId.startsWith(_ehentaiChunkPrefix);
   }
 
+  bool _isEhentaiPartId(String chapterId) {
+    return chapterId.startsWith(_ehentaiPartPrefix);
+  }
+
+  bool _isEhentaiVirtualChapterId(String chapterId) {
+    return _isEhentaiPartId(chapterId) || _isEhentaiChunkId(chapterId);
+  }
+
   Future<List<String>> _collectEhentaiChapterImages({
     required String initialChapterId,
     required String sourceId,
@@ -187,7 +199,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (candidateNextId == null ||
           candidateNextId.isEmpty ||
           candidateNextId == nextChapterId ||
-          !_isEhentaiChunkId(candidateNextId)) {
+          !_isEhentaiVirtualChapterId(candidateNextId)) {
         break;
       }
 
@@ -833,8 +845,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           List<String> resolvedImages = const [];
 
           if (_isEhentaiSource(effectiveSourceId)) {
-            // EHentai uses chunk pagination (`nextChapterId`) for load-more pages.
-            // Aggregate all chunks before passing URLs to native downloader.
+            // EHentai uses virtual part IDs and may still expose legacy chunk
+            // IDs. Aggregate all linked segments before native download.
             resolvedImages = await _collectEhentaiChapterImages(
               initialChapterId: event.contentId,
               sourceId: effectiveSourceId,
@@ -2057,6 +2069,18 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       } else {
         _logger
             .e('❌ Cannot calculate file size: downloadPath is null or empty');
+      }
+
+      try {
+        await _offlineContentManager
+            .reconcileChapterMetadataForCompletedDownload(
+          contentId: event.contentId,
+          contentPath: downloadPath,
+        );
+      } catch (e) {
+        _logger.w(
+          'DownloadBloc: metadata reconciliation skipped for ${event.contentId}: $e',
+        );
       }
 
       final completedDownload = DownloadStatus(

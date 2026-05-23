@@ -85,5 +85,29 @@ void main() {
       expect(readReaderChapter({'title': 'Missing id'}), isNull);
       expect(readReaderChapters('not-a-list'), isNull);
     });
+
+    test('decodes percent-encoded E-Hentai virtual identifiers safely', () {
+      final chapterData = readReaderChapterData({
+        'images': ['1.webp'],
+        'prevChapterId': '__ehpart__%3A3906586%3A971a6d4051%3A0',
+        'nextChapterId': '__ehpart__%3A3906586%3A971a6d4051%3A2',
+        'prevChapterTitle': 'Part 1',
+        'nextChapterTitle': 'Part 3',
+      });
+
+      expect(chapterData, isNotNull);
+      expect(chapterData!.prevChapterId, '__ehpart__:3906586:971a6d4051:0');
+      expect(chapterData.nextChapterId, '__ehpart__:3906586:971a6d4051:2');
+    });
+
+    test('preserves malformed internal identifiers without throwing', () {
+      final chapterData = readReaderChapterData({
+        'images': ['1.webp'],
+        'nextChapterId': '__ehchunk__:%ZZ:bad',
+      });
+
+      expect(chapterData, isNotNull);
+      expect(chapterData!.nextChapterId, '__ehchunk__:%ZZ:bad');
+    });
   });
 }

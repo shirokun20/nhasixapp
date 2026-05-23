@@ -31,6 +31,8 @@ import '../../widgets/shimmer_loading_widgets.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
 import 'widgets/comments_section_widget.dart';
+import 'services/detail_tag_query_resolver.dart';
+import 'services/reader_launch_payload_builder.dart';
 
 class DetailScreen extends StatefulWidget {
   final String contentId;
@@ -51,6 +53,7 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
   late final TagBlacklistService _tagBlacklistService;
+  late final DetailTagQueryResolver _tagQueryResolver;
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
@@ -108,48 +111,6 @@ class _DetailScreenState extends State<DetailScreen> {
           return candidate;
         }
       }
-    }
-
-    return null;
-  }
-
-  String _quoteEhentaiSearchValue(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return '';
-    if (!trimmed.contains(' ') && !trimmed.contains('"')) {
-      return trimmed;
-    }
-
-    final escaped = trimmed.replaceAll('"', r'\"');
-    return '"$escaped"';
-  }
-
-  String? _buildEhentaiTagQuery({
-    required String tagName,
-    String? tagId,
-    String? tagType,
-  }) {
-    final normalizedType = (tagType ?? '').toLowerCase().trim();
-    final slug = (tagId ?? '').trim();
-    final name = tagName.trim();
-
-    if (normalizedType == 'uploader' && name.isNotEmpty) {
-      return 'raw:f_search=uploader:${_quoteEhentaiSearchValue(name)}';
-    }
-
-    if (slug.contains(':')) {
-      final separatorIndex = slug.indexOf(':');
-      final namespace = slug.substring(0, separatorIndex).trim();
-      final value = slug.substring(separatorIndex + 1).trim();
-      if (namespace.isNotEmpty && value.isNotEmpty) {
-        return 'raw:f_search=$namespace:${_quoteEhentaiSearchValue(value)}';
-      }
-    }
-
-    if (normalizedType.isNotEmpty &&
-        !const {'tag', 'category'}.contains(normalizedType) &&
-        name.isNotEmpty) {
-      return 'raw:f_search=$normalizedType:${_quoteEhentaiSearchValue(name)}';
     }
 
     return null;
@@ -330,6 +291,7 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
+    _tagQueryResolver = const DetailTagQueryResolver();
     _tagBlacklistService = getIt<TagBlacklistService>()
       ..addListener(_handleBlacklistChanged);
 
@@ -445,7 +407,6 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       _isNavigating = true;
 
-      String query = tagName;
       final actualSourceId = sourceId ??
           ((context.read<DetailCubit>().state is DetailLoaded)
               ? (context.read<DetailCubit>().state as DetailLoaded)
@@ -454,97 +415,16 @@ class _DetailScreenState extends State<DetailScreen> {
               : 'nhentai');
       final rawConfig =
           getIt<RemoteConfigService>().getRawConfig(actualSourceId);
-      final navigation = rawConfig?['navigation'];
-      final tagQueryMapping = navigation is Map<String, dynamic>
-          ? navigation['tagQueryMapping'] as Map<String, dynamic>?
-          : null;
+      final resolvedQuery = _tagQueryResolver.resolve(
+        sourceId: actualSourceId,
+        tagName: tagName,
+        tagId: tagId,
+        tagType: tagType,
+        rawConfig: rawConfig,
+        resolveTagIdFromLoadedContent: _resolveTagIdFromLoadedContent,
+      );
 
-      var hasExplicitTagMapping = false;
-
-      String? resolveByTagMapping() {
-        if (tagQueryMapping == null) return null;
-
-        final normalizedType = (tagType ?? '').toLowerCase().trim();
-        final mapping = tagQueryMapping[normalizedType] ??
-            tagQueryMapping['default'] as Map<String, dynamic>?;
-        if (mapping is! Map<String, dynamic>) return null;
-        hasExplicitTagMapping = true;
-
-        final mode = (mapping['mode'] as String? ?? 'rawParam').trim();
-        if (mode == 'name') {
-          return tagName;
-        }
-
-        final valueSource =
-            (mapping['valueSource'] as String? ?? 'tagIdOrName').trim();
-        final sameAsTypes =
-            (mapping['sameAsTypes'] as List<dynamic>? ?? const [])
-                .map((e) => e.toString().toLowerCase().trim())
-                .where((e) => e.isNotEmpty)
-                .toList();
-        final candidateTypes = <String>[normalizedType, ...sameAsTypes]
-            .where((e) => e.isNotEmpty)
-            .toList();
-        var resolvedTagId = tagId?.trim();
-        if (resolvedTagId == null ||
-            resolvedTagId.isEmpty ||
-            resolvedTagId == '0') {
-          resolvedTagId =
-              _resolveTagIdFromLoadedContent(tagName, candidateTypes);
-        }
-
-        String value;
-        if (valueSource == 'tagName') {
-          value = tagName.trim();
-        } else if (valueSource == 'tagId') {
-          value = (resolvedTagId ?? '').trim();
-        } else {
-          value = (resolvedTagId != null && resolvedTagId.isNotEmpty)
-              ? resolvedTagId
-              : tagName.trim();
-        }
-
-        if (value.isEmpty) return '';
-
-        final param = (mapping['param'] as String? ?? '').trim();
-        final requiredPattern =
-            (mapping['requiredPattern'] as String? ?? '').trim();
-        if (requiredPattern.isNotEmpty &&
-            !RegExp(requiredPattern).hasMatch(value)) {
-          return '';
-        }
-
-        final transform = (mapping['transform'] as String? ?? '').trim();
-        if (transform == 'lowercase') {
-          value = value.toLowerCase();
-        } else if (transform == 'spaceToPlus') {
-          value = value.replaceAll(' ', '+');
-        }
-
-        final valuePrefix = (mapping['valuePrefix'] as String? ?? '').trim();
-        if (valuePrefix.isNotEmpty) {
-          value = '$valuePrefix$value';
-        }
-        final valueSuffix = (mapping['valueSuffix'] as String? ?? '').trim();
-        if (valueSuffix.isNotEmpty) {
-          value = '$value$valueSuffix';
-        }
-
-        // Raw search pipeline will encode query values later in the adapter.
-        // For HentaiNexus q-param mapping, keep semantic value as plain text
-        // to avoid ending up with a literal plus (%2B) in final URL.
-        if (actualSourceId == 'hentainexus' && param == 'q') {
-          value = Uri.decodeComponent(value).replaceAll('+', ' ');
-        }
-
-        if (param.isEmpty) return null;
-
-        return 'raw:$param=$value';
-      }
-
-      final mappedQuery = resolveByTagMapping();
-      if (hasExplicitTagMapping &&
-          (mappedQuery == null || mappedQuery.isEmpty)) {
+      if (resolvedQuery.explicitMappingFailed) {
         Logger().w(
           'Tag mapping failed for $tagType:$tagName (tagId=$tagId), navigation cancelled to avoid invalid query',
         );
@@ -559,84 +439,11 @@ class _DetailScreenState extends State<DetailScreen> {
         return;
       }
 
-      if (mappedQuery != null && mappedQuery.isNotEmpty) {
-        query = mappedQuery;
-      } else if (actualSourceId == 'ehentai') {
-        final ehentaiQuery = _buildEhentaiTagQuery(
-          tagName: tagName,
-          tagId: tagId,
-          tagType: tagType,
-        );
-        if (ehentaiQuery != null && ehentaiQuery.isNotEmpty) {
-          query = ehentaiQuery;
-        }
-      } else if (actualSourceId == 'nhentai') {
-        // Prefer API v2 tagged endpoint when a numeric tag ID is available.
-        final numericTagId = (tagId ?? '').trim();
-        if (numericTagId.isNotEmpty && int.tryParse(numericTagId) != null) {
-          query = 'raw:tag_id=$numericTagId';
-        } else {
-          // SPECIAL HANDLING FOR NHENTAI
-          // User requested strict slug format: lowercase + hyphens
-          // e.g. "Big Breasts" -> "big-breasts", "Lucy Heartfilia" -> "lucy-heartfilia"
-
-          // Prioritize explicit slug/tagId if it's text (not numeric ID)
-          String value = tagName.toLowerCase().replaceAll(' ', '-');
-          if (tagId != null && int.tryParse(tagId) == null) {
-            value = tagId;
-          }
-
-          if (tagType != null &&
-              !['tag', 'category'].contains(tagType.toLowerCase())) {
-            // type:slug syntax (e.g. artist:shidou, character:lucy-heartfilia)
-            query = '${tagType.toLowerCase()}:$value';
-          } else {
-            // General tags: just the slug (e.g. big-breasts)
-            // This will map to "q=big-breasts" in search
-            query = value;
-          }
-        }
-      } else {
-        // Config-driven genre route support for generic scraper sources
-        // (e.g. crotpedia, komiktap): if source defines `genreSearch` pattern,
-        // clicking a genre tag should route to that pattern via prefix query.
-        final scraper = rawConfig?['scraper'];
-        final urlPatterns = scraper is Map<String, dynamic>
-            ? scraper['urlPatterns'] as Map<String, dynamic>?
-            : null;
-        final hasGenreSearch = urlPatterns?.containsKey('genreSearch') ?? false;
-
-        final navigation = rawConfig?['navigation'];
-        final genrePrefix = navigation is Map<String, dynamic>
-            ? (navigation['genreQueryPrefix'] as String? ?? 'genre:')
-            : 'genre:';
-        final genreTagType = navigation is Map<String, dynamic>
-            ? (navigation['genreTagType'] as String? ?? 'genre')
-            : 'genre';
-
-        final normalizedTagType = (tagType ?? '').toLowerCase().trim();
-        final isGenreLikeTag = normalizedTagType.isEmpty ||
-            normalizedTagType == 'tag' ||
-            normalizedTagType == genreTagType;
-
-        if (hasGenreSearch && isGenreLikeTag) {
-          var slug = tagName.toLowerCase().trim();
-          if (tagId != null && int.tryParse(tagId) == null) {
-            slug = tagId.toLowerCase().trim();
-          }
-          slug = slug
-              .replaceAll(RegExp(r'\s+'), '-')
-              .replaceAll(RegExp(r'-+'), '-')
-              .replaceAll(RegExp(r'^-|-$'), '');
-          query = '$genrePrefix$slug';
-        }
-      }
-
       // Navigate to ContentByTagScreen
       if (mounted) {
         AppRouter.goToContentByTag(
           context,
-          query,
+          resolvedQuery.query,
           displayLabel: tagName,
         );
       } else {
@@ -2831,45 +2638,56 @@ class _DetailScreenState extends State<DetailScreen> {
     final imageMetadata =
         currentState is DetailLoaded ? currentState.imageMetadata : null;
 
-    // Validate content before passing to reader
-    // If content has no images, pass null to force reader to fetch fresh content
-    final contentToPass = content.imageUrls.isNotEmpty ? content : null;
-    Logger().w('Content to pass: $contentToPass');
+    final launchPayload = ReaderLaunchPayloadBuilder.build(
+      content: content,
+      imageMetadata: imageMetadata,
+      chapterData: chapterData,
+      parentContent: parentContent,
+      currentChapter: currentChapter,
+    );
 
-    if (contentToPass == null) {
+    Logger().w('Content to pass: ${launchPayload.content}');
+
+    if (launchPayload.content == null) {
       Logger().w(
           '⚠️ Content passed from DetailScreen has no images, forcing reader to fetch fresh data: ${content.id}');
     }
-
-    // Extract allChapters from parentContent
-    final allChapters = parentContent?.chapters;
 
     // 🔍 DEBUG LOGGING - Chapter Data Flow
     Logger().i('📤 DetailScreen._readContent - Sending to Reader:');
     Logger().i('  contentId: ${content.id}');
     Logger().i('  content.title: ${content.title}');
-    Logger().i('  parentContent: ${parentContent?.title ?? "NULL"}');
-    Logger().i('  parentContent.id: ${parentContent?.id ?? "NULL"}');
-    Logger().i('  allChapters count: ${allChapters?.length ?? 0}');
-    if (allChapters != null && allChapters.isNotEmpty) {
-      Logger().i('  allChapters[0]: ${allChapters.first.title}');
-      Logger().i('  allChapters[last]: ${allChapters.last.title}');
+    Logger()
+        .i('  parentContent: ${launchPayload.parentContent?.title ?? "NULL"}');
+    Logger()
+        .i('  parentContent.id: ${launchPayload.parentContent?.id ?? "NULL"}');
+    Logger()
+        .i('  allChapters count: ${launchPayload.allChapters?.length ?? 0}');
+    if (launchPayload.allChapters != null &&
+        launchPayload.allChapters!.isNotEmpty) {
+      Logger().i('  allChapters[0]: ${launchPayload.allChapters!.first.title}');
+      Logger()
+          .i('  allChapters[last]: ${launchPayload.allChapters!.last.title}');
     }
-    Logger().i('  currentChapter: ${currentChapter?.title ?? "NULL"}');
-    Logger().i('  currentChapter.id: ${currentChapter?.id ?? "NULL"}');
-    Logger().i('  chapterData.prevId: ${chapterData?.prevChapterId ?? "NULL"}');
-    Logger().i('  chapterData.nextId: ${chapterData?.nextChapterId ?? "NULL"}');
+    Logger().i(
+        '  currentChapter: ${launchPayload.currentChapter?.title ?? "NULL"}');
+    Logger().i(
+        '  currentChapter.id: ${launchPayload.currentChapter?.id ?? "NULL"}');
+    Logger().i(
+        '  chapterData.prevId: ${launchPayload.chapterData?.prevChapterId ?? "NULL"}');
+    Logger().i(
+        '  chapterData.nextId: ${launchPayload.chapterData?.nextChapterId ?? "NULL"}');
 
     await AppRouter.goToReader(
       context,
       content.id,
       forceStartFromBeginning: forceStartFromBeginning,
-      content: contentToPass,
-      imageMetadata: imageMetadata, // Pass metadata to reader
-      chapterData: chapterData, // Pass navigation data
-      parentContent: parentContent, // Pass parent series
-      allChapters: allChapters, // Pass all chapters
-      currentChapter: currentChapter, // Pass current chapter
+      content: launchPayload.content,
+      imageMetadata: launchPayload.imageMetadata,
+      chapterData: launchPayload.chapterData,
+      parentContent: launchPayload.parentContent,
+      allChapters: launchPayload.allChapters,
+      currentChapter: launchPayload.currentChapter,
     );
 
     if (!mounted) {

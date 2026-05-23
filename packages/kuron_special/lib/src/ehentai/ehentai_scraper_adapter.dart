@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 /// E-Hentai adapter that delegates generic scraping and adds per-page image
 /// extraction from reader links (`/s/{hash}/{gid}-{page}`).
 class EHentaiScraperAdapter implements GenericAdapter {
+  static const String _partPrefix = '__ehpart__';
   static const String _chunkPrefix = '__ehchunk__';
 
   final Dio _dio;
@@ -439,6 +440,12 @@ class EHentaiScraperAdapter implements GenericAdapter {
       normalizedContent = _hydrateDetailMetadata(normalizedContent, detailHtml);
 
       final expectedPageCount = _extractExpectedPageCount(detailHtml);
+      final maxGalleryPage = _estimateMaxGalleryPage(
+        html: detailHtml,
+        expectedPageCount: expectedPageCount,
+      );
+      final identity = _extractGalleryIdentity(contentId) ??
+          _extractGalleryIdentity(normalizedContent.id);
 
       // Keep detail screen fast: do not crawl gallery pagination here.
       // Full reader link collection is handled in fetchChapterImages().
@@ -451,6 +458,10 @@ class EHentaiScraperAdapter implements GenericAdapter {
       // Set pageCount from expected count (parsed from detail HTML)
       final updated = normalizedContent.copyWith(
         pageCount: expectedPageCount > 0 ? expectedPageCount : firstPageLinks,
+        chapters: _buildPartChapters(
+          identity: identity,
+          maxGalleryPage: maxGalleryPage,
+        ),
       );
 
       return AdapterDetailResult(
@@ -498,11 +509,15 @@ class EHentaiScraperAdapter implements GenericAdapter {
         ? _patternUrl(urlPatterns, 'detail')
         : '/g/{id}/';
 
+    final partId = _parsePartId(chapterId);
     final chunkId = _parseChunkId(chapterId);
 
     String galleryIdentity = chapterId;
     int targetGalleryPage = 0;
-    if (chunkId != null) {
+    if (partId != null) {
+      galleryIdentity = '${partId.gid}/${partId.token}';
+      targetGalleryPage = partId.page;
+    } else if (chunkId != null) {
       galleryIdentity = '${chunkId.gid}/${chunkId.token}';
       targetGalleryPage = chunkId.page;
     }
@@ -586,13 +601,25 @@ class EHentaiScraperAdapter implements GenericAdapter {
       expectedPageCount: expectedPageCount,
     );
 
-    String? nextChunkId;
+    String? previousPartId;
+    String? previousPartTitle;
+    String? nextPartId;
+    String? nextPartTitle;
     if (identity != null && targetGalleryPage < maxGalleryPage) {
-      nextChunkId = _buildChunkId(
+      nextPartId = _buildPartId(
         gid: identity.gid,
         token: identity.token,
         page: targetGalleryPage + 1,
       );
+      nextPartTitle = _buildPartLabel(targetGalleryPage + 2);
+    }
+    if (identity != null && targetGalleryPage > 0) {
+      previousPartId = _buildPartId(
+        gid: identity.gid,
+        token: identity.token,
+        page: targetGalleryPage - 1,
+      );
+      previousPartTitle = _buildPartLabel(targetGalleryPage);
     }
 
     // Return reader page URLs quickly.
@@ -600,8 +627,10 @@ class EHentaiScraperAdapter implements GenericAdapter {
     // E-Hentai config's image selector rules.
     return ChapterData(
       images: pages,
-      nextChapterId: nextChunkId,
-      nextChapterTitle: nextChunkId == null ? null : 'Load more images',
+      prevChapterId: previousPartId,
+      nextChapterId: nextPartId,
+      prevChapterTitle: previousPartTitle,
+      nextChapterTitle: nextPartTitle,
     );
   }
 
@@ -631,17 +660,63 @@ class EHentaiScraperAdapter implements GenericAdapter {
     return navMaxPage > 0 ? navMaxPage : expectedMaxPage;
   }
 
-  String _buildChunkId({
+  String _buildPartId({
     required String gid,
     required String token,
     required int page,
   }) {
-    return '$_chunkPrefix:$gid:$token:$page';
+    return '$_partPrefix:$gid:$token:$page';
+  }
+
+  List<Chapter>? _buildPartChapters({
+    required _GalleryIdentity? identity,
+    required int maxGalleryPage,
+  }) {
+    if (identity == null) {
+      return null;
+    }
+
+    final normalizedMaxPage = maxGalleryPage < 0 ? 0 : maxGalleryPage;
+    final chapters = <Chapter>[];
+    for (var page = 0; page <= normalizedMaxPage; page++) {
+      final displayIndex = page + 1;
+      chapters.add(
+        Chapter(
+          id: _buildPartId(
+            gid: identity.gid,
+            token: identity.token,
+            page: page,
+          ),
+          title: _buildPartLabel(displayIndex),
+          url: '/g/${identity.gid}/${identity.token}/?p=$page',
+        ),
+      );
+    }
+    return chapters;
+  }
+
+  String _buildPartLabel(int partNumber) {
+    return 'Part $partNumber';
+  }
+
+  _EhentaiPartId? _parsePartId(String value) {
+    final match = RegExp(
+      '^${RegExp.escape(_partPrefix)}:(\\d+):([A-Za-z0-9_-]+):(\\d+)\$',
+    ).firstMatch(value);
+    if (match == null) return null;
+
+    final gid = match.group(1);
+    final token = match.group(2);
+    final page = int.tryParse(match.group(3) ?? '');
+    if (gid == null || token == null || page == null) {
+      return null;
+    }
+    return _EhentaiPartId(gid: gid, token: token, page: page);
   }
 
   _EhentaiChunkId? _parseChunkId(String value) {
     final match = RegExp(
-      r'^__ehchunk__:(\d+):([A-Za-z0-9_-]+):(\d+)$',
+      '^${RegExp.escape(_chunkPrefix)}:(\\d+):([A-Za-z0-9_-]+):(\\d+)\$',
     ).firstMatch(value);
     if (match == null) return null;
 
@@ -1618,6 +1693,18 @@ class _GalleryIdentity {
   _GalleryIdentity({
     required this.gid,
     required this.token,
+  });
+}
+
+class _EhentaiPartId {
+  final String gid;
+  final String token;
+  final int page;
+
+  _EhentaiPartId({
+    required this.gid,
+    required this.token,
+    required this.page,
   });
 }
 
