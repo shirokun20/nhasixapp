@@ -47,6 +47,7 @@ android {
         minSdk = 24
     }
 
+
     dependencies {
         implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         testImplementation("org.jetbrains.kotlin:kotlin-test")

@@ -229,6 +229,11 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<void> openAvif({required String filePath}) async {
+    await methodChannel.invokeMethod('openAvif', {'filePath': filePath});
+  }
+
+  @override
   Future<void> clearCookies() async {
     await methodChannel.invokeMethod<void>('clearCookies');
   }
@@ -308,18 +313,15 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   @override
   Future<bool> setDohProvider(int provider) async {
-    final result = await methodChannel.invokeMethod<bool>(
-      'setDohProvider',
-      {'provider': provider},
-    );
+    final result = await methodChannel.invokeMethod<bool>('setDohProvider', {
+      'provider': provider,
+    });
     return result ?? false;
   }
 
   @override
   Future<int> getDohProvider() async {
-    final result = await methodChannel.invokeMethod<int>(
-      'getDohProvider',
-    );
+    final result = await methodChannel.invokeMethod<int>('getDohProvider');
     return result ?? -1;
   }
 
@@ -332,12 +334,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>(
       'makeHttpRequest',
-      {
-        'url': url,
-        'method': method,
-        'headers': headers,
-        'body': body,
-      },
+      {'url': url, 'method': method, 'headers': headers, 'body': body},
     );
     return result ?? {};
   }
@@ -349,10 +346,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel.invokeMethod<Uint8List>(
       'downloadBinary',
-      {
-        'url': url,
-        'headers': headers,
-      },
+      {'url': url, 'headers': headers},
     );
     return result ?? Uint8List(0);
   }

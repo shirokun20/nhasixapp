@@ -14,5 +14,14 @@
           android:theme="@style/Theme.AppCompat.NoActionBar"
           android:screenOrientation="portrait"
           android:configChanges="orientation|keyboardHidden|screenSize"/>
+        <provider
+          android:name="androidx.core.content.FileProvider"
+          android:authorities="${applicationId}.kuron_native.fileprovider"
+          android:exported="false"
+          android:grantUriPermissions="true">
+          <meta-data
+            android:name="android.support.FILE_PROVIDER_PATHS"
+            android:resource="@xml/kuron_native_file_paths" />
+        </provider>
   </application>
 </manifest>

@@ -77,6 +77,11 @@ class MockKuronNativePlatform
   }
 
   @override
+  Future<void> openAvif({required String filePath}) async {
+    return;
+  }
+
+  @override
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
     List<String>? successUrlFilters,
@@ -146,11 +151,7 @@ class MockKuronNativePlatform
     String method = 'GET',
     Map<String, String>? headers,
     String? body,
-  }) async => {
-    'statusCode': 200,
-    'body': '{"mock": true}',
-    'headers': {},
-  };
+  }) async => {'statusCode': 200, 'body': '{"mock": true}', 'headers': {}};
 
   @override
   Future<Uint8List> downloadBinary({

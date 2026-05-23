@@ -38,11 +38,22 @@ class OfflineContentManager {
 
   // 🚀 OPTIMIZATION: Cache for content paths and image URLs to reduce I/O
   final Map<String, String> _pathCache = {};
+  final Map<String, DateTime> _pathMissCacheTime = {};
+  final Map<String, DateTime> _pathMissLogTime = {};
   final Map<String, List<String>> _imageUrlsCache = {};
   final Map<String, DateTime> _imageUrlsCacheTime = {};
   final Map<String, Future<void>> _chapterMetadataWriteQueue = {};
+  String? _cachedDownloadsDirectory;
+  DateTime? _cachedDownloadsDirectoryTime;
 
   static const Duration _urlCacheDuration = Duration(minutes: 5);
+  static const Duration _pathMissCacheDuration = Duration(seconds: 45);
+  static const Duration _pathMissLogThrottle = Duration(minutes: 1);
+  static const Duration _downloadsDirectoryCacheDuration = Duration(minutes: 2);
+
+  String? _lastLoggedCustomRoot;
+  DateTime? _lastLoggedCustomRootTime;
+  static const Duration _customRootLogThrottle = Duration(minutes: 1);
 
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
@@ -52,6 +63,8 @@ class OfflineContentManager {
   /// reader does not serve stale offline paths or image URL lists.
   void invalidateCacheFor(String contentId) {
     _pathCache.remove(contentId);
+    _pathMissCacheTime.remove(contentId);
+    _pathMissLogTime.remove(contentId);
     _imageUrlsCache.remove(contentId);
     _imageUrlsCacheTime.remove(contentId);
     _metadataCache.remove(contentId);
@@ -145,6 +158,13 @@ class OfflineContentManager {
       return cachedPath;
     }
 
+    // Negative-cache misses to avoid repeated strict scans for missing content.
+    final missCachedAt = _pathMissCacheTime[contentId];
+    if (missCachedAt != null &&
+        DateTime.now().difference(missCachedAt) <= _pathMissCacheDuration) {
+      return null;
+    }
+
     try {
       final downloadStatus =
           await _userDataRepository.getDownloadStatus(contentId);
@@ -170,12 +190,20 @@ class OfflineContentManager {
               .i('✅ Found offline content path for $contentId: $contentPath');
           // 🚀 OPTIMIZATION: Update cache
           _pathCache[contentId] = contentPath;
+          _pathMissCacheTime.remove(contentId);
+          _pathMissLogTime.remove(contentId);
           return contentPath;
         }
       }
 
-      _logger.w(
-          '❌ No offline content path found for $contentId after strict scan');
+      _pathMissCacheTime[contentId] = DateTime.now();
+      final missLoggedAt = _pathMissLogTime[contentId];
+      if (missLoggedAt == null ||
+          DateTime.now().difference(missLoggedAt) > _pathMissLogThrottle) {
+        _pathMissLogTime[contentId] = DateTime.now();
+        _logger.w(
+            '❌ No offline content path found for $contentId after strict scan');
+      }
       return null;
     } catch (e, stackTrace) {
       _logger.e('Error getting offline content path for $contentId',
@@ -1858,13 +1886,21 @@ class OfflineContentManager {
   void clearCache() {
     _cachedOfflineIds = null;
     _offlineIdsCacheTime = null;
+    _pathCache.clear();
+    _pathMissCacheTime.clear();
+    _pathMissLogTime.clear();
     _metadataCache.clear();
     _metadataCacheTime.clear();
+    _cachedDownloadsDirectory = null;
+    _cachedDownloadsDirectoryTime = null;
     _logger.d('Offline content cache cleared');
   }
 
   /// Clear cache for specific content ID
   void clearContentCache(String contentId) {
+    _pathCache.remove(contentId);
+    _pathMissCacheTime.remove(contentId);
+    _pathMissLogTime.remove(contentId);
     _metadataCache.remove(contentId);
     _metadataCacheTime.remove(contentId);
     _logger.d('Cache cleared for content: $contentId');
@@ -1877,12 +1913,31 @@ class OfflineContentManager {
   /// Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
     try {
+      if (_cachedDownloadsDirectory != null &&
+          _cachedDownloadsDirectoryTime != null &&
+          DateTime.now().difference(_cachedDownloadsDirectoryTime!) <=
+              _downloadsDirectoryCacheDuration) {
+        final cachedDir = Directory(_cachedDownloadsDirectory!);
+        if (await cachedDir.exists()) {
+          return _cachedDownloadsDirectory!;
+        }
+      }
+
       // PRIORITY 1: Check custom storage root first
       final customRoot = await StorageSettings.getCustomRootPath();
       if (customRoot != null && customRoot.isNotEmpty) {
         final customDir = Directory(customRoot);
         if (await customDir.exists()) {
-          _logger.d('Using custom storage root: $customRoot');
+          if (_lastLoggedCustomRoot != customRoot ||
+              _lastLoggedCustomRootTime == null ||
+              DateTime.now().difference(_lastLoggedCustomRootTime!) >
+                  _customRootLogThrottle) {
+            _lastLoggedCustomRoot = customRoot;
+            _lastLoggedCustomRootTime = DateTime.now();
+            _logger.d('Using custom storage root: $customRoot');
+          }
+          _cachedDownloadsDirectory = customRoot;
+          _cachedDownloadsDirectoryTime = DateTime.now();
           return customRoot;
         } else {
           _logger.w(
@@ -1919,6 +1974,8 @@ class OfflineContentManager {
           final downloadsDir = Directory(path.join(externalRoot, folderName));
           if (await downloadsDir.exists()) {
             // _logger.i('Found Downloads directory: ${downloadsDir.path}');
+            _cachedDownloadsDirectory = downloadsDir.path;
+            _cachedDownloadsDirectoryTime = DateTime.now();
             return downloadsDir.path;
           }
         }
@@ -1932,6 +1989,8 @@ class OfflineContentManager {
             _logger
                 .i('Created Downloads directory: ${defaultDownloadsDir.path}');
           }
+          _cachedDownloadsDirectory = defaultDownloadsDir.path;
+          _cachedDownloadsDirectoryTime = DateTime.now();
           return defaultDownloadsDir.path;
         } catch (e) {
           _logger.w(
@@ -1952,6 +2011,8 @@ class OfflineContentManager {
         final dir = Directory(commonPath);
         if (await dir.exists()) {
           _logger.i('Found Downloads directory at common path: $commonPath');
+          _cachedDownloadsDirectory = commonPath;
+          _cachedDownloadsDirectoryTime = DateTime.now();
           return commonPath;
         }
       }
@@ -1965,6 +2026,8 @@ class OfflineContentManager {
         }
         _logger.i(
             'Using app-specific downloads directory: ${appDownloadsDir.path}');
+        _cachedDownloadsDirectory = appDownloadsDir.path;
+        _cachedDownloadsDirectoryTime = DateTime.now();
         return appDownloadsDir.path;
       }
 
@@ -1977,6 +2040,8 @@ class OfflineContentManager {
       }
       _logger.i(
           'Using app documents downloads directory: ${documentsDownloadsDir.path}');
+      _cachedDownloadsDirectory = documentsDownloadsDir.path;
+      _cachedDownloadsDirectoryTime = DateTime.now();
       return documentsDownloadsDir.path;
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
@@ -1988,6 +2053,8 @@ class OfflineContentManager {
         await emergencyDir.create(recursive: true);
       }
       _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
+      _cachedDownloadsDirectory = emergencyDir.path;
+      _cachedDownloadsDirectoryTime = DateTime.now();
       return emergencyDir.path;
     }
   }

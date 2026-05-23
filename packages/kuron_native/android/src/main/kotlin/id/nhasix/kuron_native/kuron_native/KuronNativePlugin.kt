@@ -30,9 +30,10 @@ import android.app.Activity
 import android.content.Intent
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
+import androidx.core.content.FileProvider
 import android.webkit.CookieManager
-import android.webkit.MimeTypeMap
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /** KuronNativePlugin */
 class KuronNativePlugin :
@@ -68,7 +69,7 @@ class KuronNativePlugin :
         private const val MAX_CHUNK_HEIGHT = 3000
     }
 
-    private val executor = Executors.newSingleThreadExecutor() // For background PDF work
+    private val executor = Executors.newSingleThreadExecutor() // Shared background work
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "kuron_native")
@@ -112,6 +113,9 @@ class KuronNativePlugin :
             }
             "openPdf" -> {
                 handleOpenPdf(call, result)
+            }
+            "openAvif" -> {
+                handleOpenAvif(call, result)
             }
             "showLoginWebView" -> {
                 handleShowLoginWebView(call, result)
@@ -678,10 +682,56 @@ class KuronNativePlugin :
         }
     }
 
+    private fun handleOpenAvif(call: MethodCall, result: Result) {
+        val filePath = call.argument<String>("filePath")
+
+        if (filePath.isNullOrBlank()) {
+            result.error("INVALID_ARGUMENT", "File path is null", null)
+            return
+        }
+
+        val file = File(filePath)
+        if (!file.exists() || !file.isFile) {
+            result.error("FILE_NOT_FOUND", "AVIF file not found", null)
+            return
+        }
+
+        try {
+            val authority = "${context.packageName}.kuron_native.fileprovider"
+            val contentUri = FileProvider.getUriForFile(context, authority, file)
+
+            val mimeCandidates = listOf("image/avif", "image/*", "*/*")
+            var lastError: Exception? = null
+
+            for (mimeType in mimeCandidates) {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(contentUri, mimeType)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+
+                    context.startActivity(Intent.createChooser(intent, null).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                    result.success(null)
+                    return
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+
+            result.error("OPEN_AVIF_FAILED", lastError?.message, null)
+        } catch (e: Exception) {
+            result.error("OPEN_AVIF_FAILED", e.message, null)
+        }
+    }
+
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
         downloadHandler.dispose()
         dnsResolver.clearCache()
+        executor.shutdownNow()
     }
 
     // ActivityAware Implementation
@@ -1182,16 +1232,14 @@ class KuronNativePlugin :
                 when (method.uppercase()) {
                     "GET" -> requestBuilder.get()
                     "POST" -> {
-                        val requestBody = okhttp3.RequestBody.create(
+                        val requestBody = (body ?: "").toRequestBody(
                             "application/json; charset=utf-8".toMediaType(),
-                            body ?: ""
                         )
                         requestBuilder.post(requestBody)
                     }
                     "PUT" -> {
-                        val requestBody = okhttp3.RequestBody.create(
+                        val requestBody = (body ?: "").toRequestBody(
                             "application/json; charset=utf-8".toMediaType(),
-                            body ?: ""
                         )
                         requestBuilder.put(requestBody)
                     }

@@ -59,6 +59,23 @@ class _DetailScreenState extends State<DetailScreen> {
       false; // Add navigation lock to prevent multiple simultaneous navigation
   int _historyRefreshToken = 0;
 
+  String _resolveDetailHeaderImageUrl(Content content) {
+    final firstImage =
+        content.imageUrls.isNotEmpty ? content.imageUrls.first : '';
+    if (firstImage.isEmpty) {
+      return content.coverUrl;
+    }
+
+    final firstImagePath = firstImage.toLowerCase().split('?').first;
+    // AVIF chapter pages can be decoder-hostile on some OEM devices.
+    // For detail header, prefer dedicated cover when available.
+    if (firstImagePath.endsWith('.avif') && content.coverUrl.isNotEmpty) {
+      return content.coverUrl;
+    }
+
+    return firstImage;
+  }
+
   Future<void> _refreshChapterHistoryAfterReaderReturn() async {
     final refreshToken = ++_historyRefreshToken;
 
@@ -793,9 +810,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: [
                     // Cover image with progressive loading
                     ProgressiveImageWidget(
-                      networkUrl: content.imageUrls.isNotEmpty
-                          ? content.imageUrls.first
-                          : content.coverUrl,
+                      networkUrl: _resolveDetailHeaderImageUrl(content),
                       contentId: content.id,
                       pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
                       isThumbnail: false,
@@ -806,7 +821,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       memCacheHeight: 1200,
                       httpHeaders: getIt<ContentSourceRegistry>()
                           .getSource(content.sourceId)
-                          ?.getImageDownloadHeaders(imageUrl: content.coverUrl),
+                          ?.getImageDownloadHeaders(
+                            imageUrl: _resolveDetailHeaderImageUrl(content),
+                          ),
                       placeholder: Container(
                         color: Theme.of(context).colorScheme.surfaceContainer,
                         child: Center(

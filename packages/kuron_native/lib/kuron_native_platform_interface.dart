@@ -133,6 +133,11 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('openPdf() has not been implemented.');
   }
 
+  /// Open a local AVIF image with an external Android image/gallery app.
+  Future<void> openAvif({required String filePath}) {
+    throw UnimplementedError('openAvif() has not been implemented.');
+  }
+
   /// Open a native WebView Activity for login/verification
   ///
   /// [url] The initial URL to load.

@@ -181,6 +181,9 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-05-23 | Copilot | Remove AVIF->WebP conversion and switch reader fallback to external open | ✅ Done | Removed the remaining AVIF conversion/WebP fallback paths from `ExtendedImageReaderWidget` and `packages/kuron_native`. Reader failures for AVIF now fall back to external open only: local AVIF uses new native `openAvif(filePath)` via `FileProvider` so Android gallery/photo apps can handle it, while remote AVIF opens via existing native browser/WebView path. Deleted conversion-only Kotlin classes, removed Dart conversion APIs, added Android `FileProvider` wiring, kept native animated-image routing intact, and verified with focused error checks plus `packages/kuron_native` tests (11 passed). |
+| 2026-05-24 | Copilot | Native AVIF animated converter (libavif+libwebp) + strict-scan spam fix | ✅ Done | Implemented native C++ AVIF pipeline in `kuron_native` using vendored `libavif` + `libwebp` with JNI bridge: decoder now iterates all AVIF frames and preserves frame timing into animated WebP via `WebPAnimEncoder` (with static fallback for single-frame cases). Added/updated native wiring in `CMakeLists.txt`, linked `libwebpmux`, enabled Android externalNativeBuild in plugin Gradle, and integrated Kotlin bridge call before bitmap fallback path. Also fixed OfflineContentManager strict-scan spam by adding miss-cache TTL, per-content log throttling, custom-root log throttling, and downloads-directory cache. Verified with `./android/gradlew -p android :app:assembleDebug` (BUILD SUCCESSFUL) and targeted Dart analyze clean. |
+| 2026-05-23 | Copilot | Native AVIF decode fallback to local WebP (no Pub.dev dependency) | ✅ Done | Implemented a new Kuron Native method-channel path `convertAvifToWebpFallback` that converts failed AVIF files to WebP fallback using Android native decoder/encoder APIs only (no new Pub.dev package). Wired reader fallback in `ExtendedImageReaderWidget` for both local AVIF and cached network AVIF failures (one-shot attempt, loading guard, cache routing to native view). Added Kotlin helper `AvifWebpTranscoder.kt`, plugin handler in `KuronNativePlugin.kt`, and Dart API exposure in `kuron_native` platform interface/method channel/facade. Verified with focused `fvm dart analyze` and full Android `./gradlew :app:assembleDebug -x lint` (BUILD SUCCESSFUL). |
 | 2026-05-23 | Copilot | manga18.club image loading investigation + reader WebView fallback | ✅ Done | Investigated why `view-source:` on manga18.club chapter pages doesn't show CDN image URLs. Traced full scraper flow: `GenericScraperAdapter.fetchChapterImages()` first tries `_extractScriptSlidesImageUrls()` which finds `slides_p_path = [...]` JS variable embedded in the raw server-rendered HTML — each item is a base64-encoded CDN URL decoded via `_decodeMaybeBase64Url()`. Images never appear in `view-source:` either because CF blocks the browser request (showing challenge page) or the base64 strings don't visually look like URLs until decoded. CSS selector `.chapter_boxImages img[src]` is only a final DOM fallback. Also added "Open in WebView" button to `_buildErrorWidget` in `extended_image_reader_widget.dart`: when any network image fails to load, a new `OutlinedButton` appears below Retry that calls `KuronNative.instance.openWebView(url: widget.imageUrl)` to open the image directly in the native Android WebView. Button hidden for local file paths and disabled during other repair actions. |
 | 2026-05-23 | Codex | Manga18 AVIF reader decode fallback hardening | ✅ Done | Investigated repeated Android decode failures for cached Manga18 AVIF pages (`videoFrame is a nullptr`, `invalid input`) and confirmed the issue is decoder/runtime capability, not cache miss. Hardened native reader path in `AnimatedWebPView.kt`: added a runtime failed-decode key set, skip repeated animated decode attempts for known-bad assets, and render static bitmap fallback from local file/network bytes before retrying network. Also fixed Kotlin init-flow compile issue in the skip path, then verified with `./gradlew app:compileDebugKotlin` (success) and `fvm flutter test packages/kuron_native/test/animated_webp_view_test.dart` (all pass). |
 | 2026-05-23 | Codex | E-Hentai part-mode metadata sync + detail chapter list | ✅ Done | Implemented `openspec/changes/ehentai-part-mode-metadata-sync`: E-Hentai detail now exposes virtual part chapters (`__ehpart__`) derived from gallery `?p=` pagination, reader/download flows navigate part-by-part instead of `Load more images`, and route parsing safely preserves malformed or percent-encoded internal IDs. Added shared chapter-scoped metadata reconciliation in `OfflineContentManager` so completed downloads and reader/manual repair remove stale `failed_pages` markers using the same serialized merge rules. Refactored detail tag-query + reader launch payload helpers, then fixed follow-up regressions where direct `Read now` launches lost E-Hentai part navigation context and chapter-row downloads still aggregated linked next parts instead of staying scoped to the selected part. Part-row downloads now persist the DB title as `<gallery title> - Part N`, while storage paths still derive from the safe hashed `contentId`. Final follow-up: enabled `features.chapters=true` in `ehentai-config.json` so detail pages render the part list instead of the old `Read Now` fallback when chapters are present. Verified with focused app/package `fvm flutter test`, targeted `fvm flutter analyze`, and `jq empty ehentai-config.json`. |
@@ -834,3 +837,43 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 - ✅ `fvm flutter test test/unit/data/repositories/content_repository_impl_test.dart`
 - ✅ `fvm flutter analyze lib/data/models/content_model.dart test/unit/data/models/content_model_test.dart`
 - ✅ `fvm flutter analyze lib/data/repositories/content_repository_impl.dart test/unit/data/repositories/content_repository_impl_test.dart`
+
+## 🆕 Latest Session — 2026-05-24
+
+### Native AVIF Animated Converter + Offline Strict-Scan Spam Fix ✅
+
+**Status**: Done
+
+**Done**:
+1. **Native AVIF animated converter (no pub.dev dependency)**
+  - Added JNI native bridge and C++ converter path using vendored `libavif` + `libwebp`.
+  - AVIF decode now iterates all frames via `avifDecoderNextImage()` and keeps frame timing from `avifImageTiming`.
+  - Animated output now uses `WebPAnimEncoder` + `libwebpmux` linking; single-frame fallback still encodes static WebP.
+  - Kotlin fallback flow remains: try NDK bridge first, then existing Android bitmap-based fallback if needed.
+
+2. **Native build wiring**
+  - Enabled Android `externalNativeBuild`/CMake in `packages/kuron_native/android/build.gradle`.
+  - Added native bridge files and CMake wiring in `packages/kuron_native/android/src/main/cpp/`.
+  - Vendored dependencies into `packages/kuron_native/android/src/main/cpp/third_party/`.
+  - Linked missing animated symbols by adding `libwebpmux` in CMake.
+
+3. **Offline strict-scan spam fix**
+  - Added negative miss-cache TTL for `getOfflineContentPath()` misses.
+  - Added throttled warning log per content ID for repeated strict-scan misses.
+  - Added downloads directory cache + throttled custom-root logging to reduce repetitive logs and I/O.
+
+4. **Verification**
+  - `./android/gradlew -p android :app:assembleDebug` -> **BUILD SUCCESSFUL**.
+  - `fvm dart analyze` targeted files -> **No issues found**.
+
+**Files touched (highlights)**:
+- `lib/core/utils/offline_content_manager.dart`
+- `packages/kuron_native/android/build.gradle`
+- `packages/kuron_native/android/src/main/cpp/CMakeLists.txt`
+- `packages/kuron_native/android/src/main/cpp/kuron_avif_jni.cpp`
+- `packages/kuron_native/android/src/main/kotlin/id/nhasix/kuron_native/kuron_native/LibavifNdkBridge.kt`
+- `packages/kuron_native/android/src/main/kotlin/id/nhasix/kuron_native/kuron_native/AvifWebpTranscoder.kt`
+
+**Notes**:
+- Third-party warnings from vendored `libavif` were isolated/suppressed at target level where needed.
+- Runtime path now supports animated conversion output, not only first-frame fallback.

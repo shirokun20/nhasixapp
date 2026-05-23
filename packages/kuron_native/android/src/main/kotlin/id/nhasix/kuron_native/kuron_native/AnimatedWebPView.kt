@@ -154,9 +154,11 @@ class AnimatedWebPView(
             try {
                 if (!file.exists()) {
                     Log.w(TAG, "Cache file not found: ${file.path}")
-                    if (fallbackUrl != null) {
+                    if (shouldFallbackToNetwork(fallbackUrl)) {
                         Log.i(TAG, "Falling back to network: $fallbackUrl")
-                        loadAsync(fallbackUrl, fallbackHeaders)
+                        loadAsync(fallbackUrl!!, fallbackHeaders)
+                    } else if (!fallbackUrl.isNullOrEmpty()) {
+                        Log.w(TAG, "Skipping network fallback for non-http URL: $fallbackUrl")
                     }
                     return@thread
                 }
@@ -168,7 +170,11 @@ class AnimatedWebPView(
                 renderFile(file)
             } catch (e: Exception) {
                 Log.e(TAG, "loadFromFile failed: ${e.message}")
-                cacheKey?.let { failedAnimatedDecodeKeys.add(it) }
+                cacheKey?.let {
+                    if (isLikelyAvifSource(it)) {
+                        failedAnimatedDecodeKeys.add(it)
+                    }
+                }
                 // Some OEM decoders fail to create AnimatedImageDrawable for
                 // valid AVIF sequences. Fall back to a static first frame
                 // from the same local cache file before retrying network.
@@ -176,12 +182,26 @@ class AnimatedWebPView(
                     Log.w(TAG, "Rendered static fallback from disk after animated decode failure")
                     return@thread
                 }
-                if (fallbackUrl != null) {
+                if (shouldFallbackToNetwork(fallbackUrl)) {
                     Log.i(TAG, "Falling back to network after error: $fallbackUrl")
-                    loadAsync(fallbackUrl, fallbackHeaders)
+                    loadAsync(fallbackUrl!!, fallbackHeaders)
+                } else if (!fallbackUrl.isNullOrEmpty()) {
+                    Log.w(TAG, "Skipping network fallback for non-http URL: $fallbackUrl")
                 }
             }
         }
+    }
+
+    private fun shouldFallbackToNetwork(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        return url.startsWith("http://", ignoreCase = true) ||
+            url.startsWith("https://", ignoreCase = true)
+    }
+
+    private fun isLikelyAvifSource(source: String): Boolean {
+        val lowered = source.lowercase()
+        val noQuery = lowered.substringBefore('?')
+        return noQuery.endsWith(".avif")
     }
 
     private fun loadAsync(url: String, headers: Map<String, String>) {
@@ -192,7 +212,11 @@ class AnimatedWebPView(
                 if (disposed) return@thread
                 renderBytes(downloadedBytes)
             } catch (e: Exception) {
-                cacheKey?.let { failedAnimatedDecodeKeys.add(it) }
+                cacheKey?.let {
+                    if (isLikelyAvifSource(it)) {
+                        failedAnimatedDecodeKeys.add(it)
+                    }
+                }
                 if (renderStaticBitmapFromBytes(downloadedBytes)) {
                     Log.w(TAG, "Rendered static fallback from network bytes after animated decode failure")
                     return@thread

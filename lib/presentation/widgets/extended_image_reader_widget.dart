@@ -56,9 +56,6 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   /// Called once (per content ID) when this page is identified as a heavy
   /// animated WebP (≥ 2 MB) while in continuous-scroll mode.
-  ///
-  /// The parent can use this to switch to single-page mode so that only one
-  /// animation is rendered at a time, eliminating concurrent-decode jank.
   final VoidCallback? onHeavyImageDetected;
 
   /// Notifier that emits the currently visible page number.
@@ -69,48 +66,35 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   State<ExtendedImageReaderWidget> createState() =>
       _ExtendedImageReaderWidgetState();
 
-  // ── Testing helpers ────────────────────────────────────────────────────────
-
-  /// Directly adds a URL to the heavy-image static set.
-  /// Only use in tests via `@visibleForTesting`.
   @visibleForTesting
   static void addHeavyUrlForTesting(String url) =>
       _ExtendedImageReaderWidgetState._heavyImageUrls.add(url);
 
-  /// Returns whether [url] is currently in the heavy-image set.
   @visibleForTesting
   static bool isHeavyUrlForTesting(String url) =>
       _ExtendedImageReaderWidgetState._heavyImageUrls.contains(url);
 
-  /// Clears all in-memory native-animated routing state and the ExtendedImage
-  /// disk cache. Call this when cached animated AVIF/WebP files are stuck in
-  /// the Flutter codec pipeline and are not showing correctly.
   static Future<void> clearNativeAnimatedCache() async {
     _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
     _ExtendedImageReaderWidgetState._confirmedAnimatedWebPUrls.clear();
     _ExtendedImageReaderWidgetState._cachedFilePathByUrl.clear();
     _ExtendedImageReaderWidgetState._syntheticProgressByImageKey.clear();
+    _ExtendedImageReaderWidgetState._knownBrokenLocalAvifPaths.clear();
     await clearDiskCachedImages();
   }
 
-  /// Clears the heavy-image set. Call in [tearDown] to isolate tests.
   @visibleForTesting
   static void clearHeavyUrlsForTesting() =>
       _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
 
-  /// Exposes the threshold constant for assertion in tests.
   @visibleForTesting
   static int get heavyImageThresholdBytesForTesting =>
       _ExtendedImageReaderWidgetState._heavyImageThresholdBytes;
 
-  /// Exposes the ultra-heavy threshold used for more aggressive native
-  /// animated-WebP downsampling.
   @visibleForTesting
   static int get ultraHeavyAnimatedImageThresholdBytesForTesting =>
       _ExtendedImageReaderWidgetState._ultraHeavyAnimatedImageThresholdBytes;
 
-  /// Exposes the native animated-image routing heuristic for unit testing
-  /// without needing to build a full widget tree.
   @visibleForTesting
   static bool isLikelyAnimatedWebPForTesting({
     required String url,
@@ -177,12 +161,6 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   static bool _looksLikeNativeAnimatedCapableUrl(String url) {
     final path = url.toLowerCase().split('?').first;
-    // Note: .avif is intentionally excluded from URL-based heuristic.
-    // Whether an AVIF file is animated (avis brand) vs static/tiled (avif/mif1
-    // brand) cannot be determined from the URL alone. Static tiled AVIFs crash
-    // HeifDecoderImpl on some OEM devices. The post-download file-brand check
-    // in _inferNativeAnimatedCapableExtensionFromFileSync handles animated AVIF
-    // routing after the file is cached.
     return path.endsWith('.webp') || path.contains('-wbp');
   }
 
@@ -215,28 +193,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static const Duration _ehentaiResolvedImageCacheTtl = Duration(minutes: 2);
   static final Map<String, double> _syntheticProgressByImageKey =
       <String, double>{};
-
-  /// URLs identified as heavy/animated (large file size ≥ threshold).
-  /// Persisted across widget rebuilds so keep-alive activates immediately
-  /// when the widget is re-created after a scroll-back.
+  static final Set<String> _knownBrokenLocalAvifPaths = <String>{};
   static final Set<String> _heavyImageUrls = <String>{};
-
-  /// Content IDs for which [onHeavyImageDetected] has already been fired.
-  /// Prevents repeated callbacks when the same chapter is re-opened.
   static final Set<String> _notifiedHeavyContentIds = <String>{};
-
-  /// Maps a heavy image URL → its extended_image disk-cache file path.
-  /// Persisted so that when a widget is re-created (scroll-out → scroll-back)
-  /// the native [AnimatedWebPView] can load from disk instead of re-downloading.
   static final Map<String, String> _cachedFilePathByUrl = <String, String>{};
-
-  /// URLs confirmed to contain animated WebP bytes.
-  /// Separate from [_heavyImageUrls] because some sources can pre-seed "heavy"
-  /// based on payload size before the final file format is known.
   static final Set<String> _confirmedAnimatedWebPUrls = <String>{};
-
-  /// Files ≥ 2 MB are treated as heavy (animated WebP, large scans, etc.).
-  /// These are kept in memory between scroll-outs to avoid expensive re-decode.
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
 
   /// Files ≥ 10 MB get a more aggressive native target width because the
@@ -248,7 +209,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late Animation<double> _zoomAnimation;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
-  String? _hitomiFallbackImageUrl;
 
   /// Whether this specific image URL has been identified as heavy/animated.
   /// Mirrors the static [_heavyImageUrls] set but as instance flag so that
@@ -345,7 +305,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       final localPath = _normalizeLocalPath(widget.imageUrl);
       _cachedFilePath = localPath;
       _cachedFilePathByUrl[widget.imageUrl] = localPath;
-      _shouldBypassLocalDecode = _hasInvalidLocalImagePayloadSync(localPath);
+      final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
+          _knownBrokenLocalAvifPaths.contains(localPath);
+      _shouldBypassLocalDecode =
+          isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
       if (!_shouldBypassLocalDecode) {
         _preCheckLocalFileForHeavySync(localPath);
       }
@@ -484,6 +447,25 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _heavyImageUrls.add(widget.imageUrl);
   }
 
+  bool _isAvifSource(String source) {
+    return source.toLowerCase().split('?').first.endsWith('.avif');
+  }
+
+  Future<void> _openFailedAvifExternally(String source) async {
+    try {
+      if (_isLocalFilePath(source)) {
+        await KuronNative.instance.openAvif(
+          filePath: _normalizeLocalPath(source),
+        );
+        return;
+      }
+
+      await KuronNative.instance.openWebView(url: source);
+    } catch (e) {
+      _logger.w('[AVIF] Failed to open external fallback: $e');
+    }
+  }
+
   bool _isLikelyAnimatedUrl(String url) {
     if (_isConfirmedAnimatedWebP) {
       return true;
@@ -499,14 +481,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       return false;
     }
 
-    // AVIF: URL heuristic cannot confirm animation (brand is in the file header,
-    // not the URL). On decode failure, trigger a ONE-SHOT async file inspection.
-    // If the cached file is animated AVIF it will be routed to native view;
-    // if static/not-cached or inspection already ran, fall through to error.
     if (!_isLocalFilePath(failedUrl) &&
         failedUrl.toLowerCase().split('?').first.endsWith('.avif')) {
       if (_avifDecodeRetried) {
-        // Already tried once — stop the loop and show error widget.
         return false;
       }
       _avifDecodeRetried = true;
@@ -517,7 +494,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       clearMemoryImageCache(failedUrl);
       _awaitingNativeCheck = true;
       _preCheckDiskCacheForHeavy();
-      return true; // show loading indicator while inspection runs
+      return true;
     }
 
     if (!ExtendedImageReaderWidget._looksLikeNativeAnimatedCapableUrl(
@@ -576,7 +553,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final imageChanged = oldWidget.imageUrl != widget.imageUrl;
 
     if (sourceChanged || imageChanged) {
-      _hitomiFallbackImageUrl = null;
       _ehentaiResolveRetries = 0;
       _prepareEhentaiResolveFuture();
 
@@ -584,7 +560,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         final localPath = _normalizeLocalPath(widget.imageUrl);
         _cachedFilePath = localPath;
         _cachedFilePathByUrl[widget.imageUrl] = localPath;
-        _shouldBypassLocalDecode = _hasInvalidLocalImagePayloadSync(localPath);
+        final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
+            _knownBrokenLocalAvifPaths.contains(localPath);
+        _shouldBypassLocalDecode =
+            isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
         if (!_shouldBypassLocalDecode) {
           _preCheckLocalFileForHeavySync(localPath);
         }
@@ -612,6 +591,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   void _retryBrokenLocalImage() {
     final localPath = _normalizeLocalPath(widget.imageUrl);
+    if (localPath.toLowerCase().endsWith('.avif')) {
+      _knownBrokenLocalAvifPaths.remove(localPath);
+    }
     final shouldBypass = _hasInvalidLocalImagePayloadSync(localPath);
 
     if (!mounted) {
@@ -770,6 +752,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     final normalizedLocalPath = _normalizeLocalPath(widget.imageUrl);
+    final effectiveLocalPath = normalizedLocalPath;
 
     // Check if imageUrl is a local file path
     final isLocalFile = _isLocalFilePath(widget.imageUrl);
@@ -778,21 +761,22 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       if (_shouldBypassLocalDecode) {
         return _buildErrorWidget(
           context,
+          failedSource: effectiveLocalPath,
           onRetry: _retryBrokenLocalImage,
         );
       }
 
-      if (_shouldUseNativeAnimatedView(normalizedLocalPath)) {
+      if (_shouldUseNativeAnimatedView(effectiveLocalPath)) {
         return _buildNativeAnimatedWebP(
-          normalizedLocalPath,
+          effectiveLocalPath,
           const {},
-          filePathOverride: _cachedFilePath ?? normalizedLocalPath,
+          filePathOverride: _cachedFilePath ?? effectiveLocalPath,
         );
       }
 
       // Use ExtendedImage.file for local files
       return ExtendedImage.file(
-        File(normalizedLocalPath),
+        File(effectiveLocalPath),
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
@@ -846,6 +830,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               _markLocalDecodeAsBroken();
               return _buildErrorWidget(
                 context,
+                failedSource: effectiveLocalPath,
                 onRetry: _retryBrokenLocalImage,
               );
             case LoadState.completed:
@@ -866,7 +851,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
               if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
                 try {
-                  final file = File(normalizedLocalPath);
+                  final file = File(effectiveLocalPath);
                   if (file.existsSync()) {
                     final fileSize = file.lengthSync();
                     final (:format, :width, :height) =
@@ -874,7 +859,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     if (format != null) {
                       _markHeavyNativeAnimatedImage(
                         cacheKey: widget.imageUrl,
-                        cachedFilePath: normalizedLocalPath,
+                        cachedFilePath: effectiveLocalPath,
                         confirmedAnimatedWebP: true,
                       );
                       final nativeSize = (width != null && height != null)
@@ -883,7 +868,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       setState(() {
                         _isHeavyImage = true;
                         _isConfirmedAnimatedWebP = true;
-                        _cachedFilePath = normalizedLocalPath;
+                        _cachedFilePath = effectiveLocalPath;
                         if (nativeSize != null) _nativeImageSize = nativeSize;
                       });
                       updateKeepAlive();
@@ -913,7 +898,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         },
       );
     } else {
-      final effectiveImageUrl = _hitomiFallbackImageUrl ?? widget.imageUrl;
+      final effectiveImageUrl = widget.imageUrl;
       final isEhentaiReaderUrl =
           _shouldResolveEhentaiImageUrl(effectiveImageUrl);
       if (!isEhentaiReaderUrl) {
@@ -1059,14 +1044,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
             _stopSyntheticProgress(reset: true);
-            if ((widget.sourceId ?? '').toLowerCase() == 'hitomi') {
-              _logger.w(
-                'Hitomi reader image failed: page=${widget.pageNumber}, url=$url, retries=$_imageLoadRetries, fallback=${_hitomiFallbackImageUrl ?? ''}',
-              );
-            }
-            if (_tryHitomiAvifFallback(url)) {
-              return _buildLoadingIndicator(context);
-            }
             if (_tryRefreshEhentaiResolvedImageUrl(url)) {
               return _buildLoadingIndicator(context);
             }
@@ -1078,18 +1055,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 _imageLoadRetries < _maxImageLoadRetries) {
               _scheduleAutoRetry(state);
             }
-            return _buildErrorWidget(context, state: state);
+            return _buildErrorWidget(
+              context,
+              state: state,
+              failedSource: url,
+            );
           case LoadState.completed:
             _stopSyntheticProgress(reset: true);
             _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
             _imageLoadRetries = 0; // Reset retries on success
             _ehentaiResolveRetries = 0;
-            if ((widget.sourceId ?? '').toLowerCase() == 'hitomi' &&
-                _hitomiFallbackImageUrl != null) {
-              _logger.i(
-                'Hitomi reader image loaded via fallback: page=${widget.pageNumber}, url=$url',
-              );
-            }
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
               final image = state.extendedImageInfo!.image;
@@ -1282,55 +1257,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         path.endsWith('.avif');
   }
 
-  bool _tryHitomiAvifFallback(String failedUrl) {
-    if ((widget.sourceId ?? '').toLowerCase() != 'hitomi') {
-      return false;
-    }
-    if (_hitomiFallbackImageUrl != null) {
-      return false;
-    }
-
-    final lowered = failedUrl.toLowerCase();
-    if (!lowered.contains('gold-usergeneratedcontent.net') ||
-        !lowered.contains('.avif')) {
-      return false;
-    }
-
-    final webpUrl = _toHitomiWebpUrl(failedUrl);
-    if (webpUrl == failedUrl) {
-      return false;
-    }
-
-    _logger.w(
-      'Hitomi reader AVIF fallback: page=${widget.pageNumber}, from=$failedUrl, to=$webpUrl',
-    );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _imageLoadRetries = 0;
-        _hitomiFallbackImageUrl = webpUrl;
-      });
-    });
-    return true;
-  }
-
-  String _toHitomiWebpUrl(String url) {
-    final withWebpHost = url.replaceFirstMapped(
-      RegExp(r'^(https://)a(\d+)\.gold-usergeneratedcontent\.net',
-          caseSensitive: false),
-      (match) =>
-          '${match.group(1)}w${match.group(2)}.gold-usergeneratedcontent.net',
-    );
-
-    return withWebpHost.replaceFirstMapped(
-      RegExp(r'\.avif(?=($|[?#]))', caseSensitive: false),
-      (_) => '.webp',
-    );
-  }
-
   bool _isHeavyReaderSource() {
     return widget.sourceId == 'hentainexus';
   }
@@ -1365,13 +1291,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// For WebP, dimensions are not parsed (returns `null` for width/height).
   static ({String? format, int? width, int? height})
       _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
-    const _empty = (format: null, width: null, height: null);
+    const empty = (format: null, width: null, height: null);
     RandomAccessFile? raf;
     try {
       raf = file.openSync(mode: FileMode.read);
       final length = raf.lengthSync();
       if (length < 16) {
-        return _empty;
+        return empty;
       }
 
       // Read 512 bytes — enough to reach the ispe box (~byte 203 in typical AVIF).
@@ -1385,7 +1311,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         // which prevents normal keep-alive recycling and forces native rendering.
         return _looksLikeAnimatedWebPHeader(bytes)
             ? (format: 'webp', width: null, height: null)
-            : _empty;
+            : empty;
       }
       if (ext == 'avif') {
         // Route to native AnimatedWebPView only for avis-brand AVIF within the
@@ -1405,13 +1331,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         //     26.avif  1440×5044  (> 4096) → Flutter ✓ works
         //
         // Step 1: check major brand — only avis targets native view.
-        if (bytes.length < 12) return _empty;
+        if (bytes.length < 12) return empty;
         const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
         if (bytes[8] != kAvis0 ||
             bytes[9] != kAvis1 ||
             bytes[10] != kAvis2 ||
             bytes[11] != kAvis3) {
-          return _empty; // avif / mif1 brand → Flutter codec
+          return empty; // avif / mif1 brand → Flutter codec
         }
 
         // Step 2: parse the ispe (image spatial extents) box for image dimensions.
@@ -1436,7 +1362,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ((bytes[i + 14] & 0xFF) << 8) |
                 (bytes[i + 15] & 0xFF);
             if (height > kMaxHardwareHeight) {
-              return _empty; // too tall for hardware AV1 decoder → Flutter
+              return empty; // too tall for hardware AV1 decoder → Flutter
             }
             // avis + height ≤ 4096 → native AnimatedWebPView
             return (
@@ -1453,9 +1379,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           height: null
         ); // avis, no ispe found
       }
-      return _empty;
+      return empty;
     } catch (_) {
-      return _empty;
+      return empty;
     } finally {
       raf?.closeSync();
     }
@@ -1554,9 +1480,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // bringing the total decoded footprint from ~112 MB to ~31 MB.
     // Static heavy: 75% — keeps text/detail readable.
     final bool animatedImage = isLikelyAnimatedUrl ??
-        _isLikelyAnimatedUrl(
-          imageUrl ?? _hitomiFallbackImageUrl ?? widget.imageUrl,
-        );
+        _isLikelyAnimatedUrl(imageUrl ?? widget.imageUrl);
     final double factor = animatedImage ? 0.40 : 0.75;
     return ((mediaQuery.size.width * factor) * mediaQuery.devicePixelRatio)
         .round();
@@ -2024,6 +1948,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   Widget _buildErrorWidget(
     BuildContext context, {
     ExtendedImageState? state,
+    String? failedSource,
     VoidCallback? onRetry,
   }) {
     // Responsive sizing based on reading mode
@@ -2037,6 +1962,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final isRepairing = _isRepairingBrokenImage;
     final isOpeningSourcePage = _isOpeningSourcePage;
     final isActionBusy = isRepairing || isOpeningSourcePage;
+    final resolvedFailedSource = failedSource ?? widget.imageUrl;
+    final canOpenLocalAvif = _isLocalFilePath(resolvedFailedSource) &&
+        _isAvifSource(resolvedFailedSource);
+    final canOpenRemoteAvif = !_isLocalFilePath(resolvedFailedSource) &&
+        _isAvifSource(resolvedFailedSource);
     final retryAction = onRetry ?? state?.reLoadImage;
 
     return Container(
@@ -2254,6 +2184,30 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 if (!isRetrying && widget.onRepairBrokenImage != null)
                   const SizedBox(height: 8),
 
+                if (!isRetrying && canOpenLocalAvif) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isActionBusy
+                          ? null
+                          : () =>
+                              _openFailedAvifExternally(resolvedFailedSource),
+                      icon: const Icon(Icons.photo_library_outlined, size: 16),
+                      label: const Text('Open in gallery'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
                 // Retry button (hidden if already retrying)
                 if (!isRetrying)
                   SizedBox(
@@ -2276,18 +2230,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     ),
                   ),
 
-                // Open in WebView button — only for network URLs
-                if (!isRetrying && !_isLocalFilePath(widget.imageUrl)) ...[
+                if (!isRetrying && canOpenRemoteAvif) ...[
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: isActionBusy
                           ? null
-                          : () => KuronNative.instance
-                              .openWebView(url: widget.imageUrl),
+                          : () =>
+                              _openFailedAvifExternally(resolvedFailedSource),
                       icon: const Icon(Icons.open_in_browser, size: 16),
-                      label: const Text('Open in WebView'),
+                      label: Text(l10n.openInBrowser),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -2319,8 +2272,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     ExtendedImageState state, {
     String? imageUrl,
   }) {
-    final isLikelyAnimatedImage = _isLikelyAnimatedUrl(
-        imageUrl ?? _hitomiFallbackImageUrl ?? widget.imageUrl);
+    final isLikelyAnimatedImage =
+        _isLikelyAnimatedUrl(imageUrl ?? widget.imageUrl);
     // For gesture mode, use completedWidget which includes gesture handling
     // For non-gesture mode, use ExtendedRawImage directly
     final Widget imageWidget = widget.enableZoom

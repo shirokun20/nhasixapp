@@ -191,6 +191,11 @@ class KuronNative {
     );
   }
 
+  /// Open a local AVIF image in an external gallery/photo app.
+  Future<void> openAvif({required String filePath}) {
+    return KuronNativePlatform.instance.openAvif(filePath: filePath);
+  }
+
   /// Set DNS over HTTPS provider.
   /// Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
   Future<bool> setDohProvider(int provider) {
