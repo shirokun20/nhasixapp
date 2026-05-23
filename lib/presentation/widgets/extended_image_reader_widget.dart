@@ -1300,8 +1300,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return empty;
       }
 
-      // Read 512 bytes — enough to reach the ispe box (~byte 203 in typical AVIF).
-      final sampleLength = length < 512 ? length : 512;
+      // Read a wider AVIF header window so `ispe` is still found when the box
+      // is pushed back by extra metadata. Without width/height we cannot apply
+      // the native AspectRatio wrapper, which makes some AVIF pages appear not
+      // to fill the reader width.
+      final sampleLength = length < 4096 ? length : 4096;
       final bytes = raf.readSync(sampleLength);
       final ext = inferImageExtension(bytes: bytes);
       if (ext == 'webp') {
@@ -1346,8 +1349,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         //   [4B box-size][4B 'ispe'][4B version+flags][4B width][4B height]
         //    ^box_start  ^i         i+4                i+8       i+12
         //
-        // The ispe box for manga18.club AVIF files sits at byte ~203, well within
-        // the 512-byte sample. Search for the 'ispe' marker and read height.
+        // The ispe box for manga18.club AVIF files often sits near byte ~203,
+        // but some files place it later. Search the wider sample and read the
+        // dimensions so scroll layout can reserve full-width height correctly.
         const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
         const kMaxHardwareHeight = 4096;
 
@@ -1373,11 +1377,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           }
         }
 
-        return (
-          format: 'avif',
-          width: null,
-          height: null
-        ); // avis, no ispe found
+        // Keep AVIF on the Flutter codec path when dimensions are unknown.
+        // The native view needs a known aspect ratio to reserve the correct
+        // full-width layout in the reader.
+        return empty;
       }
       return empty;
     } catch (_) {
