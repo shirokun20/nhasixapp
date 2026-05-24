@@ -109,11 +109,10 @@ lib/
 - `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
 
 ### 📋 Exploration / Analysis (in `openspec/changes/`)
-- `flutter-desktop-migration`
 - `pin-biometric-app-lock`
 
 ### 🐛 Open Issues (in `openspec/changes/`)
-- `mangadex-personal-feed` (2026-03-14) — OAuth personal feed feature
+- *(none currently)*
 
 
 ---
