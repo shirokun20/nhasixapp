@@ -37,7 +37,7 @@ dependencies:
   # Networking & Web Scraping
   dio: ^5.9.0
   native_dio_adapter: ^1.3.0
-  cronet_http: ^1.1.0
+  cronet_http: ^1.8.0
   html: ^0.15.4
   connectivity_plus: ^7.0.0
 
@@ -46,7 +46,7 @@ dependencies:
 
   # Local Storage & Caching
   sqflite: ^2.3.0
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.5
   path_provider: ^2.1.1
   path: ^1.9.0
 
@@ -67,30 +67,30 @@ dependencies:
   # Background Tasks & Notifications
   flutter_local_notifications: ^19.5.0
   workmanager: ^0.9.0
-  wakelock_plus: ^1.2.8
+  wakelock_plus: ^1.5.2
 
   # File Management & Sharing
   archive: ^4.0.7
   open_file: ^3.5.7
-  share_plus: ^12.0.1
+  share_plus: ^13.1.0
   url_launcher: ^6.3.1
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^10.3.0
 
   # WebView for Cloudflare bypass
-  webview_flutter: ^4.10.0
+  webview_flutter: ^4.12.0
 
   # Utilities
   logger: ^2.6.2
   permission_handler: ^12.0.1
   intl: ^0.20.2
-  device_info_plus: ^12.3.0
+  device_info_plus: ^13.1.0
   collection: ^1.18.0
   crypto: ^3.0.3
 
   # PDF Generation
   pdf: ^3.11.1
 
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
   markdown_widget: ^2.3.2+8
   flutter_svg: ^2.2.3
   scrollable_positioned_list: ^0.3.8
