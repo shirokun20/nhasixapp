@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -1227,14 +1228,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return false; // Allow notification to bubble up
         },
         child: ListView.builder(
+          scrollCacheExtent: ScrollCacheExtent.pixels(isHeavySource
+              ? viewportHeight *
+                  0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
+              : 2500.0),
           controller: _scrollController,
           physics: isHeavySource
               ? const ClampingScrollPhysics()
-              : const BouncingScrollPhysics(),
-          cacheExtent: isHeavySource
-              ? viewportHeight *
-                  0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
-              : 2500.0, // Keep fewer offscreen pages for heavy sources
+              : const BouncingScrollPhysics(), // Keep fewer offscreen pages for heavy sources
           addAutomaticKeepAlives:
               true, // Heavy animated images set wantKeepAlive=true; normal images stay false
           itemCount: totalItems,
