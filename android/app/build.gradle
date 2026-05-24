@@ -74,7 +74,7 @@ android {
             }
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
             resValue "string", "app_name", "Kuron"
         }
     }

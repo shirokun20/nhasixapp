@@ -20,6 +20,54 @@ dependencies:
     path: packages/kuron_native
 ```
 
+## Android Release (R8/ProGuard) - Important
+
+`kuron_native` uses FFmpegKit on Android. In release builds, R8/ProGuard can break JNI classes if keep rules are missing.
+
+### Why rules are often added in app root
+
+R8 runs on the **final app module** (`android/app`), so many projects place keep rules there.  
+To make integration safer, `kuron_native` now also ships consumer rules at:
+
+- `packages/kuron_native/android/proguard-rules.pro`
+- `packages/kuron_native/android/build.gradle` via `consumerProguardFiles`
+
+### Host app setup checklist
+
+1. Ensure release build type enables proguard files:
+
+```gradle
+buildTypes {
+  release {
+    minifyEnabled true
+    shrinkResources true
+    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+  }
+}
+```
+
+2. If your app already has custom R8 rules, keep FFmpegKit rules in app root as fallback:
+
+```proguard
+-keep class com.antonkarpenko.ffmpegkit.** { *; }
+-keep class com.arthenica.ffmpegkit.** { *; }
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+-keepclassmembers class * {
+    native <methods>;
+}
+```
+
+3. Rebuild release and verify on-device:
+
+```bash
+cd android
+./gradlew app:compileReleaseKotlin
+```
+
+If you still see `Bad JNI version returned from JNI_OnLoad`, keep the app-level rules and test without extra obfuscation temporarily to isolate shrinker side effects.
+
 ## Widgets Usage
 
 ### 1. SSO Login Button
