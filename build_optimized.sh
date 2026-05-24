@@ -88,9 +88,15 @@ echo ""
 echo "📏 SIZE SUMMARY:"
 total_size=$(du -ch $OUTPUT_DIR/kuron_*.apk 2>/dev/null | grep total | cut -f1 || echo '0')
 count=$(ls -1 $OUTPUT_DIR/kuron_*.apk 2>/dev/null | wc -l | tr -d ' ')
+universal_apk_path="build/app/outputs/flutter-apk/app-${BUILD_TYPE}.apk"
 echo "📦 Total APKs: $count"
 echo "📊 Combined size: $total_size"
-echo "💾 Previous universal: ~29MB"
+if [ -f "$universal_apk_path" ]; then
+    universal_size=$(du -h "$universal_apk_path" | cut -f1)
+    echo "💾 Universal APK reference: $universal_size ($(basename "$universal_apk_path"))"
+else
+    echo "💾 Universal APK reference: N/A (not generated with --split-per-abi)"
+fi
 echo ""
 echo "📂 All APKs saved to: $OUTPUT_DIR/"
 echo ""
