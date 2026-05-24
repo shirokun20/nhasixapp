@@ -8,6 +8,8 @@ import java.io.File
 class AvifConverter {
     companion object {
         private const val TAG = "AvifConverter"
+        @Volatile
+        private var ffmpegRuntimeBroken = false
     }
 
     fun convert(inputPath: String, quality: Int, outputPath: String): String? {
@@ -65,17 +67,30 @@ class AvifConverter {
     }
 
     private fun executeCommand(command: String, outputFile: File): Boolean {
-        val session = FFmpegKit.execute(command)
-        val returnCode = session.returnCode
-        if (!ReturnCode.isSuccess(returnCode)) {
-            Log.w(TAG, "FFmpeg command failed (rc=$returnCode): $command")
+        if (ffmpegRuntimeBroken) {
+            Log.w(TAG, "Skip FFmpeg execution because runtime is marked broken")
             return false
         }
-        if (!outputFile.exists() || outputFile.length() <= 0L) {
-            Log.w(TAG, "FFmpeg succeeded but output file is empty: ${outputFile.path}")
+
+        return try {
+            val session = FFmpegKit.execute(command)
+            val returnCode = session.returnCode
+            if (!ReturnCode.isSuccess(returnCode)) {
+                Log.w(TAG, "FFmpeg command failed (rc=$returnCode): $command")
+                return false
+            }
+            if (!outputFile.exists() || outputFile.length() <= 0L) {
+                Log.w(TAG, "FFmpeg succeeded but output file is empty: ${outputFile.path}")
+                return false
+            }
+            true
+        } catch (t: Throwable) {
+            // FFmpegKit can throw java.lang.Error in release builds when JNI init fails.
+            // Treat it as a conversion miss so reader can continue with existing fallback.
+            ffmpegRuntimeBroken = true
+            Log.e(TAG, "FFmpeg runtime unavailable: ${t.message}", t)
             return false
         }
-        return true
     }
 
     private fun quotePath(path: String): String {

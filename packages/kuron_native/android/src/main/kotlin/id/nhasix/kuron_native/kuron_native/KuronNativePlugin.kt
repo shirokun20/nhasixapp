@@ -753,10 +753,11 @@ class KuronNativePlugin :
                 mainThread {
                     result.success(mapOf("outputPath" to convertedPath))
                 }
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "convertAvifToWebP failed: ${e.message}")
+            } catch (t: Throwable) {
+                android.util.Log.e(TAG, "convertAvifToWebP failed: ${t.message}", t)
                 mainThread {
-                    result.error("AVIF_CONVERT_FAILED", e.message, null)
+                    // Return soft failure so Flutter side can continue with reader fallback.
+                    result.success(mapOf("outputPath" to null))
                 }
             }
         }
