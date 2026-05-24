@@ -73,49 +73,48 @@ lib/
 > Tracked via `openspec/` — Last updated: 2026-05-24
 
 ### ✅ Archived (in `openspec/changes/archive/`)
-- `2026-04-19-blur-recent-apps-privacy`
-- `2026-02-15-chapter-reading-history`
-- `2026-03-xx-crotpedia-ui-modernization`
-- `2026-02-xx-doujin-search-highlight`
-- `2026-04-20-ehentai-download-reader-stability`
+- `2026-02-11-nhentai-search-revamp`
 - `2026-02-14-favorites-bug-fix`
+- `2026-02-15-chapter-reading-history`
+- `2026-02-15-download-metadata-revamp`
+- `2026-02-15-fix-download-metadata-parentid`
+- `2026-02-17-fix-download-range-page-bounds`
+- `2026-02-22-app-audit-hardcode-ui`
+- `2026-02-xx-doujin-search-highlight`
+- `2026-02-xx-offline-search-highlight`
+- `2026-02-xx-reader-header-auto-show`
+- `2026-03-03-komiktap-migration`
+- `2026-03-07-fix-source-switch-shimmer`
+- `2026-03-12-builtin-dns-resolver`
+- `2026-03-14-app-config-externalization`
+- `2026-03-15-cross-source-search-ui`
+- `2026-03-15-mangadex-detail-pagination-bug`
+- `2026-03-31-fix-import-zip-metadata`
+- `2026-03-xx-crotpedia-ui-modernization`
 - `2026-03-xx-fix-app-drawer-transparency`
-- `2026-04-12-local-collection-categories`
 - `2026-03-xx-komiktap-navigation-lists`
 - `2026-03-xx-multi-provider-integration`
-- `2026-02-xx-offline-search-highlight`
-- `2026-04-xx-qol-enhancements`
-- `2026-02-xx-reader-header-auto-show`
 - `2026-03-xx-smart-caching-and-fixes`
 - `2026-03-xx-unity-ads-fix`
 - `2026-03-xx-view-comments`
+- `2026-04-12-local-collection-categories`
+- `2026-04-19-blur-recent-apps-privacy`
+- `2026-04-20-ehentai-download-reader-stability`
+- `2026-04-xx-qol-enhancements`
+- `2026-05-19-fix-url-special-chars`
 - `2026-05-24-avif-to-webp-conversion`
 - `2026-05-24-ehentai-part-mode-metadata-sync`
-- `2026-05-19-fix-url-special-chars`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
-- `premium-enhancements` — Ad bypass fix, VIP drawer info, premium source gating
 
 ### 📋 Exploration / Analysis (in `openspec/changes/`)
-- `app-audit-hardcode-ui`
-- `app-config-externalization`
-- `builtin-dns-resolver`
-- `cross-source-search-ui`
-- `download-metadata-revamp`
 - `flutter-desktop-migration`
-- `komiktap-migration`
-- `nhentai-search-revamp`
 - `pin-biometric-app-lock`
-- `reader-ads`
 
 ### 🐛 Open Issues (in `openspec/changes/`)
-- `fix-import-zip-metadata` (2026-03-31) — Import ZIP external + metadata title fix
-- `fix-download-range-page-bounds` (2026-02-17) — Range download downloads all pages
-- `fix-download-metadata-parentid` (2026-02-15) — Chapter download missing parent ID
 - `mangadex-personal-feed` (2026-03-14) — OAuth personal feed feature
-- `fix-source-switch-shimmer` (2026-03-07) — UI stuck after source switch
-- `mangadex-detail-pagination-bug` (2026-03-15) — ContentId parsing + inflated pagination
+
 
 ---
 
