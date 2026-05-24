@@ -8,9 +8,9 @@
 
 At the start of every session:
 1. Read `MEMORY.md` for cross-session context.
-2. Check `projects/onprogress-plan/` for active work.
-3. If a project exists, read its `progress.md` and main spec file.
-4. Treat `progress.md` as the Master Plan — do not implement features not listed.
+2. Check `openspec/changes/` for active (non-archived) changes.
+3. If an active change exists, read its `proposal.md` and `tasks.md`.
+4. Treat `tasks.md` as the Master Plan — do not implement features not listed.
 
 ## Architecture (STRICT)
 
@@ -71,12 +71,11 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 | Phase | Location | Rules |
 |-------|----------|-------|
-| 1. Analysis | `projects/analysis-plan/[name]/` | **READ-ONLY**. Document findings only. |
-| 2. Planning | `projects/future-plan/[name]/` | **Design only**. No code changes. |
-| 3. Execution | `projects/onprogress-plan/[name]/` | **Code allowed**. MUST create Todo list first. |
-| 4. Completion | `projects/success-plan/[name]/` | Move folder. Run `dart scripts/project_status.dart`. |
+| 1. Exploration | `openspec/changes/<name>/proposal.md` | **READ-ONLY**. Use `/opsx-explore` or `/opsx-propose`. |
+| 2. Execution | `openspec/changes/<name>/tasks.md` | **Code allowed**. Use `/opsx-apply`. Mark `[x]` on completion. |
+| 3. Archive | `openspec/changes/archive/<date>-<name>/` | Use `openspec archive -y` when done. |
 
-- **STOP & WAIT**: Do not move between phases without explicit user command.
+- **STOP & WAIT**: Do not implement without explicit user approval.
 - **Git**: NEVER run `git add` or `git commit`. User handles source control.
 
 ## Core Commands

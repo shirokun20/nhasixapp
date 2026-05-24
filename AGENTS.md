@@ -35,7 +35,7 @@
 - Reuse existing project rules instead of creating parallel rule sets.
 - Keep `.github/copilot-instructions.md` aligned with this file; if guidance overlaps, follow the stricter local project rule.
 - Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions to emulate directly unless explicit sub-agent delegation is requested.
-- Startup sequence: `MEMORY.md` -> active `projects/onprogress-plan/` -> active `progress.md` -> active main spec.
+- Startup sequence: `MEMORY.md` -> active `openspec/changes/` (non-archived) -> `proposal.md` + `tasks.md`.
 
 ## ⚡ Core Commands
 - **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
@@ -105,33 +105,28 @@ We operate with professional discipline. Code is ephemeral; Architecture is perm
 #### 🧭 Active Steering (Automatic Context)
 **CRITICAL**: At the start of every session, YOU MUST:
 1. Read `MEMORY.md` for cross-session context.
-2. Check `projects/onprogress-plan/`.
-3. If a project exists there, READ its `progress.md` and main Spec file immediately.
-4. **Treat `progress.md` as the Master Plan**. Do not implement features not listed there.
-5. **Update `progress.md`** automatically as tasks are completed.
+2. Check `openspec/changes/` for active (non-archived) changes.
+3. If an active change exists, READ its `proposal.md` and `tasks.md` immediately.
+4. **Treat `tasks.md` as the Master Plan**. Do not implement features not listed there.
+5. **Update `tasks.md`** automatically as tasks are completed.
 
-#### Phases:
+#### Phases (OpenSpec Workflow):
 
-1. **Analysis & Planning**
-   - **Folder**: `projects/analysis-plan/[project_name]/`
-   - **Main File**: `[project_name]_[date].md` (Copy from `projects/templates/project_plan_template.md`)
-   - **Issues**: `projects/issues/` (Markdown files allowed here)
-   - **Backlog**: `projects/future-plan/[project_name]/` (Follows Analysis structure)
+1. **Exploration / Analysis**
+   - Use `/opsx-explore` or create change via `openspec new change "<name>"`
+   - Folder: `openspec/changes/<name>/`
+   - Main artifact: `proposal.md`
    - **READ-ONLY**: Document findings only. No code changes.
-   - **STOP & WAIT**: Do not move ANY of these to Execution without explicit user command.
+   - **STOP & WAIT**: Do not implement without explicit user approval.
 
-2. **Execution** (`projects/onprogress-plan/`)
-   - **Convert Issue to Folder**: Create folder `[project_name]`. Move issue to `resolved_issues/`.
-   - **Main File**: Ensure `[project_name]_[date].md` exists.
-   - **Require `progress.md`**: MUST exist for dashboard tracking (Copy Implementation Plan from Analysis).
-   - **MUST** create Todo list first. Update `.md` only for completion `[x]`.
+2. **Execution** (active `openspec/changes/<name>/`)
+   - Requires `tasks.md` (generated via `/opsx-apply`)
+   - **MUST** work through tasks.md in order. Mark `[x]` on completion.
    - **Use MCP**: `Sequential Thinking`, `Context7`, `Docfork` for complex tasks.
-   - **Approval**: Only move here after explicit user approval.
+   - **Approval**: Only start after explicit user approval.
 
-3. **Completion** (`projects/success-plan/`)
-   - **Move Folder**: Move the entire folder here.
-   - **Update**: Mark `progress.md` as 100%.
-   - **Script**: Run `dart scripts/project_status.dart`.
+3. **Completion** (archived to `openspec/changes/archive/<date>-<name>/`)
+   - Run `openspec archive -y` or move folder manually.
    - **Git**: DO NOT run `git add/commit`. User handles source control.
 
 ## 🛠 Code Standards
@@ -186,7 +181,7 @@ All `.dart` files are automatically formatted using `fvm dart format` after writ
 Use these specialized tools to maintain velocity and quality.
 
 ### Agents (Use `@` to invoke)
-- **`@planner`**: Creates detailed architectural plans in `projects/analysis-plan`.
+- **`@planner`**: Creates exploration proposals in `openspec/changes/<name>/proposal.md`.
 - **`@architect`**: Reviews code for Clean Architecture violations.
 - **`@flutter-architect`**: Clean Architecture guidance and reviews.
 - **`@feature-dev`**: Development workflow coordinator.
