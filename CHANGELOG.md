@@ -13,6 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Generic Scraper Unicode Slugs**: Fixed slug extraction for raw and percent-encoded manga/chapter URLs containing Unicode path characters such as `〜` and `ー`, while preserving malformed encodings safely.
 - **Reader Route Decode Guard**: Hardened GoRouter content/detail route decoding so literal `%` and malformed percent-encoded IDs no longer crash navigation with `Illegal percent encoding in URI`.
 
+## [0.9.19+29] - 2026-05-24
+
+### ✨ Highlights
+
+#### 🖼 AVIF Reader Conversion Pipeline
+- **Auto AVIF -> WebP Conversion**: Added native conversion path for problematic tall animated AVIF (`avis`, height > 4096) so reader can route converted output into native animated rendering.
+- **Offline In-Place Conversion**: Local/offline chapter pages now support in-place AVIF replacement to `.webp`, including metadata rewrite and offline cache invalidation.
+- **Reader Loading UX**: Improved loading copy during native conversion with dedicated localized message for conversion state (`id/en/zh`).
+
+#### 🛡 Release Stability Hardening
+- **FFmpeg Runtime Guard**: Hardened native converter path to catch JNI/runtime failures from FFmpegKit in release and degrade gracefully (soft-fail) instead of crashing process.
+- **R8/ProGuard Consumer Rules**: Added plugin-level consumer ProGuard rules in `kuron_native` for FFmpeg JNI classes and native method preservation.
+- **Build Script Cleanup**: Removed hardcoded universal APK size text in `build_optimized.sh`; output now reports dynamic reference size or `N/A` when universal APK is not generated.
+
+#### 📝 Documentation
+- **Kuron Native README**: Added Android release integration guide for R8/ProGuard + FFmpegKit setup and verification steps.
+
 ## [0.9.18+28] - 2026-05-16
 
 ### ✨ Highlights
