@@ -46,14 +46,19 @@ class _AvifDebugPageState extends State<AvifDebugPage>
 
   String? _activeUrl;
   String? _activeFilePath;
+  String? _webpOutputPath;
   bool _isBusy = false;
+  bool _isConverting = false;
   String _status = 'Idle';
   AvifHeaderInfo? _headerInfo;
+  int? _convertElapsedMs;
+  int? _convertInputBytes;
+  int? _convertOutputBytes;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -111,6 +116,10 @@ class _AvifDebugPageState extends State<AvifDebugPage>
       setState(() {
         _activeUrl = raw;
         _activeFilePath = localPath;
+        _webpOutputPath = null;
+        _convertElapsedMs = null;
+        _convertInputBytes = null;
+        _convertOutputBytes = null;
         _filePathController.text = localPath;
         _headerInfo = info;
         _status = 'Downloaded ${bytes.length} bytes';
@@ -148,6 +157,10 @@ class _AvifDebugPageState extends State<AvifDebugPage>
       setState(() {
         _activeUrl = null;
         _activeFilePath = file.path;
+        _webpOutputPath = null;
+        _convertElapsedMs = null;
+        _convertInputBytes = null;
+        _convertOutputBytes = null;
         _headerInfo = info;
         _status = 'Loaded local file (${bytes.length} bytes)';
       });
@@ -175,6 +188,75 @@ class _AvifDebugPageState extends State<AvifDebugPage>
     }
   }
 
+  Future<void> _convertToWebP() async {
+    if (_isConverting) return;
+
+    final activePath = _activeFilePath;
+    if (activePath == null || activePath.isEmpty) {
+      _setStatus('Belum ada file AVIF aktif.');
+      return;
+    }
+
+    final inputFile = File(activePath);
+    if (!await inputFile.exists()) {
+      _setStatus('File input tidak ditemukan: $activePath');
+      return;
+    }
+
+    final docsDir = await getApplicationDocumentsDirectory();
+    final outputPath = _buildDefaultWebPOutputPath(activePath, docsDir.path);
+    final startedAt = DateTime.now();
+
+    setState(() {
+      _isConverting = true;
+      _status = 'Converting AVIF → WebP...';
+    });
+
+    try {
+      final convertedPath = await KuronNative.instance.convertAvifToWebP(
+        inputPath: activePath,
+        quality: 45,
+        outputPath: outputPath,
+      );
+
+      final elapsedMs = DateTime.now().difference(startedAt).inMilliseconds;
+      final inputBytes = await inputFile.length();
+      int? outputBytes;
+      if (convertedPath != null) {
+        final outputFile = File(convertedPath);
+        if (await outputFile.exists()) {
+          outputBytes = await outputFile.length();
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _convertElapsedMs = elapsedMs;
+        _convertInputBytes = inputBytes;
+        _convertOutputBytes = outputBytes;
+        _webpOutputPath = convertedPath;
+        _status = convertedPath == null
+            ? 'Konversi gagal (native return null).'
+            : 'Konversi sukses: $convertedPath';
+      });
+    } catch (e) {
+      _setStatus('Konversi gagal: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConverting = false;
+        });
+      }
+    }
+  }
+
+  String _buildDefaultWebPOutputPath(String inputPath, String docsDirPath) {
+    final fileName = inputPath.split('/').last;
+    final dot = fileName.lastIndexOf('.');
+    final baseName = dot > 0 ? fileName.substring(0, dot) : fileName;
+    return '$docsDirPath/$baseName.webp';
+  }
+
   void _setStatus(String value) {
     if (!mounted) return;
     setState(() {
@@ -194,6 +276,7 @@ class _AvifDebugPageState extends State<AvifDebugPage>
           tabs: const [
             Tab(text: 'Flutter Decode'),
             Tab(text: 'Native Decode'),
+            Tab(text: 'Convert'),
           ],
         ),
       ),
@@ -206,6 +289,7 @@ class _AvifDebugPageState extends State<AvifDebugPage>
               children: [
                 _buildFlutterPane(canRender),
                 _buildNativePane(canRender),
+                _buildConvertPane(canRender),
               ],
             ),
           ),
@@ -386,6 +470,93 @@ class _AvifDebugPageState extends State<AvifDebugPage>
     }
 
     return nativeView;
+  }
+
+  Widget _buildConvertPane(bool canRender) {
+    if (!canRender) {
+      return const Center(
+        child:
+            Text('Load AVIF dulu. Tombol convert akan aktif setelah file ada.'),
+      );
+    }
+
+    final canConvert = _activeFilePath != null && !_isConverting;
+    final outputPath = _webpOutputPath;
+    final resolvedOutputPath = outputPath ?? '';
+    final outputReady = resolvedOutputPath.isNotEmpty;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton.icon(
+            onPressed: canConvert ? _convertToWebP : null,
+            icon: _isConverting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.transform),
+            label: Text(
+              _isConverting ? 'Converting...' : 'Convert to WebP (q=45)',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Conversion Stats',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Input: ${_formatBytes(_convertInputBytes)}'),
+                  Text('Output: ${_formatBytes(_convertOutputBytes)}'),
+                  Text(
+                    'Elapsed: ${_convertElapsedMs == null ? '-' : '$_convertElapsedMs ms'}',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Output: ${outputPath ?? '-'}',
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
+          ),
+          const SizedBox(height: 12),
+          if (!outputReady)
+            const Center(child: Text('Belum ada output WebP.'))
+          else if (!AnimatedWebPView.isAvailable)
+            const Center(
+              child: Text('Animated preview hanya tersedia di Android.'),
+            )
+          else
+            AspectRatio(
+              aspectRatio: 9 / 16,
+              child: AnimatedWebPView(
+                key: ValueKey('convert_$outputPath'),
+                url: resolvedOutputPath,
+                filePath: outputPath,
+                autoPlay: true,
+                fallback: const Center(child: CircularProgressIndicator()),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _formatBytes(int? bytes) {
+    if (bytes == null) return '-';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 
   AvifHeaderInfo _parseAvifHeader(Uint8List bytes) {

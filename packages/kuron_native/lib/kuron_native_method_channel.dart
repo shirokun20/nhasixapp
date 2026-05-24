@@ -234,6 +234,20 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<String?> convertAvifToWebP({
+    required String inputPath,
+    int quality = 45,
+    String? outputPath,
+  }) async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'convertAvifToWebP',
+      {'inputPath': inputPath, 'quality': quality, 'outputPath': outputPath},
+    );
+    final path = result?['outputPath'];
+    return path is String && path.isNotEmpty ? path : null;
+  }
+
+  @override
   Future<void> clearCookies() async {
     await methodChannel.invokeMethod<void>('clearCookies');
   }

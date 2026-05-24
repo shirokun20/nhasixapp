@@ -204,6 +204,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// offline reader otherwise pays twice: thumbnail prep + animated playback.
   static const int _ultraHeavyAnimatedImageThresholdBytes =
       10 * 1024 * 1024; // 10 MB
+  static const int _maxNativeAvifHeight = 4096;
 
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
@@ -337,9 +338,73 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
   /// seed the static maps and trigger a rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
-    getCachedImageFile(widget.imageUrl).then((file) {
+    getCachedImageFile(widget.imageUrl).then((file) async {
       if (file == null) return;
       final size = file.lengthSync();
+      final avifInfo = _inspectAvifHeaderForRouting(file);
+      final shouldConvertTallAvis = avifInfo.isAvif &&
+          avifInfo.isAvisBrand &&
+          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+
+      if (shouldConvertTallAvis) {
+        _logger.i(
+          '[NativeWebP] Tall avis detected. Converting to WebP '
+          'page=${widget.pageNumber} height=${avifInfo.height}',
+        );
+        final convertedPath = await KuronNative.instance.convertAvifToWebP(
+          inputPath: file.path,
+        );
+        if (convertedPath != null) {
+          final convertedFile = File(convertedPath);
+          final convertedExists = convertedFile.existsSync();
+          final convertedSize =
+              convertedExists ? convertedFile.lengthSync() : 0;
+          if (convertedExists && convertedSize > 0) {
+            _markHeavyNativeAnimatedImage(
+              cacheKey: widget.imageUrl,
+              cachedFilePath: convertedPath,
+              confirmedAnimatedWebP: true,
+            );
+            if (!mounted) return;
+            final nativeSize =
+                (avifInfo.width != null && avifInfo.height != null)
+                    ? Size(
+                        avifInfo.width!.toDouble(),
+                        avifInfo.height!.toDouble(),
+                      )
+                    : null;
+            setState(() {
+              _isHeavyImage = true;
+              _isConfirmedAnimatedWebP = true;
+              _cachedFilePath = convertedPath;
+              _awaitingNativeCheck = false;
+              if (nativeSize != null) _nativeImageSize = nativeSize;
+            });
+            updateKeepAlive();
+            _maybeNotifyHeavyImageDetected();
+            if (nativeSize != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+                }
+              });
+            }
+            _logger.i(
+              '[NativeWebP] Tall avis converted to WebP '
+              'page=${widget.pageNumber} '
+              'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
+              'out=${(convertedSize / 1024 / 1024).toStringAsFixed(1)} MB',
+            );
+            return;
+          }
+        }
+        _logger.w(
+          '[NativeWebP] Tall avis conversion failed, keep existing fallback path '
+          'page=${widget.pageNumber}',
+        );
+        return;
+      }
+
       final (:format, :width, :height) =
           _inferNativeAnimatedCapableExtensionFromFileSync(file);
       if (format != null) {
@@ -1283,6 +1348,69 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
+  static ({bool isAvif, bool isAvisBrand, int? width, int? height})
+      _inspectAvifHeaderForRouting(File file) {
+    const empty = (
+      isAvif: false,
+      isAvisBrand: false,
+      width: null,
+      height: null,
+    );
+    RandomAccessFile? raf;
+    try {
+      raf = file.openSync(mode: FileMode.read);
+      final length = raf.lengthSync();
+      if (length < 16) {
+        return empty;
+      }
+
+      final sampleLength = length < 4096 ? length : 4096;
+      final bytes = raf.readSync(sampleLength);
+      if (inferImageExtension(bytes: bytes) != 'avif') {
+        return empty;
+      }
+
+      var isAvisBrand = false;
+      if (bytes.length >= 12) {
+        const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
+        isAvisBrand = bytes[8] == kAvis0 &&
+            bytes[9] == kAvis1 &&
+            bytes[10] == kAvis2 &&
+            bytes[11] == kAvis3;
+      }
+
+      int? parsedWidth;
+      int? parsedHeight;
+      const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
+      for (int i = 0; i <= bytes.length - 16; i++) {
+        if (_matchesBytes(bytes, i, kIspe)) {
+          final width = ((bytes[i + 8] & 0xFF) << 24) |
+              ((bytes[i + 9] & 0xFF) << 16) |
+              ((bytes[i + 10] & 0xFF) << 8) |
+              (bytes[i + 11] & 0xFF);
+          final height = ((bytes[i + 12] & 0xFF) << 24) |
+              ((bytes[i + 13] & 0xFF) << 16) |
+              ((bytes[i + 14] & 0xFF) << 8) |
+              (bytes[i + 15] & 0xFF);
+          parsedWidth = width > 0 ? width : null;
+          parsedHeight = height > 0 ? height : null;
+          break;
+        }
+      }
+
+      return (
+        isAvif: true,
+        isAvisBrand: isAvisBrand,
+        width: parsedWidth,
+        height: parsedHeight,
+      );
+    } catch (_) {
+      return empty;
+    } finally {
+      raf?.closeSync();
+    }
+  }
+
   /// Returns `(format, width, height)` if the file is a native-renderable
   /// animated image, or `(null, null, null)` if Flutter codec should be used.
   ///
@@ -1353,7 +1481,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         // but some files place it later. Search the wider sample and read the
         // dimensions so scroll layout can reserve full-width height correctly.
         const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
-        const kMaxHardwareHeight = 4096;
 
         for (int i = 0; i <= bytes.length - 16; i++) {
           if (_matchesBytes(bytes, i, kIspe)) {
@@ -1365,7 +1492,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ((bytes[i + 13] & 0xFF) << 16) |
                 ((bytes[i + 14] & 0xFF) << 8) |
                 (bytes[i + 15] & 0xFF);
-            if (height > kMaxHardwareHeight) {
+            if (height > _maxNativeAvifHeight) {
               return empty; // too tall for hardware AV1 decoder → Flutter
             }
             // avis + height ≤ 4096 → native AnimatedWebPView

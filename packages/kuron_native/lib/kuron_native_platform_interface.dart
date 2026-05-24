@@ -138,6 +138,16 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('openAvif() has not been implemented.');
   }
 
+  /// Convert local AVIF file into WebP via native FFmpeg.
+  /// Returns output path on success or null on failure.
+  Future<String?> convertAvifToWebP({
+    required String inputPath,
+    int quality = 45,
+    String? outputPath,
+  }) {
+    throw UnimplementedError('convertAvifToWebP() has not been implemented.');
+  }
+
   /// Open a native WebView Activity for login/verification
   ///
   /// [url] The initial URL to load.

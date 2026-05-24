@@ -196,6 +196,20 @@ class KuronNative {
     return KuronNativePlatform.instance.openAvif(filePath: filePath);
   }
 
+  /// Convert local AVIF file to WebP using native FFmpeg.
+  /// Returns converted file path or null when conversion fails.
+  Future<String?> convertAvifToWebP({
+    required String inputPath,
+    int quality = 45,
+    String? outputPath,
+  }) {
+    return KuronNativePlatform.instance.convertAvifToWebP(
+      inputPath: inputPath,
+      quality: quality,
+      outputPath: outputPath,
+    );
+  }
+
   /// Set DNS over HTTPS provider.
   /// Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
   Future<bool> setDohProvider(int provider) {

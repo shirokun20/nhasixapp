@@ -88,6 +88,13 @@ class MockKuronNativePlatform
   Future<void> openAvif({required String filePath}) async {}
 
   @override
+  Future<String?> convertAvifToWebP({
+    required String inputPath,
+    int quality = 45,
+    String? outputPath,
+  }) async => outputPath ?? '/tmp/mock.webp';
+
+  @override
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
     List<String>? successUrlFilters,

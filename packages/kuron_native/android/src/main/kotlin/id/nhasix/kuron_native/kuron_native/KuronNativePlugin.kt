@@ -53,6 +53,7 @@ class KuronNativePlugin :
     private lateinit var downloadHandler: id.nhasix.kuron_native.kuron_native.download.DownloadHandler
     private var zipImportHandler: ZipImportHandler? = null
     private lateinit var dnsResolver: id.nhasix.kuron_native.kuron_native.network.DnsResolver
+    private val avifConverter = AvifConverter()
 
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
@@ -116,6 +117,9 @@ class KuronNativePlugin :
             }
             "openAvif" -> {
                 handleOpenAvif(call, result)
+            }
+            "convertAvifToWebP" -> {
+                handleConvertAvifToWebP(call, result)
             }
             "showLoginWebView" -> {
                 handleShowLoginWebView(call, result)
@@ -725,6 +729,46 @@ class KuronNativePlugin :
         } catch (e: Exception) {
             result.error("OPEN_AVIF_FAILED", e.message, null)
         }
+    }
+
+    private fun handleConvertAvifToWebP(call: MethodCall, result: Result) {
+        val inputPath = call.argument<String>("inputPath")
+        if (inputPath.isNullOrBlank()) {
+            result.error("INVALID_ARGUMENT", "inputPath is required", null)
+            return
+        }
+
+        val quality = (call.argument<Int>("quality") ?: 45).coerceIn(0, 100)
+        val outputPath = call.argument<String>("outputPath")
+            ?.takeIf { it.isNotBlank() }
+            ?: buildDefaultAvifWebPOutputPath(inputPath)
+
+        executor.execute {
+            try {
+                val convertedPath = avifConverter.convert(
+                    inputPath = inputPath,
+                    quality = quality,
+                    outputPath = outputPath,
+                )
+                mainThread {
+                    result.success(mapOf("outputPath" to convertedPath))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "convertAvifToWebP failed: ${e.message}")
+                mainThread {
+                    result.error("AVIF_CONVERT_FAILED", e.message, null)
+                }
+            }
+        }
+    }
+
+    private fun buildDefaultAvifWebPOutputPath(inputPath: String): String {
+        val cacheDir = File(context.cacheDir, "avif_webp_cache")
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs()
+        }
+        val hash = inputPath.hashCode().toUInt().toString(16)
+        return File(cacheDir, "$hash.webp").absolutePath
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

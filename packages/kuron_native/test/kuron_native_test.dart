@@ -82,6 +82,15 @@ class MockKuronNativePlatform
   }
 
   @override
+  Future<String?> convertAvifToWebP({
+    required String inputPath,
+    int quality = 45,
+    String? outputPath,
+  }) async {
+    return outputPath ?? '/tmp/mock.webp';
+  }
+
+  @override
   Future<Map<String, dynamic>?> showLoginWebView({
     required String url,
     List<String>? successUrlFilters,
