@@ -539,6 +539,102 @@ class OfflineContentManager {
     );
   }
 
+  /// Rewrites chapter metadata references after an in-place local conversion
+  /// (for example `page_026.avif` -> `page_026.webp`).
+  ///
+  /// This keeps offline reader metadata aligned with the file that was
+  /// actually written on disk so the next chapter load does not keep pointing
+  /// to the stale extension.
+  Future<void> rewriteMetadataForConvertedLocalPage({
+    required String contentId,
+    required int pageNumber,
+    required String originalLocalPath,
+    required String convertedLocalPath,
+  }) async {
+    if (pageNumber <= 0) {
+      return;
+    }
+
+    final normalizedOriginalPath = originalLocalPath.trim();
+    final normalizedConvertedPath = convertedLocalPath.trim();
+    if (normalizedOriginalPath.isEmpty || normalizedConvertedPath.isEmpty) {
+      return;
+    }
+
+    final contentPath = await getOfflineContentPath(contentId);
+    if (contentPath == null || contentPath.trim().isEmpty) {
+      return;
+    }
+
+    final metadataPath = path.join(contentPath, 'metadata.json');
+    await _serializeChapterMetadataWrite(
+      metadataPath,
+      () async {
+        final metadata = await _readMetadataJson(metadataPath);
+        if (metadata == null) {
+          return;
+        }
+
+        final originalFileName = path.basename(normalizedOriginalPath);
+        final convertedFileName = path.basename(normalizedConvertedPath);
+        if (originalFileName.isEmpty || convertedFileName.isEmpty) {
+          return;
+        }
+
+        final targetBaseName =
+            path.basenameWithoutExtension(convertedFileName).toLowerCase();
+        var changed = false;
+
+        List<dynamic>? rewriteStringList(dynamic rawList) {
+          if (rawList is! List) {
+            return null;
+          }
+
+          final next = <dynamic>[];
+          for (final entry in rawList) {
+            if (entry is! String) {
+              next.add(entry);
+              continue;
+            }
+
+            final rewritten = _rewriteMetadataLocalImageReference(
+              value: entry,
+              originalFileName: originalFileName,
+              convertedFileName: convertedFileName,
+              targetBaseName: targetBaseName,
+            );
+            if (rewritten != entry) {
+              changed = true;
+            }
+            next.add(rewritten);
+          }
+          return next;
+        }
+
+        final rewrittenFiles = rewriteStringList(metadata['files']);
+        if (rewrittenFiles != null) {
+          metadata['files'] = rewrittenFiles;
+        }
+
+        final rewrittenImageUrls = rewriteStringList(metadata['imageUrls']);
+        if (rewrittenImageUrls != null) {
+          metadata['imageUrls'] = rewrittenImageUrls;
+        }
+
+        if (!changed) {
+          return;
+        }
+
+        await File(metadataPath).writeAsString(json.encode(metadata));
+        _logger.i(
+          'Rewrote metadata image extension for $contentId '
+          'page=$pageNumber ($originalFileName -> $convertedFileName)',
+        );
+      },
+    );
+    invalidateCacheFor(contentId);
+  }
+
   /// Reconciles metadata for a touched page using deterministic merge rules:
   /// if a valid page file exists, stale failed marker is removed.
   Future<void> reconcileChapterMetadataPage({
@@ -710,6 +806,49 @@ class OfflineContentManager {
     return decoded.map(
       (key, value) => MapEntry(key.toString(), value),
     );
+  }
+
+  String _rewriteMetadataLocalImageReference({
+    required String value,
+    required String originalFileName,
+    required String convertedFileName,
+    required String targetBaseName,
+  }) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return value;
+    }
+
+    final isLocalPath = isLocalReaderImagePath(trimmed);
+    final normalizedValue =
+        trimmed.startsWith('file://') ? trimmed.substring(7) : trimmed;
+    final basename = path.basename(normalizedValue);
+    if (basename.isEmpty) {
+      return value;
+    }
+
+    final sameBaseName =
+        path.basenameWithoutExtension(basename).toLowerCase() == targetBaseName;
+    final shouldRewrite = basename == originalFileName || sameBaseName;
+    if (!shouldRewrite) {
+      return value;
+    }
+
+    // Safety: avoid rewriting remote metadata URLs unless they are explicit
+    // local paths (absolute, file://, or non-http pseudo-local strings).
+    if (!isLocalPath) {
+      return value;
+    }
+
+    final directoryPath = path.dirname(normalizedValue);
+    final replacedPath = directoryPath == '.'
+        ? convertedFileName
+        : path.join(directoryPath, convertedFileName);
+
+    if (trimmed.startsWith('file://')) {
+      return 'file://$replacedPath';
+    }
+    return replacedPath;
   }
 
   bool _failedPagesEquivalent(

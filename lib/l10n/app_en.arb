@@ -3979,6 +3979,7 @@
     }
   },
   "estimatingProgress": "Estimating progress...",
+  "processingBadAvifToWebp": "Processing conversion from bad AVIF to WebP...",
   "downloadingImageData": "Downloading image data...",
 
   "searchHint": "Search...",

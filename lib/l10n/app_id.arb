@@ -2963,6 +2963,7 @@
   "notifications": "Notifikasi",
   "downloaded": "{size} diunduh",
   "estimatingProgress": "Memperkirakan progres...",
+  "processingBadAvifToWebp": "Memproses konversi AVIF rusak ke WebP...",
   "downloadingImageData": "Mengunduh data gambar...",
   "searchHint": "Cari...",
   "hideFilters": "Sembunyikan filter",

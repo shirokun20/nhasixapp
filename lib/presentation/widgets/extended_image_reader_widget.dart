@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
 // import '../../core/utils/webtoon_detector.dart';
+import '../../core/di/service_locator.dart';
+import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -311,7 +314,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _shouldBypassLocalDecode =
           isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
       if (!_shouldBypassLocalDecode) {
-        _preCheckLocalFileForHeavySync(localPath);
+        _awaitingNativeCheck = _shouldConvertTallAvisLocalFile(localPath);
+        _preCheckLocalFileForHeavy(localPath);
       }
     }
 
@@ -450,9 +454,30 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     });
   }
 
-  /// Sync pre-check for offline/local files so heavy animated WebP can route
-  /// directly to native view on first build.
-  void _preCheckLocalFileForHeavySync(String localPath) {
+  bool _shouldConvertTallAvisLocalFile(String localPath) {
+    if (!AnimatedWebPView.isAvailable) {
+      return false;
+    }
+
+    try {
+      final file = File(localPath);
+      if (!file.existsSync()) {
+        return false;
+      }
+
+      final avifInfo = _inspectAvifHeaderForRouting(file);
+      return avifInfo.isAvif &&
+          avifInfo.isAvisBrand &&
+          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Pre-check for offline/local files so heavy animated pages can route
+  /// directly to native view on first build. When a tall avis AVIF file is
+  /// detected, the file is converted in-place to WebP and metadata is updated.
+  Future<void> _preCheckLocalFileForHeavy(String localPath) async {
     if (!AnimatedWebPView.isAvailable) {
       return;
     }
@@ -460,13 +485,116 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     try {
       final file = File(localPath);
       if (!file.existsSync()) {
+        if (_awaitingNativeCheck) {
+          setState(() => _awaitingNativeCheck = false);
+        }
         return;
       }
 
       final fileSize = file.lengthSync();
+      final avifInfo = _inspectAvifHeaderForRouting(file);
+      final shouldConvertTallAvis = avifInfo.isAvif &&
+          avifInfo.isAvisBrand &&
+          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+
+      if (shouldConvertTallAvis) {
+        _logger.i(
+          '[NativeWebP] Local tall avis detected. Converting to WebP '
+          'page=${widget.pageNumber} height=${avifInfo.height}',
+        );
+        final outputPath = buildReplacementImagePath(
+          currentImagePath: localPath,
+          extension: 'webp',
+        );
+        final convertedPath = await KuronNative.instance.convertAvifToWebP(
+          inputPath: localPath,
+          outputPath: outputPath,
+        );
+
+        if (convertedPath != null) {
+          final convertedFile = File(convertedPath);
+          if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
+            await _deleteLocalPageFormatConflicts(
+              currentImagePath: localPath,
+              convertedPath: convertedPath,
+            );
+            await _syncOfflineMetadataForConvertedLocalPage(
+              originalLocalPath: localPath,
+              convertedLocalPath: convertedPath,
+            );
+
+            _markHeavyNativeAnimatedImage(
+              cacheKey: widget.imageUrl,
+              cachedFilePath: convertedPath,
+              confirmedAnimatedWebP: true,
+            );
+            final nativeSize =
+                (avifInfo.width != null && avifInfo.height != null)
+                    ? Size(
+                        avifInfo.width!.toDouble(),
+                        avifInfo.height!.toDouble(),
+                      )
+                    : null;
+
+            if (!mounted) {
+              _isHeavyImage = true;
+              _isConfirmedAnimatedWebP = true;
+              _cachedFilePath = convertedPath;
+              _awaitingNativeCheck = false;
+              if (nativeSize != null) {
+                _nativeImageSize = nativeSize;
+              }
+              return;
+            }
+
+            setState(() {
+              _isHeavyImage = true;
+              _isConfirmedAnimatedWebP = true;
+              _cachedFilePath = convertedPath;
+              _awaitingNativeCheck = false;
+              if (nativeSize != null) {
+                _nativeImageSize = nativeSize;
+              }
+            });
+            updateKeepAlive();
+            _maybeNotifyHeavyImageDetected();
+            if (nativeSize != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+                }
+              });
+            }
+            _logger.i(
+              '[NativeWebP] Local tall avis converted to WebP '
+              'page=${widget.pageNumber} '
+              'src=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
+              'path=$convertedPath',
+            );
+            return;
+          }
+        }
+
+        _logger.w(
+          '[NativeWebP] Local tall avis conversion failed '
+          'page=${widget.pageNumber}',
+        );
+        if (mounted && _awaitingNativeCheck) {
+          setState(() => _awaitingNativeCheck = false);
+        } else {
+          _awaitingNativeCheck = false;
+        }
+        return;
+      }
+
       final (:format, :width, :height) =
           _inferNativeAnimatedCapableExtensionFromFileSync(file);
       if (format == null) {
+        if (mounted && _awaitingNativeCheck) {
+          setState(() => _awaitingNativeCheck = false);
+        } else {
+          _awaitingNativeCheck = false;
+        }
         return;
       }
 
@@ -479,6 +607,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _isHeavyImage = true;
       _isConfirmedAnimatedWebP = true;
       _cachedFilePath = localPath;
+      _awaitingNativeCheck = false;
       if (width != null && height != null) {
         _nativeImageSize = Size(width.toDouble(), height.toDouble());
       }
@@ -490,6 +619,73 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _maybeNotifyHeavyImageDetected();
     } catch (e) {
       _logger.w('[NativeWebP] Local pre-check error: $e');
+    } finally {
+      if (mounted && _awaitingNativeCheck) {
+        setState(() => _awaitingNativeCheck = false);
+      } else if (_awaitingNativeCheck) {
+        _awaitingNativeCheck = false;
+      }
+    }
+  }
+
+  Future<void> _deleteLocalPageFormatConflicts({
+    required String currentImagePath,
+    required String convertedPath,
+  }) async {
+    final directory = Directory(path.dirname(currentImagePath));
+    if (!await directory.exists()) {
+      return;
+    }
+
+    final targetBaseName = path.basenameWithoutExtension(currentImagePath);
+    final normalizedConvertedPath = path.normalize(convertedPath);
+    final tempPath = '$convertedPath.repairing';
+    await for (final entity in directory.list()) {
+      if (entity is! File) {
+        continue;
+      }
+
+      final normalizedCandidate = path.normalize(entity.path);
+      if (normalizedCandidate == normalizedConvertedPath ||
+          normalizedCandidate == path.normalize(tempPath)) {
+        continue;
+      }
+
+      final extension = path.extension(entity.path).toLowerCase();
+      if (!kReaderRepairSupportedImageExtensions.contains(extension)) {
+        continue;
+      }
+
+      if (path.basenameWithoutExtension(entity.path) != targetBaseName) {
+        continue;
+      }
+
+      try {
+        await entity.delete();
+      } catch (e) {
+        _logger.w(
+          '[NativeWebP] Failed deleting stale local page ${entity.path}: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _syncOfflineMetadataForConvertedLocalPage({
+    required String originalLocalPath,
+    required String convertedLocalPath,
+  }) async {
+    try {
+      await getIt<OfflineContentManager>().rewriteMetadataForConvertedLocalPage(
+        contentId: widget.contentId,
+        pageNumber: widget.pageNumber,
+        originalLocalPath: originalLocalPath,
+        convertedLocalPath: convertedLocalPath,
+      );
+    } catch (e) {
+      _logger.w(
+        '[NativeWebP] Failed updating metadata for local conversion '
+        'content=${widget.contentId} page=${widget.pageNumber}: $e',
+      );
     }
   }
 
@@ -630,10 +826,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         _shouldBypassLocalDecode =
             isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
         if (!_shouldBypassLocalDecode) {
-          _preCheckLocalFileForHeavySync(localPath);
+          _awaitingNativeCheck = _shouldConvertTallAvisLocalFile(localPath);
+          _preCheckLocalFileForHeavy(localPath);
         }
       } else {
         _shouldBypassLocalDecode = false;
+        _awaitingNativeCheck = false;
       }
     }
   }
@@ -671,7 +869,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     });
 
     if (!shouldBypass) {
-      _preCheckLocalFileForHeavySync(localPath);
+      _awaitingNativeCheck = _shouldConvertTallAvisLocalFile(localPath);
+      _preCheckLocalFileForHeavy(localPath);
     }
   }
 
@@ -829,6 +1028,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           failedSource: effectiveLocalPath,
           onRetry: _retryBrokenLocalImage,
         );
+      }
+
+      if (_awaitingNativeCheck) {
+        return _buildLoadingIndicator(context);
       }
 
       if (_shouldUseNativeAnimatedView(effectiveLocalPath)) {
@@ -1992,18 +2195,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final bool hasKnownTotal = totalBytes != null && totalBytes > 0;
     final bool hasRealByteCount = loadedBytes > 0;
     final int resolvedTotalBytes = totalBytes ?? 0;
-    final String headlineText = hasKnownTotal
-        ? '$progressPercent%'
-        : hasRealByteCount
-            ? _formatByteSize(loadedBytes)
-            : l10n.loading;
-    final String detailText = hasKnownTotal
-        ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(resolvedTotalBytes)}'
-        : hasRealByteCount
-            ? l10n.downloaded(_formatByteSize(loadedBytes))
-            : _syntheticProgressValue > 0
-                ? l10n.estimatingProgress
-                : l10n.downloadingImageData;
+    final bool isConvertingBadAvif = _awaitingNativeCheck;
+    final String headlineText = isConvertingBadAvif
+        ? l10n.processing
+        : hasKnownTotal
+            ? '$progressPercent%'
+            : hasRealByteCount
+                ? _formatByteSize(loadedBytes)
+                : l10n.loading;
+    final String detailText = isConvertingBadAvif
+        ? l10n.processingBadAvifToWebp
+        : hasKnownTotal
+            ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(resolvedTotalBytes)}'
+            : hasRealByteCount
+                ? l10n.downloaded(_formatByteSize(loadedBytes))
+                : _syntheticProgressValue > 0
+                    ? l10n.estimatingProgress
+                    : l10n.downloadingImageData;
     final double? indicatorValue = progressValue;
     final bool showIndeterminateFromRealBytes =
         hasRealByteCount && !hasKnownTotal;

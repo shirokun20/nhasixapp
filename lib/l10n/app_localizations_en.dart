@@ -5040,6 +5040,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimatingProgress => 'Estimating progress...';
 
   @override
+  String get processingBadAvifToWebp =>
+      'Processing conversion from bad AVIF to WebP...';
+
+  @override
   String get downloadingImageData => 'Downloading image data...';
 
   @override

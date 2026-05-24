@@ -4900,6 +4900,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get estimatingProgress => '正在估算进度...';
 
   @override
+  String get processingBadAvifToWebp => '正在将损坏的 AVIF 转换为 WebP...';
+
+  @override
   String get downloadingImageData => '正在下载图片数据...';
 
   @override

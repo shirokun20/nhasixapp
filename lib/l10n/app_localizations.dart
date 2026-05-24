@@ -8574,6 +8574,12 @@ abstract class AppLocalizations {
   /// **'Estimating progress...'**
   String get estimatingProgress;
 
+  /// No description provided for @processingBadAvifToWebp.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing conversion from bad AVIF to WebP...'**
+  String get processingBadAvifToWebp;
+
   /// No description provided for @downloadingImageData.
   ///
   /// In en, this message translates to:

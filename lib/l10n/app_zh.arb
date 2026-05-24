@@ -3559,6 +3559,7 @@
   "notifications": "通知",
   "downloaded": "已下载 {size}",
   "estimatingProgress": "正在估算进度...",
+  "processingBadAvifToWebp": "正在将损坏的 AVIF 转换为 WebP...",
   "downloadingImageData": "正在下载图片数据...",
   "searchHint": "搜索...",
   "hideFilters": "隐藏筛选器",

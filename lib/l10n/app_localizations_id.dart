@@ -5064,6 +5064,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get estimatingProgress => 'Memperkirakan progres...';
 
   @override
+  String get processingBadAvifToWebp =>
+      'Memproses konversi AVIF rusak ke WebP...';
+
+  @override
   String get downloadingImageData => 'Mengunduh data gambar...';
 
   @override
