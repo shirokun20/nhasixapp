@@ -107,6 +107,30 @@ void main() {
         expect(tags, ['tag1', 'tag2', 'tag3']);
       });
 
+      test(
+          'extractList() supports :contains() with adjacent-sibling descendant selector',
+          () {
+        const html = '''
+          <div class="info-text-content">
+            <div class="info-field-label">Genre(s)</div>
+            <div class="info-field-value">
+              <a>Adventure</a>
+              <a>Comedy</a>
+              <a>Fantasy</a>
+            </div>
+          </div>
+        ''';
+        final doc = html_parser.parse(html);
+        const selector = FieldSelector(
+          selector: '.info-field-label:contains(Genre) + .info-field-value a',
+          type: 'css',
+        );
+
+        final tags = parser.extractList(doc, selector);
+
+        expect(tags, ['Adventure', 'Comedy', 'Fantasy']);
+      });
+
       test('extractList() with regex filters non-matching elements', () {
         const html = '''
           <ul>

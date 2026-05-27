@@ -120,6 +120,7 @@ const _config = {
 const _hfBaseUrl = 'https://hentaifox.com';
 
 const _hentaiNexusBaseUrl = 'https://hentainexus.com';
+const _nicomangaBaseUrl = 'https://nicomanga.com';
 
 const _hentaiFoxConfig = {
   'source': 'hentaifox',
@@ -283,6 +284,193 @@ const _absoluteRawConfig = {
       'query': {
         'queryParam': 's',
         'type': 'text',
+      },
+    },
+  },
+};
+
+const _rawQueryWithTemplatePageConfig = {
+  'source': 'nicomanga',
+  'baseUrl': _nicomangaBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': '/manga-list.html?n={query}&p={page}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+      'searchPage': {
+        'url': '/manga-list.html?n={query}&p={page}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 'n',
+        'type': 'text',
+      },
+      'page': {
+        'queryParam': 'p',
+        'type': 'page',
+      },
+    },
+  },
+};
+
+const _standardSearchPageFallbackConfig = {
+  'source': 'nicomanga',
+  'baseUrl': _nicomangaBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': '/manga-list.html?n={query}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 'n',
+        'type': 'text',
+      },
+      'page': {
+        'queryParam': 'p',
+        'type': 'page',
+      },
+    },
+  },
+};
+
+const _templateInferredRawPageConfig = {
+  'source': 'nicomanga',
+  'baseUrl': _nicomangaBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'search': {
+        'url': '/manga-list.html?n={query}&p={page}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+      'searchPage': {
+        'url': '/manga-list.html?n={query}&p={page}',
+        'list': {
+          'container': '.bsx',
+          'fields': {
+            'id': {
+              'selector': 'a[href]',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.tt'},
+            'coverUrl': {'selector': '.limit img', 'attribute': 'src'},
+          },
+          'pagination': {'next': '.pagination .next.page-numbers'},
+        },
+      },
+    },
+  },
+  'searchForm': {
+    'urlPattern': 'search',
+    'params': {
+      'query': {
+        'queryParam': 'n',
+        'type': 'text',
+      },
+    },
+  },
+};
+
+const _nicomangaDetailFixtureConfig = {
+  'source': 'nicomanga',
+  'baseUrl': _nicomangaBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'detail': '/manga/{id}.html',
+      'chapter': '/read-{id}.html',
+    },
+    'selectors': {
+      'detail': {
+        'fields': {
+          'title': {'selector': '.manga-main-title'},
+          'tags': {
+            'selector':
+                '.info-field-label:contains(Genre) + .info-field-value a',
+            'multi': true
+          },
+          'status': {
+            'selector': '.info-field-label:contains(Status) + .info-field-value'
+          },
+        }
+      }
+    }
+  }
+};
+
+const _scriptArrayReaderConfig = {
+  'source': 'komiktap',
+  'baseUrl': _baseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'chapter': '/{id}/',
+    },
+    'selectors': {
+      'reader': {
+        'container': '#reader',
+        'images': {
+          'selector': 'script',
+          'regex': r'window\.chapterImages\s*=\s*(\[[^;]+\])',
+        },
       },
     },
   },
@@ -492,6 +680,14 @@ const _chapterHtmlNoTsReader = '''
 </body></html>
 ''';
 
+const _chapterHtmlScriptArray = '''
+<html><body>
+<script>
+window.chapterImages = ["https:\\/\\/img.example.com\\/1.jpg\\n\\r","https:\\/\\/img.example.com\\/2.jpg\\n\\r"];
+</script>
+</body></html>
+''';
+
 String _buildHomeHtmlWithLinks(List<String> hrefs) {
   final items = hrefs.asMap().entries.map((entry) {
     final index = entry.key + 1;
@@ -513,6 +709,8 @@ String _buildHomeHtmlWithLinks(List<String> hrefs) {
 String _readFixtureFile(String relativePath) {
   final candidates = [
     relativePath,
+    '../$relativePath',
+    '../../$relativePath',
     'packages/kuron_generic/$relativePath',
   ];
 
@@ -652,6 +850,18 @@ GenericScraperAdapter _buildHentaiNexusAdapter(Dio dio) {
 }
 
 Dio _buildHentaiNexusDio() => Dio(BaseOptions(baseUrl: _hentaiNexusBaseUrl));
+
+GenericScraperAdapter _buildNicomangaAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: _nicomangaBaseUrl),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'nicomanga',
+  );
+}
+
+Dio _buildNicomangaDio() => Dio(BaseOptions(baseUrl: _nicomangaBaseUrl));
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Tests
@@ -1148,9 +1358,9 @@ void main() {
     late GenericScraperAdapter adapter;
 
     setUp(() {
-      dio = _buildAbsoluteRawDio();
+      dio = _buildNicomangaDio();
       dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
-      adapter = _buildAbsoluteRawAdapter(dio);
+      adapter = _buildNicomangaAdapter(dio);
     });
 
     test('preserves absolute template URL in raw search mode', () async {
@@ -1164,6 +1374,74 @@ void main() {
       final result = await adapter.search(
         const SearchFilter(query: 'raw:s=the', page: 1),
         _absoluteRawConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
+
+    test(
+        'replaces {page} in template query without appending default paged param',
+        () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?n=isekai&p=2',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:n=isekai', page: 2),
+        _rawQueryWithTemplatePageConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
+
+    test(
+        'appends configured page query param for non-raw search when template has no {page}',
+        () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?n=isekai&p=2',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'isekai', page: 2),
+        _standardSearchPageFallbackConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
+  });
+
+  group('GenericScraperAdapter.search() — template-inferred page param', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildNicomangaDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildNicomangaAdapter(dio);
+    });
+
+    test('infers page key from template when searchForm omits page param',
+        () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?n=isekai&p=2',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:n=isekai', page: 2),
+        _templateInferredRawPageConfig,
       );
 
       expect(result.items, hasLength(2));
@@ -1397,6 +1675,31 @@ void main() {
       expect(tagNames, containsAll(['Action', 'Romance', 'Comedy']));
     });
 
+    test('extracts Nicomanga genre links from detail fixture', () async {
+      final nicomangaDio = _buildNicomangaDio();
+      final nicomangaMock =
+          DioAdapter(dio: nicomangaDio, matcher: const UrlRequestMatcher());
+      final nicomangaAdapter = _buildNicomangaAdapter(nicomangaDio);
+      final nicomangaHtml = _readFixtureFile(
+          'informations/documentation/nicomanga/halaman-detail.html');
+
+      nicomangaMock.onGet(
+        '$_nicomangaBaseUrl/manga/test-slug.html',
+        (s) => s.reply(200, nicomangaHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await nicomangaAdapter.fetchDetail(
+        'test-slug',
+        _nicomangaDetailFixtureConfig,
+      );
+
+      final tagNames = result.content.tags.map((t) => t.name).toList();
+      expect(tagNames, containsAll(['Adventure', 'Comedy', 'Fantasy']));
+      expect(tagNames.length, greaterThan(5));
+    });
+
     test('extracts chapters with correct count', () async {
       dioAdapter.onGet(
         '$_baseUrl/manga/manga-slug-one/',
@@ -1623,6 +1926,38 @@ void main() {
         },
       );
       expect(result, isNull);
+    });
+  });
+
+  group('GenericScraperAdapter.fetchChapterImages() — script array regex', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAdapter(dio);
+    });
+
+    test('expands JSON array capture into normalized image URLs', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/chapter-array-test/',
+        (s) => s.reply(200, _chapterHtmlScriptArray, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchChapterImages(
+        'chapter-array-test',
+        _scriptArrayReaderConfig,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://img.example.com/1.jpg',
+        'https://img.example.com/2.jpg',
+      ]);
     });
   });
 

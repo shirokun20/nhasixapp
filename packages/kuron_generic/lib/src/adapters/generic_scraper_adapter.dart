@@ -165,8 +165,16 @@ class GenericScraperAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    _logger.d('$_sourceId scraper [$patternKey]: $url');
-    return _fetchListPage(url, rawConfig, listConfig,
+    final pagedUrl = _ensurePageQueryForStandardSearch(
+      resolvedUrl: url,
+      patternKey: patternKey,
+      filter: filter,
+      rawConfig: rawConfig,
+      urlPatternsCfg: urlPatternsCfg,
+    );
+
+    _logger.d('$_sourceId scraper [$patternKey]: $pagedUrl');
+    return _fetchListPage(pagedUrl, rawConfig, listConfig,
         defaultLanguage: rawConfig['defaultLanguage'] as String?);
   }
 
@@ -224,15 +232,12 @@ class GenericScraperAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    // Derive the page param name from searchForm.params entry of type "page".
-    String pageParam = 'paged';
-    for (final entry in formParamsCfg.entries) {
-      final def = entry.value as Map<String, dynamic>?;
-      if ((def?['type'] as String?) == 'page') {
-        pageParam = (def?['queryParam'] as String?) ?? pageParam;
-        break;
-      }
-    }
+    // Derive page query key from config/template (generic, no source hardcode).
+    final pageParam = _resolvePageParamName(
+      rawConfig: rawConfig,
+      urlPatternsCfg: urlPatternsCfg,
+      patternKeys: [patternKey, pagedPatternKey, basePatternKey],
+    );
 
     // Build the base URL path and keep template query defaults.
     final patternValue = urlPatternsCfg[patternKey];
@@ -295,6 +300,7 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     final hasPageInPathTemplate = basePath.contains('{page}');
+    final hasPageInQueryTemplate = _queryContainsPagePlaceholder(templateQuery);
     // Substitute {page} if present in path (some sources embed page in path).
     basePath = basePath.replaceAll('{page}', page.toString());
 
@@ -326,22 +332,29 @@ class GenericScraperAdapter implements GenericAdapter {
         final key = idx < 0 ? pair : pair.substring(0, idx);
         if (key.isEmpty) continue;
         var value = idx < 0 ? '' : pair.substring(idx + 1);
-        if (value == '{query}' || value == '{tag}') {
+        final decodedValue = _safeDecodeComponent(value);
+        if (decodedValue == '{query}' || decodedValue == '{tag}') {
           value = '';
+        } else if (decodedValue == '{page}') {
+          value = page.toString();
         }
         mergedParams[key] = <String>[value];
       }
     }
+    // Pagination is controlled by adapter/page argument. Remove stale page
+    // values supplied from raw query params before merging; template/default
+    // page (e.g. p={page}) should remain intact.
+    final pageKeys = <String>{pageParam, 'page', 'paged', 'p'};
+    for (final key in pageKeys) {
+      rawMap.remove(key);
+    }
+
     // Only add raw params with non-empty values
     rawMap.forEach((key, values) {
       if (values.isNotEmpty && values.first.isNotEmpty) {
         mergedParams[key] = values;
       }
     });
-
-    // Pagination is controlled by adapter/page argument. Avoid carrying a
-    // stale `page` query from saved raw filters to prevent duplicate params.
-    mergedParams.remove(pageParam);
 
     // Assemble final query string.
     final queryParts = <String>[];
@@ -359,7 +372,7 @@ class GenericScraperAdapter implements GenericAdapter {
 
     // Only append page query param when actually paginating and path does not
     // already encode page (many WordPress routes reject `page=1`).
-    if (page > 1 && !hasPageInPathTemplate) {
+    if (page > 1 && !hasPageInPathTemplate && !hasPageInQueryTemplate) {
       queryParts.add('$pageParam=${Uri.encodeComponent(page.toString())}');
     }
 
@@ -394,6 +407,123 @@ class GenericScraperAdapter implements GenericAdapter {
     } catch (_) {
       return _decodePercentEncodedSegments(value) ?? value;
     }
+  }
+
+  String _resolvePageParamName({
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> urlPatternsCfg,
+    required Iterable<String> patternKeys,
+    String fallback = 'paged',
+  }) {
+    final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
+    final formParams =
+        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    for (final entry in formParams.entries) {
+      final def = entry.value as Map<String, dynamic>?;
+      if ((def?['type'] as String?) != 'page') continue;
+      final configured = (def?['queryParam'] as String?)?.trim() ?? '';
+      if (configured.isNotEmpty) {
+        return configured;
+      }
+    }
+
+    for (final key in patternKeys) {
+      if (key.isEmpty) continue;
+      final template = _patternUrl(urlPatternsCfg, key);
+      final inferred = _inferPageParamFromTemplate(template);
+      if (inferred != null && inferred.isNotEmpty) {
+        return inferred;
+      }
+    }
+
+    return fallback;
+  }
+
+  String? _inferPageParamFromTemplate(String templateUrl) {
+    if (templateUrl.isEmpty) return null;
+    final queryIndex = templateUrl.indexOf('?');
+    if (queryIndex < 0 || queryIndex >= templateUrl.length - 1) {
+      return null;
+    }
+
+    final query = templateUrl.substring(queryIndex + 1);
+    for (final pair in query.split('&')) {
+      if (pair.isEmpty) continue;
+      final eqIndex = pair.indexOf('=');
+      if (eqIndex <= 0) continue;
+      final rawKey = pair.substring(0, eqIndex).trim();
+      if (rawKey.isEmpty) continue;
+      final rawValue = pair.substring(eqIndex + 1).trim();
+      if (_safeDecodeComponent(rawValue) == '{page}') {
+        return _safeDecodeComponent(rawKey);
+      }
+    }
+
+    return null;
+  }
+
+  bool _queryContainsPagePlaceholder(String query) {
+    if (query.isEmpty) return false;
+    for (final pair in query.split('&')) {
+      if (pair.isEmpty) continue;
+      final eqIndex = pair.indexOf('=');
+      if (eqIndex < 0 || eqIndex >= pair.length - 1) continue;
+      final value = pair.substring(eqIndex + 1).trim();
+      if (_safeDecodeComponent(value) == '{page}') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _ensurePageQueryForStandardSearch({
+    required String resolvedUrl,
+    required String patternKey,
+    required SearchFilter filter,
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> urlPatternsCfg,
+  }) {
+    if (filter.page <= 1) {
+      return resolvedUrl;
+    }
+
+    // Raw-mode search already handles page injection explicitly.
+    if (filter.query.startsWith('raw:')) {
+      return resolvedUrl;
+    }
+
+    final patternValue = urlPatternsCfg[patternKey];
+    String template = '';
+    if (patternValue is String) {
+      template = patternValue;
+    } else if (patternValue is Map<String, dynamic>) {
+      template = (patternValue['url'] as String?) ?? '';
+    }
+
+    // If template already encodes page placeholder, do not append fallback.
+    if (template.contains('{page}')) {
+      return resolvedUrl;
+    }
+
+    final lowerPath = Uri.tryParse(resolvedUrl)?.path.toLowerCase() ?? '';
+    if (RegExp(r'/page/\d+/?$').hasMatch(lowerPath)) {
+      return resolvedUrl;
+    }
+
+    final pageParam = _resolvePageParamName(
+      rawConfig: rawConfig,
+      urlPatternsCfg: urlPatternsCfg,
+      patternKeys: [patternKey],
+    );
+
+    final pageParamRegex = RegExp('([?&])${RegExp.escape(pageParam)}=');
+    if (pageParamRegex.hasMatch(resolvedUrl)) {
+      return resolvedUrl;
+    }
+
+    final separator = resolvedUrl.contains('?') ? '&' : '?';
+    return '$resolvedUrl$separator$pageParam=${Uri.encodeComponent(filter.page.toString())}';
   }
 
   Future<Response<String>> _getWithRedirectFallback(
@@ -661,7 +791,7 @@ class GenericScraperAdapter implements GenericAdapter {
       Logger().i(
           '[$_sourceId] getDetail: response received, status=${response.statusCode}');
       Logger().i(
-          '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, value=$response.data');
+          '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, value=${response.data?.substring(1, 10)}');
       final doc = _parser.parse(response.data ?? '');
 
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
@@ -1272,6 +1402,8 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
+      imageUrls = _normalizeChapterImageUrls(imageUrls);
+
       // 3. DOM fallback for navigation via reader.nav.{next,prev}.
       final navCfg = readerConfig['nav'] as Map<String, dynamic>?;
       nextId ??= _extractNavChapterId(doc, navCfg?['next']);
@@ -1369,6 +1501,24 @@ class GenericScraperAdapter implements GenericAdapter {
           ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
           : '',
     };
+
+    // Merge custom params from pattern config (e.g., "params": { "n": "{query}" })
+    if (patternMap != null) {
+      final customParams =
+          (patternMap['params'] as Map?)?.cast<String, String>() ?? {};
+      for (final entry in customParams.entries) {
+        var value = entry.value;
+        if (value == '{query}') {
+          value = Uri.encodeQueryComponent(rawQuery);
+        } else if (value == '{page}') {
+          value = filter.page.toString();
+        } else if (value == '{tag}' && filter.includeTags.isNotEmpty) {
+          value =
+              filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-');
+        }
+        params[entry.key] = value;
+      }
+    }
 
     // Some sources use non-uniform URL path for specific pages, e.g. page 2.
     if (patternMap != null) {
@@ -1889,6 +2039,66 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return null;
+  }
+
+  List<String> _normalizeChapterImageUrls(List<String> values) {
+    if (values.isEmpty) return const [];
+
+    final expanded = <String>[];
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          final parsed = json.decode(trimmed);
+          if (parsed is List) {
+            for (final entry in parsed) {
+              final asString = entry.toString();
+              if (asString.isNotEmpty) {
+                expanded.add(asString);
+              }
+            }
+            continue;
+          }
+        } catch (_) {}
+      }
+      expanded.add(value);
+    }
+
+    final seen = <String>{};
+    final normalized = <String>[];
+    for (final raw in expanded) {
+      final sanitized = _sanitizeImageUrl(raw);
+      if (sanitized.isEmpty) continue;
+      final resolved = _urlBuilder.resolve(sanitized, const {});
+      if (seen.add(resolved)) {
+        normalized.add(resolved);
+      }
+    }
+
+    return normalized;
+  }
+
+  String _sanitizeImageUrl(String value) {
+    var cleaned = value.trim();
+    if (cleaned.length >= 2 &&
+        ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+            (cleaned.startsWith("'") && cleaned.endsWith("'")))) {
+      cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+
+    cleaned = cleaned
+        .replaceAll(r'\/', '/')
+        .replaceAll(r'\n', '')
+        .replaceAll(r'\r', '')
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .trim();
+
+    if (cleaned.startsWith('//')) {
+      cleaned = 'https:$cleaned';
+    }
+
+    return cleaned;
   }
 
   bool _hasEnabledLink(dom.Document doc, String selector) {

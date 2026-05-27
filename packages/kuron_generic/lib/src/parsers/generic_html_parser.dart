@@ -10,31 +10,26 @@ import 'package:logger/logger.dart';
 
 import '../models/source_config_runtime.dart';
 
+/// Ordered list of lazy-load image attributes to check as fallbacks.
+const _kImageFallbackAttributes = ['data-src', 'data-lazy-src', 'src'];
+
 class GenericHtmlParser {
   final Logger _logger;
 
   GenericHtmlParser({required Logger logger}) : _logger = logger;
 
-  /// Parse [htmlString] into a [dom.Document].
   dom.Document parse(String htmlString) => html_parser.parse(htmlString);
 
-  /// Extract a single string value from [document] using [selector].
-  ///
-  /// If [selector.regex] is provided and selector has multiple matching elements,
-  /// scans through them and returns the first value that matches the regex.
   String? extractString(dom.Document document, FieldSelector selector) {
     try {
       if (selector.regex != null) {
-        // For regex extraction, scan all matching elements and return the first
-        // value that matches the regex. This is useful for repeated selectors
-        // where only one node contains the desired token.
-        final elements = document.querySelectorAll(selector.selector);
+        final elements = _selectAll(document, selector.selector);
         _logger.d(
             'GenericHtmlParser.extractString: selector="${selector.selector}", regex=${selector.regex}, found ${elements.length} elements');
 
         for (final element in elements) {
           final value = selector.attribute != null
-              ? element.attributes[selector.attribute]
+              ? _resolveAttribute(element, selector.attribute!)
               : element.text.trim();
           if (value == null || value.isEmpty) continue;
 
@@ -50,14 +45,15 @@ class GenericHtmlParser {
         return selector.fallback;
       }
 
-      final element = document.querySelector(selector.selector);
-      if (element == null) {
+      final elements = _selectAll(document, selector.selector);
+      if (elements.isEmpty) {
         _logger.t(
             'GenericHtmlParser.extractString: selector "${selector.selector}" matched no elements');
         return selector.fallback;
       }
+      final element = elements.first;
       final value = selector.attribute != null
-          ? element.attributes[selector.attribute]
+          ? _resolveAttribute(element, selector.attribute!)
           : element.text.trim();
       if (value == null || value.isEmpty) {
         _logger.t(
@@ -74,21 +70,15 @@ class GenericHtmlParser {
     }
   }
 
-  /// Extract a list of string values from [document] using [selector].
-  ///
-  /// If [selector.regex] is provided, applies regex to each extracted value
-  /// and keeps only values where regex produces a match (group 1 if available,
-  /// else group 0). This is critical for multi-extraction with regex filtering
-  /// (e.g. tags where you want "ahegao" from "ahegao (123)").
   List<String> extractList(dom.Document document, FieldSelector selector) {
     try {
-      final elements = document.querySelectorAll(selector.selector);
+      final elements = _selectAll(document, selector.selector);
       _logger.d(
           'GenericHtmlParser.extractList: selector="${selector.selector}", multi=true, regex=${selector.regex}, found ${elements.length} elements');
 
       final rawValues = elements
           .map((el) => selector.attribute != null
-              ? (el.attributes[selector.attribute] ?? '')
+              ? (_resolveAttribute(el, selector.attribute!) ?? '')
               : el.text.trim())
           .where((s) => s.isNotEmpty)
           .toList();
@@ -99,7 +89,6 @@ class GenericHtmlParser {
         return rawValues;
       }
 
-      // Apply regex to each value
       final regexed = <String>[];
       for (final value in rawValues) {
         final matched = _applyRegex(value, selector.regex!);
@@ -123,10 +112,9 @@ class GenericHtmlParser {
     }
   }
 
-  /// Extract a list of [dom.Element] nodes matching [selector].
   List<dom.Element> selectAll(dom.Document document, String cssSelector) {
     try {
-      return document.querySelectorAll(cssSelector);
+      return _selectAll(document, cssSelector);
     } catch (e) {
       _logger.w('GenericHtmlParser: querySelectorAll failed for "$cssSelector"',
           error: e);
@@ -134,18 +122,12 @@ class GenericHtmlParser {
     }
   }
 
-  /// Extract attribute or text from an [element] using [selector].
-  ///
-  /// The CSS [FieldSelector.selector] is first evaluated as a child query
-  /// inside [element] (e.g. container = `.utao`, field selector = `a.series`).
-  /// If no child is found the value is read from [element] itself — this
-  /// handles the rare case where the container element IS the target node.
   String? extractFromElement(dom.Element element, FieldSelector selector) {
     try {
-      final child = element.querySelector(selector.selector);
-      final target = child ?? element;
+      final children = _selectAll(element, selector.selector);
+      final target = children.isNotEmpty ? children.first : element;
       final value = selector.attribute != null
-          ? target.attributes[selector.attribute]
+          ? _resolveAttribute(target, selector.attribute!)
           : target.text.trim();
       if (value == null || value.isEmpty) return selector.fallback;
       if (selector.regex != null) return _applyRegex(value, selector.regex!);
@@ -156,6 +138,129 @@ class GenericHtmlParser {
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
+
+  /// Query selector with :contains(text) pseudo-class support.
+  ///
+  /// The standard CSS parser from `html` package does not support :contains(),
+  /// so we preprocess selectors to handle it manually.
+  List<dom.Element> _selectAll(dynamic parent, String selector) {
+    final containsRE = RegExp(r':contains\(([^)]+)\)');
+    final match = containsRE.firstMatch(selector);
+    if (match == null) return parent.querySelectorAll(selector);
+
+    final searchText =
+        match.group(1)!.replaceAll('"', '').replaceAll("'", '').trim();
+    final beforePseudo = selector.substring(0, match.start).trim();
+    final afterPseudo = selector.substring(match.end);
+
+    final bases = (parent.querySelectorAll(beforePseudo) as List)
+        .whereType<dom.Element>()
+        .toList();
+    final filtered =
+        bases.where((dom.Element el) => el.text.contains(searchText)).toList();
+
+    if (filtered.isEmpty || afterPseudo.trim().isEmpty) return filtered;
+
+    // Adjacent sibling: A:contains(text) + B
+    final adjMatch = RegExp(r'^\s*\+\s*(.+)$').firstMatch(afterPseudo);
+    if (adjMatch != null) {
+      final nextSel = adjMatch.group(1)!.trim();
+      final result = <dom.Element>[];
+      for (final el in filtered) {
+        final sibling = el.nextElementSibling;
+        if (sibling == null) continue;
+        result.addAll(_resolveAdjacentSiblingTargets(sibling, nextSel));
+      }
+      return result;
+    }
+
+    // Descendant: A:contains(text) B or A:contains(text) > B
+    final remaining = afterPseudo.trimLeft();
+    final result = <dom.Element>[];
+    for (final el in filtered) {
+      try {
+        result.addAll(el.querySelectorAll(remaining));
+      } catch (_) {}
+    }
+    return result;
+  }
+
+  List<dom.Element> _resolveAdjacentSiblingTargets(
+    dom.Element sibling,
+    String selector,
+  ) {
+    final splitMatch = RegExp(r'^([^\s>+~]+)(.*)$').firstMatch(selector.trim());
+    if (splitMatch == null) {
+      return const [];
+    }
+
+    final siblingSelector = splitMatch.group(1)!.trim();
+    var remainder = (splitMatch.group(2) ?? '').trimLeft();
+
+    if (!_matchesSimpleSelector(sibling, siblingSelector)) {
+      return const [];
+    }
+
+    if (remainder.isEmpty) {
+      return [sibling];
+    }
+
+    if (remainder.startsWith('>')) {
+      remainder = remainder.substring(1).trimLeft();
+    }
+    if (remainder.isEmpty) {
+      return [sibling];
+    }
+
+    try {
+      return sibling.querySelectorAll(remainder);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  bool _matchesSimpleSelector(dom.Element element, String selectorToken) {
+    final token = selectorToken.trim();
+    if (token.isEmpty || token == '*') return true;
+
+    if (token.startsWith('.')) {
+      final classTokens = token
+          .split('.')
+          .where((part) => part.isNotEmpty)
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty);
+      if (classTokens.isEmpty) return true;
+      for (final className in classTokens) {
+        if (!element.classes.contains(className)) return false;
+      }
+      return true;
+    }
+
+    if (token.startsWith('#')) {
+      return element.id == token.substring(1);
+    }
+
+    return element.localName?.toLowerCase() == token.toLowerCase();
+  }
+
+  String? _resolveAttribute(dom.Element element, String attribute) {
+    final value = (element.attributes[attribute] ?? '').trim();
+
+    if (element.localName != 'img') return value.isEmpty ? null : value;
+
+    if (value.isNotEmpty && !value.startsWith('data:')) return value;
+
+    for (final fallbackAttr in _kImageFallbackAttributes) {
+      if (fallbackAttr == attribute) continue;
+      final fallbackValue = (element.attributes[fallbackAttr] ?? '').trim();
+      if (fallbackValue.isEmpty || fallbackValue.startsWith('data:')) continue;
+      _logger.d(
+          'GenericHtmlParser: image lazy-load fallback: $attribute=${value.isEmpty ? "null" : "placeholder"} → $fallbackAttr="$fallbackValue"');
+      return fallbackValue;
+    }
+
+    return value.isEmpty ? null : value;
+  }
 
   String? _applyRegex(String input, String pattern) {
     try {

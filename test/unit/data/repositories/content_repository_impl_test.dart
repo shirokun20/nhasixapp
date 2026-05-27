@@ -95,8 +95,8 @@ void main() {
     when(() => source.displayName).thenReturn('KomikTap');
     registry.register(source);
 
-    when(() => remoteConfigService.isFeatureEnabled(sourceId, any()))
-        .thenReturn(true);
+    when(() => remoteConfigService.isFeatureEnabled(any(), any()))
+        .thenReturn(false);
 
     when(() => contentCacheManager.get(any())).thenAnswer((_) async => null);
     when(() => contentCacheManager.set(any(), any(), ttl: any(named: 'ttl')))
@@ -118,6 +118,9 @@ void main() {
   test(
       'getContentDetail bypasses stale chapter cache when chapter feature is enabled',
       () async {
+    when(() => remoteConfigService.isFeatureEnabled(sourceId, any()))
+        .thenReturn(true);
+
     when(() => detailCacheService.getCachedDetail(contentId))
         .thenAnswer((_) async => staleCachedContent);
     when(() => source.getDetail(contentId))
@@ -130,6 +133,62 @@ void main() {
     expect(result.chapters, hasLength(2));
     expect(result.chapters!.first.id, 'you-wont-break-me-chapter-37');
     verify(() => source.getDetail(contentId)).called(1);
+    verify(() => detailCacheService.getCachedDetail(contentId)).called(1);
+  });
+
+  test(
+      'getContentDetail bypasses stale nicomanga cache when tags only mirror language',
+      () async {
+    const nicomangaSourceId = 'nicomanga';
+    final nicomangaSource = MockContentSource();
+    final staleNicomangaContent = Content(
+      id: contentId,
+      sourceId: nicomangaSourceId,
+      title: 'Nicomanga Cached Detail',
+      coverUrl: 'https://cdn.example.com/cover.jpg',
+      tags: const [Tag(id: 0, name: 'japanese', type: 'tag', count: 0)],
+      artists: const [],
+      characters: const [],
+      parodies: const [],
+      groups: const [],
+      language: 'japanese',
+      pageCount: 10,
+      imageUrls: const ['https://cdn.example.com/cover.jpg'],
+      uploadDate: DateTime(2026, 5, 27),
+      chapters: const [
+        core.Chapter(
+          id: 'nicomanga-chapter-1',
+          title: 'Chapter 1',
+          url: 'https://nicomanga.com/read-1.html',
+        ),
+      ],
+    );
+    final refreshedNicomangaContent = staleNicomangaContent.copyWith(
+      tags: const [
+        Tag(id: 0, name: 'Comedy', type: 'tag', count: 0),
+        Tag(id: 0, name: 'Fantasy', type: 'tag', count: 0),
+      ],
+    );
+
+    when(() => nicomangaSource.id).thenReturn(nicomangaSourceId);
+    when(() => nicomangaSource.displayName).thenReturn('Nicomanga');
+    when(() => nicomangaSource.getDetail(contentId))
+        .thenAnswer((_) async => refreshedNicomangaContent);
+    when(() => detailCacheService.cacheDetail(refreshedNicomangaContent))
+        .thenAnswer((_) async {});
+    registry.register(nicomangaSource);
+
+    when(() => detailCacheService.getCachedDetail(contentId))
+        .thenAnswer((_) async => staleNicomangaContent);
+
+    final result = await repository.getContentDetail(
+      ContentId.fromString(contentId),
+      sourceId: nicomangaSourceId,
+    );
+
+    expect(
+        result.tags.map((tag) => tag.name), containsAll(['Comedy', 'Fantasy']));
+    verify(() => nicomangaSource.getDetail(contentId)).called(1);
     verify(() => detailCacheService.getCachedDetail(contentId)).called(1);
   });
 }

@@ -1,0 +1,102 @@
+{
+  "source": "nicomanga",
+  "version": "1.0.2",
+  "enabled": true,
+  "defaultLanguage": "japanese",
+  "baseUrl": "https://nicomanga.com",
+  "configUrl": "https://raw.githubusercontent.com/yourrepo/yourbranch/app/config/nicomanga-config.json",
+  "ui": {
+    "displayName": "Nicomanga",
+    "iconPath": "https://raw.githubusercontent.com/yourrepo/yourbranch/app/images/nicomanga.png",
+    "brandColor": "#FF7043"
+  },
+  "network": {
+    "requiresBypass": false,
+    "headers": {
+      "Referer": "https://nicomanga.com/",
+      "User-Agent": "Mozilla/5.0"
+    }
+  },
+  "scraper": {
+    "enabled": true,
+    "urlPatterns": {
+      "home": {
+        "url": "/manga-list.html?p={page}",
+        "list": {
+          "container": ".manga-grid .manga-card",
+          "fields": {
+            "id": { "selector": "a.manga-title", "attribute": "href" },
+            "title": { "selector": ".manga-title" },
+            "coverUrl": { "selector": "img.manga-img", "attribute": "src" }
+          },
+          "pagination": {
+            "next": ".custom-pagination .page-link.next:not(.disabled)",
+            "links": ".custom-pagination .page-link"
+          }
+        }
+      },
+      "popular": { "url": "/manga-list.html?pr=popular&p={page}", "inherits": "home" },
+      "latest": { "url": "/manga-list.html?pr=new&p={page}", "inherits": "home" },
+      "search": { "url": "/manga-list.html?n={query}&p={page}", "inherits": "home" },
+      "searchPage": { "url": "/manga-list.html?n={query}&p={page}", "inherits": "home" },
+      "genreSearch": { "url": "/manga-list-genre-{tag}.html?p={page}", "inherits": "home" },
+      "genreSearchPage": { "url": "/manga-list-genre-{tag}.html?p={page}", "inherits": "home" },
+      "detail": "/{id}",
+      "chapter": "/{id}"
+    },
+    "selectors": {
+      "detail": {
+        "fields": {
+          "title": { "selector": ".manga-main-title" },
+          "coverUrl": { "selector": ".manga-cover-image", "attribute": "src" },
+          "author": { "selector": ".info-field-label:contains(Author) + .info-field-value" },
+          "artist": { "selector": ".info-field-label:contains(Magazine) + .info-field-value" },
+          "tags": { "selector": ".info-field-label:contains(Genre) + .info-field-value a", "multi": true },
+          "status": { "selector": ".info-field-label:contains(Status) + .info-field-value" },
+          "description": { "selector": ".description-text-content" }
+        },
+        "chapters": {
+          "container": "#chapter-grid .chapter-grid-item",
+          "fields": {
+            "id": { "selector": "a", "attribute": "href" },
+            "title": { "selector": ".chapter-name-grid" },
+            "date": { "selector": ".chapter-time-grid" }
+          }
+        }
+      },
+      "reader": {
+        "container": "#chapter_images_container",
+        "images": { "selector": "#chapter_images_container img.chapter-img, #chapter_images_container img", "attribute": "src" },
+        "nav": {
+          "next": ".control-button.next-chapter, .page-nav-btn.chapter-btn[title*='Next']",
+          "prev": ".control-button.prev-chapter, .page-nav-btn.chapter-btn[title*='Previous']"
+        }
+      }
+    }
+  },
+  "features": {
+    "comments": false,
+    "related": false,
+    "download": true,
+    "favorite": true,
+    "chapters": true,
+    "generatePdf": true,
+    "offlineMode": true,
+    "advancedSearch": false
+  },
+  "searchForm": {
+    "urlPattern": "search",
+    "params": {
+      "query": {
+        "queryParam": "n",
+        "type": "text",
+        "placeholder": "Search manga..."
+      },
+      "page": {
+        "queryParam": "p",
+        "type": "page"
+      }
+    }
+  },
+  "contentIdPattern": "/manga-\\d+/([^.]+\\.html)"
+}

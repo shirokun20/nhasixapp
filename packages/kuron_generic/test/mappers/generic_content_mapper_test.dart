@@ -159,6 +159,19 @@ void main() {
       expect(result.tags[1].name, 'action');
     });
 
+    test('maps genre alias to tags when tags key is absent', () {
+      final result = GenericContentMapper.toListItem(
+        {
+          'id': 'x',
+          'genre': ['isekai', 'fantasy'],
+        },
+        sourceId: sourceId,
+      );
+      expect(result.tags, hasLength(2));
+      expect(
+          result.tags.map((t) => t.name), containsAll(['isekai', 'fantasy']));
+    });
+
     test('maps artists/characters/parodies/groups as plain string lists', () {
       final result = GenericContentMapper.toListItem(
         {
@@ -406,6 +419,18 @@ void main() {
 
       expect(result.artists, ['Satou Tomoyuki']);
       expect(result.groups, ['Irodori Comics']);
+    });
+
+    test('detail maps genre alias into tags', () {
+      final result = GenericContentMapper.toDetail(
+        'x',
+        {
+          'genre': ['romance', 'drama'],
+        },
+        sourceId: sourceId,
+      );
+      expect(result.tags, hasLength(2));
+      expect(result.tags.map((t) => t.name), containsAll(['romance', 'drama']));
     });
   });
 

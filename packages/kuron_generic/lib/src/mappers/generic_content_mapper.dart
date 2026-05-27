@@ -93,7 +93,9 @@ class GenericContentMapper {
     final uploaderName = _str(fields, 'uploader').trim();
     if (uploaderName.isNotEmpty) {
       final alreadyPresent = resolvedTags.any(
-        (t) => t.type == 'uploader' && t.name.toLowerCase() == uploaderName.toLowerCase(),
+        (t) =>
+            t.type == 'uploader' &&
+            t.name.toLowerCase() == uploaderName.toLowerCase(),
       );
       if (!alreadyPresent) {
         resolvedTags = [
@@ -230,7 +232,10 @@ class GenericContentMapper {
     }
 
     // Priority 3: List<String> tag names
-    final tagNames = _strList(fields, 'tags');
+    final tagNames = _strListAny(
+      fields,
+      const ['tags', 'tag', 'genre', 'genres'],
+    );
     return TagSplit(
       tags: tagNames
           .map((n) => Tag(id: 0, name: n, type: 'tag', count: 0))
