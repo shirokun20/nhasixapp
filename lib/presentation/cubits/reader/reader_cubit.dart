@@ -344,8 +344,12 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Fire-and-forget online fetch to update metadata or cache
   Future<void> _fetchOnlineDetailsInBackground(String contentId) async {
     try {
+      // For composite chapter IDs (e.g. "doctors-rebirth/234"), extract only
+      // the parent slug for the series detail request. Using the full composite
+      // ID would build an invalid URL like /series/doctors-rebirth/234 → 404.
+      final parentId = _extractParentContentId(contentId);
       await getContentDetailUseCase(
-          GetContentDetailParams.fromString(contentId));
+          GetContentDetailParams.fromString(parentId));
       // Results are cached by repository, so next load handles it.
       // We don't update current UI to avoid jarring changes while reading.
     } catch (e) {
@@ -2404,6 +2408,20 @@ class ReaderCubit extends Cubit<ReaderState> {
         hideUI();
       }
     });
+  }
+
+  /// Extracts the parent content ID from a composite chapter ID.
+  ///
+  /// Komikcast and similar sources store chapter IDs as composite slugs:
+  ///   - "doctors-rebirth/234"  → parent = "doctors-rebirth"
+  ///   - "doctor-rebirth/chapter/234" → parent = "doctors-rebirth"
+  ///
+  /// Returns the original [contentId] if it is not a composite ID (i.e. no `/`).
+  String _extractParentContentId(String contentId) {
+    final trimmed = contentId.trim();
+    final slashIndex = trimmed.indexOf('/');
+    if (slashIndex <= 0) return trimmed; // not composite, return as-is
+    return trimmed.substring(0, slashIndex);
   }
 
   /// Check if contentId is a Crotpedia chapter ID

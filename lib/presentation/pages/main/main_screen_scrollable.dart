@@ -276,11 +276,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         final savedFilter = SearchFilter.fromJson(savedFilterData);
 
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
-          final sanitizedQuery = savedFilter.query == '{query}'
-              ? ''
-              : savedFilter.query;
-          _currentSearchFilter =
-              savedFilter.copyWith(query: sanitizedQuery, sortBy: _currentSortOption);
+          final sanitizedQuery =
+              savedFilter.query == '{query}' ? '' : savedFilter.query;
+          _currentSearchFilter = savedFilter.copyWith(
+              query: sanitizedQuery, sortBy: _currentSortOption);
           _isShowingSearchResults = true;
           _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
 
@@ -653,7 +652,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Build empty state UI
   Widget _buildEmptyState(ContentEmpty state) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Translate l10n key to actual message
     String getDisplayMessage(String key) {
       switch (key) {
@@ -671,7 +670,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           return key;
       }
     }
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -713,7 +712,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                     return key;
                 }
               }
-              
+
               return Text(
                 '• ${getSuggestionText(suggestionKey)}',
                 style: TextStyleConst.bodyMedium,
@@ -865,15 +864,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   }
 
   String _mapSortOptionToConfigValue(SortOption option, SortingConfig config) {
-    // Try to find option with matching apiValue
+    // Match by enum name (e.g. "newest", "popular") against config option.value.
+    // The config `value` field intentionally mirrors SortOption enum names.
+    // DO NOT compare by apiValue: SortOption.popular.apiValue = "popular" but
+    // komikcast config apiValue = "popularity" — they intentionally differ.
     try {
       final match = config.options.firstWhere(
-        (o) => o.apiValue == option.apiValue,
+        (o) => o.value == option.name,
       );
       return match.value;
     } catch (_) {
-      // If no match found (e.g. Crotpedia sort options don't match SortOption enum exactly),
-      // return the default option's value
+      // Fallback to default option
       final defaultOption = config.options.firstWhere(
         (o) => o.isDefault,
         orElse: () => config.options.first,
@@ -883,14 +884,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   }
 
   void _handleDynamicSortChange(String newValue, SortingConfig config) {
-    // Map string value back to SortOption
+    // Map config option value (e.g. "popular") back to SortOption enum by name.
+    // config.option.value mirrors SortOption enum names ("newest", "popular", etc.).
+    // DO NOT compare apiValue: "popular" != "popularity" in komikcast config.
     try {
-      final optionConfig =
-          config.options.firstWhere((o) => o.value == newValue);
+      // Verify option exists in config
+      config.options.firstWhere((o) => o.value == newValue);
 
-      // Find SortOption that matches the apiValue
       final sortOption = SortOption.values.firstWhere(
-        (so) => so.apiValue == optionConfig.apiValue,
+        (so) => so.name == newValue,
         orElse: () => SortOption.newest,
       );
 
@@ -1172,11 +1174,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   bool _shouldShowSorting(ContentState state) {
     if (!mounted) return false;
 
-    // Only show sorting when there's an active search/filter AND there's data
     if (!_isShowingSearchResults) {
       return false; // Hide sorting for normal content browsing
     }
-
     // Check if the current source config supports sorting
     final sourceId = context.read<SourceCubit>().state.activeSource?.id;
     final sourceConfig = sourceId != null
@@ -1184,16 +1184,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         : null;
     final sortingConfig = sourceConfig?.searchConfig?.sortingConfig;
 
-    if (sortingConfig == null) {
-      // Hide sorting completely if there is no sortingConfig
-      return false;
-    }
+    // Hide sorting completely if source has no sortingConfig
+    if (sortingConfig == null) return false;
 
+    // Only show when there is actual content to sort
     final hasData = (state is ContentLoaded && state.contents.isNotEmpty) ||
         state is ContentLoadingMore ||
         state is ContentRefreshing;
 
-    // Show sorting only when there's data
     return hasData;
   }
 

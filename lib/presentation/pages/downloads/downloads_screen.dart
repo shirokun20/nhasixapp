@@ -7,6 +7,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 
 import '../../../core/constants/text_style_const.dart';
+import '../../../core/routing/reader_route_extra.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
@@ -516,8 +517,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
   Future<void> _navigateToReader(DownloadStatus download) async {
     // 🚀 OFFLINE-FIRST: Preload content from OfflineContentManager
-    // This ensures the reader screen receives fully-populated Content with local imageUrls
-    // Matching the pattern used by offline_content_body.dart (_openReader)
+    // This ensures the reader screen receives fully-populated Content with local imageUrls.
+    // IMPORTANT: Always wrap in buildReaderRouteExtra() so ReaderScreen can parse
+    // preloadedContent correctly (expects Map<String, dynamic>, not a raw Content object).
 
     if (!mounted) return;
 
@@ -530,27 +532,35 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           await offlineManager.createOfflineContent(download.contentId);
 
       if (offlineContent != null && offlineContent.imageUrls.isNotEmpty) {
-        // ✅ Offline content loaded successfully, navigate with preloaded data
+        // ✅ Offline content loaded successfully, navigate with properly-wrapped data
         if (!mounted) return;
         final encodedContentId = Uri.encodeComponent(download.contentId);
-        await context.push('/reader/$encodedContentId', extra: offlineContent);
+        await context.push(
+          '/reader/$encodedContentId',
+          extra: buildReaderRouteExtra(content: offlineContent),
+        );
         return;
       }
     } catch (e) {
-      debugPrint('⚠️ Failed to load offline content: $e');
+      // Log using logger pattern (no debugPrint)
+      assert(() {
+        // ignore: avoid_print
+        print('⚠️ Failed to load offline content: $e');
+        return true;
+      }());
     }
 
-    // Fallback: Use lightweight content (ReaderCubit will handle loading)
-    // This maintains backward compatibility if offline loading fails
+    // Fallback: Build a minimal Content so ReaderCubit can handle loading
+    // via Strategy B (offline) or Strategy C (online fallback)
     final content = Content(
       id: download.contentId,
       title: download.title ?? download.contentId,
       coverUrl: download.coverUrl ?? '',
       pageCount: download.totalPages,
-      imageUrls: [], // Empty initially, ReaderCubit will load
+      imageUrls: [], // Empty — ReaderCubit will load from offline or network
       sourceId: download.sourceId ?? 'nhentai', // Default fallback
 
-      // Default empty values for required fields
+      // Required empty fields
       uploadDate: DateTime.now(),
       tags: [],
       artists: [],
@@ -563,7 +573,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
     if (!mounted) return;
     final encodedContentId = Uri.encodeComponent(download.contentId);
-    await context.push('/reader/$encodedContentId', extra: content);
+    await context.push(
+      '/reader/$encodedContentId',
+      extra: buildReaderRouteExtra(content: content),
+    );
   }
 
   void _handleDownloadAction(

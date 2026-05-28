@@ -713,6 +713,28 @@ class GenericRestAdapter implements GenericAdapter {
         sortValue: sortValue,
       );
     }
+
+    // 🔧 SORT FIX: Always override the `sort` query param with the resolved value.
+    // Some endpoints (e.g. `allGalleries`) have a hardcoded `sort=X` param in their
+    // config and no `{sort}` placeholder, so `buildSearchUrl` cannot inject sort.
+    // We force-apply it here so the user's sort selection always takes effect.
+    if (sortValue.isNotEmpty) {
+      final sortParamName =
+          (rawConfig['searchConfig']?['sortParamName'] as String?) ?? 'sort';
+      // Only override if the URL already contains this param (i.e., the endpoint
+      // supports sorting) or if the resolved sort differs from the template default.
+      final templateHasSortParam =
+          Uri.tryParse(url)?.queryParameters.containsKey(sortParamName) ?? false;
+      if (templateHasSortParam) {
+        final currentSortInUrl =
+            Uri.tryParse(url)?.queryParameters[sortParamName] ?? '';
+        if (currentSortInUrl != sortValue) {
+          url = _upsertQueryParam(url, sortParamName, sortValue);
+          _logger.d(
+              '$_sourceId sort override: "$currentSortInUrl" → "$sortValue" (user selected)');
+        }
+      }
+    }
     final paginationCfg =
         (apiList['pagination'] as Map<String, dynamic>?) ?? {};
     if (paginationCfg['offsetMode'] == true) {
@@ -858,9 +880,24 @@ class GenericRestAdapter implements GenericAdapter {
           content: _emptyContent(contentId), imageUrls: []);
     }
 
-    final url = _urlBuilder.buildDetailUrl(template, contentId);
+    // When this source composes chapter IDs as "{parentSlug}/{chapterIndex}"
+    // (i.e., `detail.chapters.composeIdWithContentId == true`), the detail
+    // endpoint must only receive the parent slug — not the full composite ID.
+    // Example: contentId = "doctors-rebirth/234" but the detail path is
+    // "/series/{id}" → would build "/series/doctors-rebirth/234" (404).
+    // Fix: strip the chapter part so the URL becomes "/series/doctors-rebirth".
+    final chaptersCfg = apiDetail['chapters'] as Map<String, dynamic>?;
+    final usesCompositeChapterIds =
+        chaptersCfg?['composeIdWithContentId'] == true;
+    final idForDetail =
+        (usesCompositeChapterIds && contentId.contains('/'))
+            ? contentId.substring(0, contentId.indexOf('/'))
+            : contentId;
+
+    final url = _urlBuilder.buildDetailUrl(template, idForDetail);
     final detailUrl = _applyLanguagePlaceholder(url, rawConfig);
-    _logger.d('$_sourceId REST [new schema] detail: $detailUrl');
+    _logger.d('$_sourceId REST [new schema] detail: $detailUrl'
+        '${idForDetail != contentId ? ' (stripped chapter from "$contentId" → "$idForDetail")' : ''}');
 
     try {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
@@ -922,7 +959,7 @@ class GenericRestAdapter implements GenericAdapter {
 
       // Chapters
       List<Chapter>? chapters;
-      final chaptersCfg = apiDetail['chapters'] as Map<String, dynamic>?;
+      // chaptersCfg is already declared above (used to detect composite IDs)
       if (chaptersCfg != null) {
         final chapterEndpoint = chaptersCfg['endpoint'] as String?;
         final itemsSelector = chaptersCfg['items'] as String?;
@@ -933,8 +970,10 @@ class GenericRestAdapter implements GenericAdapter {
           final fullPath = chapterEndpoint.startsWith('/')
               ? chapterEndpoint
               : '/$chapterEndpoint';
+          // Use idForDetail (parent slug) for chapter URL – the raw contentId
+          // may be composite ("slug/234") which would yield an invalid URL.
           var chapterUrl =
-              '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
+              '$baseApiUrl${fullPath.replaceAll('{id}', idForDetail)}';
           chapterUrl = _applyLanguagePlaceholder(chapterUrl, rawConfig);
           final chapterQueryRules = (api['queryRules']
               as Map<String, dynamic>?)?['chapters'] as Map<String, dynamic>?;
@@ -956,7 +995,7 @@ class GenericRestAdapter implements GenericAdapter {
               chapters = _composeChapterIdsWithContentId(
                 chapters,
                 chaptersCfg: chaptersCfg,
-                contentId: contentId,
+                contentId: idForDetail,
               );
             }
           } catch (e) {
@@ -978,7 +1017,7 @@ class GenericRestAdapter implements GenericAdapter {
               chapters = _composeChapterIdsWithContentId(
                 chapters,
                 chaptersCfg: chaptersCfg,
-                contentId: contentId,
+                contentId: idForDetail,
               );
             }
             _logger.d(
@@ -990,7 +1029,7 @@ class GenericRestAdapter implements GenericAdapter {
       }
 
       final content = GenericContentMapper.toDetail(
-        contentId,
+        idForDetail,
         fields,
         sourceId: _sourceId,
         imageUrls: imageUrls,
