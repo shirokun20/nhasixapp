@@ -48,7 +48,7 @@ class GenericUrlBuilder {
     };
     var url = resolve(template, params);
     for (final entry in params.entries) {
-      if (entry.value.isEmpty) {
+      if (entry.value.isEmpty && template.contains('{${entry.key}}')) {
         url = _removeQueryParam(url, entry.key);
       }
     }

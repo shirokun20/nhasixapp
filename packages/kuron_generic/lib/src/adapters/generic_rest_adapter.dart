@@ -765,6 +765,7 @@ class GenericRestAdapter implements GenericAdapter {
           (apiList['pagination'] as Map<String, dynamic>?) ?? {};
       bool hasNext = true;
       int? totalPages;
+      int? totalItems;
 
       if (paginationCfg['offsetMode'] == true) {
         final totalStr = _extractRestScalar(data, paginationCfg['total']);
@@ -775,6 +776,7 @@ class GenericRestAdapter implements GenericAdapter {
         final total = int.tryParse(totalStr ?? '');
         final limit = int.tryParse(limitStr ?? '');
         final offset = int.tryParse(offsetStr ?? '');
+        totalItems = total;
 
         if (total != null && limit != null && offset != null) {
           hasNext = (offset + limit) < total;
@@ -797,11 +799,29 @@ class GenericRestAdapter implements GenericAdapter {
         final totalPagesStr =
             _extractRestScalar(data, paginationCfg['totalPages']);
         final currentPageStr =
-            _extractRestScalar(data, paginationCfg['currentPage']);
+            _extractRestScalar(data, paginationCfg['currentPage']) ??
+                _extractRestScalar(data, paginationCfg['page']);
+        final totalItemsStr =
+            _extractRestScalar(data, paginationCfg['total']) ??
+                _extractRestScalar(data, paginationCfg['totalItems']) ??
+                _extractRestScalar(data, paginationCfg['totalCount']);
+        final limitStr = _extractRestScalar(data, paginationCfg['limit']) ??
+            _extractRestScalar(data, paginationCfg['pageSize']);
+
+        totalItems = int.tryParse(totalItemsStr ?? '');
 
         if (totalPagesStr != null && currentPageStr != null) {
           totalPages = int.tryParse(totalPagesStr);
           final current = int.tryParse(currentPageStr);
+          if (totalPages != null && current != null) {
+            hasNext = current < totalPages;
+          }
+        } else {
+          totalPages = _deriveTotalPagesFromTotal(
+            totalStr: totalItemsStr,
+            limitStr: limitStr,
+          );
+          final current = int.tryParse(currentPageStr ?? '');
           if (totalPages != null && current != null) {
             hasNext = current < totalPages;
           }
@@ -812,6 +832,7 @@ class GenericRestAdapter implements GenericAdapter {
         items: items,
         hasNextPage: hasNext,
         totalPages: totalPages,
+        totalItems: totalItems,
       );
     } catch (e, st) {
       _logger.e('$_sourceId REST new schema search failed',
@@ -1016,11 +1037,17 @@ class GenericRestAdapter implements GenericAdapter {
                 _parser.extractItems(data, FieldSelector(selector: path));
             result['tagObjects'] = objs;
           }
+          break;
 
         case 'coverBuilder':
           result[fieldName] = _buildCoverUrl(data, def, null) ?? '';
+          break;
 
         default:
+          if (def.containsKey('value')) {
+            result[fieldName] = def['value'];
+            break;
+          }
           if (path.isEmpty) continue;
           final multi = def['multi'] as bool? ?? false;
           final sel = FieldSelector(selector: path);
@@ -1029,6 +1056,7 @@ class GenericRestAdapter implements GenericAdapter {
           } else {
             result[fieldName] = _parser.extractRaw(data, sel);
           }
+          break;
       }
     }
     return result;
@@ -1037,7 +1065,10 @@ class GenericRestAdapter implements GenericAdapter {
   /// Extract a scalar string from [data] using a field def `{path: "…"}`.
   String? _extractRestScalar(dynamic data, dynamic fieldDef) {
     if (fieldDef == null) return null;
-    final path = fieldDef is Map ? fieldDef['path'] as String? ?? '' : '';
+    if (fieldDef is Map && fieldDef.containsKey('value')) {
+      return fieldDef['value']?.toString();
+    }
+    final path = _extractJsonSelector(fieldDef);
     if (path.isEmpty) return null;
     return _parser.extractString(data, FieldSelector(selector: path));
   }
@@ -1350,12 +1381,28 @@ class GenericRestAdapter implements GenericAdapter {
 
   bool _parseHasNextPage(dynamic data, Map<String, dynamic> selectors) {
     final totalPagesStr = _extract(data, selectors, 'totalPages');
-    final currentPageStr = _extract(data, selectors, 'currentPage');
+    final currentPageStr = _extract(data, selectors, 'currentPage') ??
+        _extract(data, selectors, 'page');
     if (totalPagesStr != null && currentPageStr != null) {
       final total = int.tryParse(totalPagesStr);
       final current = int.tryParse(currentPageStr);
       if (total != null && current != null) return current < total;
     }
+
+    final derivedTotalPages = _deriveTotalPagesFromTotal(
+      totalStr: _extract(data, selectors, 'totalItems') ??
+          _extract(data, selectors, 'totalCount') ??
+          _extract(data, selectors, 'total'),
+      limitStr: _extract(data, selectors, 'pageSize') ??
+          _extract(data, selectors, 'limit'),
+    );
+    if (derivedTotalPages != null && currentPageStr != null) {
+      final current = int.tryParse(currentPageStr);
+      if (current != null) {
+        return current < derivedTotalPages;
+      }
+    }
+
     // If no pagination info, assume more pages unless empty result.
     return true;
   }
@@ -1365,16 +1412,35 @@ class GenericRestAdapter implements GenericAdapter {
     if (totalPagesStr != null) {
       return int.tryParse(totalPagesStr);
     }
-    return null;
+    return _deriveTotalPagesFromTotal(
+      totalStr: _extract(data, selectors, 'totalItems') ??
+          _extract(data, selectors, 'totalCount') ??
+          _extract(data, selectors, 'total'),
+      limitStr: _extract(data, selectors, 'pageSize') ??
+          _extract(data, selectors, 'limit'),
+    );
   }
 
   int? _parseTotalItems(dynamic data, Map<String, dynamic> selectors) {
     final totalItemsStr = _extract(data, selectors, 'totalItems') ??
-        _extract(data, selectors, 'totalCount');
+        _extract(data, selectors, 'totalCount') ??
+        _extract(data, selectors, 'total');
     if (totalItemsStr != null) {
       return int.tryParse(totalItemsStr);
     }
     return null;
+  }
+
+  int? _deriveTotalPagesFromTotal({
+    required String? totalStr,
+    required String? limitStr,
+  }) {
+    final total = int.tryParse(totalStr ?? '');
+    final limit = int.tryParse(limitStr ?? '');
+    if (total == null || limit == null || limit <= 0) {
+      return null;
+    }
+    return (total / limit).ceil();
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1689,7 +1755,8 @@ class GenericRestAdapter implements GenericAdapter {
     for (final obj in objects) {
       final name = obj['name']?.toString() ?? '';
       if (name.isEmpty) continue;
-      final type = obj['type']?.toString() ?? 'tag';
+      final type =
+          obj['type']?.toString() ?? obj['namespace']?.toString() ?? 'tag';
       final id = (obj['id'] as num?)?.toInt() ?? 0;
       final count = (obj['count'] as num?)?.toInt() ?? 0;
 
@@ -2686,32 +2753,64 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     final pageExtSel = builder['pageExtSelector'] as String?;
-    if (pageExtSel == null) return const [];
+    if (pageExtSel != null && pageExtSel.isNotEmpty) {
+      final extCodes = _parser.extractList(
+        data,
+        FieldSelector(selector: pageExtSel),
+      );
+      if (extCodes.isEmpty) {
+        _logger.w('$_sourceId: imageUrlBuilder — no page extensions found');
+        return const [];
+      }
 
-    final extCodes = _parser.extractList(
-      data,
-      FieldSelector(selector: pageExtSel),
-    );
-    if (extCodes.isEmpty) {
-      _logger.w('$_sourceId: imageUrlBuilder — no page extensions found');
-      return const [];
+      final mapping = (builder['extensionMapping'] as Map<String, dynamic>?)
+              ?.cast<String, String>() ??
+          const {};
+
+      final urls = <String>[];
+      for (int i = 0; i < extCodes.length; i++) {
+        final extCode = extCodes[i];
+        final ext = mapping[extCode] ?? 'jpg';
+        final url = template
+            .replaceAll('{mediaId}', mediaId)
+            .replaceAll('{page}', (i + 1).toString())
+            .replaceAll('{ext}', ext);
+        urls.add(url);
+      }
+      return urls;
     }
 
-    final mapping = (builder['extensionMapping'] as Map<String, dynamic>?)
-            ?.cast<String, String>() ??
-        const {};
+    final pageCountSel = builder['pageCountSelector'] as String?;
+    if (pageCountSel != null && pageCountSel.isNotEmpty) {
+      final pageCountStr =
+          _parser.extractString(data, FieldSelector(selector: pageCountSel));
+      final pageCount = int.tryParse(pageCountStr ?? '');
+      if (pageCount == null || pageCount <= 0) {
+        _logger.w('$_sourceId: imageUrlBuilder — invalid page count');
+        return const [];
+      }
 
-    final urls = <String>[];
-    for (int i = 0; i < extCodes.length; i++) {
-      final extCode = extCodes[i];
-      final ext = mapping[extCode] ?? 'jpg';
-      final url = template
-          .replaceAll('{mediaId}', mediaId)
-          .replaceAll('{page}', (i + 1).toString())
-          .replaceAll('{ext}', ext);
-      urls.add(url);
+      final pageStart =
+          int.tryParse(builder['pageStart']?.toString() ?? '') ?? 1;
+      final defaultExt = builder['defaultExtension']?.toString() ?? 'jpg';
+
+      final urls = <String>[];
+      for (int i = 0; i < pageCount; i++) {
+        final page = pageStart + i;
+        var url = template
+            .replaceAll('{mediaId}', mediaId)
+            .replaceAll('{page}', page.toString());
+        if (url.contains('{ext}')) {
+          url = url.replaceAll('{ext}', defaultExt);
+        }
+        urls.add(url);
+      }
+      return urls;
     }
-    return urls;
+
+    _logger.w(
+        '$_sourceId: imageUrlBuilder — neither page extensions nor page count found');
+    return const [];
   }
 }
 

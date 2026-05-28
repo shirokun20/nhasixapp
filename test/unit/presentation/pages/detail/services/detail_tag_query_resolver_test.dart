@@ -98,5 +98,53 @@ void main() {
 
       expect(result.query, 'genre:action-comedy');
     });
+
+    test('builds SpyFakku artist query with explicit namespace', () {
+      final result = resolver.resolve(
+        sourceId: 'spyfakku',
+        tagName: 'Aka',
+        tagType: 'artist',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'artist': {
+                'mode': 'rawParam',
+                'param': 'q',
+                'valueSource': 'tagName',
+                'valuePrefix': 'artist:"',
+                'valueSuffix': '"',
+              },
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'raw:q=artist:"Aka"');
+    });
+
+    test('builds SpyFakku multi-word tag query with quotes preserved', () {
+      final result = resolver.resolve(
+        sourceId: 'spyfakku',
+        tagName: 'Mating Press',
+        tagType: 'tag',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {
+                'mode': 'rawParam',
+                'param': 'q',
+                'valueSource': 'tagName',
+                'valuePrefix': 'tag:"',
+                'valueSuffix': '"',
+              },
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'raw:q=tag:"Mating Press"');
+    });
   });
 }

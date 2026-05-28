@@ -51,5 +51,20 @@ void main() {
 
       expect(url, 'https://nhentai.net/api/v2/search?page=2');
     });
+
+    test('preserves static sort query parameter when template has fixed value',
+        () {
+      const filter = SearchFilter(query: 'aka', page: 1);
+
+      final url = builder.buildSearchUrl(
+        '/library?sort=released_at&q={query}&page={page}',
+        filter,
+      );
+
+      expect(
+        url,
+        'https://nhentai.net/library?sort=released_at&q=aka&page=1',
+      );
+    });
   });
 }

@@ -171,7 +171,8 @@ class GenericContentMapper {
     for (final obj in objects) {
       final name = obj['name']?.toString() ?? '';
       if (name.isEmpty) continue;
-      final type = obj['type']?.toString() ?? 'tag';
+      final type =
+          obj['type']?.toString() ?? obj['namespace']?.toString() ?? 'tag';
       final id = (obj['id'] as num?)?.toInt() ?? 0;
       final count = (obj['count'] as num?)?.toInt() ?? 0;
 
