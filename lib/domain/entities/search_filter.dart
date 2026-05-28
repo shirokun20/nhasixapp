@@ -388,6 +388,7 @@ enum SortOption {
   popular,
   popularWeek,
   popularToday,
+  rating,
 }
 
 /// Navigation source for search filter
@@ -439,6 +440,8 @@ extension SortOptionExtension on SortOption {
         return 'Popular This Week';
       case SortOption.popularToday:
         return 'Popular Today';
+      case SortOption.rating:
+        return 'Rating';
     }
   }
 
@@ -452,6 +455,8 @@ extension SortOptionExtension on SortOption {
         return 'popular-week';
       case SortOption.popularToday:
         return 'popular-today';
+      case SortOption.rating:
+        return 'rating';
     }
   }
 }

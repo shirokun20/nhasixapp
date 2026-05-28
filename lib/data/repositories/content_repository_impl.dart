@@ -64,6 +64,7 @@ class ContentRepositoryImpl implements ContentRepository {
         if (sortBy == SortOption.popularToday) {
           coreSort = core.SortOption.popularToday;
         }
+        if (sortBy == SortOption.rating) coreSort = core.SortOption.rating;
 
         final coreResult =
             await _activeSource.getList(page: page, sort: coreSort);
@@ -487,6 +488,9 @@ class ContentRepositoryImpl implements ContentRepository {
     }
     if (appFilter.sortBy == SortOption.popularToday) {
       coreSort = core.SortOption.popularToday;
+    }
+    if (appFilter.sortBy == SortOption.rating) {
+      coreSort = core.SortOption.rating;
     }
 
     // Convert FilterItems to core.FilterItem

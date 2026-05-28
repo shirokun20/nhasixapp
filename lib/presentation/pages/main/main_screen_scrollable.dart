@@ -864,42 +864,49 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   }
 
   String _mapSortOptionToConfigValue(SortOption option, SortingConfig config) {
-    // Match by enum name (e.g. "newest", "popular") against config option.value.
-    // The config `value` field intentionally mirrors SortOption enum names.
-    // DO NOT compare by apiValue: SortOption.popular.apiValue = "popular" but
-    // komikcast config apiValue = "popularity" — they intentionally differ.
+    // Strategy: try enum name match first (e.g. "popular" == SortOption.popular.name),
+    // then fall back to apiValue match (e.g. "popular-week" == SortOption.popularWeek.apiValue).
+    // This handles both komikcast (value:"popular" matches name) and nhentai
+    // (value:"popular-week" matches apiValue but not name "popularWeek").
     try {
-      final match = config.options.firstWhere(
-        (o) => o.value == option.name,
-      );
-      return match.value;
-    } catch (_) {
-      // Fallback to default option
-      final defaultOption = config.options.firstWhere(
-        (o) => o.isDefault,
-        orElse: () => config.options.first,
-      );
-      return defaultOption.value;
-    }
+      return config.options.firstWhere((o) => o.value == option.name).value;
+    } catch (_) {}
+
+    try {
+      return config.options
+          .firstWhere((o) => o.apiValue == option.apiValue)
+          .value;
+    } catch (_) {}
+
+    // Fallback to default option
+    return config.options
+        .firstWhere(
+          (o) => o.isDefault,
+          orElse: () => config.options.first,
+        )
+        .value;
   }
 
   void _handleDynamicSortChange(String newValue, SortingConfig config) {
-    // Map config option value (e.g. "popular") back to SortOption enum by name.
-    // config.option.value mirrors SortOption enum names ("newest", "popular", etc.).
-    // DO NOT compare apiValue: "popular" != "popularity" in komikcast config.
+    // Strategy: try enum name match first, then apiValue match as fallback.
+    // komikcast: value:"popular" → SortOption.popular.name == "popular" ✅
+    // nhentai:   value:"popular-week" → name "popularWeek" ≠ "popular-week" → apiValue match ✅
     try {
-      // Verify option exists in config
-      config.options.firstWhere((o) => o.value == newValue);
+      final optionConfig =
+          config.options.firstWhere((o) => o.value == newValue);
 
       final sortOption = SortOption.values.firstWhere(
-        (so) => so.name == newValue,
-        orElse: () => SortOption.newest,
-      );
+            (so) => so.name == newValue,
+            orElse: () => SortOption.values.firstWhere(
+              (so) => so.apiValue == optionConfig.apiValue,
+              orElse: () => SortOption.newest,
+            ),
+          );
 
       _onSortingChanged(sortOption);
     } catch (e) {
       Logger().w(
-          'MainScreen: Could not map dynamic sort "$newValue" to SortOption');
+          'MainScreen: Could not map dynamic sort "$newValue" to SortOption: $e');
     }
   }
 

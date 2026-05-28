@@ -4,7 +4,8 @@ enum SortOption {
   popular('Popular', 'popular'),
   popularToday('Popular Today', 'popular-today'),
   popularWeek('Popular This Week', 'popular-week'),
-  popularMonth('Popular This Month', 'popular-month');
+  popularMonth('Popular This Month', 'popular-month'),
+  rating('Rating', 'rating');
 
   final String displayName;
   final String apiValue;

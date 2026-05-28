@@ -724,7 +724,8 @@ class GenericRestAdapter implements GenericAdapter {
       // Only override if the URL already contains this param (i.e., the endpoint
       // supports sorting) or if the resolved sort differs from the template default.
       final templateHasSortParam =
-          Uri.tryParse(url)?.queryParameters.containsKey(sortParamName) ?? false;
+          Uri.tryParse(url)?.queryParameters.containsKey(sortParamName) ??
+              false;
       if (templateHasSortParam) {
         final currentSortInUrl =
             Uri.tryParse(url)?.queryParameters[sortParamName] ?? '';
@@ -889,10 +890,9 @@ class GenericRestAdapter implements GenericAdapter {
     final chaptersCfg = apiDetail['chapters'] as Map<String, dynamic>?;
     final usesCompositeChapterIds =
         chaptersCfg?['composeIdWithContentId'] == true;
-    final idForDetail =
-        (usesCompositeChapterIds && contentId.contains('/'))
-            ? contentId.substring(0, contentId.indexOf('/'))
-            : contentId;
+    final idForDetail = (usesCompositeChapterIds && contentId.contains('/'))
+        ? contentId.substring(0, contentId.indexOf('/'))
+        : contentId;
 
     final url = _urlBuilder.buildDetailUrl(template, idForDetail);
     final detailUrl = _applyLanguagePlaceholder(url, rawConfig);
@@ -2504,6 +2504,7 @@ class GenericRestAdapter implements GenericAdapter {
         case SortOption.popularToday:
         case SortOption.popularWeek:
         case SortOption.popularMonth:
+        case SortOption.rating:
           return filter.sort.apiValue;
       }
     }
