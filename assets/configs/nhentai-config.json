@@ -15,7 +15,7 @@
     },
     "api": {
         "enabled": true,
-        "apiBase": "https://nhentai.net/api/v2",
+        "apiBase": "https://nhentai.net",
         "timeout": 30000,
         "endpoints": {
             "galleryDetail": "/api/v2/galleries/{id}?include=comments",
