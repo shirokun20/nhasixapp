@@ -88,14 +88,9 @@ ApiConfig _$ApiConfigFromJson(Map<String, dynamic> json) => ApiConfig(
       baseUrl: json['baseUrl'] as String?,
       apiBase: json['apiBase'] as String?,
       timeout: (json['timeout'] as num?)?.toInt(),
-      endpoints: (json['endpoints'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ),
+      endpoints: json['endpoints'] as Map<String, dynamic>?,
       images: json['images'] as Map<String, dynamic>?,
-      extensionMapping:
-          (json['extensionMapping'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ),
+      extensionMapping: json['extensionMapping'] as Map<String, dynamic>?,
       mirrors:
           (json['mirrors'] as List<dynamic>?)?.map((e) => e as String).toList(),
       useMirrors: json['useMirrors'] as bool?,

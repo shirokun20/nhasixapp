@@ -241,13 +241,13 @@ class ApiConfig {
   final String? baseUrl;
   final String? apiBase;
   final int? timeout;
-  final Map<String, String>? endpoints;
-  
+  final Map<String, dynamic>? endpoints;
+
   /// Images config can have nested structure (mode, items, proxyPatterns, etc.)
   /// so it must be Map<String, dynamic>, not Map<String, String>.
   final Map<String, dynamic>? images;
-  
-  final Map<String, String>? extensionMapping;
+
+  final Map<String, dynamic>? extensionMapping;
   final List<String>? mirrors;
   final bool? useMirrors;
 
