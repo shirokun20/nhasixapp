@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart' show Tag;
@@ -298,9 +298,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       tags: includeAdvanced ? (_multiSelectFilters['tag'] ?? []) : const [],
       artists:
           includeAdvanced ? (_multiSelectFilters['artist'] ?? []) : const [],
-      characters: includeAdvanced
-          ? (_multiSelectFilters['character'] ?? [])
-          : const [],
+      characters:
+          includeAdvanced ? (_multiSelectFilters['character'] ?? []) : const [],
       parodies:
           includeAdvanced ? (_multiSelectFilters['parody'] ?? []) : const [],
       groups: includeAdvanced ? (_multiSelectFilters['group'] ?? []) : const [],
@@ -462,16 +461,16 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         ],
 
         // Date Filter
-        _buildSectionTitle(AppLocalizations.of(context)!.dateUploaded),
-        const SizedBox(height: 10),
-        _buildDateFilter(colorScheme),
-        const SizedBox(height: 20),
+        // _buildSectionTitle(AppLocalizations.of(context)!.dateUploaded),
+        // const SizedBox(height: 10),
+        // _buildDateFilter(colorScheme),
+        // const SizedBox(height: 20),
 
-        // Numeric Filters
-        _buildSectionTitle(AppLocalizations.of(context)!.numericFilters),
-        const SizedBox(height: 10),
-        _buildNumericFilters(colorScheme),
-        const SizedBox(height: 8),
+        // // Numeric Filters
+        // _buildSectionTitle(AppLocalizations.of(context)!.numericFilters),
+        // const SizedBox(height: 10),
+        // _buildNumericFilters(colorScheme),
+        // const SizedBox(height: 8),
       ],
     );
 
@@ -913,7 +912,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   // ── Date Filter ─────────────────────────────────────────────────────────────
 
-  Widget _buildDateFilter(ColorScheme cs) {
+  /* Widget _buildDateFilter(ColorScheme cs) {
     final presets = [
       [AppLocalizations.of(context)!.today, '<1d'],
       ['7 days', '<7d'],
@@ -971,11 +970,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         );
       }).toList(),
     );
-  }
+  } */
 
   // ── Numeric Filters ─────────────────────────────────────────────────────────
 
-  Widget _buildNumericFilters(ColorScheme cs) {
+  /* Widget _buildNumericFilters(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1021,9 +1020,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         ),
       ],
     );
-  }
+  } */
 
-  Widget _numericInput({
+  /* Widget _numericInput({
     required TextEditingController controller,
     required String hint,
     required ColorScheme cs,
@@ -1062,7 +1061,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         onChanged: (_) => setState(() {}),
       ),
     );
-  }
+  } */
 
   // ── Search Button ───────────────────────────────────────────────────────────
 

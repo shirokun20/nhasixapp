@@ -42,7 +42,7 @@ class TagsRemoteDataSource {
       }
 
       final baseUrl = config!.api!.apiBase;
-      final url = '$baseUrl/tags/$tagType';
+      final url = '$baseUrl/api/v2/tags/$tagType';
 
       _logger.d('Fetching tags: $url (page: $page, perPage: $perPage)');
 
@@ -142,7 +142,7 @@ class TagsRemoteDataSource {
       }
 
       final baseUrl = config!.api!.apiBase;
-      final url = '$baseUrl/tags/autocomplete';
+      final url = '$baseUrl/api/v2/tags/autocomplete';
 
       _logger.d('Fetching autocomplete: $url (query: $query, type: $tagType)');
 
@@ -200,7 +200,7 @@ class TagsRemoteDataSource {
       }
 
       final baseUrl = config!.api!.apiBase;
-      final url = '$baseUrl/tags/$tagType/$slug';
+      final url = '$baseUrl/api/v2/tags/$tagType/$slug';
 
       _logger.d('Fetching tag detail: $url');
 
