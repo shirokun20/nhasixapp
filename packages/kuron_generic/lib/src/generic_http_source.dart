@@ -500,7 +500,8 @@ class GenericHttpSource implements ContentSource {
     DelayApplier? delayApplier,
   ) {
     final sourceId = rawConfig['source'] as String? ?? 'unknown';
-    final baseUrl = rawConfig['baseUrl'] as String? ?? '';
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final baseUrl = (api?['url'] ?? api?['apiBase'] ?? rawConfig['baseUrl'] ?? '') as String;
     logger.d('[$sourceId] Adapter baseUrl: "$baseUrl"');
 
     final urlBuilder = GenericUrlBuilder(baseUrl: baseUrl);

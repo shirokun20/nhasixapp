@@ -64,9 +64,11 @@ class GenericRestAdapter implements GenericAdapter {
       return _searchNewSchema(filter, rawConfig, api!, apiList);
     }
 
-    final endpoints =
-        (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
+    // Normalize: extract path from both old (string) and new (object) schemas
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
 
     // Build effective query from all active filters using `queryTokenTemplates`
     // declared in the source config's `searchConfig`.
@@ -261,9 +263,10 @@ class GenericRestAdapter implements GenericAdapter {
       return _fetchDetailNewSchema(contentId, rawConfig, api!, apiDetail);
     }
 
-    final endpoints =
-        (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
     final detailTemplate =
         endpoints['detail'] ?? endpoints['galleryDetail'] ?? '';
     if (detailTemplate.isEmpty) {
@@ -308,9 +311,10 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
-    final endpoints =
-        (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
     final relatedTemplate = endpoints['related'] ?? '';
     if (relatedTemplate.isEmpty) return const [];
 
@@ -338,9 +342,10 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
-    final endpoints =
-        (api?['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
     final commentsTemplate = endpoints['comments'] ?? '';
     if (commentsTemplate.isEmpty) return const [];
 
@@ -650,9 +655,10 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> api,
     Map<String, dynamic> apiList,
   ) async {
-    final endpoints =
-        (api['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api['endpoints'] as Map<String, dynamic>?) ?? {};
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
     final isEmptyQuery = filter.query.trim().isEmpty && !filter.hasFilters;
     final template = isEmptyQuery
         ? (endpoints['allGalleries'] ?? endpoints['search'] ?? '')
@@ -816,9 +822,10 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> api,
     Map<String, dynamic> apiDetail,
   ) async {
-    final endpoints =
-        (api['endpoints'] as Map<String, dynamic>?)?.cast<String, String>() ??
-            {};
+    final rawEndpoints = (api['endpoints'] as Map<String, dynamic>?) ?? {};
+    final endpoints = <String, String>{
+      for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
+    };
     final template = endpoints['detail'] ?? endpoints['galleryDetail'] ?? '';
     if (template.isEmpty) {
       _logger.w('$_sourceId (new schema): no detail endpoint configured');
@@ -2610,4 +2617,16 @@ class _TagSplit {
   final List<String> parodies;
   final List<String> groups;
   final String language;
+}
+
+/// Extract endpoint path from config value.
+///
+/// Supports both old schema (string) and new schema (object with 'path' field).
+String _getEndpointPath(dynamic endpoint) {
+  if (endpoint == null) return '';
+  if (endpoint is String) return endpoint;
+  if (endpoint is Map<String, dynamic>) {
+    return endpoint['path']?.toString() ?? '';
+  }
+  return endpoint.toString();
 }
