@@ -1505,22 +1505,29 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       if (configuredUrl != null && configuredUrl.isNotEmpty) {
         url = configuredUrl;
       } else if (_isShowingSearchResults && _currentSearchFilter != null) {
-        // Search results page - use current search filter
+        // Search results page - try config-driven search URL first
         final filter =
             _currentSearchFilter!.copyWith(page: contentState.currentPage);
 
         if (filter.isEmpty) {
-          // Empty filter - redirect to main page
           url = _buildMainPageUrl(contentState.currentPage);
         } else {
-          // Use SearchFilter's complete URL building
-          final queryParams = filter.toQueryString();
-          if (queryParams.trim().isEmpty) {
-            // Fallback to main page if query params are empty
-            url = _buildMainPageUrl(contentState.currentPage);
+          final configSearchUrl = _buildConfigDrivenUrl(
+            isSearch: true,
+            query: filter.query ?? '',
+            sortBy: filter.sortBy,
+          );
+          if (configSearchUrl != null) {
+            url = configSearchUrl;
           } else {
-            final baseUrl = _getSourceBaseUrl();
-            url = '$baseUrl/search/?$queryParams';
+            // Generic fallback
+            final queryParams = filter.toQueryString();
+            if (queryParams.trim().isEmpty) {
+              url = _buildMainPageUrl(contentState.currentPage);
+            } else {
+              final baseUrl = _getSourceBaseUrl();
+              url = '$baseUrl/search/?$queryParams';
+            }
           }
         }
       } else {
@@ -1598,6 +1605,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build main page URL with optional sort and page parameters
   String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
+    // Try config-driven browse URL first
+    final configUrl = _buildConfigDrivenUrl(isSearch: false, sortBy: sortBy);
+    if (configUrl != null) return configUrl;
+
+    // Generic fallback
     final baseUrl = _getSourceBaseUrl();
     final sort = sortBy ?? SortOption.newest;
     final sortParam = sort == SortOption.newest ? '' : '?sort=${sort.apiValue}';
@@ -1605,6 +1617,73 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         ? (sortParam.isEmpty ? '?page=$currentPage' : '&page=$currentPage')
         : '';
     return '$baseUrl/$sortParam$pageParam';
+  }
+
+  /// Build a URL from config ui.browseUrlTemplate or ui.searchUrlTemplate.
+  /// Returns null if no template is configured.
+  String? _buildConfigDrivenUrl({
+    required bool isSearch,
+    String query = '',
+    SortOption? sortBy,
+  }) {
+    try {
+      final sourceId = _getActiveSource()?.id;
+      if (sourceId == null) return null;
+
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig(sourceId);
+      final ui = rawConfig?['ui'] as Map<String, dynamic>?;
+      if (ui == null) return null;
+
+      final templateKey =
+          isSearch ? 'searchUrlTemplate' : 'browseUrlTemplate';
+      final template = ui[templateKey] as String?;
+      if (template == null || template.trim().isEmpty) return null;
+
+      final baseUrl = _getSourceBaseUrl();
+
+      // Resolve sort apiValue via config options for the active source
+      final sort = sortBy ?? SortOption.newest;
+      final sortApiValue = _resolveSortApiValue(sort, sourceId, rawConfig);
+
+      return template
+          .replaceAll('{baseUrl}', baseUrl)
+          .replaceAll('{sort}', sortApiValue)
+          .replaceAll('{query}', Uri.encodeComponent(query));
+    } catch (e) {
+      Logger().w('_buildConfigDrivenUrl failed: $e');
+      return null;
+    }
+  }
+
+  /// Resolve the API sort value for a given SortOption using source config options.
+  String _resolveSortApiValue(
+    SortOption sort,
+    String sourceId,
+    Map<String, dynamic>? rawConfig,
+  ) {
+    try {
+      final rawOptions = rawConfig?['searchConfig']?['sortingConfig']
+          ?['options'] as List?;
+      final options = rawOptions?.cast<Map<String, dynamic>>();
+      if (options == null) return sort.apiValue;
+
+      // First try matching by enum name
+      final byName =
+          options.firstWhere((o) => o['value'] == sort.name, orElse: () => {});
+      if (byName.isNotEmpty && byName['apiValue'] != null) {
+        return byName['apiValue'] as String;
+      }
+
+      // Fallback: match by apiValue
+      final byApi = options.firstWhere(
+          (o) => o['apiValue'] == sort.apiValue,
+          orElse: () => {});
+      if (byApi.isNotEmpty && byApi['apiValue'] != null) {
+        return byApi['apiValue'] as String;
+      }
+    } catch (_) {}
+    return sort.apiValue;
   }
 
   /// Clean URL by removing trailing ? or & characters and empty parameters
