@@ -62,7 +62,7 @@ class GenericContentMapper {
       favorites: _int(fields, 'favorites'),
       status: _status(fields),
       totalChapters: _intOrNull(fields, 'pageCount'),
-      mediaId: fields['mediaId'] as String?,
+      mediaId: _nullableString(fields['mediaId']),
     );
   }
 
@@ -131,9 +131,9 @@ class GenericContentMapper {
       chapters: chapters,
       uploadDate: _resolveUploadDate(fields),
       favorites: _int(fields, 'favorites'),
-      mediaId: fields['mediaId'] as String?,
-      englishTitle: fields['englishTitle'] as String?,
-      japaneseTitle: fields['japaneseTitle'] as String?,
+      mediaId: _nullableString(fields['mediaId']),
+      englishTitle: _nullableString(fields['englishTitle']),
+      japaneseTitle: _nullableString(fields['japaneseTitle']),
       subTitle: _extractDescription(fields),
       status: _status(fields),
       totalChapters: rawPageCount > 0 ? rawPageCount : null,
@@ -255,6 +255,10 @@ class GenericContentMapper {
   }) {
     final v = f[key];
     if (v is String) return v.isEmpty ? fallback : v;
+    if (v is num || v is bool) {
+      final asString = v.toString();
+      return asString.isEmpty ? fallback : asString;
+    }
     if (v is Map && v.isNotEmpty) {
       final firstVal = v.values.first;
       if (firstVal is String && firstVal.isNotEmpty) return firstVal;
@@ -296,6 +300,40 @@ class GenericContentMapper {
 
     // Drop trailing count labels like "Satou Tomoyuki (6)".
     return cleaned.replaceFirst(RegExp(r'\s*\([0-9,]+\)\s*$'), '').trim();
+  }
+
+  static String? _nullableString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) {
+      final normalized = value.trim();
+      return normalized.isEmpty ? null : normalized;
+    }
+    if (value is num || value is bool) {
+      return value.toString();
+    }
+    if (value is Map && value.isNotEmpty) {
+      final preferred = value['en'] ?? value['value'];
+      if (preferred != null) {
+        final normalized = preferred.toString().trim();
+        if (normalized.isNotEmpty) return normalized;
+      }
+      for (final candidate in value.values) {
+        if (candidate == null) continue;
+        final normalized = candidate.toString().trim();
+        if (normalized.isNotEmpty) return normalized;
+      }
+      return null;
+    }
+    if (value is List && value.isNotEmpty) {
+      for (final candidate in value) {
+        if (candidate == null) continue;
+        final normalized = candidate.toString().trim();
+        if (normalized.isNotEmpty) return normalized;
+      }
+      return null;
+    }
+    final normalized = value.toString().trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   static String _extractTitle(Map<String, dynamic> fields) {

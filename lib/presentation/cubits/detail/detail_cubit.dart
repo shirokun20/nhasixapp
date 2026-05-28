@@ -509,9 +509,11 @@ class DetailCubit extends BaseCubit<DetailState> {
         return;
       }
 
-      // Create a temporary Content object for the Reader
-      // KEEP the original content ID (Series ID) so history/settings work correctly
+      // Create a temporary chapter Content object for Reader.
+      // Use chapter.id so offline lookup and chapter-specific history stay
+      // aligned with download metadata/folder IDs.
       final chapterContent = currentState.content.copyWith(
+        id: chapter.id,
         title: '${currentState.content.title} - ${chapter.title}',
         imageUrls: images,
         pageCount: images.length,

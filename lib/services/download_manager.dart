@@ -13,6 +13,7 @@ class DownloadProgressUpdate {
     required this.totalPages,
     this.downloadSpeed,
     this.estimatedTimeRemaining,
+    this.terminalState,
   });
 
   final String contentId;
@@ -20,6 +21,7 @@ class DownloadProgressUpdate {
   final int totalPages;
   final double? downloadSpeed; // bytes per second
   final Duration? estimatedTimeRemaining;
+  final DownloadState? terminalState;
 
   double get progressPercentage =>
       totalPages > 0 ? (downloadedPages / totalPages) * 100 : 0;
@@ -64,21 +66,28 @@ class DownloadManager {
           final double speed =
               (data['downloadSpeed'] as num?)?.toDouble() ?? 0.0;
 
+          final int safeTotal = total > 0 ? total : downloaded;
+          final int safeDownloaded =
+              downloaded.clamp(0, safeTotal > 0 ? safeTotal : downloaded);
+
           _logger.d(
               'Native event: $contentId -> $status ($downloaded/$total) @ $speed B/s');
 
           if (status == 'COMPLETED') {
+            if (safeDownloaded <= 0) {
+              _logger.e(
+                  '❌ COMPLETED event rejected for $contentId because downloadedPages=0');
+              emitCompletion(contentId, DownloadState.failed);
+              return;
+            }
+
             _logger.i('🎯 COMPLETION EVENT received for $contentId');
 
-            // CRITICAL: Ensure we emit 100% progress FIRST
-            // This ensures UI shows full progress bar before notification disappears
-            final finalDownloaded = total > 0 ? total : downloaded;
-
-            _logger.d('Emitting final progress: $finalDownloaded/$total');
+            _logger.d('Emitting final progress: $safeDownloaded/$safeTotal');
             emitProgress(DownloadProgressUpdate(
               contentId: contentId,
-              downloadedPages: finalDownloaded,
-              totalPages: total,
+              downloadedPages: safeDownloaded,
+              totalPages: safeTotal,
               downloadSpeed: speed,
             ));
 
@@ -95,8 +104,8 @@ class DownloadManager {
             // Progress update
             emitProgress(DownloadProgressUpdate(
               contentId: contentId,
-              downloadedPages: downloaded,
-              totalPages: total,
+              downloadedPages: safeDownloaded,
+              totalPages: safeTotal,
               downloadSpeed: speed,
             ));
           }
@@ -211,13 +220,21 @@ class DownloadManager {
   /// Emit a completion event to notify listeners of download completion
   void emitCompletion(String contentId, DownloadState state) {
     if (!_progressController.isClosed) {
+      final int terminalCode = switch (state) {
+        DownloadState.completed => -1,
+        DownloadState.failed => -2,
+        DownloadState.cancelled => -3,
+        _ => -9,
+      };
+
       // Create a completion update with special marker
       final completionUpdate = DownloadProgressUpdate(
         contentId: contentId,
-        downloadedPages: -1, // Special marker for completion
-        totalPages: -1,
+        downloadedPages: -1, // Special marker for terminal state
+        totalPages: terminalCode,
         downloadSpeed: 0.0,
         estimatedTimeRemaining: Duration.zero,
+        terminalState: state,
       );
       _progressController.add(completionUpdate);
       _logger.d(

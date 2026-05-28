@@ -225,6 +225,17 @@ class DownloadCompletedEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
+/// Event triggered when native layer reports terminal failure
+class DownloadNativeFailedEvent extends DownloadEvent {
+  const DownloadNativeFailedEvent(this.contentId, {this.error});
+
+  final String contentId;
+  final String? error;
+
+  @override
+  List<Object?> get props => [contentId, error];
+}
+
 /// Event to clear completed downloads
 class DownloadClearCompletedEvent extends DownloadEvent {
   const DownloadClearCompletedEvent();

@@ -398,6 +398,22 @@ void main() {
       expect(result.mediaId, '3456789');
     });
 
+    test('accepts object-based optional string fields without cast errors', () {
+      final result = GenericContentMapper.toDetail(
+        'x',
+        {
+          'mediaId': 3456789,
+          'englishTitle': {'en': 'The English Title'},
+          'japaneseTitle': {'jp': '日本語タイトル'},
+        },
+        sourceId: sourceId,
+      );
+
+      expect(result.mediaId, '3456789');
+      expect(result.englishTitle, 'The English Title');
+      expect(result.japaneseTitle, '日本語タイトル');
+    });
+
     test('maps favorites on detail', () {
       final result = GenericContentMapper.toDetail(
         'x',

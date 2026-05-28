@@ -179,11 +179,21 @@ class DownloadWorker(
             }
             
             Log.d(TAG, "Download complete for $contentId.")
+
+            if (result.downloadedFiles.isEmpty()) {
+                Log.e(TAG, "Download produced zero valid image files for $contentId")
+                return@withContext Result.failure(workDataOf(
+                    "content_id" to contentId,
+                    "downloadedCount" to 0,
+                    "totalCount" to imageUrls.size,
+                    "error" to "No valid image files downloaded"
+                ))
+            }
             
             // Return success with complete data for EventChannel emission
             Result.success(workDataOf(
                 "content_id" to contentId,
-                "downloadedCount" to imageUrls.size,
+                "downloadedCount" to result.downloadedFiles.size,
                 "totalCount" to imageUrls.size
             ))
         } catch (e: Exception) {

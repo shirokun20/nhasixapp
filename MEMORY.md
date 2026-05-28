@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-05-24
+> Tracked via `openspec/` — Last updated: 2026-05-28
 
 ### ✅ Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -107,6 +107,7 @@ lib/
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
+- `fix-generic-rest-adapter-schema-support` — runtime hardening for REST endpoint object schema (`path`/`params`), Komikcast pagination/detail/reader path stability
 
 ### 📋 Exploration / Analysis (in `openspec/changes/`)
 - `pin-biometric-app-lock`
@@ -189,6 +190,11 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-05-28 | Codex | Komikcast chapter-image fail-soft preservation | ✅ Done | Hardened `DownloadBloc` chapter-image fallback so resolved direct image URLs are preserved even if post-fetch metadata/state update throws (prevents false abort `No image URLs resolved` after successful extraction from Komikcast image host URLs such as `sv1.imgkc1.my.id`). Verified with `fvm flutter test test/presentation/blocs/download/download_bloc_test.dart`, `fvm flutter analyze lib/presentation/blocs/download/download_bloc.dart`, and `dart test test/integration/komikcast_rest_integration_test.dart` (in `packages/kuron_generic`). |
+| 2026-05-28 | Codex | Komikcast chapter-id parity + false-complete download guard | ✅ Done | Fixed chapter download ID consistency so composite chapter IDs (contoh `slug/17`) stay intact for metadata/native queue/reader route even when detail lookup is normalized to parent slug. Updated detail-to-reader chapter launch to pass `chapter.id` as `Content.id` for offline path alignment. Added regression test in `download_bloc_test` to assert native completion cannot mark download as completed when zero valid image files exist. Verified: `fvm flutter test test/presentation/blocs/download/download_bloc_test.dart`, `fvm flutter analyze lib/presentation/blocs/download/download_bloc.dart lib/presentation/cubits/detail/detail_cubit.dart test/presentation/blocs/download/download_bloc_test.dart`, `dart test test/integration/komikcast_rest_integration_test.dart` + `dart test test/mappers/generic_content_mapper_test.dart` + `dart analyze lib/src/adapters/generic_rest_adapter.dart lib/src/mappers/generic_content_mapper.dart` (in `packages/kuron_generic`). |
+| 2026-05-28 | Codex | Reader false chapter-classification guard (Komikcast slug) | ✅ Done | Fixed `ReaderCubit` false-positive chapter detection that treated dash-heavy non-Crotpedia slugs as Crotpedia chapter IDs (triggering `Chapter not available offline...` and blocking online fallback). Added source-aware classifier `ChapterIdClassifier` and updated reader loading/history fallback checks to use source hints (`preloadedContent/parent/state sourceId`) plus source-aware `GetContentDetailParams(..., sourceId: hint)` for online strategy. Added unit test `test/unit/core/utils/chapter_id_classifier_test.dart` to lock regression (Komikcast slug false, Crotpedia chapter true, numeric false). Verification: `dart analyze` touched files + `flutter test test/unit/core/utils/chapter_id_classifier_test.dart`. |
+| 2026-05-28 | Codex | Komikcast chapter download fallback cast + detail-id normalization | ✅ Done | Fixed chapter-download failure from log `type '_Map<String, dynamic>' is not a subtype of type 'String?'` by hardening fallback URL generation in `DownloadBloc` + `SourceUrlResolver` for endpoint object schema (`detail.path`). Added composite detail-id normalization (`slug/17` -> `slug`) before `getContentDetail` to stop 404 requests to `/series/{slug}/{chapter}` during chapter download bootstrap. Added regression bloc test (`download_bloc_test`) to assert composite-id normalization and continued start flow when chapter images resolve, plus unit test (`source_url_resolver_test`) for endpoint object schema path/base-url priority. Verification: `dart analyze` (touched files), `flutter test test/unit/core/utils/source_url_resolver_test.dart`, `flutter test test/presentation/blocs/download/download_bloc_test.dart`. |
+| 2026-05-28 | Codex | Komikcast REST schema hardening + proposal sync | 🚧 In Progress | Updated `openspec/changes/fix-generic-rest-adapter-schema-support/proposal.md` with execution status and relation to `tachiyomi-extensions-integration`. Implemented/validated runtime fixes in `packages/kuron_generic`: endpoint object schema normalization (`_getEndpointPath`), base URL priority (`api.url/api.apiBase`), chapter-id composition (`contentId/chapterId`) for detail->reader flow, chapter-image placeholder support, and scalar-to-string chapter mapping in `GenericContentMapper`. Added integration regression test `test/integration/komikcast_rest_integration_test.dart` (search pagination, detail chapters, reader images). Follow-up hardening in app layer (`DownloadBloc`): preserve explicit source `Referer/Origin` headers (avoid dynamic override mismatch) and fail-fast when chapter image resolution returns empty before native download starts. Verification passed: targeted `dart analyze` + targeted `dart test` suites (`download_bloc_test`, `komikcast_rest_integration_test`); full package test still has unrelated pre-existing failures. |
 | 2026-05-24 | Codex | AVIF->WebP loading i18n polish + OpenSpec archive | ✅ Done | Updated reader loading copy during AVIF fallback conversion to a conversion-specific message (`processingBadAvifToWebp`) and added localization for ID/EN/ZH, then regenerated l10n and re-verified (`fvm flutter analyze` target + widget tests pass). Archived change `avif-to-webp-conversion` via `openspec archive -y`; OpenSpec auto-synced delta spec by creating `openspec/specs/avif-webp-converter/spec.md`. Manual device QA tasks 7.5/7.7/7.8 remain unchecked in archived `tasks.md` with explicit sub-checklist notes. |
 | 2026-05-23 | Copilot | Remove AVIF->WebP conversion and switch reader fallback to external open | ✅ Done | Removed the remaining AVIF conversion/WebP fallback paths from `ExtendedImageReaderWidget` and `packages/kuron_native`. Reader failures for AVIF now fall back to external open only: local AVIF uses new native `openAvif(filePath)` via `FileProvider` so Android gallery/photo apps can handle it, while remote AVIF opens via existing native browser/WebView path. Deleted conversion-only Kotlin classes, removed Dart conversion APIs, added Android `FileProvider` wiring, kept native animated-image routing intact, and verified with focused error checks plus `packages/kuron_native` tests (11 passed). |
 | 2026-05-24 | Copilot | Native AVIF animated converter (libavif+libwebp) + strict-scan spam fix | ✅ Done | Implemented native C++ AVIF pipeline in `kuron_native` using vendored `libavif` + `libwebp` with JNI bridge: decoder now iterates all AVIF frames and preserves frame timing into animated WebP via `WebPAnimEncoder` (with static fallback for single-frame cases). Added/updated native wiring in `CMakeLists.txt`, linked `libwebpmux`, enabled Android externalNativeBuild in plugin Gradle, and integrated Kotlin bridge call before bitmap fallback path. Also fixed OfflineContentManager strict-scan spam by adding miss-cache TTL, per-content log throttling, custom-root log throttling, and downloads-directory cache. Verified with `./android/gradlew -p android :app:assembleDebug` (BUILD SUCCESSFUL) and targeted Dart analyze clean. |
@@ -886,3 +892,41 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 **Notes**:
 - Third-party warnings from vendored `libavif` were isolated/suppressed at target level where needed.
 - Runtime path now supports animated conversion output, not only first-frame fallback.
+
+## 🆕 Latest Session — 2026-05-28
+
+### Komikcast Chapter Download False-Complete Guard + Reader Offline Path Stabilization ✅
+
+**Status**: Done (hotfix validated)
+
+**Root cause confirmed**:
+1. Native terminal `FAILED` event was emitted through the same marker shape as `COMPLETED`, then interpreted by `DownloadBloc` as completed.
+2. Native worker returned `Result.success` even when valid downloaded images were zero (and reported `downloadedCount` as total input URLs).
+3. Download completion handler in Flutter did not validate actual saved image files before setting DB state to `completed`.
+
+**Fix implemented**:
+- `DownloadManager` now differentiates terminal markers:
+  - `COMPLETED` => marker `-1/-1`
+  - `FAILED` => marker `-1/-2`
+- `DownloadBloc` now handles native failed marker via dedicated event `DownloadNativeFailedEvent`, routed to existing failure/retry logic.
+- `DownloadWorker` now:
+  - reports actual `downloadedCount` from saved files,
+  - returns `Result.failure` when zero valid images are produced.
+- `DownloadBloc._onCompleted` now validates filesystem image count when path hint exists; zero files immediately flips to failure path (not completed).
+
+**Verification**:
+- ✅ `fvm flutter test test/presentation/blocs/download/download_bloc_test.dart`
+- ✅ `fvm flutter test test/unit/core/utils/source_url_resolver_test.dart test/unit/core/utils/chapter_id_classifier_test.dart`
+- ✅ `./gradlew app:compileDebugKotlin` (from `packages/kuron_native/example/android`)
+- ✅ Manual URL probe for Komikcast image CDN sample (`sv1.imgkc1`) returns HTTP 200 (with/without referer), so failure was pipeline/status logic, not hotlink blocking.
+
+**Files touched**:
+- `lib/services/download_manager.dart`
+- `lib/presentation/blocs/download/download_bloc.dart`
+- `lib/presentation/blocs/download/download_event.dart`
+- `packages/kuron_native/android/src/main/kotlin/.../download/DownloadWorker.kt`
+- `test/presentation/blocs/download/download_bloc_test.dart`
+
+**Impact**:
+- Prevents “download status successful but image empty” false positives.
+- Reader no longer sees completed chapter entries that have zero offline pages.

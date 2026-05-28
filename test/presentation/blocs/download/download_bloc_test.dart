@@ -1,4 +1,5 @@
 import 'dart:async'; // Add async import for StreamController
+import 'dart:io';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
@@ -70,6 +71,7 @@ void main() {
     late MockOfflineContentManager mockOfflineContentManager;
     late MockPdfConversionQueueManager mockPdfConversionQueueManager;
     late MockLogger mockLogger;
+    late Directory completionGuardTempDir;
 
     // Stream controller for DownloadManager progress
     late StreamController<DownloadProgressUpdate> progressController;
@@ -98,6 +100,8 @@ void main() {
       mockPdfConversionQueueManager = MockPdfConversionQueueManager();
       mockLogger = MockLogger();
       progressController = StreamController<DownloadProgressUpdate>.broadcast();
+      completionGuardTempDir =
+          Directory.systemTemp.createTempSync('download-bloc-empty-');
 
       registerFallbackValue(
         GetContentDetailParams.fromString('fallback-content-id'),
@@ -208,7 +212,60 @@ void main() {
       await progressController.close();
       await downloadBloc.close();
       await getIt.reset();
+      if (completionGuardTempDir.existsSync()) {
+        completionGuardTempDir.deleteSync(recursive: true);
+      }
     });
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'marks download as failed when completion arrives but no image file exists',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: [
+          DownloadStatus(
+            contentId: testContentId,
+            state: DownloadState.downloading,
+            downloadedPages: 10,
+            totalPages: 10,
+            title: 'Test Manga',
+            sourceId: 'src',
+            downloadPath: completionGuardTempDir.path,
+          ),
+        ],
+        settings: const DownloadSettings(
+          autoRetry: false,
+          enableNotifications: false,
+        ),
+        lastUpdated: DateTime.now(),
+      ),
+      act: (bloc) => bloc.add(const DownloadCompletedEvent(testContentId)),
+      wait: const Duration(milliseconds: 30),
+      verify: (_) {
+        verify(
+          () => mockRepo.saveDownloadStatus(
+            any(
+              that: predicate<DownloadStatus>(
+                (d) =>
+                    d.contentId == testContentId &&
+                    d.state == DownloadState.failed &&
+                    (d.error?.contains(
+                          'Native download completed without saved image files',
+                        ) ??
+                        false),
+              ),
+            ),
+          ),
+        ).called(1);
+
+        verifyNever(
+          () => mockNotificationService.showDownloadCompleted(
+            contentId: any(named: 'contentId'),
+            title: any(named: 'title'),
+            downloadPath: any(named: 'downloadPath'),
+          ),
+        );
+      },
+    );
 
     blocTest<DownloadBloc, DownloadBlocState>(
       'emits completed state and saves to DB when DownloadCompletedEvent is added',
@@ -281,6 +338,44 @@ void main() {
                 (d) => d.contentId == testContentId && d.downloadedPages == 2,
               ),
             )));
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'maps native FAILED terminal marker to failed status instead of completed',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: testContentId,
+            state: DownloadState.downloading,
+            downloadedPages: 3,
+            totalPages: 8,
+            title: 'Test Manga',
+            sourceId: 'src',
+          ),
+        ],
+        settings: const DownloadSettings(
+          autoRetry: false,
+          enableNotifications: false,
+        ),
+        lastUpdated: DateTime.now(),
+      ),
+      act: (_) => progressController.add(const DownloadProgressUpdate(
+        contentId: testContentId,
+        downloadedPages: -1,
+        totalPages: -2,
+      )),
+      wait: const Duration(milliseconds: 30),
+      verify: (_) {
+        verify(() => mockRepo.saveDownloadStatus(any(
+              that: predicate<DownloadStatus>(
+                (d) =>
+                    d.contentId == testContentId &&
+                    d.state == DownloadState.failed &&
+                    d.error != null,
+              ),
+            ))).called(1);
       },
     );
 
@@ -402,6 +497,117 @@ void main() {
             ),
           ),
         ).called(1);
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'normalizes composite chapter id for detail lookup and keeps chapter download running',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: 'komikcast-slug/17',
+            state: DownloadState.queued,
+            totalPages: 0,
+            title: 'Komikcast Ch.17',
+            sourceId: 'komikcast',
+            downloadPath: '/tmp/komikcast-chapter',
+          ),
+        ],
+        settings: const DownloadSettings(
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 5, 28),
+      ),
+      setUp: () {
+        when(() => mockRemoteConfigService.getRawConfig('komikcast'))
+            .thenReturn({
+          'network': {
+            'headers': {'User-Agent': 'UnitTest'},
+          },
+          'api': {
+            'url': 'https://be.komikcast.cc',
+            'endpoints': {
+              'detail': {'path': '/series/{id}'},
+              'images': {'path': '/series/{id}/chapters/{chapter}'},
+            },
+          },
+        });
+        when(() => mockGetContentDetailUseCase.call(any()))
+            .thenThrow(Exception('detail can fail for chapter download'));
+        when(() => mockGetChapterImagesUseCase.call(any())).thenAnswer(
+          (_) async => const ChapterData(
+            images: [
+              'https://sv1.imgkc1.my.id/wp-content/img/A/ATM/017/001.jpg'
+            ],
+          ),
+        );
+        when(() => mockDownloadContentUseCase.call(any())).thenAnswer(
+          (_) async => const DownloadStatus(
+            contentId: 'komikcast-slug/17',
+            state: DownloadState.downloading,
+            totalPages: 1,
+            title: 'Komikcast Ch.17',
+            sourceId: 'komikcast',
+          ),
+        );
+      },
+      act: (bloc) => bloc.add(const DownloadStartEvent('komikcast-slug/17')),
+      wait: const Duration(milliseconds: 30),
+      verify: (_) {
+        final capturedDetailCall = verify(
+          () => mockGetContentDetailUseCase.call(captureAny()),
+        ).captured.single as GetContentDetailParams;
+        expect(capturedDetailCall.contentId.value, 'komikcast-slug');
+        expect(capturedDetailCall.sourceId, 'komikcast');
+
+        verify(
+          () => mockDownloadContentUseCase.call(
+            any(
+              that: predicate<DownloadContentParams>(
+                (params) =>
+                    params.content.id == 'komikcast-slug/17' &&
+                    params.content.imageUrls.length == 1 &&
+                    params.content.imageUrls.first.endsWith('/001.jpg'),
+              ),
+            ),
+          ),
+        ).called(1);
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'does not start native download when chapter images cannot be resolved',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: 'komikcast-slug/17',
+            state: DownloadState.queued,
+            totalPages: 0,
+            title: 'Komikcast Ch.17',
+            sourceId: 'komikcast',
+            downloadPath: '/tmp/komikcast-chapter',
+          ),
+        ],
+        settings: const DownloadSettings(
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 5, 28),
+      ),
+      setUp: () {
+        when(() => mockGetContentDetailUseCase.call(any()))
+            .thenThrow(Exception('detail not available for chapter id'));
+        when(() => mockGetChapterImagesUseCase.call(any())).thenAnswer(
+          (_) async => const ChapterData(images: []),
+        );
+      },
+      act: (bloc) => bloc.add(const DownloadStartEvent('komikcast-slug/17')),
+      wait: const Duration(milliseconds: 30),
+      verify: (_) {
+        verifyNever(() => mockDownloadContentUseCase.call(any()));
       },
     );
   });

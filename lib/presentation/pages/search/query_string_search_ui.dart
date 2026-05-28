@@ -67,6 +67,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   List<SortOptionConfig> get _sortOptions =>
       widget.config.sortingConfig?.options ?? [];
 
+  bool get _supportsAdvancedFilters =>
+      _singleSelectFilters.isNotEmpty || _multiSelectFilters2.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -256,6 +259,10 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   /// Build token suffixes for date/numeric filters appended to query
   String _buildExtraTokens() {
+    if (!_supportsAdvancedFilters) {
+      return '';
+    }
+
     final tokens = <String>[];
     if (_uploadedPreset.isNotEmpty) tokens.add('uploaded:$_uploadedPreset');
 
@@ -276,17 +283,27 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     final combinedQuery =
         [textQuery, extraTokens].where((s) => s.isNotEmpty).join(' ');
 
+    final includeAdvanced = _supportsAdvancedFilters;
+
     return SearchFilter(
       query: combinedQuery.isNotEmpty ? combinedQuery : null,
-      language: _selectedLanguage.isNotEmpty ? _selectedLanguage : null,
-      category: _selectedCategory.isNotEmpty ? _selectedCategory : null,
+      language: includeAdvanced && _selectedLanguage.isNotEmpty
+          ? _selectedLanguage
+          : null,
+      category: includeAdvanced && _selectedCategory.isNotEmpty
+          ? _selectedCategory
+          : null,
       sortBy: _mapSortToSortOption(_selectedSort),
       popular: _selectedSort.contains('popular'),
-      tags: _multiSelectFilters['tag'] ?? [],
-      artists: _multiSelectFilters['artist'] ?? [],
-      characters: _multiSelectFilters['character'] ?? [],
-      parodies: _multiSelectFilters['parody'] ?? [],
-      groups: _multiSelectFilters['group'] ?? [],
+      tags: includeAdvanced ? (_multiSelectFilters['tag'] ?? []) : const [],
+      artists:
+          includeAdvanced ? (_multiSelectFilters['artist'] ?? []) : const [],
+      characters: includeAdvanced
+          ? (_multiSelectFilters['character'] ?? [])
+          : const [],
+      parodies:
+          includeAdvanced ? (_multiSelectFilters['parody'] ?? []) : const [],
+      groups: includeAdvanced ? (_multiSelectFilters['group'] ?? []) : const [],
     );
   }
 
@@ -464,32 +481,34 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchBox(colorScheme),
-          const SizedBox(height: 16),
-          _buildAdvancedToggle(colorScheme),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: child,
-                );
-              },
-              child: _showAdvancedFilters
-                  ? KeyedSubtree(
-                      key: const ValueKey('advanced_filters_open'),
-                      child: advancedFiltersPanel,
-                    )
-                  : const SizedBox.shrink(
-                      key: ValueKey('advanced_filters_closed'),
-                    ),
+          if (_supportsAdvancedFilters) ...[
+            const SizedBox(height: 16),
+            _buildAdvancedToggle(colorScheme),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: _showAdvancedFilters
+                    ? KeyedSubtree(
+                        key: const ValueKey('advanced_filters_open'),
+                        child: advancedFiltersPanel,
+                      )
+                    : const SizedBox.shrink(
+                        key: ValueKey('advanced_filters_closed'),
+                      ),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 20),
           _buildSearchButton(colorScheme),
         ],

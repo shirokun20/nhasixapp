@@ -101,6 +101,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadBulkDeleteEvent>(_onBulkDelete);
     on<DownloadCompletedEvent>(_onCompleted);
+    on<DownloadNativeFailedEvent>(_onNativeFailed);
 
     // Initialize notifications (checks existing permission, doesn't request)
     // If permission not granted, service will be initialized later when user grants permission
@@ -130,20 +131,91 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   /// Helper to generate fallback URL based on source
   String _generateFallbackUrl(String? sourceId, String contentId) {
-    if (sourceId != null && sourceId.isNotEmpty) {
-      final preferChapterPattern = contentId.contains('chapter');
-      final configDrivenUrl = SourceUrlResolver.buildContentUrl(
-        remoteConfigService: _remoteConfigService,
-        sourceId: sourceId,
-        contentId: contentId,
-        preferChapterPattern: preferChapterPattern,
-      );
-      if (configDrivenUrl.isNotEmpty) {
-        return configDrivenUrl;
+    try {
+      if (sourceId != null && sourceId.isNotEmpty) {
+        final preferChapterPattern = contentId.contains('chapter');
+        final normalizedContentId = _normalizeDetailContentId(
+          sourceId: sourceId,
+          contentId: contentId,
+        );
+        final targetContentId =
+            preferChapterPattern ? contentId : normalizedContentId;
+        final configDrivenUrl = SourceUrlResolver.buildContentUrl(
+          remoteConfigService: _remoteConfigService,
+          sourceId: sourceId,
+          contentId: targetContentId,
+          preferChapterPattern: preferChapterPattern,
+        );
+        if (configDrivenUrl.isNotEmpty) {
+          return configDrivenUrl;
+        }
       }
+    } catch (e) {
+      _logger.w(
+        'DownloadBloc: Failed to build fallback URL for $sourceId/$contentId: $e',
+      );
     }
 
     return ''; // Unknown source
+  }
+
+  String _normalizeDetailContentId({
+    required String sourceId,
+    required String contentId,
+  }) {
+    if (_isEhentaiSource(sourceId)) {
+      return contentId;
+    }
+
+    final slashIndex = contentId.lastIndexOf('/');
+    if (slashIndex <= 0 || slashIndex >= contentId.length - 1) {
+      return contentId;
+    }
+
+    final parentId = contentId.substring(0, slashIndex);
+    final chapterSegment = contentId.substring(slashIndex + 1);
+    final looksNumericChapter = int.tryParse(chapterSegment) != null;
+    if (!looksNumericChapter || parentId.isEmpty) {
+      return contentId;
+    }
+
+    final rawConfig = _remoteConfigService.getRawConfig(sourceId);
+    final apiEndpoints = ((rawConfig?['api'] as Map?)?['endpoints'] as Map?)
+            ?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final detailPath = _extractEndpointPath(apiEndpoints['detail']);
+    final imagesPath = _extractEndpointPath(apiEndpoints['images']) ??
+        _extractEndpointPath(apiEndpoints['pages']) ??
+        _extractEndpointPath(apiEndpoints['chapterImages']);
+
+    final detailExpectsSingleId = detailPath?.contains('{id}') ?? false;
+    final chapterEndpointPresent = (imagesPath?.contains('{chapter}') ??
+            imagesPath?.contains('{chapterId}') ??
+            false) ||
+        imagesPath?.contains('{chapterIdFull}') == true;
+
+    if (detailExpectsSingleId && chapterEndpointPresent) {
+      return parentId;
+    }
+
+    return contentId;
+  }
+
+  String? _extractEndpointPath(dynamic endpoint) {
+    if (endpoint is String && endpoint.isNotEmpty) {
+      return endpoint;
+    }
+    if (endpoint is Map) {
+      final pathValue = endpoint['path'];
+      if (pathValue is String && pathValue.isNotEmpty) {
+        return pathValue;
+      }
+      final urlValue = endpoint['url'];
+      if (urlValue is String && urlValue.isNotEmpty) {
+        return urlValue;
+      }
+    }
+    return null;
   }
 
   bool _isEhentaiSource(String? sourceId) {
@@ -239,11 +311,23 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       (update) {
         _logger.d('DownloadBloc: Received progress update: $update');
 
-        // Check if this is a completion event (special marker)
-        if (update.downloadedPages == -1 && update.totalPages == -1) {
-          _logger.d(
-              'DownloadBloc: Received completion event for ${update.contentId}');
-          add(DownloadCompletedEvent(update.contentId));
+        // Check if this is a terminal event marker from DownloadManager
+        if (update.downloadedPages == -1) {
+          if (update.totalPages == -1) {
+            _logger.d(
+                'DownloadBloc: Received completion event for ${update.contentId}');
+            add(DownloadCompletedEvent(update.contentId));
+          } else if (update.totalPages == -2) {
+            _logger.w(
+                'DownloadBloc: Received native failed event for ${update.contentId}');
+            add(DownloadNativeFailedEvent(
+              update.contentId,
+              error: 'Native download reported failure',
+            ));
+          } else {
+            _logger.w(
+                'DownloadBloc: Ignored unknown terminal marker for ${update.contentId}: ${update.totalPages}');
+          }
         } else {
           // Regular progress update
           add(DownloadProgressUpdateEvent(
@@ -802,12 +886,29 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Get content details for download
       late Content content;
       try {
+        final detailContentId = _normalizeDetailContentId(
+          sourceId: updatedDownload.sourceId ?? '',
+          contentId: event.contentId,
+        );
+        final isCompositeChapterDownload = detailContentId != event.contentId;
         content = await _getContentDetailUseCase.call(
           GetContentDetailParams.fromString(
-            event.contentId,
+            detailContentId,
             sourceId: updatedDownload.sourceId,
           ),
         );
+
+        // Keep chapter ID stable for chapter downloads (e.g. "slug/17").
+        // Detail APIs may require parent slug only, but offline metadata,
+        // download status, and reader routing must keep the original chapter ID.
+        if (isCompositeChapterDownload) {
+          final chapterUrl =
+              _generateFallbackUrl(updatedDownload.sourceId, event.contentId);
+          content = content.copyWith(
+            id: event.contentId,
+            url: chapterUrl.isNotEmpty ? chapterUrl : content.url,
+          );
+        }
       } catch (e) {
         // getContentDetail failed - fallback
         _logger.w(
@@ -866,33 +967,48 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
 
           if (resolvedImages.isNotEmpty) {
+            // Keep resolved images even if subsequent metadata/state updates fail.
+            var fallbackUrl = content.url;
+            if (fallbackUrl == null || fallbackUrl.isEmpty) {
+              try {
+                fallbackUrl =
+                    _generateFallbackUrl(updatedDownload.sourceId, event.contentId);
+              } catch (e) {
+                _logger.w(
+                  'DownloadBloc: Failed to generate fallback chapter URL for ${event.contentId}: $e',
+                );
+              }
+            }
+
             content = content.copyWith(
               imageUrls: resolvedImages,
               pageCount: resolvedImages.length,
-              // If URL is still empty after chapter fetch (unlikely but possible), try again
-              url: (content.url?.isEmpty ?? true)
-                  ? _generateFallbackUrl(
-                      updatedDownload.sourceId, event.contentId)
-                  : content.url,
+              url: fallbackUrl,
             );
 
-            // Update total pages
-            updatedDownload = updatedDownload.copyWith(
-              totalPages: resolvedImages.length,
-              sourceId: updatedDownload.sourceId,
-            );
-            await _userDataRepository.saveDownloadStatus(updatedDownload);
+            // Persist download metadata/state best-effort, but do not fail the
+            // whole start flow after images are already resolved.
+            try {
+              updatedDownload = updatedDownload.copyWith(
+                totalPages: resolvedImages.length,
+                sourceId: updatedDownload.sourceId,
+              );
+              await _userDataRepository.saveDownloadStatus(updatedDownload);
 
-            // Update state again
-            final latestState = state;
-            if (latestState is DownloadLoaded) {
-              emit(latestState.copyWith(
-                downloads: latestState.downloads
-                    .map((d) =>
-                        d.contentId == event.contentId ? updatedDownload : d)
-                    .toList(),
-                lastUpdated: DateTime.now(),
-              ));
+              final latestState = state;
+              if (latestState is DownloadLoaded) {
+                emit(latestState.copyWith(
+                  downloads: latestState.downloads
+                      .map((d) =>
+                          d.contentId == event.contentId ? updatedDownload : d)
+                      .toList(),
+                  lastUpdated: DateTime.now(),
+                ));
+              }
+            } catch (e) {
+              _logger.w(
+                'DownloadBloc: Chapter image metadata update failed for ${event.contentId}: $e',
+              );
             }
           }
         } catch (e) {
@@ -918,6 +1034,20 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         );
         _logger.d(
             'DownloadBloc: Restored correct title from pending download status: ${content.title}');
+      }
+
+      if (content.imageUrls.isEmpty) {
+        _logger.e(
+          'DownloadBloc: No image URLs resolved for ${event.contentId} '
+          '(source: ${content.sourceId}). Aborting download start.',
+        );
+        await _handleDownloadFailure(
+          event.contentId,
+          'No chapter images resolved for download',
+          null,
+          emit,
+        );
+        return;
       }
 
       // Create download task
@@ -1077,8 +1207,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               '🌐 Loaded ${networkHeaders.length} network headers for ${content.sourceId}: ${networkHeaders.keys.join(", ")}');
         }
 
-        // Anti-hotlink hardening: prefer dynamic referer/origin from current content URL
-        // (chapter/detail URL) so native worker behaves closer to reader requests.
+        // Anti-hotlink hardening: prefer dynamic referer/origin from current
+        // content URL only when config/source did not provide explicit values.
         if (content.url != null && content.url!.isNotEmpty) {
           final parsedContentUri = Uri.tryParse(content.url!);
           if (parsedContentUri != null && parsedContentUri.scheme.isNotEmpty) {
@@ -1088,14 +1218,36 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
                 content.url!.endsWith('/') ? content.url! : '${content.url!}/';
             final origin =
                 '${parsedContentUri.scheme}://${parsedContentUri.host}';
+            final hasExplicitReferer = networkHeaders.entries.any(
+              (entry) =>
+                  entry.key.toLowerCase() == 'referer' &&
+                  entry.value.trim().isNotEmpty,
+            );
+            final hasExplicitOrigin = networkHeaders.entries.any(
+              (entry) =>
+                  entry.key.toLowerCase() == 'origin' &&
+                  entry.value.trim().isNotEmpty,
+            );
 
-            networkHeaders['Referer'] = normalizedReferer;
-            networkHeaders['referer'] = normalizedReferer;
-            networkHeaders['Origin'] = origin;
-            networkHeaders['origin'] = origin;
+            if (!hasExplicitReferer) {
+              networkHeaders['Referer'] = normalizedReferer;
+              networkHeaders['referer'] = normalizedReferer;
+            }
+            if (!hasExplicitOrigin) {
+              networkHeaders['Origin'] = origin;
+              networkHeaders['origin'] = origin;
+            }
 
-            _logger.i(
-                '🌐 Applied dynamic referer/origin for ${content.sourceId}: $normalizedReferer');
+            if (!hasExplicitReferer || !hasExplicitOrigin) {
+              _logger.i(
+                '🌐 Applied dynamic referer/origin for ${content.sourceId}: '
+                '$normalizedReferer',
+              );
+            } else {
+              _logger.d(
+                '🌐 Keeping configured referer/origin for ${content.sourceId}',
+              );
+            }
           }
         }
       } catch (e) {
@@ -1961,6 +2113,53 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  Future<int> _countDownloadedImages({
+    required String contentId,
+    required String? sourceId,
+    String? downloadPath,
+  }) async {
+    bool isImageFile(String filePath) {
+      final lower = filePath.toLowerCase();
+      return lower.endsWith('.jpg') ||
+          lower.endsWith('.jpeg') ||
+          lower.endsWith('.png') ||
+          lower.endsWith('.webp') ||
+          lower.endsWith('.avif') ||
+          lower.endsWith('.gif') ||
+          lower.endsWith('.bmp');
+    }
+
+    Future<int> countFromBasePath(String basePath) async {
+      final baseDir = Directory(basePath);
+      if (!await baseDir.exists()) {
+        return 0;
+      }
+
+      final imagesDir =
+          Directory(path.join(baseDir.path, AppStorage.imagesSubfolder));
+      final targetDir = await imagesDir.exists() ? imagesDir : baseDir;
+
+      final entities = await targetDir.list().toList();
+      return entities
+          .whereType<File>()
+          .where((f) => isImageFile(f.path))
+          .length;
+    }
+
+    if (downloadPath != null && downloadPath.isNotEmpty) {
+      final directCount = await countFromBasePath(downloadPath);
+      if (directCount > 0) {
+        return directCount;
+      }
+    }
+
+    final resolvedPaths = await DownloadStorageUtils.getDownloadedImagePaths(
+      contentId,
+      sourceId: sourceId,
+    );
+    return resolvedPaths.length;
+  }
+
   /// Handle download completion
   Future<void> _onCompleted(
     DownloadCompletedEvent event,
@@ -2073,6 +2272,29 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             .e('❌ Cannot calculate file size: downloadPath is null or empty');
       }
 
+      final downloadedImagesCount = await _countDownloadedImages(
+        contentId: event.contentId,
+        sourceId: currentDownload.sourceId,
+        downloadPath: downloadPath,
+      );
+      final hasPathHint = (downloadPath != null && downloadPath.isNotEmpty) ||
+          (currentDownload.downloadPath != null &&
+              currentDownload.downloadPath!.isNotEmpty);
+      if (hasPathHint && downloadedImagesCount <= 0) {
+        _logger.e(
+          '❌ DownloadBloc: Native completion arrived but no image files were found '
+          'for ${event.contentId}. Marking as failed.',
+        );
+        await _handleDownloadFailure(
+          event.contentId,
+          'Native download completed without saved image files',
+          null,
+          emit,
+        );
+        add(const DownloadRefreshEvent());
+        return;
+      }
+
       try {
         await _offlineContentManager
             .reconcileChapterMetadataForCompletedDownload(
@@ -2088,8 +2310,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final completedDownload = DownloadStatus(
         contentId: currentDownload.contentId,
         state: DownloadState.completed,
-        downloadedPages: currentDownload.totalPages, // Ensure full count
-        totalPages: currentDownload.totalPages,
+        downloadedPages: downloadedImagesCount,
+        totalPages: currentDownload.totalPages > 0
+            ? currentDownload.totalPages
+            : downloadedImagesCount,
         startTime: currentDownload.startTime,
         endTime: DateTime.now(),
         error: null, // Clear error explicitly
@@ -2152,6 +2376,21 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Ensure we at least leave a consistent state
       add(const DownloadRefreshEvent());
     }
+  }
+
+  Future<void> _onNativeFailed(
+    DownloadNativeFailedEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    _logger.e(
+      'DownloadBloc: Native layer reported failure for ${event.contentId}',
+    );
+    await _handleDownloadFailure(
+      event.contentId,
+      event.error ?? 'Native download failed',
+      null,
+      emit,
+    );
   }
 
   /// Update download settings

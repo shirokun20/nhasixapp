@@ -17,6 +17,7 @@ import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../data/models/reader_settings_model.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/utils/chapter_id_classifier.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/config/remote_config_service.dart';
@@ -134,6 +135,12 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Check network connectivity?.chapters;
 
       final isConnected = networkCubit.isConnected;
+      final sourceHint = _resolveSourceHint(
+        preloadedContent: preloadedContent,
+        parentContent: parentContent,
+      );
+      final isCrotpediaChapter =
+          _isCrotpediaChapterId(contentId, sourceId: sourceHint);
 
       // 1. Check offline availability first (Fastest)
       // This uses the new caching in OfflineContentManager so it's very fast
@@ -211,18 +218,17 @@ class ReaderCubit extends Cubit<ReaderState> {
 
         // 🚀 OPTIONAL: Trigger background online update if connected
         // This updates metadata/details silently without blocking UI
-        if (isConnected && !_isCrotpediaChapterId(contentId)) {
+        if (isConnected && !isCrotpediaChapter) {
           await _fetchOnlineDetailsInBackground(contentId);
         }
       }
       // Strategy C: Online Content (Fallback) - only if content not set yet
-      else if (content == null &&
-          isConnected &&
-          !_isCrotpediaChapterId(contentId)) {
+      else if (content == null && isConnected && !isCrotpediaChapter) {
         _logger.i('🌐 Strategy C: Fetching online content: $contentId');
         try {
           content = await getContentDetailUseCase(
-              GetContentDetailParams.fromString(contentId));
+              GetContentDetailParams.fromString(contentId,
+                  sourceId: sourceHint));
           isOfflineMode = false;
         } catch (e) {
           _logger.w('Online fetch failed: $e');
@@ -246,7 +252,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       if (content == null) {
-        if (_isCrotpediaChapterId(contentId)) {
+        if (isCrotpediaChapter) {
           throw Exception(
               'Chapter not available offline. Please access this chapter from the series detail page to read online.');
         }
@@ -255,9 +261,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // 3.5. Fetch ChapterData if missing (for navigation)
       // If we loaded content but don't have chapterData (navigation links), try to fetch it
-      if (chapterData == null &&
-          isConnected &&
-          _isCrotpediaChapterId(contentId)) {
+      if (chapterData == null && isConnected && isCrotpediaChapter) {
         try {
           _logger
               .i('🔍 Fetching missing chapter data for navigation: $contentId');
@@ -928,7 +932,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       // If currentChapter is null but content.id looks like a chapter ID, use it
       if (chapterId == null || chapterId.isEmpty) {
         final contentId = state.content!.id;
-        if (_isCrotpediaChapterId(contentId)) {
+        if (_isCrotpediaChapterId(
+          contentId,
+          sourceId: state.content?.sourceId ?? _parentContent?.sourceId,
+        )) {
           chapterId = contentId;
           // Try to extract chapter title from content title
           final title = state.content!.title;
@@ -2245,7 +2252,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       // If currentChapter is null but content.id looks like a chapter ID, use it
       if (chapterId == null || chapterId.isEmpty) {
         final contentId = state.content!.id;
-        if (_isCrotpediaChapterId(contentId)) {
+        if (_isCrotpediaChapterId(
+          contentId,
+          sourceId: state.content?.sourceId ?? _parentContent?.sourceId,
+        )) {
           chapterId = contentId;
           // Try to extract chapter title from content title
           // Format: "Series Title - Chapter X" or just "Chapter X"
@@ -2399,24 +2409,36 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Check if contentId is a Crotpedia chapter ID
   /// Crotpedia chapter IDs typically contain "chapter" in the slug
   /// e.g., "manga-name-chapter-1-bahasa-indonesia"
-  bool _isCrotpediaChapterId(String contentId) {
-    // Nhentai IDs are pure numbers (e.g., "123456")
-    // Crotpedia chapter IDs are slugs with "chapter" keyword or multiple dashes
+  bool _isCrotpediaChapterId(
+    String contentId, {
+    String? sourceId,
+  }) {
+    return ChapterIdClassifier.isCrotpediaChapterId(
+      contentId,
+      sourceId: sourceId,
+    );
+  }
 
-    // If it's purely numeric, it's definitely not a Crotpedia chapter
-    if (RegExp(r'^\d+$').hasMatch(contentId)) {
-      return false;
+  String? _resolveSourceHint({
+    Content? preloadedContent,
+    Content? parentContent,
+  }) {
+    final preloadedSource = preloadedContent?.sourceId.trim();
+    if (preloadedSource != null && preloadedSource.isNotEmpty) {
+      return preloadedSource;
     }
 
-    // If it contains "chapter" or "ch-", it's likely a Crotpedia chapter
-    if (contentId.contains('chapter') || contentId.contains('ch-')) {
-      return true;
+    final parentSource = parentContent?.sourceId.trim();
+    if (parentSource != null && parentSource.isNotEmpty) {
+      return parentSource;
     }
 
-    // Additional check: Crotpedia slugs typically have multiple dashes
-    // and contain language indicators like "bahasa-indonesia"
-    final dashCount = '-'.allMatches(contentId).length;
-    return dashCount >= 3; // e.g., "series-name-chapter-1" has 3 dashes minimum
+    final stateSource = state.content?.sourceId.trim();
+    if (stateSource != null && stateSource.isNotEmpty) {
+      return stateSource;
+    }
+
+    return null;
   }
 
   /// Stop auto-hide UI timer

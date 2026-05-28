@@ -49,8 +49,8 @@ class SourceUrlResolver {
     }
 
     final detailTemplate = _patternUrl(urlPatterns['detail']) ??
-        apiEndpoints['contentUrl'] as String? ??
-        apiEndpoints['detail'] as String?;
+        _patternUrl(apiEndpoints['contentUrl']) ??
+        _patternUrl(apiEndpoints['detail']);
     if (detailTemplate != null && detailTemplate.isNotEmpty) {
       return urlBuilder.buildDetailUrl(detailTemplate, contentId);
     }
@@ -59,9 +59,22 @@ class SourceUrlResolver {
   }
 
   static String _resolveBaseUrl(Map<String, dynamic> rawConfig) {
-    return ((rawConfig['api'] as Map?)?['baseUrl'] as String?) ??
-        (rawConfig['baseUrl'] as String?) ??
-        '';
+    final api = (rawConfig['api'] as Map?)?.cast<String, dynamic>();
+    final candidates = <dynamic>[
+      api?['url'],
+      api?['apiBase'],
+      api?['baseUrl'],
+      rawConfig['baseUrl'],
+    ];
+
+    for (final candidate in candidates) {
+      final value = candidate?.toString().trim() ?? '';
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return '';
   }
 
   static String? _patternUrl(dynamic value) {
@@ -69,7 +82,14 @@ class SourceUrlResolver {
       return value;
     }
     if (value is Map) {
-      return value['url'] as String?;
+      final path = value['path'];
+      if (path is String && path.isNotEmpty) {
+        return path;
+      }
+      final url = value['url'];
+      if (url is String && url.isNotEmpty) {
+        return url;
+      }
     }
     return null;
   }
