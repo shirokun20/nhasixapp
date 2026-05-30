@@ -896,12 +896,12 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           config.options.firstWhere((o) => o.value == newValue);
 
       final sortOption = SortOption.values.firstWhere(
-            (so) => so.name == newValue,
-            orElse: () => SortOption.values.firstWhere(
-              (so) => so.apiValue == optionConfig.apiValue,
-              orElse: () => SortOption.newest,
-            ),
-          );
+        (so) => so.name == newValue,
+        orElse: () => SortOption.values.firstWhere(
+          (so) => so.apiValue == optionConfig.apiValue,
+          orElse: () => SortOption.newest,
+        ),
+      );
 
       _onSortingChanged(sortOption);
     } catch (e) {
@@ -1630,13 +1630,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       final sourceId = _getActiveSource()?.id;
       if (sourceId == null) return null;
 
-      final rawConfig =
-          getIt<RemoteConfigService>().getRawConfig(sourceId);
+      final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
       final ui = rawConfig?['ui'] as Map<String, dynamic>?;
       if (ui == null) return null;
 
-      final templateKey =
-          isSearch ? 'searchUrlTemplate' : 'browseUrlTemplate';
+      final templateKey = isSearch ? 'searchUrlTemplate' : 'browseUrlTemplate';
       final template = ui[templateKey] as String?;
       if (template == null || template.trim().isEmpty) return null;
 
@@ -1663,8 +1661,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     Map<String, dynamic>? rawConfig,
   ) {
     try {
-      final rawOptions = rawConfig?['searchConfig']?['sortingConfig']
-          ?['options'] as List?;
+      final rawOptions =
+          rawConfig?['searchConfig']?['sortingConfig']?['options'] as List?;
       final options = rawOptions?.cast<Map<String, dynamic>>();
       if (options == null) return sort.apiValue;
 
@@ -1676,8 +1674,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       }
 
       // Fallback: match by apiValue
-      final byApi = options.firstWhere(
-          (o) => o['apiValue'] == sort.apiValue,
+      final byApi = options.firstWhere((o) => o['apiValue'] == sort.apiValue,
           orElse: () => {});
       if (byApi.isNotEmpty && byApi['apiValue'] != null) {
         return byApi['apiValue'] as String;
@@ -1852,7 +1849,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       for (final content in contentState.contents) {
         try {
           final isDownloaded = await ContentDownloadCache.isDownloaded(
-              content.id, mounted ? context : null);
+            content.id,
+            sourceId: content.sourceId,
+            context: mounted ? context : null,
+          );
           if (isDownloaded) {
             alreadyDownloadedCount++;
           } else {

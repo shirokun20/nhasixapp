@@ -28,59 +28,113 @@ class ContentDownloadCache {
   static final Map<String, DateTime> _cacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
 
-  static Future<bool> isDownloaded(String contentId,
-      [BuildContext? context]) async {
-    // Check cache first
-    if (_cache.containsKey(contentId)) {
-      final cacheTime = _cacheTime[contentId];
-      if (cacheTime != null &&
-          DateTime.now().difference(cacheTime) < _cacheExpiry) {
-        return _cache[contentId]!;
-      }
+  static String _buildCacheKey(String contentId, String? sourceId) {
+    final normalizedSource = (sourceId ?? '').trim().toLowerCase();
+    return '$normalizedSource::$contentId';
+  }
+
+  static bool _matchesCompletedDownload(
+    DownloadStatus download,
+    String contentId, {
+    String? sourceId,
+  }) {
+    final normalizedSource = (sourceId ?? '').trim().toLowerCase();
+    final downloadSource = (download.sourceId ?? '').trim().toLowerCase();
+
+    if (normalizedSource.isNotEmpty && downloadSource != normalizedSource) {
+      return false;
     }
 
-    // 🐛 FIXED: Priority 1 - Check DownloadBloc state (single source of truth)
-    bool isDownloaded = false;
+    if (download.contentId == contentId) {
+      return true;
+    }
+
+    // Chapter-based sources keep completed download IDs as composite values
+    // like "slug/17". Highlight the parent series card when any descendant
+    // chapter under the same source has been downloaded.
+    return download.contentId.startsWith('$contentId/');
+  }
+
+  static Future<bool> isDownloaded(
+    String contentId, {
+    String? sourceId,
+    BuildContext? context,
+  }) async {
+    final cacheKey = _buildCacheKey(contentId, sourceId);
+
+    // Priority 1 - Read DownloadBloc state when available. This is both the
+    // cheapest and most accurate source because it already reflects source-aware
+    // completed downloads in memory.
     if (context != null && context.mounted) {
       try {
         final downloadState = context.read<DownloadBloc>().state;
         if (downloadState is DownloadLoaded) {
-          isDownloaded = downloadState.isDownloaded(contentId);
+          final isDownloaded = downloadState.completedDownloads.any(
+            (download) => _matchesCompletedDownload(
+              download,
+              contentId,
+              sourceId: sourceId,
+            ),
+          );
 
-          // Cache DownloadBloc result as it's authoritative
-          _cache[contentId] = isDownloaded;
-          _cacheTime[contentId] = DateTime.now();
-
+          _cache[cacheKey] = isDownloaded;
+          _cacheTime[cacheKey] = DateTime.now();
           return isDownloaded;
         }
       } catch (e) {
-        // DownloadBloc not available or context invalid, fallback to filesystem check
         Logger().w(
-            'Failed to read DownloadBloc state, falling back to filesystem check: $e');
+          'Failed to read DownloadBloc state, falling back to cached/filesystem check: $e',
+        );
       }
     }
 
-    // Priority 2 - Fallback to filesystem check only when DownloadBloc unavailable
+    // Check cache first
+    if (_cache.containsKey(cacheKey)) {
+      final cacheTime = _cacheTime[cacheKey];
+      if (cacheTime != null &&
+          DateTime.now().difference(cacheTime) < _cacheExpiry) {
+        return _cache[cacheKey]!;
+      }
+    }
+
+    bool isDownloaded = false;
+
+    // Priority 2 - Fallback to filesystem check only when DownloadBloc is not
+    // reachable. This remains an exact content ID check; chapter-descendant
+    // matching is intentionally handled from DownloadBloc state to avoid doing
+    // expensive directory scans for every card build.
     try {
       isDownloaded = await LocalImagePreloader.isContentDownloaded(contentId);
 
       // Cache result
-      _cache[contentId] = isDownloaded;
-      _cacheTime[contentId] = DateTime.now();
+      _cache[cacheKey] = isDownloaded;
+      _cacheTime[cacheKey] = DateTime.now();
 
       return isDownloaded;
     } catch (e) {
       // If error checking, assume not downloaded and cache negative result briefly
-      _cache[contentId] = false;
-      _cacheTime[contentId] = DateTime.now();
+      _cache[cacheKey] = false;
+      _cacheTime[cacheKey] = DateTime.now();
       return false;
     }
   }
 
   /// Invalidate cache for specific content to force refresh
-  static void invalidateCache(String contentId) {
-    _cache.remove(contentId);
-    _cacheTime.remove(contentId);
+  static void invalidateCache(String contentId, {String? sourceId}) {
+    if (sourceId != null) {
+      final cacheKey = _buildCacheKey(contentId, sourceId);
+      _cache.remove(cacheKey);
+      _cacheTime.remove(cacheKey);
+      return;
+    }
+
+    final suffix = '::$contentId';
+    final keysToRemove =
+        _cache.keys.where((key) => key.endsWith(suffix)).toList();
+    for (final key in keysToRemove) {
+      _cache.remove(key);
+      _cacheTime.remove(key);
+    }
   }
 
   /// Clear all cache entries
@@ -411,8 +465,11 @@ class _ContentListWidgetState extends State<ContentListWidget> {
 
                 // Use FutureBuilder to check download status for highlight
                 return FutureBuilder<bool>(
-                  future: ContentDownloadCache.isDownloaded(content.id,
-                      context), // 🐛 FIXED: Pass context for DownloadBloc access
+                  future: ContentDownloadCache.isDownloaded(
+                    content.id,
+                    sourceId: content.sourceId,
+                    context: context,
+                  ),
                   builder: (context, snapshot) {
                     final isDownloaded = snapshot.data ?? false;
 

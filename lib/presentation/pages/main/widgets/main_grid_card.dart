@@ -26,7 +26,11 @@ class MainGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: ContentDownloadCache.isDownloaded(content.id, context),
+      future: ContentDownloadCache.isDownloaded(
+        content.id,
+        sourceId: content.sourceId,
+        context: context,
+      ),
       builder: (context, snapshot) {
         final isDownloaded = snapshot.data ?? false;
         final theme = Theme.of(context);

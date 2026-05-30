@@ -3001,6 +3001,15 @@
       }
     }
   },
+  "readerTapDirectionLabel": "Arah Tap",
+  "readerTapDirectionNormal": "Normal",
+  "readerTapDirectionInverted": "Balik",
+  "readerTapDirectionNormalDescription": "Tap kanan untuk ke halaman berikutnya",
+  "readerTapDirectionInvertedDescription": "Tap kiri untuk ke halaman berikutnya",
+  "readerClearImageCache": "Bersihkan Cache Gambar",
+  "readerImageCacheCleared": "Cache gambar dibersihkan. Gulir untuk memuat ulang halaman.",
+  "readerOpenInGallery": "Buka di galeri",
+  "readerPinchToZoom": "Cubit untuk zoom",
   "captchaCancelled": "Tantangan CAPTCHA dibatalkan atau gagal.",
   "failedToOpenCaptcha": "Gagal membuka pemecah CAPTCHA bawaan: {error}"
 }

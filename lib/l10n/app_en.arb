@@ -4021,6 +4021,16 @@
     }
   },
 
+  "readerTapDirectionLabel": "Tap Direction",
+  "readerTapDirectionNormal": "Normal",
+  "readerTapDirectionInverted": "Reverse",
+  "readerTapDirectionNormalDescription": "Tap right to go to the next page",
+  "readerTapDirectionInvertedDescription": "Tap left to go to the next page",
+  "readerClearImageCache": "Clear Image Cache",
+  "readerImageCacheCleared": "Image cache cleared. Scroll to reload pages.",
+  "readerOpenInGallery": "Open in gallery",
+  "readerPinchToZoom": "Pinch to zoom",
+
   "captchaCancelled": "CAPTCHA challenge was cancelled or failed.",
   "failedToOpenCaptcha": "Failed to open native CAPTCHA solver: {error}",
   "@failedToOpenCaptcha": {

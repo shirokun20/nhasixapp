@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// A brief overlay shown when a chapter is first opened.
 /// Auto-dismisses after [autoDismissDuration].
@@ -97,7 +98,8 @@ class _ChapterOpenOverlayState extends State<ChapterOpenOverlay>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            '${widget.totalPages} pages',
+                            AppLocalizations.of(context)!
+                                .nPages(widget.totalPages),
                             style: const TextStyle(
                                 color: Colors.white60, fontSize: 11),
                           ),

@@ -2546,7 +2546,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           : () =>
                               _openFailedAvifExternally(resolvedFailedSource),
                       icon: const Icon(Icons.photo_library_outlined, size: 16),
-                      label: const Text('Open in gallery'),
+                      label: Text(l10n.readerOpenInGallery),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -2716,15 +2716,21 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.pinch, color: Colors.white70, size: 16),
-                          SizedBox(width: 6),
+                          const Icon(
+                            Icons.pinch,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            'Pinch to zoom',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12),
+                            AppLocalizations.of(context)!.readerPinchToZoom,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),

@@ -2188,29 +2188,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 const Divider(height: 1),
                 ListTile(
                   title: Text(
-                    'Arah Tap',
+                    AppLocalizations.of(context)!.readerTapDirectionLabel,
                     style: TextStyleConst.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   subtitle: Text(
-                    (currentState.tapDirection ?? TapDirection.normal)
-                        .description,
+                    _getTapDirectionDescription(
+                      currentState.tapDirection ?? TapDirection.normal,
+                    ),
                     style: TextStyleConst.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   trailing: SegmentedButton<TapDirection>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: TapDirection.normal,
-                        icon: Icon(Icons.arrow_forward, size: 16),
-                        label: Text('Normal'),
+                        icon: const Icon(Icons.arrow_forward, size: 16),
+                        label: Text(
+                          AppLocalizations.of(context)!
+                              .readerTapDirectionNormal,
+                        ),
                       ),
                       ButtonSegment(
                         value: TapDirection.inverted,
-                        icon: Icon(Icons.arrow_back, size: 16),
-                        label: Text('Balik'),
+                        icon: const Icon(Icons.arrow_back, size: 16),
+                        label: Text(
+                          AppLocalizations.of(context)!
+                              .readerTapDirectionInverted,
+                        ),
                       ),
                     ],
                     selected: {
@@ -2292,7 +2299,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   label: Text(
-                    'Clear Image Cache',
+                    AppLocalizations.of(context)!.readerClearImageCache,
                     style: TextStyleConst.buttonMedium.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -2357,6 +2364,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
         return AppLocalizations.of(context)!.verticalPages;
       case ReadingMode.continuousScroll:
         return AppLocalizations.of(context)!.continuousScroll;
+    }
+  }
+
+  String _getTapDirectionDescription(TapDirection direction) {
+    switch (direction) {
+      case TapDirection.normal:
+        return AppLocalizations.of(context)!
+            .readerTapDirectionNormalDescription;
+      case TapDirection.inverted:
+        return AppLocalizations.of(context)!
+            .readerTapDirectionInvertedDescription;
     }
   }
 
@@ -2769,7 +2787,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Image cache cleared. Scroll to reload pages.'),
+          content: Text(AppLocalizations.of(context)!.readerImageCacheCleared),
           backgroundColor: Theme.of(context).colorScheme.primary,
           duration: const Duration(seconds: 2),
         ),

@@ -3597,6 +3597,15 @@
       }
     }
   },
+  "readerTapDirectionLabel": "点击方向",
+  "readerTapDirectionNormal": "正常",
+  "readerTapDirectionInverted": "反向",
+  "readerTapDirectionNormalDescription": "点击右侧前往下一页",
+  "readerTapDirectionInvertedDescription": "点击左侧前往下一页",
+  "readerClearImageCache": "清除图片缓存",
+  "readerImageCacheCleared": "图片缓存已清除。滚动以重新加载页面。",
+  "readerOpenInGallery": "在图库中打开",
+  "readerPinchToZoom": "双指缩放",
   "captchaCancelled": "验证码挑战已取消或失败。",
   "failedToOpenCaptcha": "无法打开原生验证码求解器：{error}"
 }

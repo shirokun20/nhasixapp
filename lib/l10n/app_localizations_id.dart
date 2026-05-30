@@ -5118,6 +5118,36 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get readerTapDirectionLabel => 'Arah Tap';
+
+  @override
+  String get readerTapDirectionNormal => 'Normal';
+
+  @override
+  String get readerTapDirectionInverted => 'Balik';
+
+  @override
+  String get readerTapDirectionNormalDescription =>
+      'Tap kanan untuk ke halaman berikutnya';
+
+  @override
+  String get readerTapDirectionInvertedDescription =>
+      'Tap kiri untuk ke halaman berikutnya';
+
+  @override
+  String get readerClearImageCache => 'Bersihkan Cache Gambar';
+
+  @override
+  String get readerImageCacheCleared =>
+      'Cache gambar dibersihkan. Gulir untuk memuat ulang halaman.';
+
+  @override
+  String get readerOpenInGallery => 'Buka di galeri';
+
+  @override
+  String get readerPinchToZoom => 'Cubit untuk zoom';
+
+  @override
   String get captchaCancelled => 'Tantangan CAPTCHA dibatalkan atau gagal.';
 
   @override

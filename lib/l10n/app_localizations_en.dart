@@ -5093,6 +5093,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get readerTapDirectionLabel => 'Tap Direction';
+
+  @override
+  String get readerTapDirectionNormal => 'Normal';
+
+  @override
+  String get readerTapDirectionInverted => 'Reverse';
+
+  @override
+  String get readerTapDirectionNormalDescription =>
+      'Tap right to go to the next page';
+
+  @override
+  String get readerTapDirectionInvertedDescription =>
+      'Tap left to go to the next page';
+
+  @override
+  String get readerClearImageCache => 'Clear Image Cache';
+
+  @override
+  String get readerImageCacheCleared =>
+      'Image cache cleared. Scroll to reload pages.';
+
+  @override
+  String get readerOpenInGallery => 'Open in gallery';
+
+  @override
+  String get readerPinchToZoom => 'Pinch to zoom';
+
+  @override
   String get captchaCancelled => 'CAPTCHA challenge was cancelled or failed.';
 
   @override

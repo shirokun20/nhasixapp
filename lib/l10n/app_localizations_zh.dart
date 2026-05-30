@@ -4952,6 +4952,33 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get readerTapDirectionLabel => '点击方向';
+
+  @override
+  String get readerTapDirectionNormal => '正常';
+
+  @override
+  String get readerTapDirectionInverted => '反向';
+
+  @override
+  String get readerTapDirectionNormalDescription => '点击右侧前往下一页';
+
+  @override
+  String get readerTapDirectionInvertedDescription => '点击左侧前往下一页';
+
+  @override
+  String get readerClearImageCache => '清除图片缓存';
+
+  @override
+  String get readerImageCacheCleared => '图片缓存已清除。滚动以重新加载页面。';
+
+  @override
+  String get readerOpenInGallery => '在图库中打开';
+
+  @override
+  String get readerPinchToZoom => '双指缩放';
+
+  @override
   String get captchaCancelled => '验证码挑战已取消或失败。';
 
   @override

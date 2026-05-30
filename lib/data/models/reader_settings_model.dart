@@ -15,52 +15,6 @@ enum TapDirection {
   inverted, // Left = next, Right = previous (for RTL manga)
 }
 
-/// Extension for TapDirection display names
-extension TapDirectionExtension on TapDirection {
-  String get displayName {
-    switch (this) {
-      case TapDirection.normal:
-        return 'Normal (→ Next)';
-      case TapDirection.inverted:
-        return 'Inverted (← Next)';
-    }
-  }
-
-  String get description {
-    switch (this) {
-      case TapDirection.normal:
-        return 'Tap right to go to next page';
-      case TapDirection.inverted:
-        return 'Tap left to go to next page (RTL manga)';
-    }
-  }
-}
-
-/// Extension for ReadingMode display names and validation
-extension ReadingModeExtension on ReadingMode {
-  String get displayName {
-    switch (this) {
-      case ReadingMode.singlePage:
-        return 'Single Page';
-      case ReadingMode.verticalPage:
-        return 'Vertical Page';
-      case ReadingMode.continuousScroll:
-        return 'Continuous Scroll';
-    }
-  }
-
-  String get description {
-    switch (this) {
-      case ReadingMode.singlePage:
-        return 'Horizontal page-by-page reading';
-      case ReadingMode.verticalPage:
-        return 'Vertical page-by-page reading';
-      case ReadingMode.continuousScroll:
-        return 'Continuous vertical scrolling';
-    }
-  }
-}
-
 /// Reader settings data model for persistence
 class ReaderSettings extends Equatable {
   const ReaderSettings({

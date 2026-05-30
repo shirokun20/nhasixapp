@@ -8664,6 +8664,60 @@ abstract class AppLocalizations {
   /// **'{count}mo ago'**
   String readerMonthsAgoShort(int count);
 
+  /// No description provided for @readerTapDirectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Direction'**
+  String get readerTapDirectionLabel;
+
+  /// No description provided for @readerTapDirectionNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get readerTapDirectionNormal;
+
+  /// No description provided for @readerTapDirectionInverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse'**
+  String get readerTapDirectionInverted;
+
+  /// No description provided for @readerTapDirectionNormalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap right to go to the next page'**
+  String get readerTapDirectionNormalDescription;
+
+  /// No description provided for @readerTapDirectionInvertedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap left to go to the next page'**
+  String get readerTapDirectionInvertedDescription;
+
+  /// No description provided for @readerClearImageCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Image Cache'**
+  String get readerClearImageCache;
+
+  /// No description provided for @readerImageCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Image cache cleared. Scroll to reload pages.'**
+  String get readerImageCacheCleared;
+
+  /// No description provided for @readerOpenInGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in gallery'**
+  String get readerOpenInGallery;
+
+  /// No description provided for @readerPinchToZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch to zoom'**
+  String get readerPinchToZoom;
+
   /// No description provided for @captchaCancelled.
   ///
   /// In en, this message translates to:
