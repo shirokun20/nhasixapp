@@ -110,7 +110,7 @@ void main() {
       };
 
       // Parse using engine that supports our declared primitives.
-      final parser = SourceConfigParser(
+      const parser = SourceConfigParser(
         engineVersion: '1.0.0',
         registeredPrimitives: <String>{
           EnginePrimitive.imageModeDirectUrl,

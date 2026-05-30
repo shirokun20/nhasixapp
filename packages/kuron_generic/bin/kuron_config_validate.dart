@@ -259,8 +259,9 @@ class _CliOptions {
           showHelp = true;
         case '--dir':
           i++;
-          if (i >= args.length)
+          if (i >= args.length) {
             throw const _UsageError('--dir requires a path');
+          }
           configDir = args[i];
         case '--output':
           i++;
