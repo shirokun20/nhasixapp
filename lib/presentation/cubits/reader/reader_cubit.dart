@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kuron_generic/kuron_generic.dart'
+    show PageResolutionPipeline, PageResolutionInput;
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -299,6 +301,25 @@ class ReaderCubit extends Cubit<ReaderState> {
             // Preserve any previously fetched chapterData, but if absent,
             // keep fallback navigation so next/prev can still work.
             chapterData ??= fallbackChapterData;
+
+            // §8.2 — Run pipeline to emit download-readiness diagnostics.
+            // Non-blocking; only logs. Full pipeline-based resolution is a
+            // future enhancement once adapter outputs are wired through
+            // ResolvedChapterPages end-to-end.
+            final pipelineResult = const PageResolutionPipeline().resolve(
+              PageResolutionInput(
+                sourceId: content.sourceId,
+                contentId: contentId,
+                chapterId: null,
+                imageUrls: fallbackChapterData.images,
+              ),
+            );
+            if (!pipelineResult.pages.isDownloadReady) {
+              _logger.w(
+                'Reader pipeline: download not ready for $contentId — '
+                '${pipelineResult.diagnostics.map((d) => d.code).join(', ')}',
+              );
+            }
 
             _logger.i(
                 '✅ Fallback loaded ${fallbackChapterData.images.length} images for: $contentId');

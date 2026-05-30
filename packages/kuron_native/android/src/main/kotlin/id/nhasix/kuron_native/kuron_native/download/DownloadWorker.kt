@@ -51,6 +51,7 @@ class DownloadWorker(
         const val KEY_DESTINATION_PATH = "destination_path"
         const val KEY_COOKIES = "cookies"  // Cookies as JSON string
         const val KEY_HEADERS = "headers"  // Source-specific HTTP headers as JSON string
+        const val KEY_PER_PAGE_PAYLOAD = "per_page_payload" // v2: JSON array of page objects
         // Metadata fields for v2.1
         const val KEY_TITLE = "title"
         const val KEY_URL = "url"
@@ -309,7 +310,9 @@ class DownloadWorker(
                             // Feature C: Per-image timeout — skip slow images instead of blocking
                             val downloadResult = withTimeoutOrNull(imageTimeoutMs) {
                                 try {
-                                    downloadImage(url, destFile)
+                                    // v2: merge per-page headers (per-page wins over global)
+                                    val pageOverrides = perPageHeaders?.get(pageNumber)
+                                    downloadImage(url, destFile, pageOverrides)
                                     true
                                 } catch (e: Exception) {
                                     if (e is CancellationException) throw e
@@ -396,6 +399,12 @@ class DownloadWorker(
         parseHeaders(inputData.getString(KEY_HEADERS))
     }
 
+    // v2: per-page headers (1-based page index → merged headers).
+    // Null when the worker was invoked with v1 payload (no perPagePayload key).
+    private val perPageHeaders: Map<Int, Map<String, String>>? by lazy {
+        parsePerPagePayload(inputData.getString(KEY_PER_PAGE_PAYLOAD))
+    }
+
     private fun parseHeaders(headersJson: String?): Map<String, String> {
         if (headersJson.isNullOrBlank()) return emptyMap()
         return try {
@@ -417,13 +426,54 @@ class DownloadWorker(
         }
     }
 
-    private fun downloadImage(url: String, destFile: File) {
+    // ── v2 per-page payload parsing ──────────────────────────────────────────
+
+    /**
+     * Parse the v2 per-page payload (JSON array of page objects produced by
+     * NativeDownloadPayload.toChannelMap()).
+     *
+     * Returns a map of 1-based page index → per-page headers, or null if
+     * the key is absent (v1 fallback).
+     */
+    private fun parsePerPagePayload(payloadJson: String?): Map<Int, Map<String, String>>? {
+        if (payloadJson.isNullOrBlank()) return null
+        return try {
+            val array = org.json.JSONArray(payloadJson)
+            val result = mutableMapOf<Int, Map<String, String>>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val pageNumber = obj.optInt("pageNumber", i + 1)
+                val headersObj = obj.optJSONObject("headers")
+                val pageHeaders = mutableMapOf<String, String>()
+                if (headersObj != null) {
+                    val keys = headersObj.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        val v = headersObj.optString(k)
+                        if (k.isNotBlank() && v.isNotBlank()) pageHeaders[k] = v
+                    }
+                }
+                val referer = obj.optString("referer", "")
+                if (referer.isNotBlank()) pageHeaders["Referer"] = referer
+                result[pageNumber] = pageHeaders
+            }
+            Log.d(TAG, "Parsed v2 per-page payload: ${result.size} pages")
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse per-page payload JSON", e)
+            null
+        }
+    }
+
+    private fun downloadImage(url: String, destFile: File, pageHeaderOverrides: Map<String, String>? = null) {
         if (isEhentaiReaderPageUrl(url)) {
             downloadEhentaiReaderPage(url, destFile)
             return
         }
 
+        // Merge: global headers ← per-page overrides (per-page wins)
         val initialHeaders = customHeaders.toMutableMap()
+        pageHeaderOverrides?.forEach { (k, v) -> initialHeaders[k] = v }
         val attempts = buildHeaderAttempts(url, initialHeaders)
 
         var lastCode = -1

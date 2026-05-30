@@ -16,3 +16,17 @@ export 'src/models/source_config_runtime.dart';
 export 'src/parsers/generic_html_parser.dart';
 export 'src/parsers/generic_json_parser.dart';
 export 'src/url_builder/generic_url_builder.dart';
+
+// Config Contract v2 parsing (revamp-kuron-config-runtime §3)
+export 'src/config/source_config_parser.dart';
+export 'src/config/typed_config/dynamic_search_form.dart';
+export 'src/config/typed_config/network_rules.dart';
+
+// Validation report writers + CLI (§4)
+export 'src/validation/report_writers.dart';
+
+// Shared Resolution Pipeline (§5)
+export 'src/pipeline/page_resolution_pipeline.dart';
+
+// Plugin Architecture (§6)
+export 'src/plugins/source_plugin.dart';

@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:kuron_native/kuron_native.dart' show NativeDownloadPayload;
 
 class NativeDownloadService {
   // Singleton pattern
@@ -63,6 +64,23 @@ class NativeDownloadService {
       return workId ?? '';
     } on PlatformException catch (e) {
       throw Exception('Failed to start native download: ${e.message}');
+    }
+  }
+
+  /// Start download using the canonical v2 [NativeDownloadPayload].
+  ///
+  /// Produces a v2 channel map that includes per-page headers in addition to
+  /// the legacy `imageUrls` field for backward compatibility with older native
+  /// workers.
+  Future<String> startDownloadV2(NativeDownloadPayload payload) async {
+    try {
+      final workId = await _channel.invokeMethod<String>(
+        'kuronNativeStartDownload',
+        payload.toChannelMap(),
+      );
+      return workId ?? '';
+    } on PlatformException catch (e) {
+      throw Exception('Failed to start native download (v2): ${e.message}');
     }
   }
 

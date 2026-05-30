@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:kuron_generic/kuron_generic.dart'
+    show PageResolutionPipeline, PageResolutionInput;
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
@@ -187,6 +189,29 @@ class DownloadContentUseCase
         '(${rangeImageUrls.length}/${allImageUrls.length} images)'
         '${isRangeDownload ? ' [RANGE]' : ' [FULL]'}',
       );
+
+      // §8.3 — Validate download readiness via PageResolutionPipeline.
+      // This emits diagnostics for empty URLs, parity mismatches, and
+      // missing headers *before* the native worker starts.
+      final pipelineResult = const PageResolutionPipeline().resolve(
+        PageResolutionInput(
+          sourceId: content.sourceId,
+          contentId: content.id,
+          chapterId: null,
+          imageUrls: rangeImageUrls,
+          globalHeaders: headers ?? const <String, String>{},
+        ),
+      );
+      if (!pipelineResult.pages.isDownloadReady) {
+        final blockers = pipelineResult.diagnostics
+            .map((d) => '${d.code}: ${d.message}')
+            .join('; ');
+        _logger.w(
+          'Download readiness check failed for ${content.id}: $blockers',
+        );
+        // Non-fatal: log and proceed. Native layer may still succeed with
+        // partial data. Change to early return if strictness is required.
+      }
 
       final String destination = savePath ?? '';
 

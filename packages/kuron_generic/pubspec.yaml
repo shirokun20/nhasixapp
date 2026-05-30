@@ -9,6 +9,7 @@ environment:
 dependencies:
   kuron_core:
     path: ../kuron_core
+  equatable: ^2.0.7
   dio: ^5.9.0
   html: ^0.15.4
   json_path: ^0.7.0

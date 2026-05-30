@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'package:kuron_core/kuron_core.dart' show ValidationReport;
+import 'package:kuron_generic/kuron_generic.dart' show SourceConfigParser;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:path/path.dart' as p;
@@ -73,6 +75,8 @@ class RemoteConfigService {
   SourceManifest? _manifest;
   final Map<String, SourceConfig> _sourceConfigs = {};
   final Map<String, Map<String, dynamic>> _rawSourceConfigs = {};
+  // §8.1 — static compatibility reports computed on config load.
+  final Map<String, ValidationReport> _validationReports = {};
 
   // ── Constructor ──────────────────────────────────────────────────────────────
 
@@ -148,6 +152,11 @@ class RemoteConfigService {
   // Getters ──────────────────────────────────────────────────────────────────
 
   SourceConfig? getConfig(String source) => _sourceConfigs[source];
+
+  /// Returns the cached static [ValidationReport] for [source], or `null`
+  /// when the source is not loaded or is a non-source config (app, tags).
+  ValidationReport? getValidationReport(String source) =>
+      _validationReports[source];
 
   /// Returns search config for [source], preferring typed config and falling
   /// back to raw JSON when typed parsing was skipped/failed.
@@ -647,6 +656,21 @@ class RemoteConfigService {
         error: e,
       );
     }
+
+    // §8.1 — Run static validation and cache the report. Non-blocking; never
+    // throws so a broken config can't prevent other sources from loading.
+    try {
+      final result = const SourceConfigParser().parse(
+        raw.cast<String, Object?>(),
+      );
+      _validationReports[sourceId] = result.report;
+      _logger.d(
+        'SourceConfigParser: $sourceId → ${result.report.overallStatus.name} '
+        '(${result.report.diagnostics.length} diagnostics)',
+      );
+    } catch (e) {
+      _logger.w('ValidationReport generation failed for $sourceId', error: e);
+    }
   }
 
   /// Load a config from bundled assets (last resort).
@@ -675,6 +699,24 @@ class RemoteConfigService {
         }
       }
       _logger.d('Loaded bundled config for $sourceId');
+      // §8.1 — Static validation for bundled source.
+      if (sourceId != 'app' && sourceId != 'tags') {
+        try {
+          final result = const SourceConfigParser().parse(
+            raw.cast<String, Object?>(),
+          );
+          _validationReports[sourceId] = result.report;
+          _logger.d(
+            'SourceConfigParser (bundled): $sourceId → '
+            '${result.report.overallStatus.name}',
+          );
+        } catch (e) {
+          _logger.w(
+            'ValidationReport generation failed for bundled $sourceId',
+            error: e,
+          );
+        }
+      }
     } catch (e) {
       _logger.w('Bundled asset load failed for $sourceId', error: e);
     }

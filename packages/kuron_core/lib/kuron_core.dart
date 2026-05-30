@@ -38,3 +38,22 @@ export 'src/exceptions/login_required_exception.dart';
 
 // Network utilities
 export 'src/network/rate_limiter.dart';
+
+// Compatibility / validation contracts (revamp-kuron-config-runtime)
+export 'src/compat/compatibility_status.dart';
+export 'src/compat/diagnostic_severity.dart';
+export 'src/compat/feature_kind.dart';
+export 'src/compat/feature_status.dart';
+export 'src/compat/validation_diagnostic.dart';
+export 'src/compat/validation_report.dart';
+
+// Source capability contracts
+export 'src/capability/source_capability.dart';
+
+// Canonical page resolution models (used by reader + native download)
+export 'src/pages/page_request_kind.dart';
+export 'src/pages/resolved_page_request.dart';
+export 'src/pages/resolved_chapter_pages.dart';
+
+// Secret redaction utilities for diagnostics + persisted reports
+export 'src/redaction/secret_redactor.dart';
