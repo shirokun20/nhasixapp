@@ -345,6 +345,30 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   }
 
   @override
+  Future<void> saveTapDirection(TapDirection tapDirection) async {
+    await _withLock('saveTapDirection', () async {
+      await _retryOperation(
+        'saveTapDirection',
+        () async {
+          _logInfo('saveTapDirection', 'Saving tap direction: $tapDirection');
+          try {
+            final currentSettings = await getReaderSettings();
+            final updatedSettings =
+                currentSettings.copyWith(tapDirection: tapDirection);
+            await saveReaderSettings(updatedSettings);
+            _logInfo(
+                'saveTapDirection', 'Successfully saved tap direction setting');
+          } catch (e, stackTrace) {
+            _logError('saveTapDirection', e, stackTrace);
+            rethrow;
+          }
+        },
+        null,
+      );
+    });
+  }
+
+  @override
   Future<void> resetToDefaults() async {
     await _withLock('resetToDefaults', () async {
       await _retryOperation(

@@ -32,6 +32,11 @@ abstract class ReaderSettingsRepository {
   /// Updates only the show UI setting while preserving other settings
   Future<void> saveShowUI(bool showUI);
 
+  /// Save tap direction preference
+  ///
+  /// [tapDirection] - Tap direction for prev/next navigation
+  Future<void> saveTapDirection(TapDirection tapDirection);
+
   /// Reset all reader settings to defaults
   ///
   /// Clears all stored reader preferences and returns to default values

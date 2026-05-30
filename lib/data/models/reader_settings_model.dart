@@ -9,6 +9,33 @@ enum ReadingMode {
   continuousScroll, // Vertical ListView
 }
 
+/// Tap direction for page navigation gestures
+enum TapDirection {
+  normal, // Left = previous, Right = next
+  inverted, // Left = next, Right = previous (for RTL manga)
+}
+
+/// Extension for TapDirection display names
+extension TapDirectionExtension on TapDirection {
+  String get displayName {
+    switch (this) {
+      case TapDirection.normal:
+        return 'Normal (→ Next)';
+      case TapDirection.inverted:
+        return 'Inverted (← Next)';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case TapDirection.normal:
+        return 'Tap right to go to next page';
+      case TapDirection.inverted:
+        return 'Tap left to go to next page (RTL manga)';
+    }
+  }
+}
+
 /// Extension for ReadingMode display names and validation
 extension ReadingModeExtension on ReadingMode {
   String get displayName {
@@ -41,12 +68,14 @@ class ReaderSettings extends Equatable {
     this.keepScreenOn = false,
     this.showUI = true,
     this.enableZoom = true,
+    this.tapDirection = TapDirection.normal,
   });
 
   final ReadingMode readingMode;
   final bool keepScreenOn;
   final bool showUI;
   final bool enableZoom;
+  final TapDirection tapDirection;
 
   @override
   List<Object?> get props => [
@@ -54,6 +83,7 @@ class ReaderSettings extends Equatable {
         keepScreenOn,
         showUI,
         enableZoom,
+        tapDirection,
       ];
 
   /// Create a copy with updated values
@@ -62,12 +92,14 @@ class ReaderSettings extends Equatable {
     bool? keepScreenOn,
     bool? showUI,
     bool? enableZoom,
+    TapDirection? tapDirection,
   }) {
     return ReaderSettings(
       readingMode: readingMode ?? this.readingMode,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       showUI: showUI ?? this.showUI,
       enableZoom: enableZoom ?? this.enableZoom,
+      tapDirection: tapDirection ?? this.tapDirection,
     );
   }
 
@@ -78,6 +110,7 @@ class ReaderSettings extends Equatable {
       'keepScreenOn': keepScreenOn,
       'showUI': showUI,
       'enableZoom': enableZoom,
+      'tapDirection': tapDirection.name,
     };
   }
 
@@ -88,7 +121,22 @@ class ReaderSettings extends Equatable {
       keepScreenOn: _parseBool(json['keepScreenOn'], false),
       showUI: _parseBool(json['showUI'], true),
       enableZoom: _parseBool(json['enableZoom'], true),
+      tapDirection: _parseTapDirection(json['tapDirection']),
     );
+  }
+
+  /// Parse and validate TapDirection with fallback to default
+  static TapDirection _parseTapDirection(dynamic value) {
+    if (value == null) return TapDirection.normal;
+    try {
+      if (value is String) {
+        return TapDirection.values.firstWhere(
+          (d) => d.name == value,
+          orElse: () => TapDirection.normal,
+        );
+      }
+    } catch (_) {}
+    return TapDirection.normal;
   }
 
   /// Parse and validate ReadingMode with fallback to default
@@ -175,7 +223,8 @@ class ReaderSettings extends Equatable {
     return readingMode == ReadingMode.singlePage &&
         keepScreenOn == false &&
         showUI == true &&
-        enableZoom == true;
+        enableZoom == true &&
+        tapDirection == TapDirection.normal;
   }
 
   /// Get default settings instance
@@ -195,7 +244,8 @@ class ReaderSettings extends Equatable {
         'readingMode: $readingMode, '
         'keepScreenOn: $keepScreenOn, '
         'showUI: $showUI, '
-        'enableZoom: $enableZoom'
+        'enableZoom: $enableZoom, '
+        'tapDirection: $tapDirection'
         ')';
   }
 }

@@ -40,6 +40,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.onHeavyImageDetected,
     this.onRepairBrokenImage,
     this.onOpenSourcePageForRepair,
+    this.onDoubleTapGesture,
   });
 
   final String imageUrl;
@@ -56,6 +57,10 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   /// 🎯 PHASE 1: Callback when image loads with actual dimensions
   final Function(int pageNumber, Size imageSize)? onImageLoaded;
+
+  /// If set, double-tap calls this instead of the built-in zoom animation.
+  /// Use to toggle reader UI from a parent (e.g. `_readerCubit.toggleUI()`).
+  final VoidCallback? onDoubleTapGesture;
 
   /// Called once (per content ID) when this page is identified as a heavy
   /// animated WebP (≥ 2 MB) while in continuous-scroll mode.
@@ -80,6 +85,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   static Future<void> clearNativeAnimatedCache() async {
     _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
     _ExtendedImageReaderWidgetState._confirmedAnimatedWebPUrls.clear();
+    _ExtendedImageReaderWidgetState._nonNativeAnimatedUrls.clear();
     _ExtendedImageReaderWidgetState._cachedFilePathByUrl.clear();
     _ExtendedImageReaderWidgetState._syntheticProgressByImageKey.clear();
     _ExtendedImageReaderWidgetState._knownBrokenLocalAvifPaths.clear();
@@ -201,6 +207,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Set<String> _notifiedHeavyContentIds = <String>{};
   static final Map<String, String> _cachedFilePathByUrl = <String, String>{};
   static final Set<String> _confirmedAnimatedWebPUrls = <String>{};
+  static final Set<String> _nonNativeAnimatedUrls = <String>{};
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
 
   /// Files ≥ 10 MB get a more aggressive native target width because the
@@ -211,6 +218,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
+  late AnimationController _pinchHintController;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
 
@@ -293,6 +301,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
     // Initialize with dummy animation (will be replaced on double-tap)
     _zoomAnimation = _zoomController.drive(Tween<double>(begin: 1.0, end: 1.0));
+
+    // Brief pinch-to-zoom hint (shown once per page, only when double-tap-zoom is disabled)
+    _pinchHintController = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    );
+    if (widget.onDoubleTapGesture != null && widget.enableZoom) {
+      // Delay so the image has time to load first
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) _pinchHintController.forward();
+      });
+    }
 
     _syntheticProgressValue =
         _syntheticProgressByImageKey[_imageProgressKey] ?? 0.0;
@@ -876,6 +896,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   @override
   void dispose() {
+    _pinchHintController.dispose();
     _zoomController.dispose();
     _autoRetryTimer?.cancel();
     _syntheticProgressTimer?.cancel();
@@ -935,37 +956,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// 🎯 PHASE 2: Automatically detects webtoon images and applies BoxFit.fitWidth
   /// for better vertical scrolling experience.
   BoxFit _getAdaptiveBoxFit() {
-    // Check if image is loaded and detect webtoon
-    // if (_loadedImageSize != null) {
-    //   final isWebtoon = WebtoonDetector.isWebtoon(_loadedImageSize!);
-
-    //   if (isWebtoon) {
-    //     // Webtoon images: Use fitWidth to fill screen width
-    //     // This allows full vertical scrolling without horizontal overflow
-    //     debugPrint('🎨 Webtoon detected (page ${widget.pageNumber}): '
-    //         'AR=${WebtoonDetector.getAspectRatio(_loadedImageSize!)?.toStringAsFixed(2)} '
-    //         '→ Using BoxFit.fitWidth');
-    //     return BoxFit.fitWidth;
-    //   }
-    // }
-
-    // Normal images: Use BoxFit.contain for proper centering
-    // BoxFit.contain will:
-    // 1. Fit the entire image within bounds
-    // 2. Maintain aspect ratio
-    // 3. Auto-center the image (critical for PageView)
-    return BoxFit.contain;
-
-    /* Original adaptive strategy (caused centering issues):
-    switch (widget.readingMode) {
-      case ReadingMode.singlePage:
-        return BoxFit.fitWidth; // Fill width, height auto (horizontal scroll)
-      case ReadingMode.verticalPage:
-        return BoxFit.fitHeight; // Fill height, width auto (vertical page)
-      case ReadingMode.continuousScroll:
-        return BoxFit.fitWidth; // Fill width for vertical scroll
-    }
-    */
+    // Use fitWidth for all modes so the image always fills the screen width.
+    // This ensures:
+    // - Paginated (single/vertical): image fills full width; zooming expands
+    //   BEYOND screen in all directions → free pan (no boxed feel)
+    // - continuousScroll: standard fill-width behaviour
+    // minScale < 1.0 in GestureConfig lets users pinch-out to see wide/landscape
+    // images in full if needed.
+    return BoxFit.fitWidth;
   }
 
   /// Handle double-tap zoom gesture with smooth animation
@@ -1064,22 +1062,28 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         extendedImageGestureKey: _gestureKey,
         initGestureConfigHandler: (state) {
           return GestureConfig(
-            minScale: 1.0, // No zoom out - always at fit scale
-            maxScale: 3.0, // Max 3x zoom for reading small text
-            animationMinScale: 0.9, // Smooth bounce back animation
-            animationMaxScale: 3.5,
+            // Allow pinch-out to see wide/landscape images, and plenty of
+            // pinch-in headroom for reading small text.
+            minScale: 0.5,
+            maxScale: 5.0,
+            animationMinScale: 0.4,
+            animationMaxScale: 5.5,
             speed: 1.0,
             inertialSpeed: 100.0,
-            initialScale: 1.0, // Start at fit scale (no zoom)
-            // 🐛 BUG FIX: Only use PageView optimization for actual PageView modes
-            // For continuous scroll (ListView), set to false to avoid gesture conflicts
+            initialScale: 1.0,
             inPageView: widget.readingMode != ReadingMode.continuousScroll,
-            cacheGesture: false, // Don't cache zoom state between pages
+            cacheGesture: false,
             initialAlignment: InitialAlignment.center,
           );
         },
         onDoubleTap: widget.enableZoom
-            ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
+            ? (ExtendedImageGestureState gestureState) {
+                if (widget.onDoubleTapGesture != null) {
+                  widget.onDoubleTapGesture!();
+                } else {
+                  _handleDoubleTap(gestureState);
+                }
+              }
             : null,
         loadStateChanged: (ExtendedImageState state) {
           switch (state.extendedImageLoadState) {
@@ -1271,10 +1275,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       extendedImageGestureKey: _gestureKey,
       initGestureConfigHandler: (state) {
         return GestureConfig(
-          minScale: 1.0,
-          maxScale: 3.0,
-          animationMinScale: 0.9,
-          animationMaxScale: 3.5,
+          minScale: 0.5,
+          maxScale: 5.0,
+          animationMinScale: 0.4,
+          animationMaxScale: 5.5,
           speed: 1.0,
           inertialSpeed: 100.0,
           initialScale: 1.0,
@@ -1284,7 +1288,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         );
       },
       onDoubleTap: widget.enableZoom
-          ? (ExtendedImageGestureState state) => _handleDoubleTap(state)
+          ? (ExtendedImageGestureState gestureState) {
+              if (widget.onDoubleTapGesture != null) {
+                widget.onDoubleTapGesture!();
+              } else {
+                _handleDoubleTap(gestureState);
+              }
+            }
           : null,
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
@@ -1409,6 +1419,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     ' path=${cacheFile.path}',
                   );
                 } else {
+                  _nonNativeAnimatedUrls.add(url);
                   _logger.d(
                     '[NativeWebP] Not a native-animated candidate '
                     '(${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
@@ -1530,6 +1541,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   bool _shouldInspectCachedFileForAnimatedWebP(String url) {
+    if (_nonNativeAnimatedUrls.contains(url)) {
+      return false;
+    }
+
     // Always inspect AVIF files after download — brand (avis vs avif/mif1)
     // and image height (≤ 4096 vs > 4096) cannot be determined from the URL.
     // _inferNativeAnimatedCapableExtensionFromFileSync handles the precise check.
@@ -2637,16 +2652,26 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // the zoom/scale AnimatedBuilder triggers rebuilds on every zoom tick;
     // the boundary keeps those repaints isolated from the ListView.
     final Widget gestureWidget = AnimatedBuilder(
-      animation: _zoomController,
+      animation: Listenable.merge([_zoomController, _pinchHintController]),
       builder: (context, child) {
         final gestureState = _gestureKey.currentState;
         final currentScale = gestureState?.gestureDetails?.totalScale ?? 1.0;
         final isZoomed = currentScale > 1.2;
+        // Pinch hint: fade in then out during _pinchHintController lifetime
+        final hintOpacity = _pinchHintController.value < 0.2
+            ? _pinchHintController.value / 0.2
+            : _pinchHintController.value > 0.7
+                ? (1.0 - _pinchHintController.value) / 0.3
+                : 1.0;
+        final showHint = widget.onDoubleTapGesture != null &&
+            _pinchHintController.isAnimating &&
+            !isZoomed;
 
         return Stack(
           alignment: Alignment.center,
           children: [
             Center(child: imageWidget),
+            // Zoom level indicator (shown when zoomed in)
             if (isZoomed && widget.readingMode != ReadingMode.continuousScroll)
               Positioned(
                 top: 16,
@@ -2672,6 +2697,38 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            // Pinch-to-zoom hint (shown briefly on page first open)
+            if (showHint)
+              Positioned(
+                bottom: 72,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Opacity(
+                    opacity: hintOpacity.clamp(0.0, 1.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.pinch, color: Colors.white70, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Pinch to zoom',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -344,6 +344,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         imageMetadata: imageMetadata,
         chapterData: chapterData,
         currentChapter: currentChapter,
+        tapDirection: savedSettings.tapDirection,
       ));
 
       _logImageUrlMapping(content);
@@ -1120,6 +1121,37 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e('Failed to save reading mode: $e',
           error: e, stackTrace: stackTrace);
       // Settings will still apply for current session
+    }
+  }
+
+  /// Toggle zoom setting and persist it
+  Future<void> toggleEnableZoom() async {
+    final newEnableZoom = !(state.enableZoom ?? true);
+    if (!isClosed) {
+      emit(state.copyWith(enableZoom: newEnableZoom));
+    }
+    try {
+      final current = await readerSettingsRepository.getReaderSettings();
+      await readerSettingsRepository
+          .saveReaderSettings(current.copyWith(enableZoom: newEnableZoom));
+      _logger.i('Successfully saved enable zoom: $newEnableZoom');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save enable zoom: $e',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Set tap direction (normal or inverted) and persist it
+  Future<void> setTapDirection(TapDirection direction) async {
+    if (!isClosed) {
+      emit(state.copyWith(tapDirection: direction));
+    }
+    try {
+      await readerSettingsRepository.saveTapDirection(direction);
+      _logger.i('Successfully saved tap direction: ${direction.name}');
+    } catch (e, stackTrace) {
+      _logger.e('Failed to save tap direction: $e',
+          error: e, stackTrace: stackTrace);
     }
   }
 

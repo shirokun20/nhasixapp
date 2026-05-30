@@ -15,6 +15,7 @@ class ReaderState extends Equatable {
     this.imageMetadata,
     this.chapterData,
     this.currentChapter,
+    this.tapDirection,
   });
 
   final Content? content;
@@ -29,6 +30,7 @@ class ReaderState extends Equatable {
   final List<ImageMetadata>? imageMetadata;
   final ChapterData? chapterData;
   final Chapter? currentChapter;
+  final TapDirection? tapDirection;
 
   @override
   List<Object?> get props => [
@@ -44,6 +46,7 @@ class ReaderState extends Equatable {
         imageMetadata,
         chapterData,
         currentChapter,
+        tapDirection,
       ];
 
   static const _undefined = Object();
@@ -61,6 +64,7 @@ class ReaderState extends Equatable {
     List<ImageMetadata>? imageMetadata,
     ChapterData? chapterData,
     Chapter? currentChapter,
+    TapDirection? tapDirection,
   }) {
     return ReaderState(
       content: content ?? this.content,
@@ -81,6 +85,7 @@ class ReaderState extends Equatable {
       imageMetadata: imageMetadata ?? this.imageMetadata,
       chapterData: chapterData ?? this.chapterData,
       currentChapter: currentChapter ?? this.currentChapter,
+      tapDirection: tapDirection ?? this.tapDirection,
     );
   }
 
@@ -134,6 +139,7 @@ class ReaderLoading extends ReaderState {
           imageMetadata: prevState.imageMetadata,
           chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
+          tapDirection: prevState.tapDirection,
         );
 }
 
@@ -153,6 +159,7 @@ class ReaderLoaded extends ReaderState {
           imageMetadata: prevState.imageMetadata,
           chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
+          tapDirection: prevState.tapDirection ?? TapDirection.normal,
         );
 }
 
@@ -172,5 +179,6 @@ class ReaderError extends ReaderState {
           imageMetadata: prevState.imageMetadata,
           chapterData: prevState.chapterData,
           currentChapter: prevState.currentChapter,
+          tapDirection: prevState.tapDirection,
         );
 }

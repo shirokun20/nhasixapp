@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ import '../../cubits/reader/reader_cubit.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/extended_image_reader_widget.dart';
+import 'chapter_open_overlay.dart';
 import 'end_of_chapter_overlay.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
@@ -78,6 +80,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Prefetch control
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
+  static const int _prefetchBackCount = 1;
+  // Throttle: track last two page-change timestamps for fast-scroll detection
+  DateTime _lastPageChangedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _prevPageChangedAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  // Chapter open overlay: shown once per reader session
+  bool _chapterOverlayShown = false;
 
   // 🎬 Heavy-image guard: content IDs where continuous-scroll is disabled.
   // Static so the lock persists across reader navigations in the same session.
@@ -106,6 +115,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final ValueNotifier<int> _visiblePageNotifier = ValueNotifier<int>(1);
   final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
   Timer? _scrollIndicatorTimer;
+
+  // Slider footer previews the destination locally while dragging and only
+  // commits navigation once on release, preventing overlapping PageView syncs.
+  double? _sliderPreviewValue;
 
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
@@ -583,18 +596,42 @@ class _ReaderScreenState extends State<ReaderScreen> {
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
-    // HentaiNexus image pages are typically large. Instead of disabling prefetch,
-    // use ODD/EVEN batching for pseudo-parallel loading with rate limiting.
-    // This allows faster image appearance while respecting server constraints.
-    if (_isHeavyPrefetchSource(sourceId)) {
-      // 🔴 HentaiNexus: DISABLE prefetch completely
-      // Odd/even batching was causing GPU buffer saturation + frame drops
-      // Solution: Lazy-on-demand loading when user scrolls (handled by ExtendedImage widget)
-      // Result: No competing rendering, smooth continuous scroll, no glitches
+    // Throttle: skip prefetch when user is fast-scrolling (2 page changes < 300ms)
+    final now = DateTime.now();
+    final sinceLast = now.difference(_lastPageChangedAt);
+    final sincePrev = now.difference(_prevPageChangedAt);
+    _prevPageChangedAt = _lastPageChangedAt;
+    _lastPageChangedAt = now;
+    if (sinceLast.inMilliseconds < 300 && sincePrev.inMilliseconds < 600) {
+      // Two rapid page changes detected — skip this cycle
       return;
     }
 
-    // Prefetch next _prefetchCount pages (standard for lighter sources)
+    // HentaiNexus: DISABLE prefetch completely (GPU saturation issue)
+    if (_isHeavyPrefetchSource(sourceId)) {
+      return;
+    }
+
+    // Backward prefetch: 1 page behind
+    for (int i = 1; i <= _prefetchBackCount; i++) {
+      final targetPage = currentPage - i;
+      if (targetPage >= 1 && !_prefetchedPages.contains(targetPage)) {
+        _prefetchedPages.add(targetPage);
+        final imageUrl = imageUrls[targetPage - 1];
+        if (imageUrl.startsWith('http')) {
+          LocalImagePreloader.downloadAndCacheImage(
+            imageUrl,
+            widget.contentId,
+            targetPage,
+          ).catchError((_) {
+            _prefetchedPages.remove(targetPage);
+            return '';
+          });
+        }
+      }
+    }
+
+    // Forward prefetch: _prefetchCount pages ahead
     for (int i = 1; i <= _prefetchCount; i++) {
       final targetPage = currentPage + i;
 
@@ -669,6 +706,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
           debugPrint('❌ Failed to prefetch page $targetPage: $error');
         });
       }
+    }
+  }
+
+  /// Evict image providers for pages that are far from the current reading position.
+  ///
+  /// Pages outside the window [currentPage - 4, currentPage + 4] are evicted
+  /// from the Flutter image cache to reduce memory pressure during long chapters.
+  /// Eviction is skipped for offline content (page images are already on disk).
+  /// All evictions are queued after the current frame via [WidgetsBinding.instance].
+  void _evictDistantPages(int currentPage, List<String> imageUrls,
+      {bool isOffline = false}) {
+    if (isOffline || imageUrls.isEmpty) return;
+
+    const window = 4;
+    final minKeep = (currentPage - window).clamp(1, imageUrls.length);
+    final maxKeep = (currentPage + window).clamp(1, imageUrls.length);
+
+    for (int page = 1; page <= imageUrls.length; page++) {
+      if (page >= minKeep && page <= maxKeep) continue;
+      final url = imageUrls[page - 1];
+      if (!url.startsWith('http')) continue; // skip local paths
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        NetworkImage(url).evict().catchError((_) => false);
+      });
     }
   }
 
@@ -754,8 +815,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _pageController
               .animateToPage(
             targetPageIndex,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
           )
               .then((_) {
             _isProgrammaticAnimation = false;
@@ -985,6 +1046,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildReader(ReaderState state) {
+    // Show chapter open overlay once on first content load
+    final showOverlay = !_chapterOverlayShown && (state.content != null);
+
     return Stack(
       children: [
         // Main reader content
@@ -996,6 +1060,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // 🎯 Floating page indicator for continuous scroll
         if (state.readingMode == ReadingMode.continuousScroll)
           _buildFloatingPageIndicator(state),
+
+        // 📖 Chapter open overlay (auto-dismiss, shown once per session)
+        if (showOverlay)
+          ChapterOpenOverlay(
+            title: state.content!.getDisplayTitle(),
+            totalPages: state.content!.pageCount,
+            onDismiss: () {
+              if (mounted) setState(() => _chapterOverlayShown = true);
+            },
+          ),
       ],
     );
   }
@@ -1021,6 +1095,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final hasContent =
         state.content != null && (state.content!.imageUrls.isNotEmpty);
     return hasContent;
+  }
+
+  /// Returns true if the tap at [tapX] (horizontal) should navigate to the
+  /// next page, respecting the current [tapDirection] setting.
+  bool _isNextTap(double tapX, double screenWidth, TapDirection tapDirection) {
+    final isRightSide = tapX > screenWidth * 0.7;
+    return tapDirection == TapDirection.inverted ? !isRightSide : isRightSide;
+  }
+
+  /// Returns true if the tap at [tapX] (horizontal) should navigate to the
+  /// previous page, respecting the current [tapDirection] setting.
+  bool _isPrevTap(double tapX, double screenWidth, TapDirection tapDirection) {
+    final isLeftSide = tapX < screenWidth * 0.3;
+    return tapDirection == TapDirection.inverted ? !isLeftSide : isLeftSide;
   }
 
   Widget _buildChapterNavigationPage(ReaderState state) {
@@ -1055,12 +1143,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Simple tap gesture: center = toggle UI, sides = navigate
         final screenWidth = MediaQuery.of(context).size.width;
         final tapX = details.globalPosition.dx;
+        final tapDir = state.tapDirection ?? TapDirection.normal;
 
-        if (tapX < screenWidth * 0.3) {
-          // Left side - previous page
+        if (_isPrevTap(tapX, screenWidth, tapDir)) {
+          // Previous page (respects tap direction setting)
           _readerCubit.previousPage();
-        } else if (tapX > screenWidth * 0.7) {
-          // Right side - next page
+        } else if (_isNextTap(tapX, screenWidth, tapDir)) {
+          // Next page (respects tap direction setting)
           _readerCubit.nextPage();
         } else {
           // Center - toggle UI
@@ -1092,6 +1181,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
               state.imageMetadata,
               sourceId: state.content?.sourceId,
             );
+            // LRU eviction: release images far from current position
+            _evictDistantPages(reportPage, imageUrls,
+                isOffline: state.isOfflineMode ?? false);
           }
 
           // Update ReaderCubit state
@@ -1126,12 +1218,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Simple tap gesture: center = toggle UI, top/bottom = navigate
         final screenHeight = MediaQuery.of(context).size.height;
         final tapY = details.globalPosition.dy;
+        final tapDir = state.tapDirection ?? TapDirection.normal;
+        final isTopArea = tapY < screenHeight * 0.3;
+        final isBottomArea = tapY > screenHeight * 0.7;
+        // For vertical mode: inverted means top=next, bottom=prev
+        final prevArea =
+            tapDir == TapDirection.inverted ? isBottomArea : isTopArea;
+        final nextArea =
+            tapDir == TapDirection.inverted ? isTopArea : isBottomArea;
 
-        if (tapY < screenHeight * 0.3) {
-          // Top area - previous page
+        if (prevArea) {
+          // Top area (or bottom if inverted) - previous page
           _readerCubit.previousPage();
-        } else if (tapY > screenHeight * 0.7) {
-          // Bottom area - next page
+        } else if (nextArea) {
+          // Bottom area (or top if inverted) - next page
           _readerCubit.nextPage();
         } else {
           // Center - toggle UI
@@ -1163,6 +1263,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
               state.imageMetadata,
               sourceId: state.content?.sourceId,
             );
+            // LRU eviction: release images far from current position
+            _evictDistantPages(reportPage, imageUrls,
+                isOffline: state.isOfflineMode ?? false);
           }
 
           // Update ReaderCubit state
@@ -1370,6 +1473,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             httpHeaders: headers,
             enableZoom: zoom,
             visiblePageNotifier: _visiblePageNotifier,
+            // Double tap = toggle UI (pinch handles zoom)
+            onDoubleTapGesture: () => _readerCubit.toggleUI(),
             onRepairBrokenImage:
                 canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
             onOpenSourcePageForRepair: canOpenSourcePage
@@ -1641,150 +1746,119 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildTopBar(ReaderState state) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-      ),
-      child: Row(
-        children: [
-          // Back button
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(Icons.arrow_back,
-                color: Theme.of(context).colorScheme.onSurface),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: const BoxDecoration(
+            color: Color(0x8C000000), // semi-transparent dark
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
           ),
+          child: Row(
+            children: [
+              // Back button
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                iconSize: 22,
+                visualDensity: VisualDensity.compact,
+              ),
 
-          const SizedBox(width: 8),
-
-          // Title
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              // Title + subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        state.content?.getDisplayTitle() ??
-                            AppLocalizations.of(context)?.loading ??
-                            AppLocalizations.of(context)!.loading,
-                        style: TextStyleConst.headingMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            state.content?.getDisplayTitle() ??
+                                AppLocalizations.of(context)?.loading ??
+                                '',
+                            style: TextStyleConst.headingMedium.copyWith(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        // Offline indicator
+                        if (state.isOfflineMode ?? false) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.offline_bolt,
+                                    size: 11, color: Colors.white70),
+                                SizedBox(width: 2),
+                                Text('offline',
+                                    style: TextStyle(
+                                        color: Colors.white70, fontSize: 10)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    // Page counter (paginated modes only)
+                    if (state.readingMode != ReadingMode.continuousScroll)
+                      Text(
+                        (state.currentPage ?? 1) >
+                                (state.content?.pageCount ?? 1)
+                            ? (AppLocalizations.of(context)?.chapterComplete ??
+                                '')
+                            : (AppLocalizations.of(context)?.pageOfPages(
+                                    state.currentPage ?? 1,
+                                    state.content?.pageCount ?? 1) ??
+                                AppLocalizations.of(context)!.pageOfContent(
+                                    state.currentPage ?? 1,
+                                    state.content?.pageCount ?? 1)),
+                        style: const TextStyle(
+                            color: Colors.white60, fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    // Offline indicator
-                    if (state.isOfflineMode ?? false) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 1),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.offline_bolt,
-                              size: 12,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              AppLocalizations.of(context)!.offlineStatus,
-                              style: TextStyleConst.bodySmall.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
-                // Only show page counter in paginated modes (singlePage, verticalPage)
-                // In continuous scroll, page counter is not meaningful as multiple pages are visible
-                if (state.readingMode != ReadingMode.continuousScroll)
-                  Row(
-                    children: [
-                      // Check if we're on navigation page
-                      if ((state.currentPage ?? 1) >
-                          (state.content?.pageCount ?? 1))
-                        Text(
-                          AppLocalizations.of(context)!.chapterComplete,
-                          style: TextStyleConst.bodySmall.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      else
-                        Text(
-                          AppLocalizations.of(context)?.pageOfPages(
-                                  state.currentPage ?? 1,
-                                  state.content?.pageCount ?? 1) ??
-                              AppLocalizations.of(context)!.pageOfContent(
-                                  state.currentPage ?? 1,
-                                  state.content?.pageCount ?? 1),
-                          style: TextStyleConst.bodySmall.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
+              ),
 
-          // Reading mode toggle
-          IconButton(
-            onPressed: () {
-              final currentMode = state.readingMode ?? ReadingMode.singlePage;
-              final newMode = _getNextReadingMode(
-                currentMode,
-                disableContinuousScroll:
-                    _isContinuousScrollDisabledForCurrentContent(),
-              );
+              // Keep screen on toggle (compact)
+              IconButton(
+                onPressed: () => _readerCubit.toggleKeepScreenOn(),
+                icon: Icon(
+                  (state.keepScreenOn ?? false)
+                      ? Icons.screen_lock_portrait
+                      : Icons.screen_lock_portrait_outlined,
+                  color: (state.keepScreenOn ?? false)
+                      ? Colors.amberAccent
+                      : Colors.white70,
+                ),
+                iconSize: 20,
+                visualDensity: VisualDensity.compact,
+              ),
 
-              _readerCubit.changeReadingMode(newMode);
-            },
-            icon: Icon(
-              _getReadingModeIcon(state.readingMode ?? ReadingMode.singlePage),
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+              // Settings button
+              IconButton(
+                onPressed: () => _showReaderSettings(state),
+                icon: const Icon(Icons.settings, color: Colors.white70),
+                iconSize: 20,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
-
-          // Keep screen on toggle
-          IconButton(
-            onPressed: () => _readerCubit.toggleKeepScreenOn(),
-            icon: Icon(
-              (state.keepScreenOn ?? false)
-                  ? Icons.screen_lock_portrait
-                  : Icons.screen_lock_portrait_outlined,
-              color: (state.keepScreenOn ?? false)
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-
-          // Settings button
-          IconButton(
-            onPressed: () => _showReaderSettings(state),
-            icon: Icon(Icons.settings,
-                color: Theme.of(context).colorScheme.onSurface),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1793,66 +1867,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // Clamp display values for navigation page
     final isOnNavigationPage =
         (state.currentPage ?? 1) > (state.content?.pageCount ?? 1);
-    final displayPage = isOnNavigationPage
-        ? (state.content?.pageCount ?? 1)
-        : (state.currentPage ?? 1);
-    final displayProgress = isOnNavigationPage ? 1.0 : state.progress;
-    final displayPercentage =
-        isOnNavigationPage ? 100 : state.progressPercentage;
+    final totalPages = state.content?.pageCount ?? 1;
+    final currentPage = isOnNavigationPage
+        ? totalPages
+        : (state.currentPage ?? 1).clamp(1, totalPages);
+    final sliderValue = (_sliderPreviewValue ?? currentPage.toDouble())
+        .clamp(1.0, totalPages.toDouble())
+        .toDouble();
+    final displayPage = sliderValue.round().clamp(1, totalPages);
 
-    debugPrint(
-        '🎨 BottomBar: currentPage=${state.currentPage}, pageCount=${state.content?.pageCount}, '
-        'isOnNavPage=$isOnNavigationPage, displayProgress=$displayProgress, displayPercentage=$displayPercentage%');
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Progress bar
-          isOnNavigationPage
-              ? const SizedBox.shrink()
-              : Row(
-                  children: [
-                    Text(
-                      '$displayPage',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: displayProgress,
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .outline
-                            .withValues(alpha: 0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${state.content?.pageCount ?? 1}',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-
-          const SizedBox(height: 16),
-
-          // Navigation controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Row(
             children: [
-              // Previous page
+              // Prev button
               IconButton(
                 onPressed: state.isFirstPage
                     ? null
@@ -1860,38 +1896,119 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 icon: Icon(
                   Icons.navigate_before,
                   color: state.isFirstPage
-                      ? Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.38)
-                      : Theme.of(context).colorScheme.onSurface,
+                      ? Colors.white.withValues(alpha: 0.3)
+                      : Colors.white,
                 ),
+                iconSize: 22,
+                visualDensity: VisualDensity.compact,
               ),
 
-              // Page info and jump
-              Text(
-                '$displayPercentage%',
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              // Slider + label
+              Expanded(
+                child: isOnNavigationPage
+                    ? Center(
+                        child: Text(
+                          '$totalPages / $totalPages',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          // Page label
+                          Text(
+                            '$displayPage',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 11),
+                          ),
+                          const SizedBox(width: 4),
+                          // Slider
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6),
+                                overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 14),
+                                trackHeight: 2.5,
+                                activeTrackColor: Colors.white,
+                                inactiveTrackColor:
+                                    Colors.white.withValues(alpha: 0.25),
+                                thumbColor: Colors.white,
+                                overlayColor:
+                                    Colors.white.withValues(alpha: 0.2),
+                              ),
+                              child: Slider(
+                                value: sliderValue,
+                                min: 1,
+                                max: totalPages
+                                    .toDouble()
+                                    .clamp(1, double.infinity),
+                                onChanged: (v) {
+                                  if (_sliderPreviewValue == v) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    _sliderPreviewValue = v;
+                                  });
+                                },
+                                onChangeEnd: (v) {
+                                  final targetPage =
+                                      v.round().clamp(1, totalPages);
+                                  setState(() {
+                                    _sliderPreviewValue = null;
+                                  });
+
+                                  if (targetPage != currentPage) {
+                                    _readerCubit.jumpToPage(targetPage);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Total label
+                          Text(
+                            '$totalPages',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
               ),
 
-              // Next page
+              // Next button
               IconButton(
-                onPressed: () => _readerCubit
-                    .nextPage(), // Always enabled, nextPage() handles limits
+                onPressed: () => _readerCubit.nextPage(),
+                icon: const Icon(Icons.navigate_next, color: Colors.white),
+                iconSize: 22,
+                visualDensity: VisualDensity.compact,
+              ),
+
+              // Mode toggle icon
+              IconButton(
+                onPressed: () {
+                  final newMode = _getNextReadingMode(
+                    state.readingMode ?? ReadingMode.singlePage,
+                    disableContinuousScroll:
+                        _isContinuousScrollDisabledForCurrentContent(),
+                  );
+                  _readerCubit.changeReadingMode(newMode);
+                },
                 icon: Icon(
-                  Icons.navigate_next,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  _getReadingModeIcon(
+                      state.readingMode ?? ReadingMode.singlePage),
+                  color: Colors.white,
                 ),
+                iconSize: 20,
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
-
   // DELETED: _buildEndOfChapterOverlay (moved to extra page in builder)
 
   // DISABLED: Jump to page feature temporarily disabled to prevent navigation bugs
@@ -2041,6 +2158,49 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ),
               ),
+
+              // Tap Direction (only for non-continuous-scroll modes)
+              if (currentState.readingMode != ReadingMode.continuousScroll) ...[
+                const Divider(height: 1),
+                ListTile(
+                  title: Text(
+                    'Arah Tap',
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Text(
+                    (currentState.tapDirection ?? TapDirection.normal)
+                        .description,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  trailing: SegmentedButton<TapDirection>(
+                    segments: const [
+                      ButtonSegment(
+                        value: TapDirection.normal,
+                        icon: Icon(Icons.arrow_forward, size: 16),
+                        label: Text('Normal'),
+                      ),
+                      ButtonSegment(
+                        value: TapDirection.inverted,
+                        icon: Icon(Icons.arrow_back, size: 16),
+                        label: Text('Balik'),
+                      ),
+                    ],
+                    selected: {
+                      currentState.tapDirection ?? TapDirection.normal
+                    },
+                    onSelectionChanged: (s) =>
+                        _readerCubit.setTapDirection(s.first),
+                    style: const ButtonStyle(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ],
 
               // Chapter Selector (only in chapter mode)
               if (currentState.chapterData != null ||
