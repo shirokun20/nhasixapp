@@ -383,34 +383,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final metrics = notification.metrics;
     final totalPages = state.content!.pageCount;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // 🎯 CRITICAL FIX: Use viewport center for page detection
-    // This is more accurate than using scroll position directly
-    final viewportCenter = metrics.pixels + (screenHeight / 2);
-
-    // 🎯 ADAPTIVE: Calculate average item height based on ACTUAL maxScrollExtent
-    // This adapts to webtoon (tall images) vs manga (normal images)
-    int estimatedPage;
-
-    if (metrics.maxScrollExtent > 0 && totalPages > 0) {
-      // Use actual maxScrollExtent to calculate accurate average height
-      final averageItemHeight = metrics.maxScrollExtent / totalPages;
-
-      // Find which page the viewport center is currently viewing
-      estimatedPage = (viewportCenter / averageItemHeight)
-              .floor()
-              .clamp(0, totalPages - 1) +
-          1;
-
-      // Logger().t(
-      //     '📐 Avg height: ${averageItemHeight.toStringAsFixed(0)}px, viewport center at page $estimatedPage');
-    } else {
-      // Fallback: Use screen-based estimation (only when maxScrollExtent not ready)
-      final estimatedItemHeight = screenHeight * 0.9;
-      estimatedPage = ((metrics.pixels / estimatedItemHeight) + 1)
-          .round()
-          .clamp(1, totalPages);
-    }
+    final estimatedPage = _estimateContinuousVisiblePage(
+      metrics: metrics,
+      totalPages: totalPages,
+      screenHeight: screenHeight,
+    );
 
     // Update current page for progress bar with debounce
     if (estimatedPage != _lastReportedPage) {
@@ -457,6 +434,53 @@ class _ReaderScreenState extends State<ReaderScreen> {
       // Scrolling up (threshold -5px to avoid micro-scrolls)
       _debounceUIToggle(true, state);
     }
+  }
+
+  int _estimateContinuousVisiblePage({
+    required ScrollMetrics metrics,
+    required int totalPages,
+    required double screenHeight,
+  }) {
+    if (totalPages <= 0) {
+      return 1;
+    }
+
+    final viewportCenter = metrics.pixels + (metrics.viewportDimension / 2);
+    final fallbackItemHeight = _resolveContinuousFallbackItemHeight(
+      metrics: metrics,
+      totalPages: totalPages,
+      screenHeight: screenHeight,
+    );
+
+    double cumulativeHeight = 0;
+    for (int page = 1; page <= totalPages; page++) {
+      final itemHeight = (_cachedImageHeights[page] ?? fallbackItemHeight)
+          .clamp(1.0, double.infinity)
+          .toDouble();
+      cumulativeHeight += itemHeight;
+
+      if (viewportCenter < cumulativeHeight) {
+        return page;
+      }
+    }
+
+    return totalPages;
+  }
+
+  double _resolveContinuousFallbackItemHeight({
+    required ScrollMetrics metrics,
+    required int totalPages,
+    required double screenHeight,
+  }) {
+    if (metrics.maxScrollExtent > 0) {
+      final estimatedContentExtent =
+          metrics.maxScrollExtent + metrics.viewportDimension;
+      return (estimatedContentExtent / totalPages)
+          .clamp(1.0, double.infinity)
+          .toDouble();
+    }
+
+    return (screenHeight * 0.9).clamp(1.0, double.infinity).toDouble();
   }
 
   /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam
