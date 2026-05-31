@@ -3493,7 +3493,7 @@
   "checkInternetOrReload": "Please check your internet connection or try reloading the application.",
 
   "tagBlacklist": "Tag blacklist",
-  "blacklistDescription": "Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.",
+  "blacklistDescription": "Nhentai-only feature. Local entries work offline for nhentai, and logged-in nhentai accounts also pull online blacklist IDs. Other sources are not affected.",
   "onlineRuleDetailsCount": "Online rule details ({count})",
   "@onlineRuleDetailsCount": {
     "placeholders": {

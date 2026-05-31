@@ -4563,7 +4563,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blacklistDescription =>
-      'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.';
+      'Nhentai-only feature. Local entries work offline for nhentai, and logged-in nhentai accounts also pull online blacklist IDs. Other sources are not affected.';
 
   @override
   String onlineRuleDetailsCount(int count) {

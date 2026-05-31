@@ -43,10 +43,18 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TagBlacklistService _tagBlacklistService;
 
+  void _ensureDownloadBlocInitialized() {
+    final downloadBloc = context.read<DownloadBloc>();
+    if (downloadBloc.state is DownloadInitial) {
+      downloadBloc.add(const DownloadInitializeEvent());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _tagBlacklistService = getIt<TagBlacklistService>();
+    _ensureDownloadBlocInitialized();
 
     unawaited(
       Future.wait([
@@ -1689,9 +1697,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
       builder: (context, state) {
-        if (state is! DownloadLoaded) {
+        if (state is DownloadError) {
           return _buildSettingsCard([
             ListTile(
+              title: Text(
+                l10n.failedToLoad,
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  state.message,
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              trailing: state.canRetry
+                  ? IconButton(
+                      onPressed: () => context
+                          .read<DownloadBloc>()
+                          .add(const DownloadInitializeEvent()),
+                      icon: const Icon(Icons.refresh_rounded),
+                      tooltip: l10n.retry,
+                    )
+                  : null,
+            ),
+          ], theme);
+        }
+
+        if (state is DownloadInitial || state is DownloadInitializing) {
+          return _buildSettingsCard([
+            ListTile(
+              leading: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               title: Text(
                 l10n.loadingDownloads,
                 style: TextStyleConst.bodyMedium.copyWith(
@@ -1700,6 +1748,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ], theme);
+        }
+
+        if (state is! DownloadLoaded) {
+          return const SizedBox.shrink();
         }
 
         final settings = state.settings;

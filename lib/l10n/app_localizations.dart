@@ -7797,7 +7797,7 @@ abstract class AppLocalizations {
   /// No description provided for @blacklistDescription.
   ///
   /// In en, this message translates to:
-  /// **'Local entries work offline. Logged-in nhentai accounts also pull online blacklist IDs.'**
+  /// **'Nhentai-only feature. Local entries work offline for nhentai, and logged-in nhentai accounts also pull online blacklist IDs. Other sources are not affected.'**
   String get blacklistDescription;
 
   /// No description provided for @onlineRuleDetailsCount.

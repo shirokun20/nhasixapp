@@ -2741,7 +2741,7 @@
   "checkInternetOrReload": "Silakan periksa koneksi internet Anda atau coba muat ulang aplikasi.",
 
   "tagBlacklist": "Daftar hitam tag",
-  "blacklistDescription": "Entri lokal berfungsi offline. Akun nhentai yang masuk juga menarik ID daftar hitam online.",
+  "blacklistDescription": "Fitur khusus nhentai. Entri lokal berfungsi offline untuk nhentai, dan akun nhentai yang masuk juga menarik ID daftar hitam online. Source lain tidak terpengaruh.",
   "onlineRuleDetailsCount": "Detail aturan online ({count})",
   "noBlacklistRulesYet": "Belum ada aturan daftar hitam. Tambahkan nama tag seperti romance, artist:foo, atau ID tag numerik.",
   "activeCoverageDescription": "Cakupan aktif diaktifkan untuk {count} token (lokal + ID online). Disembunyikan di sini agar tampilan tetap mudah dibaca.",

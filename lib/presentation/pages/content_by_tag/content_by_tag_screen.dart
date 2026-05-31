@@ -107,9 +107,9 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
           : getIt<RemoteConfigService>().getRawConfig(sourceId);
       final hasTagRoute =
           ((rawConfig?['scraper'] as Map<String, dynamic>?)?['urlPatterns']
-                  as Map<String, dynamic>?)
-              ?.containsKey('tag') ??
-          false;
+                      as Map<String, dynamic>?)
+                  ?.containsKey('tag') ??
+              false;
 
       final normalizedTag = widget.tagQuery.trim().toLowerCase();
       final includeTag = hasTagRoute &&
@@ -370,6 +370,10 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
   /// Determine if content should be blurred (excluded content)
   bool _shouldBlurContent(Content content) {
+    if (content.sourceId.toLowerCase() != 'nhentai') {
+      return false;
+    }
+
     final settingsState = context.read<SettingsCubit>().state;
     if (settingsState is! SettingsLoaded) {
       return false;

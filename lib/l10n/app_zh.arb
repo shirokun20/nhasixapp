@@ -3337,7 +3337,7 @@
   "checkInternetOrReload": "请检查您的网络连接或尝试重新加载应用。",
 
   "tagBlacklist": "标签黑名单",
-  "blacklistDescription": "本地条目离线可用。已登录的 nhentai 帐户还会拉取在线黑名单 ID。",
+  "blacklistDescription": "这是仅限 nhentai 的功能。本地条目仅对 nhentai 离线生效，已登录的 nhentai 帐户还会拉取在线黑名单 ID。其他来源不受影响。",
   "onlineRuleDetailsCount": "在线规则详情 ({count})",
   "noBlacklistRulesYet": "暂无黑名单规则。添加标签名称如 romance、artist:foo 或数字标签 ID。",
   "activeCoverageDescription": "已为 {count} 个令牌启用活跃覆盖（本地 + 在线 ID）。此处隐藏以保持视图可读性。",

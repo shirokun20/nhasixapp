@@ -4584,7 +4584,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get blacklistDescription =>
-      'Entri lokal berfungsi offline. Akun nhentai yang masuk juga menarik ID daftar hitam online.';
+      'Fitur khusus nhentai. Entri lokal berfungsi offline untuk nhentai, dan akun nhentai yang masuk juga menarik ID daftar hitam online. Source lain tidak terpengaruh.';
 
   @override
   String onlineRuleDetailsCount(int count) {

@@ -4435,7 +4435,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tagBlacklist => '标签黑名单';
 
   @override
-  String get blacklistDescription => '本地条目离线可用。已登录的 nhentai 帐户还会拉取在线黑名单 ID。';
+  String get blacklistDescription =>
+      '这是仅限 nhentai 的功能。本地条目仅对 nhentai 离线生效，已登录的 nhentai 帐户还会拉取在线黑名单 ID。其他来源不受影响。';
 
   @override
   String onlineRuleDetailsCount(int count) {

@@ -1076,7 +1076,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
+  bool _isNhentaiBlacklistSource(String? sourceId) {
+    return sourceId?.toLowerCase() == 'nhentai';
+  }
+
   bool _shouldBlurContent(Content content, List<String> localBlacklistEntries) {
+    if (!_isNhentaiBlacklistSource(content.sourceId)) {
+      return false;
+    }
+
     return _tagBlacklistService.isContentBlacklisted(
       content,
       localEntries: localBlacklistEntries,
