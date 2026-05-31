@@ -23,8 +23,8 @@
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
-| **ARM64** | 24MB | HP Modern (2019+) | ✅ Tersedia |
-| **ARM32** | 22MB | HP Lama (2015-2018) | ✅ Tersedia |
+| **ARM64** | 80MB | HP Modern (2019+) | ✅ Tersedia |
+| **ARM32** | 69MB | HP Lama (2015-2018) | ✅ Tersedia |
 
 ---
 
