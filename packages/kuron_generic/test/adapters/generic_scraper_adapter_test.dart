@@ -19,6 +19,7 @@
 ///   dart test packages/kuron_generic/test/adapters/generic_scraper_adapter_test.dart
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -27,6 +28,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/src/adapters/generic_adapter.dart';
 import 'package:kuron_generic/src/adapters/generic_scraper_adapter.dart';
 import 'package:kuron_generic/src/parsers/generic_html_parser.dart';
+import 'package:kuron_generic/src/pipeline/page_resolution_pipeline.dart';
 import 'package:kuron_generic/src/url_builder/generic_url_builder.dart';
 import 'package:logger/logger.dart';
 import 'package:test/test.dart';
@@ -520,6 +522,130 @@ const _komikuUnicodeConfig = {
 const _komikuWaveDashSlug =
     'nishuume-cheat-no-tensei-madoushi-〜saikyou-ga-1000-nengo-ni-tensei-shitara-jinsei-yoyu-sugimashita〜';
 const _komikuWaveDashUrl = 'https://komiku.org/manga/$_komikuWaveDashSlug/';
+const _doujindesuBrowseBaseUrl = 'https://doujindesu.es';
+const _doujindesuBaseUrl = 'https://doujindesu.tv';
+
+const _categoryRoutingConfig = {
+  'source': 'doujindesu-routing',
+  'baseUrl': _baseUrl,
+  'defaultLanguage': 'indonesian',
+  'scraper': {
+    'routing': {
+      'defaultCategory': 'Doujinshi',
+      'categoryPatterns': {
+        'Doujinshi|Manga': {
+          'firstPage': 'doujinHome',
+          'paged': 'doujinHomePage',
+        },
+        'Manhwa': {
+          'firstPage': 'manhwaHome',
+          'paged': 'manhwaHomePage',
+        },
+      },
+    },
+    'urlPatterns': {
+      'home': {
+        'url': '/doujin/',
+        'list': {
+          'container': '.utao',
+          'fields': {
+            'id': {
+              'selector': 'a.series',
+              'attribute': 'href',
+              'transform': 'slug'
+            },
+            'title': {'selector': '.luf > a > h4'},
+            'coverUrl': {'selector': 'img.ts-post-image', 'attribute': 'src'},
+          },
+          'pagination': {'alt': '.hpage a.r'},
+        },
+      },
+      'homePage': {
+        'url': '/doujin/page/{page}/',
+        'inherits': 'home',
+      },
+      'doujinHome': {
+        'url': '/doujin/',
+        'inherits': 'home',
+      },
+      'doujinHomePage': {
+        'url': '/doujin/page/{page}/',
+        'inherits': 'home',
+      },
+      'manhwaHome': {
+        'url': '/manhwa/',
+        'inherits': 'home',
+      },
+      'manhwaHomePage': {
+        'url': '/manhwa/page/{page}/',
+        'inherits': 'home',
+      },
+      'search': {
+        'url': '/?s={query}',
+        'inherits': 'home',
+      },
+      'searchPage': {
+        'url': '/page/{page}/?s={query}',
+        'inherits': 'home',
+      },
+      'genreSearch': {
+        'url': '/genre/{tag}/',
+        'inherits': 'home',
+      },
+      'genreSearchPage': {
+        'url': '/genre/{tag}/page/{page}/',
+        'inherits': 'home',
+      },
+    },
+  },
+};
+
+const _ajaxHtmlReaderConfig = {
+  'source': 'doujindesuv2',
+  'baseUrl': _doujindesuBaseUrl,
+  'network': {
+    'headers': {
+      'User-Agent': 'UA-Test',
+      'Accept': 'text/html',
+      'X-Network-Header': 'network-value',
+    },
+  },
+  'scraper': {
+    'urlPatterns': {
+      'chapter': '/{id}/',
+    },
+    'selectors': {
+      'reader': {
+        'mode': 'ajaxHtmlImages',
+        'request': {
+          'method': 'POST',
+          'url': '/themes/ajax/ch.php',
+          'contentType': 'application/x-www-form-urlencoded',
+          'headers': {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Request-Header': 'request-value',
+          },
+          'body': {
+            'id': {
+              'selector': 'main#reader',
+              'attribute': 'data-id',
+            },
+          },
+        },
+        'response': {
+          'images': {
+            'selector': 'img',
+            'attribute': 'src',
+          },
+        },
+        'nav': {
+          'prev': '.naveps .nvs:first-child a:not(.nonex)',
+          'next': '.naveps .nvs.rght a:not(.nonex)',
+        },
+      },
+    },
+  },
+};
 
 GenericScraperAdapter _buildAbsoluteRawAdapter(Dio dio) {
   return GenericScraperAdapter(
@@ -724,6 +850,11 @@ String _readFixtureFile(String relativePath) {
   throw StateError('Fixture not found: $relativePath');
 }
 
+Map<String, dynamic> _readFixtureJsonMap(String relativePath) {
+  return (jsonDecode(_readFixtureFile(relativePath)) as Map)
+      .cast<String, dynamic>();
+}
+
 String _buildDetailHtmlWithTitle(String title) => '''
 <html><body>
 <h1 class="entry-title">$title</h1>
@@ -850,6 +981,18 @@ GenericScraperAdapter _buildHentaiNexusAdapter(Dio dio) {
 }
 
 Dio _buildHentaiNexusDio() => Dio(BaseOptions(baseUrl: _hentaiNexusBaseUrl));
+
+GenericScraperAdapter _buildDoujindesuAdapter(Dio dio) {
+  return GenericScraperAdapter(
+    dio: dio,
+    urlBuilder: const GenericUrlBuilder(baseUrl: _doujindesuBaseUrl),
+    parser: GenericHtmlParser(logger: Logger(printer: PrettyPrinter())),
+    logger: Logger(printer: PrettyPrinter()),
+    sourceId: 'doujindesuv2',
+  );
+}
+
+Dio _buildDoujindesuDio() => Dio(BaseOptions(baseUrl: _doujindesuBaseUrl));
 
 GenericScraperAdapter _buildNicomangaAdapter(Dio dio) {
   return GenericScraperAdapter(
@@ -1564,6 +1707,139 @@ void main() {
     });
   });
 
+  group('GenericScraperAdapter.search() — category routing', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAdapter(dio);
+    });
+
+    test('category Manhwa page 1 uses manhwaHome pattern', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/manhwa/',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: '', page: 1, category: 'Manhwa'),
+        _categoryRoutingConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, 'manga-slug-one');
+    });
+
+    test('category Manhwa page 2 uses manhwaHomePage pattern', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/manhwa/page/2/',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: '', page: 2, category: 'manhwa'),
+        _categoryRoutingConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, 'manga-slug-one');
+    });
+
+    test('text query keeps search priority over category browse', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/?s=test',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'test', page: 1, category: 'Manhwa'),
+        _categoryRoutingConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+    });
+
+    test('tag query keeps genreSearch priority over category browse', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/genre/action/',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: '',
+          page: 1,
+          category: 'Manhwa',
+          includeTags: [FilterItem(id: 1, name: 'action', type: 'tag')],
+        ),
+        _categoryRoutingConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+    });
+
+    test('unknown category falls back to home route', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/doujin/',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: '', page: 1, category: 'Unknown'),
+        _categoryRoutingConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, 'manga-slug-one');
+    });
+
+    test('missing mapped pattern key falls back to home route', () async {
+      final brokenConfig = <String, dynamic>{
+        ..._categoryRoutingConfig,
+        'scraper': {
+          ...(_categoryRoutingConfig['scraper'] as Map<String, dynamic>),
+          'routing': {
+            'defaultCategory': 'Manhwa',
+            'categoryPatterns': {
+              'Manhwa': {
+                'firstPage': 'manhwaMissing',
+                'paged': 'manhwaMissingPage',
+              },
+            },
+          },
+        },
+      };
+
+      dioAdapter.onGet(
+        '$_baseUrl/doujin/',
+        (s) => s.reply(200, _homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: '', page: 1, category: 'Manhwa'),
+        brokenConfig,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, 'manga-slug-one');
+    });
+  });
+
   // ─────────────────────────────────────────────────────────────────────────
   // search() — safety
   // ─────────────────────────────────────────────────────────────────────────
@@ -1810,6 +2086,215 @@ void main() {
     });
   });
 
+  group('DoujinDesu v2 fixtures — scraper config integration', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+    late Map<String, dynamic> config;
+    late String homeHtml;
+    late String doujinPage2Html;
+    late String manhwaPage2Html;
+    late String searchHtml;
+    late String genreHtml;
+    late String detailHtml;
+
+    setUp(() {
+      dio = _buildDoujindesuDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildDoujindesuAdapter(dio);
+      config = _readFixtureJsonMap(
+        'informations/configs/doujindesuv2-config.json',
+      );
+      homeHtml =
+          _readFixtureFile('informations/documentation/doujindesuv2/home.html');
+      doujinPage2Html = _readFixtureFile(
+          'informations/documentation/doujindesuv2/home_page_2_doujin.html');
+      manhwaPage2Html = _readFixtureFile(
+          'informations/documentation/doujindesuv2/home_page_2_manhwa.html');
+      searchHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/search.html');
+      genreHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/content_by_tag.html');
+      detailHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/detail.html');
+    });
+
+    test('default browse parses list items from doujin route', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/doujin/',
+        (s) => s.reply(200, homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(const SearchFilter(page: 1), config);
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+      expect(result.items.first.title, isNotEmpty);
+      expect(result.items.first.coverUrl, isNotEmpty);
+      expect(result.items.first.sourceId, 'doujindesuv2');
+      expect(result.hasNextPage, isTrue);
+    });
+
+    test('category Manhwa uses split browse route and pagination', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/manhwa/page/2/',
+        (s) => s.reply(200, manhwaPage2Html, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(page: 2, category: 'Manhwa'),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+    });
+
+    test('category Doujinshi page 2 uses doujinHomePage fixture', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/doujin/page/2/',
+        (s) => s.reply(200, doujinPage2Html, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(page: 2, category: 'Doujinshi'),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+    });
+
+    test('text query uses mixed search route (not category browse)', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/?s=neko',
+        (s) => s.reply(200, searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'neko', page: 1, category: 'Manhwa'),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+    });
+
+    test('text query page 2 uses configured searchPage route', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/page/2/?s=neko',
+        (s) => s.reply(200, searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'neko', page: 2),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+    });
+
+    test('tag browse uses genre route and parses list', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/genre/bikini/',
+        (s) => s.reply(200, genreHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          page: 1,
+          includeTags: [FilterItem(id: 1, name: 'bikini', type: 'tag')],
+        ),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+    });
+
+    test('raw category-only query falls back to category browse route',
+        () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/doujin/',
+        (s) => s.reply(200, homeHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:type=Doujinshi', page: 1),
+        config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, isNotEmpty);
+    });
+
+    test('detail maps metadata, tags, chapters, and related entries', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBrowseBaseUrl/manga/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, detailHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final detail =
+          await adapter.fetchDetail('kyuukyoku-ni-kimochii-sex', config);
+      final related =
+          await adapter.fetchRelated('kyuukyoku-ni-kimochii-sex', config);
+
+      expect(detail.content.title, contains('Kyuukyoku ni Kimochii Sex'));
+      expect(detail.content.coverUrl, isNotEmpty);
+      expect(detail.content.tags.map((t) => t.name), contains('Big Breast'));
+      expect(detail.content.chapters, isNotNull);
+      expect(detail.content.chapters, isNotEmpty);
+      expect(detail.content.chapters!.first.id, isNotEmpty);
+      expect(related, isNotEmpty);
+      expect(related.first.id, isNotEmpty);
+    });
+
+    test('config routes detail on .es and chapter/ajax on .tv', () async {
+      final readerHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/reader.html');
+      final ajaxHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/reader_ajax_response.html');
+
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) => s.reply(200, ajaxHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final chapter =
+          await adapter.fetchChapterImages('kyuukyoku-ni-kimochii-sex', config);
+
+      expect(chapter, isNotNull);
+      expect(chapter!.images, isNotEmpty);
+      expect(
+        chapter.images.first,
+        'https://doujindesu.tv/uploads/kyuukyoku-ni-kimochii-sex/1.jpg',
+      );
+    });
+  });
+
   // ─────────────────────────────────────────────────────────────────────────
   // fetchChapterImages() — ts_reader JSON path
   // ─────────────────────────────────────────────────────────────────────────
@@ -1958,6 +2443,188 @@ void main() {
         'https://img.example.com/1.jpg',
         'https://img.example.com/2.jpg',
       ]);
+    });
+  });
+
+  group('GenericScraperAdapter.fetchChapterImages() — ajaxHtmlImages mode', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+    late List<RequestOptions> capturedRequests;
+    late String readerHtml;
+    late String ajaxHtml;
+
+    setUp(() {
+      dio = _buildDoujindesuDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      capturedRequests = <RequestOptions>[];
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            capturedRequests.add(options);
+            handler.next(options);
+          },
+        ),
+      );
+      adapter = _buildDoujindesuAdapter(dio);
+      readerHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/reader.html');
+      ajaxHtml = _readFixtureFile(
+          'informations/documentation/doujindesuv2/reader_ajax_response.html');
+    });
+
+    test('extracts POST body from reader DOM and resolves normalized images',
+        () async {
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) => s.reply(200, ajaxHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchChapterImages(
+        'kyuukyoku-ni-kimochii-sex',
+        _ajaxHtmlReaderConfig,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://doujindesu.tv/uploads/kyuukyoku-ni-kimochii-sex/1.jpg',
+        'https://doujindesu.tv/uploads/kyuukyoku-ni-kimochii-sex/2.jpg',
+        'https://doujindesu.tv/uploads/kyuukyoku-ni-kimochii-sex/3.jpg',
+      ]);
+
+      final ajaxRequest = capturedRequests.lastWhere(
+        (request) => request.path.contains('/themes/ajax/ch.php'),
+      );
+      expect(ajaxRequest.method, 'POST');
+      expect((ajaxRequest.data as Map)['id'], '46177');
+    });
+
+    test('merges network headers + request headers + referer/origin', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) => s.reply(200, ajaxHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      await adapter.fetchChapterImages(
+        'kyuukyoku-ni-kimochii-sex',
+        _ajaxHtmlReaderConfig,
+      );
+
+      final ajaxRequest = capturedRequests.lastWhere(
+        (request) => request.path.contains('/themes/ajax/ch.php'),
+      );
+      expect(ajaxRequest.headers['User-Agent'], 'UA-Test');
+      expect(ajaxRequest.headers['X-Network-Header'], 'network-value');
+      expect(ajaxRequest.headers['X-Requested-With'], 'XMLHttpRequest');
+      expect(ajaxRequest.headers['X-Request-Header'], 'request-value');
+      expect(ajaxRequest.headers['Referer'],
+          'https://doujindesu.tv/kyuukyoku-ni-kimochii-sex/');
+      expect(ajaxRequest.headers['Origin'], 'https://doujindesu.tv');
+    });
+
+    test('missing required request field returns empty image list', () async {
+      final readerWithoutId = readerHtml.replaceFirst(' data-id="46177"', '');
+      var ajaxCalled = false;
+
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerWithoutId, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) {
+          ajaxCalled = true;
+          return s.reply(200, ajaxHtml, headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8']
+          });
+        },
+      );
+
+      final result = await adapter.fetchChapterImages(
+        'kyuukyoku-ni-kimochii-sex',
+        _ajaxHtmlReaderConfig,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.images, isEmpty);
+      expect(ajaxCalled, isA<bool>());
+    });
+
+    test('empty AJAX response produces empty image list', () async {
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) => s.reply(200, '<div id="anu"></div>', headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.fetchChapterImages(
+        'kyuukyoku-ni-kimochii-sex',
+        _ajaxHtmlReaderConfig,
+      );
+
+      expect(result, isNotNull);
+      expect(result!.images, isEmpty);
+    });
+
+    test('resolved AJAX images are download-ready in page-resolution pipeline',
+        () async {
+      dioAdapter.onGet(
+        '$_doujindesuBaseUrl/kyuukyoku-ni-kimochii-sex/',
+        (s) => s.reply(200, readerHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_doujindesuBaseUrl/themes/ajax/ch.php',
+        (s) => s.reply(200, ajaxHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final chapter = await adapter.fetchChapterImages(
+        'kyuukyoku-ni-kimochii-sex',
+        _ajaxHtmlReaderConfig,
+      );
+      expect(chapter, isNotNull);
+
+      final pipelineResult = const PageResolutionPipeline().resolve(
+        PageResolutionInput(
+          sourceId: 'doujindesuv2',
+          contentId: 'kyuukyoku-ni-kimochii-sex',
+          chapterId: 'kyuukyoku-ni-kimochii-sex',
+          imageUrls: chapter!.images,
+        ),
+      );
+      expect(pipelineResult.isDownloadReady, isTrue);
+      expect(
+        const PageResolutionPipeline().toDownloadUrls(pipelineResult.pages),
+        hasLength(3),
+      );
     });
   });
 

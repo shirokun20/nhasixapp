@@ -304,6 +304,44 @@ void main() {
     });
   });
 
+  // ── DoujinDesu v2 (scraper, category routing, AJAX reader HTML) ────────
+  group('doujindesuv2-config.json', () {
+    late SourceConfigParseResult result;
+
+    setUpAll(() {
+      result = _parser().parse(_loadConfig('doujindesuv2-config.json'));
+    });
+
+    test('sourceId is doujindesuv2', () {
+      expect(result.declaration.sourceId, 'doujindesuv2');
+    });
+
+    test('search requires category-routing primitive when configured', () {
+      final FeatureContract? searchContract =
+          result.declaration.contractFor(FeatureKind.search);
+      expect(searchContract, isNotNull);
+      expect(
+        searchContract!.requiredPrimitives,
+        contains(EnginePrimitive.searchCategoryRouting),
+      );
+    });
+
+    test('reader requires ajax-html primitive when ajax reader mode is used',
+        () {
+      final FeatureContract? readerContract =
+          result.declaration.contractFor(FeatureKind.reader);
+      expect(readerContract, isNotNull);
+      expect(
+        readerContract!.requiredPrimitives,
+        contains(EnginePrimitive.imageModeAjaxHtml),
+      );
+      expect(
+        readerContract.requiredPrimitives,
+        isNot(contains(EnginePrimitive.imageModeDirectUrl)),
+      );
+    });
+  });
+
   // ── NetworkRules unit tests ───────────────────────────────────────────────
   group('NetworkRules.fromConfig', () {
     test('parses static headers', () {

@@ -404,6 +404,28 @@ void _setupDataSources() {
     );
   });
 
+  // DoujinDesu v2 WebView Session Adapter
+  // Uses isolated cookie storage so Cloudflare challenge cookies are persisted
+  // per source and do not leak across provider sessions.
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'doujindesuv2',
+    () {
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig('doujindesuv2') ?? {};
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://doujindesu.tv';
+      final cookieStorage = GenericCookieStorage('doujindesuv2');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
   // PersistCookieJar for EHentai — cookie persistence for auth & session mgmt
   getIt.registerLazySingleton<PersistCookieJar>(() {
     final cookieStorage = GenericCookieStorage('ehentai');
@@ -463,6 +485,12 @@ void _setupDataSources() {
         CrotpediaSourceFactory(
           dio: getIt<Dio>(),
           sessionAdapter: getIt<WebViewSessionAdapter>(),
+          logger: getIt<Logger>(),
+        ),
+        DoujindesuSourceFactory(
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'doujindesuv2'),
           logger: getIt<Logger>(),
         ),
         EHentaiSourceFactory(

@@ -1738,7 +1738,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
     final rawQuery = 'raw:${parts.join('&')}';
     final parsed = _parseRaw(rawQuery.substring(4));
-    final queryExpression = (parsed['q'] ?? const <String>[]).join(' ').trim();
+    final queryExpression = _extractPreviewQueryExpression(parsed);
     if (queryExpression.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -1770,6 +1770,28 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         ],
       ),
     );
+  }
+
+  String _extractPreviewQueryExpression(Map<String, List<String>> parsed) {
+    const candidateKeys = <String>['q', 's', 'query'];
+    for (final key in candidateKeys) {
+      final values = parsed[key];
+      if (values == null || values.isEmpty) continue;
+      final expression = values.join(' ').trim();
+      if (expression.isNotEmpty) {
+        return expression;
+      }
+    }
+
+    for (final entry in parsed.entries) {
+      if (entry.key == 'page' || entry.key == 'sort') continue;
+      final expression = entry.value.join(' ').trim();
+      if (expression.isNotEmpty) {
+        return expression;
+      }
+    }
+
+    return '';
   }
 
   void _restoreJoinedParamGroup(

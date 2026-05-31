@@ -126,8 +126,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
     // 1) Genre/tag filter → genreSearch / genreSearchPage
     // 2) Non-empty text   → search / searchPage
-    // 3) Empty query p>1  → homePage (if defined)
-    // 4) Empty query p=1  → home
+    // 3) Empty query      → category-routed browse (if configured)
+    // 4) Empty query      → home/homePage fallback
     final String patternKey;
     if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
@@ -140,9 +140,11 @@ class GenericScraperAdapter implements GenericAdapter {
           ? 'searchPage'
           : 'search';
     } else {
-      patternKey = filter.page > 1 && urlPatternsCfg.containsKey('homePage')
-          ? 'homePage'
-          : 'home';
+      patternKey = _resolveBrowsePatternKey(
+        filter: filter,
+        scraper: scraper,
+        urlPatternsCfg: urlPatternsCfg,
+      );
     }
 
     if (!urlPatternsCfg.containsKey(patternKey)) {
@@ -190,24 +192,6 @@ class GenericScraperAdapter implements GenericAdapter {
     required Map<String, dynamic> scraper,
     required Map<String, dynamic> urlPatternsCfg,
   }) async {
-    // Determine which URL pattern to use from searchForm config.
-    final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
-    final basePatternKey =
-        (searchFormCfg?['urlPattern'] as String?) ?? 'search';
-    final formParamsCfg =
-        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
-
-    // Prefer `{pattern}Page` variant for page > 1 when provided by config.
-    final pagedPatternKey = '${basePatternKey}Page';
-    final patternKey = page > 1 && urlPatternsCfg.containsKey(pagedPatternKey)
-        ? pagedPatternKey
-        : basePatternKey;
-
-    if (!urlPatternsCfg.containsKey(patternKey)) {
-      _logger.w('$_sourceId: raw search — URL pattern "$patternKey" not found');
-      return const AdapterSearchResult(items: [], hasNextPage: false);
-    }
-
     // Parse raw params (e.g. "s=manga&status=ongoing")
     final rawMap = <String, List<String>>{};
     for (final pair in rawParams.split('&')) {
@@ -218,6 +202,67 @@ class GenericScraperAdapter implements GenericAdapter {
       final value = _safeDecodeComponent(pair.substring(idx + 1));
       rawMap.putIfAbsent(key, () => <String>[]).add(value);
     }
+
+    String? firstRawValue(String key) {
+      final values = rawMap[key];
+      if (values == null || values.isEmpty) return null;
+      final value = values.first.trim();
+      return value.isEmpty ? null : value;
+    }
+
+    // Determine which URL pattern to use from searchForm config.
+    final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
+    final basePatternKey =
+        (searchFormCfg?['urlPattern'] as String?) ?? 'search';
+    final formParamsCfg =
+        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
+    final queryParamName = ((formParamsCfg['query']
+            as Map<String, dynamic>?)?['queryParam'] as String?) ??
+        'query';
+    final tagParamName = ((formParamsCfg['tag']
+            as Map<String, dynamic>?)?['queryParam'] as String?) ??
+        'tag';
+    final categoryParamName = ((formParamsCfg['category']
+            as Map<String, dynamic>?)?['queryParam'] as String?) ??
+        'category';
+
+    final rawQueryValue =
+        firstRawValue(queryParamName) ?? firstRawValue('query');
+    final rawTagValue = firstRawValue(tagParamName) ?? firstRawValue('tag');
+    final rawCategoryValue =
+        firstRawValue(categoryParamName) ?? firstRawValue('category');
+
+    // Prefer category browse routing when form sends only category in raw mode,
+    // e.g. "raw:type=Doujinshi" with empty text query.
+    String patternKey;
+    if (rawQueryValue == null &&
+        rawTagValue == null &&
+        rawCategoryValue != null) {
+      patternKey = _resolveBrowsePatternKey(
+        filter: SearchFilter(
+          query: '',
+          page: page,
+          category: rawCategoryValue,
+        ),
+        scraper: scraper,
+        urlPatternsCfg: urlPatternsCfg,
+      );
+      rawMap.remove(categoryParamName);
+      rawMap.remove('category');
+    } else {
+      // Prefer `{pattern}Page` variant for page > 1 when provided by config.
+      final pagedPatternKey = '${basePatternKey}Page';
+      patternKey = page > 1 && urlPatternsCfg.containsKey(pagedPatternKey)
+          ? pagedPatternKey
+          : basePatternKey;
+    }
+
+    if (!urlPatternsCfg.containsKey(patternKey)) {
+      _logger.w('$_sourceId: raw search — URL pattern "$patternKey" not found');
+      return const AdapterSearchResult(items: [], hasNextPage: false);
+    }
+
+    final pagedPatternKey = '${basePatternKey}Page';
 
     // Resolve list config from the URL pattern (for pagination/selector info).
     // We use a dummy SearchFilter to call _resolvePattern just for the listConfig.
@@ -259,26 +304,9 @@ class GenericScraperAdapter implements GenericAdapter {
 
     // Resolve path placeholders from raw params for templates like
     // /search/keyword/{query}/ and /search/tag/{tag}/.
-    String? firstRawValue(String key) {
-      final values = rawMap[key];
-      if (values == null || values.isEmpty) return null;
-      final value = values.first.trim();
-      return value.isEmpty ? null : value;
-    }
-
-    final queryParamName = ((formParamsCfg['query']
-            as Map<String, dynamic>?)?['queryParam'] as String?) ??
-        'query';
-    final tagParamName = ((formParamsCfg['tag']
-            as Map<String, dynamic>?)?['queryParam'] as String?) ??
-        'tag';
 
     final queryInPathTemplate = basePath.contains('{query}');
     final tagInPathTemplate = basePath.contains('{tag}');
-
-    final rawQueryValue =
-        firstRawValue(queryParamName) ?? firstRawValue('query');
-    final rawTagValue = firstRawValue(tagParamName) ?? firstRawValue('tag');
 
     if (rawQueryValue != null) {
       basePath = basePath.replaceAll(
@@ -524,6 +552,154 @@ class GenericScraperAdapter implements GenericAdapter {
 
     final separator = resolvedUrl.contains('?') ? '&' : '?';
     return '$resolvedUrl$separator$pageParam=${Uri.encodeComponent(filter.page.toString())}';
+  }
+
+  String _resolveBrowsePatternKey({
+    required SearchFilter filter,
+    required Map<String, dynamic> scraper,
+    required Map<String, dynamic> urlPatternsCfg,
+  }) {
+    final fallback = _homeFallbackPatternKey(
+      page: filter.page,
+      urlPatternsCfg: urlPatternsCfg,
+    );
+
+    final routing = (scraper['routing'] as Map?)?.cast<String, dynamic>();
+    final categoryPatterns =
+        (routing?['categoryPatterns'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+    if (categoryPatterns.isEmpty) return fallback;
+
+    var selectedCategory = (filter.category ?? '').trim();
+    if (selectedCategory.isEmpty) {
+      selectedCategory = (routing?['defaultCategory'] as String? ?? '').trim();
+    }
+    if (selectedCategory.isEmpty) return fallback;
+
+    final route = _resolveCategoryRoute(
+      selectedCategory: selectedCategory,
+      categoryPatterns: categoryPatterns,
+    );
+    if (route == null) {
+      _logger.w(
+        '$_sourceId: browse category "$selectedCategory" is unknown; fallback to "$fallback"',
+      );
+      return fallback;
+    }
+
+    final firstPageKey = (route['firstPage'] ?? '').trim();
+    final pagedKey = (route['paged'] ?? '').trim();
+    final candidate = filter.page > 1
+        ? (pagedKey.isNotEmpty ? pagedKey : firstPageKey)
+        : firstPageKey;
+
+    if (candidate.isEmpty) {
+      _logger.w(
+        '$_sourceId: category "$selectedCategory" has empty route; fallback to "$fallback"',
+      );
+      return fallback;
+    }
+
+    if (!urlPatternsCfg.containsKey(candidate)) {
+      _logger.w(
+        '$_sourceId: category "$selectedCategory" maps to missing pattern "$candidate"; fallback to "$fallback"',
+      );
+      return fallback;
+    }
+
+    return candidate;
+  }
+
+  Map<String, String>? _resolveCategoryRoute({
+    required String selectedCategory,
+    required Map<String, dynamic> categoryPatterns,
+  }) {
+    final byAlias = <String, Map<String, String>>{};
+    for (final entry in categoryPatterns.entries) {
+      final route = _parseCategoryRoute(entry.value);
+      if (route == null) continue;
+
+      final aliases = <String>{
+        ..._splitCategoryAliasTokens(entry.key),
+      };
+
+      final raw = entry.value;
+      if (raw is Map) {
+        final aliasRaw = raw['aliases'];
+        if (aliasRaw is List) {
+          for (final value in aliasRaw) {
+            aliases.addAll(_splitCategoryAliasTokens(value.toString()));
+          }
+        } else if (aliasRaw is String) {
+          aliases.addAll(_splitCategoryAliasTokens(aliasRaw));
+        }
+      }
+
+      if (aliases.isEmpty) {
+        aliases.add(entry.key);
+      }
+
+      for (final alias in aliases) {
+        final normalized = _normalizeCategoryKey(alias);
+        if (normalized.isEmpty) continue;
+        byAlias.putIfAbsent(normalized, () => route);
+      }
+    }
+
+    final selected = _normalizeCategoryKey(selectedCategory);
+    if (selected.isEmpty) return null;
+    return byAlias[selected];
+  }
+
+  Map<String, String>? _parseCategoryRoute(dynamic raw) {
+    if (raw is String) {
+      final firstPage = raw.trim();
+      if (firstPage.isEmpty) return null;
+      return <String, String>{'firstPage': firstPage};
+    }
+
+    if (raw is! Map) return null;
+    final map = raw.cast<String, dynamic>();
+
+    final firstPage = (map['firstPage'] as String?)?.trim() ??
+        (map['first'] as String?)?.trim() ??
+        (map['pattern'] as String?)?.trim() ??
+        (map['key'] as String?)?.trim() ??
+        '';
+    final paged = (map['paged'] as String?)?.trim() ??
+        (map['page'] as String?)?.trim() ??
+        (map['pagedPattern'] as String?)?.trim() ??
+        '';
+
+    if (firstPage.isEmpty && paged.isEmpty) {
+      return null;
+    }
+
+    return <String, String>{
+      if (firstPage.isNotEmpty) 'firstPage': firstPage,
+      if (paged.isNotEmpty) 'paged': paged,
+    };
+  }
+
+  Set<String> _splitCategoryAliasTokens(String raw) {
+    return raw
+        .split(RegExp(r'[|,;]'))
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet();
+  }
+
+  String _normalizeCategoryKey(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  String _homeFallbackPatternKey({
+    required int page,
+    required Map<String, dynamic> urlPatternsCfg,
+  }) {
+    return page > 1 && urlPatternsCfg.containsKey('homePage')
+        ? 'homePage'
+        : 'home';
   }
 
   Future<Response<String>> _getWithRedirectFallback(
@@ -781,12 +957,17 @@ class GenericScraperAdapter implements GenericAdapter {
     final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
     Logger().i('[$_sourceId] getDetail: fetching URL=$url');
     _logger.d('$_sourceId scraper detail: $url');
+    final requestHeaders =
+        _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     try {
       Logger().i('[$_sourceId] getDetail: about to fetch...');
       final response = await _dio.get<String>(
         url,
-        options: Options(responseType: ResponseType.plain),
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: requestHeaders,
+        ),
       );
       Logger().i(
           '[$_sourceId] getDetail: response received, status=${response.statusCode}');
@@ -916,11 +1097,16 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
+    final requestHeaders =
+        _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     try {
       final response = await _dio.get<String>(
         url,
-        options: Options(responseType: ResponseType.plain),
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: requestHeaders,
+        ),
       );
       final doc = _parser.parse(response.data ?? '');
       final relatedEls = _parser.selectAll(doc, containerSel);
@@ -989,6 +1175,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
     final url = _urlBuilder.buildDetailUrl(detailTemplate, contentId);
     String? cachedDetailHtml;
+    final detailRequestHeaders =
+        _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     // 1) API-first comments path (e.g. HentaiFox includes/comments.php)
     final commentsEndpoint = commentsCfg['endpoint'] as String?;
@@ -1001,13 +1189,17 @@ class GenericScraperAdapter implements GenericAdapter {
         // comments.php is protected by CSRF/session checks.
         final detailResponse = await _dio.get<String>(
           url,
-          options: Options(responseType: ResponseType.plain),
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: detailRequestHeaders,
+          ),
         );
         cachedDetailHtml = detailResponse.data;
 
         final csrfToken = _extractCsrfToken(cachedDetailHtml ?? '');
         final cookieHeader = _buildCookieHeader(detailResponse.headers);
         final requestHeaders = <String, dynamic>{
+          ...detailRequestHeaders,
           'Referer': url,
           'Origin': Uri.parse(url).origin,
           'X-Requested-With': 'XMLHttpRequest',
@@ -1064,7 +1256,10 @@ class GenericScraperAdapter implements GenericAdapter {
       final html = cachedDetailHtml ??
           (await _dio.get<String>(
             url,
-            options: Options(responseType: ResponseType.plain),
+            options: Options(
+              responseType: ResponseType.plain,
+              headers: detailRequestHeaders,
+            ),
           ))
               .data ??
           '';
@@ -1166,11 +1361,16 @@ class GenericScraperAdapter implements GenericAdapter {
 
     final url = _urlBuilder.buildDetailUrl(chapterTemplate, chapterId);
     _logger.d('$_sourceId scraper chapter: $url');
+    final chapterRequestHeaders =
+        _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     try {
       final response = await _dio.get<String>(
         url,
-        options: Options(responseType: ResponseType.plain),
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: chapterRequestHeaders,
+        ),
       );
       final htmlContent = response.data ?? '';
 
@@ -1223,6 +1423,16 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final doc = _parser.parse(htmlContent);
 
+      if (imageUrls.isEmpty &&
+          (readerConfig['mode'] as String?) == 'ajaxHtmlImages') {
+        imageUrls = await _fetchAjaxHtmlImages(
+          rawConfig: rawConfig,
+          readerConfig: readerConfig,
+          readerDocument: doc,
+          readerPageUrl: url,
+        );
+      }
+
       // 2. DOM fallback for images.
       if (imageUrls.isEmpty && readerConfig['mode'] == 'hentaifoxCdn') {
         // Prefer true full-res URL from /g/{id}/1/ page so extension follows
@@ -1239,7 +1449,13 @@ class GenericScraperAdapter implements GenericAdapter {
           );
           final readerResp = await _dio.get<String>(
             readerPageUrl,
-            options: Options(responseType: ResponseType.plain),
+            options: Options(
+              responseType: ResponseType.plain,
+              headers: _resolveRequestHeaders(
+                rawConfig,
+                fallbackReferer: readerPageUrl,
+              ),
+            ),
           );
           final readerHtml = readerResp.data ?? '';
           final readerDoc = _parser.parse(readerHtml);
@@ -1985,6 +2201,195 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return value.isEmpty ? null : value;
+  }
+
+  Future<List<String>> _fetchAjaxHtmlImages({
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> readerConfig,
+    required dom.Document readerDocument,
+    required String readerPageUrl,
+  }) async {
+    final requestConfig =
+        (readerConfig['request'] as Map?)?.cast<String, dynamic>();
+    if (requestConfig == null) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: missing reader.request config',
+      );
+      return const [];
+    }
+
+    final method =
+        ((requestConfig['method'] as String?) ?? 'POST').trim().toUpperCase();
+    final requestUrlTemplate = (requestConfig['url'] as String?)?.trim() ?? '';
+    if (requestUrlTemplate.isEmpty) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: request.url is empty',
+      );
+      return const [];
+    }
+
+    final bodyFields = _extractAjaxRequestFields(
+      readerDocument: readerDocument,
+      requestConfig: requestConfig,
+      fieldGroup: 'body',
+    );
+    if (bodyFields == null) return const [];
+
+    final queryFields = _extractAjaxRequestFields(
+      readerDocument: readerDocument,
+      requestConfig: requestConfig,
+      fieldGroup: 'query',
+    );
+    if (queryFields == null) return const [];
+
+    final queryParameters = <String, dynamic>{...queryFields};
+    if (method == 'GET' && bodyFields.isNotEmpty) {
+      for (final entry in bodyFields.entries) {
+        queryParameters.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
+
+    final headers = _resolveRequestHeaders(
+      rawConfig,
+      fallbackReferer: readerPageUrl,
+    );
+    headers['Referer'] = readerPageUrl;
+
+    final origin = Uri.tryParse(readerPageUrl)?.origin;
+    if (origin != null && origin.isNotEmpty) {
+      headers.putIfAbsent('Origin', () => origin);
+    }
+
+    final ajaxHeaders =
+        (requestConfig['headers'] as Map?)?.cast<String, dynamic>() ?? {};
+    headers.addAll(ajaxHeaders);
+
+    final requestUrl = _urlBuilder.resolve(requestUrlTemplate, const {});
+    final configuredContentType =
+        (requestConfig['contentType'] as String?)?.trim();
+    final contentType =
+        configuredContentType == null || configuredContentType.isEmpty
+            ? (method == 'POST' ? Headers.formUrlEncodedContentType : null)
+            : configuredContentType;
+
+    final response = await _dio.request<String>(
+      requestUrl,
+      data: method == 'GET' ? null : bodyFields,
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
+      options: Options(
+        method: method,
+        headers: headers,
+        contentType: contentType,
+        responseType: ResponseType.plain,
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    if (!_isSuccessStatus(response.statusCode)) {
+      if (response.statusCode == 403 &&
+          (response.headers.value('cf-mitigated')?.isNotEmpty ?? false)) {
+        _logger.w(
+          '$_sourceId ajaxHtmlImages: blocked by site protection (403 cf-mitigated) for $requestUrl',
+        );
+      }
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: request failed with status ${response.statusCode} for $requestUrl',
+      );
+      return const [];
+    }
+
+    final responseHtml = response.data ?? '';
+    if (responseHtml.trim().isEmpty) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: empty HTML response for $requestUrl',
+      );
+      return const [];
+    }
+
+    final responseConfig =
+        (readerConfig['response'] as Map?)?.cast<String, dynamic>() ?? {};
+    final imagesDef = responseConfig['images'] ?? readerConfig['images'];
+    final defMap = _toDefMap(imagesDef);
+    if (defMap == null) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: response.images selector is missing',
+      );
+      return const [];
+    }
+
+    final selector = _fieldDefToSelector(defMap);
+    if (selector == null) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: response.images selector is invalid',
+      );
+      return const [];
+    }
+
+    final responseDoc = _parser.parse(responseHtml);
+    final rawUrls = _parser.extractList(responseDoc, selector);
+    final normalizedUrls = _normalizeChapterImageUrls(rawUrls);
+    if (normalizedUrls.isEmpty) {
+      _logger.w(
+        '$_sourceId ajaxHtmlImages: no images extracted using selector "${selector.selector}"',
+      );
+    }
+
+    return normalizedUrls;
+  }
+
+  Map<String, dynamic>? _extractAjaxRequestFields({
+    required dom.Document readerDocument,
+    required Map<String, dynamic> requestConfig,
+    required String fieldGroup,
+  }) {
+    final defs =
+        (requestConfig[fieldGroup] as Map?)?.cast<String, dynamic>() ?? {};
+    final values = <String, dynamic>{};
+
+    for (final entry in defs.entries) {
+      final name = entry.key;
+      final rawDef = entry.value;
+      final required = rawDef is Map
+          ? (rawDef.cast<String, dynamic>()['required'] as bool? ?? true)
+          : true;
+
+      final value = _extractAjaxRequestFieldValue(
+        readerDocument: readerDocument,
+        definition: rawDef,
+      );
+      if ((value == null || value.isEmpty) && required) {
+        _logger.w(
+          '$_sourceId ajaxHtmlImages: missing required $fieldGroup field "$name"',
+        );
+        return null;
+      }
+      if (value != null && value.isNotEmpty) {
+        values[name] = value;
+      }
+    }
+
+    return values;
+  }
+
+  String? _extractAjaxRequestFieldValue({
+    required dom.Document readerDocument,
+    required dynamic definition,
+  }) {
+    if (definition is String) return definition.trim();
+    if (definition is num || definition is bool) return definition.toString();
+    if (definition is! Map) return null;
+
+    final map = definition.cast<String, dynamic>();
+    final constant = map['value'];
+    if (constant != null) {
+      return constant.toString().trim();
+    }
+
+    final selector = _fieldDefToSelector(map);
+    if (selector == null) return null;
+    final value = _parser.extractString(readerDocument, selector)?.trim();
+    if (value == null || value.isEmpty) return null;
+    return value;
   }
 
   List<String> _extractScriptSlidesImageUrls(String htmlContent) {

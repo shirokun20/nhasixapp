@@ -19,6 +19,7 @@ class EnginePrimitive {
   static const String imageModeTemplate = 'imageMode.template';
   static const String imageModeCdnRegex = 'imageMode.cdnRegex';
   static const String imageModeScriptRegex = 'imageMode.scriptRegex';
+  static const String imageModeAjaxHtml = 'imageMode.ajaxHtml';
   static const String imageModeExtensionMap = 'imageMode.extensionMap';
   static const String imageModeProxy = 'imageMode.proxy';
 
@@ -32,6 +33,7 @@ class EnginePrimitive {
   static const String dynamicFormOperators = 'dynamicForm.operators';
   static const String dynamicFormQuoteWhitespace =
       'dynamicForm.quoteWhitespace';
+  static const String searchCategoryRouting = 'search.categoryRouting';
 
   // Header / referer rules.
   static const String headersStatic = 'headers.static';
@@ -77,6 +79,7 @@ class EnginePrimitive {
     imageModeTemplate: 'Image URL built from a template string.',
     imageModeCdnRegex: 'Image URL resolved via CDN-path regex.',
     imageModeScriptRegex: 'Image URL extracted via embedded-script regex.',
+    imageModeAjaxHtml: 'Image URL extracted via AJAX response HTML.',
     imageModeExtensionMap:
         'Image extension resolved per-page via a server map.',
     imageModeProxy: 'Image served through an app-side proxy.',
@@ -86,6 +89,8 @@ class EnginePrimitive {
     dynamicFormBasic: 'Dynamic search form with basic text fields.',
     dynamicFormOperators: 'Dynamic search form with boolean operators.',
     dynamicFormQuoteWhitespace: 'Search form quotes multi-word terms.',
+    searchCategoryRouting:
+        'Search browse routing can switch URL pattern by category.',
     headersStatic: 'Source requires static request headers (Referer, etc.).',
     headersDynamic: 'Source requires dynamically computed headers.',
     refererTemplate: 'Referer header built from a template.',

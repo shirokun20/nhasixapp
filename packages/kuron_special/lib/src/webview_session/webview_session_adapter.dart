@@ -31,9 +31,11 @@ class WebViewSessionConfig {
     final network = json['network'] as Map<String, dynamic>? ?? {};
     final cf = network['cloudflare'] as Map<String, dynamic>? ?? {};
     final auth = json['auth'] as Map<String, dynamic>? ?? {};
+    final requiresBypass = network['requiresBypass'] == true;
+    final cloudflareBypass = cf['bypassEnabled'] == true;
 
     return WebViewSessionConfig(
-      bypassEnabled: cf['bypassEnabled'] == true,
+      bypassEnabled: requiresBypass || cloudflareBypass,
       authEnabled: auth['enabled'] == true,
       loginUrl: (auth['loginUrl'] as String?) ?? '',
       registerUrl: (auth['registerUrl'] as String?) ?? '',

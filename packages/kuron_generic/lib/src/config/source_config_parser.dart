@@ -349,6 +349,14 @@ class SourceConfigParser {
         : const <String, Object?>{};
     final bool hasTsReaderRegex = readerSelectors.containsKey('tsReaderRegex');
     final bool hasCdnPathRegex = readerSelectors.containsKey('cdnPathRegex');
+    final bool hasAjaxHtmlReader =
+        readerSelectors['mode']?.toString() == 'ajaxHtmlImages';
+
+    final Map<String, Object?> scraperRouting = scraper['routing'] is Map
+        ? (scraper['routing']! as Map).cast<String, Object?>()
+        : const <String, Object?>{};
+    final bool hasCategoryRouting = scraperRouting['categoryPatterns'] is Map &&
+        (scraperRouting['categoryPatterns'] as Map).isNotEmpty;
 
     // API image modes.
     final Map<String, Object?> apiImages = api['images'] is Map
@@ -372,11 +380,13 @@ class SourceConfigParser {
       return <String>{
         if (hasTsReaderRegex) EnginePrimitive.imageModeScriptRegex,
         if (hasCdnPathRegex) EnginePrimitive.imageModeCdnRegex,
+        if (hasAjaxHtmlReader) EnginePrimitive.imageModeAjaxHtml,
         if (hasImagesTemplate) EnginePrimitive.imageModeTemplate,
         if (hasImagesProxy) EnginePrimitive.imageModeProxy,
         if (apiImagesMode == 'atHome') EnginePrimitive.imageModeDirectUrl,
         if (!hasTsReaderRegex &&
             !hasCdnPathRegex &&
+            !hasAjaxHtmlReader &&
             !hasImagesTemplate &&
             !hasImagesProxy &&
             apiImagesMode != 'atHome')
@@ -415,6 +425,7 @@ class SourceConfigParser {
       required: true,
       primitives: <String>{
         _paginationPrimitive(rawConfig, hasScraper: hasScraper, hasApi: hasApi),
+        if (hasCategoryRouting) EnginePrimitive.searchCategoryRouting,
       }.where((String s) => s.isNotEmpty).toSet(),
     );
 
