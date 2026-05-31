@@ -20,6 +20,7 @@ import 'package:nhasixapp/core/utils/source_url_resolver.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/core/utils/tag_color_palette.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
@@ -1246,11 +1247,10 @@ class _DetailScreenState extends State<DetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
+                  color: _getTagColor(tag.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color:
-                        _getTagColor(context, tag.type).withValues(alpha: 0.8),
+                    color: _getTagColor(tag.type).withValues(alpha: 0.8),
                   ),
                 ),
                 child: Row(
@@ -1259,7 +1259,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       tag.name,
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: _getTagColor(context, tag.type),
+                        color: _getTagColor(tag.type),
                       ),
                     ),
                     if (tag.count > 0) ...[
@@ -1267,8 +1267,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       Text(
                         _formatNumber(tag.count),
                         style: TextStyleConst.overline.copyWith(
-                          color: _getTagColor(context, tag.type)
-                              .withValues(alpha: 0.7),
+                          color: _getTagColor(tag.type).withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -2603,44 +2602,9 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Get theme-aware tag color based on tag type
-  Color _getTagColor(BuildContext context, String tagType) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    switch (tagType.toLowerCase()) {
-      case 'artist':
-        return colorScheme.primary;
-      case 'character':
-        return colorScheme.secondary;
-      case 'parody':
-        return colorScheme.tertiary;
-      case 'group':
-        return colorScheme.error;
-      case 'language':
-        // Use primary for language in light mode since onSurfaceVariant is too light
-        return isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.primary;
-      case 'uploader':
-        return isDarkMode
-            ? const Color(0xFFFFB74D) // amber-300
-            : const Color(0xFFE65100); // deep-orange-900
-      case 'female':
-        return const Color(0xFFE91E63); // pink
-      case 'male':
-        return const Color(0xFF1565C0); // blue-800
-      case 'other':
-      case 'misc':
-        return isDarkMode
-            ? colorScheme.outline
-            : colorScheme.onSurface.withValues(alpha: 0.6);
-      case 'tag':
-      default:
-        // Use onSurface for default tags in light mode for better visibility
-        // In dark mode, outline works fine
-        return isDarkMode
-            ? colorScheme.outline
-            : colorScheme.onSurface.withValues(alpha: 0.8);
-    }
+  /// Get neon tag color based on tag type.
+  Color _getTagColor(String tagType) {
+    return TagColorPalette.resolve(tagType);
   }
 
   Future<void> _readContent(

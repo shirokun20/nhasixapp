@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/core/utils/tag_color_palette.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -616,19 +617,17 @@ class ContentCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
-                    color:
-                        _getTagColor(context, tag.type).withValues(alpha: 0.2),
+                    color: _getTagColor(tag.type).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getTagColor(context, tag.type)
-                          .withValues(alpha: 0.5),
+                      color: _getTagColor(tag.type).withValues(alpha: 0.5),
                       width: 0.5,
                     ),
                   ),
                   child: Text(
                     tag.name,
                     style: TextStyleConst.contentTag.copyWith(
-                      color: _getTagColor(context, tag.type),
+                      color: _getTagColor(tag.type),
                       fontSize: 9,
                     ),
                   ),
@@ -638,24 +637,9 @@ class ContentCard extends StatelessWidget {
     );
   }
 
-  /// Helper method to get tag color based on theme
-  Color _getTagColor(BuildContext context, String tagType) {
-    switch (tagType.toLowerCase()) {
-      case 'artist':
-        return Theme.of(context).colorScheme.primary;
-      case 'character':
-        return Theme.of(context).colorScheme.secondary;
-      case 'parody':
-        return Theme.of(context).colorScheme.tertiary;
-      case 'group':
-        return Theme.of(context).colorScheme.error;
-      case 'language':
-        return Theme.of(context).colorScheme.inversePrimary;
-      case 'category':
-        return Theme.of(context).colorScheme.outline;
-      default:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
-    }
+  /// Helper method to get neon tag color based on tag type.
+  Color _getTagColor(String tagType) {
+    return TagColorPalette.resolve(tagType);
   }
 
   Widget _buildBottomRow() {
