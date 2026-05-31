@@ -347,10 +347,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSettingsCard([
             if (kDebugMode) ...[
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: const Icon(Icons.dns_outlined),
                 title: const Text('DoH Test'),
-                subtitle: const Text('Test DNS-over-HTTPS resolver and responses'),
+                subtitle:
+                    const Text('Test DNS-over-HTTPS resolver and responses'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => AppRouter.goToDohTest(context),
               ),
@@ -1116,6 +1118,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return Padding(
               padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
               child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: mediaQuery.size.height * 0.9,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: const BorderRadius.vertical(
@@ -1124,252 +1129,289 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: SafeArea(
                   top: false,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 42,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.outline
-                                  .withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                Icons.visibility_off_rounded,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppLocalizations.of(context)!
-                                        .manageTagBlacklist,
-                                    style: TextStyleConst.headingSmall.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    AppLocalizations.of(context)!
-                                        .addTagRulesDescription,
-                                    style: TextStyleConst.bodySmall.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                            Center(
+                              child: Container(
+                                width: 42,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.outline
+                                      .withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
                               ),
                             ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    Icons.visibility_off_rounded,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        AppLocalizations.of(context)!
+                                            .manageTagBlacklist,
+                                        style: TextStyleConst.headingSmall
+                                            .copyWith(
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        AppLocalizations.of(context)!
+                                            .addTagRulesDescription,
+                                        style:
+                                            TextStyleConst.bodySmall.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            TextField(
+                              controller: controller,
+                              minLines: 1,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(context)!
+                                    .searchExampleHint,
+                                prefixIcon: const Icon(Icons.tag_rounded),
+                                filled: true,
+                                fillColor:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide(
+                                    color: theme.colorScheme.outline
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide(
+                                    color: theme.colorScheme.outline
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                ),
+                              ),
+                              onSubmitted: (_) => addEntries(),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: isSyncing
+                                        ? null
+                                        : () async {
+                                            await Future.wait([
+                                              _tagBlacklistService
+                                                  .syncOnlineEntries(
+                                                'nhentai',
+                                                forceRefresh: true,
+                                              ),
+                                              _tagBlacklistService
+                                                  .syncOnlineRules(
+                                                'nhentai',
+                                                forceRefresh: true,
+                                              ),
+                                            ]);
+                                            if (sheetContext.mounted) {
+                                              setSheetState(() {});
+                                            }
+                                          },
+                                    icon: isSyncing
+                                        ? SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.sync_rounded,
+                                            size: 18,
+                                          ),
+                                    label: Text(
+                                      AppLocalizations.of(context)!
+                                          .refreshOnline,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: addEntries,
+                                    icon: const Icon(
+                                      Icons.add_rounded,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      AppLocalizations.of(context)!.addRules,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: pickFromTags,
+                                icon: const Icon(Icons.playlist_add_rounded),
+                                label: Text(
+                                  AppLocalizations.of(context)!.pickFromTags,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
                           ],
                         ),
-                        const SizedBox(height: 18),
-                        TextField(
-                          controller: controller,
-                          minLines: 1,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText:
-                                AppLocalizations.of(context)!.searchExampleHint,
-                            prefixIcon: const Icon(Icons.tag_rounded),
-                            filled: true,
-                            fillColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.2),
+                      ),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!
+                                    .localRulesCount(localEntries.length),
+                                style: TextStyleConst.bodyLarge.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.2),
-                              ),
-                            ),
-                          ),
-                          onSubmitted: (_) => addEntries(),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: isSyncing
-                                    ? null
-                                    : () async {
-                                        await Future.wait([
-                                          _tagBlacklistService
-                                              .syncOnlineEntries(
-                                            'nhentai',
-                                            forceRefresh: true,
+                              const SizedBox(height: 10),
+                              if (localEntries.isEmpty)
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .nothingSavedLocally,
+                                )
+                              else
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: localEntries
+                                      .map(
+                                        (entry) => InputChip(
+                                          label: Text(
+                                            _buildLocalBlacklistLabel(
+                                              entry,
+                                              onlineRules,
+                                              localMetadata,
+                                            ),
                                           ),
-                                          _tagBlacklistService.syncOnlineRules(
-                                            'nhentai',
-                                            forceRefresh: true,
-                                          ),
-                                        ]);
-                                        if (sheetContext.mounted) {
-                                          setSheetState(() {});
-                                        }
-                                      },
-                                icon: isSyncing
-                                    ? SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: theme.colorScheme.primary,
+                                          onDeleted: () => removeEntry(entry),
+                                          deleteIconColor: theme
+                                              .colorScheme.onSurfaceVariant,
                                         ),
                                       )
-                                    : const Icon(Icons.sync_rounded, size: 18),
-                                label: Text(AppLocalizations.of(context)!
-                                    .refreshOnline),
+                                      .toList(),
+                                ),
+                              const SizedBox(height: 20),
+                              Text(
+                                hasSession
+                                    ? AppLocalizations.of(context)!
+                                        .onlineRulesMetadataCount(
+                                            onlineRules.length)
+                                    : AppLocalizations.of(context)!
+                                        .onlineRulesMetadata,
+                                style: TextStyleConst.bodyLarge.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: addEntries,
-                                icon: const Icon(Icons.add_rounded, size: 18),
-                                label: Text(
-                                    AppLocalizations.of(context)!.addRules),
+                              const SizedBox(height: 10),
+                              if (!hasSession)
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .loginRequiredForRules,
+                                )
+                              else if (isSyncingRules && onlineRules.isEmpty)
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .syncingOnlineRules,
+                                )
+                              else if (onlineRules.isEmpty)
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .noOnlineRuleDetails,
+                                )
+                              else
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: onlineRules
+                                      .map(
+                                        (rule) => _buildBlacklistEntryChip(
+                                          theme,
+                                          rule.displayLabel,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              const SizedBox(height: 20),
+                              Text(
+                                AppLocalizations.of(context)!
+                                    .activeCoverageCount(mergedEntries.length),
+                                style: TextStyleConst.bodyLarge.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: pickFromTags,
-                            icon: const Icon(Icons.playlist_add_rounded),
-                            label: Text(
-                                AppLocalizations.of(context)!.pickFromTags),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          AppLocalizations.of(context)!
-                              .localRulesCount(localEntries.length),
-                          style: TextStyleConst.bodyLarge.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        if (localEntries.isEmpty)
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!.nothingSavedLocally,
-                          )
-                        else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: localEntries
-                                .map(
-                                  (entry) => InputChip(
-                                    label: Text(
-                                      _buildLocalBlacklistLabel(
-                                        entry,
-                                        onlineRules,
-                                        localMetadata,
-                                      ),
-                                    ),
-                                    onDeleted: () => removeEntry(entry),
-                                    deleteIconColor:
-                                        theme.colorScheme.onSurfaceVariant,
-                                  ),
+                              const SizedBox(height: 10),
+                              if (mergedEntries.isEmpty)
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .blacklistGalleriesInfo,
                                 )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 20),
-                        Text(
-                          hasSession
-                              ? AppLocalizations.of(context)!
-                                  .onlineRulesMetadataCount(onlineRules.length)
-                              : AppLocalizations.of(context)!
-                                  .onlineRulesMetadata,
-                          style: TextStyleConst.bodyLarge.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        if (!hasSession)
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!.loginRequiredForRules,
-                          )
-                        else if (isSyncingRules && onlineRules.isEmpty)
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!.syncingOnlineRules,
-                          )
-                        else if (onlineRules.isEmpty)
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!.noOnlineRuleDetails,
-                          )
-                        else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: onlineRules
-                                .map(
-                                  (rule) => _buildBlacklistEntryChip(
-                                    theme,
-                                    rule.displayLabel,
+                              else
+                                _buildSheetHint(
+                                  theme,
+                                  AppLocalizations.of(context)!
+                                      .coverageActiveDescription(
+                                    mergedEntries.length,
                                   ),
-                                )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 20),
-                        Text(
-                          AppLocalizations.of(context)!
-                              .activeCoverageCount(mergedEntries.length),
-                          style: TextStyleConst.bodyLarge.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
+                                ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        if (mergedEntries.isEmpty)
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!
-                                .blacklistGalleriesInfo,
-                          )
-                        else
-                          _buildSheetHint(
-                            theme,
-                            AppLocalizations.of(context)!
-                                .coverageActiveDescription(
-                                    mergedEntries.length),
-                          ),
-                        const SizedBox(height: 20),
-                        SizedBox(
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: SizedBox(
                           width: double.infinity,
                           child: FilledButton(
                             onPressed: () async {
@@ -1385,8 +1427,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             child: Text(AppLocalizations.of(context)!.done),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
