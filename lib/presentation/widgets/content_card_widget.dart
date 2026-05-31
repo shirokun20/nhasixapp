@@ -617,17 +617,19 @@ class ContentCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
-                    color: _getTagColor(tag.type).withValues(alpha: 0.2),
+                    color:
+                        _getTagColor(context, tag.type).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getTagColor(tag.type).withValues(alpha: 0.5),
+                      color: _getTagColor(context, tag.type)
+                          .withValues(alpha: 0.5),
                       width: 0.5,
                     ),
                   ),
                   child: Text(
                     tag.name,
                     style: TextStyleConst.contentTag.copyWith(
-                      color: _getTagColor(tag.type),
+                      color: _getTagColor(context, tag.type),
                       fontSize: 9,
                     ),
                   ),
@@ -637,9 +639,12 @@ class ContentCard extends StatelessWidget {
     );
   }
 
-  /// Helper method to get neon tag color based on tag type.
-  Color _getTagColor(String tagType) {
-    return TagColorPalette.resolve(tagType);
+  /// Helper method to get theme-aware tag color based on tag type.
+  Color _getTagColor(BuildContext context, String tagType) {
+    return TagColorPalette.resolve(
+      tagType,
+      brightness: Theme.of(context).brightness,
+    );
   }
 
   Widget _buildBottomRow() {

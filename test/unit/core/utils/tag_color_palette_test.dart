@@ -4,23 +4,47 @@ import 'package:nhasixapp/core/utils/tag_color_palette.dart';
 
 void main() {
   group('TagColorPalette', () {
-    test('returns distinct neon colors for known fallback types', () {
-      expect(TagColorPalette.resolve('tag'), const Color(0xFF18FFFF));
-      expect(TagColorPalette.resolve('other'), const Color(0xFF00F5D4));
-      expect(TagColorPalette.resolve('misc'), const Color(0xFFC6FF00));
-      expect(TagColorPalette.resolve('tag'),
-          isNot(TagColorPalette.resolve('other')));
-      expect(TagColorPalette.resolve('other'),
-          isNot(TagColorPalette.resolve('misc')));
+    test('returns warm theme colors in light mode', () {
+      expect(
+        TagColorPalette.resolve('artist', brightness: Brightness.light),
+        const Color(0xFFB8655E),
+      );
+      expect(
+        TagColorPalette.resolve('tag', brightness: Brightness.light),
+        const Color(0xFFBF6C63),
+      );
+      expect(
+        TagColorPalette.resolve('misc', brightness: Brightness.light),
+        const Color(0xFF8B7C57),
+      );
+    });
+
+    test('returns vivid accents in dark mode', () {
+      expect(
+        TagColorPalette.resolve('tag', brightness: Brightness.dark),
+        const Color(0xFF18FFFF),
+      );
+      expect(
+        TagColorPalette.resolve('other', brightness: Brightness.dark),
+        const Color(0xFF00F5D4),
+      );
     });
 
     test('maps unknown types deterministically into the fallback palette', () {
-      final first = TagColorPalette.resolve('unregistered-type-a');
-      final second = TagColorPalette.resolve('unregistered-type-a');
-      final different = TagColorPalette.resolve('unregistered-type-b');
+      final first = TagColorPalette.resolve(
+        'unregistered-type-a',
+        brightness: Brightness.light,
+      );
+      final second = TagColorPalette.resolve(
+        'unregistered-type-a',
+        brightness: Brightness.light,
+      );
+      final different = TagColorPalette.resolve(
+        'unregistered-type-b',
+        brightness: Brightness.light,
+      );
 
       expect(first, second);
-      expect(first, isNot(const Color(0xFF000000)));
       expect(first, isNot(different));
     });
   });

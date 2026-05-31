@@ -1247,10 +1247,11 @@ class _DetailScreenState extends State<DetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getTagColor(tag.type).withValues(alpha: 0.1),
+                  color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _getTagColor(tag.type).withValues(alpha: 0.8),
+                    color:
+                        _getTagColor(context, tag.type).withValues(alpha: 0.8),
                   ),
                 ),
                 child: Row(
@@ -1259,7 +1260,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       tag.name,
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: _getTagColor(tag.type),
+                        color: _getTagColor(context, tag.type),
                       ),
                     ),
                     if (tag.count > 0) ...[
@@ -1267,7 +1268,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       Text(
                         _formatNumber(tag.count),
                         style: TextStyleConst.overline.copyWith(
-                          color: _getTagColor(tag.type).withValues(alpha: 0.7),
+                          color: _getTagColor(context, tag.type)
+                              .withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -2602,9 +2604,12 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Get neon tag color based on tag type.
-  Color _getTagColor(String tagType) {
-    return TagColorPalette.resolve(tagType);
+  /// Get theme-aware tag color based on tag type.
+  Color _getTagColor(BuildContext context, String tagType) {
+    return TagColorPalette.resolve(
+      tagType,
+      brightness: Theme.of(context).brightness,
+    );
   }
 
   Future<void> _readContent(
