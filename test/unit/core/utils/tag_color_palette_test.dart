@@ -19,14 +19,14 @@ void main() {
       );
     });
 
-    test('returns vivid accents in dark mode', () {
+    test('returns muted theme colors in dark mode', () {
       expect(
         TagColorPalette.resolve('tag', brightness: Brightness.dark),
-        const Color(0xFF18FFFF),
+        const Color(0xFFB8776D),
       );
       expect(
         TagColorPalette.resolve('other', brightness: Brightness.dark),
-        const Color(0xFF00F5D4),
+        const Color(0xFF7E726D),
       );
     });
 

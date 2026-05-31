@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:nhasixapp/core/constants/colors_const.dart';
+
 /// Resolves theme-aware tag colors for UI chips and labels.
 ///
 /// Light mode uses warm accent tones that fit the app theme.
-/// Dark mode keeps vivid accents for readability.
+/// Dark mode keeps muted, theme-aligned tones for readability.
 /// Unknown tag types are mapped deterministically so they stay distinct.
 class TagColorPalette {
   static const Map<String, Color> _lightColors = <String, Color>{
@@ -22,18 +24,18 @@ class TagColorPalette {
   };
 
   static const Map<String, Color> _darkColors = <String, Color>{
-    'artist': Color(0xFFFF4D8D),
-    'character': Color(0xFF00E5FF),
-    'parody': Color(0xFFB388FF),
-    'group': Color(0xFF39FF14),
-    'language': Color(0xFFFFD54F),
-    'category': Color(0xFFFF9100),
-    'uploader': Color(0xFFFF6D00),
-    'female': Color(0xFFFF2AA1),
-    'male': Color(0xFF40C4FF),
-    'other': Color(0xFF00F5D4),
-    'misc': Color(0xFFC6FF00),
-    'tag': Color(0xFF18FFFF),
+    'artist': AppColors.brandCoral,
+    'character': AppColors.brandMuted,
+    'parody': AppColors.brandDusty,
+    'group': Color(0xFFB77A74),
+    'language': Color(0xFFC2A46E),
+    'category': Color(0xFF8A847E),
+    'uploader': Color(0xFF6F9F87),
+    'female': Color(0xFFC98A9B),
+    'male': Color(0xFF7FA5C9),
+    'other': Color(0xFF7E726D),
+    'misc': Color(0xFF9B8F67),
+    'tag': Color(0xFFB8776D),
   };
 
   static const List<Color> _lightFallbackColors = <Color>[
@@ -48,14 +50,14 @@ class TagColorPalette {
   ];
 
   static const List<Color> _darkFallbackColors = <Color>[
-    Color(0xFF00E5FF),
-    Color(0xFFFF4D8D),
-    Color(0xFFC6FF00),
-    Color(0xFFB388FF),
-    Color(0xFFFFB300),
-    Color(0xFF40C4FF),
-    Color(0xFF00E676),
-    Color(0xFFFF9100),
+    AppColors.brandCoral,
+    AppColors.brandMuted,
+    AppColors.brandDusty,
+    Color(0xFFC2A46E),
+    Color(0xFF6F9F87),
+    Color(0xFF7FA5C9),
+    Color(0xFF9B8F67),
+    Color(0xFFB8776D),
   ];
 
   static Color resolve(
