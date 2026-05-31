@@ -132,6 +132,44 @@ flutter run
 
 ---
 
+## 🔧 **Menambahkan Source Kustom**
+
+Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apapun. Setiap source cukup satu file JSON yang menjelaskan cara scraping atau pemanggilan API-nya.
+
+### Referensi
+
+| Panduan | Link |
+|:--------|:-----|
+| Panduan lengkap (EN) | [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) |
+| Panduan lengkap (ID) | [docs/id/CONFIG-GUIDE.md](docs/id/CONFIG-GUIDE.md) |
+| Panduan lengkap (ZH) | [docs/zh/CONFIG-GUIDE.md](docs/zh/CONFIG-GUIDE.md) |
+
+### Langkah cepat
+
+1. **Tulis config JSON** — buat file JSON yang mendeskripsikan cara scraping / API situs target. Lihat panduan di bawah untuk detail selector, reader, dan auth.
+2. **Isi selector / endpoint** — gunakan DevTools browser untuk inspeksi situs target.
+3. **Buat entri manifest** — agar source muncul di Source Manager, config harus didaftarkan lewat `manifest.json` yang di-host online. Format entri:
+   ```json
+   {
+     "id": "mysite",
+     "version": "1.0.0",
+     "url": "https://yourhost.com/config/mysite-config.json",
+     "meta": {
+       "displayName": "My Site",
+       "description": "Deskripsi singkat",
+       "contentType": "manga",
+       "language": "id",
+       "requiresAuth": false
+     }
+   }
+   ```
+4. **Install** — lewat **Pengaturan → Sources → Add via Link** (tempel URL manifest) atau **Import ZIP**.
+5. **Validasi** — jalankan `dart run kuron_generic:kuron_config_validate --help` untuk cek skema sebelum testing.
+
+> Lihat [docs/id/CONFIG-GUIDE.md](docs/id/CONFIG-GUIDE.md) untuk panduan lengkap mencakup reader nav, auth, dekripsi, dan pitfall umum.
+
+---
+
 ## 🆘 **Bantuan**
 
 **FAQ**

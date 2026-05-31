@@ -132,6 +132,46 @@ flutter run
 
 ---
 
+## 🔧 **Adding a Custom Source**
+
+Kuron's source system is fully config-driven — no code changes required. Each source is a single JSON file that tells the app how to scrape or call an API.
+
+### Where to look
+
+| Guide | Link |
+|:------|:-----|
+| Full guide (EN) | [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) |
+| Full guide (ID) | [docs/id/CONFIG-GUIDE.md](docs/id/CONFIG-GUIDE.md) |
+| Full guide (ZH) | [docs/zh/CONFIG-GUIDE.md](docs/zh/CONFIG-GUIDE.md) |
+
+### Quick steps
+
+1. **Write the config JSON** — create a JSON file describing how to scrape or call the target site's API. See the full guide below for selectors, reader, and auth details.
+2. **Fill in selectors / endpoints** — use browser DevTools to inspect the target site.
+3. **Create a manifest entry** — to make the source appear in Source Manager, register it via a `manifest.json` hosted online. Entry format:
+   ```json
+   {
+     "id": "mysite",
+     "version": "1.0.0",
+     "url": "https://yourhost.com/config/mysite-config.json",
+     "meta": {
+       "displayName": "My Site",
+       "description": "Short description",
+       "contentType": "manga",
+       "language": "en",
+       "requiresAuth": false
+     }
+   }
+   ```
+4. **Install** — via **Settings → Sources → Add via Link** (paste manifest URL) or **Import ZIP**.
+5. **Validate** — run `dart run kuron_generic:kuron_config_validate --help` to catch schema errors before testing.
+
+> See [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) for the full walkthrough including reader nav, auth, decryption, and common pitfalls.
+
+> See [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) for the full walkthrough including reader nav, auth, decryption, and common pitfalls.
+
+---
+
 ## 🆘 **Support**
 
 **FAQ**
