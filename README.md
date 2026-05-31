@@ -168,8 +168,6 @@ Kuron's source system is fully config-driven — no code changes required. Each 
 
 > See [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) for the full walkthrough including reader nav, auth, decryption, and common pitfalls.
 
-> See [docs/en/CONFIG-GUIDE.md](docs/en/CONFIG-GUIDE.md) for the full walkthrough including reader nav, auth, decryption, and common pitfalls.
-
 ---
 
 ## 🆘 **Support**
