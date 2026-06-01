@@ -8,10 +8,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### 🩹 Bug Fixes
+## [0.9.20+30] - 2026-06-01
 
-- **Generic Scraper Unicode Slugs**: Fixed slug extraction for raw and percent-encoded manga/chapter URLs containing Unicode path characters such as `〜` and `ー`, while preserving malformed encodings safely.
-- **Reader Route Decode Guard**: Hardened GoRouter content/detail route decoding so literal `%` and malformed percent-encoded IDs no longer crash navigation with `Illegal percent encoding in URI`.
+### ✨ Highlights
+
+#### 🧩 Config Runtime & Source Adapter Hardening
+- **Endpoint Schema Compatibility**: Updated `ApiConfig`, `GenericHttpSource`, and `GenericRestAdapter` to support the newer `api.endpoints` map structure and extension mapping flow.
+- **Template URL Generation**: Added config-driven URL generation for search and browse paths from remote templates.
+- **REST Adapter Reliability**: Improved pagination logic, tag query resolution, language defaults, sorting/detail URL generation, and rating sort mapping.
+- **Komikcast REST Stability**: Completed Komikcast REST schema hardening and related integration coverage.
+- **Scraper Pagination Improvements**: Enhanced `GenericScraperAdapter` pagination/template handling and improved parser error handling for invalid `--dir` usage.
+
+#### 📖 Reader & UX
+- **Tap Direction Control**: Added reader tap direction setting with localized labels and descriptions.
+- **Zoom Toggle**: Added reader zoom toggle setting for better per-device readability preferences.
+- **Page Estimation Refactor**: Refined reader page estimation logic for improved accuracy and smoother behavior.
+- **Heavy Source Performance**: Optimized `ListView` caching for heavy image sources to reduce offscreen rebuild cost.
+- **Settings Layout Polish**: Improved settings layout constraints for better usability on varied screen sizes.
+
+#### 🎨 Visual & Localization
+- **Tag Color Palette Revamp**: Implemented theme-aware tag color resolution and tuned dark-mode colors to more muted tones for readability.
+- **Localization Updates**: Clarified blacklist descriptions across locales.
+
+#### 🔌 Source Capability Expansion
+- **DoujinDesuV2 Runtime Support**: Added category routing and AJAX reader support for DoujinDesuV2 integration.
+
+#### 🛠 Build, Dependencies & Docs
+- **Android Build Compatibility**: Updated Gradle/Kotlin-related configuration and fixed Android build compilation issues.
+- **Dependency Refresh**: Updated `flutter_secure_storage` and related dependency lockfiles.
+- **Documentation & Assets**: Added Indonesian/Chinese configuration guides, refreshed screenshots, cleaned README links, and corrected architecture-specific binary size notes.
 
 ## [0.9.19+29] - 2026-05-24
 
