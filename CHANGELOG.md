@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### ✨ Highlights
+
+#### Note: This section is for upcoming features and improvements that are currently in development or planned for future releases. It may include:
+- New source integrations (e.g., additional manga/doujin platforms)
+- Major reader experience enhancements (e.g., new reading modes, advanced navigation)
+- Significant architectural refactors for performance and maintainability
+- Expanded localization support for additional languages
+- Additional user-requested features and quality-of-life improvements
+
+---
+
 ## [0.9.20+30] - 2026-06-01
 
 ### ✨ Highlights
