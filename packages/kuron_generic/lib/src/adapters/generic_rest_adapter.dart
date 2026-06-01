@@ -33,6 +33,7 @@ class GenericRestAdapter implements GenericAdapter {
   final String _sourceId;
   final HeadersGenerator? _headersGenerator;
   final DelayApplier? _delayApplier;
+  final RateLimiter? _rateLimiter;
 
   GenericRestAdapter({
     required Dio dio,
@@ -42,13 +43,15 @@ class GenericRestAdapter implements GenericAdapter {
     required String sourceId,
     HeadersGenerator? headersGenerator,
     DelayApplier? delayApplier,
+    RateLimiter? rateLimiter,
   })  : _dio = dio,
         _urlBuilder = urlBuilder,
         _parser = parser,
         _logger = logger,
         _sourceId = sourceId,
         _headersGenerator = headersGenerator,
-        _delayApplier = delayApplier;
+        _delayApplier = delayApplier,
+        _rateLimiter = rateLimiter;
 
   @override
   Future<AdapterSearchResult> search(
@@ -212,7 +215,8 @@ class GenericRestAdapter implements GenericAdapter {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
 
       _logger.d('$_sourceId REST search: Fetching URL: $url');
-      final response = await _dio.get<dynamic>(url);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(url));
       _logger.d(
           '$_sourceId REST search: Got response status=${response.statusCode}');
 
@@ -275,7 +279,8 @@ class GenericRestAdapter implements GenericAdapter {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
 
       _logger.d('$_sourceId REST detail: Fetching URL: $url');
-      final response = await _dio.get<dynamic>(url);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(url));
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
@@ -319,7 +324,8 @@ class GenericRestAdapter implements GenericAdapter {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
 
       _logger.d('$_sourceId REST related: Fetching URL: $url');
-      final response = await _dio.get<dynamic>(url);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(url));
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
@@ -350,7 +356,8 @@ class GenericRestAdapter implements GenericAdapter {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
 
       _logger.d('$_sourceId REST comments: Fetching URL: $url');
-      final response = await _dio.get<dynamic>(url);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(url));
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
@@ -481,7 +488,8 @@ class GenericRestAdapter implements GenericAdapter {
         _logger.d('$_sourceId direct images request: $imageUrl');
 
         await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-        final response = await _dio.get<dynamic>(imageUrl);
+        final response =
+            await _executeRequest<dynamic>(() => _dio.get<dynamic>(imageUrl));
         final data = response.data is String
             ? jsonDecode(response.data as String)
             : response.data;
@@ -550,16 +558,18 @@ class GenericRestAdapter implements GenericAdapter {
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-        final response = await _dio.get<dynamic>(
-          url,
-          options: Options(
-            responseType: ResponseType.json,
-            headers: const {
-              'Accept': 'application/json',
-              // For unstable mobile networks this can reduce half-closed
-              // keep-alive socket issues on subsequent retries.
-              'Connection': 'close',
-            },
+        final response = await _executeRequest<dynamic>(
+          () => _dio.get<dynamic>(
+            url,
+            options: Options(
+              responseType: ResponseType.json,
+              headers: const {
+                'Accept': 'application/json',
+                // For unstable mobile networks this can reduce half-closed
+                // keep-alive socket issues on subsequent retries.
+                'Connection': 'close',
+              },
+            ),
           ),
         );
         return response.data is String
@@ -760,7 +770,8 @@ class GenericRestAdapter implements GenericAdapter {
 
     try {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-      final response = await _dio.get<dynamic>(url);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(url));
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
@@ -901,7 +912,8 @@ class GenericRestAdapter implements GenericAdapter {
 
     try {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-      final response = await _dio.get<dynamic>(detailUrl);
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(detailUrl));
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
@@ -930,7 +942,9 @@ class GenericRestAdapter implements GenericAdapter {
               '$baseApiUrl${fullPath.replaceAll('{id}', contentId)}';
 
           try {
-            final statsRes = await _dio.get<dynamic>(statsUrl);
+            final statsRes = await _executeRequest<dynamic>(
+              () => _dio.get<dynamic>(statsUrl),
+            );
             final statsData = statsRes.data is String
                 ? jsonDecode(statsRes.data as String)
                 : statsRes.data;
@@ -1572,6 +1586,13 @@ class GenericRestAdapter implements GenericAdapter {
 
     // Priority 3: Dio defaults only (no modification needed)
     _logger.d('$_sourceId: Using Dio default headers only');
+  }
+
+  Future<T> _executeRequest<T>(Future<T> Function() request) {
+    if (_rateLimiter == null) {
+      return request();
+    }
+    return _rateLimiter.execute(request);
   }
 
   /// Extract base URL from config for referer header.
@@ -2333,7 +2354,8 @@ class GenericRestAdapter implements GenericAdapter {
 
     while (true) {
       await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
-      final chapterRes = await _dio.get<dynamic>(pageUrl);
+      final chapterRes =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(pageUrl));
       final cData = chapterRes.data is String
           ? jsonDecode(chapterRes.data as String)
           : chapterRes.data;

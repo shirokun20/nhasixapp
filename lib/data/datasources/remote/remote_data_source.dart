@@ -561,8 +561,7 @@ class RemoteDataSource {
               'Content not found: $url', response.statusCode.toString());
         } else if (response.statusCode == 429) {
           // Server returned rate limit, trigger our cooldown
-          _rateManager.triggerCooldown(
-              cooldownDuration: const Duration(minutes: 5));
+          _rateManager.triggerCooldown();
           throw RateLimitException(
               'Rate limit exceeded: $url', response.statusCode.toString());
         } else if (response.statusCode! >= 500) {

@@ -83,6 +83,8 @@ class GenericScraperAdapter implements GenericAdapter {
   final GenericHtmlParser _parser;
   final Logger _logger;
   final String _sourceId;
+  final Future<void> Function()? _delayApplier;
+  final RateLimiter? _rateLimiter;
 
   GenericScraperAdapter({
     required Dio dio,
@@ -90,11 +92,29 @@ class GenericScraperAdapter implements GenericAdapter {
     required GenericHtmlParser parser,
     required Logger logger,
     required String sourceId,
+    Future<void> Function()? delayApplier,
+    RateLimiter? rateLimiter,
   })  : _dio = dio,
         _urlBuilder = urlBuilder,
         _parser = parser,
         _logger = logger,
-        _sourceId = sourceId;
+        _sourceId = sourceId,
+        _delayApplier = delayApplier,
+        _rateLimiter = rateLimiter;
+
+  Future<void> _prepareRequestDelay() async {
+    if (_delayApplier != null) {
+      await _delayApplier();
+    }
+  }
+
+  Future<T> _executeRequest<T>(Future<T> Function() request) async {
+    await _prepareRequestDelay();
+    if (_rateLimiter == null) {
+      return request();
+    }
+    return _rateLimiter.execute(request);
+  }
 
   // ── search ─────────────────────────────────────────────────────────────────
 
@@ -708,13 +728,15 @@ class GenericScraperAdapter implements GenericAdapter {
   }) async {
     final headers = _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
-    final initialResponse = await _dio.get<String>(
-      url,
-      options: Options(
-        responseType: ResponseType.plain,
-        headers: headers,
-        followRedirects: false,
-        validateStatus: (status) => status != null && status < 500,
+    final initialResponse = await _executeRequest<Response<String>>(
+      () => _dio.get<String>(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: headers,
+          followRedirects: false,
+          validateStatus: (status) => status != null && status < 500,
+        ),
       ),
     );
 
@@ -744,12 +766,14 @@ class GenericScraperAdapter implements GenericAdapter {
       final location = initialResponse.headers.value('location')?.trim();
       if (location != null && location.isNotEmpty) {
         final resolvedUrl = Uri.parse(url).resolve(location).toString();
-        final resolvedResponse = await _dio.get<String>(
-          resolvedUrl,
-          options: Options(
-            responseType: ResponseType.plain,
-            headers: headers,
-            validateStatus: (status) => status != null && status < 500,
+        final resolvedResponse = await _executeRequest<Response<String>>(
+          () => _dio.get<String>(
+            resolvedUrl,
+            options: Options(
+              responseType: ResponseType.plain,
+              headers: headers,
+              validateStatus: (status) => status != null && status < 500,
+            ),
           ),
         );
 
@@ -962,11 +986,13 @@ class GenericScraperAdapter implements GenericAdapter {
 
     try {
       Logger().i('[$_sourceId] getDetail: about to fetch...');
-      final response = await _dio.get<String>(
-        url,
-        options: Options(
-          responseType: ResponseType.plain,
-          headers: requestHeaders,
+      final response = await _executeRequest<Response<String>>(
+        () => _dio.get<String>(
+          url,
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: requestHeaders,
+          ),
         ),
       );
       Logger().i(
@@ -1101,11 +1127,13 @@ class GenericScraperAdapter implements GenericAdapter {
         _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     try {
-      final response = await _dio.get<String>(
-        url,
-        options: Options(
-          responseType: ResponseType.plain,
-          headers: requestHeaders,
+      final response = await _executeRequest<Response<String>>(
+        () => _dio.get<String>(
+          url,
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: requestHeaders,
+          ),
         ),
       );
       final doc = _parser.parse(response.data ?? '');
@@ -1187,11 +1215,13 @@ class GenericScraperAdapter implements GenericAdapter {
         final commentsUrl = _urlBuilder.resolve(commentsEndpoint, const {});
 
         // comments.php is protected by CSRF/session checks.
-        final detailResponse = await _dio.get<String>(
-          url,
-          options: Options(
-            responseType: ResponseType.plain,
-            headers: detailRequestHeaders,
+        final detailResponse = await _executeRequest<Response<String>>(
+          () => _dio.get<String>(
+            url,
+            options: Options(
+              responseType: ResponseType.plain,
+              headers: detailRequestHeaders,
+            ),
           ),
         );
         cachedDetailHtml = detailResponse.data;
@@ -1208,14 +1238,16 @@ class GenericScraperAdapter implements GenericAdapter {
           if (cookieHeader.isNotEmpty) 'Cookie': cookieHeader,
         };
 
-        final response = await _dio.post<dynamic>(
-          commentsUrl,
-          data: {galleryIdParam: contentId},
-          options: Options(
-            contentType: Headers.formUrlEncodedContentType,
-            responseType: ResponseType.plain,
-            headers: requestHeaders,
-            validateStatus: (status) => status != null && status < 500,
+        final response = await _executeRequest<Response<dynamic>>(
+          () => _dio.post<dynamic>(
+            commentsUrl,
+            data: {galleryIdParam: contentId},
+            options: Options(
+              contentType: Headers.formUrlEncodedContentType,
+              responseType: ResponseType.plain,
+              headers: requestHeaders,
+              validateStatus: (status) => status != null && status < 500,
+            ),
           ),
         );
 
@@ -1254,11 +1286,13 @@ class GenericScraperAdapter implements GenericAdapter {
 
     try {
       final html = cachedDetailHtml ??
-          (await _dio.get<String>(
-            url,
-            options: Options(
-              responseType: ResponseType.plain,
-              headers: detailRequestHeaders,
+          (await _executeRequest<Response<String>>(
+            () => _dio.get<String>(
+              url,
+              options: Options(
+                responseType: ResponseType.plain,
+                headers: detailRequestHeaders,
+              ),
             ),
           ))
               .data ??
@@ -1365,11 +1399,13 @@ class GenericScraperAdapter implements GenericAdapter {
         _resolveRequestHeaders(rawConfig, fallbackReferer: url);
 
     try {
-      final response = await _dio.get<String>(
-        url,
-        options: Options(
-          responseType: ResponseType.plain,
-          headers: chapterRequestHeaders,
+      final response = await _executeRequest<Response<String>>(
+        () => _dio.get<String>(
+          url,
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: chapterRequestHeaders,
+          ),
         ),
       );
       final htmlContent = response.data ?? '';
@@ -1447,13 +1483,15 @@ class GenericScraperAdapter implements GenericAdapter {
             readerPagePattern.replaceAll('{id}', chapterId),
             const {},
           );
-          final readerResp = await _dio.get<String>(
-            readerPageUrl,
-            options: Options(
-              responseType: ResponseType.plain,
-              headers: _resolveRequestHeaders(
-                rawConfig,
-                fallbackReferer: readerPageUrl,
+          final readerResp = await _executeRequest<Response<String>>(
+            () => _dio.get<String>(
+              readerPageUrl,
+              options: Options(
+                responseType: ResponseType.plain,
+                headers: _resolveRequestHeaders(
+                  rawConfig,
+                  fallbackReferer: readerPageUrl,
+                ),
               ),
             ),
           );
@@ -2272,16 +2310,18 @@ class GenericScraperAdapter implements GenericAdapter {
             ? (method == 'POST' ? Headers.formUrlEncodedContentType : null)
             : configuredContentType;
 
-    final response = await _dio.request<String>(
-      requestUrl,
-      data: method == 'GET' ? null : bodyFields,
-      queryParameters: queryParameters.isEmpty ? null : queryParameters,
-      options: Options(
-        method: method,
-        headers: headers,
-        contentType: contentType,
-        responseType: ResponseType.plain,
-        validateStatus: (status) => status != null && status < 500,
+    final response = await _executeRequest<Response<String>>(
+      () => _dio.request<String>(
+        requestUrl,
+        data: method == 'GET' ? null : bodyFields,
+        queryParameters: queryParameters.isEmpty ? null : queryParameters,
+        options: Options(
+          method: method,
+          headers: headers,
+          contentType: contentType,
+          responseType: ResponseType.plain,
+          validateStatus: (status) => status != null && status < 500,
+        ),
       ),
     );
 

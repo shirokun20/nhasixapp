@@ -1,31 +1,46 @@
 import 'dart:math';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 
 /// Advanced request rate manager for intelligent rate limiting
 class RequestRateManager {
   RequestRateManager({
     required this.remoteConfigService,
+    this.sourceId = 'nhentai',
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
   final RemoteConfigService remoteConfigService;
+  final String sourceId;
   final Logger _logger;
   final List<DateTime> _requestHistory = [];
   static const Duration _defaultTimeWindow = Duration(minutes: 1);
 
   // Dynamic getters from config with fallbacks
-  int get _maxRequestsPerWindow =>
-      remoteConfigService.getRateLimitConfig('nhentai').requestsPerMinute;
+  bool get _isEnabled => _rateLimitConfig.enabled;
+  int get _maxRequestsPerWindow => _rateLimitConfig.requestsPerMinute > 0
+      ? _rateLimitConfig.requestsPerMinute
+      : 30;
   Duration get _baseDelay => Duration(
       milliseconds:
-          remoteConfigService.getRateLimitConfig('nhentai').minDelayMs);
+          _rateLimitConfig.minDelayMs > 0 ? _rateLimitConfig.minDelayMs : 1500);
+  Duration get _defaultCooldown => Duration(
+        milliseconds: _rateLimitConfig.cooldownDurationMs ??
+            const Duration(minutes: 2).inMilliseconds,
+      );
+  RateLimitConfig get _rateLimitConfig =>
+      remoteConfigService.getRateLimitConfig(sourceId);
 
   bool _isInCooldown = false;
   DateTime? _cooldownEndTime;
 
   /// Check if a request can be made now
   bool canMakeRequest() {
+    if (!_isEnabled) {
+      return true;
+    }
+
     _cleanupOldRequests();
 
     // Check if we're in cooldown period
@@ -44,6 +59,10 @@ class RequestRateManager {
 
   /// Calculate delay before next request
   Duration calculateDelay() {
+    if (!_isEnabled) {
+      return Duration.zero;
+    }
+
     final requestCount = _requestHistory.length;
 
     // Exponential backoff based on recent request count
@@ -71,6 +90,10 @@ class RequestRateManager {
 
   /// Record a successful request
   void recordRequest() {
+    if (!_isEnabled) {
+      return;
+    }
+
     _requestHistory.add(DateTime.now());
     _cleanupOldRequests();
 
@@ -79,12 +102,16 @@ class RequestRateManager {
   }
 
   /// Trigger cooldown period when rate limit is detected
-  void triggerCooldown(
-      {Duration cooldownDuration = const Duration(minutes: 2)}) {
+  void triggerCooldown({Duration? cooldownDuration}) {
+    if (!_isEnabled) {
+      return;
+    }
+
+    final appliedCooldown = cooldownDuration ?? _defaultCooldown;
     _isInCooldown = true;
-    _cooldownEndTime = DateTime.now().add(cooldownDuration);
+    _cooldownEndTime = DateTime.now().add(appliedCooldown);
     _logger.w(
-        'Rate limit triggered, entering cooldown for ${cooldownDuration.inMinutes} minutes');
+        'Rate limit triggered for $sourceId, entering cooldown for ${appliedCooldown.inSeconds}s');
 
     // Clear request history to start fresh after cooldown
     _requestHistory.clear();
@@ -108,6 +135,7 @@ class RequestRateManager {
     return {
       'requestsInWindow': _requestHistory.length,
       'maxRequestsPerWindow': _maxRequestsPerWindow,
+      'enabled': _isEnabled,
       'isInCooldown': isInCooldown,
       'remainingCooldownSeconds': remainingCooldown?.inSeconds,
       'canMakeRequest': canMakeRequest(),

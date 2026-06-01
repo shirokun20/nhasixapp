@@ -13,9 +13,9 @@ class _FakeSecureStorage extends FlutterSecureStorage {
   Future<String?> read({
     required String key,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {
@@ -27,9 +27,9 @@ class _FakeSecureStorage extends FlutterSecureStorage {
     required String key,
     required String? value,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {
@@ -40,9 +40,9 @@ class _FakeSecureStorage extends FlutterSecureStorage {
   Future<void> delete({
     required String key,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {
@@ -59,9 +59,9 @@ class _MutableFakeSecureStorage extends FlutterSecureStorage {
   Future<String?> read({
     required String key,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {
@@ -73,9 +73,9 @@ class _MutableFakeSecureStorage extends FlutterSecureStorage {
     required String key,
     required String? value,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {
@@ -91,9 +91,9 @@ class _MutableFakeSecureStorage extends FlutterSecureStorage {
   Future<void> delete({
     required String key,
     AndroidOptions? aOptions,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     LinuxOptions? lOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
     WebOptions? webOptions,
   }) async {

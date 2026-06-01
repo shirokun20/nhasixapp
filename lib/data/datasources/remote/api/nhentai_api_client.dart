@@ -121,11 +121,24 @@ class NhentaiApiClient {
 
   /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
-    if (!_rateManager.canMakeRequest()) {
+    while (!_rateManager.canMakeRequest()) {
+      if (_rateManager.isInCooldown) {
+        final remaining = _rateManager.remainingCooldown;
+        final seconds = remaining?.inSeconds ?? 0;
+        throw NhentaiApiException(
+          'In cooldown period (${seconds}s remaining)',
+          statusCode: 429,
+        );
+      }
+
       final delay = _rateManager.calculateDelay();
+      if (delay <= Duration.zero) {
+        break;
+      }
       _logger.d('Rate limiting: waiting ${delay.inMilliseconds}ms');
       await Future.delayed(delay);
     }
+
     await _antiDetection.applyRandomDelay();
   }
 

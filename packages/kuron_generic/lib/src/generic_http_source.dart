@@ -27,6 +27,7 @@ class GenericHttpSource implements ContentSource {
   final Dio _dio;
   final HeadersGenerator? _headersGenerator;
   final DelayApplier? _delayApplier;
+  final RateLimiter? _rateLimiter;
   final GenericAdapter _adapter;
   // ignore: unused_field — will be used in Phase 2 when filter UI is wired up
   final GenericFilterTransformer _filterTransformer;
@@ -47,11 +48,13 @@ class GenericHttpSource implements ContentSource {
     required Logger logger,
     HeadersGenerator? headersGenerator,
     DelayApplier? delayApplier,
+    RateLimiter? rateLimiter,
     GenericAdapter? adapterOverride,
   })  : _rawConfig = rawConfig,
         _dio = dio,
         _headersGenerator = headersGenerator,
         _delayApplier = delayApplier,
+        _rateLimiter = rateLimiter,
         _logger = logger,
         _filterTransformer = const GenericFilterTransformer(),
         _id = rawConfig['source'] as String? ?? 'unknown',
@@ -67,8 +70,8 @@ class GenericHttpSource implements ContentSource {
         _defaultHeaders = _resolveHeaders(rawConfig),
         _brandColorValue = _resolveBrandColor(rawConfig),
         _adapter = adapterOverride ??
-            _buildAdapter(
-                rawConfig, dio, logger, headersGenerator, delayApplier);
+            _buildAdapter(rawConfig, dio, logger, headersGenerator,
+                delayApplier, rateLimiter);
 
   // ── ContentSource identity ─────────────────────────────────────────────────
 
@@ -201,15 +204,17 @@ class GenericHttpSource implements ContentSource {
           _logger.d('$_id: Random request #${index + 1}: GET $url');
 
           await _prepareRandomRequest(referer: _baseUrl);
-          final response = await _dio.get<dynamic>(
-            url,
-            options: Options(
-              headers: _mergeHeaders(_dio.options.headers, {
-                if (!_defaultHeaders.containsKey('Accept'))
-                  'Accept': 'application/json',
-                if (!_defaultHeaders.containsKey('Referer'))
-                  'Referer': refererHeader,
-              }),
+          final response = await _executeRequest<dynamic>(
+            () => _dio.get<dynamic>(
+              url,
+              options: Options(
+                headers: _mergeHeaders(_dio.options.headers, {
+                  if (!_defaultHeaders.containsKey('Accept'))
+                    'Accept': 'application/json',
+                  if (!_defaultHeaders.containsKey('Referer'))
+                    'Referer': refererHeader,
+                }),
+              ),
             ),
           );
 
@@ -498,10 +503,14 @@ class GenericHttpSource implements ContentSource {
     Logger logger,
     HeadersGenerator? headersGenerator,
     DelayApplier? delayApplier,
+    RateLimiter? rateLimiter,
   ) {
     final sourceId = rawConfig['source'] as String? ?? 'unknown';
     final api = rawConfig['api'] as Map<String, dynamic>?;
-    final baseUrl = (api?['url'] ?? api?['apiBase'] ?? rawConfig['baseUrl'] ?? '') as String;
+    final baseUrl = (api?['url'] ??
+        api?['apiBase'] ??
+        rawConfig['baseUrl'] ??
+        '') as String;
     logger.d('[$sourceId] Adapter baseUrl: "$baseUrl"');
 
     final urlBuilder = GenericUrlBuilder(baseUrl: baseUrl);
@@ -517,6 +526,8 @@ class GenericHttpSource implements ContentSource {
         parser: htmlParser,
         logger: logger,
         sourceId: sourceId,
+        delayApplier: delayApplier,
+        rateLimiter: rateLimiter,
       );
     } else {
       // REST / JSON API path — uses JSONPath selectors from config's `api` block.
@@ -530,8 +541,16 @@ class GenericHttpSource implements ContentSource {
         sourceId: sourceId,
         headersGenerator: headersGenerator,
         delayApplier: delayApplier,
+        rateLimiter: rateLimiter,
       );
     }
+  }
+
+  Future<T> _executeRequest<T>(Future<T> Function() request) {
+    if (_rateLimiter == null) {
+      return request();
+    }
+    return _rateLimiter.execute(request);
   }
 
   SortOption _timeframeToSort(PopularTimeframe timeframe) {
