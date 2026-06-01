@@ -10,12 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Highlights
 
-#### Note: This section is for upcoming features and improvements that are currently in development or planned for future releases. It may include:
-- New source integrations (e.g., additional manga/doujin platforms)
-- Major reader experience enhancements (e.g., new reading modes, advanced navigation)
-- Significant architectural refactors for performance and maintainability
-- Expanded localization support for additional languages
-- Additional user-requested features and quality-of-life improvements
+#### 🚦 Source Rate-Limit Hardening
+- **Config-Driven Runtime Limits**: Generic source pipeline now reads `network.rateLimit` config and applies request throttling (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, and delay controls) across REST and scraper adapters.
+- **Adaptive Cooldown on 429**: `RequestRateManager` now honors source config for cooldown duration and active state, and `RemoteDataSource` uses the manager cooldown path instead of fixed hardcoded timing.
+- **Cooldown Behavior Safety**: Nhentai client wait flow now enforces cooldown checks in a loop and surfaces explicit rate-limit failures when API calls are attempted during active cooldown.
+- **Test Compatibility Fix**: Updated secure storage test overrides to use `AppleOptions` so auth client tests remain compatible with current `flutter_secure_storage` API changes.
+
+#### 🧩 Source Config Baseline
+- Added baseline `network.rateLimit` blocks (`enabled`, `requestsPerSecond`, `maxConcurrentRequests`) for multiple source configs under `informations/configs` for safer default request pacing.
 
 ---
 

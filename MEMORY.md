@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.17+26 |
+| **Version** | 0.9.20+30 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-05-28
+> Tracked via `openspec/` — Last updated: 2026-06-01
 
 ### ✅ Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -191,6 +191,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-06-01 | Codex | Rate-limit hardening + config baseline sync | ✅ Done | Hardened rate-limit flow end-to-end: `RequestRateManager` now source-config aware (`enabled`, `cooldownDurationMs`), 429 cooldown now uses manager timing (removed hardcoded 5-minute cooldown in remote datasource), nhentai cooldown wait now explicit and loop-based, and generic runtime pipeline (`GenericSourceFactory` -> `GenericHttpSource` -> REST/Scraper adapters) now applies config-driven `RateLimiter` (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, `minDelayMs`). Also fixed `flutter_secure_storage` test override compatibility by switching to `AppleOptions`, and added baseline `network.rateLimit` blocks for multiple source configs under `informations/configs` (not tracked in git because directory is ignored). Verified with targeted analyze/tests in app, `kuron_generic`, and `kuron_special`. |
 | 2026-05-31 | Codex | doujindesuv2-scraper implementation (tasks 1-29) | ✅ Done | Implemented OpenSpec change end-to-end in `kuron_generic`: category browse routing (`scraper.routing.categoryPatterns` + alias/default handling), AJAX reader mode `ajaxHtmlImages` (DOM field extraction, Dio request with merged headers/referer/origin, HTML image extraction, normalization/dedup, diagnostics), parser primitive detection (`EnginePrimitive.searchCategoryRouting`, `EnginePrimitive.imageModeAjaxHtml`), and extensive fixture-based tests. Updated `doujindesuv2` fixtures/docs/config to scraper runtime with category routing + AJAX request contract. Verification run: targeted adapter subsets (`category routing`, `DoujinDesu fixtures`, `ajaxHtmlImages`) + `test/config/source_config_parser_test.dart` + `test/pipeline/page_resolution_pipeline_test.dart` all pass; config validator `fvm dart run kuron_generic:kuron_config_validate informations/configs/doujindesuv2-config.json` => `Status: compatible`. Live probe caveat: browse/search/detail `curl -sSIL` returned `HTTP/2 403` (Cloudflare); direct AJAX POST probe returned `curl: (6) Could not resolve host: doujindesu.tv` in current env. Provider-repo rollout intentionally deferred pending confirmed live readiness. |
 | 2026-05-31 | Codex | doujindesuv2-scraper OpenSpec artifact repair | ✅ Done | Reworked `openspec/changes/doujindesuv2-scraper` from a loose/incomplete proposal into apply-ready artifacts: concise proposal with capabilities, architecture design, three strict specs (`generic-scraper-category-routing`, `generic-scraper-ajax-reader`, `doujindesuv2-html-source`), and implementation tasks. Key design decision: implement category routing and AJAX reader resolution as generic scraper capabilities, not source-id hardcoding. Verified with `openspec status --change doujindesuv2-scraper --json` (`isComplete: true`) and `openspec validate doujindesuv2-scraper --type change --strict --json` (valid). No runtime code implemented yet. |
 | 2026-05-30 | Copilot | Source-aware download border + reader ARB cleanup | ✅ Done | Made `ContentDownloadCache` source-aware with composite `(sourceId, contentId)` cache keys and DownloadBloc-first matching so home/content-by-tag borders no longer leak across sources. Parent cards for chapter-based sources now highlight when a completed child download uses the same source and a composite `contentId/` prefix. Localized visible reader strings in settings/overlay/image widget (`Tap Direction`, clear-cache CTA/snackbar, `Open in gallery`, `Pinch to zoom`, chapter page count), regenerated l10n, and verified with targeted `flutter analyze` plus widget/unit tests (`extended_image_reader_widget_test.dart`, `reader_screen_policy_test.dart`). |
