@@ -21,11 +21,14 @@ class MockPdfService extends Mock implements PdfService {}
 
 class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 
+class MockLogger extends Mock implements Logger {}
+
 void main() {
   late MockUserDataRepository userDataRepository;
   late MockNativeDownloadService nativeDownloadService;
   late MockPdfService pdfService;
   late MockRemoteConfigService remoteConfigService;
+  late MockLogger logger;
   late DownloadContentUseCase useCase;
 
   setUpAll(() {
@@ -42,11 +45,12 @@ void main() {
     nativeDownloadService = MockNativeDownloadService();
     pdfService = MockPdfService();
     remoteConfigService = MockRemoteConfigService();
+    logger = MockLogger();
     useCase = DownloadContentUseCase(
       userDataRepository,
       nativeDownloadService,
       pdfService,
-      logger: Logger(),
+      logger: logger,
     );
 
     if (getIt.isRegistered<RemoteConfigService>()) {
@@ -170,10 +174,61 @@ void main() {
     final metadataFile = File('${tempDir.path}/metadata.json');
     expect(await metadataFile.exists(), isTrue);
 
-    final metadata = json.decode(await metadataFile.readAsString())
-        as Map<String, dynamic>;
+    final metadata =
+        json.decode(await metadataFile.readAsString()) as Map<String, dynamic>;
     expect(metadata['id'], content.id);
     expect(metadata['source'], content.sourceId);
     expect(metadata['totalImages'], 5);
+  });
+
+  test(
+      'logs parity warning when some resolved pages are not download-ready but still starts download',
+      () async {
+    final tempDir = await Directory.systemTemp.createTemp(
+      'download-content-usecase-parity-test',
+    );
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final content = Content(
+      id: 'parity-1',
+      title: 'Parity Warning Test',
+      coverUrl: 'https://example.com/cover.jpg',
+      pageCount: 2,
+      imageUrls: const <String>[
+        'https://example.com/page-1.jpg',
+        '',
+      ],
+      tags: const <Tag>[],
+      artists: const <String>[],
+      characters: const <String>[],
+      parodies: const <String>[],
+      groups: const <String>[],
+      language: 'en',
+      url: 'https://example.com/gallery/parity-1',
+      uploadDate: DateTime(2026, 6, 2),
+      favorites: 0,
+      sourceId: 'test-source',
+    );
+
+    final result = await useCase.call(
+      DownloadContentParams.immediate(
+        content,
+        savePath: tempDir.path,
+      ),
+    );
+
+    final capturedWarnings =
+        verify(() => logger.w(captureAny())).captured.cast<Object?>();
+    final readinessWarning =
+        capturedWarnings.map((message) => message.toString()).firstWhere(
+              (message) => message.contains('Download readiness check failed'),
+            );
+
+    expect(readinessWarning, contains('downloadNotReady'));
+    expect(result.state, DownloadState.downloading);
   });
 }

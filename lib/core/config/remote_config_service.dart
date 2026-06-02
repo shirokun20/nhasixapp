@@ -446,6 +446,11 @@ class RemoteConfigService {
 
     _rawSourceConfigs[sourceId] = decoded;
     _sourceConfigs[sourceId] = parsed;
+    _cacheValidationReport(
+      sourceId: sourceId,
+      raw: decoded,
+      sourceLabel: sourceLabel,
+    );
 
     _logger.i(
       '✅ Applied source config from $sourceLabel for $sourceId (v${version ?? 'unknown'})',
@@ -491,6 +496,7 @@ class RemoteConfigService {
 
     _rawSourceConfigs.remove(sourceId);
     _sourceConfigs.remove(sourceId);
+    _validationReports.remove(sourceId);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefSourceVersion(sourceId));
@@ -657,20 +663,7 @@ class RemoteConfigService {
       );
     }
 
-    // §8.1 — Run static validation and cache the report. Non-blocking; never
-    // throws so a broken config can't prevent other sources from loading.
-    try {
-      final result = const SourceConfigParser().parse(
-        raw.cast<String, Object?>(),
-      );
-      _validationReports[sourceId] = result.report;
-      _logger.d(
-        'SourceConfigParser: $sourceId → ${result.report.overallStatus.name} '
-        '(${result.report.diagnostics.length} diagnostics)',
-      );
-    } catch (e) {
-      _logger.w('ValidationReport generation failed for $sourceId', error: e);
-    }
+    _cacheValidationReport(sourceId: sourceId, raw: raw, sourceLabel: 'cache');
   }
 
   /// Load a config from bundled assets (last resort).
@@ -699,26 +692,42 @@ class RemoteConfigService {
         }
       }
       _logger.d('Loaded bundled config for $sourceId');
-      // §8.1 — Static validation for bundled source.
-      if (sourceId != 'app' && sourceId != 'tags') {
-        try {
-          final result = const SourceConfigParser().parse(
-            raw.cast<String, Object?>(),
-          );
-          _validationReports[sourceId] = result.report;
-          _logger.d(
-            'SourceConfigParser (bundled): $sourceId → '
-            '${result.report.overallStatus.name}',
-          );
-        } catch (e) {
-          _logger.w(
-            'ValidationReport generation failed for bundled $sourceId',
-            error: e,
-          );
-        }
-      }
+      _cacheValidationReport(
+        sourceId: sourceId,
+        raw: raw,
+        sourceLabel: 'bundled',
+      );
     } catch (e) {
       _logger.w('Bundled asset load failed for $sourceId', error: e);
+    }
+  }
+
+  void _cacheValidationReport({
+    required String sourceId,
+    required Map<String, dynamic> raw,
+    required String sourceLabel,
+  }) {
+    if (sourceId == 'app' || sourceId == 'tags') {
+      _validationReports.remove(sourceId);
+      return;
+    }
+
+    try {
+      final result = const SourceConfigParser().parse(
+        raw.cast<String, Object?>(),
+      );
+      _validationReports[sourceId] = result.report;
+      _logger.d(
+        'SourceConfigParser ($sourceLabel): $sourceId → '
+        '${result.report.overallStatus.name} '
+        '(${result.report.diagnostics.length} diagnostics)',
+      );
+    } catch (e) {
+      _validationReports.remove(sourceId);
+      _logger.w(
+        'ValidationReport generation failed for $sourceLabel source $sourceId',
+        error: e,
+      );
     }
   }
 
