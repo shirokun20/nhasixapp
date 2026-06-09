@@ -14,12 +14,14 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
+import '../../domain/extensions/content_extensions.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/pdf_conversion_queue_manager.dart';
 import '../../services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../cubits/offline_search/offline_search_cubit.dart';
+import '../cubits/offline_search/offline_library_models.dart';
 import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';
 import 'content_card_widget.dart';
@@ -28,6 +30,11 @@ import 'offline_content_shimmer.dart';
 import '../mixins/offline_management_mixin.dart';
 import 'permission_request_sheet.dart';
 import 'progressive_image_widget.dart';
+
+enum _LibraryOptionsSheetSection {
+  sort,
+  filter,
+}
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -518,8 +525,30 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           selectedSourceId = getIt<SharedPreferences>().getString('offline_selected_source_filter');
         }
 
-        final remoteConfig = getIt<RemoteConfigService>();
-        final sourceConfigs = remoteConfig.getAllSourceConfigs();
+  Widget _buildLibraryToolbar(OfflineSearchState state) {
+    final sortMode = state is OfflineSearchLoaded
+        ? state.sortMode
+        : OfflineLibrarySortMode.date;
+    final l10n = AppLocalizations.of(context)!;
+    final options = state is OfflineSearchLoaded
+        ? state.availableFilters
+        : const <OfflineSourceFilterOption>[
+            OfflineSourceFilterOption(
+              id: OfflineSourceFilterOption.allId,
+              kind: OfflineSourceBucketKind.all,
+            ),
+          ];
+    final selectedFilterId =
+        state is OfflineSearchLoaded ? state.selectedFilterId : null;
+    final selectedOption = options.firstWhere(
+      (option) =>
+          option.id == (selectedFilterId ?? OfflineSourceFilterOption.allId),
+      orElse: () => const OfflineSourceFilterOption(
+        id: OfflineSourceFilterOption.allId,
+        kind: OfflineSourceBucketKind.all,
+      ),
+    );
+    final colorScheme = Theme.of(context).colorScheme;
 
         return Wrap(
           spacing: 8,
@@ -579,15 +608,137 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
-  Widget _buildFilterChip(
-    BuildContext context, {
-    required String label,
-    required bool isSelected,
-    required Function(bool) onSelected,
-    Color? color,
-    Color? selectedColor,
-    Color? textColor,
+  Widget _buildOptionTile({
+    required Key key,
+    required String title,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: key,
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? colorScheme.primaryContainer.withValues(alpha: 0.75)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: selected
+                    ? colorScheme.primary.withValues(alpha: 0.28)
+                    : colorScheme.outline.withValues(alpha: 0.18),
+              ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? colorScheme.primary.withValues(alpha: 0.16)
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 19,
+                    color: selected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    style: TextStyleConst.bodyMedium.copyWith(
+                      color: selected
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: selected
+                      ? Container(
+                          key: const ValueKey('offline-option-selected-dot'),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colorScheme.primary,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.45),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Icon(
+                          Icons.chevron_right_rounded,
+                          key: const ValueKey('offline-option-unselected-icon'),
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLibrarySectionSelector({
+    required _LibraryOptionsSheetSection selectedSection,
+    required ValueChanged<_LibraryOptionsSheetSection> onChanged,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = selectedColor ?? colorScheme.primary;
 
@@ -641,6 +792,45 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
+  String _sortLabel(OfflineLibrarySortMode sortMode) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (sortMode) {
+      case OfflineLibrarySortMode.date:
+        return l10n.recent;
+      case OfflineLibrarySortMode.title:
+        return 'A-Z';
+      case OfflineLibrarySortMode.imageCount:
+        return l10n.pages;
+    }
+  }
+
+  String _filterLabel(OfflineSourceFilterOption option) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (option.kind) {
+      case OfflineSourceBucketKind.all:
+        return l10n.all;
+      case OfflineSourceBucketKind.local:
+        return l10n.local;
+      case OfflineSourceBucketKind.other:
+        return l10n.other;
+      case OfflineSourceBucketKind.installed:
+        return option.displayName ?? option.sourceId ?? option.id;
+    }
+  }
+
+  IconData _filterIcon(OfflineSourceBucketKind kind) {
+    switch (kind) {
+      case OfflineSourceBucketKind.all:
+        return Icons.apps_rounded;
+      case OfflineSourceBucketKind.local:
+        return Icons.folder_rounded;
+      case OfflineSourceBucketKind.other:
+        return Icons.extension_rounded;
+      case OfflineSourceBucketKind.installed:
+        return Icons.public_rounded;
+    }
+  }
+
   Widget _buildContent(OfflineSearchState state) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -653,7 +843,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         child: AppErrorWidget(
           title: AppLocalizations.of(context)!.offlineContentError,
           message: state.message,
-          onRetry: () => _offlineSearchCubit.getAllOfflineContent(),
+          onRetry: () {
+            if (state.query.trim().isNotEmpty) {
+              _offlineSearchCubit.searchOfflineContent(state.query.trim());
+              return;
+            }
+            _offlineSearchCubit.getAllOfflineContent();
+          },
         ),
       );
     }
@@ -778,26 +974,6 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     if (state is OfflineSearchLoaded) {
       return Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Text(
-                  state.displayTitle,
-                  style: TextStyleConst.headingSmall.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  state.resultsSummary,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
@@ -827,12 +1003,10 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    // Add 1 for loading indicator if loading more
-                    itemCount:
-                        state.results.length + (state.isLoadingMore ? 1 : 0),
+                    itemCount: state.displayOrder.length +
+                        (state.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      // Show loading indicator at bottom if loading more
-                      if (index == state.results.length) {
+                      if (index == state.displayOrder.length) {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -857,22 +1031,26 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         );
                       }
 
-                      final content = state.results[index];
-                      return ContentCard(
-                        content: content,
-                        onTap: () => _openReader(context, content),
-                        onLongPress: () =>
-                            _showContentActions(context, content),
-                        showOfflineIndicator: true,
-                        isHighlighted: false,
-                        isBlurred: _tagBlacklistService.isContentBlacklisted(
-                          content,
-                          localEntries: localBlacklistEntries,
-                        ),
-                        offlineSize: state.offlineSizes[content.id],
-                        highlightQuery:
-                            state.query, // Pass search query for highlighting
-                        preferStaticCover: true,
+                      final entryKey = state.displayOrder[index];
+                      final group = state.groupsByKey[entryKey];
+                      if (group != null) {
+                        return _buildGroupedContentCard(
+                          group: group,
+                          highlightQuery: state.query,
+                          localBlacklistEntries: localBlacklistEntries,
+                        );
+                      }
+
+                      final item = state.itemsById[entryKey];
+                      if (item == null) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return _buildSingleContentCard(
+                        item: item,
+                        offlineSize: state.offlineSizes[item.stableId],
+                        highlightQuery: state.query,
+                        localBlacklistEntries: localBlacklistEntries,
                       );
                     },
                   ),
@@ -885,6 +1063,300 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     }
 
     return const OfflineContentGridShimmer();
+  }
+
+  Widget _buildSingleContentCard({
+    required OfflineLibraryItemData item,
+    required String? offlineSize,
+    required String highlightQuery,
+    required List<String> localBlacklistEntries,
+  }) {
+    final content = item.content.copyWith(
+      subTitle: _buildSingleItemSubtitle(item),
+    );
+
+    return ContentCard(
+      content: content,
+      onTap: () => _openReader(context, content),
+      onLongPress: () => _showContentActions(
+        context,
+        content,
+        itemData: item,
+      ),
+      showOfflineIndicator: true,
+      isHighlighted: false,
+      isBlurred: _tagBlacklistService.isContentBlacklisted(
+        content,
+        localEntries: localBlacklistEntries,
+      ),
+      offlineSize: offlineSize ??
+          OfflineContentManager.formatStorageSize(item.fileSizeBytes),
+      highlightQuery: highlightQuery,
+      preferStaticCover: true,
+    );
+  }
+
+  Widget _buildGroupedContentCard({
+    required OfflineLibraryGroupData group,
+    required String highlightQuery,
+    required List<String> localBlacklistEntries,
+  }) {
+    final previewContent = group.previewContent.copyWith(
+      title: group.parentTitle,
+      subTitle: _buildGroupSubtitle(group),
+      pageCount: group.totalImageCount,
+      uploadDate: group.sortDate,
+    );
+
+    return ContentCard(
+      content: previewContent,
+      onTap: () => _handleGroupedCardTap(context, group),
+      onLongPress: () => _showGroupedContentSheet(context, group),
+      showOfflineIndicator: true,
+      isHighlighted: false,
+      isBlurred: _tagBlacklistService.isContentBlacklisted(
+        previewContent,
+        localEntries: localBlacklistEntries,
+      ),
+      offlineSize:
+          OfflineContentManager.formatStorageSize(group.totalFileSizeBytes),
+      highlightQuery: highlightQuery,
+      preferStaticCover: true,
+    );
+  }
+
+  Future<void> _handleGroupedCardTap(
+    BuildContext context,
+    OfflineLibraryGroupData group,
+  ) async {
+    if (group.children.length == 1) {
+      await _openReader(context, group.children.first.content);
+      return;
+    }
+
+    await _showGroupedContentSheet(context, group);
+  }
+
+  String _buildSingleItemSubtitle(OfflineLibraryItemData item) {
+    final contentSubtitle = item.content.subTitle?.trim();
+    final sourceLabel = _buildSourceLabel(
+      kind: item.sourceBucketKind,
+      sourceDisplayName: item.sourceDisplayName,
+    );
+
+    if (contentSubtitle != null && contentSubtitle.isNotEmpty) {
+      return '$sourceLabel • $contentSubtitle';
+    }
+
+    return sourceLabel;
+  }
+
+  String _buildGroupSubtitle(OfflineLibraryGroupData group) {
+    final sourceLabel = _buildSourceLabel(
+      kind: group.sourceBucketKind,
+      sourceDisplayName: group.sourceDisplayName,
+    );
+    final childLabels = group.children
+        .take(2)
+        .map((child) => child.childLabel.trim())
+        .where((label) => label.isNotEmpty)
+        .toList(growable: false);
+    final remainder = group.children.length - childLabels.length;
+    final childSummary = [
+      ...childLabels,
+      if (remainder > 0) '+$remainder',
+    ].join(' • ');
+
+    if (childSummary.isEmpty) {
+      return sourceLabel;
+    }
+
+    return '$sourceLabel • $childSummary';
+  }
+
+  String _buildSourceLabel({
+    required OfflineSourceBucketKind kind,
+    required String sourceDisplayName,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (kind) {
+      case OfflineSourceBucketKind.local:
+        return l10n.local;
+      case OfflineSourceBucketKind.other:
+        return '${l10n.other}: $sourceDisplayName';
+      case OfflineSourceBucketKind.installed:
+        return sourceDisplayName;
+      case OfflineSourceBucketKind.all:
+        return l10n.all;
+    }
+  }
+
+  Future<void> _showGroupedContentSheet(
+    BuildContext context,
+    OfflineLibraryGroupData group,
+  ) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final sizeText =
+        OfflineContentManager.formatStorageSize(group.totalFileSizeBytes);
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      builder: (bottomSheetContext) {
+        final parentContext = context;
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: ProgressiveImageWidget(
+                        networkUrl: group.previewContent.coverUrl,
+                        contentId: group.previewContent.id,
+                        isThumbnail: true,
+                        width: 60,
+                        height: 84,
+                        fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(8),
+                        preferStaticPreview: true,
+                        errorWidget: Container(
+                          width: 60,
+                          height: 84,
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            group.parentTitle,
+                            style: TextStyleConst.titleMedium.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _buildSourceLabel(
+                              kind: group.sourceBucketKind,
+                              sourceDisplayName: group.sourceDisplayName,
+                            ),
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${group.children.length} • '
+                            '${l10n.pages}: ${group.totalImageCount} • $sizeText',
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: group.children.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final child = group.children[index];
+                    final childSize = OfflineContentManager.formatStorageSize(
+                      child.fileSizeBytes,
+                    );
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: colorScheme.secondaryContainer,
+                        foregroundColor: colorScheme.onSecondaryContainer,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyleConst.labelSmall.copyWith(
+                            color: colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        child.childLabel,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${l10n.pages}: ${child.imageCount} • $childSize',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(bottomSheetContext);
+                          _showContentActions(
+                            parentContext,
+                            child.content,
+                            itemData: child,
+                          );
+                        },
+                      ),
+                      onTap: () {
+                        Navigator.pop(bottomSheetContext);
+                        _openReader(parentContext, child.content);
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildTipRow(ColorScheme colorScheme, String text) {
@@ -910,12 +1382,14 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   }
 
   Future<void> _showContentActions(
-      BuildContext context, Content content) async {
+    BuildContext context,
+    Content content, {
+    OfflineLibraryItemData? itemData,
+  }) async {
     final colorScheme = Theme.of(context).colorScheme;
     final offlineManager = getIt<OfflineContentManager>();
     final l10n = AppLocalizations.of(context)!;
 
-    // Calculate content size for info
     final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
     int totalBytes = 0;
     for (final imagePath in imagePaths) {
@@ -1004,6 +1478,55 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       ),
                     ),
                   ],
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.folder_outlined,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.path,
+                            style: TextStyleConst.titleSmall.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (resolvedPath != null &&
+                          resolvedPath.trim().isNotEmpty)
+                        SelectableText(
+                          resolvedPath,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      else
+                        Text(
+                          l10n.unknown,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               const Divider(),

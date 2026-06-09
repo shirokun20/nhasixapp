@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-06-02
+> Tracked via `openspec/` — Last updated: 2026-06-09
 
 ### ✅ Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`

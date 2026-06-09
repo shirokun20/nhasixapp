@@ -8,7 +8,7 @@ import 'package:logger/logger.dart';
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
   static const int _databaseVersion =
-      13; // Updated for favorite collections support
+      15; // v15: resolved_cover_url for 0 disk I/O
 
   static Database? _database;
   static final Logger _logger = Logger();
@@ -492,6 +492,49 @@ class DatabaseHelper {
       } catch (e) {
         _logger.e('Error upgrading favorite collections tables: $e');
         rethrow;
+      }
+    }
+
+    // v14: Write-through cache columns for offline library sort
+    // Stores resolved title, page count, and sort date so the cubit can
+    // ORDER BY at DB level and skip metadata.json / filesystem I/O.
+    if (oldVersion < 14 && newVersion >= 14) {
+      _logger.i(
+          'Upgrading to version 14: Adding resolved sort-cache columns to downloads');
+      try {
+        await db.execute(
+            'ALTER TABLE downloads ADD COLUMN resolved_title TEXT');
+        await db.execute(
+            'ALTER TABLE downloads ADD COLUMN resolved_page_count INTEGER');
+        await db.execute(
+            'ALTER TABLE downloads ADD COLUMN resolved_sort_date INTEGER');
+
+        // Index for the new sort columns
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_downloads_resolved_sort_date '
+            'ON downloads (state, resolved_sort_date DESC)');
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_downloads_resolved_title '
+            'ON downloads (state, resolved_title COLLATE NOCASE ASC)');
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_downloads_resolved_pages '
+            'ON downloads (state, resolved_page_count DESC)');
+
+        _logger.i('Added resolved sort-cache columns to downloads table');
+      } catch (e) {
+        _logger.w('Error adding resolved sort-cache columns: $e');
+      }
+    }
+
+    // v15: Write-through cache for cover URL to completely eliminate disk I/O
+    if (oldVersion < 15 && newVersion >= 15) {
+      _logger.i('Upgrading to version 15: Adding resolved_cover_url to downloads');
+      try {
+        await db.execute(
+            'ALTER TABLE downloads ADD COLUMN resolved_cover_url TEXT');
+        _logger.i('Added resolved_cover_url column to downloads table');
+      } catch (e) {
+        _logger.w('Error adding resolved_cover_url column: $e');
       }
     }
   }

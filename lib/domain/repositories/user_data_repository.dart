@@ -208,6 +208,13 @@ abstract class UserDataRepository {
   /// Returns history entry or null if not found
   Future<History?> getHistoryEntry(String id);
 
+  /// Batch-fetch history entries for multiple content IDs in one DB query.
+  ///
+  /// Replaces N individual [getHistoryEntry] calls with one round-trip.
+  /// Returns a map of contentId -> History for items that exist in history.
+  Future<Map<String, History>> getHistoryBatch(List<String> ids);
+
+
   /// Get history entry for specific chapter
   ///
   /// [id] - Content ID
