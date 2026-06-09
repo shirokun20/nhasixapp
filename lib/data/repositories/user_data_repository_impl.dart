@@ -296,6 +296,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
   }
 
   @override
+
+  @override
   Future<int> getDownloadsCount(
       {DownloadState? state, String? sourceId}) async {
     try {
@@ -428,13 +430,22 @@ class UserDataRepositoryImpl implements UserDataRepository {
   Future<History?> getHistoryEntry(String id) async {
     try {
       final historyModel = await localDataSource.getHistory(id);
-      _logger
-          .w('isi file dari getHistoryEntry db: ${historyModel?.toEntity()}');
       return historyModel?.toEntity();
     } catch (e, stackTrace) {
       _logger.e('Failed to get history entry',
           error: e, stackTrace: stackTrace);
       return null;
+    }
+  }
+
+  @override
+  Future<Map<String, History>> getHistoryBatch(List<String> ids) async {
+    try {
+      final models = await localDataSource.getHistoryBatch(ids);
+      return models.map((id, model) => MapEntry(id, model.toEntity()));
+    } catch (e, stackTrace) {
+      _logger.e('Failed to batch-fetch history', error: e, stackTrace: stackTrace);
+      return {};
     }
   }
 
