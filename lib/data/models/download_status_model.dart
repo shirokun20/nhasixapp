@@ -17,8 +17,8 @@ class DownloadStatusModel extends DownloadStatus {
     super.startPage,
     super.endPage,
     super.title,
-    super.sourceId,
     super.coverUrl,
+    super.sourceId,
   });
 
   /// Create DownloadStatusModel from DownloadStatus entity
@@ -92,9 +92,9 @@ class DownloadStatusModel extends DownloadStatus {
       retryCount: map['retry_count'] ?? 0,
       startPage: map['start_page'],
       endPage: map['end_page'],
-      title: map['title'] as String?,
-      sourceId: map['source_id'] as String?,
-      coverUrl: map['cover_url'] as String?,
+      title: map['title'],
+      coverUrl: map['cover_url'],
+      sourceId: map['source_id'] ?? 'nhentai',
     );
   }
 

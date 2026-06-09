@@ -34,7 +34,7 @@ class DownloadStatus extends Equatable {
   final int retryCount; // number of retry attempts made
   final int? startPage; // Start page for range download
   final int? endPage; // End page for range download
-  final String? title; // Manga title
+  final String? title; // Content title for display
   final String? sourceId; // Source (from SourceType enum)
   final String? coverUrl; // Cover image URL
 

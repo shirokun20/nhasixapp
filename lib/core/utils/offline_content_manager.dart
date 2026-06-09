@@ -51,11 +51,6 @@ class OfflineContentManager {
   static const Duration _pathMissLogThrottle = Duration(minutes: 1);
   static const Duration _downloadsDirectoryCacheDuration = Duration(minutes: 2);
 
-  // 🚀 Session-level cache for resolveOfflineStoragePath results.
-  // Keyed by "contentId|downloadPath" so repeated calls in the same build
-  // pass avoid redundant filesystem probes.
-  final Map<String, String?> _resolvedPathCache = {};
-
   String? _lastLoggedCustomRoot;
   DateTime? _lastLoggedCustomRootTime;
   static const Duration _customRootLogThrottle = Duration(minutes: 1);
@@ -74,8 +69,6 @@ class OfflineContentManager {
     _imageUrlsCacheTime.remove(contentId);
     _metadataCache.remove(contentId);
     _metadataCacheTime.remove(contentId);
-    // Bust resolved-path cache entries for this content.
-    _resolvedPathCache.removeWhere((key, _) => key.startsWith('$contentId|'));
     // Also bust the global offline-IDs list so the next check re-queries the DB.
     _cachedOfflineIds = null;
     _offlineIdsCacheTime = null;
@@ -968,22 +961,38 @@ class OfflineContentManager {
       // Try images subdirectory first (new structure)
       final imagesDir = path.join(contentPath, 'images');
 
+      // Common first page patterns
+      final patterns = [
+        '001.jpg',
+        '001.png',
+        '001.webp',
+        '001.avif',
+        '001.jpeg',
+        '1.jpg',
+        '1.png',
+        '1.webp',
+        '1.avif',
+        '1.jpeg',
+        '0001.jpg',
+        '0001.png',
+        '0001.webp',
+        '0001.avif',
+      ];
+
       // Try new structure first
-      final dir = Directory(imagesDir);
-      if (await dir.exists()) {
-        try {
-          final file = await dir.list().firstWhere((e) => e is File && _isImageFile(e.path));
-          return file.path;
-        } catch (_) {}
+      for (final pattern in patterns) {
+        final imagePath = path.join(imagesDir, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
       }
 
       // Fallback: try old structure (images directly in content folder)
-      final contentDir = Directory(contentPath);
-      if (await contentDir.exists()) {
-        try {
-          final file = await contentDir.list().firstWhere((e) => e is File && _isImageFile(e.path));
-          return file.path;
-        } catch (_) {}
+      for (final pattern in patterns) {
+        final imagePath = path.join(contentPath, pattern);
+        if (await File(imagePath).exists()) {
+          return imagePath;
+        }
       }
 
       // Last resort: scan directory (but only return first)
@@ -1442,50 +1451,38 @@ class OfflineContentManager {
     String? contentPath,
     List<String> imageUrls = const [],
   }) async {
-    // 🚀 Check session cache first to avoid repeated filesystem probes for
-    // the same item during a single library-build pass.
-    final cacheKey = '$contentId|$downloadPath';
-    if (_resolvedPathCache.containsKey(cacheKey)) {
-      return _resolvedPathCache[cacheKey];
-    }
-
-    String? result;
-
     if (downloadPath != null && downloadPath.trim().isNotEmpty) {
       final downloadDir = Directory(downloadPath);
       if (await downloadDir.exists()) {
-        result = downloadDir.path;
+        return downloadDir.path;
       }
     }
 
-    if (result == null) {
-      final resolvedPath = contentPath ??
-          (contentId != null ? await getOfflineContentPath(contentId) : null);
-      if (resolvedPath != null && resolvedPath.trim().isNotEmpty) {
-        final resolvedDir = Directory(resolvedPath);
-        if (await resolvedDir.exists()) {
-          result = resolvedDir.path;
-        }
+    final resolvedPath = contentPath ??
+        (contentId != null ? await getOfflineContentPath(contentId) : null);
+    if (resolvedPath != null && resolvedPath.trim().isNotEmpty) {
+      final resolvedDir = Directory(resolvedPath);
+      if (await resolvedDir.exists()) {
+        return resolvedDir.path;
       }
     }
 
-    if (result == null) {
-      for (final imageUrl in imageUrls) {
-        if (!imageUrl.startsWith('/')) continue;
-        final file = File(imageUrl);
-        if (!await file.exists()) continue;
-        final parentDir = file.parent;
-        if (path.basename(parentDir.path) == AppStorage.imagesSubfolder) {
-          result = parentDir.parent.path;
-        } else {
-          result = parentDir.path;
-        }
-        break;
+    for (final imageUrl in imageUrls) {
+      if (!imageUrl.startsWith('/')) {
+        continue;
       }
+      final file = File(imageUrl);
+      if (!await file.exists()) {
+        continue;
+      }
+      final parentDir = file.parent;
+      if (path.basename(parentDir.path) == AppStorage.imagesSubfolder) {
+        return parentDir.parent.path;
+      }
+      return parentDir.path;
     }
 
-    _resolvedPathCache[cacheKey] = result;
-    return result;
+    return null;
   }
 
   /// Clean up orphaned offline files
@@ -2206,7 +2203,6 @@ class OfflineContentManager {
     _pathMissLogTime.clear();
     _metadataCache.clear();
     _metadataCacheTime.clear();
-    _resolvedPathCache.clear();
     _cachedDownloadsDirectory = null;
     _cachedDownloadsDirectoryTime = null;
     _logger.d('Offline content cache cleared');

@@ -848,42 +848,6 @@ class LocalDataSource {
     }
   }
 
-  /// Batch-fetch history entries for multiple content IDs in a single query.
-  /// Returns a map of contentId -> most-recent HistoryModel.
-  /// Replaces N individual [getHistory] calls with one SQL `WHERE id IN (...)`.
-  Future<Map<String, HistoryModel>> getHistoryBatch(List<String> ids) async {
-    if (ids.isEmpty) return {};
-    try {
-      final db = await _getSafeDatabase();
-      if (db == null) return {};
-
-      final placeholders = List.filled(ids.length, '?').join(',');
-      final result = await db.rawQuery(
-        '''
-        SELECT id, source_id, chapter_id, title, cover_url,
-               last_viewed, parent_id, chapter_title, chapter_index
-        FROM history
-        WHERE id IN ($placeholders)
-        ORDER BY last_viewed DESC
-        ''',
-        ids,
-      );
-
-      // Keep only the most-recent entry per content id (ORDER BY DESC, first wins)
-      final map = <String, HistoryModel>{};
-      for (final row in result) {
-        final contentId = row['id'] as String? ?? '';
-        if (contentId.isNotEmpty && !map.containsKey(contentId)) {
-          map[contentId] = HistoryModel.fromMap(row);
-        }
-      }
-      return map;
-    } catch (e) {
-      _logger.e('Error batch-fetching history: $e');
-      return {};
-    }
-  }
-
   /// Get history entry by content ID
   /// For chapter mode, returns the most recent chapter entry for this content
   Future<HistoryModel?> getHistory(String id) async {

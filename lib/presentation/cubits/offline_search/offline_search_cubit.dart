@@ -42,11 +42,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
 
-  /// Cached snapshot from the last full build.
-  /// On load-more we extend the visible window from this cache instead of
-  /// rebuilding all items from scratch (which was causing the slowdown).
-  _OfflineLibrarySnapshot? _cachedSnapshot;
-
   RemoteConfigService get _remoteConfigService => getIt<RemoteConfigService>();
 
   Future<int> _getDirectorySize(Directory directory) async {
@@ -173,7 +168,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       logInfo('Force refreshing offline content');
       _offlineContentManager.clearCache();
-      _cachedSnapshot = null; // bust snapshot so next load rebuilds fresh
       await _reloadCurrentContext(backupPath: backupPath);
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'force refresh');
@@ -321,33 +315,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             currentState.isLoadingMore) {
           return;
         }
-
-        // ⚡ FAST PATH: extend visible window from cached snapshot.
-        // Do NOT rebuild all items — that was causing load-more to be as slow
-        // as the initial load for large libraries (2237+ items).
-        final cached = _cachedSnapshot;
-        if (cached != null &&
-            cached.isValidFor(
-              query: query,
-              filterId: requestedFilterId,
-            )) {
-          emit(currentState.copyWith(isLoadingMore: true));
-          // Yield to let the spinner render
-          await Future<void>.delayed(Duration.zero);
-          _emitFromSnapshot(
-            snapshot: cached,
-            query: query,
-            loadMore: true,
-            prevState: currentState,
-            effectiveSortMode: effectiveSortMode,
-          );
-          return;
-        }
-
         emit(currentState.copyWith(isLoadingMore: true));
       } else {
-        // A full (re)load: clear any cached snapshot so we build fresh.
-        _cachedSnapshot = null;
         emit(const OfflineSearchLoading());
       }
 
@@ -359,9 +328,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       );
 
       if (isClosed) return;
-
-      // Cache the freshly built snapshot for subsequent load-more calls.
-      _cachedSnapshot = snapshot;
 
       if (snapshot.filteredItems.isEmpty) {
         if (query.isNotEmpty ||
@@ -390,13 +356,69 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
-      _emitFromSnapshot(
-        snapshot: snapshot,
+      final totalDisplayEntries = snapshot.displayOrder.length;
+      final previousDisplayCount =
+          loadMore && currentState is OfflineSearchLoaded
+              ? currentState.displayOrder.length
+              : 0;
+      final visibleDisplayCount = loadMore
+          ? (previousDisplayCount + _pageSize)
+              .clamp(0, totalDisplayEntries)
+              .toInt()
+          : _pageSize.clamp(0, totalDisplayEntries).toInt();
+      final visibleOrder = snapshot.displayOrder
+          .take(visibleDisplayCount)
+          .toList(growable: false);
+      final visibleGroups = <String, OfflineLibraryGroupData>{};
+      final visibleItems = <OfflineLibraryItemData>[];
+      final visibleSizes = <String, String>{};
+
+      for (final entryKey in visibleOrder) {
+        final group = snapshot.groupsByKey[entryKey];
+        if (group != null) {
+          visibleGroups[entryKey] = group;
+          for (final child in group.children) {
+            visibleItems.add(child);
+            visibleSizes[child.stableId] =
+                OfflineContentManager.formatStorageSize(child.fileSizeBytes);
+          }
+          continue;
+        }
+
+        final item = snapshot.itemById[entryKey];
+        if (item == null) {
+          continue;
+        }
+        visibleItems.add(item);
+        visibleSizes[item.stableId] =
+            OfflineContentManager.formatStorageSize(item.fileSizeBytes);
+      }
+
+      final totalPages = totalDisplayEntries == 0
+          ? 1
+          : (totalDisplayEntries / _pageSize).ceil();
+      final currentPage = visibleDisplayCount == 0
+          ? 1
+          : (visibleDisplayCount / _pageSize).ceil();
+
+      emit(OfflineSearchLoaded(
         query: query,
-        loadMore: false,
-        prevState: currentState is OfflineSearchLoaded ? currentState : null,
-        effectiveSortMode: effectiveSortMode,
-      );
+        items: visibleItems,
+        totalResults: snapshot.filteredItems.length,
+        offlineSizes: visibleSizes,
+        storageUsage: snapshot.storageUsage,
+        formattedStorageUsage:
+            OfflineContentManager.formatStorageSize(snapshot.storageUsage),
+        currentPage: currentPage,
+        totalPages: totalPages,
+        hasMore: visibleDisplayCount < totalDisplayEntries,
+        isLoadingMore: false,
+        selectedFilterId: snapshot.normalizedFilterId,
+        sortMode: effectiveSortMode,
+        availableFilters: snapshot.availableFilters,
+        displayOrder: visibleOrder,
+        groupsByKey: visibleGroups,
+      ));
     } catch (e, stackTrace) {
       if (isClosed) return;
       handleError(e, stackTrace, 'load offline library');
@@ -413,76 +435,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         query: query,
       ));
     }
-  }
-
-  /// Build the new emitted state from a snapshot, handling both initial load
-  /// and load-more (extending the visible window).
-  void _emitFromSnapshot({
-    required _OfflineLibrarySnapshot snapshot,
-    required String query,
-    required bool loadMore,
-    required OfflineLibrarySortMode effectiveSortMode,
-    OfflineSearchLoaded? prevState,
-  }) {
-    final totalDisplayEntries = snapshot.displayOrder.length;
-    final previousDisplayCount =
-        loadMore && prevState != null ? prevState.displayOrder.length : 0;
-    final visibleDisplayCount = loadMore
-        ? (previousDisplayCount + _pageSize)
-            .clamp(0, totalDisplayEntries)
-            .toInt()
-        : _pageSize.clamp(0, totalDisplayEntries).toInt();
-    final visibleOrder = snapshot.displayOrder
-        .take(visibleDisplayCount)
-        .toList(growable: false);
-    final visibleGroups = <String, OfflineLibraryGroupData>{};
-    final visibleItems = <OfflineLibraryItemData>[];
-    final visibleSizes = <String, String>{};
-
-    for (final entryKey in visibleOrder) {
-      final group = snapshot.groupsByKey[entryKey];
-      if (group != null) {
-        visibleGroups[entryKey] = group;
-        for (final child in group.children) {
-          visibleItems.add(child);
-          visibleSizes[child.stableId] =
-              OfflineContentManager.formatStorageSize(child.fileSizeBytes);
-        }
-        continue;
-      }
-
-      final item = snapshot.itemById[entryKey];
-      if (item == null) continue;
-      visibleItems.add(item);
-      visibleSizes[item.stableId] =
-          OfflineContentManager.formatStorageSize(item.fileSizeBytes);
-    }
-
-    final totalPages = totalDisplayEntries == 0
-        ? 1
-        : (totalDisplayEntries / _pageSize).ceil();
-    final currentPage = visibleDisplayCount == 0
-        ? 1
-        : (visibleDisplayCount / _pageSize).ceil();
-
-    emit(OfflineSearchLoaded(
-      query: query,
-      items: visibleItems,
-      totalResults: snapshot.filteredItems.length,
-      offlineSizes: visibleSizes,
-      storageUsage: snapshot.storageUsage,
-      formattedStorageUsage:
-          OfflineContentManager.formatStorageSize(snapshot.storageUsage),
-      currentPage: currentPage,
-      totalPages: totalPages,
-      hasMore: visibleDisplayCount < totalDisplayEntries,
-      isLoadingMore: false,
-      selectedFilterId: snapshot.normalizedFilterId,
-      sortMode: effectiveSortMode,
-      availableFilters: snapshot.availableFilters,
-      displayOrder: visibleOrder,
-      groupsByKey: visibleGroups,
-    ));
   }
 
   Future<_OfflineLibrarySnapshot> _buildOfflineLibrarySnapshot({
@@ -518,8 +470,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     );
 
     return _OfflineLibrarySnapshot(
-      query: query,
-      filterId: selectedFilterId,
       filteredItems: sortedItems,
       availableFilters: availableFilters,
       normalizedFilterId: normalizedFilterId,
@@ -529,42 +479,20 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     );
   }
 
-  /// Build merged library items with performance optimisations:
-  /// 1. Preload all history in a single batch DB query.
-  /// 2. Only scan the backup folder for items NOT already covered by a DB
-  ///    record with a valid download path (avoids scanning 2237 folders on
-  ///    every load — only orphan / uninstalled-source items are scanned).
-  /// 3. Process items in parallel chunks (size 10) instead of sequentially.
   Future<List<OfflineLibraryItemData>> _buildMergedLibraryItems({
     String? backupPath,
   }) async {
-    // ── Step 1: Load all completed downloads from DB (one paginated query) ──
     final downloads = await _loadAllCompletedDownloadsFromDb();
-
-    // ── Step 2: Preload ALL history in one batch SQL query ──
-    final contentIds = downloads.map((d) => d.contentId).toList();
-    final historyMap =
-        await _userDataRepository.getHistoryBatch(contentIds);
-
-    // ── Step 3: Identify which DB items already have a valid path ──
-    // For those we skip the full backup scan; scan is only for true orphans.
-    final knownPathsFromDb = <String>{};
-    for (final d in downloads) {
-      final p = _normalizeOfflinePath(d.downloadPath);
-      if (p != null) knownPathsFromDb.add(p);
-    }
-
-    // ── Step 4: Scan backup folder (discover uninstalled-source orphans) ──
-    final scannedContents =
-        await _loadScannedContents(backupPath: backupPath);
+    final scannedContents = await _loadScannedContents(backupPath: backupPath);
     final pendingScannedById = <String, Content>{};
     final pendingScannedByPath = <String, Content>{};
-    for (final sc in scannedContents) {
-      final pathKey = _normalizeOfflinePath(sc.derivedContentPath);
-      // Skip items whose path is already tracked by a DB download record
-      if (pathKey != null && knownPathsFromDb.contains(pathKey)) continue;
-      pendingScannedById[sc.id] = sc;
-      if (pathKey != null) pendingScannedByPath[pathKey] = sc;
+
+    for (final scannedContent in scannedContents) {
+      pendingScannedById[scannedContent.id] = scannedContent;
+      final pathKey = _normalizeOfflinePath(scannedContent.derivedContentPath);
+      if (pathKey != null) {
+        pendingScannedByPath[pathKey] = scannedContent;
+      }
     }
 
     final sourceConfigs = {
@@ -575,62 +503,45 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     final indexByStableId = <String, int>{};
     final indexByResolvedPath = <String, int>{};
 
-    // ── Step 5: Process DB downloads in parallel chunks ──
-    const chunkSize = 10;
-    for (var i = 0; i < downloads.length; i += chunkSize) {
-      final chunk = downloads.skip(i).take(chunkSize).toList();
-      final chunkResults = await Future.wait(
-        chunk.map((download) async {
-          final matched = await _matchScannedContentForDownload(
-            download: download,
-            pendingScannedById: pendingScannedById,
-            pendingScannedByPath: pendingScannedByPath,
-          );
-          return _buildItemFromDownload(
-            download: download,
-            scannedContent: matched.scannedContent,
-            resolvedPathOverride: matched.resolvedPath,
-            sourceConfigs: sourceConfigs,
-            preloadedHistory: historyMap,
-          );
-        }),
+    for (final download in downloads) {
+      final matchedScannedContent = await _matchScannedContentForDownload(
+        download: download,
+        pendingScannedById: pendingScannedById,
+        pendingScannedByPath: pendingScannedByPath,
       );
-      for (final item in chunkResults) {
-        if (item != null) {
-          _storeMergedItem(
-            items: items,
-            indexByStableId: indexByStableId,
-            indexByResolvedPath: indexByResolvedPath,
-            item: item,
-          );
-        }
+      final item = await _buildItemFromDownload(
+        download: download,
+        scannedContent: matchedScannedContent.scannedContent,
+        resolvedPathOverride: matchedScannedContent.resolvedPath,
+        sourceConfigs: sourceConfigs,
+      );
+      if (item != null) {
+        _storeMergedItem(
+          items: items,
+          indexByStableId: indexByStableId,
+          indexByResolvedPath: indexByResolvedPath,
+          item: item,
+        );
       }
     }
 
-    // ── Step 6: Process orphan scanned items in parallel chunks ──
-    final orphanList = pendingScannedById.values.toList();
-    for (var i = 0; i < orphanList.length; i += chunkSize) {
-      final chunk = orphanList.skip(i).take(chunkSize).toList();
-      final chunkResults = await Future.wait(
-        chunk.map((sc) => _buildItemFromScannedContent(sc, sourceConfigs)),
+    for (final scannedContent in pendingScannedById.values) {
+      final item = await _buildItemFromScannedContent(
+        scannedContent,
+        sourceConfigs,
       );
-      for (final item in chunkResults) {
-        if (item != null) {
-          _storeMergedItem(
-            items: items,
-            indexByStableId: indexByStableId,
-            indexByResolvedPath: indexByResolvedPath,
-            item: item,
-          );
-        }
+      if (item != null) {
+        _storeMergedItem(
+          items: items,
+          indexByStableId: indexByStableId,
+          indexByResolvedPath: indexByResolvedPath,
+          item: item,
+        );
       }
     }
-
-
 
     return items;
   }
-
 
   Future<List<DownloadStatus>> _loadAllCompletedDownloadsFromDb() async {
     const batchSize = 500;
@@ -643,9 +554,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         limit: batchSize,
         offset: offset,
       );
-      if (page.isEmpty) break;
+      if (page.isEmpty) {
+        break;
+      }
       downloads.addAll(page);
-      if (page.length < batchSize) break;
+      if (page.length < batchSize) {
+        break;
+      }
       offset += batchSize;
     }
 
@@ -666,7 +581,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     required Content? scannedContent,
     String? resolvedPathOverride,
     required Map<String, SourceConfig> sourceConfigs,
-    Map<String, History> preloadedHistory = const {},
   }) async {
     final resolvedPath = resolvedPathOverride ??
         await _offlineContentManager.resolveOfflineStoragePath(
@@ -676,81 +590,54 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           imageUrls: scannedContent?.imageUrls ?? const <String>[],
         );
 
-    late final Map<String, dynamic>? rawMetadata;
-    late final String title;
-    late final int imageCount;
-    late final DateTime sortDate;
-    late final String firstImagePath;
-    late final String rawSourceId;
+    final rawMetadata = await _offlineContentManager.getRawOfflineMetadata(
+      contentId: download.contentId,
+      contentPath: resolvedPath ?? scannedContent?.derivedContentPath,
+    );
 
-    if (scannedContent == null) {
-      // 🚀 FAST PATH FOR DB ITEMS: 0 Disk I/O!
-      // We rely completely on the SQLite database values.
-      rawMetadata = null;
-      title = download.title ?? 'Unknown';
-      imageCount = download.totalPages;
-      sortDate = download.startTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      firstImagePath = download.coverUrl ?? '';
-      rawSourceId = download.sourceId ?? 'nhentai';
-    } else {
-      // 🐢 SLOW PATH FOR ORPHAN ITEMS: Read metadata.json from disk
-      rawMetadata = await _offlineContentManager.getRawOfflineMetadata(
-        contentId: download.contentId,
-        contentPath: resolvedPath ?? scannedContent.derivedContentPath,
-      );
-      title = _resolveTitle(
-        contentId: download.contentId,
-        fallbackTitle: download.title,
-        metadata: rawMetadata,
-        scannedContent: scannedContent,
-      );
-      imageCount = await _resolveImageCount(
-        contentId: download.contentId,
-        fallbackPageCount: scannedContent.pageCount,
-        contentPath: resolvedPath ?? scannedContent.derivedContentPath,
-        metadata: rawMetadata,
-      );
-      sortDate = await _resolveSortDate(
-        fallbackPath: resolvedPath ?? scannedContent.derivedContentPath,
-        download: download,
-        metadata: rawMetadata,
-      );
-
-      // Find first image by falling back to directory scan if needed
-      firstImagePath = scannedContent.coverUrl.isNotEmpty == true
-          ? scannedContent.coverUrl
-          : (await _offlineContentManager.getOfflineFirstImagePath(
-                download.contentId,
-                downloadPath: resolvedPath ?? download.downloadPath,
-              ) ?? '');
-      
-      rawSourceId = _resolveRawSourceId(
-        metadata: rawMetadata,
-        contentPath: resolvedPath ?? scannedContent.derivedContentPath,
-        fallbackSourceId: scannedContent.sourceId,
-      );
-    }
-
+    final rawSourceId = _resolveRawSourceId(
+      metadata: rawMetadata,
+      contentPath: resolvedPath ?? scannedContent?.derivedContentPath,
+      fallbackSourceId: scannedContent?.sourceId ?? download.sourceId,
+    );
     final bucketInfo = _resolveBucketInfo(rawSourceId, sourceConfigs);
 
-    if (firstImagePath.isEmpty) {
+    final firstImagePath = scannedContent?.coverUrl.isNotEmpty == true
+        ? scannedContent!.coverUrl
+        : await _offlineContentManager.getOfflineFirstImagePath(
+            download.contentId,
+            downloadPath: resolvedPath ?? download.downloadPath,
+          );
+    if (firstImagePath == null || firstImagePath.isEmpty) {
       return null;
     }
 
-    // Fix 5: Use DB fileSize directly — skip expensive directory traversal
-    // Only fall back to filesystem scan when the DB value is genuinely absent.
+    final title = _resolveTitle(
+      contentId: download.contentId,
+      fallbackTitle: download.title,
+      metadata: rawMetadata,
+      scannedContent: scannedContent,
+    );
+    final imageCount = await _resolveImageCount(
+      contentId: download.contentId,
+      fallbackPageCount: scannedContent?.pageCount ?? download.totalPages,
+      contentPath: resolvedPath ?? scannedContent?.derivedContentPath,
+      metadata: rawMetadata,
+    );
     final fileSizeBytes = download.fileSize > 0
         ? download.fileSize
         : await _resolveFileSize(
             resolvedPath ?? scannedContent?.derivedContentPath,
           );
-
-    // Fix 1: use preloaded history map instead of individual DB query
+    final sortDate = await _resolveSortDate(
+      fallbackPath: resolvedPath ?? scannedContent?.derivedContentPath,
+      download: download,
+      metadata: rawMetadata,
+    );
     final parentContext = await _resolveParentContext(
       contentId: download.contentId,
       displayTitle: title,
       metadata: rawMetadata,
-      preloadedHistory: preloadedHistory,
     );
 
     final content = (scannedContent ??
@@ -1158,15 +1045,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
-  /// Resolve parent/chapter context for an item.
-  ///
-  /// [preloadedHistory] – pass the batch-preloaded history map so this method
-  /// does NOT make any additional DB calls during the hot loop.
   Future<_OfflineParentContext> _resolveParentContext({
     required String contentId,
     required String displayTitle,
     required Map<String, dynamic>? metadata,
-    Map<String, History> preloadedHistory = const {},
   }) async {
     String? parentId = _readString(
       metadata,
@@ -1185,15 +1067,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       ['chapterIndex', 'chapter_index', 'chapterNumber', 'chapter_number'],
     );
 
-    // Use preloaded map (no extra DB hit); fall back to individual query only
-    // when called outside the hot loop (e.g. orphan scanned content).
-    History? historyEntry = preloadedHistory[contentId];
-    if (historyEntry == null && preloadedHistory.isEmpty) {
-      try {
-        historyEntry = await _userDataRepository.getHistoryEntry(contentId);
-      } catch (_) {
-        historyEntry = null;
-      }
+    History? historyEntry;
+    try {
+      historyEntry = await _userDataRepository.getHistoryEntry(contentId);
+    } catch (_) {
+      historyEntry = null;
     }
 
     parentId ??= historyEntry?.parentId?.trim();
@@ -1219,19 +1097,12 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
     if (parentId != null && parentId.isNotEmpty) {
       if (parentTitle == null || parentTitle.isEmpty) {
-        // Check preloaded map first before hitting DB
-        final parentHistory = preloadedHistory[parentId];
-        parentTitle = parentHistory?.title?.trim();
-
-        if ((parentTitle == null || parentTitle.isEmpty) &&
-            preloadedHistory.isEmpty) {
-          try {
-            final fetched =
-                await _userDataRepository.getHistoryEntry(parentId);
-            parentTitle = fetched?.title?.trim();
-          } catch (_) {
-            parentTitle = null;
-          }
+        try {
+          final parentHistory =
+              await _userDataRepository.getHistoryEntry(parentId);
+          parentTitle = parentHistory?.title?.trim();
+        } catch (_) {
+          parentTitle = null;
         }
       }
 
@@ -1537,8 +1408,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
 class _OfflineLibrarySnapshot {
   const _OfflineLibrarySnapshot({
-    required this.query,
-    required this.filterId,
     required this.filteredItems,
     required this.availableFilters,
     required this.normalizedFilterId,
@@ -1547,10 +1416,6 @@ class _OfflineLibrarySnapshot {
     required this.storageUsage,
   });
 
-  /// The query and filterId used to build this snapshot.
-  /// Used to validate cache freshness before serving load-more from cache.
-  final String query;
-  final String? filterId;
   final List<OfflineLibraryItemData> filteredItems;
   final List<OfflineSourceFilterOption> availableFilters;
   final String? normalizedFilterId;
@@ -1561,11 +1426,6 @@ class _OfflineLibrarySnapshot {
   Map<String, OfflineLibraryItemData> get itemById => {
         for (final item in filteredItems) item.stableId: item,
       };
-
-  /// Returns true when this snapshot can be reused for a load-more call
-  /// with the given [query] and [filterId].
-  bool isValidFor({required String query, required String? filterId}) =>
-      this.query == query && this.filterId == filterId;
 }
 
 class _OfflineDisplayModel {

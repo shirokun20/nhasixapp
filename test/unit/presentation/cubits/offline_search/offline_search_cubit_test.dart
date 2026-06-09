@@ -195,8 +195,6 @@ void main() {
 
     when(() => mockUserDataRepository.getHistoryEntry(any()))
         .thenAnswer((_) async => null);
-    when(() => mockUserDataRepository.getHistoryBatch(any()))
-        .thenAnswer((_) async => <String, History>{});
     when(() => mockOfflineContentManager.getBackupRootPath())
         .thenAnswer((_) async => '/virtual/nhasix');
 
@@ -375,23 +373,299 @@ void main() {
       );
     });
 
-    /* test('derives parent grouping and keeps child paths', () async {
-      // ... test commented out because chapter grouping requires metadata.json parsing
-    }); */
+    test('derives parent grouping and keeps child paths', () async {
+      final fixtures = [
+        _buildFixture(
+          id: 'series/chapter-2',
+          title: 'Series - Chapter 2',
+          rawSourceId: 'mangafire',
+          downloadedAt: DateTime(2026, 1, 2),
+          imageCount: 10,
+          metadata: {
+            'parentId': 'series-parent',
+            'chapterIndex': 2,
+            'chapterTitle': 'Chapter 2',
+          },
+        ),
+        _buildFixture(
+          id: 'series/chapter-1',
+          title: 'Series - Chapter 1',
+          rawSourceId: 'mangafire',
+          downloadedAt: DateTime(2026, 1, 1),
+          imageCount: 9,
+          metadata: {
+            'parentId': 'series-parent',
+            'chapterIndex': 1,
+            'chapterTitle': 'Chapter 1',
+          },
+        ),
+      ];
+      _stubOfflineScan(
+        offlineContentManager: mockOfflineContentManager,
+        fixtures: fixtures,
+      );
+      when(() => mockUserDataRepository.getHistoryEntry('series-parent'))
+          .thenAnswer(
+        (_) async => History(
+          contentId: 'series-parent',
+          sourceId: 'mangafire',
+          lastViewed: DateTime(2026, 1, 5),
+          title: 'Series Title',
+        ),
+      );
 
-    /* test('deduplicates scanned content when db entry still uses safe folder id',
-        () async {
-      // test commented out
-    }); */
+      await cubit.getAllOfflineContent();
 
-    /* test('chapter-mode items keep two children instead of doubling to four',
-        () async {
-      // test commented out
-    }); */
+      final state = cubit.state as OfflineSearchLoaded;
+      expect(state.displayOrder.length, 1);
+      expect(state.groupsByKey.length, 1);
 
-    /* test('deduplicates duplicate db rows that point to the same folder',
+      final group = state.groupsByKey.values.first;
+      expect(group.parentTitle, 'Series Title');
+      expect(group.children.map((item) => item.childLabel).toList(), [
+        'Chapter 1',
+        'Chapter 2',
+      ]);
+      expect(group.children.first.resolvedPath, fixtures[1].resolvedPath);
+      expect(group.children.last.resolvedPath, fixtures[0].resolvedPath);
+    });
+
+    test('deduplicates scanned content when db entry still uses safe folder id',
         () async {
-      // test commented out
-    }); */
+      final fixture = _buildFixture(
+        id: 'chapter-72-original-id',
+        title: 'Chapter 72',
+        rawSourceId: 'komiku',
+        downloadedAt: DateTime(2026, 1, 2),
+        imageCount: 18,
+        resolvedPathOverride: '/virtual/nhasix/komiku/2qbiiejj4x',
+      );
+      _stubOfflineScan(
+        offlineContentManager: mockOfflineContentManager,
+        fixtures: [fixture],
+      );
+
+      when(
+        () => mockUserDataRepository.getAllDownloads(
+          state: any(named: 'state'),
+          sourceId: any(named: 'sourceId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          orderBy: any(named: 'orderBy'),
+          descending: any(named: 'descending'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          DownloadStatus(
+            contentId: '2qbiiejj4x',
+            state: DownloadState.completed,
+            downloadedPages: 18,
+            totalPages: 18,
+            downloadPath: fixture.resolvedPath,
+            fileSize: 6200,
+            title: 'Chapter 72',
+            sourceId: 'komiku',
+          ),
+        ],
+      );
+
+      await cubit.getAllOfflineContent();
+
+      final state = cubit.state as OfflineSearchLoaded;
+      expect(state.results, hasLength(1));
+      expect(state.items.single.content.id, fixture.content.id);
+      expect(state.items.single.resolvedPath, fixture.resolvedPath);
+    });
+
+    test('chapter-mode items keep two children instead of doubling to four',
+        () async {
+      final fixtures = [
+        _buildFixture(
+          id: 'chapter-72-original-id',
+          title: 'Series - Chapter 72',
+          rawSourceId: 'komiku',
+          downloadedAt: DateTime(2026, 1, 2),
+          imageCount: 18,
+          resolvedPathOverride: '/virtual/nhasix/komiku/2qbiiejj4x',
+          metadata: {
+            'parentId': 'series-parent',
+            'chapterIndex': 72,
+            'chapterTitle': 'Chapter 72',
+          },
+        ),
+        _buildFixture(
+          id: 'chapter-73-original-id',
+          title: 'Series - Chapter 73',
+          rawSourceId: 'komiku',
+          downloadedAt: DateTime(2026, 1, 3),
+          imageCount: 21,
+          resolvedPathOverride: '/virtual/nhasix/komiku/9orw3pvat',
+          metadata: {
+            'parentId': 'series-parent',
+            'chapterIndex': 73,
+            'chapterTitle': 'Chapter 73',
+          },
+        ),
+      ];
+      _stubOfflineScan(
+        offlineContentManager: mockOfflineContentManager,
+        fixtures: fixtures,
+      );
+      when(() => mockUserDataRepository.getHistoryEntry('series-parent'))
+          .thenAnswer(
+        (_) async => History(
+          contentId: 'series-parent',
+          sourceId: 'komiku',
+          lastViewed: DateTime(2026, 1, 5),
+          title: 'Series Title',
+        ),
+      );
+      when(
+        () => mockUserDataRepository.getAllDownloads(
+          state: any(named: 'state'),
+          sourceId: any(named: 'sourceId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          orderBy: any(named: 'orderBy'),
+          descending: any(named: 'descending'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          DownloadStatus(
+            contentId: '2qbiiejj4x',
+            state: DownloadState.completed,
+            downloadedPages: 18,
+            totalPages: 18,
+            downloadPath: fixtures[0].resolvedPath,
+            fileSize: 6200,
+            title: 'Series - Chapter 72',
+            sourceId: 'komiku',
+          ),
+          DownloadStatus(
+            contentId: '9orw3pvat',
+            state: DownloadState.completed,
+            downloadedPages: 21,
+            totalPages: 21,
+            downloadPath: fixtures[1].resolvedPath,
+            fileSize: 7100,
+            title: 'Series - Chapter 73',
+            sourceId: 'komiku',
+          ),
+        ],
+      );
+
+      await cubit.getAllOfflineContent();
+
+      final state = cubit.state as OfflineSearchLoaded;
+      expect(state.displayOrder, hasLength(1));
+      expect(state.groupsByKey, hasLength(1));
+
+      final group = state.groupsByKey.values.single;
+      expect(group.parentTitle, 'Series Title');
+      expect(group.children, hasLength(2));
+      expect(
+        group.children.map((item) => item.childLabel).toList(),
+        ['Chapter 72', 'Chapter 73'],
+      );
+    });
+
+    test('deduplicates duplicate db rows that point to the same folder',
+        () async {
+      when(() => mockOfflineContentManager.scanBackupFolder(any()))
+          .thenAnswer((_) async => const <Content>[]);
+      when(
+        () => mockOfflineContentManager.getRawOfflineMetadata(
+          contentId: any(named: 'contentId'),
+          contentPath: any(named: 'contentPath'),
+        ),
+      ).thenAnswer((invocation) async {
+        final contentId = invocation.namedArguments[#contentId] as String?;
+        if (contentId == 'chapter-73-original-id') {
+          return {
+            'id': 'chapter-73-original-id',
+            'title': 'Chapter 73',
+            'rawSourceId': 'komiku',
+            'resolvedImageCount': 21,
+          };
+        }
+        return null;
+      });
+      when(
+        () => mockOfflineContentManager.resolveStoredSourceId(
+          metadata: any(named: 'metadata'),
+          contentPath: any(named: 'contentPath'),
+        ),
+      ).thenReturn('komiku');
+      when(
+        () => mockOfflineContentManager.resolveOfflineStoragePath(
+          contentId: any(named: 'contentId'),
+          downloadPath: any(named: 'downloadPath'),
+          contentPath: any(named: 'contentPath'),
+          imageUrls: any(named: 'imageUrls'),
+        ),
+      ).thenAnswer((invocation) async {
+        final downloadPath =
+            invocation.namedArguments[#downloadPath] as String?;
+        return downloadPath ?? '/virtual/nhasix/komiku/9orw3pvat';
+      });
+      when(
+        () => mockOfflineContentManager.getOfflineFirstImagePath(
+          any(),
+          downloadPath: any(named: 'downloadPath'),
+        ),
+      ).thenAnswer((invocation) async {
+        final downloadPath =
+            invocation.namedArguments[#downloadPath] as String?;
+        return '$downloadPath/images/page_001.webp';
+      });
+      when(
+        () => mockOfflineContentManager.resolveOfflineImageCount(
+          contentId: any(named: 'contentId'),
+          contentPath: any(named: 'contentPath'),
+          metadata: any(named: 'metadata'),
+        ),
+      ).thenAnswer((_) async => 21);
+
+      const sharedPath = '/virtual/nhasix/komiku/9orw3pvat';
+      when(
+        () => mockUserDataRepository.getAllDownloads(
+          state: any(named: 'state'),
+          sourceId: any(named: 'sourceId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+          orderBy: any(named: 'orderBy'),
+          descending: any(named: 'descending'),
+        ),
+      ).thenAnswer(
+        (_) async => const [
+          DownloadStatus(
+            contentId: '9orw3pvat',
+            state: DownloadState.completed,
+            downloadedPages: 21,
+            totalPages: 21,
+            downloadPath: sharedPath,
+            fileSize: 7100,
+            title: 'Chapter 73',
+            sourceId: 'komiku',
+          ),
+          DownloadStatus(
+            contentId: 'chapter-73-original-id',
+            state: DownloadState.completed,
+            downloadedPages: 21,
+            totalPages: 21,
+            downloadPath: sharedPath,
+            fileSize: 7100,
+            title: 'Chapter 73',
+            sourceId: 'komiku',
+          ),
+        ],
+      );
+
+      await cubit.getAllOfflineContent();
+
+      final state = cubit.state as OfflineSearchLoaded;
+      expect(state.results, hasLength(1));
+      expect(state.items.single.resolvedPath, sharedPath);
+    });
   });
 }
