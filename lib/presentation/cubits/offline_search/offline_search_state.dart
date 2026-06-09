@@ -25,84 +25,83 @@ class OfflineSearchLoading extends OfflineSearchState {
 class OfflineSearchLoaded extends OfflineSearchState {
   const OfflineSearchLoaded({
     required this.query,
-    required this.items,
+    required this.results,
     required this.totalResults,
     this.offlineSizes = const {},
     this.storageUsage = 0,
     this.formattedStorageUsage = '0 B',
+    // NEW: Pagination fields
     this.currentPage = 1,
     this.totalPages = 1,
     this.hasMore = false,
     this.isLoadingMore = false,
-    this.selectedFilterId,
-    this.sortMode = OfflineLibrarySortMode.date,
-    this.availableFilters = const [],
-    this.displayOrder = const [],
-    this.groupsByKey = const {},
+    this.selectedSourceId,
   });
 
   final String query;
-  final List<OfflineLibraryItemData> items;
+  final List<Content> results;
   final int totalResults;
   final Map<String, String> offlineSizes;
   final int storageUsage;
   final String formattedStorageUsage;
+
+  // NEW: Pagination fields
   final int currentPage;
   final int totalPages;
   final bool hasMore;
   final bool isLoadingMore;
-  final String? selectedFilterId;
-  final OfflineLibrarySortMode sortMode;
-  final List<OfflineSourceFilterOption> availableFilters;
-  final List<String> displayOrder;
-  final Map<String, OfflineLibraryGroupData> groupsByKey;
 
-  List<Content> get results =>
-      items.map((item) => item.content).toList(growable: false);
+  // NEW: Filter field
+  final String? selectedSourceId;
 
-  Map<String, OfflineLibraryItemData> get itemsById => {
-        for (final item in items) item.stableId: item,
-      };
+  @override
+  List<Object?> get props => [
+        query,
+        results,
+        totalResults,
+        offlineSizes,
+        storageUsage,
+        formattedStorageUsage,
+        currentPage,
+        totalPages,
+        hasMore,
+        isLoadingMore,
+        selectedSourceId,
+      ];
 
+  /// Check if this is a search result or all content
   bool get isSearchResult => query.isNotEmpty;
 
-  int get visibleGroupCount => displayOrder.length;
-
-  OfflineSourceFilterOption? get selectedFilterOption {
-    if (selectedFilterId == null) {
-      return null;
-    }
-    for (final filter in availableFilters) {
-      if (filter.id == selectedFilterId) {
-        return filter;
-      }
-    }
-    return null;
-  }
-
+  /// Get display title for the results
   String get displayTitle {
     if (isSearchResult) {
+      if (selectedSourceId != null) {
+        return 'Results for "$query" in $selectedSourceId';
+      }
       return 'Search Results for "$query"';
+    } else {
+      if (selectedSourceId != null) {
+        return 'Offline Content ($selectedSourceId)';
+      }
+      return 'Offline Content';
     }
-    return 'Offline Content';
   }
 
+  /// Get results summary
   String get resultsSummary {
     if (totalResults == 0) {
       return 'No content found';
-    }
-    if (visibleGroupCount > 0 && visibleGroupCount != totalResults) {
-      return '$visibleGroupCount groups • $totalResults items';
-    }
-    if (totalResults == 1) {
+    } else if (totalResults == 1) {
       return '1 item found';
+    } else {
+      return '$totalResults items found';
     }
-    return '$totalResults items found';
   }
 
+  /// Create a copy with updated fields
   OfflineSearchLoaded copyWith({
     String? query,
-    List<OfflineLibraryItemData>? items,
+    List<Content>? results,
     int? totalResults,
     Map<String, String>? offlineSizes,
     int? storageUsage,
@@ -111,16 +110,12 @@ class OfflineSearchLoaded extends OfflineSearchState {
     int? totalPages,
     bool? hasMore,
     bool? isLoadingMore,
-    String? selectedFilterId,
-    bool clearSelectedFilter = false,
-    OfflineLibrarySortMode? sortMode,
-    List<OfflineSourceFilterOption>? availableFilters,
-    List<String>? displayOrder,
-    Map<String, OfflineLibraryGroupData>? groupsByKey,
+    String? selectedSourceId,
+    bool clearSourceId = false,
   }) {
     return OfflineSearchLoaded(
       query: query ?? this.query,
-      items: items ?? this.items,
+      results: results ?? this.results,
       totalResults: totalResults ?? this.totalResults,
       offlineSizes: offlineSizes ?? this.offlineSizes,
       storageUsage: storageUsage ?? this.storageUsage,
@@ -130,34 +125,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
       totalPages: totalPages ?? this.totalPages,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      selectedFilterId: clearSelectedFilter
-          ? null
-          : (selectedFilterId ?? this.selectedFilterId),
-      sortMode: sortMode ?? this.sortMode,
-      availableFilters: availableFilters ?? this.availableFilters,
-      displayOrder: displayOrder ?? this.displayOrder,
-      groupsByKey: groupsByKey ?? this.groupsByKey,
+      selectedSourceId:
+          clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
     );
   }
-
-  @override
-  List<Object?> get props => [
-        query,
-        items,
-        totalResults,
-        offlineSizes,
-        storageUsage,
-        formattedStorageUsage,
-        currentPage,
-        totalPages,
-        hasMore,
-        isLoadingMore,
-        selectedFilterId,
-        sortMode,
-        availableFilters,
-        displayOrder,
-        groupsByKey,
-      ];
 }
 
 /// State when no offline content found
@@ -171,11 +142,13 @@ class OfflineSearchEmpty extends OfflineSearchState {
   @override
   List<Object?> get props => [query];
 
+  /// Get empty message based on query
   String get emptyMessage {
     if (query.isEmpty) {
       return 'No offline content available.\nDownload some content to read offline.';
+    } else {
+      return 'No offline content found for "$query".\nTry a different search term.';
     }
-    return 'No offline content found for "$query".\nTry a different search term.';
   }
 }
 

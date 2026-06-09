@@ -1108,28 +1108,24 @@ class OfflineContentManager {
     return allDownloads;
   }
 
-  /// Extract raw sourceId from folder path.
-  ///
-  /// Supported layouts:
-  /// - `.../nhasix/{sourceId}/{contentId}/...`
-  /// - `.../nhasix/{contentId}/...` -> legacy source-less local folder
+  /// Extract sourceId from folder path.
+  /// Path pattern: .../nhasix/{sourceId}/{contentId}/...
+  /// Returns extracted sourceId or defaultSourceId as fallback.
   String _extractSourceIdFromPath(String contentPath) {
     try {
       final segments = contentPath.split(path.separator);
       final nhasixIndex = segments.indexOf('nhasix');
-      if (nhasixIndex != -1 && nhasixIndex + 2 < segments.length) {
+      if (nhasixIndex != -1 && nhasixIndex + 1 < segments.length) {
         final potentialSource = segments[nhasixIndex + 1];
-        if (potentialSource.isNotEmpty) {
+        // Only return if it's a known source (not a content ID)
+        if (AppStorage.knownSources.contains(potentialSource)) {
           return potentialSource;
         }
-      }
-      if (nhasixIndex != -1 && nhasixIndex + 1 < segments.length) {
-        return 'local';
       }
     } catch (e) {
       _logger.w('Error extracting sourceId from path: $e');
     }
-    return 'local';
+    return AppStorage.defaultSourceId;
   }
 
   /// Extract sourceId from metadata or fall back to path extraction.
@@ -1137,24 +1133,12 @@ class OfflineContentManager {
     Map<String, dynamic>? metadata,
     String contentPath,
   ) {
-    if (metadata != null) {
-      final rawSource = metadata['source'] ??
-          metadata['sourceId'] ??
-          metadata['source_id'] ??
-          metadata['rawSourceId'];
-      final normalizedSource = rawSource?.toString().trim();
-      if (normalizedSource != null && normalizedSource.isNotEmpty) {
-        return normalizedSource;
-      }
+    // Try metadata first (v2 format has 'source' field)
+    if (metadata != null && metadata['source'] != null) {
+      return metadata['source'] as String;
     }
+    // Fallback to path extraction
     return _extractSourceIdFromPath(contentPath);
-  }
-
-  String resolveStoredSourceId({
-    Map<String, dynamic>? metadata,
-    required String contentPath,
-  }) {
-    return _extractSourceIdFromMetadataOrPath(metadata, contentPath);
   }
 
   /// Search in offline content
@@ -1283,10 +1267,9 @@ class OfflineContentManager {
               'coverUrl':
                   fileMetadata['coverUrl'] ?? fileMetadata['cover_url'] ?? '',
               'source': 'metadata_file',
-              'sourceId': fileMetadata['source'] ??
-                  fileMetadata['sourceId'] ??
+              'sourceId': fileMetadata['sourceId'] ??
                   fileMetadata['source_id'] ??
-                  'local',
+                  SourceType.nhentai.id,
             };
             // Cache the result
             _metadataCache[contentId] = metadata;
@@ -1363,126 +1346,6 @@ class OfflineContentManager {
   Future<List<Content>> getAllOfflineContentFromFileSystem(
       String loadPath) async {
     return await scanBackupFolder(loadPath);
-  }
-
-  Future<String?> getBackupRootPath() async {
-    try {
-      final downloadsPath = await _getDownloadsDirectory();
-      final backupRoot = path.join(downloadsPath, AppStorage.backupFolderName);
-      final backupDir = Directory(backupRoot);
-      if (await backupDir.exists()) {
-        return backupDir.path;
-      }
-      return null;
-    } catch (e) {
-      _logger.w('Failed to resolve backup root path: $e');
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> getRawOfflineMetadata({
-    String? contentId,
-    String? contentPath,
-  }) async {
-    final resolvedPath = contentPath ??
-        (contentId != null ? await getOfflineContentPath(contentId) : null);
-    if (resolvedPath == null || resolvedPath.trim().isEmpty) {
-      return null;
-    }
-    final metadataPath = path.join(resolvedPath, 'metadata.json');
-    return _readMetadataJson(metadataPath);
-  }
-
-  Future<int> resolveOfflineImageCount({
-    String? contentId,
-    String? contentPath,
-    Map<String, dynamic>? metadata,
-  }) async {
-    final resolvedPath = contentPath ??
-        (contentId != null ? await getOfflineContentPath(contentId) : null);
-    if (metadata != null) {
-      final candidates = <dynamic>[
-        metadata['total_pages'],
-        metadata['pageCount'],
-        metadata['page_count'],
-        metadata['totalImages'],
-        metadata['total_images'],
-        metadata['pages_downloaded'],
-      ];
-      for (final candidate in candidates) {
-        final value = candidate is num
-            ? candidate.toInt()
-            : int.tryParse(candidate?.toString() ?? '');
-        if (value != null && value > 0) {
-          return value;
-        }
-      }
-    }
-
-    if (resolvedPath == null || resolvedPath.trim().isEmpty) {
-      return 0;
-    }
-
-    final imageDirectories = <Directory>[
-      Directory(path.join(resolvedPath, AppStorage.imagesSubfolder)),
-      Directory(resolvedPath),
-    ];
-
-    for (final directory in imageDirectories) {
-      if (!await directory.exists()) {
-        continue;
-      }
-
-      final files = await directory
-          .list(recursive: false)
-          .where((entity) => entity is File && _isImageFile(entity.path))
-          .length;
-      if (files > 0) {
-        return files;
-      }
-    }
-
-    return 0;
-  }
-
-  Future<String?> resolveOfflineStoragePath({
-    String? contentId,
-    String? downloadPath,
-    String? contentPath,
-    List<String> imageUrls = const [],
-  }) async {
-    if (downloadPath != null && downloadPath.trim().isNotEmpty) {
-      final downloadDir = Directory(downloadPath);
-      if (await downloadDir.exists()) {
-        return downloadDir.path;
-      }
-    }
-
-    final resolvedPath = contentPath ??
-        (contentId != null ? await getOfflineContentPath(contentId) : null);
-    if (resolvedPath != null && resolvedPath.trim().isNotEmpty) {
-      final resolvedDir = Directory(resolvedPath);
-      if (await resolvedDir.exists()) {
-        return resolvedDir.path;
-      }
-    }
-
-    for (final imageUrl in imageUrls) {
-      if (!imageUrl.startsWith('/')) {
-        continue;
-      }
-      final file = File(imageUrl);
-      if (!await file.exists()) {
-        continue;
-      }
-      final parentDir = file.parent;
-      if (path.basename(parentDir.path) == AppStorage.imagesSubfolder) {
-        return parentDir.parent.path;
-      }
-      return parentDir.path;
-    }
-
-    return null;
   }
 
   /// Clean up orphaned offline files
@@ -1845,21 +1708,11 @@ class OfflineContentManager {
             final sourceContents = await _scanContentFolder(entity.path);
             contentWithTimes.addAll(sourceContents);
           } else {
-            // Could be a legacy content folder or an uninstalled-source root.
-            // Try direct content parsing first, then fall back to nested scan
-            // so raw source folders like `nhasix/mangafire/{contentId}` stay
-            // discoverable even when the source config is no longer installed.
+            // Could be legacy content folder, try to scan it directly
             final contentResult =
                 await _tryParseContentFolder(entity, folderName);
             if (contentResult != null) {
               contentWithTimes.add(contentResult);
-              continue;
-            }
-
-            final nestedContents = await _scanContentFolder(entity.path);
-            if (nestedContents.isNotEmpty) {
-              _logger.d('Scanning uninstalled source-like folder: $folderName');
-              contentWithTimes.addAll(nestedContents);
             }
           }
         }
@@ -1876,32 +1729,6 @@ class OfflineContentManager {
           error: e, stackTrace: stackTrace);
       return [];
     }
-  }
-
-  Future<bool> _looksLikeDirectContentFolder(String folderPath) async {
-    final metadataFile = File(path.join(folderPath, 'metadata.json'));
-    if (await metadataFile.exists()) {
-      return true;
-    }
-
-    final imagesDir = Directory(path.join(folderPath, 'images'));
-    if (await imagesDir.exists()) {
-      return true;
-    }
-
-    try {
-      await for (final entity in Directory(folderPath).list(recursive: false)) {
-        if (entity is File &&
-            _isImageFile(entity.path) &&
-            path.basename(entity.path) != 'metadata.json') {
-          return true;
-        }
-      }
-    } catch (_) {
-      return false;
-    }
-
-    return false;
   }
 
   /// Helper to scan a specific source folder (e.g. nhentai/) for content
@@ -2386,21 +2213,16 @@ class OfflineContentManager {
           if (entity is Directory) {
             final folderName = path.basename(entity.path);
             if (!AppStorage.knownSources.contains(folderName)) {
-              final looksLikeContent =
-                  await _looksLikeDirectContentFolder(entity.path);
-              if (!looksLikeContent) {
-                continue;
-              }
               // Potential legacy content - attempt migration
-              // This moves `nhasix/{id}` into explicit local bucket instead of
-              // pretending it belongs to default installed source.
+              // This moves nhasix/{id} -> nhasix/nhentai/{id}
               final migrated = await DownloadStorageUtils.migrateToSourceFolder(
                 folderName,
-                sourceId: 'local',
+                sourceId:
+                    AppStorage.defaultSourceId, // Default for legacy content
               );
               if (migrated) {
                 _logger.i(
-                    'Auto-migrated legacy content $folderName to local source');
+                    'Auto-migrated legacy content $folderName to nhentai source');
               }
             }
           }
@@ -2411,16 +2233,6 @@ class OfflineContentManager {
     }
 
     final contents = await scanBackupFolder(backupPath);
-    final existingDownloads = await _loadCompletedDownloadsForSync();
-    final existingById = {
-      for (final download in existingDownloads) download.contentId: download,
-    };
-    final existingByPath = <String, DownloadStatus>{
-      for (final download in existingDownloads)
-        if (_normalizeSyncPath(download.downloadPath) != null)
-          _normalizeSyncPath(download.downloadPath)!: download,
-    };
-
     int syncedCount = 0;
     int updatedCount = 0;
     final int total = contents.length;
@@ -2430,64 +2242,16 @@ class OfflineContentManager {
     onProgress?.call(0, total);
 
     for (final content in contents) {
+      final existing = await _userDataRepository.getDownloadStatus(content.id);
+
       // Use derived content path from entity (replaces duplicated logic)
       final contentDir = content.derivedContentPath;
-      final normalizedContentPath = _normalizeSyncPath(contentDir);
-      var existing = existingById[content.id] ??
-          (normalizedContentPath != null
-              ? existingByPath[normalizedContentPath]
-              : null);
-      existing ??= await _userDataRepository.getDownloadStatus(content.id);
-      if (existing != null) {
-        existingById.putIfAbsent(content.id, () => existing!);
-        final existingPathKey = _normalizeSyncPath(existing.downloadPath);
-        if (existingPathKey != null) {
-          existingByPath.putIfAbsent(existingPathKey, () => existing!);
-        }
-      }
-
       int fileSize = 0;
       if (content.imageUrls.isNotEmpty) {
         for (final imgPath in content.imageUrls) {
           final file = File(imgPath);
           if (await file.exists()) fileSize += await file.length();
         }
-      }
-
-      if (existing != null &&
-          existing.contentId != content.id &&
-          normalizedContentPath != null) {
-        final legacyContentId = existing.contentId;
-        final rekeyedStatus = existing.copyWith(
-          contentId: content.id,
-          totalPages:
-              existing.totalPages > 0 ? existing.totalPages : content.pageCount,
-          downloadedPages: existing.downloadedPages > 0
-              ? existing.downloadedPages
-              : content.pageCount,
-          downloadPath: contentDir ?? existing.downloadPath,
-          fileSize: fileSize > 0 ? fileSize : existing.fileSize,
-          title: content.title.isNotEmpty ? content.title : existing.title,
-          sourceId: content.sourceId.trim().isNotEmpty
-              ? content.sourceId
-              : existing.sourceId,
-          coverUrl: content.coverUrl.isNotEmpty
-              ? content.coverUrl
-              : existing.coverUrl,
-        );
-        await _userDataRepository.saveDownloadStatus(rekeyedStatus);
-        await _userDataRepository.deleteDownloadStatus(existing.contentId);
-
-        existingById
-          ..remove(legacyContentId)
-          ..[content.id] = rekeyedStatus;
-        existingByPath[normalizedContentPath] = rekeyedStatus;
-
-        existing = rekeyedStatus;
-        updatedCount++;
-        _logger.i(
-          'Rekeyed existing download entry $legacyContentId -> ${content.id}',
-        );
       }
 
       if (existing == null) {
@@ -2502,23 +2266,16 @@ class OfflineContentManager {
           coverUrl: content.coverUrl,
         );
         await _userDataRepository.saveDownloadStatus(status);
-        existingById[content.id] = status;
-        if (normalizedContentPath != null) {
-          existingByPath[normalizedContentPath] = status;
-        }
         syncedCount++;
         _logger.i('Synced new content: ${content.id}');
-      } else {
+      } else if (existing.downloadPath != null) {
         // DUPLICATE/EXISTING: Check for updates or path fixes
-        final existingPath = existing.downloadPath;
+        final existingDir = Directory(existing.downloadPath!);
         bool needsUpdate = false;
         var updatedStatus = existing;
 
         // Check 1: Path broken?
-        if (contentDir != null &&
-            (existingPath == null ||
-                existingPath.isEmpty ||
-                !await Directory(existingPath).exists())) {
+        if (!await existingDir.exists() && contentDir != null) {
           updatedStatus = updatedStatus.copyWith(downloadPath: contentDir);
           needsUpdate = true;
           _logger.i('Updated broken path for: ${content.id}');
@@ -2531,8 +2288,11 @@ class OfflineContentManager {
           needsUpdate = true;
         }
 
-        if ((existing.sourceId ?? '').trim() != content.sourceId.trim() &&
-            content.sourceId.trim().isNotEmpty) {
+        if ((existing.sourceId == null ||
+                existing.sourceId!.isEmpty ||
+                existing.sourceId == 'nhentai') &&
+            content.sourceId.isNotEmpty &&
+            content.sourceId != 'nhentai') {
           updatedStatus = updatedStatus.copyWith(sourceId: content.sourceId);
           needsUpdate = true;
         }
@@ -2543,30 +2303,8 @@ class OfflineContentManager {
           needsUpdate = true;
         }
 
-        if (existing.fileSize <= 0 && fileSize > 0) {
-          updatedStatus = updatedStatus.copyWith(fileSize: fileSize);
-          needsUpdate = true;
-        }
-
-        if ((existing.totalPages <= 0 || existing.downloadedPages <= 0) &&
-            content.pageCount > 0) {
-          updatedStatus = updatedStatus.copyWith(
-            totalPages: existing.totalPages > 0
-                ? existing.totalPages
-                : content.pageCount,
-            downloadedPages: existing.downloadedPages > 0
-                ? existing.downloadedPages
-                : content.pageCount,
-          );
-          needsUpdate = true;
-        }
-
         if (needsUpdate) {
           await _userDataRepository.saveDownloadStatus(updatedStatus);
-          existingById[content.id] = updatedStatus;
-          if (normalizedContentPath != null) {
-            existingByPath[normalizedContentPath] = updatedStatus;
-          }
           updatedCount++;
           _logger.i('Updated existing entry metadata/path for: ${content.id}');
         }
@@ -2583,40 +2321,6 @@ class OfflineContentManager {
 
     _logger.i('Sync complete: $syncedCount new, $updatedCount updated');
     return {'synced': syncedCount, 'updated': updatedCount};
-  }
-
-  Future<List<DownloadStatus>> _loadCompletedDownloadsForSync() async {
-    const batchSize = 500;
-    final downloads = <DownloadStatus>[];
-    int offset = 0;
-
-    while (true) {
-      final page = await _userDataRepository.getAllDownloads(
-        state: DownloadState.completed,
-        limit: batchSize,
-        offset: offset,
-      );
-      if (page.isEmpty) {
-        break;
-      }
-
-      downloads.addAll(page);
-      if (page.length < batchSize) {
-        break;
-      }
-
-      offset += batchSize;
-    }
-
-    return downloads;
-  }
-
-  String? _normalizeSyncPath(String? rawPath) {
-    final trimmedPath = rawPath?.trim();
-    if (trimmedPath == null || trimmedPath.isEmpty) {
-      return null;
-    }
-    return path.normalize(trimmedPath);
   }
 
   /// Delete offline content and free up storage
