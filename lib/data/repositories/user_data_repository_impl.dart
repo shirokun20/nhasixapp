@@ -328,6 +328,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
     String? sourceId,
     int limit = 20,
     int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   }) async {
     try {
       _logger.i(
@@ -338,6 +340,8 @@ class UserDataRepositoryImpl implements UserDataRepository {
         sourceId: sourceId,
         limit: limit,
         offset: offset,
+        orderBy: orderBy,
+        descending: descending,
       );
     } catch (e, stackTrace) {
       _logger.e('Failed to search downloads', error: e, stackTrace: stackTrace);

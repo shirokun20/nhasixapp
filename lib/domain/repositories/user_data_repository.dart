@@ -157,6 +157,8 @@ abstract class UserDataRepository {
     String? sourceId,
     int limit = 20,
     int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   });
 
   /// Get search results count

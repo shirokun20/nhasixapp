@@ -36,6 +36,8 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.selectedSourceId,
+    this.orderBy = 'created_at',
+    this.descending = true,
   });
 
   final String query;
@@ -53,6 +55,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
 
   // NEW: Filter field
   final String? selectedSourceId;
+
+  // NEW: Sorting fields
+  final String orderBy;
+  final bool descending;
 
   @override
   List<Object?> get props => [
@@ -111,6 +117,8 @@ class OfflineSearchLoaded extends OfflineSearchState {
     bool? hasMore,
     bool? isLoadingMore,
     String? selectedSourceId,
+    String? orderBy,
+    bool? descending,
     bool clearSourceId = false,
   }) {
     return OfflineSearchLoaded(
@@ -127,6 +135,8 @@ class OfflineSearchLoaded extends OfflineSearchState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       selectedSourceId:
           clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
+      orderBy: orderBy ?? this.orderBy,
+      descending: descending ?? this.descending,
     );
   }
 }

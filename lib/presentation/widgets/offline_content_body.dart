@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
@@ -41,6 +44,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   late final TagBlacklistService _tagBlacklistService;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  bool _isFabVisible = true;
 
   @override
   void initState() {
@@ -74,6 +79,21 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     }
 
     unawaited(_tagBlacklistService.syncAllAvailableSources());
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels > 100) {
+        // Hide FAB on scroll down, show on scroll up
+        if (_scrollController.position.userScrollDirection ==
+            ScrollDirection.reverse) {
+          if (_isFabVisible) setState(() => _isFabVisible = false);
+        } else if (_scrollController.position.userScrollDirection ==
+            ScrollDirection.forward) {
+          if (!_isFabVisible) setState(() => _isFabVisible = true);
+        }
+      } else {
+        if (!_isFabVisible) setState(() => _isFabVisible = true);
+      }
+    });
   }
 
   @override
@@ -81,6 +101,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     _tagBlacklistService.removeListener(_handleBlacklistChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -97,36 +118,285 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   Widget build(BuildContext context) {
     context.watch<SettingsCubit>().state;
 
-    return Column(
-      children: [
-        _buildSearchBar(),
-        _buildFilterChips(),
-        Expanded(
-          child: BlocListener<DownloadBloc, DownloadBlocState>(
-            listenWhen: (previous, current) {
-              // Only trigger if completed downloads count changes (success or delete)
-              // This filters out frequent progress updates
-              if (previous is DownloadLoaded && current is DownloadLoaded) {
-                return previous.completedDownloads.length !=
-                    current.completedDownloads.length;
-              }
-              return true;
-            },
-            listener: (context, downloadState) {
-              // Auto-refresh when a download completes
-              if (downloadState is DownloadLoaded) {
-                if (_searchController.text.isEmpty) {
-                  _offlineSearchCubit.getAllOfflineContent();
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: BlocListener<DownloadBloc, DownloadBlocState>(
+              listenWhen: (previous, current) {
+                // Only trigger if completed downloads count changes (success or delete)
+                // This filters out frequent progress updates
+                if (previous is DownloadLoaded && current is DownloadLoaded) {
+                  return previous.completedDownloads.length !=
+                      current.completedDownloads.length;
                 }
-              }
-            },
-            child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-              bloc: _offlineSearchCubit,
-              builder: (context, state) => _buildContent(state),
+                return true;
+              },
+              listener: (context, downloadState) {
+                // Auto-refresh when a download completes
+                if (downloadState is DownloadLoaded) {
+                  if (_searchController.text.isEmpty) {
+                    _offlineSearchCubit.getAllOfflineContent();
+                  }
+                }
+              },
+              child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+                bloc: _offlineSearchCubit,
+                builder: (context, state) => _buildContent(state),
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: AnimatedSlide(
+        duration: const Duration(milliseconds: 300),
+        offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _isFabVisible ? 1.0 : 0.0,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.tertiary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _showSortFilterModal,
+                borderRadius: BorderRadius.circular(30),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tune_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sort & Filter',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  void _showSortFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent, // For floating effect
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.65,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  )
+                ],
+              ),
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Library Options',
+                      style: TextStyleConst.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      height: 44,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: TabBar(
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        splashBorderRadius: BorderRadius.circular(22),
+                        indicator: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          color: colorScheme.primary,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        labelColor: colorScheme.onPrimary,
+                        unselectedLabelColor: colorScheme.onSurfaceVariant,
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                        dividerColor: Colors.transparent,
+                        tabs: const [
+                          Tab(text: 'Sort'),
+                          Tab(text: 'Filter'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildSortTab(scrollController),
+                          _buildFilterTab(scrollController),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSortTab(ScrollController scrollController) {
+    return BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+      bloc: _offlineSearchCubit,
+      builder: (context, state) {
+        String currentOrderBy = 'created_at';
+        bool currentDescending = true;
+        if (state is OfflineSearchLoaded) {
+          currentOrderBy = state.orderBy;
+          currentDescending = state.descending;
+        }
+
+        Widget buildSortTile(String title, String orderBy, bool descending, IconData icon) {
+          final isSelected = currentOrderBy == orderBy && currentDescending == descending;
+          final colorScheme = Theme.of(context).colorScheme;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Material(
+              color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.5) : colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  _offlineSearchCubit.changeSorting(orderBy: orderBy, descending: descending);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? colorScheme.primary : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? colorScheme.primary.withValues(alpha: 0.2) : colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, 
+                            size: 20, 
+                            color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(Icons.check_circle_rounded, color: colorScheme.primary)
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            buildSortTile('A - Z', 'title', false, Icons.sort_by_alpha_rounded),
+            buildSortTile('Z - A', 'title', true, Icons.sort_by_alpha_rounded),
+            buildSortTile('New to Old', 'created_at', true, Icons.new_releases_rounded),
+            buildSortTile('Old to New', 'created_at', false, Icons.history_rounded),
+            buildSortTile('Pages (Ascending)', 'total_pages', false, Icons.format_list_numbered_rounded),
+            buildSortTile('Pages (Descending)', 'total_pages', true, Icons.format_list_numbered_rtl_rounded),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterTab(ScrollController scrollController) {
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildFilterChips(),
+      ),
     );
   }
 
@@ -239,67 +509,71 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
 
   Widget _buildFilterChips() {
     return BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
+      bloc: _offlineSearchCubit,
       builder: (context, state) {
         String? selectedSourceId;
         if (state is OfflineSearchLoaded) {
           selectedSourceId = state.selectedSourceId;
+        } else {
+          selectedSourceId = getIt<SharedPreferences>().getString('offline_selected_source_filter');
         }
 
         final remoteConfig = getIt<RemoteConfigService>();
         final sourceConfigs = remoteConfig.getAllSourceConfigs();
 
-        return Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildFilterChip(
-                context,
-                label: AppLocalizations.of(context)?.all ?? 'All',
-                isSelected: selectedSourceId == null,
-                onSelected: (selected) {
-                  if (selected) _offlineSearchCubit.filterBySource(null);
-                },
-              ),
-              const SizedBox(width: 8),
-              ...sourceConfigs.map((config) {
-                final sourceId = config.source;
-                final displayName = config.ui?.displayName ?? sourceId;
-                final themeColor = config.ui?.activeColor;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildFilterChip(
+              context,
+              label: AppLocalizations.of(context)?.all ?? 'All',
+              isSelected: selectedSourceId == null,
+              onSelected: (selected) {
+                if (selected) _offlineSearchCubit.filterBySource(null);
+              },
+            ),
+            _buildFilterChip(
+              context,
+              label: 'Local',
+              isSelected: selectedSourceId == 'local',
+              onSelected: (selected) {
+                if (selected) _offlineSearchCubit.filterBySource('local');
+              },
+            ),
+            ...sourceConfigs.map((config) {
+              final sourceId = config.source;
+              final displayName = config.ui?.displayName ?? sourceId;
+              final themeColor = config.ui?.activeColor;
 
-                Color? chipColor;
-                if (themeColor != null) {
-                  try {
-                    chipColor =
-                        Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
-                  } catch (e) {
-                    // Fallback if color parsing fails
-                  }
+              Color? chipColor;
+              if (themeColor != null) {
+                try {
+                  chipColor =
+                      Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+                } catch (e) {
+                  // Fallback if color parsing fails
                 }
+              }
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildFilterChip(
-                    context,
-                    label: displayName,
-                    isSelected: selectedSourceId == sourceId,
-                    onSelected: (selected) {
-                      if (selected) {
-                        _offlineSearchCubit.filterBySource(sourceId);
-                      }
-                    },
-                    color: chipColor?.withValues(alpha: 0.2),
-                    selectedColor: chipColor,
-                    textColor:
-                        (selectedSourceId == sourceId && chipColor != null)
-                            ? Colors.white
-                            : null,
-                  ),
-                );
-              }),
-            ],
-          ),
+              return _buildFilterChip(
+                context,
+                label: displayName,
+                isSelected: selectedSourceId == sourceId,
+                onSelected: (selected) {
+                  if (selected) {
+                    _offlineSearchCubit.filterBySource(sourceId);
+                  }
+                },
+                color: chipColor?.withValues(alpha: 0.2),
+                selectedColor: chipColor,
+                textColor:
+                    (selectedSourceId == sourceId && chipColor != null)
+                        ? Colors.white
+                        : null,
+              );
+            }),
+          ],
         );
       },
     );
@@ -315,27 +589,54 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     Color? textColor,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = selectedColor ?? colorScheme.primary;
 
-    return FilterChip(
-      label: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: textColor ??
-              (isSelected ? colorScheme.onPrimary : colorScheme.onSurface),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onSelected(!isSelected),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: baseColor.withValues(alpha: 0.2),
+        highlightColor: baseColor.withValues(alpha: 0.1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? baseColor.withValues(alpha: 0.15) 
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? baseColor : colorScheme.outlineVariant.withValues(alpha: 0.5),
+              width: isSelected ? 1.5 : 1,
+            ),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: baseColor.withValues(alpha: 0.2),
+                blurRadius: 8,
+                spreadRadius: 1,
+              )
+            ] : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                Icon(Icons.check_circle_rounded, size: 16, color: baseColor),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  color: isSelected ? baseColor : colorScheme.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  letterSpacing: 0.5,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      selected: isSelected,
-      onSelected: onSelected,
-      backgroundColor: color ?? colorScheme.surfaceContainerHighest,
-      selectedColor: selectedColor ?? colorScheme.primary,
-      checkmarkColor: textColor ?? colorScheme.onPrimary,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      visualDensity: VisualDensity.compact,
-      side: BorderSide.none,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
       ),
     );
   }
@@ -517,6 +818,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     return false;
                   },
                   child: GridView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     gridDelegate:
                         ResponsiveGridDelegate.createStandardGridDelegate(
@@ -623,6 +925,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       }
     }
     final sizeText = OfflineContentManager.formatStorageSize(totalBytes);
+    final contentPath = await offlineManager.getOfflineContentPath(content.id);
 
     if (!context.mounted) return;
 
@@ -704,6 +1007,44 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 ),
               ),
               const Divider(),
+              if (contentPath != null) ...[
+                ListTile(
+                  leading: Icon(Icons.folder_open_rounded, color: colorScheme.secondary),
+                  title: Text(
+                    contentPath,
+                    style: TextStyleConst.labelSmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded, size: 20),
+                        tooltip: 'Copy path',
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: contentPath));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Path copied to clipboard')),
+                          );
+                          Navigator.pop(bottomSheetContext);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                        tooltip: 'Open in explorer',
+                        onPressed: () {
+                          OpenFile.open(contentPath);
+                          Navigator.pop(bottomSheetContext);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+              ],
               FutureBuilder<bool>(
                 future: _checkPdfExists(content.id),
                 builder: (context, snapshot) {
