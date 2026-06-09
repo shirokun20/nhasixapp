@@ -515,6 +515,9 @@ class LocalDataSource {
       // Map orderBy field names to actual column names
       final columnName = _mapOrderByField(orderBy);
       final orderDirection = descending ? 'DESC' : 'ASC';
+      final String orderClause = columnName == 'title' 
+          ? 'COALESCE(title, id) $orderDirection'
+          : '$columnName $orderDirection';
 
       // Use raw query with GROUP BY to prevent duplicates
       // Group by id to ensure only one entry per content (in case of duplicate source_id entries)
@@ -538,7 +541,7 @@ class LocalDataSource {
         FROM downloads
         WHERE $whereClause
         GROUP BY id
-        ORDER BY $columnName $orderDirection
+        ORDER BY $orderClause
         LIMIT ? OFFSET ?
       ''';
 
@@ -563,6 +566,10 @@ class LocalDataSource {
         return 'end_time';
       case 'content_id':
         return 'id';
+      case 'title':
+        return 'title'; // COALESCE(title, id) will be used in the query directly if needed
+      case 'total_pages':
+        return 'total_pages';
       default:
         return 'start_time'; // Default to start_time
     }
@@ -664,6 +671,8 @@ class LocalDataSource {
     String? sourceId,
     int limit = 20,
     int offset = 0,
+    String orderBy = 'created_at',
+    bool descending = true,
   }) async {
     try {
       final db = await _getSafeDatabase();
@@ -692,6 +701,12 @@ class LocalDataSource {
         whereArgs.add(sourceId.toLowerCase());
       }
 
+      final String columnName = _mapOrderByField(orderBy);
+      final String orderDirection = descending ? 'DESC' : 'ASC';
+      final String orderClause = columnName == 'title' 
+          ? 'COALESCE(title, id) $orderDirection'
+          : '$columnName $orderDirection';
+
       // Use raw query with GROUP BY to prevent duplicates
       final sql = '''
         SELECT
@@ -713,7 +728,7 @@ class LocalDataSource {
         FROM downloads
         WHERE $whereClause
         GROUP BY id
-        ORDER BY start_time DESC
+        ORDER BY $orderClause
         LIMIT ? OFFSET ?
       ''';
 

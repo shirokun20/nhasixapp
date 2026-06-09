@@ -131,6 +131,27 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
+  /// Change sorting method
+  Future<void> changeSorting({required String orderBy, required bool descending}) async {
+    final currentState = state;
+    if (currentState is! OfflineSearchLoaded) return;
+
+    // Emit updated state with new sorting
+    emit(currentState.copyWith(
+      orderBy: orderBy,
+      descending: descending,
+      // Clear results to trigger a fresh load
+      results: [],
+    ));
+
+    // Reload content
+    if (currentState.query.isNotEmpty) {
+      await searchOfflineContent(currentState.query);
+    } else {
+      await getAllOfflineContent();
+    }
+  }
+
   /// Search in offline content - DATABASE ONLY (optimized)
   ///
   /// [query] - Search query string
@@ -159,6 +180,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
         effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
+      }
+
+      // Determine sorting BEFORE state changes to loading
+      String currentOrderBy = 'created_at';
+      bool currentDescending = true;
+      if (state is OfflineSearchLoaded) {
+        currentOrderBy = (state as OfflineSearchLoaded).orderBy;
+        currentDescending = (state as OfflineSearchLoaded).descending;
       }
 
       // If loading more, check current state
@@ -197,13 +226,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           ? (state as OfflineSearchLoaded).results.length
           : 0;
 
-      // Search from database with pagination
-      final dbResults = await _userDataRepository.searchDownloads(
+      // Load page from database
+      final searchResults = await _userDataRepository.searchDownloads(
         query: query,
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
         limit: pageSize,
         offset: offset,
+        orderBy: currentOrderBy,
+        descending: currentDescending,
       );
 
       if (isClosed) return;
@@ -220,7 +251,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final newOfflineSizes = <String, String>{};
       int newStorageUsage = 0;
 
-      for (final row in dbResults) {
+      for (final row in searchResults) {
         if (isClosed) return;
 
         final contentId = row['id'] as String;
@@ -307,6 +338,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         hasMore: hasMore,
         isLoadingMore: false,
         selectedSourceId: effectiveSourceId,
+        orderBy: currentOrderBy,
+        descending: currentDescending,
       ));
 
       logInfo(
@@ -389,6 +422,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         effectiveSourceId ??= _prefs.getString(_keySelectedSourceFilter);
       }
 
+      // Determine sorting BEFORE state changes to loading
+      String currentOrderBy = 'created_at';
+      bool currentDescending = true;
+      if (state is OfflineSearchLoaded) {
+        currentOrderBy = (state as OfflineSearchLoaded).orderBy;
+        currentDescending = (state as OfflineSearchLoaded).descending;
+      }
+
       // If loading more, check current state
       if (loadMore) {
         final currentState = state;
@@ -425,6 +466,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         sourceId: effectiveSourceId,
         limit: pageSize,
         offset: offset,
+        orderBy: currentOrderBy,
+        descending: currentDescending,
       );
 
       if (isClosed) return;
@@ -543,6 +586,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         hasMore: hasMore,
         isLoadingMore: false,
         selectedSourceId: effectiveSourceId,
+        orderBy: currentOrderBy,
+        descending: currentDescending,
       ));
 
       logInfo(
