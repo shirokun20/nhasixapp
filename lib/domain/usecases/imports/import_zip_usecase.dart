@@ -11,7 +11,8 @@ import '../../../domain/entities/download_status.dart';
 /// Parameters for importing a ZIP file
 class ImportZipParams {
   /// Optional progress callback: (processed, total, imageCount, currentFile)
-  final Function(int processed, int total, int imageCount, String currentFile)? onProgress;
+  final Function(int processed, int total, int imageCount, String currentFile)?
+      onProgress;
 
   const ImportZipParams({this.onProgress});
 }
@@ -55,11 +56,13 @@ class ImportZipUseCase {
 
       // Step 2: Resolve ZIP display name and build unique content ID
       final zipDisplayName = await _kuronNative.getZipDisplayName(zipUri);
-      final zipFileName = (zipDisplayName != null && zipDisplayName.trim().isNotEmpty)
-          ? zipDisplayName.trim()
-          : _extractFileNameFromUri(zipUri);
+      final zipFileName =
+          (zipDisplayName != null && zipDisplayName.trim().isNotEmpty)
+              ? zipDisplayName.trim()
+              : _extractFileNameFromUri(zipUri);
       final baseContentId = _sanitizeContentId(zipFileName);
-      final contentId = await _ensureUniqueContentId(baseContentId, sourceId: 'local');
+      final contentId =
+          await _ensureUniqueContentId(baseContentId, sourceId: 'local');
 
       _logger.i('Content ID: $contentId');
 
@@ -230,8 +233,9 @@ class ImportZipUseCase {
     var suffix = 2;
 
     while (true) {
-      final existingDir =
-          await DownloadStorageUtils.getContentDirectory(candidate, sourceId: sourceId);
+      final existingDir = await DownloadStorageUtils.getContentDirectory(
+          candidate,
+          sourceId: sourceId);
       if (!await Directory(existingDir).exists()) {
         return candidate;
       }

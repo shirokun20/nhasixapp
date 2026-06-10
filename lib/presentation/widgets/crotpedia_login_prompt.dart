@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CrotpediaLoginPrompt extends StatelessWidget {
   const CrotpediaLoginPrompt({super.key});
 

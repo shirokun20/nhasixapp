@@ -3607,5 +3607,9 @@
   "readerOpenInGallery": "在图库中打开",
   "readerPinchToZoom": "双指缩放",
   "captchaCancelled": "验证码挑战已取消或失败。",
-  "failedToOpenCaptcha": "无法打开原生验证码求解器：{error}"
+  "failedToOpenCaptcha": "无法打开原生验证码求解器：{error}",
+  "readFirstChapter": "阅读第一章",
+  "convertAllToPdf": "全部转换为 PDF",
+  "deleteSeriesConfirmation": "您确定要删除 \"{title}\" 的 {count} 个章节吗？",
+  "deleteSeriesWithCount": "删除系列 ({count})"
 }

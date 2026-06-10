@@ -4039,5 +4039,26 @@
         "type": "String"
       }
     }
+  },
+  "readFirstChapter": "Read First Chapter",
+  "convertAllToPdf": "Convert All to PDF",
+  "deleteSeriesConfirmation": "Are you sure you want to delete {count} chapters of \"{title}\"?",
+  "@deleteSeriesConfirmation": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteSeriesWithCount": "Delete Series ({count})",
+  "@deleteSeriesWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

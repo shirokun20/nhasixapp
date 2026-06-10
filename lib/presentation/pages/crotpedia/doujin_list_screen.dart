@@ -16,6 +16,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CrotpediaDoujinListScreen extends StatelessWidget {
   const CrotpediaDoujinListScreen({super.key});
 
@@ -290,7 +291,8 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    AppLocalizations.of(context)!.noResultsForQuery(_searchQuery),
+                                    AppLocalizations.of(context)!
+                                        .noResultsForQuery(_searchQuery),
                                     style: TextStyleConst.bodyLarge.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                     ),
@@ -471,11 +473,13 @@ class _DoujinListTile extends StatelessWidget {
             sourceId: SourceType.crotpedia.id);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.cannotParseSlug(doujin.url))));
+            content: Text(
+                AppLocalizations.of(context)!.cannotParseSlug(doujin.url))));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.errorParsingUrl(doujin.url))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(AppLocalizations.of(context)!.errorParsingUrl(doujin.url))));
     }
   }
 }

@@ -22,9 +22,8 @@ class TagDetailModel extends TagDetailEntity {
       count: json['count'] as int? ?? 0,
       url: json['url'] as String?,
       description: json['description'] as String?,
-      aliases: (json['aliases'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      aliases:
+          (json['aliases'] as List<dynamic>?)?.map((e) => e as String).toList(),
     );
   }
 

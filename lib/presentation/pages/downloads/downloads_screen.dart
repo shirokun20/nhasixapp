@@ -178,7 +178,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     .add(const DownloadToggleSelectionModeEvent()),
               ),
               title: Text(
-                AppLocalizations.of(context)!.nSelected(state.selectedItems.length),
+                AppLocalizations.of(context)!
+                    .nSelected(state.selectedItems.length),
                 style: TextStyleConst.headlineSmall.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
@@ -229,7 +230,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                       .add(const DownloadRefreshEvent());
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(AppLocalizations.of(context)!.refreshingDownloads),
+                      content: Text(
+                          AppLocalizations.of(context)!.refreshingDownloads),
                       duration: const Duration(seconds: 1),
                     ),
                   );
@@ -845,14 +847,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          AppLocalizations.of(context)!.bulkDeleteConfirmation(state.selectedItems.length),
+          AppLocalizations.of(context)!
+              .bulkDeleteConfirmation(state.selectedItems.length),
           style: TextStyleConst.bodyMedium
               .copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyleConst.labelLarge),
+            child: Text(AppLocalizations.of(context)!.cancel,
+                style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {

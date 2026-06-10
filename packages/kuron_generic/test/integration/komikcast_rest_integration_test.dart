@@ -315,7 +315,8 @@ void main() {
       );
     });
 
-    test('chapter images supports selector object config (no map cast)', () async {
+    test('chapter images supports selector object config (no map cast)',
+        () async {
       const chapterId = '$_slug/17';
       const expectedUrl = '$_baseUrl/series/$_slug/chapters/17';
 

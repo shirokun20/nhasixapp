@@ -99,7 +99,8 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.downloadingNItems(activeCount),
+                      AppLocalizations.of(context)!
+                          .downloadingNItems(activeCount),
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,

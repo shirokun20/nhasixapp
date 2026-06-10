@@ -460,7 +460,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
                   ),
                   child: Text(
                     state is FilterDataLoaded && state.hasSelectedFilters
-                        ? AppLocalizations.of(context)!.applyWithCount(state.selectedCount)
+                        ? AppLocalizations.of(context)!
+                            .applyWithCount(state.selectedCount)
                         : AppLocalizations.of(context)!.apply,
                   ),
                 ),

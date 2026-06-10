@@ -430,8 +430,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                             : null,
                         onImport:
                             _isOffline ? () => importFromBackup(context) : null,
-                        onExport:
-                            _isOffline ? () => exportLibrary(context) : null,
                         onSearchPressed: () async {
                           // Navigate to search and wait for result
                           final result = await context.push(AppRoute.search);

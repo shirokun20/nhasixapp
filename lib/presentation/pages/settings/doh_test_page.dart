@@ -43,8 +43,8 @@ class _DohTestPageState extends State<DohTestPage> {
       final statusCode = response['statusCode'] as int;
 
       if (statusCode == 200) {
-        setState(() =>
-            _status = '✓ Success! Status: $statusCode\nProvider: ${DohProvider.getName(_selectedProvider)}');
+        setState(() => _status =
+            '✓ Success! Status: $statusCode\nProvider: ${DohProvider.getName(_selectedProvider)}');
       } else {
         setState(() => _status = '✗ Failed. Status: $statusCode');
       }
@@ -70,8 +70,8 @@ class _DohTestPageState extends State<DohTestPage> {
         },
       );
 
-      setState(() =>
-          _status = '✓ Downloaded ${bytes.length} bytes\nProvider: ${DohProvider.getName(_selectedProvider)}');
+      setState(() => _status =
+          '✓ Downloaded ${bytes.length} bytes\nProvider: ${DohProvider.getName(_selectedProvider)}');
     } catch (e) {
       setState(() => _status = '✗ Download failed: $e');
     } finally {
@@ -88,7 +88,8 @@ class _DohTestPageState extends State<DohTestPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('DNS Provider', style: Theme.of(context).textTheme.titleMedium),
+            Text('DNS Provider',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...DohProvider.all.map((provider) {
               final isSelected = _selectedProvider == provider;
@@ -105,7 +106,8 @@ class _DohTestPageState extends State<DohTestPage> {
               );
             }),
             const SizedBox(height: 24),
-            Text('Test Results', style: Theme.of(context).textTheme.titleMedium),
+            Text('Test Results',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -113,7 +115,8 @@ class _DohTestPageState extends State<DohTestPage> {
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(_status, style: const TextStyle(fontFamily: 'monospace')),
+              child: Text(_status,
+                  style: const TextStyle(fontFamily: 'monospace')),
             ),
             const SizedBox(height: 24),
             SizedBox(

@@ -3011,5 +3011,9 @@
   "readerOpenInGallery": "Buka di galeri",
   "readerPinchToZoom": "Cubit untuk zoom",
   "captchaCancelled": "Tantangan CAPTCHA dibatalkan atau gagal.",
-  "failedToOpenCaptcha": "Gagal membuka pemecah CAPTCHA bawaan: {error}"
+  "failedToOpenCaptcha": "Gagal membuka pemecah CAPTCHA bawaan: {error}",
+  "readFirstChapter": "Baca Chapter Pertama",
+  "convertAllToPdf": "Konversi Semua ke PDF",
+  "deleteSeriesConfirmation": "Apakah Anda yakin ingin menghapus {count} chapter dari \"{title}\"?",
+  "deleteSeriesWithCount": "Hapus Series ({count})"
 }

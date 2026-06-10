@@ -1174,23 +1174,10 @@ class ProgressiveThumbnailWidget extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.offline_bolt,
-                            size: 12,
-                            color: Theme.of(context).colorScheme.onTertiary,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
-                                .toUpperCase(),
-                            style: TextStyleConst.overline.copyWith(
-                              color: Theme.of(context).colorScheme.onTertiary,
-                            ),
-                          ),
-                        ],
+                      child: Icon(
+                        Icons.download_rounded,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onTertiary,
                       ),
                     ),
                   );

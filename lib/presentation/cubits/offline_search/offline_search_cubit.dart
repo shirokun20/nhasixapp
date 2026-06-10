@@ -8,8 +8,12 @@ import '../../../core/utils/download_storage_utils.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/download_status.dart';
 import '../../../domain/repositories/user_data_repository.dart';
+import '../../../domain/repositories/reader_repository.dart';
+import '../../../core/di/service_locator.dart';
 
 import '../base/base_cubit.dart';
+import '../../models/content_group.dart';
+import '../../../core/utils/title_parser_utils.dart';
 
 part 'offline_search_state.dart';
 
@@ -32,6 +36,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final SharedPreferences _prefs;
   static const String _keySelectedSourceFilter =
       'offline_selected_source_filter';
+  static const String _keyIsListMode = 'offline_is_list_mode';
 
   /// Helper to calculate directory size recursively
   Future<int> _getDirectorySize(Directory directory) async {
@@ -132,7 +137,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   }
 
   /// Change sorting method
-  Future<void> changeSorting({required String orderBy, required bool descending}) async {
+  Future<void> changeSorting(
+      {required String orderBy, required bool descending}) async {
     final currentState = state;
     if (currentState is! OfflineSearchLoaded) return;
 
@@ -149,6 +155,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       await searchOfflineContent(currentState.query);
     } else {
       await getAllOfflineContent();
+    }
+  }
+
+  /// Toggle List/Grid View Mode
+  Future<void> toggleViewMode() async {
+    final currentState = state;
+    if (currentState is OfflineSearchLoaded) {
+      final newMode = !currentState.isListMode;
+      await _prefs.setBool(_keyIsListMode, newMode);
+      emit(currentState.copyWith(isListMode: newMode));
     }
   }
 
@@ -223,7 +239,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       // Calculate offset based on current page
       final offset = loadMore && state is OfflineSearchLoaded
-          ? (state as OfflineSearchLoaded).results.length
+          ? (state as OfflineSearchLoaded).results.expand((g) => g.items).length
           : 0;
 
       // Load page from database
@@ -299,27 +315,31 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (isClosed) return;
 
       // Merge with existing results if loading more
-      final List<Content> finalResults;
+      final List<Content> finalResultsFlat;
       final Map<String, String> finalSizes;
       final int finalStorageUsage;
 
       if (loadMore && state is OfflineSearchLoaded) {
         final currentState = state as OfflineSearchLoaded;
-        finalResults = [...currentState.results, ...newContents];
+        final flatItems = currentState.results.expand((g) => g.items).toList();
+        finalResultsFlat = [...flatItems, ...newContents];
         finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
         finalStorageUsage = currentState.storageUsage + newStorageUsage;
       } else {
-        finalResults = newContents;
+        finalResultsFlat = newContents;
         finalSizes = newOfflineSizes;
         finalStorageUsage = newStorageUsage;
       }
 
-      // Calculate pagination metadata
-      final currentPage = (finalResults.length / pageSize).ceil();
-      final totalPages = (totalCount / pageSize).ceil();
-      final hasMore = finalResults.length < totalCount;
+      final List<ContentGroup> groupedResults =
+          await _groupContent(finalResultsFlat);
 
-      if (finalResults.isEmpty && offset == 0) {
+      // Calculate pagination metadata
+      final currentPage = (finalResultsFlat.length / pageSize).ceil();
+      final totalPages = (totalCount / pageSize).ceil();
+      final hasMore = finalResultsFlat.length < totalCount;
+
+      if (groupedResults.isEmpty && offset == 0) {
         // Keep sourceId in empty state if we want to show filtered empty state
         emit(OfflineSearchEmpty(query: query));
         return;
@@ -327,7 +347,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       emit(OfflineSearchLoaded(
         query: query,
-        results: finalResults,
+        results: groupedResults,
         totalResults: totalCount,
         offlineSizes: finalSizes,
         storageUsage: finalStorageUsage,
@@ -340,10 +360,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         selectedSourceId: effectiveSourceId,
         orderBy: currentOrderBy,
         descending: currentDescending,
+        isListMode: _prefs.getBool(_keyIsListMode) ?? false,
       ));
 
       logInfo(
-          'Search complete: ${finalResults.length}/$totalCount results for "$query" (source: $effectiveSourceId) '
+          'Search complete: ${groupedResults.length} groups / ${finalResultsFlat.length} items for "$query" (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;
@@ -357,6 +378,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           message: 'failedSearchOffline',
           query: query,
         ));
+      }
+    }
+
+    // Save to search history if query is not empty and we didn't error out
+    if (query.isNotEmpty && !loadMore) {
+      try {
+        await _userDataRepository.addSearchHistory(query);
+      } catch (e) {
+        logInfo('Error saving search history: $e');
       }
     }
   }
@@ -457,7 +487,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       // Calculate offset based on current page
       final offset = loadMore && state is OfflineSearchLoaded
-          ? (state as OfflineSearchLoaded).results.length
+          ? (state as OfflineSearchLoaded).results.expand((g) => g.items).length
           : 0;
 
       // Load page from database
@@ -535,27 +565,31 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (isClosed) return;
 
       // Merge with existing results if loading more
-      final List<Content> finalResults;
+      final List<Content> finalResultsFlat;
       final Map<String, String> finalSizes;
       final int finalStorageUsage;
 
       if (loadMore && state is OfflineSearchLoaded) {
         final currentState = state as OfflineSearchLoaded;
-        finalResults = [...currentState.results, ...newContents];
+        final flatItems = currentState.results.expand((g) => g.items).toList();
+        finalResultsFlat = [...flatItems, ...newContents];
         finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
         finalStorageUsage = currentState.storageUsage + newStorageUsage;
       } else {
-        finalResults = newContents;
+        finalResultsFlat = newContents;
         finalSizes = newOfflineSizes;
         finalStorageUsage = newStorageUsage;
       }
 
-      // Calculate pagination metadata
-      final currentPage = (finalResults.length / pageSize).ceil();
-      final totalPages = (totalCount / pageSize).ceil();
-      final hasMore = finalResults.length < totalCount;
+      final List<ContentGroup> groupedResults =
+          await _groupContent(finalResultsFlat);
 
-      if (finalResults.isEmpty) {
+      // Calculate pagination metadata
+      final currentPage = (finalResultsFlat.length / pageSize).ceil();
+      final totalPages = (totalCount / pageSize).ceil();
+      final hasMore = finalResultsFlat.length < totalCount;
+
+      if (groupedResults.isEmpty) {
         // If filtered and empty, we should still show the filtered state, not generic empty
         emit(OfflineSearchLoaded(
           query: '',
@@ -569,13 +603,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           hasMore: false,
           isLoadingMore: false,
           selectedSourceId: effectiveSourceId,
+          isListMode: _prefs.getBool(_keyIsListMode) ?? false,
         ));
         return;
       }
 
       emit(OfflineSearchLoaded(
         query: '',
-        results: finalResults,
+        results: groupedResults,
         totalResults: totalCount,
         offlineSizes: finalSizes,
         storageUsage: finalStorageUsage,
@@ -588,10 +623,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         selectedSourceId: effectiveSourceId,
         orderBy: currentOrderBy,
         descending: currentDescending,
+        isListMode: _prefs.getBool(_keyIsListMode) ?? false,
       ));
 
       logInfo(
-          'Loaded ${finalResults.length}/$totalCount offline content items (source: $effectiveSourceId) '
+          'Loaded ${groupedResults.length} groups / ${finalResultsFlat.length} offline items (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;
@@ -644,14 +680,17 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
     }
 
+    final List<ContentGroup> groupedResults = await _groupContent(contents);
+
     emit(OfflineSearchLoaded(
       query: '',
-      results: contents,
+      results: groupedResults,
       totalResults: contents.length,
       offlineSizes: offlineSizes,
       storageUsage: totalStorageUsage,
       formattedStorageUsage:
           OfflineContentManager.formatStorageSize(totalStorageUsage),
+      isListMode: _prefs.getBool(_keyIsListMode) ?? false,
     ));
 
     logInfo(
@@ -809,14 +848,18 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         }
       }
 
+      final List<ContentGroup> groupedResults =
+          await _groupContent(backupContents);
+
       emit(OfflineSearchLoaded(
         query: '',
-        results: backupContents,
+        results: groupedResults,
         totalResults: backupContents.length,
         offlineSizes: offlineSizes,
         storageUsage: totalStorageUsage,
         formattedStorageUsage:
             OfflineContentManager.formatStorageSize(totalStorageUsage),
+        isListMode: _prefs.getBool(_keyIsListMode) ?? false,
       ));
 
       logInfo('Found ${backupContents.length} backup content items');
@@ -826,6 +869,25 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         message: 'failedScanBackup',
         query: '',
       ));
+    }
+  }
+
+  /// Get search history
+  Future<List<String>> getSearchHistory() async {
+    try {
+      return await _userDataRepository.getSearchHistory(limit: 10);
+    } catch (e) {
+      logInfo('Error getting search history: $e');
+      return [];
+    }
+  }
+
+  /// Delete a search history entry
+  Future<void> deleteSearchHistory(String query) async {
+    try {
+      await _userDataRepository.deleteSearchHistory(query);
+    } catch (e) {
+      logInfo('Error deleting search history: $e');
     }
   }
 
@@ -856,5 +918,65 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // We might want to emit error state? Or just log it.
       // Keeping current state but maybe showing a snackbar is handled by UI.
     }
+  }
+
+  /// Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
+  Future<List<ContentGroup>> _groupContent(List<Content> flatItems) async {
+    final Map<String, List<Content>> groupedMap = {};
+    for (final item in flatItems) {
+      final baseTitle = TitleParserUtils.getBaseTitle(item.title);
+      final groupKey = '${item.sourceId}:::$baseTitle';
+      groupedMap.putIfAbsent(groupKey, () => []).add(item);
+    }
+
+    // Try to get ReaderPositionRepository if registered
+    dynamic readerPosRepo;
+    try {
+      readerPosRepo = getIt<ReaderRepository>();
+    } catch (_) {
+      // Ignore if not found
+    }
+
+    final List<ContentGroup> groups = [];
+    for (final entry in groupedMap.entries) {
+      final items = entry.value;
+      if (items.isEmpty) continue;
+
+      final baseTitle = TitleParserUtils.getBaseTitle(items.first.title);
+      double maxProgress = 0.0;
+      bool isRead = false;
+      bool isReading = false;
+
+      // Check progress for all items in the group and take the highest
+      for (final item in items) {
+        try {
+          if (readerPosRepo != null) {
+            final position = await readerPosRepo.getReaderPosition(item.id);
+            if (position != null && position.totalPages > 0) {
+              final double progress =
+                  position.currentPage / position.totalPages;
+              if (progress > maxProgress) maxProgress = progress;
+              if (position.currentPage >= position.totalPages - 1) {
+                isRead = true;
+              } else if (position.currentPage > 1) {
+                isReading = true;
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+
+      groups.add(ContentGroup(
+        baseTitle: baseTitle,
+        items: items,
+        totalSize: 0,
+        readProgress: maxProgress > 1.0 ? 1.0 : maxProgress,
+        isRead: isRead,
+        isReading: isReading,
+      ));
+    }
+    return groups;
   }
 }

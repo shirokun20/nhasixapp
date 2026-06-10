@@ -45,6 +45,8 @@ class ContentCard extends StatelessWidget {
     this.offlineSize, // NEW: for offline screen - total file size
     this.highlightQuery, // NEW: for search highlighting
     this.preferStaticCover = false,
+    this.readProgress, // NEW: 0.0 to 1.0 for history reading progress
+    this.isNew = false, // NEW: red dot status for new updates
   });
 
   final Content content;
@@ -71,6 +73,8 @@ class ContentCard extends StatelessWidget {
   final String? offlineSize; // NEW: formatted file size (e.g., "45.2 MB")
   final String? highlightQuery; // NEW: text to highlight in title
   final bool preferStaticCover;
+  final double? readProgress; // NEW: 0.0 to 1.0 for history reading progress
+  final bool isNew; // NEW: red dot status for new updates
 
   @override
   Widget build(BuildContext context) {
@@ -122,8 +126,8 @@ class ContentCard extends StatelessWidget {
                     if (showDownloadStatus && downloadProgress != null)
                       _buildDownloadProgressOverlay(),
 
-                    // Top overlay with favorite button and page count
-                    if (content.pageCount > 0 || showOfflineIndicator)
+                    // Top overlay with favorite button, page count, and new indicator
+                    if (content.pageCount > 0 || showOfflineIndicator || isNew)
                       _buildTopOverlay(),
 
                     // Highlight indicator overlay
@@ -194,6 +198,20 @@ class ContentCard extends StatelessWidget {
 
                       // Bottom row with language flag and metadata
                       _buildBottomRow(),
+
+                      if (readProgress != null && readProgress! > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: LinearProgressIndicator(
+                            value: readProgress,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary),
+                            minHeight: 3,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -437,22 +455,39 @@ class ContentCard extends StatelessWidget {
             // Left side badges
             Row(
               children: [
+                // New update dot
+                if (isNew)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 // Page count badge
                 if (showPageCount && content.pageCount > 0)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${content.pageCount}${AppLocalizations.of(context)?.pages ?? 'p'}',
-                      style: TextStyleConst.labelSmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${content.pageCount}${AppLocalizations.of(context)?.pages ?? 'p'}',
+                          style: TextStyleConst.labelSmall.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       ),
                     ),
                   ),

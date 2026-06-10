@@ -20,7 +20,7 @@ class GenericJsonParser {
     try {
       final value = _evaluate(data, selector);
       if (value == null) return selector.fallback;
-      
+
       String? str;
       if (value is Map) {
         if (value.containsKey('en')) {
@@ -54,7 +54,8 @@ class GenericJsonParser {
     try {
       return _evaluate(data, selector);
     } catch (e) {
-      _logger.w('GenericJsonParser: failed to extract raw "${selector.selector}"',
+      _logger.w(
+          'GenericJsonParser: failed to extract raw "${selector.selector}"',
           error: e);
       return null;
     }

@@ -38,10 +38,11 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.selectedSourceId,
     this.orderBy = 'created_at',
     this.descending = true,
+    this.isListMode = false,
   });
 
   final String query;
-  final List<Content> results;
+  final List<ContentGroup> results;
   final int totalResults;
   final Map<String, String> offlineSizes;
   final int storageUsage;
@@ -60,6 +61,9 @@ class OfflineSearchLoaded extends OfflineSearchState {
   final String orderBy;
   final bool descending;
 
+  // NEW: View Mode
+  final bool isListMode;
+
   @override
   List<Object?> get props => [
         query,
@@ -73,6 +77,9 @@ class OfflineSearchLoaded extends OfflineSearchState {
         hasMore,
         isLoadingMore,
         selectedSourceId,
+        orderBy,
+        descending,
+        isListMode,
       ];
 
   /// Check if this is a search result or all content
@@ -107,7 +114,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
   /// Create a copy with updated fields
   OfflineSearchLoaded copyWith({
     String? query,
-    List<Content>? results,
+    List<ContentGroup>? results,
     int? totalResults,
     Map<String, String>? offlineSizes,
     int? storageUsage,
@@ -119,6 +126,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     String? selectedSourceId,
     String? orderBy,
     bool? descending,
+    bool? isListMode,
     bool clearSourceId = false,
   }) {
     return OfflineSearchLoaded(
@@ -137,6 +145,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
           clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
       orderBy: orderBy ?? this.orderBy,
       descending: descending ?? this.descending,
+      isListMode: isListMode ?? this.isListMode,
     );
   }
 }

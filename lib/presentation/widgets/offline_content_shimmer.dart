@@ -26,43 +26,57 @@ class OfflineContentShimmer extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+        child: AspectRatio(
+          aspectRatio: 0.7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image placeholder
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            // Content placeholder
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title placeholder
-                  Container(
-                    height: 16,
-                    width: double.infinity,
-                    color: colorScheme.surfaceContainerHighest,
+              // Content placeholder
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title placeholder
+                      Container(
+                        height: 14,
+                        width: double.infinity,
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        height: 14,
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                      const SizedBox(height: 8),
+                      // Subtitle placeholder
+                      Container(
+                        height: 10,
+                        width: MediaQuery.of(context).size.width * 0.15,
+                        color: colorScheme.surfaceContainerHighest,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  // Subtitle placeholder
-                  Container(
-                    height: 14,
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    color: colorScheme.surfaceContainerHighest,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

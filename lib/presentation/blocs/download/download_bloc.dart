@@ -971,8 +971,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             var fallbackUrl = content.url;
             if (fallbackUrl == null || fallbackUrl.isEmpty) {
               try {
-                fallbackUrl =
-                    _generateFallbackUrl(updatedDownload.sourceId, event.contentId);
+                fallbackUrl = _generateFallbackUrl(
+                    updatedDownload.sourceId, event.contentId);
               } catch (e) {
                 _logger.w(
                   'DownloadBloc: Failed to generate fallback chapter URL for ${event.contentId}: $e',
