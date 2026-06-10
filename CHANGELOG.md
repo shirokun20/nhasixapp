@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Highlights
 
+#### 🎨 Offline Library UI Polish
+- **Ganteng UI Updates**: Improved Offline Content sorting/filter UI with a Glowing Gradient floating action button, modern AnimatedContainer filter chips, and pill-shaped TabBar ripples.
+- **Smart FAB Auto-Hide**: Fixed FAB auto-hide behavior during scroll by implementing a `NotificationListener<ScrollUpdateNotification>`.
+- **Filter State Stability**: Fixed filter state anomaly by reading `offline_selected_source_filter` from `SharedPreferences` during loading states to prevent UI flickering back to the "All" tab.
+- **Advanced File Path Utility**: Added file path display in the offline long-press bottom sheet with "Copy Path" and "Open in Explorer" utilities.
+- **Chapter Card Redesign**: Redesigned chapter list cards in the detail screen to be more premium with outline borders, icons, and badges.
+
 #### 🚦 Source Rate-Limit Hardening
 - **Config-Driven Runtime Limits**: Generic source pipeline now reads `network.rateLimit` config and applies request throttling (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, and delay controls) across REST and scraper adapters.
 - **Adaptive Cooldown on 429**: `RequestRateManager` now honors source config for cooldown duration and active state, and `RemoteDataSource` uses the manager cooldown path instead of fixed hardcoded timing.
