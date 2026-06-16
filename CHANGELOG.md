@@ -16,6 +16,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Filter State Stability**: Fixed filter state anomaly by reading `offline_selected_source_filter` from `SharedPreferences` during loading states to prevent UI flickering back to the "All" tab.
 - **Advanced File Path Utility**: Added file path display in the offline long-press bottom sheet with "Copy Path" and "Open in Explorer" utilities.
 - **Chapter Card Redesign**: Redesigned chapter list cards in the detail screen to be more premium with outline borders, icons, and badges.
+- **Grouped Offline Metadata**: Offline grouped items now aggregate per-chapter DB file sizes, show available chapter counts instead of misleading single-item size, and keep multi-path information available for inspection.
+- **Info-Only Offline Group Sheet**: Offline library long-press sheet now focuses on information only; read, delete, and PDF conversion actions live in `OfflineSeriesDetailScreen`.
+- **Offline Detail Actions Fix**: Fixed offline detail delete/PDF/read flow by using the shared offline search cubit, refreshing local detail items after deletion, and keeping progress state in sync after returning from reader.
+
+#### 📖 Reader Interaction & Progress
+- **Offline Progress Flush**: Reader now force-saves offline reading progress into `reader_positions` before dispose, so offline library and detail progress update without requiring an app restart.
+- **Animated Image Tap Zones**: Reader tap zones now work over native/animated image surfaces, restoring left/right next/previous navigation and center UI toggling behavior.
+- **Draggable Chrome Toggle**: Added a draggable mini floating control to show/hide reader header/footer, clamped to the visible screen area.
+
+#### 📥 Download Storage & Permissions
+- **Custom Directory Permission Flow**: `DownloadsScreen` now treats `StorageSettings.custom_storage_root` as the download source of truth and no longer requires full storage permission when a custom directory is configured.
+- **Storage Setup Prompt**: When no custom download directory is set, downloads now prompt the user to open Settings instead of requesting broad storage access.
+- **PDF Conversion Permission Scope**: PDF conversion from downloads now skips storage permission when the custom download root is available and only requests notification permission when needed.
+
+#### 🎨 Theme Polish
+- **Animated Dice Theme Color**: `AnimatedDiceWidget` icon/painter color now follows `IconTheme` and the active app theme.
 
 #### 🚦 Source Rate-Limit Hardening
 - **Config-Driven Runtime Limits**: Generic source pipeline now reads `network.rateLimit` config and applies request throttling (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, and delay controls) across REST and scraper adapters.
