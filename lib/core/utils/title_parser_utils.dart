@@ -7,7 +7,7 @@ class TitleParserUtils {
     // Regex to match common chapter/volume markers and any trailing text/numbers after them
     // Matches: [space or dash] followed by (chapter, ch, part, vol, episode, ep, hen, 編, #)
     // followed by numbers, optionally with decimals or other text until the end of the string
-    final pattern =
+    const pattern =
         r'[\s\-]*(?:chapter\b|ch\.|part\b|vol\.|volume\b|episode\b|ep\.|hen\b|編|#).*$';
     final regExp = RegExp(pattern, caseSensitive: false);
     String baseTitle = fullTitle.replaceAll(regExp, '').trim();

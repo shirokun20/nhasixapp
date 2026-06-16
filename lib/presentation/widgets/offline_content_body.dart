@@ -7,10 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as p;
-import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
-import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -18,7 +15,6 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/mixins/offline_management_mixin.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
-import 'package:kuron_core/kuron_core.dart';
 import '../../services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../../core/config/remote_config_service.dart';
@@ -816,8 +812,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
                         contentGroup: contentGroup,
                         isListMode: state.isListMode,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => OfflineSeriesDetailScreen(
@@ -825,6 +821,9 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                               ),
                             ),
                           );
+                          if (context.mounted) {
+                            await _offlineSearchCubit.forceRefresh();
+                          }
                         },
                         onLongPress: () {
                           _showGroupContentActions(context, contentGroup);
@@ -869,25 +868,22 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       BuildContext context, ContentGroup group) async {
     final colorScheme = Theme.of(context).colorScheme;
     final offlineManager = getIt<OfflineContentManager>();
-    final l10n = AppLocalizations.of(context)!;
 
     final representative = group.representativeContent;
-    final isSingle = group.items.length == 1;
 
-    // Get content path if possible
-    String? contentPath;
-    try {
-      final firstImage =
-          await offlineManager.getOfflineFirstImagePath(representative.id);
-      if (firstImage != null) {
-        contentPath = File(firstImage).parent.path;
-        if (!isSingle) {
-          // If it's a group, maybe use the parent directory of the chapter
-          contentPath = File(contentPath).parent.path;
+    final chapterPaths = <({String title, String path})>[];
+    for (final item in group.items) {
+      try {
+        final firstImage = await offlineManager.getOfflineFirstImagePath(
+          item.id,
+        );
+        if (firstImage != null) {
+          chapterPaths
+              .add((title: item.title, path: File(firstImage).parent.path));
         }
+      } catch (_) {
+        // Best effort only. Missing paths should not block the info sheet.
       }
-    } catch (e) {
-      debugPrint('Error getting content path: $e');
     }
 
     if (!context.mounted) return;
@@ -901,6 +897,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       builder: (bottomSheetContext) {
         final sizeText =
             OfflineContentManager.formatStorageSize(group.totalSize);
+        final chapterLabel =
+            '${group.chapterCount} Chapter${group.chapterCount > 1 ? 's' : ''} tersedia';
 
         return SafeArea(
           child: Column(
@@ -921,18 +919,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 child: Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 64,
+                      width: 54,
+                      height: 54,
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
-                        child: Text(
-                          representative.sourceId == 'nhentai' ? 'NH' : 'CP',
-                          style: TextStyleConst.labelLarge.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        child: Icon(
+                          Icons.library_books_rounded,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 28,
                         ),
                       ),
                     ),
@@ -945,16 +942,14 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             group.baseTitle,
                             style: TextStyleConst.titleMedium.copyWith(
                               color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
-                            isSingle
-                                ? AppLocalizations.of(context)!.pagesWithSize(
-                                    representative.pageCount, sizeText)
-                                : '${group.items.length} Chapters • $sizeText',
+                            chapterLabel,
                             style: TextStyleConst.bodySmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -965,124 +960,162 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   ],
                 ),
               ),
-              const Divider(),
-              if (contentPath != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.auto_stories_rounded,
+                        label: 'Chapters',
+                        value: '${group.chapterCount}',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.storage_rounded,
+                        label: 'Storage',
+                        value: sizeText,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.public_rounded,
+                        label: 'Source',
+                        value: representative.sourceId.toUpperCase(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              if (chapterPaths.isNotEmpty) ...[
                 ListTile(
-                  leading: Icon(Icons.folder_open_rounded,
+                  leading: Icon(Icons.folder_copy_rounded,
                       color: colorScheme.secondary),
                   title: Text(
-                    contentPath,
-                    style: TextStyleConst.labelSmall.copyWith(
+                    'Chapter paths',
+                    style: TextStyleConst.titleSmall.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${chapterPaths.length} lokasi tersimpan',
+                    style: TextStyleConst.bodySmall.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy_rounded, size: 20),
-                        tooltip: 'Copy path',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: contentPath!));
-                          ScaffoldMessenger.of(parentContext).showSnackBar(
-                            const SnackBar(
-                                content: Text('Path copied to clipboard')),
-                          );
-                          Navigator.pop(bottomSheetContext);
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.open_in_new_rounded, size: 20),
-                        tooltip: 'Open in explorer',
-                        onPressed: () {
-                          OpenFile.open(contentPath);
-                          Navigator.pop(bottomSheetContext);
-                        },
-                      ),
-                    ],
+                  trailing: IconButton(
+                    icon: const Icon(Icons.copy_all_rounded),
+                    tooltip: 'Copy all paths',
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(
+                          text: chapterPaths
+                              .map((entry) => entry.path)
+                              .join('\n'),
+                        ),
+                      );
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        const SnackBar(content: Text('Paths copied')),
+                      );
+                    },
                   ),
                 ),
-                const Divider(),
-              ],
-              if (isSingle) ...[
-                FutureBuilder<bool>(
-                  future: _checkPdfExists(representative.id),
-                  builder: (context, snapshot) {
-                    final isPdf = snapshot.data ?? false;
-                    return ListTile(
-                      leading: Icon(
-                          isPdf ? Icons.picture_as_pdf : Icons.remove_red_eye,
-                          color: isPdf
-                              ? colorScheme.tertiary
-                              : colorScheme.primary),
-                      title:
-                          Text(isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
-                      onTap: () {
-                        Navigator.pop(bottomSheetContext);
-                        _openReader(parentContext, representative);
-                      },
-                    );
-                  },
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    itemCount: chapterPaths.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final entry = chapterPaths[index];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          leading: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyleConst.labelSmall.copyWith(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyleConst.labelMedium.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          subtitle: Text(
+                            entry.path,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyleConst.labelSmall.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.copy_rounded, size: 18),
+                                tooltip: 'Copy path',
+                                onPressed: () {
+                                  Clipboard.setData(
+                                      ClipboardData(text: entry.path));
+                                  ScaffoldMessenger.of(parentContext)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Path copied')),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.open_in_new_rounded,
+                                    size: 18),
+                                tooltip: 'Open in explorer',
+                                onPressed: () => OpenFile.open(entry.path),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                ListTile(
-                  leading:
-                      Icon(Icons.picture_as_pdf, color: colorScheme.tertiary),
-                  title: Text(l10n.convertToPdf),
-                  subtitle: Text(AppLocalizations.of(context)!
-                      .nPages(representative.pageCount)),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    _generatePdf(parentContext, representative);
-                  },
+              ] else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  child: Text(
+                    'Path chapter belum tersedia.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-              ] else ...[
-                ListTile(
-                  leading:
-                      Icon(Icons.remove_red_eye, color: colorScheme.primary),
-                  title: Text(l10n.readFirstChapter),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    // Open the oldest chapter in the group
-                    final oldest = List<Content>.from(group.items)
-                      ..sort((a, b) => a.uploadDate.compareTo(b.uploadDate));
-                    if (oldest.isNotEmpty) {
-                      _openReader(parentContext, oldest.first);
-                    }
-                  },
-                ),
-                ListTile(
-                  leading:
-                      Icon(Icons.picture_as_pdf, color: colorScheme.tertiary),
-                  title: Text(l10n.convertAllToPdf),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    for (final item in group.items) {
-                      _generatePdf(parentContext, item, showSnackbar: false);
-                    }
-                    ScaffoldMessenger.of(parentContext).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              'Queued ${group.items.length} chapters for PDF conversion')),
-                    );
-                  },
-                ),
-              ],
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                title: Text(
-                  isSingle
-                      ? l10n.delete
-                      : l10n.deleteSeriesWithCount(group.items.length),
-                  style: TextStyle(color: colorScheme.error),
-                ),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  _showGroupDeleteConfirmation(parentContext, group);
-                },
-              ),
-              const SizedBox(height: 8),
             ],
           ),
         );
@@ -1090,141 +1123,48 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
-  Future<bool> _checkPdfExists(String contentId) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(contentId);
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          return files.any((f) => f.path.toLowerCase().endsWith('.pdf'));
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking PDF existence: $e');
-    }
-    return false;
-  }
-
-  void _openReader(BuildContext context, Content content) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(content.id);
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          final pdfFile = files
-              .where((f) => f.path.toLowerCase().endsWith('.pdf'))
-              .firstOrNull;
-
-          if (pdfFile != null && context.mounted) {
-            AppRouter.goToReaderPdf(
-              context,
-              filePath: pdfFile.path,
-              contentId: content.id,
-              title: content.title,
-            );
-            return;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking for PDF in _openReader: $e');
-    }
-
-    if (context.mounted) {
-      await AppRouter.goToReader(
-        context,
-        content.id,
-        content: content,
-      );
-    }
-  }
-
-  Future<void> _generatePdf(BuildContext context, Content content,
-      {bool showSnackbar = true}) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    final queueManager = getIt<PdfConversionQueueManager>();
-
-    try {
-      final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
-      if (imagePaths.isEmpty) return;
-
-      await queueManager.queueConversion(
-        contentId: content.id,
-        title: content.title,
-        imagePaths: imagePaths,
-        sourceId: content.sourceId,
-      );
-
-      if (showSnackbar && context.mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.convertingToPdf)),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error generating PDF: $e');
-    }
-  }
-
-  void _showGroupDeleteConfirmation(BuildContext context, ContentGroup group) {
-    final l10n = AppLocalizations.of(context)!;
-    final isSingle = group.items.length == 1;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(isSingle
-            ? l10n.removeDownloadConfirmation
-            : l10n.deleteSeriesConfirmation(
-                group.items.length, group.baseTitle)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.cancel),
+  Widget _buildInfoPill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.primary),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyleConst.labelSmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _deleteContentGroup(context, group);
-            },
-            child: Text(
-              l10n.delete,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyleConst.labelMedium.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _deleteContentGroup(
-      BuildContext context, ContentGroup group) async {
-    final l10n = AppLocalizations.of(context)!;
-    final cubit = context.read<OfflineSearchCubit>();
-    try {
-      for (final item in group.items) {
-        await cubit.deleteOfflineContent(item.id);
-      }
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.contentDeleted)),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
-        );
-      }
-    }
   }
 }

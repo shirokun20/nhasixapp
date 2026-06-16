@@ -7,7 +7,9 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 
 import '../../../core/constants/text_style_const.dart';
+import '../../../core/routing/app_route.dart';
 import '../../../core/routing/reader_route_extra.dart';
+import '../../../core/utils/storage_settings.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/entities.dart';
 import '../../blocs/download/download_bloc.dart';
@@ -42,11 +44,24 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   Future<void> _checkPermissionsAndInitialize() async {
     if (!mounted || _permissionsChecked) return;
 
-    final hasPermissions = await showPermissionRequestSheet(
-      context,
-      requireStorage: true,
-      requireNotification: true,
-    );
+    final hasCustomRoot = await StorageSettings.hasCustomRoot();
+    if (!mounted) return;
+
+    if (hasCustomRoot) {
+      final hasPermissions = await showPermissionRequestSheet(
+        context,
+        requireStorage: false,
+        requireNotification: true,
+      );
+
+      if (!mounted) return;
+
+      if (!hasPermissions) {
+        _showSnackBar(AppLocalizations.of(context)!.permissionDenied);
+      }
+    } else {
+      _showStorageLocationRequiredSnackBar();
+    }
 
     if (!mounted) return;
 
@@ -54,22 +69,47 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       _permissionsChecked = true;
     });
 
-    if (hasPermissions) {
-      // Initialize download manager if not already initialized
-      final downloadBloc = context.read<DownloadBloc>();
-      if (downloadBloc.state is DownloadInitial) {
-        downloadBloc.add(const DownloadInitializeEvent());
-      }
-    } else {
-      // Permission denied, navigate back
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.permissionDenied),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    // Initialize download manager even when notification permission is denied.
+    // Custom download root is the storage source of truth; full storage access
+    // should not block users from viewing existing download state.
+    final downloadBloc = context.read<DownloadBloc>();
+    if (downloadBloc.state is DownloadInitial) {
+      downloadBloc.add(const DownloadInitializeEvent());
     }
+  }
+
+  Future<bool> _ensureCustomStorageRoot() async {
+    final hasCustomRoot = await StorageSettings.hasCustomRoot();
+    if (!mounted) return false;
+    if (!hasCustomRoot) {
+      _showStorageLocationRequiredSnackBar();
+      return false;
+    }
+    return true;
+  }
+
+  void _showStorageLocationRequiredSnackBar() {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.pleaseSetStorageLocation),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        action: SnackBarAction(
+          label: l10n.settings,
+          textColor: Theme.of(context).colorScheme.onError,
+          onPressed: () => context.push(AppRoute.settings),
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
   }
 
   @override
@@ -650,10 +690,15 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       return;
     }
 
-    // Check permissions before starting PDF conversion
+    final hasCustomRoot = await _ensureCustomStorageRoot();
+    if (!hasCustomRoot || !mounted) return;
+
+    // Check runtime permissions before starting PDF conversion. Storage is
+    // intentionally skipped here because user-selected SAF directory is the
+    // download root.
     final hasPermissions = await showPermissionRequestSheet(
       context,
-      requireStorage: true,
+      requireStorage: false,
       requireNotification: true,
     );
 

@@ -10,7 +10,6 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -35,52 +34,75 @@ class OfflineSeriesDetailScreen extends StatefulWidget {
 
 class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   final Map<String, double> _progressMap = {};
+  late List<Content> _items;
+  late final OfflineSearchCubit _offlineSearchCubit;
+
+  int _sizeFor(Content content) =>
+      widget.contentGroup.sizeForContent(content.id);
 
   @override
   void initState() {
     super.initState();
+    _items = List<Content>.from(widget.contentGroup.items);
+    _offlineSearchCubit = getIt<OfflineSearchCubit>();
     _loadProgress();
   }
 
+  @override
+  void didUpdateWidget(covariant OfflineSeriesDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.contentGroup != widget.contentGroup) {
+      _items = List<Content>.from(widget.contentGroup.items);
+      _loadProgress();
+    }
+  }
+
   Future<void> _loadProgress() async {
-    // We try to get ReaderPositionRepository for offline reading progress
-    dynamic readerPosRepo;
+    ReaderRepository? readerPosRepo;
     try {
       readerPosRepo = getIt<ReaderRepository>();
     } catch (_) {
-      // Fallback
+      readerPosRepo = null;
     }
 
     if (readerPosRepo == null) return;
 
-    for (final content in widget.contentGroup.items) {
+    final nextProgress = <String, double>{};
+    for (final content in _items) {
       try {
         final position = await readerPosRepo.getReaderPosition(content.id);
         if (position != null && position.totalPages > 0) {
-          if (mounted) {
-            setState(() {
-              _progressMap[content.id] =
-                  position.currentPage / position.totalPages;
-            });
-          }
+          nextProgress[content.id] =
+              (position.currentPage / position.totalPages).clamp(0.0, 1.0);
         }
       } catch (e) {
         // Ignore error
       }
     }
+
+    if (!mounted) return;
+    setState(() {
+      _progressMap
+        ..clear()
+        ..addAll(nextProgress);
+    });
   }
 
-  void _openReader(Content content) {
-    AppRouter.goToReader(
+  Future<void> _openReader(Content content) async {
+    await AppRouter.goToReader(
       context,
       content.id,
       content: content,
     );
+    if (!mounted) return;
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await _loadProgress();
+    await _offlineSearchCubit.forceRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.contentGroup.items;
+    final items = _items;
 
     return Scaffold(
       appBar: AppBar(
@@ -107,7 +129,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .outlineVariant
+                    .withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -123,7 +148,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -137,7 +165,9 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            content.title.isNotEmpty ? content.title : content.id,
+                            content.title.isNotEmpty
+                                ? content.title
+                                : content.id,
                             style: TextStyleConst.contentTitle.copyWith(
                               fontSize: 15,
                               color: Theme.of(context).colorScheme.onSurface,
@@ -154,23 +184,44 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                 context,
                                 Icons.pages,
                                 '${content.pageCount} P',
-                                Theme.of(context).colorScheme.surfaceContainerHighest,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                               _buildBadge(
                                 context,
                                 Icons.public,
                                 content.sourceId.toUpperCase(),
-                                Theme.of(context).colorScheme.secondaryContainer,
-                                Theme.of(context).colorScheme.onSecondaryContainer,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .onSecondaryContainer,
                               ),
                               _buildBadge(
                                 context,
                                 Icons.calendar_today,
                                 dateStr,
-                                Theme.of(context).colorScheme.surfaceContainerHighest,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
+                              if (_sizeFor(content) > 0)
+                                _buildBadge(
+                                  context,
+                                  Icons.storage,
+                                  OfflineContentManager.formatStorageSize(
+                                      _sizeFor(content)),
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                             ],
                           ),
                           if (progress > 0) ...[
@@ -186,7 +237,9 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                           .colorScheme
                                           .surfaceContainerHighest,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context).colorScheme.primary),
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .primary),
                                       minHeight: 4,
                                     ),
                                   ),
@@ -195,7 +248,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                 Text(
                                   '${(progress * 100).toInt()}%',
                                   style: TextStyleConst.labelSmall.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -281,7 +335,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       context: parentContext,
       isScrollControlled: true,
       builder: (context) {
-        const sizeText = '0 MB';
+        final sizeText =
+            OfflineContentManager.formatStorageSize(_sizeFor(content));
 
         return SafeArea(
           child: Column(
@@ -606,13 +661,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         ),
       );
 
-      await context.read<OfflineSearchCubit>().deleteOfflineContent(content.id);
+      await _offlineSearchCubit.deleteOfflineContent(content.id);
+      getIt<DownloadBloc>().add(const DownloadRefreshEvent());
 
-      // Add a small delay to ensure DB transaction is committed
-      // Use getIt to access the singleton DownloadBloc, bypassing context entirely
-      Future.delayed(const Duration(milliseconds: 500), () {
-        getIt<DownloadBloc>().add(const DownloadRefreshEvent());
-      });
+      await _offlineSearchCubit.forceRefresh();
 
       if (!context.mounted) return;
 
@@ -625,11 +677,13 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
       // Update local state by removing the item
       setState(() {
-        widget.contentGroup.items.removeWhere((item) => item.id == content.id);
-        if (widget.contentGroup.items.isEmpty) {
-          Navigator.of(context).pop();
-        }
+        _items.removeWhere((item) => item.id == content.id);
+        _progressMap.remove(content.id);
       });
+
+      if (_items.isEmpty && context.mounted) {
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

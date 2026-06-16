@@ -4,6 +4,7 @@ class ContentGroup {
   final String baseTitle;
   final List<Content> items;
   final int totalSize;
+  final Map<String, int> itemSizes;
 
   // History properties
   final double readProgress; // 0.0 to 1.0
@@ -14,6 +15,7 @@ class ContentGroup {
     required this.baseTitle,
     required this.items,
     required this.totalSize,
+    this.itemSizes = const {},
     this.readProgress = 0.0,
     this.isRead = false,
     this.isReading = false,
@@ -28,4 +30,6 @@ class ContentGroup {
 
   /// Total chapters in this group
   int get chapterCount => items.length;
+
+  int sizeForContent(String contentId) => itemSizes[contentId] ?? 0;
 }

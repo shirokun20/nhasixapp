@@ -34,6 +34,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final OfflineContentManager _offlineContentManager;
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
+  final Map<String, int> _sizeBytesByContentId = {};
   static const String _keySelectedSourceFilter =
       'offline_selected_source_filter';
   static const String _keyIsListMode = 'offline_is_list_mode';
@@ -265,6 +266,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Convert database results to Content objects
       final newContents = <Content>[];
       final newOfflineSizes = <String, String>{};
+      final newSizeBytes = <String, int>{};
       int newStorageUsage = 0;
 
       for (final row in searchResults) {
@@ -309,6 +311,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
         newOfflineSizes[contentId] =
             OfflineContentManager.formatStorageSize(fileSize);
+        newSizeBytes[contentId] = fileSize;
         newStorageUsage += fileSize;
       }
 
@@ -331,8 +334,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         finalStorageUsage = newStorageUsage;
       }
 
-      final List<ContentGroup> groupedResults =
-          await _groupContent(finalResultsFlat);
+      if (!loadMore) {
+        _sizeBytesByContentId.clear();
+      }
+      _sizeBytesByContentId.addAll(newSizeBytes);
+
+      final List<ContentGroup> groupedResults = await _groupContent(
+        finalResultsFlat,
+        itemSizes: _sizeBytesByContentId,
+      );
 
       // Calculate pagination metadata
       final currentPage = (finalResultsFlat.length / pageSize).ceil();
@@ -523,6 +533,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       // Convert DownloadStatus to Content objects
       final newContents = <Content>[];
       final newOfflineSizes = <String, String>{};
+      final newSizeBytes = <String, int>{};
       int newStorageUsage = 0;
 
       for (final download in downloads) {
@@ -559,6 +570,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
         // Use DB size (already available)
         newOfflineSizes[download.contentId] = download.formattedFileSize;
+        newSizeBytes[download.contentId] = download.fileSize;
         newStorageUsage += download.fileSize;
       }
 
@@ -581,8 +593,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         finalStorageUsage = newStorageUsage;
       }
 
-      final List<ContentGroup> groupedResults =
-          await _groupContent(finalResultsFlat);
+      if (!loadMore) {
+        _sizeBytesByContentId.clear();
+      }
+      _sizeBytesByContentId.addAll(newSizeBytes);
+
+      final List<ContentGroup> groupedResults = await _groupContent(
+        finalResultsFlat,
+        itemSizes: _sizeBytesByContentId,
+      );
 
       // Calculate pagination metadata
       final currentPage = (finalResultsFlat.length / pageSize).ceil();
@@ -896,7 +915,12 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       logInfo('Deleting offline content: $contentId');
 
-      await _offlineContentManager.deleteOfflineContent(contentId);
+      final deleted =
+          await _offlineContentManager.deleteOfflineContent(contentId);
+      if (!deleted) {
+        throw StateError('Offline content not found: $contentId');
+      }
+      _sizeBytesByContentId.remove(contentId);
 
       // Refresh the list
       // If we are searching, we might want to re-search?
@@ -915,13 +939,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       logInfo('Deleted content $contentId');
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'delete offline content');
-      // We might want to emit error state? Or just log it.
-      // Keeping current state but maybe showing a snackbar is handled by UI.
+      rethrow;
     }
   }
 
   /// Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
-  Future<List<ContentGroup>> _groupContent(List<Content> flatItems) async {
+  Future<List<ContentGroup>> _groupContent(
+    List<Content> flatItems, {
+    Map<String, int> itemSizes = const {},
+  }) async {
     final Map<String, List<Content>> groupedMap = {};
     for (final item in flatItems) {
       final baseTitle = TitleParserUtils.getBaseTitle(item.title);
@@ -943,6 +969,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (items.isEmpty) continue;
 
       final baseTitle = TitleParserUtils.getBaseTitle(items.first.title);
+      final totalSize = items.fold<int>(
+        0,
+        (sum, item) => sum + (itemSizes[item.id] ?? 0),
+      );
+      final groupItemSizes = {
+        for (final item in items) item.id: itemSizes[item.id] ?? 0,
+      };
       double maxProgress = 0.0;
       bool isRead = false;
       bool isReading = false;
@@ -971,7 +1004,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       groups.add(ContentGroup(
         baseTitle: baseTitle,
         items: items,
-        totalSize: 0,
+        totalSize: totalSize,
+        itemSizes: groupItemSizes,
         readProgress: maxProgress > 1.0 ? 1.0 : maxProgress,
         isRead: isRead,
         isReading: isReading,
