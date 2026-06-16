@@ -9,6 +9,7 @@ import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:nhasixapp/presentation/pages/search/dynamic_form_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/form_based_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/query_string_search_ui.dart';
+import 'package:nhasixapp/presentation/pages/search/search_form_contract_adapter.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -49,6 +50,32 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  bool _shouldUseLegacySearchUi(SearchConfig config) {
+    if (config.filterSupport != null) return true;
+    if (config.searchMode == SearchMode.queryString) {
+      return config.textFields?.isNotEmpty == true ||
+          config.radioGroups?.isNotEmpty == true ||
+          config.checkboxGroups?.isNotEmpty == true;
+    }
+    return false;
+  }
+
+  Widget _buildLegacySearchUi(SearchConfig config, String sourceId) {
+    switch (config.searchMode) {
+      case SearchMode.queryString:
+        return QueryStringSearchUI(
+          config: config,
+          sourceId: sourceId,
+          initialQuery: widget.query,
+        );
+      case SearchMode.formBased:
+        return FormBasedSearchUI(
+          config: config,
+          sourceId: sourceId,
+        );
+    }
+  }
+
   Future<void> _retrySearchConfig(String sourceId) async {
     if (_isRefreshingSearchConfig) return;
 
@@ -79,28 +106,30 @@ class _SearchScreenState extends State<SearchScreen> {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
           final remoteConfig = getIt<RemoteConfigService>();
           final rawMap = remoteConfig.getRawConfig(sourceId);
+          final canonicalSearchForm =
+              remoteConfig.getCanonicalSearchForm(sourceId);
           final searchForm = remoteConfig.getSearchFormConfig(sourceId);
           final searchConfig = remoteConfig.getSearchConfig(sourceId) ??
-              (searchForm == null ? _buildScraperQueryFallback(rawMap) : null);
+              (searchForm == null && canonicalSearchForm == null
+                  ? _buildScraperQueryFallback(rawMap)
+                  : null);
 
           // Priority:
-          // 1) Explicit searchConfig from source config (nhentai/crotpedia, etc)
-          // 2) searchForm dynamic UI
-          // 3) scraper query fallback when only URL pattern exists
-          if (searchConfig != null) {
-            switch (searchConfig.searchMode) {
-              case SearchMode.queryString:
-                return QueryStringSearchUI(
-                  config: searchConfig,
-                  sourceId: sourceId,
-                  initialQuery: widget.query,
-                );
-              case SearchMode.formBased:
-                return FormBasedSearchUI(
-                  config: searchConfig,
-                  sourceId: sourceId,
-                );
-            }
+          // 1) Canonical package-side contract (searchForm/searchConfig/inference)
+          // 2) Legacy explicit searchConfig fallback
+          // 3) Legacy searchForm fallback
+          // 4) scraper query fallback when only URL pattern exists
+          if (searchConfig != null && _shouldUseLegacySearchUi(searchConfig)) {
+            return _buildLegacySearchUi(searchConfig, sourceId);
+          } else if (canonicalSearchForm != null) {
+            return DynamicFormSearchUI(
+              config: SearchFormContractAdapter.toSearchFormConfig(
+                  canonicalSearchForm),
+              sourceId: sourceId,
+              canonicalContract: canonicalSearchForm,
+            );
+          } else if (searchConfig != null) {
+            return _buildLegacySearchUi(searchConfig, sourceId);
           }
 
           if (searchForm != null) {

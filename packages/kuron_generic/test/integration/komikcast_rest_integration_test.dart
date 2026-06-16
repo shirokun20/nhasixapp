@@ -113,6 +113,7 @@ const _config = {
       'options': [
         {'value': 'newest', 'apiValue': 'latest'},
         {'value': 'popular', 'apiValue': 'popularity'},
+        {'value': 'rating', 'apiValue': 'rating'},
       ],
     },
   },
@@ -253,6 +254,72 @@ void main() {
           query: 'raw:genreIds=Ecchi',
           page: 1,
           sort: SortOption.newest,
+        ),
+        _config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, _slug);
+    });
+
+    test('raw text query fills endpoint filter placeholder', () async {
+      const expectedUrl =
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=popularity';
+
+      dioAdapter.onGet(
+        expectedUrl,
+        (server) => server.reply(200, jsonDecode(jsonEncode(_searchResponse))),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: 'raw:query=neko',
+          page: 1,
+          sort: SortOption.popular,
+        ),
+        _config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, _slug);
+    });
+
+    test('raw text sort follows filter sort value', () async {
+      const expectedUrl =
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=rating';
+
+      dioAdapter.onGet(
+        expectedUrl,
+        (server) => server.reply(200, jsonDecode(jsonEncode(_searchResponse))),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: 'raw:query=neko',
+          page: 1,
+          sort: SortOption.rating,
+        ),
+        _config,
+      );
+
+      expect(result.items, isNotEmpty);
+      expect(result.items.first.id, _slug);
+    });
+
+    test('stale raw sort is overridden by filter sort', () async {
+      const expectedUrl =
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=popularity';
+
+      dioAdapter.onGet(
+        expectedUrl,
+        (server) => server.reply(200, jsonDecode(jsonEncode(_searchResponse))),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: 'raw:query=neko&sort=latest',
+          page: 1,
+          sort: SortOption.popular,
         ),
         _config,
       );

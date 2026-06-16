@@ -57,18 +57,18 @@ class SelectedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isExclude = filterItem.isExcluded;
-    final bg = isExclude ? cs.error : cs.primary;
-    final onBg = isExclude ? cs.onError : cs.onPrimary;
+    final colors =
+        _selectedFilterColors(isExclude: isExclude, context: context);
 
     return Container(
       decoration: BoxDecoration(
-        color: bg,
+        color: colors.background,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.accent),
         boxShadow: [
           BoxShadow(
-            color: bg.withValues(alpha: 0.4),
+            color: colors.accent.withValues(alpha: 0.30),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -82,7 +82,7 @@ class SelectedFilterChip extends StatelessWidget {
             child: Icon(
               isExclude ? Icons.remove_rounded : Icons.add_rounded,
               size: 14,
-              color: onBg,
+              color: colors.accent,
             ),
           ),
           Padding(
@@ -92,7 +92,7 @@ class SelectedFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: onBg,
+                color: colors.foreground,
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -106,12 +106,31 @@ class SelectedFilterChip extends StatelessWidget {
               child: Icon(
                 Icons.close_rounded,
                 size: 14,
-                color: onBg.withValues(alpha: 0.8),
+                color: colors.accent,
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  _SelectedFilterColors _selectedFilterColors({
+    required bool isExclude,
+    required BuildContext context,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isExclude
+        ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F))
+        : (isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853));
+    final foreground = isExclude
+        ? (isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D))
+        : (isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45));
+
+    return _SelectedFilterColors(
+      accent: accent,
+      foreground: foreground,
+      background: accent.withValues(alpha: isDark ? 0.20 : 0.14),
     );
   }
 }
@@ -242,30 +261,61 @@ class SelectedFilterChipCompact extends StatelessWidget {
   }
 
   Color _getChipColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withValues(alpha: 0.1);
-    }
-    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
+    return _selectedFilterColors(
+      isExclude: filterItem.isExcluded,
+      context: context,
+    ).background;
   }
 
   Color _getBorderColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error.withValues(alpha: 0.3);
-    }
-    return Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
+    return _selectedFilterColors(
+      isExclude: filterItem.isExcluded,
+      context: context,
+    ).accent.withValues(alpha: 0.62);
   }
 
   Color _getIconColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return Theme.of(context).colorScheme.primary;
+    return _selectedFilterColors(
+      isExclude: filterItem.isExcluded,
+      context: context,
+    ).accent;
   }
 
   Color _getTextColor(BuildContext context) {
-    if (filterItem.isExcluded) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return Theme.of(context).colorScheme.primary;
+    return _selectedFilterColors(
+      isExclude: filterItem.isExcluded,
+      context: context,
+    ).foreground;
   }
+}
+
+_SelectedFilterColors _selectedFilterColors({
+  required bool isExclude,
+  required BuildContext context,
+}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final accent = isExclude
+      ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F))
+      : (isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853));
+  final foreground = isExclude
+      ? (isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D))
+      : (isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45));
+
+  return _SelectedFilterColors(
+    accent: accent,
+    foreground: foreground,
+    background: accent.withValues(alpha: isDark ? 0.20 : 0.14),
+  );
+}
+
+class _SelectedFilterColors {
+  const _SelectedFilterColors({
+    required this.accent,
+    required this.foreground,
+    required this.background,
+  });
+
+  final Color accent;
+  final Color foreground;
+  final Color background;
 }

@@ -19,6 +19,9 @@ enum SearchFormFieldType {
   /// Free-text input.
   text,
 
+  /// Single-value radio group.
+  radio,
+
   /// Tag chips input (multiInput true by default).
   tag,
 
@@ -30,6 +33,9 @@ enum SearchFormFieldType {
 
   /// Sort order selector. Serialized as `sort`.
   sort,
+
+  /// Hidden transport field such as pagination.
+  hidden,
 
   /// Visual separator — no value.
   separator,
@@ -46,10 +52,20 @@ class SearchFormFieldOption extends Equatable {
   final String? label;
 
   factory SearchFormFieldOption.fromMap(Map<String, Object?> map) {
+    final value = map['apiValue']?.toString() ?? map['value']?.toString() ?? '';
     return SearchFormFieldOption(
-      value: map['value']?.toString() ?? '',
-      label: map['label']?.toString(),
+      value: value,
+      label: map['displayLabel']?.toString() ?? map['label']?.toString(),
     );
+  }
+
+  factory SearchFormFieldOption.fromObject(Object? value) {
+    if (value is Map) {
+      return SearchFormFieldOption.fromMap(value.cast<String, Object?>());
+    }
+
+    final text = value?.toString() ?? '';
+    return SearchFormFieldOption(value: text, label: text);
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -75,6 +91,7 @@ class SearchFormFieldContract extends Equatable {
     this.multiInput = false,
     this.joinMode,
     this.uiSelector,
+    this.uiDataSource,
     this.operators = const <String>[],
     this.options = const <SearchFormFieldOption>[],
   });
@@ -109,6 +126,9 @@ class SearchFormFieldContract extends Equatable {
   /// UI control hint from `ui.selector` (e.g. `"chips"`, `"dropdown"`).
   final String? uiSelector;
 
+  /// Optional option source key from `searchForm.dataSources`.
+  final String? uiDataSource;
+
   /// Operator list for range/comparison fields (e.g. `[">=", "<="]`).
   final List<String> operators;
 
@@ -121,17 +141,24 @@ class SearchFormFieldContract extends Equatable {
   ) {
     final String typeStr = map['type']?.toString() ?? 'text';
     final SearchFormFieldType type = switch (typeStr) {
+      'radio' => SearchFormFieldType.radio,
       'tag' => SearchFormFieldType.tag,
+      'picker' || 'lov' => SearchFormFieldType.tag,
       'select' => SearchFormFieldType.select,
       'checkbox' => SearchFormFieldType.checkbox,
       'sort' => SearchFormFieldType.sort,
+      'page' || 'hidden' => SearchFormFieldType.hidden,
       'separator' => SearchFormFieldType.separator,
+      'text' || 'input' || 'query' => SearchFormFieldType.text,
       _ => SearchFormFieldType.text,
     };
 
     final Object? uiRaw = map['ui'];
     final String? uiSelector = uiRaw is Map
         ? uiRaw.cast<String, Object?>()['selector']?.toString()
+        : null;
+    final String? uiDataSource = uiRaw is Map
+        ? uiRaw.cast<String, Object?>()['dataSource']?.toString()
         : null;
 
     final Object? opsRaw = map['operators'];
@@ -144,9 +171,8 @@ class SearchFormFieldContract extends Equatable {
     final Object? optsRaw = map['options'];
     final List<SearchFormFieldOption> options = optsRaw is List
         ? optsRaw
-            .whereType<Map>()
-            .map<SearchFormFieldOption>((Map<Object?, Object?> e) =>
-                SearchFormFieldOption.fromMap(e.cast<String, Object?>()))
+            .map<SearchFormFieldOption>(SearchFormFieldOption.fromObject)
+            .where((SearchFormFieldOption option) => option.value.isNotEmpty)
             .toList(growable: false)
         : const <SearchFormFieldOption>[];
 
@@ -163,6 +189,7 @@ class SearchFormFieldContract extends Equatable {
           map['multiInput'] as bool? ?? (type == SearchFormFieldType.tag),
       joinMode: map['joinMode']?.toString(),
       uiSelector: uiSelector,
+      uiDataSource: uiDataSource,
       operators: operators,
       options: options,
     );
@@ -180,6 +207,7 @@ class SearchFormFieldContract extends Equatable {
         if (multiInput) 'multiInput': multiInput,
         if (joinMode != null) 'joinMode': joinMode,
         if (uiSelector != null) 'uiSelector': uiSelector,
+        if (uiDataSource != null) 'uiDataSource': uiDataSource,
         if (operators.isNotEmpty) 'operators': operators,
         if (options.isNotEmpty)
           'options': options
@@ -200,6 +228,7 @@ class SearchFormFieldContract extends Equatable {
         multiInput,
         joinMode,
         uiSelector,
+        uiDataSource,
         operators,
         options,
       ];
@@ -210,6 +239,7 @@ class DynamicSearchFormContract extends Equatable {
   DynamicSearchFormContract({
     required this.urlPattern,
     required List<SearchFormFieldContract> fields,
+    this.dataSources = const <String, Object?>{},
     this.defaultSort,
     this.diagnostics = const <ValidationDiagnostic>[],
   }) : fields = List<SearchFormFieldContract>.unmodifiable(fields);
@@ -218,6 +248,9 @@ class DynamicSearchFormContract extends Equatable {
   final String urlPattern;
 
   final List<SearchFormFieldContract> fields;
+
+  /// Optional picker or LOV data source declarations keyed by field UI hints.
+  final Map<String, Object?> dataSources;
 
   /// Default sort option when none is selected.
   final String? defaultSort;
@@ -252,29 +285,40 @@ class DynamicSearchFormContract extends Equatable {
     final bool hasScBlock = rawConfig['searchConfig'] is Map;
 
     if (!hasSfBlock && !hasScBlock) {
+      final inferred = _inferMinimalQueryForm(rawConfig, diags);
+      if (inferred != null) return inferred;
+
       return DynamicSearchFormContract(
         urlPattern: 'search',
         fields: const <SearchFormFieldContract>[],
+        dataSources: const <String, Object?>{},
         diagnostics: diags,
       );
     }
 
     String urlPattern = 'search';
     final List<SearchFormFieldContract> fields = <SearchFormFieldContract>[];
+    Map<String, Object?> dataSources = const <String, Object?>{};
 
     // Parse HentaiNexus-style `params` map.
     if (sfRaw is Map) {
       final Map<String, Object?> sf = sfRaw.cast<String, Object?>();
       urlPattern = sf['urlPattern']?.toString() ?? 'search';
+      final Object? dataSourcesRaw = sf['dataSources'];
+      if (dataSourcesRaw is Map) {
+        dataSources = dataSourcesRaw.cast<String, Object?>();
+      }
       final Object? paramsRaw = sf['params'];
       if (paramsRaw is Map) {
         for (final MapEntry<Object?, Object?> entry in paramsRaw.entries) {
           final String id = entry.key.toString();
           final Object? value = entry.value;
           if (value is Map) {
+            final map = value.cast<String, Object?>();
+            _addUnsupportedFieldDiagnostics(id, map, diags);
             fields.add(SearchFormFieldContract.fromEntry(
               id,
-              value.cast<String, Object?>(),
+              map,
             ));
           }
         }
@@ -285,27 +329,85 @@ class DynamicSearchFormContract extends Equatable {
     final Object? scRaw = rawConfig['searchConfig'];
     if (scRaw is Map) {
       final Map<String, Object?> sc = scRaw.cast<String, Object?>();
+      final String queryParam = _firstString(sc, const <String>[
+            'queryParam',
+            'queryParamName',
+            'searchParam',
+          ]) ??
+          _inferQueryParamFromUrlPattern(rawConfig) ??
+          'q';
+      if (!fields.any((SearchFormFieldContract f) =>
+          f.queryParam == queryParam && f.type == SearchFormFieldType.text)) {
+        fields.insert(
+          0,
+          SearchFormFieldContract(
+            id: 'query',
+            queryParam: queryParam,
+            type: SearchFormFieldType.text,
+            label: 'Search',
+          ),
+        );
+      }
+
+      _addLegacyFormFields(sc, fields);
+
       final Object? sortingRaw = sc['sortingConfig'];
       if (sortingRaw is Map) {
         final Map<String, Object?> sorting = sortingRaw.cast<String, Object?>();
         final Object? optionsRaw = sorting['options'];
         final List<SearchFormFieldOption> sortOptions = optionsRaw is List
             ? optionsRaw
-                .whereType<Map>()
-                .map<SearchFormFieldOption>((Map<Object?, Object?> e) =>
-                    SearchFormFieldOption.fromMap(e.cast<String, Object?>()))
+                .map<SearchFormFieldOption>(SearchFormFieldOption.fromObject)
+                .where(
+                    (SearchFormFieldOption option) => option.value.isNotEmpty)
                 .toList(growable: false)
             : const <SearchFormFieldOption>[];
         if (sortOptions.isNotEmpty) {
           fields.add(SearchFormFieldContract(
             id: '_sort',
-            queryParam: sorting['queryParam']?.toString() ?? 'orderby',
+            queryParam: sorting['queryParam']?.toString() ??
+                sc['sortParam']?.toString() ??
+                sc['sortParamName']?.toString() ??
+                'sort',
             type: SearchFormFieldType.sort,
             label: sorting['label']?.toString() ?? 'Sort',
             uiSelector: sorting['widgetType']?.toString(),
             options: sortOptions,
           ));
         }
+      } else {
+        final Object? sortValuesRaw = sc['sortValues'];
+        if (sortValuesRaw is Map && sortValuesRaw.isNotEmpty) {
+          fields.add(SearchFormFieldContract(
+            id: '_sort',
+            queryParam: sc['sortParam']?.toString() ??
+                sc['sortParamName']?.toString() ??
+                'sort',
+            type: SearchFormFieldType.sort,
+            label: 'Sort',
+            options: sortValuesRaw.entries
+                .map((MapEntry<Object?, Object?> entry) =>
+                    SearchFormFieldOption(
+                      value: entry.value?.toString() ?? entry.key.toString(),
+                      label: entry.key.toString(),
+                    ))
+                .toList(growable: false),
+          ));
+        }
+      }
+
+      final String? pageParam = _firstString(sc, const <String>[
+        'pageParam',
+        'pageParamName',
+        'paginationParam',
+      ]);
+      if (pageParam != null && pageParam.isNotEmpty) {
+        fields.add(SearchFormFieldContract(
+          id: '_page',
+          queryParam: pageParam,
+          type: SearchFormFieldType.hidden,
+          label: 'Page',
+        ));
       }
     }
 
@@ -323,6 +425,7 @@ class DynamicSearchFormContract extends Equatable {
     return DynamicSearchFormContract(
       urlPattern: urlPattern,
       fields: fields,
+      dataSources: dataSources,
       diagnostics: diags,
     );
   }
@@ -330,11 +433,242 @@ class DynamicSearchFormContract extends Equatable {
   Map<String, Object?> toJson() => <String, Object?>{
         'urlPattern': urlPattern,
         if (defaultSort != null) 'defaultSort': defaultSort,
+        if (dataSources.isNotEmpty) 'dataSources': dataSources,
         'fields': fields
             .map((SearchFormFieldContract f) => f.toJson())
             .toList(growable: false),
       };
 
   @override
-  List<Object?> get props => <Object?>[urlPattern, fields, defaultSort];
+  List<Object?> get props =>
+      <Object?>[urlPattern, fields, dataSources, defaultSort];
+
+  static DynamicSearchFormContract? _inferMinimalQueryForm(
+    Map<String, Object?> rawConfig,
+    List<ValidationDiagnostic> diags,
+  ) {
+    final String? queryParam = _inferQueryParamFromUrlPattern(rawConfig);
+    if (queryParam == null || queryParam.isEmpty) return null;
+
+    final String? pageParam = _inferPageParamFromUrlPattern(rawConfig);
+    diags.add(ValidationDiagnostic(
+      severity: DiagnosticSeverity.info,
+      code: 'searchAutowiringInferred',
+      message:
+          'Search form inferred from conventional query parameters: $queryParam.',
+      feature: FeatureKind.dynamicForm,
+      path: 'scraper.urlPatterns.search',
+      context: <String, Object?>{
+        'queryParam': queryParam,
+        if (pageParam != null) 'pageParam': pageParam,
+      },
+    ));
+
+    return DynamicSearchFormContract(
+      urlPattern: 'search',
+      fields: <SearchFormFieldContract>[
+        SearchFormFieldContract(
+          id: 'query',
+          queryParam: queryParam,
+          type: SearchFormFieldType.text,
+          label: 'Search',
+        ),
+        if (pageParam != null)
+          SearchFormFieldContract(
+            id: '_page',
+            queryParam: pageParam,
+            type: SearchFormFieldType.hidden,
+            label: 'Page',
+          ),
+      ],
+      diagnostics: diags,
+    );
+  }
+
+  static String? _inferQueryParamFromUrlPattern(
+      Map<String, Object?> rawConfig) {
+    final template = _searchUrlTemplate(rawConfig);
+    if (template == null) return null;
+
+    const candidates = <String>['q', 'query', 'search', 's', 'keyword', 'term'];
+    for (final candidate in candidates) {
+      if (RegExp('(?:[?&])$candidate=\\{[^}]+\\}').hasMatch(template)) {
+        return candidate;
+      }
+    }
+
+    final conventionalParam = RegExp(
+      r'(?:[?&])([^=&]+)=\{(?:query|keyword|search|term)\}',
+    ).firstMatch(template);
+    if (conventionalParam != null) {
+      return Uri.decodeComponent(conventionalParam.group(1)!);
+    }
+
+    return template.contains('{query}') ? 'q' : null;
+  }
+
+  static String? _inferPageParamFromUrlPattern(Map<String, Object?> rawConfig) {
+    final template = _searchUrlTemplate(rawConfig);
+    if (template == null) return null;
+
+    const candidates = <String>['page', 'p', 'paged'];
+    for (final candidate in candidates) {
+      if (RegExp('(?:[?&])$candidate=\\{[^}]+\\}').hasMatch(template)) {
+        return candidate;
+      }
+    }
+
+    final conventionalParam = RegExp(
+      r'(?:[?&])([^=&]+)=\{(?:page|p|paged)\}',
+    ).firstMatch(template);
+    if (conventionalParam != null) {
+      return Uri.decodeComponent(conventionalParam.group(1)!);
+    }
+
+    return null;
+  }
+
+  static String? _searchUrlTemplate(Map<String, Object?> rawConfig) {
+    final scraper = rawConfig['scraper'];
+    if (scraper is Map) {
+      final urlPatterns = scraper.cast<String, Object?>()['urlPatterns'];
+      if (urlPatterns is Map) {
+        final search = urlPatterns.cast<String, Object?>()['search'];
+        if (search is String) return search;
+        if (search is Map) {
+          return search.cast<String, Object?>()['url']?.toString();
+        }
+      }
+    }
+
+    final api = rawConfig['api'];
+    if (api is Map) {
+      final endpoints = api.cast<String, Object?>()['endpoints'];
+      if (endpoints is Map) {
+        final search = endpoints.cast<String, Object?>()['search'];
+        if (search is String) return search;
+        if (search is Map) {
+          return search.cast<String, Object?>()['url']?.toString();
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static String? _firstString(Map<String, Object?> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  static void _addLegacyFormFields(
+    Map<String, Object?> searchConfig,
+    List<SearchFormFieldContract> fields,
+  ) {
+    final textFields = searchConfig['textFields'];
+    if (textFields is List) {
+      for (final item in textFields.whereType<Map>()) {
+        final map = item.cast<String, Object?>();
+        final name = map['name']?.toString();
+        if (name == null || name.isEmpty) continue;
+        fields.add(SearchFormFieldContract(
+          id: name,
+          queryParam: map['queryParam']?.toString() ?? name,
+          type: SearchFormFieldType.text,
+          label: map['label']?.toString(),
+          placeholder: map['placeholder']?.toString(),
+        ));
+      }
+    }
+
+    final radioGroups = searchConfig['radioGroups'];
+    if (radioGroups is List) {
+      for (final item in radioGroups.whereType<Map>()) {
+        final map = item.cast<String, Object?>();
+        final name = map['name']?.toString();
+        if (name == null || name.isEmpty) continue;
+        fields.add(SearchFormFieldContract(
+          id: name,
+          queryParam: map['queryParam']?.toString() ?? name,
+          type: SearchFormFieldType.radio,
+          label: map['label']?.toString(),
+          options: _optionsFromRawList(map['options']),
+        ));
+      }
+    }
+
+    final checkboxGroups = searchConfig['checkboxGroups'];
+    if (checkboxGroups is List) {
+      for (final item in checkboxGroups.whereType<Map>()) {
+        final map = item.cast<String, Object?>();
+        final name = map['name']?.toString();
+        if (name == null || name.isEmpty) continue;
+        fields.add(SearchFormFieldContract(
+          id: name,
+          queryParam: map['paramName']?.toString() ??
+              map['queryParam']?.toString() ??
+              name,
+          type: SearchFormFieldType.checkbox,
+          label: map['label']?.toString(),
+          options: _optionsFromRawList(map['options']),
+        ));
+      }
+    }
+  }
+
+  static List<SearchFormFieldOption> _optionsFromRawList(Object? raw) {
+    if (raw is! List) return const <SearchFormFieldOption>[];
+    return raw
+        .map<SearchFormFieldOption>(SearchFormFieldOption.fromObject)
+        .where((SearchFormFieldOption option) => option.value.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  static void _addUnsupportedFieldDiagnostics(
+    String id,
+    Map<String, Object?> map,
+    List<ValidationDiagnostic> diags,
+  ) {
+    final type = map['type']?.toString() ?? 'text';
+    const supported = <String>{
+      'text',
+      'input',
+      'query',
+      'radio',
+      'tag',
+      'picker',
+      'lov',
+      'select',
+      'checkbox',
+      'sort',
+      'page',
+      'hidden',
+      'separator',
+    };
+    if (!supported.contains(type)) {
+      diags.add(ValidationDiagnostic(
+        severity: DiagnosticSeverity.warning,
+        code: 'searchFieldUnsupported',
+        message: 'Search field "$id" uses unsupported type "$type".',
+        feature: FeatureKind.dynamicForm,
+        path: 'searchForm.params.$id.type',
+        context: <String, Object?>{'field': id, 'type': type},
+      ));
+    }
+
+    final operators = map['operators'];
+    if (operators is List && operators.isNotEmpty) {
+      diags.add(ValidationDiagnostic(
+        severity: DiagnosticSeverity.info,
+        code: 'searchFieldOperatorsDetected',
+        message: 'Search field "$id" uses operator serialization.',
+        feature: FeatureKind.dynamicForm,
+        path: 'searchForm.params.$id.operators',
+        context: <String, Object?>{'field': id},
+      ));
+    }
+  }
 }

@@ -172,7 +172,8 @@ class SourceConfigParser {
     // ── Dynamic search form (3.3) ───────────────────────────────────────────
     DynamicSearchFormContract? searchForm;
     final bool hasSearchForm = rawConfig.containsKey('searchForm') ||
-        rawConfig.containsKey('searchConfig');
+        rawConfig.containsKey('searchConfig') ||
+        _hasSearchEndpoint(rawConfig);
     if (hasSearchForm) {
       searchForm = DynamicSearchFormContract.fromConfig(rawConfig);
       diags.addAll(searchForm.diagnostics);
@@ -274,6 +275,28 @@ class SourceConfigParser {
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────
+
+  bool _hasSearchEndpoint(Map<String, Object?> rawConfig) {
+    final scraper = rawConfig['scraper'];
+    if (scraper is Map) {
+      final urlPatterns = scraper.cast<String, Object?>()['urlPatterns'];
+      if (urlPatterns is Map &&
+          urlPatterns.cast<String, Object?>().containsKey('search')) {
+        return true;
+      }
+    }
+
+    final api = rawConfig['api'];
+    if (api is Map) {
+      final endpoints = api.cast<String, Object?>()['endpoints'];
+      if (endpoints is Map &&
+          endpoints.cast<String, Object?>().containsKey('search')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   List<FeatureContract> _buildFeatureContracts({
     required Map<String, Object?> rawConfig,

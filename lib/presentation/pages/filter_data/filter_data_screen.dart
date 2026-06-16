@@ -500,8 +500,9 @@ class _FilterTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final typeColor = _tagTypeColor(context);
+    final includeColors = _selectionColors(isExclude: false, context: context);
+    final excludeColors = _selectionColors(isExclude: true, context: context);
 
     // Solid fill for selected states, tinted background for default
     final Color bg;
@@ -513,35 +514,35 @@ class _FilterTagChip extends StatelessWidget {
     final double borderWidth;
 
     if (isIncluded) {
-      bg = colorScheme.primary;
-      border = colorScheme.primary;
-      labelColor = colorScheme.onPrimary;
-      countColor = colorScheme.onPrimary.withValues(alpha: 0.7);
+      bg = includeColors.background;
+      border = includeColors.accent;
+      labelColor = includeColors.foreground;
+      countColor = includeColors.foreground.withValues(alpha: 0.75);
       shadows = [
         BoxShadow(
-          color: colorScheme.primary.withValues(alpha: 0.45),
+          color: includeColors.accent.withValues(alpha: 0.35),
           blurRadius: 8,
           spreadRadius: 0,
           offset: const Offset(0, 2),
         ),
       ];
       icon = Icons.add_rounded;
-      borderWidth = 0;
+      borderWidth = 1;
     } else if (isExcluded) {
-      bg = colorScheme.error;
-      border = colorScheme.error;
-      labelColor = colorScheme.onError;
-      countColor = colorScheme.onError.withValues(alpha: 0.7);
+      bg = excludeColors.background;
+      border = excludeColors.accent;
+      labelColor = excludeColors.foreground;
+      countColor = excludeColors.foreground.withValues(alpha: 0.75);
       shadows = [
         BoxShadow(
-          color: colorScheme.error.withValues(alpha: 0.45),
+          color: excludeColors.accent.withValues(alpha: 0.35),
           blurRadius: 8,
           spreadRadius: 0,
           offset: const Offset(0, 2),
         ),
       ];
       icon = Icons.remove_rounded;
-      borderWidth = 0;
+      borderWidth = 1;
     } else {
       bg = typeColor.withValues(alpha: 0.08);
       border = typeColor.withValues(alpha: 0.35);
@@ -625,4 +626,35 @@ class _FilterTagChip extends StatelessWidget {
         return cs.onSurfaceVariant;
     }
   }
+
+  _FilterSelectionColors _selectionColors({
+    required bool isExclude,
+    required BuildContext context,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isExclude
+        ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F))
+        : (isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853));
+    final foreground = isExclude
+        ? (isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D))
+        : (isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45));
+
+    return _FilterSelectionColors(
+      accent: accent,
+      foreground: foreground,
+      background: accent.withValues(alpha: isDark ? 0.20 : 0.14),
+    );
+  }
+}
+
+class _FilterSelectionColors {
+  const _FilterSelectionColors({
+    required this.accent,
+    required this.foreground,
+    required this.background,
+  });
+
+  final Color accent;
+  final Color foreground;
+  final Color background;
 }

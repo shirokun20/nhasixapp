@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:kuron_core/kuron_core.dart' show ValidationReport;
-import 'package:kuron_generic/kuron_generic.dart' show SourceConfigParser;
+import 'package:kuron_generic/kuron_generic.dart'
+    show DynamicSearchFormContract, SourceConfigParser;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:path/path.dart' as p;
@@ -200,6 +201,32 @@ class RemoteConfigService {
     }
 
     return null;
+  }
+
+  /// Returns the canonical package-side search contract for [source].
+  ///
+  /// This is the preferred app-facing search representation. Legacy
+  /// [SearchConfig] and [SearchFormConfig] remain compatibility inputs and are
+  /// normalized by `kuron_generic` before rendering.
+  DynamicSearchFormContract? getCanonicalSearchForm(String source) {
+    final raw = _rawSourceConfigs[source];
+    if (raw == null) return null;
+
+    try {
+      final parsed = const SourceConfigParser().parse(
+        raw.cast<String, Object?>(),
+      );
+      final contract = parsed.searchForm;
+      if (contract == null || contract.fields.isEmpty) return null;
+      return contract;
+    } catch (e, stackTrace) {
+      _logger.w(
+        'Failed to build canonical search form for $source',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
   }
 
   List<SourceConfig> getAllSourceConfigs() =>

@@ -260,6 +260,27 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         filter.category != null;
   }
 
+  String? _removeRawSearchQueryParam(String? query, String paramName) {
+    if (query == null || !query.startsWith('raw:')) return query;
+
+    final raw = query.substring(4);
+    final kept = <String>[];
+    for (final pair in raw.split('&')) {
+      if (pair.isEmpty) continue;
+      final idx = pair.indexOf('=');
+      if (idx < 0) {
+        kept.add(pair);
+        continue;
+      }
+      final key = Uri.decodeComponent(pair.substring(0, idx));
+      if (key != paramName) {
+        kept.add(pair);
+      }
+    }
+
+    return kept.isEmpty ? null : 'raw:${kept.join('&')}';
+  }
+
   /// Reload search filter from storage and apply to content bloc
   Future<void> _reloadSearchFilter() async {
     try {
@@ -276,10 +297,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         final savedFilter = SearchFilter.fromJson(savedFilterData);
 
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
-          final sanitizedQuery =
-              savedFilter.query == '{query}' ? '' : savedFilter.query;
+          final sanitizedQuery = savedFilter.query == '{query}'
+              ? ''
+              : _removeRawSearchQueryParam(savedFilter.query, 'sort');
           _currentSearchFilter = savedFilter.copyWith(
-              query: sanitizedQuery, sortBy: _currentSortOption);
+            query: sanitizedQuery,
+            sortBy: _currentSortOption,
+          );
           _isShowingSearchResults = true;
           _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
 
@@ -1122,15 +1146,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       final userDataRepository = getIt<UserDataRepository>();
       await userDataRepository.saveSortingPreference(newSort);
 
-      // Apply sorting using ContentBloc event
-      _contentBloc.add(ContentSortChangedEvent(newSort));
-
-      // Update current search filter if showing search results
       if (_isShowingSearchResults && _currentSearchFilter != null) {
         _currentSearchFilter = _currentSearchFilter!.copyWith(
           sortBy: newSort,
           page: 1, // Reset to first page when sorting changes
         );
+        _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
+      } else {
+        // Apply sorting using ContentBloc event for normal browse mode.
+        _contentBloc.add(ContentSortChangedEvent(newSort));
       }
     } catch (e) {
       Logger().e('MainScreen: Error changing sorting: $e');
