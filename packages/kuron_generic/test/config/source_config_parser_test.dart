@@ -569,6 +569,43 @@ void main() {
       );
     });
 
+    test('deduplicates form query fields that share the same queryParam', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchForm': <String, Object?>{
+          'urlPattern': 'advancedSearch',
+          'params': <String, Object?>{
+            'query': <String, Object?>{
+              'queryParam': 'title',
+              'type': 'text',
+            },
+            'page': <String, Object?>{
+              'queryParam': 'page',
+              'type': 'page',
+            },
+          },
+        },
+        'searchConfig': <String, Object?>{
+          'searchMode': 'form-based',
+          'textFields': <Object?>[
+            <String, Object?>{
+              'name': 'title',
+              'label': 'Title',
+              'placeholder': 'Search by title...',
+            },
+          ],
+        },
+      });
+
+      final titleFields = c.fields
+          .where((SearchFormFieldContract field) => field.queryParam == 'title')
+          .toList(growable: false);
+
+      expect(titleFields, hasLength(1));
+      expect(titleFields.single.id, 'query');
+      expect(c.fields.map((field) => field.id), isNot(contains('title')));
+    });
+
     test('infers minimal query contract from scraper search URL pattern', () {
       final DynamicSearchFormContract c =
           DynamicSearchFormContract.fromConfig(<String, Object?>{

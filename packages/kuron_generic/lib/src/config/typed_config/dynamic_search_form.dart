@@ -329,6 +329,12 @@ class DynamicSearchFormContract extends Equatable {
     final Object? scRaw = rawConfig['searchConfig'];
     if (scRaw is Map) {
       final Map<String, Object?> sc = scRaw.cast<String, Object?>();
+      final bool hasExplicitLegacyFields =
+          (sc['textFields'] is List && (sc['textFields'] as List).isNotEmpty) ||
+              (sc['radioGroups'] is List &&
+                  (sc['radioGroups'] as List).isNotEmpty) ||
+              (sc['checkboxGroups'] is List &&
+                  (sc['checkboxGroups'] as List).isNotEmpty);
       final String queryParam = _firstString(sc, const <String>[
             'queryParam',
             'queryParamName',
@@ -336,8 +342,10 @@ class DynamicSearchFormContract extends Equatable {
           ]) ??
           _inferQueryParamFromUrlPattern(rawConfig) ??
           'q';
-      if (!fields.any((SearchFormFieldContract f) =>
-          f.queryParam == queryParam && f.type == SearchFormFieldType.text)) {
+      if (!hasExplicitLegacyFields &&
+          !fields.any((SearchFormFieldContract f) =>
+              f.queryParam == queryParam &&
+              f.type == SearchFormFieldType.text)) {
         fields.insert(
           0,
           SearchFormFieldContract(
@@ -574,9 +582,14 @@ class DynamicSearchFormContract extends Equatable {
         final map = item.cast<String, Object?>();
         final name = map['name']?.toString();
         if (name == null || name.isEmpty) continue;
+        final queryParam = map['queryParam']?.toString() ?? name;
+        if (fields.any((SearchFormFieldContract field) =>
+            field.queryParam == queryParam)) {
+          continue;
+        }
         fields.add(SearchFormFieldContract(
           id: name,
-          queryParam: map['queryParam']?.toString() ?? name,
+          queryParam: queryParam,
           type: SearchFormFieldType.text,
           label: map['label']?.toString(),
           placeholder: map['placeholder']?.toString(),
@@ -590,9 +603,14 @@ class DynamicSearchFormContract extends Equatable {
         final map = item.cast<String, Object?>();
         final name = map['name']?.toString();
         if (name == null || name.isEmpty) continue;
+        final queryParam = map['queryParam']?.toString() ?? name;
+        if (fields.any((SearchFormFieldContract field) =>
+            field.queryParam == queryParam)) {
+          continue;
+        }
         fields.add(SearchFormFieldContract(
           id: name,
-          queryParam: map['queryParam']?.toString() ?? name,
+          queryParam: queryParam,
           type: SearchFormFieldType.radio,
           label: map['label']?.toString(),
           options: _optionsFromRawList(map['options']),
@@ -606,11 +624,16 @@ class DynamicSearchFormContract extends Equatable {
         final map = item.cast<String, Object?>();
         final name = map['name']?.toString();
         if (name == null || name.isEmpty) continue;
+        final queryParam = map['paramName']?.toString() ??
+            map['queryParam']?.toString() ??
+            name;
+        if (fields.any((SearchFormFieldContract field) =>
+            field.queryParam == queryParam)) {
+          continue;
+        }
         fields.add(SearchFormFieldContract(
           id: name,
-          queryParam: map['paramName']?.toString() ??
-              map['queryParam']?.toString() ??
-              name,
+          queryParam: queryParam,
           type: SearchFormFieldType.checkbox,
           label: map['label']?.toString(),
           options: _optionsFromRawList(map['options']),
