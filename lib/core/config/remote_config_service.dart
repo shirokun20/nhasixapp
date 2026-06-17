@@ -23,8 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// On [smartInitialize] the service:
 /// 1. Loads bundled defaults (`nhentai`, `app`, `tags`).
 /// 2. Restores manually installed sources from local cache.
-/// 3. Performs best-effort self-refresh via each non-bundled source's
-///    `configUrl`.
+/// 3. Trusts installed/cached source configs as the source of truth.
 ///
 /// Config is intentionally **not time-expiring** — invalidation is purely
 /// version-driven (bumping version in manifest triggers re-download).
@@ -33,10 +32,10 @@ class RemoteConfigService {
   final Logger _logger;
 
   // Legacy tags URLs (kept for backward compatibility)
-  static const String _tagsBaseUrl =
-      'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs/tags';
-  static const String _nhentaiTagsUrl = '$_tagsBaseUrl/tags_nhentai.json';
-  static const String _crotpediaTagsUrl = '$_tagsBaseUrl/tags_crotpedia.json';
+  // static const String _tagsBaseUrl =
+  //     'https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs/tags';
+  // static const String _nhentaiTagsUrl = '$_tagsBaseUrl/tags_nhentai.json';
+  // static const String _crotpediaTagsUrl = '$_tagsBaseUrl/tags_crotpedia.json';
 
   // ── Asset paths ──────────────────────────────────────────────────────────────
 
@@ -66,8 +65,8 @@ class RemoteConfigService {
       'config_version_$sourceId';
 
   // Legacy tag cache keys
-  static const String _nhentaiTagsCacheKey = 'tags_cache_nhentai';
-  static const String _crotpediaTagsCacheKey = 'tags_cache_crotpedia';
+  // static const String _nhentaiTagsCacheKey = 'tags_cache_nhentai';
+  // static const String _crotpediaTagsCacheKey = 'tags_cache_crotpedia';
 
   // ── In-memory state ──────────────────────────────────────────────────────────
 
@@ -127,11 +126,7 @@ class RemoteConfigService {
       onProgress?.call(0.55, 'Loading tags config…');
       await _loadTagsManifest();
 
-      // Attempt a background self-refresh for every source that carries a
-      // configUrl field. With manifest mode disabled, this is the only
-      // network-based refresh path.
-      onProgress?.call(0.85, 'Checking source self-updates…');
-      await _selfRefreshAllFromConfigUrl(null);
+      onProgress?.call(0.85, 'Source configs ready…');
 
       // Persist sync timestamp
       final prefs = await SharedPreferences.getInstance();
@@ -311,90 +306,22 @@ class RemoteConfigService {
   Future<bool> hasValidCache(String source) async =>
       _sourceConfigs.containsKey(source);
 
-  /// Attempts to refresh a source config from its own embedded `configUrl`
-  /// field (self-describing CDN reference).
+  /// `configUrl` refresh is disabled.
   ///
-  /// This is called by `GenericHttpSource` during initialization so each
-  /// source can describe its own update endpoint, independent of the CDN
-  /// manifest. The config is refreshed only when the remote version is newer
-  /// than the currently loaded one.
+  /// Installed source configs are the single source of truth. The runtime no
+  /// longer reaches out to the source's embedded `configUrl`, because that can
+  /// overwrite the locally installed config with stale remote data.
   ///
-  /// Returns `true` if the config was refreshed, `false` otherwise.
-  Future<bool> refreshSourceFromConfigUrl(String sourceId) async {
-    if (_bundledSourceIds.contains(sourceId)) {
-      _logger.d(
-        '$sourceId: bundled source uses APK config only — skipping configUrl refresh',
-      );
-      return false;
-    }
-
-    final raw = _rawSourceConfigs[sourceId];
-    final dynamic rawConfigUrl = raw?['configUrl'];
-    final configUrl = rawConfigUrl is String ? rawConfigUrl : null;
-    if (configUrl == null || configUrl.isEmpty) {
-      _logger.d('$sourceId: no configUrl field — skipping self-refresh');
-      return false;
-    }
-
-    _logger.i('$sourceId: attempting self-refresh from $configUrl');
-    try {
-      final response = await _dio.get<String>(
-        configUrl,
-        options: Options(
-          receiveTimeout: const Duration(seconds: 8),
-          responseType: ResponseType.plain,
-        ),
-      );
-
-      final rawJson = response.data;
-      if (rawJson == null) return false;
-
-      final decoded = _normalizeSourceConfigForCompatibility(
-        jsonDecode(rawJson) as Map<String, dynamic>,
-      );
-      final remoteVersion = decoded['version'] as String?;
-      final localVersion = raw?['version'] as String?;
-
-      if (remoteVersion == localVersion) {
-        _logger.d(
-          '$sourceId: configUrl version $remoteVersion == local — no update',
-        );
-        return false;
-      }
-
-      if (!_isRemoteVersionNewer(remoteVersion, localVersion)) {
-        _logger.w(
-          '$sourceId: skip configUrl refresh because remote version '
-          '$remoteVersion is not newer than local $localVersion',
-        );
-        return false;
-      }
-
-      // Persist to AppDocDir so it survives app restarts.
-      final configDir = await _getConfigDirectory();
-      final cachedFile = File(p.join(configDir.path, '$sourceId-config.json'));
-      await cachedFile.writeAsString(jsonEncode(decoded));
-
-      // Also update the version pref so manifest sync skips re-download.
-      if (remoteVersion != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_prefSourceVersion(sourceId), remoteVersion);
-      }
-
-      _rawSourceConfigs[sourceId] = decoded;
-      _sourceConfigs[sourceId] = SourceConfig.fromJson(decoded);
-
-      _logger.i(
-        '✅ $sourceId refreshed via configUrl: $localVersion → $remoteVersion',
-      );
-      return true;
-    } catch (e) {
-      _logger.w(
-        '$sourceId: configUrl refresh failed — keeping existing config',
-        error: e,
-      );
-      return false;
-    }
+  /// Returns `false` to indicate no refresh happened.
+  Future<bool> refreshSourceFromConfigUrl(
+    String sourceId, {
+    bool forceRefresh = false,
+  }) async {
+    _logger.d(
+      '$sourceId: configUrl refresh disabled (forceRefresh=$forceRefresh) — '
+      'using installed cache only',
+    );
+    return false;
   }
 
   /// Downloads a source config from an explicit URL and applies it instantly.
@@ -548,77 +475,83 @@ class RemoteConfigService {
   // ─── Tags (legacy) ──────────────────────────────────────────────────────────
 
   Future<void> downloadTagsForSource(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') {
-      _logger.w('Tags download not supported for source: $source');
-      return;
-    }
+    // if (source != 'nhentai' && source != 'crotpedia') {
+    _logger.w('Tags download not supported for source: $source');
+    return;
+    // }
 
-    final url = source == 'nhentai' ? _nhentaiTagsUrl : _crotpediaTagsUrl;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    // const url = null;
+    // final cacheKey =
+    // source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
 
-    try {
-      _logger.i('Downloading tags for $source from: $url');
-      final response = await _dio.get(url);
+    // if (url == null) {
+    //   _logger.w('Tags download URL is null for source: $source');
+    //   return;
+    // }
 
-      if (response.statusCode == 200 && response.data != null) {
-        final String jsonString = response.data is String
-            ? response.data as String
-            : jsonEncode(response.data);
+    // try {
+    //   _logger.i('Downloading tags for $source from: $url');
+    //   final response = await _dio.get(url);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(cacheKey, jsonString);
-        await prefs.setInt(
-          '${cacheKey}_timestamp',
-          DateTime.now().millisecondsSinceEpoch,
-        );
-        _logger.i('✅ Tags downloaded and cached for $source');
-      }
-    } catch (e) {
-      _logger.e('Error downloading tags for $source', error: e);
-    }
+    //   if (response.statusCode == 200 && response.data != null) {
+    //     final String jsonString = response.data is String
+    //         ? response.data as String
+    //         : jsonEncode(response.data);
+
+    //     final prefs = await SharedPreferences.getInstance();
+    //     await prefs.setString(cacheKey, jsonString);
+    //     await prefs.setInt(
+    //       '${cacheKey}_timestamp',
+    //       DateTime.now().millisecondsSinceEpoch,
+    //     );
+    //     _logger.i('✅ Tags downloaded and cached for $source');
+    //   }
+    // } catch (e) {
+    //   _logger.e('Error downloading tags for $source', error: e);
+    // }
   }
 
   Future<List<Map<String, dynamic>>?> getCachedTags(String source) async {
     if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(cacheKey);
-      if (raw != null) {
-        final list = jsonDecode(raw) as List<dynamic>;
-        return list.cast<Map<String, dynamic>>();
-      }
-    } catch (e) {
-      _logger.w('Failed to load cached tags for $source', error: e);
-    }
+    // final cacheKey =
+    //     source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    // try {
+    //   final prefs = await SharedPreferences.getInstance();
+    //   final raw = prefs.getString(cacheKey);
+    //   if (raw != null) {
+    //     final list = jsonDecode(raw) as List<dynamic>;
+    //     return list.cast<Map<String, dynamic>>();
+    //   }
+    // } catch (e) {
+    //   _logger.w('Failed to load cached tags for $source', error: e);
+    // }
     return null;
   }
 
   Future<bool> hasTagsCache(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') return false;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(cacheKey);
+    // if (source != 'nhentai' && source != 'crotpedia') return false;
+    // final cacheKey =
+    //     source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    // final prefs = await SharedPreferences.getInstance();
+    // return prefs.containsKey(cacheKey);
+    return false;
   }
 
   Future<int?> getTagsCacheAge(String source) async {
-    if (source != 'nhentai' && source != 'crotpedia') return null;
-    final cacheKey =
-        source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final ts = prefs.getInt('${cacheKey}_timestamp');
-      if (ts != null) {
-        return DateTime.now()
-            .difference(DateTime.fromMillisecondsSinceEpoch(ts))
-            .inDays;
-      }
-    } catch (e) {
-      _logger.w('Failed to get cache age for $source', error: e);
-    }
+    // if (source != 'nhentai' && source != 'crotpedia') return null;
+    // final cacheKey =
+    //     source == 'nhentai' ? _nhentaiTagsCacheKey : _crotpediaTagsCacheKey;
+    // try {
+    //   final prefs = await SharedPreferences.getInstance();
+    //   final ts = prefs.getInt('${cacheKey}_timestamp');
+    //   if (ts != null) {
+    //     return DateTime.now()
+    //         .difference(DateTime.fromMillisecondsSinceEpoch(ts))
+    //         .inDays;
+    //   }
+    // } catch (e) {
+    //   _logger.w('Failed to get cache age for $source', error: e);
+    // }
     return null;
   }
 
@@ -758,37 +691,6 @@ class RemoteConfigService {
     }
   }
 
-  bool _isRemoteVersionNewer(String? remote, String? local) {
-    if (remote == null || remote.isEmpty) return false;
-    if (local == null || local.isEmpty) return true;
-
-    final remoteParts = _parseVersionParts(remote);
-    final localParts = _parseVersionParts(local);
-    final maxLength = remoteParts.length > localParts.length
-        ? remoteParts.length
-        : localParts.length;
-
-    for (var i = 0; i < maxLength; i++) {
-      final r = i < remoteParts.length ? remoteParts[i] : 0;
-      final l = i < localParts.length ? localParts[i] : 0;
-      if (r > l) return true;
-      if (r < l) return false;
-    }
-
-    return false;
-  }
-
-  List<int> _parseVersionParts(String version) {
-    final normalized = version.trim();
-    if (normalized.isEmpty) return const [];
-
-    return normalized
-        .split('.')
-        .map(
-            (part) => int.tryParse(part.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0)
-        .toList();
-  }
-
   Future<void> _loadTagsManifest() async {
     try {
       final assetString = await rootBundle.loadString(_tagsAssetPath);
@@ -798,31 +700,6 @@ class RemoteConfigService {
     } catch (e) {
       _logger.w('Tags manifest load failed', error: e);
     }
-  }
-
-  /// For each loaded source that has a `configUrl` field and whose version
-  /// was NOT already refreshed by the manifest during this init cycle, try a
-  /// lightweight self-refresh.
-  ///
-  /// Sources that WERE handled by the manifest are skipped — the manifest
-  /// sync is authoritative and already fetched the latest version.
-  Future<void> _selfRefreshAllFromConfigUrl(SourceManifest? manifest) async {
-    // Build a set of source IDs whose versions were handled by the manifest.
-    final manifestIds =
-        manifest?.installableSources.map((e) => e.id).toSet() ?? {};
-
-    final futures = _rawSourceConfigs.keys
-        .where((id) => !manifestIds.contains(id))
-        .where((id) => !_bundledSourceIds.contains(id))
-        .where((id) {
-          final dynamic configUrl = _rawSourceConfigs[id]?['configUrl'];
-          return configUrl is String && configUrl.isNotEmpty;
-        })
-        .map((id) => refreshSourceFromConfigUrl(id))
-        .toList();
-
-    if (futures.isEmpty) return;
-    await Future.wait(futures, eagerError: false);
   }
 
   /// Normalize older source config schemas into the typed model expected by

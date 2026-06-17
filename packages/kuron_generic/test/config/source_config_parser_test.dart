@@ -546,6 +546,9 @@ void main() {
               'name': 'genre',
               'label': 'Genre',
               'paramName': 'genre[]',
+              'loadFromTags': true,
+              'tagType': 'genre',
+              'tagSourceUrl': 'https://example.com/tags.json',
               'options': <String>['action'],
             },
           ],
@@ -566,6 +569,10 @@ void main() {
       expect(
         c.fields.firstWhere((field) => field.id == 'genre').queryParam,
         'genre[]',
+      );
+      expect(
+        c.fields.firstWhere((field) => field.id == 'genre').tagSourceUrl,
+        'https://example.com/tags.json',
       );
     });
 

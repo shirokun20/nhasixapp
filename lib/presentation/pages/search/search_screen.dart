@@ -25,7 +25,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  bool _isRefreshingSearchConfig = false;
+  int _configReloadNonce = 0;
 
   SearchConfig? _buildScraperQueryFallback(Map<String, dynamic>? rawMap) {
     final scraper = rawMap?['scraper'] as Map<String, dynamic>?;
@@ -64,43 +64,51 @@ class _SearchScreenState extends State<SearchScreen> {
     switch (config.searchMode) {
       case SearchMode.queryString:
         return QueryStringSearchUI(
+          key: _searchUiKey(sourceId),
           config: config,
           sourceId: sourceId,
           initialQuery: widget.query,
+          reloadSignal: _configReloadNonce,
         );
       case SearchMode.formBased:
         return FormBasedSearchUI(
+          key: _searchUiKey(sourceId),
           config: config,
           sourceId: sourceId,
+          reloadSignal: _configReloadNonce,
         );
     }
   }
 
-  Future<void> _retrySearchConfig(String sourceId) async {
-    if (_isRefreshingSearchConfig) return;
+  Key _searchUiKey(String sourceId) => ValueKey('search-ui-$sourceId');
 
+  Future<void> _reloadSearchUi(String sourceId) async {
     setState(() {
-      _isRefreshingSearchConfig = true;
+      _configReloadNonce++;
     });
 
-    try {
-      await getIt<RemoteConfigService>().refreshSourceFromConfigUrl(sourceId);
-      if (!mounted) return;
+    context.read<SourceCubit>().refreshSources();
 
-      context.read<SourceCubit>().refreshSources();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshingSearchConfig = false;
-        });
-      }
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reloading search filters'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffoldWithOffline(
       title: AppLocalizations.of(context)?.searchTitle ?? 'Search',
+      actions: [
+        IconButton(
+          tooltip: 'Reload search UI',
+          onPressed: () => _reloadSearchUi(
+            context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai',
+          ),
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
       body: BlocBuilder<SourceCubit, SourceState>(
         builder: (context, sourceState) {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
@@ -123,10 +131,12 @@ class _SearchScreenState extends State<SearchScreen> {
             return _buildLegacySearchUi(searchConfig, sourceId);
           } else if (canonicalSearchForm != null) {
             return DynamicFormSearchUI(
+              key: _searchUiKey(sourceId),
               config: SearchFormContractAdapter.toSearchFormConfig(
                   canonicalSearchForm),
               sourceId: sourceId,
               canonicalContract: canonicalSearchForm,
+              reloadSignal: _configReloadNonce,
             );
           } else if (searchConfig != null) {
             return _buildLegacySearchUi(searchConfig, sourceId);
@@ -134,8 +144,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
           if (searchForm != null) {
             return DynamicFormSearchUI(
+              key: _searchUiKey(sourceId),
               config: searchForm,
               sourceId: sourceId,
+              reloadSignal: _configReloadNonce,
             );
           }
 
@@ -168,22 +180,9 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _isRefreshingSearchConfig
-                  ? null
-                  : () => _retrySearchConfig(sourceId),
-              icon: _isRefreshingSearchConfig
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    )
-                  : const Icon(Icons.refresh),
-              label: Text(
-                _isRefreshingSearchConfig ? l10n.retrying : l10n.retrySearch,
-              ),
+              onPressed: () => _reloadSearchUi(sourceId),
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retrySearch),
             ),
           ],
         ),

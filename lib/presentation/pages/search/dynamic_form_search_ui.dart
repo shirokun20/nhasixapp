@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
@@ -31,12 +32,14 @@ class DynamicFormSearchUI extends StatefulWidget {
   final SearchFormConfig config;
   final String sourceId;
   final DynamicSearchFormContract? canonicalContract;
+  final int reloadSignal;
 
   const DynamicFormSearchUI({
     super.key,
     required this.config,
     required this.sourceId,
     this.canonicalContract,
+    this.reloadSignal = 0,
   });
 
   @override
@@ -55,22 +58,37 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   final Map<String, List<_DynamicOption>> _multiSelectValues = {};
   final Map<String, List<String>> _tagChipValues = {};
   final Map<String, List<String>> _pendingMultiRestore = {};
+  int _lastReloadSignal = 0;
 
   Map<String, dynamic>? _rawSearchForm;
   Map<String, dynamic> _dataSources = const {};
   final Map<String, List<_DynamicOption>> _optionCacheBySource = {};
   final Set<String> _loadingPickerSources = <String>{};
   final Map<String, String> _pickerLoadErrorBySource = <String, String>{};
+  final Map<String, List<_DynamicOption>> _checkboxOptionCache = {};
+  final Set<String> _loadingCheckboxFields = <String>{};
+  final Map<String, String> _checkboxLoadErrorByField = {};
 
   @override
   void initState() {
     super.initState();
+    _lastReloadSignal = widget.reloadSignal;
     _initRawSearchForm();
     _initFields();
     context
         .read<SearchBloc>()
         .add(SearchInitializeEvent(sourceId: widget.sourceId));
     _initializeDynamicOptions();
+  }
+
+  @override
+  void didUpdateWidget(covariant DynamicFormSearchUI oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reloadSignal != oldWidget.reloadSignal &&
+        widget.reloadSignal != _lastReloadSignal) {
+      _lastReloadSignal = widget.reloadSignal;
+      _reloadDynamicOptions();
+    }
   }
 
   void _initRawSearchForm() {
@@ -131,7 +149,20 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _initializeDynamicOptions() async {
     await _loadPickerOptions();
+    await _loadCheckboxOptions();
     await _restoreSaved();
+  }
+
+  Future<void> _reloadDynamicOptions() async {
+    _optionCacheBySource.clear();
+    _pickerLoadErrorBySource.clear();
+    _loadingPickerSources.clear();
+    _checkboxOptionCache.clear();
+    _checkboxLoadErrorByField.clear();
+    _loadingCheckboxFields.clear();
+    await _loadPickerOptions();
+    await _loadCheckboxOptions();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadPickerOptions() async {
@@ -222,6 +253,86 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       _pickerLoadErrorBySource[sourceId] = e.toString();
     } finally {
       _loadingPickerSources.remove(sourceId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _loadCheckboxOptions() async {
+    for (final entry in widget.config.params.entries) {
+      final fieldName = entry.key;
+      final field = entry.value;
+      if (!_isDynamicCheckboxField(fieldName, field)) continue;
+      if (_checkboxOptionCache.containsKey(fieldName)) continue;
+      await _loadCheckboxOptionsForField(fieldName);
+    }
+  }
+
+  Future<void> _loadCheckboxOptionsForField(
+    String fieldName, {
+    bool force = false,
+  }) async {
+    if (_loadingCheckboxFields.contains(fieldName)) return;
+    if (!force && _checkboxOptionCache.containsKey(fieldName)) return;
+
+    final rawField = _rawFieldConfig(fieldName);
+    if (rawField == null) return;
+
+    final dynamic rawOptions = rawField['options'];
+    final hasStaticOptions = rawOptions is List && rawOptions.isNotEmpty;
+    final tagSourceUrl = rawField['tagSourceUrl'] as String?;
+    final loadFromTags = rawField['loadFromTags'] as bool? ?? false;
+    final tagType = rawField['tagType']?.toString();
+
+    if ((tagSourceUrl == null || tagSourceUrl.isEmpty) &&
+        (tagType == null || tagType.isEmpty) &&
+        !loadFromTags &&
+        !hasStaticOptions) {
+      return;
+    }
+
+    _loadingCheckboxFields.add(fieldName);
+    if (mounted) setState(() {});
+
+    try {
+      final tagManager = getIt<TagDataManager>();
+      final List<_DynamicOption> options;
+      if (tagSourceUrl != null && tagSourceUrl.isNotEmpty) {
+        final tags = await tagManager.loadTagsFromUrl(tagSourceUrl);
+        options = tags
+            .map(
+              (tag) => _DynamicOption(
+                value: (tag.slug ?? '').isNotEmpty ? tag.slug! : tag.name,
+                label: tag.name,
+              ),
+            )
+            .toList(growable: false);
+      } else if (loadFromTags && tagType != null && tagType.isNotEmpty) {
+        final tags = await tagManager.getTagsByType(
+          tagType,
+          source: widget.sourceId,
+        );
+        options = tags
+            .map(
+              (tag) => _DynamicOption(
+                value: (tag.slug ?? '').isNotEmpty ? tag.slug! : tag.name,
+                label: tag.name,
+              ),
+            )
+            .toList(growable: false);
+      } else {
+        options = _optionsForStaticField(rawField);
+      }
+
+      _checkboxOptionCache[fieldName] = options;
+      _checkboxLoadErrorByField.remove(fieldName);
+    } catch (e) {
+      _logger.w(
+        'DynamicFormSearchUI: failed loading checkbox field $fieldName: $e',
+      );
+      _checkboxOptionCache[fieldName] = const [];
+      _checkboxLoadErrorByField[fieldName] = e.toString();
+    } finally {
+      _loadingCheckboxFields.remove(fieldName);
       if (mounted) setState(() {});
     }
   }
@@ -1715,7 +1826,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       case 'radio':
         _selectValues[name] = values.first;
       case 'checkbox':
-        final options = _optionsForField(field, _rawFieldConfig(name));
+        final options = _optionsForField(name, field, _rawFieldConfig(name));
         _multiSelectValues[name] = values
             .map((value) => options.firstWhere(
                   (option) => option.value == value,
@@ -2059,7 +2170,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Widget _buildSelectField(String name, SearchFormFieldConfig field) {
     final colorScheme = Theme.of(context).colorScheme;
     final rawField = _rawFieldConfig(name);
-    final options = _optionsForField(field, rawField);
+    final options = _optionsForField(name, field, rawField);
     final selected = _selectValues[name];
 
     return Column(
@@ -2128,9 +2239,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Widget _buildCheckboxField(String name, SearchFormFieldConfig field) {
     final colorScheme = Theme.of(context).colorScheme;
     final rawField = _rawFieldConfig(name);
-    final options = _optionsForField(field, rawField);
+    final options = _optionsForField(name, field, rawField);
     final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
     final selectedValues = selected.map((option) => option.value).toSet();
+    final isDynamic = _isDynamicCheckboxField(name, field);
+    final isLoading = _loadingCheckboxFields.contains(name);
+    final loadError = _checkboxLoadErrorByField[name];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2143,29 +2257,75 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            for (final option in options)
-              _buildCheckboxChip(
-                colorScheme: colorScheme,
-                option: option,
-                isSelected: selectedValues.contains(option.value),
-                onSelected: (enabled) {
-                  setState(() {
-                    final next = <_DynamicOption>[...selected];
-                    if (enabled) {
-                      next.add(option);
-                    } else {
-                      next.removeWhere((item) => item.value == option.value);
-                    }
-                    _multiSelectValues[name] = next;
-                  });
-                },
+        if (options.isEmpty && isDynamic) ...[
+          Row(
+            children: [
+              if (isLoading)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Text(
+                  isLoading
+                      ? AppLocalizations.of(context)!.loadingOptions
+                      : loadError != null
+                          ? AppLocalizations.of(context)!
+                              .failedToLoadOptionsTap
+                          : AppLocalizations.of(context)!.tapToLoadOptions,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: isLoading
+                ? null
+                : () => _loadCheckboxOptionsForField(name, force: true),
+            icon: const Icon(Icons.refresh),
+            label: Text(AppLocalizations.of(context)!.retryAction),
+          ),
+          if (loadError != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              loadError,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.error,
+                  ),
+            ),
           ],
-        ),
+        ] else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final option in options)
+                _buildCheckboxChip(
+                  colorScheme: colorScheme,
+                  option: option,
+                  isSelected: selectedValues.contains(option.value),
+                  onSelected: (enabled) {
+                    setState(() {
+                      final next = <_DynamicOption>[...selected];
+                      if (enabled) {
+                        next.add(option);
+                      } else {
+                        next.removeWhere((item) => item.value == option.value);
+                      }
+                      _multiSelectValues[name] = next;
+                    });
+                  },
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -2197,9 +2357,14 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   }
 
   List<_DynamicOption> _optionsForField(
+    String name,
     SearchFormFieldConfig field,
     Map<String, dynamic>? rawField,
   ) {
+    if (_isDynamicCheckboxField(name, field)) {
+      return _checkboxOptionCache[name] ?? const <_DynamicOption>[];
+    }
+
     final rawOptions = rawField?['options'];
     if (rawOptions is List) {
       return rawOptions
@@ -2223,6 +2388,41 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     return (field.options ?? const <String>[])
         .map((value) => _DynamicOption(value: value, label: _capitalize(value)))
         .toList(growable: false);
+  }
+
+  List<_DynamicOption> _optionsForStaticField(Map<String, dynamic>? rawField) {
+    final rawOptions = rawField?['options'];
+    if (rawOptions is List) {
+      return rawOptions
+          .map<_DynamicOption?>((dynamic option) {
+            if (option is Map<String, dynamic>) {
+              final value = option['value']?.toString() ?? '';
+              if (value.isEmpty) return null;
+              return _DynamicOption(
+                value: value,
+                label: option['label']?.toString() ?? value,
+              );
+            }
+            final value = option?.toString() ?? '';
+            if (value.isEmpty) return null;
+            return _DynamicOption(value: value, label: _capitalize(value));
+          })
+          .whereType<_DynamicOption>()
+          .toList(growable: false);
+    }
+    return const <_DynamicOption>[];
+  }
+
+  bool _isDynamicCheckboxField(String name, SearchFormFieldConfig field) {
+    if (field.type != 'checkbox') return false;
+    final rawField = _rawFieldConfig(name);
+    if (rawField == null) return false;
+    final tagSourceUrl = rawField['tagSourceUrl'] as String?;
+    final loadFromTags = rawField['loadFromTags'] as bool? ?? false;
+    final tagType = rawField['tagType']?.toString();
+    return (tagSourceUrl != null && tagSourceUrl.isNotEmpty) ||
+        loadFromTags ||
+        (tagType != null && tagType.isNotEmpty);
   }
 
   String _labelFor(String name) => switch (name) {

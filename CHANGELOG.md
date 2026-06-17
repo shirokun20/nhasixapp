@@ -33,7 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### 🎨 Theme Polish
 - **Animated Dice Theme Color**: `AnimatedDiceWidget` icon/painter color now follows `IconTheme` and the active app theme.
 - **Search & Filter Chip Contrast**: Improved selected chip readability in light/dark mode for dynamic search select/checkbox fields, MangaDex include/exclude tag pickers, `FilterDataScreen`, and selected filter summaries. Include states now use a readable green palette and exclude states use a readable red palette.
+- **Canonical Checkbox URL Loading**: Dynamic search checkbox fields now preserve `loadFromTags`/`tagType`/`tagSourceUrl` through the canonical contract bridge and can load tag options from remote URLs with loading and error feedback.
 - **Crotpedia Search Dedupe**: Removed the redundant overlapping search input for Crotpedia by deduplicating form-backed query fields, so the UI now shows a single source-of-truth search field while preserving the `title` query param.
+- **Crotpedia Genre Direct Source**: Genre chips now load from the explicit remote tag URL declared in `crotpedia-config.json`, removing the dependency on the legacy tag sync manifest for this screen.
+- **Search Config Reload Action**: Added a Search screen reload button that force-refreshes the source config from `configUrl` and remounts the search widget so updated fields can appear without reinstalling the app.
 
 #### 🚦 Source Rate-Limit Hardening
 - **Config-Driven Runtime Limits**: Generic source pipeline now reads `network.rateLimit` config and applies request throttling (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, and delay controls) across REST and scraper adapters.

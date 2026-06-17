@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:kuron_core/kuron_core.dart' show Tag;
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart' hide TagType;
@@ -15,11 +16,13 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 class FormBasedSearchUI extends StatefulWidget {
   final SearchConfig config;
   final String sourceId;
+  final int reloadSignal;
 
   const FormBasedSearchUI({
     super.key,
     required this.config,
     required this.sourceId,
+    this.reloadSignal = 0,
   });
 
   @override
@@ -38,13 +41,26 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
 
   // Loaded tag data
   final Map<String, List<_TagOption>> _loadedTags = {};
+  final Map<String, String> _tagLoadErrors = {};
   bool _isLoadingTags = true;
+  int _lastReloadSignal = 0;
 
   @override
   void initState() {
     super.initState();
+    _lastReloadSignal = widget.reloadSignal;
     _initializeForm();
     _loadTagsIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant FormBasedSearchUI oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reloadSignal != oldWidget.reloadSignal &&
+        widget.reloadSignal != _lastReloadSignal) {
+      _lastReloadSignal = widget.reloadSignal;
+      _reloadTags();
+    }
   }
 
   void _initializeForm() {
@@ -160,25 +176,23 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
           'FormBasedSearchUI: Loading tags for ${groupsToLoad.length} groups');
 
       for (var group in groupsToLoad) {
-        if (group.tagType != null) {
-          final tags = await getIt<TagDataManager>().getTagsByType(
-            group.tagType!,
-            source: widget.sourceId,
+        try {
+          final List<_TagOption> options = await _loadTagsForGroup(group);
+          if (!mounted) continue;
+          setState(() {
+            _loadedTags[group.name] = options;
+            _tagLoadErrors.remove(group.name);
+          });
+        } catch (e) {
+          _logger.w(
+            'FormBasedSearchUI: Failed to load tags for ${group.name}',
+            error: e,
           );
-
-          if (mounted) {
-            setState(() {
-              _loadedTags[group.name] = tags
-                  .map(
-                    (t) => _TagOption(
-                      label: t.name,
-                      // Use slug as query value; fallback to name if slug missing.
-                      value: (t.slug ?? '').isNotEmpty ? t.slug! : t.name,
-                    ),
-                  )
-                  .toList();
-            });
-          }
+          if (!mounted) continue;
+          setState(() {
+            _loadedTags.remove(group.name);
+            _tagLoadErrors[group.name] = e.toString();
+          });
         }
       }
     } catch (e) {
@@ -186,6 +200,58 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
     } finally {
       if (mounted) setState(() => _isLoadingTags = false);
     }
+  }
+
+  Future<void> _reloadTags() async {
+    final groupsToLoad =
+        widget.config.checkboxGroups?.where((g) => g.loadFromTags).toList() ??
+            [];
+    if (groupsToLoad.isEmpty) return;
+
+    setState(() {
+      _isLoadingTags = true;
+      for (final group in groupsToLoad) {
+        _loadedTags.remove(group.name);
+        _tagLoadErrors.remove(group.name);
+      }
+    });
+
+    await _loadTagsIfNeeded();
+  }
+
+  Future<List<_TagOption>> _loadTagsForGroup(CheckboxGroupConfig group) async {
+    final tagManager = getIt<TagDataManager>();
+    if (group.tagSourceUrl != null && group.tagSourceUrl!.isNotEmpty) {
+      final tags = await tagManager.loadTagsFromUrl(group.tagSourceUrl!);
+      return _mapTags(tags);
+    }
+
+    if (group.tagType != null) {
+      final tags = await tagManager.getTagsByType(
+        group.tagType!,
+        source: widget.sourceId,
+      );
+      if (tags.isEmpty) {
+        throw StateError(
+          'No tags available for ${group.name} from source cache',
+        );
+      }
+      return _mapTags(tags);
+    }
+
+    throw StateError('Missing tagSourceUrl and tagType for ${group.name}');
+  }
+
+  List<_TagOption> _mapTags(List<Tag> tags) {
+    return tags
+        .map(
+          (t) => _TagOption(
+            label: t.name,
+            // Use slug as query value; fallback to name if slug missing.
+            value: (t.slug ?? '').isNotEmpty ? t.slug! : t.name,
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override
@@ -411,12 +477,80 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
     final availableTags = _loadedTags[group.name] ?? [];
     final selectedValues = _checkboxValues[group.name] ?? [];
     final isExpanded = _checkboxExpanded[group.name] ?? false;
+    final loadError = _tagLoadErrors[group.name];
 
-    // Only show if we have tags (or if we don't expect to load them)
     if (availableTags.isEmpty) {
       if (!group.loadFromTags) return const SizedBox.shrink();
-      if (_isLoadingTags) return const SizedBox.shrink();
-      return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    group.label.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+                if (_isLoadingTags)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_isLoadingTags)
+              Text(
+                AppLocalizations.of(context)!.loadingOptions,
+                style: Theme.of(context).textTheme.bodyMedium,
+              )
+            else ...[
+              if (loadError != null) ...[
+                Text(
+                  'Failed to load options',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  loadError,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                AppLocalizations.of(context)!.failedToLoadOptionsTap,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _reloadTags,
+                icon: const Icon(Icons.refresh),
+                label: Text(AppLocalizations.of(context)!.tapToLoadOptions),
+              ),
+            ],
+          ],
+        ),
+      );
     }
 
     // Limit visible tags if not expanded

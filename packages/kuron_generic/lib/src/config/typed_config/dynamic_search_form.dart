@@ -92,6 +92,9 @@ class SearchFormFieldContract extends Equatable {
     this.joinMode,
     this.uiSelector,
     this.uiDataSource,
+    this.loadFromTags = false,
+    this.tagType,
+    this.tagSourceUrl,
     this.operators = const <String>[],
     this.options = const <SearchFormFieldOption>[],
   });
@@ -128,6 +131,11 @@ class SearchFormFieldContract extends Equatable {
 
   /// Optional option source key from `searchForm.dataSources`.
   final String? uiDataSource;
+
+  /// Legacy checkbox metadata for sources that source options from tags.
+  final bool loadFromTags;
+  final String? tagType;
+  final String? tagSourceUrl;
 
   /// Operator list for range/comparison fields (e.g. `[">=", "<="]`).
   final List<String> operators;
@@ -190,6 +198,9 @@ class SearchFormFieldContract extends Equatable {
       joinMode: map['joinMode']?.toString(),
       uiSelector: uiSelector,
       uiDataSource: uiDataSource,
+      loadFromTags: map['loadFromTags'] as bool? ?? false,
+      tagType: map['tagType']?.toString(),
+      tagSourceUrl: map['tagSourceUrl']?.toString(),
       operators: operators,
       options: options,
     );
@@ -208,6 +219,9 @@ class SearchFormFieldContract extends Equatable {
         if (joinMode != null) 'joinMode': joinMode,
         if (uiSelector != null) 'uiSelector': uiSelector,
         if (uiDataSource != null) 'uiDataSource': uiDataSource,
+        if (loadFromTags) 'loadFromTags': loadFromTags,
+        if (tagType != null) 'tagType': tagType,
+        if (tagSourceUrl != null) 'tagSourceUrl': tagSourceUrl,
         if (operators.isNotEmpty) 'operators': operators,
         if (options.isNotEmpty)
           'options': options
@@ -229,6 +243,9 @@ class SearchFormFieldContract extends Equatable {
         joinMode,
         uiSelector,
         uiDataSource,
+        loadFromTags,
+        tagType,
+        tagSourceUrl,
         operators,
         options,
       ];
@@ -636,6 +653,9 @@ class DynamicSearchFormContract extends Equatable {
           queryParam: queryParam,
           type: SearchFormFieldType.checkbox,
           label: map['label']?.toString(),
+          loadFromTags: map['loadFromTags'] as bool? ?? false,
+          tagType: map['tagType']?.toString(),
+          tagSourceUrl: map['tagSourceUrl']?.toString(),
           options: _optionsFromRawList(map['options']),
         ));
       }

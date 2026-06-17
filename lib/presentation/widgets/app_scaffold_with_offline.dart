@@ -18,6 +18,7 @@ class AppScaffoldWithOffline extends StatefulWidget {
     required this.body,
     required this.title,
     this.appBar,
+    this.actions,
     this.floatingActionButton,
     this.bottomNavigationBar,
     this.drawer,
@@ -27,6 +28,7 @@ class AppScaffoldWithOffline extends StatefulWidget {
   final Widget body;
   final String title;
   final PreferredSizeWidget? appBar;
+  final List<Widget>? actions;
   final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
   final Widget? drawer;
@@ -228,7 +230,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
       actions: [
         // Show offline badge in app bar when in offline mode
         if (isOfflineMode) _buildOfflineBadge(context),
-        // Add any additional actions here
+        ...?widget.actions,
       ],
     );
   }

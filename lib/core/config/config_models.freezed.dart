@@ -2152,6 +2152,7 @@ mixin _$CheckboxGroupConfig {
   int get columns;
   bool get loadFromTags;
   String? get tagType;
+  String? get tagSourceUrl;
 
   /// Create a copy of CheckboxGroupConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -2178,17 +2179,19 @@ mixin _$CheckboxGroupConfig {
             (identical(other.columns, columns) || other.columns == columns) &&
             (identical(other.loadFromTags, loadFromTags) ||
                 other.loadFromTags == loadFromTags) &&
-            (identical(other.tagType, tagType) || other.tagType == tagType));
+            (identical(other.tagType, tagType) || other.tagType == tagType) &&
+            (identical(other.tagSourceUrl, tagSourceUrl) ||
+                other.tagSourceUrl == tagSourceUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, name, label, paramName,
-      displayMode, columns, loadFromTags, tagType);
+      displayMode, columns, loadFromTags, tagType, tagSourceUrl);
 
   @override
   String toString() {
-    return 'CheckboxGroupConfig(name: $name, label: $label, paramName: $paramName, displayMode: $displayMode, columns: $columns, loadFromTags: $loadFromTags, tagType: $tagType)';
+    return 'CheckboxGroupConfig(name: $name, label: $label, paramName: $paramName, displayMode: $displayMode, columns: $columns, loadFromTags: $loadFromTags, tagType: $tagType, tagSourceUrl: $tagSourceUrl)';
   }
 }
 
@@ -2205,7 +2208,8 @@ abstract mixin class $CheckboxGroupConfigCopyWith<$Res> {
       String displayMode,
       int columns,
       bool loadFromTags,
-      String? tagType});
+      String? tagType,
+      String? tagSourceUrl});
 }
 
 /// @nodoc
@@ -2228,6 +2232,7 @@ class _$CheckboxGroupConfigCopyWithImpl<$Res>
     Object? columns = null,
     Object? loadFromTags = null,
     Object? tagType = freezed,
+    Object? tagSourceUrl = freezed,
   }) {
     return _then(_self.copyWith(
       name: null == name
@@ -2257,6 +2262,10 @@ class _$CheckboxGroupConfigCopyWithImpl<$Res>
       tagType: freezed == tagType
           ? _self.tagType
           : tagType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagSourceUrl: freezed == tagSourceUrl
+          ? _self.tagSourceUrl
+          : tagSourceUrl // ignore: cast_nullable_to_non_nullable
               as String?,
     ));
   }
@@ -2360,7 +2369,8 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             String displayMode,
             int columns,
             bool loadFromTags,
-            String? tagType)?
+            String? tagType,
+            String? tagSourceUrl)?
         $default, {
     required TResult orElse(),
   }) {
@@ -2374,7 +2384,8 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             _that.displayMode,
             _that.columns,
             _that.loadFromTags,
-            _that.tagType);
+            _that.tagType,
+            _that.tagSourceUrl);
       case _:
         return orElse();
     }
@@ -2395,8 +2406,15 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(String name, String label, String paramName,
-            String displayMode, int columns, bool loadFromTags, String? tagType)
+    TResult Function(
+            String name,
+            String label,
+            String paramName,
+            String displayMode,
+            int columns,
+            bool loadFromTags,
+            String? tagType,
+            String? tagSourceUrl)
         $default,
   ) {
     final _that = this;
@@ -2409,7 +2427,8 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             _that.displayMode,
             _that.columns,
             _that.loadFromTags,
-            _that.tagType);
+            _that.tagType,
+            _that.tagSourceUrl);
     }
   }
 
@@ -2434,7 +2453,8 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             String displayMode,
             int columns,
             bool loadFromTags,
-            String? tagType)?
+            String? tagType,
+            String? tagSourceUrl)?
         $default,
   ) {
     final _that = this;
@@ -2447,7 +2467,8 @@ extension CheckboxGroupConfigPatterns on CheckboxGroupConfig {
             _that.displayMode,
             _that.columns,
             _that.loadFromTags,
-            _that.tagType);
+            _that.tagType,
+            _that.tagSourceUrl);
       case _:
         return null;
     }
@@ -2464,7 +2485,8 @@ class _CheckboxGroupConfig implements CheckboxGroupConfig {
       this.displayMode = 'expandable',
       this.columns = 3,
       this.loadFromTags = false,
-      this.tagType});
+      this.tagType,
+      this.tagSourceUrl});
   factory _CheckboxGroupConfig.fromJson(Map<String, dynamic> json) =>
       _$CheckboxGroupConfigFromJson(json);
 
@@ -2485,6 +2507,8 @@ class _CheckboxGroupConfig implements CheckboxGroupConfig {
   final bool loadFromTags;
   @override
   final String? tagType;
+  @override
+  final String? tagSourceUrl;
 
   /// Create a copy of CheckboxGroupConfig
   /// with the given fields replaced by the non-null parameter values.
@@ -2516,17 +2540,19 @@ class _CheckboxGroupConfig implements CheckboxGroupConfig {
             (identical(other.columns, columns) || other.columns == columns) &&
             (identical(other.loadFromTags, loadFromTags) ||
                 other.loadFromTags == loadFromTags) &&
-            (identical(other.tagType, tagType) || other.tagType == tagType));
+            (identical(other.tagType, tagType) || other.tagType == tagType) &&
+            (identical(other.tagSourceUrl, tagSourceUrl) ||
+                other.tagSourceUrl == tagSourceUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, name, label, paramName,
-      displayMode, columns, loadFromTags, tagType);
+      displayMode, columns, loadFromTags, tagType, tagSourceUrl);
 
   @override
   String toString() {
-    return 'CheckboxGroupConfig(name: $name, label: $label, paramName: $paramName, displayMode: $displayMode, columns: $columns, loadFromTags: $loadFromTags, tagType: $tagType)';
+    return 'CheckboxGroupConfig(name: $name, label: $label, paramName: $paramName, displayMode: $displayMode, columns: $columns, loadFromTags: $loadFromTags, tagType: $tagType, tagSourceUrl: $tagSourceUrl)';
   }
 }
 
@@ -2545,7 +2571,8 @@ abstract mixin class _$CheckboxGroupConfigCopyWith<$Res>
       String displayMode,
       int columns,
       bool loadFromTags,
-      String? tagType});
+      String? tagType,
+      String? tagSourceUrl});
 }
 
 /// @nodoc
@@ -2568,6 +2595,7 @@ class __$CheckboxGroupConfigCopyWithImpl<$Res>
     Object? columns = null,
     Object? loadFromTags = null,
     Object? tagType = freezed,
+    Object? tagSourceUrl = freezed,
   }) {
     return _then(_CheckboxGroupConfig(
       name: null == name
@@ -2597,6 +2625,10 @@ class __$CheckboxGroupConfigCopyWithImpl<$Res>
       tagType: freezed == tagType
           ? _self.tagType
           : tagType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tagSourceUrl: freezed == tagSourceUrl
+          ? _self.tagSourceUrl
+          : tagSourceUrl // ignore: cast_nullable_to_non_nullable
               as String?,
     ));
   }

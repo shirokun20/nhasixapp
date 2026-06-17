@@ -944,3 +944,78 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 **Impact**:
 - Prevents “download status successful but image empty” false positives.
 - Reader no longer sees completed chapter entries that have zero offline pages.
+
+## 🆕 Latest Session — 2026-06-17
+
+### Crotpedia Genre Direct URL Loading ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Added `tagSourceUrl` to `CheckboxGroupConfig` so checkbox-driven tag groups can declare an explicit remote tag file.
+- `FormBasedSearchUI` now loads genre options directly from the configured URL when present, instead of depending on `TagDataManager` sync/manifest state.
+- Crotpedia genre config now points directly at `https://raw.githubusercontent.com/shirokun20/nhasixapp/master/configs/tags/tags_crotpedia.json`.
+- Added a focused test that serves a remote JSON payload over local HTTP and verifies `TagDataManager.loadTagsFromUrl()` parses tags correctly.
+
+**Verification**:
+- ✅ `fvm flutter test test/unit/core/tag_data_manager_test.dart`
+- ✅ `fvm flutter analyze lib/core/config/config_models.dart lib/core/utils/tag_data_manager.dart lib/presentation/pages/search/form_based_search_ui.dart test/unit/core/tag_data_manager_test.dart`
+
+**Files touched**:
+- `lib/core/config/config_models.dart`
+- `lib/core/utils/tag_data_manager.dart`
+- `lib/presentation/pages/search/form_based_search_ui.dart`
+- `informations/configs/crotpedia-config.json`
+- `test/unit/core/tag_data_manager_test.dart`
+
+**Impact**:
+- Crotpedia genre no longer depends on background tag sync just to render the search chips.
+- The source config now states the tag origin explicitly, which makes the UI behavior easier to trace.
+
+### Canonical Search Checkbox URL Loading ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Extended the canonical `DynamicSearchFormContract` bridge so checkbox fields now preserve `loadFromTags`, `tagType`, and `tagSourceUrl` metadata end to end.
+- `DynamicFormSearchUI` now loads checkbox/genre options from remote URL when the config declares `tagSourceUrl`, with visible loading, retry, and error states.
+- Search form adapter now serializes the checkbox tag metadata into raw config so canonical forms keep the tag source origin instead of dropping it during conversion.
+
+**Verification**:
+- ✅ `fvm flutter analyze lib/presentation/pages/search/dynamic_form_search_ui.dart lib/presentation/pages/search/search_form_contract_adapter.dart lib/presentation/pages/search/search_screen.dart packages/kuron_generic/lib/src/config/typed_config/dynamic_search_form.dart`
+- ✅ `fvm flutter test test/unit/presentation/pages/search/search_form_contract_adapter_test.dart packages/kuron_generic/test/config/source_config_parser_test.dart`
+
+**Files touched**:
+- `packages/kuron_generic/lib/src/config/typed_config/dynamic_search_form.dart`
+- `lib/presentation/pages/search/search_form_contract_adapter.dart`
+- `lib/presentation/pages/search/dynamic_form_search_ui.dart`
+- `test/unit/presentation/pages/search/search_form_contract_adapter_test.dart`
+- `packages/kuron_generic/test/config/source_config_parser_test.dart`
+
+**Impact**:
+- Canonical search forms can now load genre-style checkbox data directly from remote tag URLs without falling back to static options.
+- Search UI now shows explicit loading and failure feedback when a checkbox tag source is empty or unreachable.
+
+### Search Config Reload Action ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Added an AppBar reload action to `SearchScreen` via `AppScaffoldWithOffline.actions`.
+- The action force-refreshes the active source config from `configUrl`, bypassing version comparison, then refreshes `SourceCubit` and remounts the search UI with a new key.
+- `RemoteConfigService.refreshSourceFromConfigUrl()` now supports a `forceRefresh` flag for explicit reload flows.
+
+**Verification**:
+- ✅ `fvm flutter analyze lib/core/config/remote_config_service.dart lib/presentation/widgets/app_scaffold_with_offline.dart lib/presentation/pages/search/search_screen.dart lib/core/config/config_models.dart lib/core/utils/tag_data_manager.dart lib/presentation/pages/search/form_based_search_ui.dart test/unit/core/tag_data_manager_test.dart`
+- ✅ `fvm flutter test test/unit/core/tag_data_manager_test.dart`
+
+**Files touched**:
+- `lib/core/config/remote_config_service.dart`
+- `lib/presentation/widgets/app_scaffold_with_offline.dart`
+- `lib/presentation/pages/search/search_screen.dart`
+- `CHANGELOG.md`
+- `MEMORY.md`
+
+**Impact**:
+- Gives a direct recovery path when the search UI is showing stale config in release builds.
+- Still depends on the remote `configUrl` actually serving the updated source config.

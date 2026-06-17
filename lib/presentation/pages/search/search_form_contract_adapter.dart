@@ -60,6 +60,9 @@ class SearchFormContractAdapter {
           if (field.multiInput) 'multi': true,
           if (field.uiDataSource != null) 'dataSource': field.uiDataSource,
         },
+      if (field.loadFromTags) 'loadFromTags': field.loadFromTags,
+      if (field.tagType != null) 'tagType': field.tagType,
+      if (field.tagSourceUrl != null) 'tagSourceUrl': field.tagSourceUrl,
       if (field.options.isNotEmpty)
         'options': field.options
             .map((option) => <String, dynamic>{

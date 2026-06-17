@@ -35,6 +35,9 @@ void main() {
             queryParam: 'genre[]',
             type: SearchFormFieldType.checkbox,
             label: 'Genre',
+            loadFromTags: true,
+            tagType: 'genre',
+            tagSourceUrl: 'https://example.com/tags.json',
             options: <SearchFormFieldOption>[
               SearchFormFieldOption(value: 'action', label: 'Action'),
             ],
@@ -79,6 +82,9 @@ void main() {
       );
       expect(params['includedTag']['ui']['selector'], 'picker');
       expect(params['includedTag']['ui']['dataSource'], 'mangaTags');
+      expect(params['genre']['loadFromTags'], true);
+      expect(params['genre']['tagType'], 'genre');
+      expect(params['genre']['tagSourceUrl'], 'https://example.com/tags.json');
       expect(params['_page']['type'], 'page');
     });
   });

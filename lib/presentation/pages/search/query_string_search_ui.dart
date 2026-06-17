@@ -21,12 +21,14 @@ class QueryStringSearchUI extends StatefulWidget {
   final SearchConfig config;
   final String? initialQuery;
   final String sourceId;
+  final int reloadSignal;
 
   const QueryStringSearchUI({
     super.key,
     required this.config,
     required this.sourceId,
     this.initialQuery,
+    this.reloadSignal = 0,
   });
 
   @override
