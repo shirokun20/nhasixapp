@@ -2258,50 +2258,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         ),
         const SizedBox(height: 8),
         if (options.isEmpty && isDynamic) ...[
-          Row(
-            children: [
-              if (isLoading)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: Text(
-                  isLoading
-                      ? AppLocalizations.of(context)!.loadingOptions
-                      : loadError != null
-                          ? AppLocalizations.of(context)!
-                              .failedToLoadOptionsTap
-                          : AppLocalizations.of(context)!.tapToLoadOptions,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
+          _buildCheckboxRemoteStateCard(
+            fieldName: name,
+            isLoading: isLoading,
+            loadError: loadError,
+            colorScheme: colorScheme,
           ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: isLoading
-                ? null
-                : () => _loadCheckboxOptionsForField(name, force: true),
-            icon: const Icon(Icons.refresh),
-            label: Text(AppLocalizations.of(context)!.retryAction),
-          ),
-          if (loadError != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              loadError,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.error,
-                  ),
-            ),
-          ],
         ] else
           Wrap(
             spacing: 8,
@@ -2423,6 +2385,322 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     return (tagSourceUrl != null && tagSourceUrl.isNotEmpty) ||
         loadFromTags ||
         (tagType != null && tagType.isNotEmpty);
+  }
+
+  Widget _buildCheckboxRemoteStateCard({
+    required String fieldName,
+    required bool isLoading,
+    required String? loadError,
+    required ColorScheme colorScheme,
+  }) {
+    final sourceUrl = _rawFieldConfig(fieldName)?['tagSourceUrl']?.toString();
+    final sourceHost = sourceUrl == null || sourceUrl.isEmpty
+        ? null
+        : Uri.tryParse(sourceUrl)?.host;
+    final theme = Theme.of(context);
+    final isError = loadError != null;
+    final isIdle = !isLoading && !isError;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      child: Container(
+        key: ValueKey<String>(
+          'checkbox-remote-state-$fieldName-${isLoading ? 'loading' : isError ? 'error' : 'idle'}',
+        ),
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(
+            color: isError
+                ? colorScheme.error.withValues(alpha: 0.38)
+                : colorScheme.outlineVariant.withValues(alpha: 0.50),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isError
+                        ? colorScheme.errorContainer
+                        : colorScheme.primaryContainer.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isError
+                        ? Icons.warning_amber_rounded
+                        : Icons.cloud_download_outlined,
+                    color: isError
+                        ? colorScheme.onErrorContainer
+                        : colorScheme.onPrimaryContainer,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isError
+                                  ? 'Genre options failed'
+                                  : 'Loading genre options',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          _buildRemoteStateBadge(
+                            colorScheme: colorScheme,
+                            label: isLoading
+                                ? 'Loading'
+                                : isError
+                                    ? 'Error'
+                                    : 'Idle',
+                            filled: isLoading || isIdle,
+                            isError: isError,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        sourceHost == null
+                            ? (isError
+                                ? AppLocalizations.of(context)!
+                                    .failedToLoadOptionsTap
+                                : AppLocalizations.of(context)!.loadingOptions)
+                            : isError
+                                ? 'Could not read tags from $sourceHost'
+                                : 'Fetching tags from $sourceHost',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (sourceUrl != null && sourceUrl.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          sourceUrl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if (isLoading) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.10),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading remote genres from GitHub raw. This can take a moment.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(
+                  10,
+                  (index) => _buildSkeletonChip(colorScheme, index),
+                ),
+              ),
+            ] else if (isError) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  loadError,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildGhostChip(
+                    label: 'Remote source',
+                    colorScheme: colorScheme,
+                    emphasized: true,
+                  ),
+                  _buildGhostChip(
+                    label: 'Retry fetch',
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ] else ...[
+              Text(
+                'No remote genre list is loaded yet. Reload to sync from source.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildGhostChip(
+                    label: 'Idle',
+                    colorScheme: colorScheme,
+                    emphasized: true,
+                  ),
+                  _buildGhostChip(
+                    label: 'GitHub raw',
+                    colorScheme: colorScheme,
+                  ),
+                  _buildGhostChip(
+                    label: 'Live tags',
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () => _loadCheckboxOptionsForField(
+                              fieldName,
+                              force: true,
+                            ),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(
+                      isError
+                          ? AppLocalizations.of(context)!.retryAction
+                          : 'Reload genre',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRemoteStateBadge({
+    required ColorScheme colorScheme,
+    required String label,
+    required bool filled,
+    required bool isError,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isError
+            ? colorScheme.errorContainer.withValues(alpha: 0.7)
+            : filled
+                ? colorScheme.primaryContainer.withValues(alpha: 0.75)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isError
+              ? colorScheme.error.withValues(alpha: 0.30)
+              : filled
+                  ? colorScheme.primary.withValues(alpha: 0.28)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: isError
+                  ? colorScheme.onErrorContainer
+                  : filled
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonChip(ColorScheme colorScheme, int index) {
+    final widths = <double>[72, 96, 60, 84, 68, 104, 88, 76];
+    return Container(
+      width: widths[index % widths.length],
+      height: 34,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGhostChip({
+    required String label,
+    required ColorScheme colorScheme,
+    bool emphasized = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: emphasized
+            ? colorScheme.primaryContainer.withValues(alpha: 0.7)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: emphasized
+              ? colorScheme.primary.withValues(alpha: 0.35)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: emphasized
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
   }
 
   String _labelFor(String name) => switch (name) {
