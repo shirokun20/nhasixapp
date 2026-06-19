@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
+
 class MockContentSource extends Mock implements ContentSource {}
 
 void main() {

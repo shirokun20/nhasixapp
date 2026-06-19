@@ -16,6 +16,7 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
+import 'package:nhasixapp/presentation/models/content_group.dart';
 
 // Mocks
 class MockOfflineSearchCubit extends MockCubit<OfflineSearchState>
@@ -140,23 +141,32 @@ void main() {
       (WidgetTester tester) async {
     // Arrange
     // Generate enough items to ensure scrolling is possible
-    final List<Content> items = List.generate(
+    final List<ContentGroup> items = List.generate(
       20,
-      (index) => Content(
-        id: 'id_$index',
-        title: 'Title $index',
-        coverUrl: '', // Will fail image load but that's okay for this test
-        sourceId: 'nhentai',
-        tags: [],
-        artists: [],
-        characters: [],
-        parodies: [],
-        groups: [],
-        language: 'en',
-        pageCount: 10,
-        imageUrls: [],
-        uploadDate: DateTime.now(),
-        favorites: 0,
+      (index) => ContentGroup(
+        baseTitle: 'Title $index',
+        items: [
+          Content(
+            id: 'id_$index',
+            title: 'Title $index',
+            coverUrl: '', // Will fail image load but that's okay for this test
+            sourceId: 'nhentai',
+            tags: [],
+            artists: [],
+            characters: [],
+            parodies: [],
+            groups: [],
+            language: 'en',
+            pageCount: 10,
+            imageUrls: [],
+            uploadDate: DateTime.now(),
+            favorites: 0,
+          ),
+        ],
+        totalSize: 0,
+        readProgress: 0.0,
+        isRead: false,
+        isReading: false,
       ),
     );
 

@@ -8729,6 +8729,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to open native CAPTCHA solver: {error}'**
   String failedToOpenCaptcha(String error);
+
+  /// No description provided for @readFirstChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Read First Chapter'**
+  String get readFirstChapter;
+
+  /// No description provided for @convertAllToPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert All to PDF'**
+  String get convertAllToPdf;
+
+  /// No description provided for @deleteSeriesConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {count} chapters of \"{title}\"?'**
+  String deleteSeriesConfirmation(int count, String title);
+
+  /// No description provided for @deleteSeriesWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Series ({count})'**
+  String deleteSeriesWithCount(int count);
 }
 
 class _AppLocalizationsDelegate

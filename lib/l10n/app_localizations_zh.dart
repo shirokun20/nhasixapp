@@ -4986,4 +4986,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String failedToOpenCaptcha(String error) {
     return '无法打开原生验证码求解器：$error';
   }
+
+  @override
+  String get readFirstChapter => '阅读第一章';
+
+  @override
+  String get convertAllToPdf => '全部转换为 PDF';
+
+  @override
+  String deleteSeriesConfirmation(int count, String title) {
+    return '您确定要删除 \"$title\" 的 $count 个章节吗？';
+  }
+
+  @override
+  String deleteSeriesWithCount(int count) {
+    return '删除系列 ($count)';
+  }
 }

@@ -736,7 +736,8 @@ class GenericRestAdapter implements GenericAdapter {
       final templateHasSortParam =
           Uri.tryParse(url)?.queryParameters.containsKey(sortParamName) ??
               false;
-      if (templateHasSortParam) {
+      final templateHasSortPlaceholder = template.contains('{$sortParamName}');
+      if (templateHasSortParam || templateHasSortPlaceholder) {
         final currentSortInUrl =
             Uri.tryParse(url)?.queryParameters[sortParamName] ?? '';
         if (currentSortInUrl != sortValue) {
@@ -2598,18 +2599,28 @@ class GenericRestAdapter implements GenericAdapter {
     SearchFilter filter,
   ) {
     final page = filter.page > 0 ? filter.page : 1;
-    final baseUrl = _urlBuilder.resolve(template, {
+    final rawMap = _parseRawQueryParams(rawParams);
+    final placeholderParams = <String, String>{
       'query': '',
       'page': page.toString(),
       'sort': '',
-    });
+    };
+
+    for (final entry in rawMap.entries) {
+      final firstValue = entry.value.isEmpty ? '' : entry.value.first.trim();
+      if (firstValue.isEmpty) continue;
+      placeholderParams[entry.key] = firstValue;
+    }
+
+    final baseUrl = _urlBuilder.resolve(template, placeholderParams);
 
     if (rawParams.trim().isEmpty) {
       return baseUrl;
     }
 
     final templateParams = _parseUrlQueryParams(baseUrl);
-    final rawMap = _parseRawQueryParams(rawParams);
+    final consumedPlaceholderKeys =
+        _extractPlaceholders(template).where(rawMap.containsKey).toSet();
 
     final merged = <String, List<String>>{};
 
@@ -2622,10 +2633,19 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     for (final entry in rawMap.entries) {
+      if (consumedPlaceholderKeys.contains(entry.key)) continue;
       merged[entry.key] = entry.value;
     }
 
     return _rebuildUrlWithQueryParams(baseUrl, merged);
+  }
+
+  Set<String> _extractPlaceholders(String template) {
+    return RegExp(r'\{([A-Za-z0-9_\[\].-]+)\}')
+        .allMatches(template)
+        .map((match) => match.group(1))
+        .whereType<String>()
+        .toSet();
   }
 
   Map<String, List<String>> _parseUrlQueryParams(String url) {

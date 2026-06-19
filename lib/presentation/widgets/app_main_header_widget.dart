@@ -17,6 +17,8 @@ class AppMainHeaderWidget extends StatelessWidget
   final Future<Map<String, dynamic>>? offlineStats;
   final String? title;
   final String? sourceId; // For feature flag checking
+  final bool isListMode;
+  final VoidCallback? onToggleViewMode;
 
   const AppMainHeaderWidget({
     super.key,
@@ -32,6 +34,8 @@ class AppMainHeaderWidget extends StatelessWidget
     this.offlineStats,
     this.title,
     this.sourceId, // Optional sourceId for feature checking
+    this.isListMode = false,
+    this.onToggleViewMode,
   });
 
   final BuildContext context;
@@ -97,45 +101,121 @@ class AppMainHeaderWidget extends StatelessWidget
                     return const SizedBox.shrink();
                   },
                 ),
-              // Refresh Button
-              if (onRefresh != null)
+              // View Mode Toggle
+              if (onToggleViewMode != null)
                 IconButton(
-                  onPressed: onRefresh,
+                  onPressed: onToggleViewMode,
                   icon: Icon(
-                    Icons.sync,
+                    isListMode ? Icons.grid_view : Icons.view_list,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  tooltip: AppLocalizations.of(context)!.syncRefresh,
+                  tooltip: isListMode ? 'Grid View' : 'List View',
                 ),
-              // Import Button
-              if (onImport != null)
-                IconButton(
-                  onPressed: onImport,
-                  icon: Icon(
-                    Icons.create_new_folder_outlined,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  tooltip: AppLocalizations.of(context)!.importFromBackup,
-                ),
-              // Import ZIP Button
-              if (onImportZip != null)
-                IconButton(
-                  onPressed: onImportZip,
-                  icon: Icon(
-                    Icons.folder_zip,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  tooltip: AppLocalizations.of(context)!.importZipFile,
-                ),
-              // Export Button
-              if (onExport != null)
-                IconButton(
-                  onPressed: onExport,
-                  icon: Icon(
-                    Icons.file_upload,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  tooltip: AppLocalizations.of(context)!.exportLibrary,
+              // More Actions Menu
+              if (onRefresh != null ||
+                  onImport != null ||
+                  onImportZip != null ||
+                  onExport != null)
+                PopupMenuButton<String>(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  icon: Icon(Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  onSelected: (String item) {
+                    switch (item) {
+                      case 'refresh':
+                        if (onRefresh != null) onRefresh!();
+                        break;
+                      case 'import':
+                        if (onImport != null) onImport!();
+                        break;
+                      case 'import_zip':
+                        if (onImportZip != null) onImportZip!();
+                        break;
+                      case 'export':
+                        if (onExport != null) onExport!();
+                        break;
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      if (onRefresh != null)
+                        PopupMenuItem<String>(
+                          value: 'refresh',
+                          child: Row(
+                            children: [
+                              Icon(Icons.sync,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)!.syncRefresh,
+                                style: TextStyleConst.bodyMedium.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (onImport != null)
+                        PopupMenuItem<String>(
+                          value: 'import',
+                          child: Row(
+                            children: [
+                              Icon(Icons.create_new_folder_outlined,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)!.importFromBackup,
+                                style: TextStyleConst.bodyMedium.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (onImportZip != null)
+                        PopupMenuItem<String>(
+                          value: 'import_zip',
+                          child: Row(
+                            children: [
+                              Icon(Icons.folder_zip,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)!.importZipFile,
+                                style: TextStyleConst.bodyMedium.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (onExport != null)
+                        PopupMenuItem<String>(
+                          value: 'export',
+                          child: Row(
+                            children: [
+                              Icon(Icons.file_upload,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)!.exportLibrary,
+                                style: TextStyleConst.bodyMedium.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ];
+                  },
                 ),
             ]
           : [

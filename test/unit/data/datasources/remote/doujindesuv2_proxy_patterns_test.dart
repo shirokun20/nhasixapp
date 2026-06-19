@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('DoujinDesu v2 ProxyPatterns Type Safety', () {
-    test('proxyPatterns from JSON decode is List<dynamic>, not List<String>', () {
+    test('proxyPatterns from JSON decode is List<dynamic>, not List<String>',
+        () {
       const jsonString = '''
       {
         "api": {
@@ -20,7 +21,7 @@ void main() {
 
       final config = jsonDecode(jsonString) as Map<String, dynamic>;
       final imagesCfg = config['api']['images'] as Map<String, dynamic>;
-      
+
       // ❌ This will FAIL with type cast error
       expect(
         () => imagesCfg['proxyPatterns'] as List<String>,
@@ -29,10 +30,10 @@ void main() {
 
       // ✅ This is the CORRECT way
       final proxyPatterns = (imagesCfg['proxyPatterns'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
+              ?.map((e) => e.toString())
+              .toList() ??
           [];
-      
+
       expect(proxyPatterns, isA<List<String>>());
       expect(proxyPatterns, ['desu.photos', 'cdn.doujindesu']);
     });
@@ -50,12 +51,12 @@ void main() {
 
       final config = jsonDecode(jsonString) as Map<String, dynamic>;
       final imagesCfg = config['api']['images'] as Map<String, dynamic>;
-      
+
       final proxyPatterns = (imagesCfg['proxyPatterns'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
+              ?.map((e) => e.toString())
+              .toList() ??
           [];
-      
+
       expect(proxyPatterns, isEmpty);
     });
 
@@ -72,16 +73,17 @@ void main() {
 
       final config = jsonDecode(jsonString) as Map<String, dynamic>;
       final imagesCfg = config['api']['images'] as Map<String, dynamic>;
-      
+
       final proxyPatterns = (imagesCfg['proxyPatterns'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
+              ?.map((e) => e.toString())
+              .toList() ??
           [];
-      
+
       expect(proxyPatterns, isEmpty);
     });
 
-    test('proxyPatterns works with actual doujindesuv2-config.json structure', () {
+    test('proxyPatterns works with actual doujindesuv2-config.json structure',
+        () {
       final configJson = {
         'api': {
           'images': {
@@ -95,13 +97,13 @@ void main() {
       };
 
       final imagesCfg = configJson['api']!['images'] as Map<String, dynamic>;
-      
+
       // Safe cast (correct way)
       final proxyPatterns = (imagesCfg['proxyPatterns'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ??
+              ?.map((e) => e.toString())
+              .toList() ??
           [];
-      
+
       expect(proxyPatterns, ['desu.photos']);
       expect(proxyPatterns, isA<List<String>>());
     });

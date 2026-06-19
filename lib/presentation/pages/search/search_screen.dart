@@ -9,6 +9,7 @@ import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:nhasixapp/presentation/pages/search/dynamic_form_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/form_based_search_ui.dart';
 import 'package:nhasixapp/presentation/pages/search/query_string_search_ui.dart';
+import 'package:nhasixapp/presentation/pages/search/search_form_contract_adapter.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  bool _isRefreshingSearchConfig = false;
+  int _configReloadNonce = 0;
 
   SearchConfig? _buildScraperQueryFallback(Map<String, dynamic>? rawMap) {
     final scraper = rawMap?['scraper'] as Map<String, dynamic>?;
@@ -49,64 +50,104 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Future<void> _retrySearchConfig(String sourceId) async {
-    if (_isRefreshingSearchConfig) return;
+  bool _shouldUseLegacySearchUi(SearchConfig config) {
+    if (config.filterSupport != null) return true;
+    if (config.searchMode == SearchMode.queryString) {
+      return config.textFields?.isNotEmpty == true ||
+          config.radioGroups?.isNotEmpty == true ||
+          config.checkboxGroups?.isNotEmpty == true;
+    }
+    return false;
+  }
 
+  Widget _buildLegacySearchUi(SearchConfig config, String sourceId) {
+    switch (config.searchMode) {
+      case SearchMode.queryString:
+        return QueryStringSearchUI(
+          key: _searchUiKey(sourceId),
+          config: config,
+          sourceId: sourceId,
+          initialQuery: widget.query,
+          reloadSignal: _configReloadNonce,
+        );
+      case SearchMode.formBased:
+        return FormBasedSearchUI(
+          key: _searchUiKey(sourceId),
+          config: config,
+          sourceId: sourceId,
+          reloadSignal: _configReloadNonce,
+        );
+    }
+  }
+
+  Key _searchUiKey(String sourceId) => ValueKey('search-ui-$sourceId');
+
+  Future<void> _reloadSearchUi(String sourceId) async {
     setState(() {
-      _isRefreshingSearchConfig = true;
+      _configReloadNonce++;
     });
 
-    try {
-      await getIt<RemoteConfigService>().refreshSourceFromConfigUrl(sourceId);
-      if (!mounted) return;
+    context.read<SourceCubit>().refreshSources();
 
-      context.read<SourceCubit>().refreshSources();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshingSearchConfig = false;
-        });
-      }
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reloading search filters'),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffoldWithOffline(
       title: AppLocalizations.of(context)?.searchTitle ?? 'Search',
+      actions: [
+        IconButton(
+          tooltip: 'Reload search UI',
+          onPressed: () => _reloadSearchUi(
+            context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai',
+          ),
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
       body: BlocBuilder<SourceCubit, SourceState>(
         builder: (context, sourceState) {
           final sourceId = sourceState.activeSource?.id ?? 'nhentai';
           final remoteConfig = getIt<RemoteConfigService>();
           final rawMap = remoteConfig.getRawConfig(sourceId);
+          final canonicalSearchForm =
+              remoteConfig.getCanonicalSearchForm(sourceId);
           final searchForm = remoteConfig.getSearchFormConfig(sourceId);
           final searchConfig = remoteConfig.getSearchConfig(sourceId) ??
-              (searchForm == null ? _buildScraperQueryFallback(rawMap) : null);
+              (searchForm == null && canonicalSearchForm == null
+                  ? _buildScraperQueryFallback(rawMap)
+                  : null);
 
           // Priority:
-          // 1) Explicit searchConfig from source config (nhentai/crotpedia, etc)
-          // 2) searchForm dynamic UI
-          // 3) scraper query fallback when only URL pattern exists
-          if (searchConfig != null) {
-            switch (searchConfig.searchMode) {
-              case SearchMode.queryString:
-                return QueryStringSearchUI(
-                  config: searchConfig,
-                  sourceId: sourceId,
-                  initialQuery: widget.query,
-                );
-              case SearchMode.formBased:
-                return FormBasedSearchUI(
-                  config: searchConfig,
-                  sourceId: sourceId,
-                );
-            }
+          // 1) Canonical package-side contract (searchForm/searchConfig/inference)
+          // 2) Legacy explicit searchConfig fallback
+          // 3) Legacy searchForm fallback
+          // 4) scraper query fallback when only URL pattern exists
+          if (searchConfig != null && _shouldUseLegacySearchUi(searchConfig)) {
+            return _buildLegacySearchUi(searchConfig, sourceId);
+          } else if (canonicalSearchForm != null) {
+            return DynamicFormSearchUI(
+              key: _searchUiKey(sourceId),
+              config: SearchFormContractAdapter.toSearchFormConfig(
+                  canonicalSearchForm),
+              sourceId: sourceId,
+              canonicalContract: canonicalSearchForm,
+              reloadSignal: _configReloadNonce,
+            );
+          } else if (searchConfig != null) {
+            return _buildLegacySearchUi(searchConfig, sourceId);
           }
 
           if (searchForm != null) {
             return DynamicFormSearchUI(
+              key: _searchUiKey(sourceId),
               config: searchForm,
               sourceId: sourceId,
+              reloadSignal: _configReloadNonce,
             );
           }
 
@@ -139,22 +180,9 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _isRefreshingSearchConfig
-                  ? null
-                  : () => _retrySearchConfig(sourceId),
-              icon: _isRefreshingSearchConfig
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    )
-                  : const Icon(Icons.refresh),
-              label: Text(
-                _isRefreshingSearchConfig ? l10n.retrying : l10n.retrySearch,
-              ),
+              onPressed: () => _reloadSearchUi(sourceId),
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retrySearch),
             ),
           ],
         ),

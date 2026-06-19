@@ -191,6 +191,11 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-06-17 | Codex | Crotpedia search field dedupe | ✅ Done | Removed the duplicate Crotpedia search input by deduplicating search-form field synthesis in `DynamicSearchFormContract`: explicit legacy `searchConfig.textFields` / radio / checkbox groups now win, and fields that share the same `queryParam` are no longer emitted twice. Added regression coverage to ensure a `title` query field appears only once when both `searchForm` and `searchConfig` overlap. Verified with `cd packages/kuron_generic && fvm dart test test/config/source_config_parser_test.dart` and focused analyze on the touched package files. |
+| 2026-06-16 | Codex | Search and filter chip contrast polish | ✅ Done | Polished theme-aware selected chip colors across search and filter UIs. `DynamicFormSearchUI` select chips now use `onPrimaryContainer` for selected text/checkmarks, checkbox chips use explicit selected/unselected label and border colors, MangaDex include/exclude tag pickers use distinct readable green/red palettes in light and dark mode, and picker-backed include/exclude data fields now share the same selected-state colors. `FilterDataScreen` and `SelectedFiltersWidget` were aligned so include chips render green and exclude chips render red in both the result grid and selected-filter summary. Verified with focused `fvm flutter analyze` on the touched search/filter UI files. |
+| 2026-06-16 | Codex | search-runtime-autowiring canonical contract bridge | 🚧 In Progress | Implemented the safe first slice of `openspec/changes/search-runtime-autowiring`: package `DynamicSearchFormContract` now supports radio/hidden fields, string options, sort `apiValue`, legacy form-based text/radio/checkbox groups, query/sort/page inference from `searchConfig` and conventional search URL params, plus diagnostics for inferred/unsupported search forms. App `RemoteConfigService` exposes the canonical package contract, `SearchScreen` routes safe canonical forms into `DynamicFormSearchUI`, and rich legacy query-string configs such as `filterSupport` remain on the old UI to avoid losing advanced filters before parity. Added `SearchFormContractAdapter`, checkbox/radio support in the dynamic renderer, package parser tests, and app adapter test. Follow-up fixes preserved `searchForm.dataSources` and field `ui.dataSource` in the canonical bridge so MangaDex picker-backed tag fields can open the bottom sheet and load `/manga/tag` options, fixed REST raw search URL building so Komikcast `raw:query=neko` fills endpoint placeholders inside `filter=title=like="{query}"...` instead of emitting `query=neko` with an empty filter, moved `DynamicFormSearchUI` route pop outside the save try/catch using `Navigator.canPop()` so a route/context pop issue no longer appears as `failed to save filter: Null check operator used on a null value`, fixed search-result sorting so `DynamicSortingWidget` updates `_currentSearchFilter` before dispatching `ContentSearchEvent`, and finalized the UX decision that sort belongs only to Home/Search Results: Search page hides and does not serialize sort fields, stale raw `sort=` is stripped when saved filters are reloaded, and REST sort follows `SearchFilter.sortBy` from Home. Verified with focused `fvm dart test packages/kuron_generic/test/config/source_config_parser_test.dart`, `fvm flutter test test/unit/presentation/pages/search/search_form_contract_adapter_test.dart`, `cd packages/kuron_generic && fvm dart test test/integration/komikcast_rest_integration_test.dart`, and focused analyze for touched package/app files. Remaining OpenSpec tasks: dedicated search-form orchestration layer, broader widget/state/request tests, and final legacy UI deprecation/removal after parity. |
+| 2026-06-16 | Codex | Offline library/detail + reader interaction + custom storage permission polish | ✅ Done | Fixed offline library grouped metadata and actions: group/item size now uses per-item DB `file_size`, long-press sheet on `OfflineContentBody` is info-only with chapter count and path list, and destructive/read/PDF actions were moved to `OfflineSeriesDetailScreen`. Fixed offline detail delete flow to use the singleton offline search cubit, refresh local item state, and refresh reader progress after returning from reader. Reader now force-flushes offline progress to `reader_positions` on dispose, supports tap zones over native/animated images, and has a draggable mini chrome toggle for show/hide header/footer. `AnimatedDiceWidget` icon color now follows `IconTheme`/theme. `DownloadsScreen` no longer requires full storage permission when `StorageSettings.custom_storage_root` is configured; it checks the custom root and only requests notification permission, with a Settings snackbar when no download directory is set. Verified with targeted `fvm flutter analyze` on touched files. |
+| 2026-06-11 | Antigravity | Offline library pagination & N+1 fix planning | 🚧 In Progress | User approved the architectural finding that offline library grouping pagination was broken because it fetched 20 raw items from Isar DB and then grouped them. Wrote an `implementation_plan.md` to fetch all raw items, group them in memory, and paginate the resulting groups. Also planned to fix the N+1 `ReaderRepository` query by extracting progress checking into a separate function that only runs on the visible paginated groups. Implementation deferred to next session. |
 | 2026-06-10 | Antigravity | Offline Sort & Filter UI Polish + BottomSheet Path | ✅ Done | Improved `OfflineContentBody` sorting/filter UI with Ganteng UI (Glowing Gradient FAB, modern AnimatedContainer filter chips, and pill TabBar ripples). Fixed FAB auto-hide by adding `_scrollController` to `GridView`. Fixed filter state anomaly by reading `offline_selected_source_filter` from `SharedPreferences` during `OfflineSearchLoading` state to prevent UI flickering back to "All" tab. Added file path display in offline long-press bottom sheet with "Copy Path" and "Open in Explorer" (`open_file` package) utilities. |
 | 2026-06-02 | Codex | revamp-kuron-config-runtime verification closeout | ✅ Done | Closed the remaining feasible tasks for `revamp-kuron-config-runtime`: `RemoteConfigService.applySourceConfigFromJson()` now caches/removes `ValidationReport` alongside imported/uninstalled configs, and new app tests cover import compatibility state caching plus download parity warnings (`test/unit/core/config/remote_config_service_test.dart`, `test/unit/domain/usecases/download_content_usecase_test.dart`). Verification passed for import/reader/download app paths (`remote_config_service_test`, `download_content_usecase_test`, `reader_screen_policy_test`, `download_bloc_test`). Android payload parsing compile verification passed in `packages/kuron_native/example/android` with `./gradlew app:compileDebugKotlin` (`BUILD SUCCESSFUL`). Provider-repo validation ran against `/Users/asix/Documents/ide_baru/kuron-config-providers/config` with report saved to `/tmp/kuron_provider_validation_report.txt`: `hitomi` and `hentainexus` = `needsEngineSupport`, `crotpedia` = `partiallyCompatible`, all other checked provider configs = `compatible`. |
 | 2026-06-01 | Codex | Rate-limit hardening + config baseline sync | ✅ Done | Hardened rate-limit flow end-to-end: `RequestRateManager` now source-config aware (`enabled`, `cooldownDurationMs`), 429 cooldown now uses manager timing (removed hardcoded 5-minute cooldown in remote datasource), nhentai cooldown wait now explicit and loop-based, and generic runtime pipeline (`GenericSourceFactory` -> `GenericHttpSource` -> REST/Scraper adapters) now applies config-driven `RateLimiter` (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, `minDelayMs`). Also fixed `flutter_secure_storage` test override compatibility by switching to `AppleOptions`, and added baseline `network.rateLimit` blocks for multiple source configs under `informations/configs` (not tracked in git because directory is ignored). Verified with targeted analyze/tests in app, `kuron_generic`, and `kuron_special`. |
@@ -939,3 +944,78 @@ fvm flutter test test/unit/data/datasources/remote/doujindesuv2_api_integration_
 **Impact**:
 - Prevents “download status successful but image empty” false positives.
 - Reader no longer sees completed chapter entries that have zero offline pages.
+
+## 🆕 Latest Session — 2026-06-17
+
+### Crotpedia Genre Direct URL Loading ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Added `tagSourceUrl` to `CheckboxGroupConfig` so checkbox-driven tag groups can declare an explicit remote tag file.
+- `FormBasedSearchUI` now loads genre options directly from the configured URL when present, instead of depending on `TagDataManager` sync/manifest state.
+- Crotpedia genre config now points directly at `https://raw.githubusercontent.com/shirokun20/nhasixapp/master/configs/tags/tags_crotpedia.json`.
+- Added a focused test that serves a remote JSON payload over local HTTP and verifies `TagDataManager.loadTagsFromUrl()` parses tags correctly.
+
+**Verification**:
+- ✅ `fvm flutter test test/unit/core/tag_data_manager_test.dart`
+- ✅ `fvm flutter analyze lib/core/config/config_models.dart lib/core/utils/tag_data_manager.dart lib/presentation/pages/search/form_based_search_ui.dart test/unit/core/tag_data_manager_test.dart`
+
+**Files touched**:
+- `lib/core/config/config_models.dart`
+- `lib/core/utils/tag_data_manager.dart`
+- `lib/presentation/pages/search/form_based_search_ui.dart`
+- `informations/configs/crotpedia-config.json`
+- `test/unit/core/tag_data_manager_test.dart`
+
+**Impact**:
+- Crotpedia genre no longer depends on background tag sync just to render the search chips.
+- The source config now states the tag origin explicitly, which makes the UI behavior easier to trace.
+
+### Canonical Search Checkbox URL Loading ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Extended the canonical `DynamicSearchFormContract` bridge so checkbox fields now preserve `loadFromTags`, `tagType`, and `tagSourceUrl` metadata end to end.
+- `DynamicFormSearchUI` now loads checkbox/genre options from remote URL when the config declares `tagSourceUrl`, with visible loading, retry, and error states.
+- Search form adapter now serializes the checkbox tag metadata into raw config so canonical forms keep the tag source origin instead of dropping it during conversion.
+
+**Verification**:
+- ✅ `fvm flutter analyze lib/presentation/pages/search/dynamic_form_search_ui.dart lib/presentation/pages/search/search_form_contract_adapter.dart lib/presentation/pages/search/search_screen.dart packages/kuron_generic/lib/src/config/typed_config/dynamic_search_form.dart`
+- ✅ `fvm flutter test test/unit/presentation/pages/search/search_form_contract_adapter_test.dart packages/kuron_generic/test/config/source_config_parser_test.dart`
+
+**Files touched**:
+- `packages/kuron_generic/lib/src/config/typed_config/dynamic_search_form.dart`
+- `lib/presentation/pages/search/search_form_contract_adapter.dart`
+- `lib/presentation/pages/search/dynamic_form_search_ui.dart`
+- `test/unit/presentation/pages/search/search_form_contract_adapter_test.dart`
+- `packages/kuron_generic/test/config/source_config_parser_test.dart`
+
+**Impact**:
+- Canonical search forms can now load genre-style checkbox data directly from remote tag URLs without falling back to static options.
+- Search UI now shows explicit loading and failure feedback when a checkbox tag source is empty or unreachable.
+
+### Search Config Reload Action ✅
+
+**Status**: Done (validated)
+
+**Fix implemented**:
+- Added an AppBar reload action to `SearchScreen` via `AppScaffoldWithOffline.actions`.
+- The action force-refreshes the active source config from `configUrl`, bypassing version comparison, then refreshes `SourceCubit` and remounts the search UI with a new key.
+- `RemoteConfigService.refreshSourceFromConfigUrl()` now supports a `forceRefresh` flag for explicit reload flows.
+
+**Verification**:
+- ✅ `fvm flutter analyze lib/core/config/remote_config_service.dart lib/presentation/widgets/app_scaffold_with_offline.dart lib/presentation/pages/search/search_screen.dart lib/core/config/config_models.dart lib/core/utils/tag_data_manager.dart lib/presentation/pages/search/form_based_search_ui.dart test/unit/core/tag_data_manager_test.dart`
+- ✅ `fvm flutter test test/unit/core/tag_data_manager_test.dart`
+
+**Files touched**:
+- `lib/core/config/remote_config_service.dart`
+- `lib/presentation/widgets/app_scaffold_with_offline.dart`
+- `lib/presentation/pages/search/search_screen.dart`
+- `CHANGELOG.md`
+- `MEMORY.md`
+
+**Impact**:
+- Gives a direct recovery path when the search UI is showing stale config in release builds.
+- Still depends on the remote `configUrl` actually serving the updated source config.

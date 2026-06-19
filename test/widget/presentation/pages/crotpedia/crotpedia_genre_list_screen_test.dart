@@ -15,6 +15,7 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
     implements CrotpediaFeatureCubit {}
+
 class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 
 void main() {

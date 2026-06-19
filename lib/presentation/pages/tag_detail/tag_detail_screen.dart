@@ -173,7 +173,8 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                     ),
                     _buildBadge(
                       icon: Icons.numbers,
-                      label: AppLocalizations.of(context)!.nGalleries(tag.count),
+                      label:
+                          AppLocalizations.of(context)!.nGalleries(tag.count),
                       colorScheme: colorScheme,
                     ),
                   ],
@@ -243,12 +244,15 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            _buildMetaRow(AppLocalizations.of(context)!.tagId, tag.id.toString(), colorScheme),
+            _buildMetaRow(AppLocalizations.of(context)!.tagId,
+                tag.id.toString(), colorScheme),
             const Divider(height: 18),
-            _buildMetaRow(AppLocalizations.of(context)!.slug, tag.slug, colorScheme),
+            _buildMetaRow(
+                AppLocalizations.of(context)!.slug, tag.slug, colorScheme),
             if (tag.url != null && tag.url!.trim().isNotEmpty) ...[
               const Divider(height: 18),
-              _buildMetaRow(AppLocalizations.of(context)!.path, tag.url!, colorScheme),
+              _buildMetaRow(
+                  AppLocalizations.of(context)!.path, tag.url!, colorScheme),
             ],
           ],
         ),

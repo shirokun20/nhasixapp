@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../cubits/reader/reader_cubit.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 /// End-of-Chapter Overlay Widget
 /// Shows at the last page of content with navigation options
 class EndOfChapterOverlay extends StatelessWidget {
@@ -51,7 +52,9 @@ class EndOfChapterOverlay extends StatelessWidget {
 
               // Title
               Text(
-                isChapterMode ? AppLocalizations.of(context)!.chapterComplete : AppLocalizations.of(context)!.finishedReading,
+                isChapterMode
+                    ? AppLocalizations.of(context)!.chapterComplete
+                    : AppLocalizations.of(context)!.finishedReading,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,

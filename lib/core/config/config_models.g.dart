@@ -799,6 +799,7 @@ _CheckboxGroupConfig _$CheckboxGroupConfigFromJson(Map<String, dynamic> json) =>
       columns: (json['columns'] as num?)?.toInt() ?? 3,
       loadFromTags: json['loadFromTags'] as bool? ?? false,
       tagType: json['tagType'] as String?,
+      tagSourceUrl: json['tagSourceUrl'] as String?,
     );
 
 Map<String, dynamic> _$CheckboxGroupConfigToJson(
@@ -811,6 +812,7 @@ Map<String, dynamic> _$CheckboxGroupConfigToJson(
       'columns': instance.columns,
       'loadFromTags': instance.loadFromTags,
       'tagType': instance.tagType,
+      'tagSourceUrl': instance.tagSourceUrl,
     };
 
 _SortingConfig _$SortingConfigFromJson(Map<String, dynamic> json) =>

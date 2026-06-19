@@ -540,7 +540,8 @@ class HitomiAdapter implements GenericAdapter {
         'https://ltn.gold-usergeneratedcontent.net/galleries/{id}.js';
     final endpoint = endpointTemplate.replaceAll('{id}', id);
 
-    _logger.i('Hitomi gallery json request: id=$id, url=${_shortUrl(endpoint)}');
+    _logger
+        .i('Hitomi gallery json request: id=$id, url=${_shortUrl(endpoint)}');
 
     await _throttle(rawConfig);
     final response = await _dio.get<String>(

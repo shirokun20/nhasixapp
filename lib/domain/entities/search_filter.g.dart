@@ -87,6 +87,7 @@ const _$SortOptionEnumMap = {
   SortOption.popular: 'popular',
   SortOption.popularWeek: 'popularWeek',
   SortOption.popularToday: 'popularToday',
+  SortOption.rating: 'rating',
 };
 
 const _$SearchSourceEnumMap = {

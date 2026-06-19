@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kuron_generic/kuron_generic.dart'
+    show DynamicSearchFormContract;
 import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
+import 'package:nhasixapp/presentation/pages/search/search_form_contract_adapter.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -28,11 +31,15 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 class DynamicFormSearchUI extends StatefulWidget {
   final SearchFormConfig config;
   final String sourceId;
+  final DynamicSearchFormContract? canonicalContract;
+  final int reloadSignal;
 
   const DynamicFormSearchUI({
     super.key,
     required this.config,
     required this.sourceId,
+    this.canonicalContract,
+    this.reloadSignal = 0,
   });
 
   @override
@@ -51,16 +58,21 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   final Map<String, List<_DynamicOption>> _multiSelectValues = {};
   final Map<String, List<String>> _tagChipValues = {};
   final Map<String, List<String>> _pendingMultiRestore = {};
+  int _lastReloadSignal = 0;
 
   Map<String, dynamic>? _rawSearchForm;
   Map<String, dynamic> _dataSources = const {};
   final Map<String, List<_DynamicOption>> _optionCacheBySource = {};
   final Set<String> _loadingPickerSources = <String>{};
   final Map<String, String> _pickerLoadErrorBySource = <String, String>{};
+  final Map<String, List<_DynamicOption>> _checkboxOptionCache = {};
+  final Set<String> _loadingCheckboxFields = <String>{};
+  final Map<String, String> _checkboxLoadErrorByField = {};
 
   @override
   void initState() {
     super.initState();
+    _lastReloadSignal = widget.reloadSignal;
     _initRawSearchForm();
     _initFields();
     context
@@ -69,7 +81,31 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     _initializeDynamicOptions();
   }
 
+  @override
+  void didUpdateWidget(covariant DynamicFormSearchUI oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reloadSignal != oldWidget.reloadSignal &&
+        widget.reloadSignal != _lastReloadSignal) {
+      _lastReloadSignal = widget.reloadSignal;
+      _reloadDynamicOptions();
+    }
+  }
+
   void _initRawSearchForm() {
+    final canonicalRaw = widget.canonicalContract == null
+        ? null
+        : SearchFormContractAdapter.toRawSearchForm(
+            widget.canonicalContract!,
+          );
+    if (canonicalRaw != null) {
+      _rawSearchForm = canonicalRaw;
+      final dynamic dataSources = canonicalRaw['dataSources'];
+      if (dataSources is Map<String, dynamic>) {
+        _dataSources = dataSources;
+      }
+      return;
+    }
+
     final rawSource = _remoteConfigService.getRawConfig(widget.sourceId);
     final rawForm = rawSource?['searchForm'];
     if (rawForm is Map<String, dynamic>) {
@@ -100,7 +136,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         case 'tag':
           _textControllers[entry.key] = TextEditingController();
         case 'select':
+        case 'sort':
+        case 'radio':
           _selectValues[entry.key] = null; // null = "all" / no filter
+        case 'checkbox':
+          _multiSelectValues[entry.key] = [];
         default:
           break; // 'page' and unknown types are ignored in the UI
       }
@@ -109,7 +149,20 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _initializeDynamicOptions() async {
     await _loadPickerOptions();
+    await _loadCheckboxOptions();
     await _restoreSaved();
+  }
+
+  Future<void> _reloadDynamicOptions() async {
+    _optionCacheBySource.clear();
+    _pickerLoadErrorBySource.clear();
+    _loadingPickerSources.clear();
+    _checkboxOptionCache.clear();
+    _checkboxLoadErrorByField.clear();
+    _loadingCheckboxFields.clear();
+    await _loadPickerOptions();
+    await _loadCheckboxOptions();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadPickerOptions() async {
@@ -200,6 +253,86 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       _pickerLoadErrorBySource[sourceId] = e.toString();
     } finally {
       _loadingPickerSources.remove(sourceId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _loadCheckboxOptions() async {
+    for (final entry in widget.config.params.entries) {
+      final fieldName = entry.key;
+      final field = entry.value;
+      if (!_isDynamicCheckboxField(fieldName, field)) continue;
+      if (_checkboxOptionCache.containsKey(fieldName)) continue;
+      await _loadCheckboxOptionsForField(fieldName);
+    }
+  }
+
+  Future<void> _loadCheckboxOptionsForField(
+    String fieldName, {
+    bool force = false,
+  }) async {
+    if (_loadingCheckboxFields.contains(fieldName)) return;
+    if (!force && _checkboxOptionCache.containsKey(fieldName)) return;
+
+    final rawField = _rawFieldConfig(fieldName);
+    if (rawField == null) return;
+
+    final dynamic rawOptions = rawField['options'];
+    final hasStaticOptions = rawOptions is List && rawOptions.isNotEmpty;
+    final tagSourceUrl = rawField['tagSourceUrl'] as String?;
+    final loadFromTags = rawField['loadFromTags'] as bool? ?? false;
+    final tagType = rawField['tagType']?.toString();
+
+    if ((tagSourceUrl == null || tagSourceUrl.isEmpty) &&
+        (tagType == null || tagType.isEmpty) &&
+        !loadFromTags &&
+        !hasStaticOptions) {
+      return;
+    }
+
+    _loadingCheckboxFields.add(fieldName);
+    if (mounted) setState(() {});
+
+    try {
+      final tagManager = getIt<TagDataManager>();
+      final List<_DynamicOption> options;
+      if (tagSourceUrl != null && tagSourceUrl.isNotEmpty) {
+        final tags = await tagManager.loadTagsFromUrl(tagSourceUrl);
+        options = tags
+            .map(
+              (tag) => _DynamicOption(
+                value: (tag.slug ?? '').isNotEmpty ? tag.slug! : tag.name,
+                label: tag.name,
+              ),
+            )
+            .toList(growable: false);
+      } else if (loadFromTags && tagType != null && tagType.isNotEmpty) {
+        final tags = await tagManager.getTagsByType(
+          tagType,
+          source: widget.sourceId,
+        );
+        options = tags
+            .map(
+              (tag) => _DynamicOption(
+                value: (tag.slug ?? '').isNotEmpty ? tag.slug! : tag.name,
+                label: tag.name,
+              ),
+            )
+            .toList(growable: false);
+      } else {
+        options = _optionsForStaticField(rawField);
+      }
+
+      _checkboxOptionCache[fieldName] = options;
+      _checkboxLoadErrorByField.remove(fieldName);
+    } catch (e) {
+      _logger.w(
+        'DynamicFormSearchUI: failed loading checkbox field $fieldName: $e',
+      );
+      _checkboxOptionCache[fieldName] = const [];
+      _checkboxLoadErrorByField[fieldName] = e.toString();
+    } finally {
+      _loadingCheckboxFields.remove(fieldName);
       if (mounted) setState(() {});
     }
   }
@@ -316,12 +449,18 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final selectedTagItems = <FilterItem>[];
     final parts = _collectEncodedQueryParts(selectedTagItems: selectedTagItems);
     final rawQuery = parts.isNotEmpty ? 'raw:${parts.join('&')}' : '';
-    final filter = SearchFilter(query: rawQuery, tags: selectedTagItems);
+    final filter = SearchFilter(
+      query: rawQuery,
+      tags: selectedTagItems,
+    );
 
     try {
       await getIt<LocalDataSource>()
           .saveSearchFilter(widget.sourceId, filter.toJson());
-      if (mounted) context.pop(true);
+      _logger.d(
+        'DynamicFormSearchUI: saved search filter for ${widget.sourceId} '
+        'query=$rawQuery sort=${filter.sortBy.name}',
+      );
     } catch (e) {
       _logger.e('DynamicFormSearchUI: failed to save filter: $e');
       if (mounted) {
@@ -331,7 +470,17 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   .failedToApplySearch(e.toString()))),
         );
       }
+      return;
     }
+
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop(true);
+      return;
+    }
+
+    _logger.w('DynamicFormSearchUI: search filter saved but route cannot pop');
   }
 
   void _onReset() {
@@ -356,6 +505,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final visibleFields = widget.config.params.entries
         .where((e) =>
             e.value.type != 'page' &&
+            e.value.type != 'sort' &&
             !_shouldHideBecauseCombinedPicker(e.key, e.value))
         .toList();
 
@@ -424,6 +574,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             ? _buildTagChipsField(name, field)
             : _buildTagField(name, field),
         'select' => _buildSelectField(name, field),
+        'sort' => _buildSelectField(name, field),
+        'radio' => _buildSelectField(name, field),
+        'checkbox' => _buildCheckboxField(name, field),
         _ => const SizedBox.shrink(),
       },
     );
@@ -547,7 +700,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Widget _buildPickerField(String name, SearchFormFieldConfig field) {
     final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
     final sourceId = _pickerDataSource(name, field);
-    final accentColor = _pickerAccentColor(name, field, context);
+    final pickerColors = _pickerSelectedColors(name, field, context);
+    final accentColor = pickerColors.accent;
     final baseIcon = _pickerLeadingIcon(name, field);
     final isLoading =
         sourceId != null && _loadingPickerSources.contains(sourceId);
@@ -614,7 +768,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       style: selected.isEmpty
                           ? null
                           : TextStyle(
-                              color: accentColor,
+                              color: pickerColors.foreground,
                               fontWeight: FontWeight.w600,
                             ),
                     ),
@@ -644,10 +798,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 .map(
                   (e) => InputChip(
                     label: Text(e.label),
-                    backgroundColor: accentColor.withValues(alpha: 0.14),
-                    side: BorderSide(
-                      color: accentColor.withValues(alpha: 0.55),
+                    labelStyle: TextStyle(
+                      color: pickerColors.foreground,
+                      fontWeight: FontWeight.w600,
                     ),
+                    backgroundColor: pickerColors.background,
+                    side: BorderSide(color: pickerColors.border),
                     deleteIconColor: accentColor,
                     onDeleted: () {
                       setState(() {
@@ -684,10 +840,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final hasCachedOptions = sourceId != null &&
         (_optionCacheBySource[sourceId]?.isNotEmpty ?? false);
 
-    final includeColor =
-        _pickerAccentColor(includedName, includedField, context);
-    final excludeColor =
-        _pickerAccentColor(excludedName, excludedField, context);
+    final includeColors = _tagChipColors(_TagPickState.include, context);
+    final excludeColors = _tagChipColors(_TagPickState.exclude, context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,10 +927,18 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ...included.map(
                 (e) => InputChip(
                   label: Text(e.label),
-                  avatar: Icon(Icons.add, size: 14, color: includeColor),
-                  backgroundColor: includeColor.withValues(alpha: 0.14),
-                  side: BorderSide(color: includeColor.withValues(alpha: 0.55)),
-                  deleteIconColor: includeColor,
+                  labelStyle: TextStyle(
+                    color: includeColors.foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  avatar: Icon(
+                    Icons.add,
+                    size: 14,
+                    color: includeColors.accent,
+                  ),
+                  backgroundColor: includeColors.background,
+                  side: BorderSide(color: includeColors.border),
+                  deleteIconColor: includeColors.accent,
                   onDeleted: () {
                     setState(() {
                       _multiSelectValues[includedName] =
@@ -788,10 +950,18 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ...excluded.map(
                 (e) => InputChip(
                   label: Text(e.label),
-                  avatar: Icon(Icons.remove, size: 14, color: excludeColor),
-                  backgroundColor: excludeColor.withValues(alpha: 0.14),
-                  side: BorderSide(color: excludeColor.withValues(alpha: 0.55)),
-                  deleteIconColor: excludeColor,
+                  labelStyle: TextStyle(
+                    color: excludeColors.foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  avatar: Icon(
+                    Icons.remove,
+                    size: 14,
+                    color: excludeColors.accent,
+                  ),
+                  backgroundColor: excludeColors.background,
+                  side: BorderSide(color: excludeColors.border),
+                  deleteIconColor: excludeColors.accent,
                   onDeleted: () {
                     setState(() {
                       _multiSelectValues[excludedName] =
@@ -852,10 +1022,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
     if (!mounted) return;
 
-    final includeColor =
-        _pickerAccentColor(includedName, includedField, context);
-    final excludeColor =
-        _pickerAccentColor(excludedName, excludedField, context);
+    final includeColors = _tagChipColors(_TagPickState.include, context);
+    final excludeColors = _tagChipColors(_TagPickState.exclude, context);
 
     final selectedState = <String, _TagPickState>{
       for (final o
@@ -965,13 +1133,13 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       Row(
                         children: [
                           Icon(Icons.add_circle_outline,
-                              size: 16, color: includeColor),
+                              size: 16, color: includeColors.accent),
                           const SizedBox(width: 4),
                           Text(AppLocalizations.of(context)!
                               .includeCountLabel(includeCount)),
                           const SizedBox(width: 12),
                           Icon(Icons.remove_circle_outline,
-                              size: 16, color: excludeColor),
+                              size: 16, color: excludeColors.accent),
                           const SizedBox(width: 4),
                           Text(AppLocalizations.of(context)!
                               .excludeCountLabel(excludeCount)),
@@ -1027,13 +1195,14 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                             pickState == _TagPickState.include;
                                         final isExclude =
                                             pickState == _TagPickState.exclude;
-                                        final chipColor = isInclude
-                                            ? includeColor
+                                        final selectedColors = isInclude
+                                            ? includeColors
                                             : isExclude
-                                                ? excludeColor
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .outlineVariant;
+                                                ? excludeColors
+                                                : null;
+                                        final fallbackBorder = Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant;
 
                                         return FilterChip(
                                           showCheckmark: false,
@@ -1041,29 +1210,29 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                           selected: isInclude || isExclude,
                                           avatar: isInclude
                                               ? Icon(Icons.add,
-                                                  size: 14, color: includeColor)
+                                                  size: 14,
+                                                  color: includeColors.accent)
                                               : isExclude
                                                   ? Icon(Icons.remove,
                                                       size: 14,
-                                                      color: excludeColor)
+                                                      color:
+                                                          excludeColors.accent)
                                                   : null,
                                           backgroundColor: Theme.of(context)
                                               .colorScheme
                                               .surfaceContainerLow,
                                           selectedColor:
-                                              chipColor.withValues(alpha: 0.2),
+                                              selectedColors?.background,
                                           side: BorderSide(
                                             color: (isInclude || isExclude)
-                                                ? chipColor.withValues(
-                                                    alpha: 0.8)
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .outlineVariant,
+                                                ? selectedColors!.border
+                                                : fallbackBorder,
                                           ),
-                                          checkmarkColor: chipColor,
+                                          checkmarkColor:
+                                              selectedColors?.foreground,
                                           labelStyle: TextStyle(
                                             color: (isInclude || isExclude)
-                                                ? chipColor
+                                                ? selectedColors!.foreground
                                                 : null,
                                             fontWeight: (isInclude || isExclude)
                                                 ? FontWeight.w600
@@ -1159,7 +1328,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _openPicker(String name, SearchFormFieldConfig field) async {
     final sourceId = _pickerDataSource(name, field);
-    final accentColor = _pickerAccentColor(name, field, context);
+    final pickerColors = _pickerSelectedColors(name, field, context);
+    final accentColor = pickerColors.accent;
     final pickerIcon = _pickerLeadingIcon(name, field);
     if (sourceId == null) return;
 
@@ -1340,20 +1510,20 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                             backgroundColor: Theme.of(context)
                                                 .colorScheme
                                                 .surfaceContainerLow,
-                                            selectedColor: accentColor
-                                                .withValues(alpha: 0.2),
+                                            selectedColor:
+                                                pickerColors.background,
                                             side: BorderSide(
                                               color: isSelected
-                                                  ? accentColor.withValues(
-                                                      alpha: 0.8)
+                                                  ? pickerColors.border
                                                   : Theme.of(context)
                                                       .colorScheme
                                                       .outlineVariant,
                                             ),
-                                            checkmarkColor: accentColor,
+                                            checkmarkColor:
+                                                pickerColors.foreground,
                                             labelStyle: TextStyle(
                                               color: isSelected
-                                                  ? accentColor
+                                                  ? pickerColors.foreground
                                                   : null,
                                               fontWeight: isSelected
                                                   ? FontWeight.w600
@@ -1505,10 +1675,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     if (_isIncludedTagField(name, field)) {
-      return colorScheme.tertiary;
+      return _tagChipColors(_TagPickState.include, context).accent;
     }
     if (_isExcludedTagField(name, field)) {
-      return colorScheme.error;
+      return _tagChipColors(_TagPickState.exclude, context).accent;
     }
     return colorScheme.primary;
   }
@@ -1516,6 +1686,49 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Color _onAccentColor(Color accentColor) {
     final brightness = ThemeData.estimateBrightnessForColor(accentColor);
     return brightness == Brightness.dark ? Colors.white : Colors.black;
+  }
+
+  _TagChipColors _tagChipColors(_TagPickState state, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final Color accent;
+    final Color foreground;
+    switch (state) {
+      case _TagPickState.include:
+        accent = isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853);
+        foreground = isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45);
+      case _TagPickState.exclude:
+        accent = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
+        foreground = isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D);
+    }
+
+    return _TagChipColors(
+      accent: accent,
+      foreground: foreground,
+      background: accent.withValues(alpha: isDark ? 0.18 : 0.14),
+      border: accent.withValues(alpha: isDark ? 0.78 : 0.62),
+    );
+  }
+
+  _TagChipColors _pickerSelectedColors(
+    String name,
+    SearchFormFieldConfig field,
+    BuildContext context,
+  ) {
+    if (_isIncludedTagField(name, field)) {
+      return _tagChipColors(_TagPickState.include, context);
+    }
+    if (_isExcludedTagField(name, field)) {
+      return _tagChipColors(_TagPickState.exclude, context);
+    }
+
+    final accent = _pickerAccentColor(name, field, context);
+    return _TagChipColors(
+      accent: accent,
+      foreground: accent,
+      background: accent.withValues(alpha: 0.16),
+      border: accent.withValues(alpha: 0.62),
+    );
   }
 
   String? _pickerDataSource(String name, SearchFormFieldConfig field) {
@@ -1609,7 +1822,17 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           _textControllers[name]?.text = values.join(', ');
         }
       case 'select':
+      case 'sort':
+      case 'radio':
         _selectValues[name] = values.first;
+      case 'checkbox':
+        final options = _optionsForField(name, field, _rawFieldConfig(name));
+        _multiSelectValues[name] = values
+            .map((value) => options.firstWhere(
+                  (option) => option.value == value,
+                  orElse: () => _DynamicOption(value: value, label: value),
+                ))
+            .toList(growable: false);
       default:
         break;
     }
@@ -1699,9 +1922,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             addParamValue(qp, formatted, joinMode: joinMode);
           }
         case 'select':
+        case 'radio':
           final val = _selectValues[name];
           if (val != null && val.isNotEmpty) {
             final formatted = _formatFieldValue(rawField, val);
+            addParamValue(qp, formatted, joinMode: joinMode);
+          }
+        case 'checkbox':
+          final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+          for (final option in selected) {
+            final formatted = _formatFieldValue(rawField, option.value);
             addParamValue(qp, formatted, joinMode: joinMode);
           }
         default:
@@ -1938,7 +2168,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   }
 
   Widget _buildSelectField(String name, SearchFormFieldConfig field) {
-    final options = field.options ?? [];
+    final colorScheme = Theme.of(context).colorScheme;
+    final rawField = _rawFieldConfig(name);
+    final options = _optionsForField(name, field, rawField);
     final selected = _selectValues[name];
 
     return Column(
@@ -1957,23 +2189,517 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           runSpacing: 4,
           children: [
             // "All" chip = clear selection
-            ChoiceChip(
-              label: Text(AppLocalizations.of(context)!.all),
-              selected: selected == null,
+            _buildSelectChip(
+              colorScheme: colorScheme,
+              label: AppLocalizations.of(context)!.all,
+              isSelected: selected == null,
               onSelected: (_) => setState(() => _selectValues[name] = null),
-              selectedColor: Theme.of(context).colorScheme.primaryContainer,
             ),
             for (final opt in options)
-              ChoiceChip(
-                label: Text(_capitalize(opt)),
-                selected: selected == opt,
+              _buildSelectChip(
+                colorScheme: colorScheme,
+                label: opt.label,
+                isSelected: selected == opt.value,
                 onSelected: (v) =>
-                    setState(() => _selectValues[name] = v ? opt : null),
-                selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                    setState(() => _selectValues[name] = v ? opt.value : null),
               ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSelectChip({
+    required ColorScheme colorScheme,
+    required String label,
+    required bool isSelected,
+    required ValueChanged<bool> onSelected,
+  }) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      showCheckmark: true,
+      selectedColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      checkmarkColor: colorScheme.onPrimaryContainer,
+      labelStyle: TextStyle(
+        color:
+            isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      side: BorderSide(
+        color: isSelected
+            ? colorScheme.primary.withValues(alpha: 0.45)
+            : colorScheme.outline.withValues(alpha: 0.25),
+      ),
+      onSelected: onSelected,
+    );
+  }
+
+  Widget _buildCheckboxField(String name, SearchFormFieldConfig field) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final rawField = _rawFieldConfig(name);
+    final options = _optionsForField(name, field, rawField);
+    final selected = _multiSelectValues[name] ?? const <_DynamicOption>[];
+    final selectedValues = selected.map((option) => option.value).toSet();
+    final isDynamic = _isDynamicCheckboxField(name, field);
+    final isLoading = _loadingCheckboxFields.contains(name);
+    final loadError = _checkboxLoadErrorByField[name];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _labelFor(name).toUpperCase(),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+        const SizedBox(height: 8),
+        if (options.isEmpty && isDynamic) ...[
+          _buildCheckboxRemoteStateCard(
+            fieldName: name,
+            isLoading: isLoading,
+            loadError: loadError,
+            colorScheme: colorScheme,
+          ),
+        ] else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final option in options)
+                _buildCheckboxChip(
+                  colorScheme: colorScheme,
+                  option: option,
+                  isSelected: selectedValues.contains(option.value),
+                  onSelected: (enabled) {
+                    setState(() {
+                      final next = <_DynamicOption>[...selected];
+                      if (enabled) {
+                        next.add(option);
+                      } else {
+                        next.removeWhere((item) => item.value == option.value);
+                      }
+                      _multiSelectValues[name] = next;
+                    });
+                  },
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCheckboxChip({
+    required ColorScheme colorScheme,
+    required _DynamicOption option,
+    required bool isSelected,
+    required ValueChanged<bool> onSelected,
+  }) {
+    return FilterChip(
+      label: Text(option.label),
+      selected: isSelected,
+      selectedColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      checkmarkColor: colorScheme.onPrimaryContainer,
+      labelStyle: TextStyle(
+        color:
+            isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      side: BorderSide(
+        color: isSelected
+            ? colorScheme.primary.withValues(alpha: 0.45)
+            : colorScheme.outline.withValues(alpha: 0.25),
+      ),
+      onSelected: onSelected,
+    );
+  }
+
+  List<_DynamicOption> _optionsForField(
+    String name,
+    SearchFormFieldConfig field,
+    Map<String, dynamic>? rawField,
+  ) {
+    if (_isDynamicCheckboxField(name, field)) {
+      return _checkboxOptionCache[name] ?? const <_DynamicOption>[];
+    }
+
+    final rawOptions = rawField?['options'];
+    if (rawOptions is List) {
+      return rawOptions
+          .map<_DynamicOption?>((dynamic option) {
+            if (option is Map<String, dynamic>) {
+              final value = option['value']?.toString() ?? '';
+              if (value.isEmpty) return null;
+              return _DynamicOption(
+                value: value,
+                label: option['label']?.toString() ?? value,
+              );
+            }
+            final value = option?.toString() ?? '';
+            if (value.isEmpty) return null;
+            return _DynamicOption(value: value, label: _capitalize(value));
+          })
+          .whereType<_DynamicOption>()
+          .toList(growable: false);
+    }
+
+    return (field.options ?? const <String>[])
+        .map((value) => _DynamicOption(value: value, label: _capitalize(value)))
+        .toList(growable: false);
+  }
+
+  List<_DynamicOption> _optionsForStaticField(Map<String, dynamic>? rawField) {
+    final rawOptions = rawField?['options'];
+    if (rawOptions is List) {
+      return rawOptions
+          .map<_DynamicOption?>((dynamic option) {
+            if (option is Map<String, dynamic>) {
+              final value = option['value']?.toString() ?? '';
+              if (value.isEmpty) return null;
+              return _DynamicOption(
+                value: value,
+                label: option['label']?.toString() ?? value,
+              );
+            }
+            final value = option?.toString() ?? '';
+            if (value.isEmpty) return null;
+            return _DynamicOption(value: value, label: _capitalize(value));
+          })
+          .whereType<_DynamicOption>()
+          .toList(growable: false);
+    }
+    return const <_DynamicOption>[];
+  }
+
+  bool _isDynamicCheckboxField(String name, SearchFormFieldConfig field) {
+    if (field.type != 'checkbox') return false;
+    final rawField = _rawFieldConfig(name);
+    if (rawField == null) return false;
+    final tagSourceUrl = rawField['tagSourceUrl'] as String?;
+    final loadFromTags = rawField['loadFromTags'] as bool? ?? false;
+    final tagType = rawField['tagType']?.toString();
+    return (tagSourceUrl != null && tagSourceUrl.isNotEmpty) ||
+        loadFromTags ||
+        (tagType != null && tagType.isNotEmpty);
+  }
+
+  Widget _buildCheckboxRemoteStateCard({
+    required String fieldName,
+    required bool isLoading,
+    required String? loadError,
+    required ColorScheme colorScheme,
+  }) {
+    final sourceUrl = _rawFieldConfig(fieldName)?['tagSourceUrl']?.toString();
+    final sourceHost = sourceUrl == null || sourceUrl.isEmpty
+        ? null
+        : Uri.tryParse(sourceUrl)?.host;
+    final theme = Theme.of(context);
+    final isError = loadError != null;
+    final isIdle = !isLoading && !isError;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      child: Container(
+        key: ValueKey<String>(
+          'checkbox-remote-state-$fieldName-${isLoading ? 'loading' : isError ? 'error' : 'idle'}',
+        ),
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(
+            color: isError
+                ? colorScheme.error.withValues(alpha: 0.38)
+                : colorScheme.outlineVariant.withValues(alpha: 0.50),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isError
+                        ? colorScheme.errorContainer
+                        : colorScheme.primaryContainer.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isError
+                        ? Icons.warning_amber_rounded
+                        : Icons.cloud_download_outlined,
+                    color: isError
+                        ? colorScheme.onErrorContainer
+                        : colorScheme.onPrimaryContainer,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isError
+                                  ? 'Genre options failed'
+                                  : 'Loading genre options',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          _buildRemoteStateBadge(
+                            colorScheme: colorScheme,
+                            label: isLoading
+                                ? 'Loading'
+                                : isError
+                                    ? 'Error'
+                                    : 'Idle',
+                            filled: isLoading || isIdle,
+                            isError: isError,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        sourceHost == null
+                            ? (isError
+                                ? AppLocalizations.of(context)!
+                                    .failedToLoadOptionsTap
+                                : AppLocalizations.of(context)!.loadingOptions)
+                            : isError
+                                ? 'Could not read tags from $sourceHost'
+                                : 'Fetching tags from $sourceHost',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (sourceUrl != null && sourceUrl.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          sourceUrl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if (isLoading) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.10),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading remote genres from GitHub raw. This can take a moment.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(
+                  10,
+                  (index) => _buildSkeletonChip(colorScheme, index),
+                ),
+              ),
+            ] else if (isError) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  loadError,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildGhostChip(
+                    label: 'Remote source',
+                    colorScheme: colorScheme,
+                    emphasized: true,
+                  ),
+                  _buildGhostChip(
+                    label: 'Retry fetch',
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ] else ...[
+              Text(
+                'No remote genre list is loaded yet. Reload to sync from source.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildGhostChip(
+                    label: 'Idle',
+                    colorScheme: colorScheme,
+                    emphasized: true,
+                  ),
+                  _buildGhostChip(
+                    label: 'GitHub raw',
+                    colorScheme: colorScheme,
+                  ),
+                  _buildGhostChip(
+                    label: 'Live tags',
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () => _loadCheckboxOptionsForField(
+                              fieldName,
+                              force: true,
+                            ),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(
+                      isError
+                          ? AppLocalizations.of(context)!.retryAction
+                          : 'Reload genre',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRemoteStateBadge({
+    required ColorScheme colorScheme,
+    required String label,
+    required bool filled,
+    required bool isError,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isError
+            ? colorScheme.errorContainer.withValues(alpha: 0.7)
+            : filled
+                ? colorScheme.primaryContainer.withValues(alpha: 0.75)
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isError
+              ? colorScheme.error.withValues(alpha: 0.30)
+              : filled
+                  ? colorScheme.primary.withValues(alpha: 0.28)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: isError
+                  ? colorScheme.onErrorContainer
+                  : filled
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonChip(ColorScheme colorScheme, int index) {
+    final widths = <double>[72, 96, 60, 84, 68, 104, 88, 76];
+    return Container(
+      width: widths[index % widths.length],
+      height: 34,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGhostChip({
+    required String label,
+    required ColorScheme colorScheme,
+    bool emphasized = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: emphasized
+            ? colorScheme.primaryContainer.withValues(alpha: 0.7)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: emphasized
+              ? colorScheme.primary.withValues(alpha: 0.35)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: emphasized
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 
@@ -2013,6 +2739,20 @@ class _DynamicOption {
   final String value;
   final String label;
   final String? group;
+}
+
+class _TagChipColors {
+  const _TagChipColors({
+    required this.accent,
+    required this.foreground,
+    required this.background,
+    required this.border,
+  });
+
+  final Color accent;
+  final Color foreground;
+  final Color background;
+  final Color border;
 }
 
 enum _TagPickState {

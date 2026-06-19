@@ -5,6 +5,7 @@ import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 /// Bottom sheet widget for displaying legal content (T&C, Privacy, FAQ)
 class LegalContentSheet extends StatefulWidget {
   const LegalContentSheet({

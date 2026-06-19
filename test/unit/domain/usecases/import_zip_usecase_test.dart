@@ -58,14 +58,15 @@ void main() {
     when(() => remoteConfigService.appConfig).thenReturn(null);
     getIt.registerSingleton<RemoteConfigService>(remoteConfigService);
 
-    when(() => kuronNative.pickZipFile())
-        .thenAnswer((_) async => 'content://com.android.providers.media.documents/document/1234');
+    when(() => kuronNative.pickZipFile()).thenAnswer((_) async =>
+        'content://com.android.providers.media.documents/document/1234');
     when(() => kuronNative.extractZipFile(
           contentUri: any(named: 'contentUri'),
           destinationPath: any(named: 'destinationPath'),
           onProgress: any(named: 'onProgress'),
         )).thenAnswer((invocation) async {
-      final destinationPath = invocation.namedArguments[#destinationPath] as String;
+      final destinationPath =
+          invocation.namedArguments[#destinationPath] as String;
       final dir = Directory(destinationPath);
       await dir.create(recursive: true);
       await File(path.join(destinationPath, '001.jpg')).writeAsBytes([1, 2, 3]);
@@ -90,7 +91,8 @@ void main() {
     }
   });
 
-  test('uses ZIP display name instead of generic document URI segment', () async {
+  test('uses ZIP display name instead of generic document URI segment',
+      () async {
     when(() => kuronNative.getZipDisplayName(any()))
         .thenAnswer((_) async => 'My Test Doujin.zip');
 
@@ -107,7 +109,8 @@ void main() {
     expect(saved.sourceId, 'local');
   });
 
-  test('adds numeric suffix when target import folder already exists', () async {
+  test('adds numeric suffix when target import folder already exists',
+      () async {
     when(() => kuronNative.getZipDisplayName(any()))
         .thenAnswer((_) async => 'Collision.zip');
 

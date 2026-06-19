@@ -439,23 +439,219 @@ void main() {
       final DynamicSearchFormContract c =
           DynamicSearchFormContract.fromConfig(<String, Object?>{
         'searchConfig': <String, Object?>{
+          'queryParam': 's',
           'sortingConfig': <String, Object?>{
             'queryParam': 'orderby',
             'label': 'Sort',
             'widgetType': 'dropdown',
             'options': <Object?>[
-              <String, Object?>{'value': 'newest', 'label': 'Newest'},
+              <String, Object?>{
+                'value': 'newest',
+                'apiValue': 'date',
+                'label': 'Newest',
+              },
               <String, Object?>{'value': 'popular', 'label': 'Popular'},
             ],
           },
         },
       });
 
-      expect(c.fields, hasLength(1));
-      final SearchFormFieldContract sortField = c.fields.first;
+      expect(c.fields, hasLength(2));
+      expect(c.fields.first.type, SearchFormFieldType.text);
+      expect(c.fields.first.queryParam, 's');
+      final SearchFormFieldContract sortField = c.fields.last;
       expect(sortField.type, SearchFormFieldType.sort);
       expect(sortField.options, hasLength(2));
+      expect(sortField.options.first.value, 'date');
       expect(sortField.uiSelector, 'dropdown');
+    });
+
+    test('parses string options from explicit select fields', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchForm': <String, Object?>{
+          'params': <String, Object?>{
+            'favorited': <String, Object?>{
+              'queryParam': 'q',
+              'type': 'select',
+              'options': <String>['true', 'false'],
+            },
+          },
+        },
+      });
+
+      expect(c.fields.single.type, SearchFormFieldType.select);
+      expect(
+        c.fields.single.options
+            .map((SearchFormFieldOption option) => option.value),
+        <String>['true', 'false'],
+      );
+    });
+
+    test('preserves picker data sources from explicit searchForm', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchForm': <String, Object?>{
+          'urlPattern': 'search',
+          'dataSources': <String, Object?>{
+            'mangaTags': <String, Object?>{
+              'endpoint': '/manga/tag',
+              'itemsPath': 'data',
+            },
+          },
+          'params': <String, Object?>{
+            'includedTag': <String, Object?>{
+              'queryParam': 'includedTags[]',
+              'type': 'tag',
+              'multiInput': true,
+              'ui': <String, Object?>{
+                'selector': 'picker',
+                'multi': true,
+                'dataSource': 'mangaTags',
+              },
+            },
+          },
+        },
+      });
+
+      expect(c.dataSources.keys, contains('mangaTags'));
+      expect(c.fields.single.uiSelector, 'picker');
+      expect(c.fields.single.uiDataSource, 'mangaTags');
+    });
+
+    test('upgrades legacy form-based field groups', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchConfig': <String, Object?>{
+          'searchMode': 'form-based',
+          'queryParam': 'q',
+          'textFields': <Object?>[
+            <String, Object?>{
+              'name': 'author',
+              'label': 'Author',
+              'placeholder': 'Author name',
+            },
+          ],
+          'radioGroups': <Object?>[
+            <String, Object?>{
+              'name': 'status',
+              'label': 'Status',
+              'options': <Object?>[
+                <String, Object?>{'value': 'all', 'label': 'All'},
+              ],
+            },
+          ],
+          'checkboxGroups': <Object?>[
+            <String, Object?>{
+              'name': 'genre',
+              'label': 'Genre',
+              'paramName': 'genre[]',
+              'loadFromTags': true,
+              'tagType': 'genre',
+              'tagSourceUrl': 'https://example.com/tags.json',
+              'options': <String>['action'],
+            },
+          ],
+        },
+      });
+
+      expect(
+          c.fields.map((field) => field.id),
+          containsAll(<String>[
+            'author',
+            'status',
+            'genre',
+          ]));
+      expect(
+        c.fields.firstWhere((field) => field.id == 'status').type,
+        SearchFormFieldType.radio,
+      );
+      expect(
+        c.fields.firstWhere((field) => field.id == 'genre').queryParam,
+        'genre[]',
+      );
+      expect(
+        c.fields.firstWhere((field) => field.id == 'genre').tagSourceUrl,
+        'https://example.com/tags.json',
+      );
+    });
+
+    test('deduplicates form query fields that share the same queryParam', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchForm': <String, Object?>{
+          'urlPattern': 'advancedSearch',
+          'params': <String, Object?>{
+            'query': <String, Object?>{
+              'queryParam': 'title',
+              'type': 'text',
+            },
+            'page': <String, Object?>{
+              'queryParam': 'page',
+              'type': 'page',
+            },
+          },
+        },
+        'searchConfig': <String, Object?>{
+          'searchMode': 'form-based',
+          'textFields': <Object?>[
+            <String, Object?>{
+              'name': 'title',
+              'label': 'Title',
+              'placeholder': 'Search by title...',
+            },
+          ],
+        },
+      });
+
+      final titleFields = c.fields
+          .where((SearchFormFieldContract field) => field.queryParam == 'title')
+          .toList(growable: false);
+
+      expect(titleFields, hasLength(1));
+      expect(titleFields.single.id, 'query');
+      expect(c.fields.map((field) => field.id), isNot(contains('title')));
+    });
+
+    test('infers minimal query contract from scraper search URL pattern', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'scraper': <String, Object?>{
+          'urlPatterns': <String, Object?>{
+            'search': '/?s={query}&page={page}',
+          },
+        },
+      });
+
+      expect(c.fields, hasLength(2));
+      expect(c.fields.first.id, 'query');
+      expect(c.fields.first.queryParam, 's');
+      expect(c.fields.first.type, SearchFormFieldType.text);
+      expect(c.fields.last.type, SearchFormFieldType.hidden);
+      expect(
+        c.diagnostics.map((ValidationDiagnostic d) => d.code),
+        contains('searchAutowiringInferred'),
+      );
+    });
+
+    test('emits diagnostic for unsupported explicit field type', () {
+      final DynamicSearchFormContract c =
+          DynamicSearchFormContract.fromConfig(<String, Object?>{
+        'searchForm': <String, Object?>{
+          'params': <String, Object?>{
+            'range': <String, Object?>{
+              'queryParam': 'range',
+              'type': 'slider',
+            },
+          },
+        },
+      });
+
+      expect(c.fields.single.type, SearchFormFieldType.text);
+      expect(
+        c.diagnostics.map((ValidationDiagnostic d) => d.code),
+        contains('searchFieldUnsupported'),
+      );
     });
   });
 

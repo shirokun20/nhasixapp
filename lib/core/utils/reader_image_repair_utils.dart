@@ -111,8 +111,7 @@ SourceImageResolutionRules resolveSourceImageResolutionRules(
     imageUrlsConfig['linkSelector'] ?? imageUrlsConfig['linkSelectors'],
     fallback: kEhentaiDefaultLinkSelectors,
   );
-  final supportsManualSourcePageRepair =
-      imageUrlsConfig.isNotEmpty &&
+  final supportsManualSourcePageRepair = imageUrlsConfig.isNotEmpty &&
       (imageSelectors.isNotEmpty || linkSelectors.isNotEmpty);
 
   return (

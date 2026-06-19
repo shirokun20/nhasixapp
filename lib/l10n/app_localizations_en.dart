@@ -5129,4 +5129,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String failedToOpenCaptcha(String error) {
     return 'Failed to open native CAPTCHA solver: $error';
   }
+
+  @override
+  String get readFirstChapter => 'Read First Chapter';
+
+  @override
+  String get convertAllToPdf => 'Convert All to PDF';
+
+  @override
+  String deleteSeriesConfirmation(int count, String title) {
+    return 'Are you sure you want to delete $count chapters of \"$title\"?';
+  }
+
+  @override
+  String deleteSeriesWithCount(int count) {
+    return 'Delete Series ($count)';
+  }
 }

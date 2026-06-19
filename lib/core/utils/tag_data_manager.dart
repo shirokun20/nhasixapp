@@ -190,6 +190,20 @@ class TagDataManager {
     }
   }
 
+  /// Load tags directly from a remote JSON URL without caching or version sync.
+  ///
+  /// This is used by source configs that declare their tag list inline and do
+  /// not rely on the legacy tags manifest.
+  Future<List<Tag>> loadTagsFromUrl(String url) async {
+    final response = await _dio.get<dynamic>(url);
+    dynamic payload = response.data;
+    if (payload is String) {
+      payload = jsonDecode(payload);
+    }
+
+    return _parseTagsPayload(payload);
+  }
+
   /// Check if tags are loaded for a source
   bool hasTags(String source) =>
       _cachedTagsBySource.containsKey(source) &&
@@ -243,39 +257,7 @@ class TagDataManager {
   }) async {
     try {
       final dynamic jsonData = jsonDecode(jsonString);
-      final List<Tag> tags = [];
-
-      // Unified parsing logic: Expect List of Arrays [id, name, slug, typeCode, count]
-      if (jsonData is List) {
-        for (var item in jsonData) {
-          if (item is List && item.length >= 4) {
-            try {
-              final id = item[0] as int;
-              final name = item[1] as String;
-              final slug = item[2] as String;
-              final typeCode = item[3] as int;
-              // Count might be missing in old formats or some datasets
-              final count = (item.length > 4) ? (item[4] as int) : 0;
-
-              final type = TagType.fromCode(typeCode);
-
-              tags.add(
-                Tag(
-                  id: id,
-                  name: name,
-                  type: type
-                      .name, // Keeping entity.type as String for compatibility
-                  count: count,
-                  url: _generateTagUrl(slug, type),
-                  slug: slug,
-                ),
-              );
-            } catch (e) {
-              // Skip invalid
-            }
-          }
-        }
-      }
+      final List<Tag> tags = _parseTagsPayload(jsonData);
 
       if (tags.isNotEmpty) {
         _cachedTagsBySource[tagSource] = tags;
@@ -300,6 +282,43 @@ class TagDataManager {
       _logger.e('TagDataManager: Parsing failed for $tagSource', error: e);
     }
     return false;
+  }
+
+  List<Tag> _parseTagsPayload(dynamic jsonData) {
+    final tags = <Tag>[];
+
+    // Unified parsing logic: Expect List of Arrays [id, name, slug, typeCode, count]
+    if (jsonData is List) {
+      for (final item in jsonData) {
+        if (item is List && item.length >= 4) {
+          try {
+            final id = item[0] as int;
+            final name = item[1] as String;
+            final slug = item[2] as String;
+            final typeCode = item[3] as int;
+            // Count might be missing in old formats or some datasets
+            final count = (item.length > 4) ? (item[4] as int) : 0;
+
+            final type = TagType.fromCode(typeCode);
+
+            tags.add(
+              Tag(
+                id: id,
+                name: name,
+                type: type.name, // Keeping entity.type as String for compatibility
+                count: count,
+                url: _generateTagUrl(slug, type),
+                slug: slug,
+              ),
+            );
+          } catch (e) {
+            // Skip invalid items.
+          }
+        }
+      }
+    }
+
+    return tags;
   }
 
   /// Search tags by query with type filtering

@@ -246,21 +246,21 @@ class DownloadStorageUtils {
     }
 
     if (metadata == null) return formatSlug(contentId);
-    
+
     final title = metadata['title'] as String? ?? '';
     final rawId = metadata['id'] as String? ?? '';
     final originalId = rawId.isNotEmpty ? rawId : contentId;
-    
+
     // If title is genuinely empty, convert slug to human-readable title
     if (title.isEmpty) {
       return formatSlug(originalId);
     }
-    
+
     // Fallback for ciphertext bug (Cloudflare encryption output: very long, no spaces)
     if (title.length > 50 && !title.contains(' ')) {
       return formatSlug(originalId);
     }
-    
+
     return title;
   }
 

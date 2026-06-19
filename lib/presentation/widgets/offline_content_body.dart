@@ -2,32 +2,27 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as p;
-import 'package:nhasixapp/core/routing/app_router.dart';
-import '../../core/constants/text_style_const.dart';
-import '../../core/di/service_locator.dart';
-import '../../core/utils/offline_content_manager.dart';
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
+import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/mixins/offline_management_mixin.dart';
+import 'package:nhasixapp/presentation/models/content_group.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
-import 'package:kuron_core/kuron_core.dart';
-import '../../l10n/app_localizations.dart';
-import '../../services/pdf_conversion_queue_manager.dart';
 import '../../services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
-import '../cubits/offline_search/offline_search_cubit.dart';
 import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';
-import 'content_card_widget.dart';
+import '../pages/offline/offline_series_detail_screen.dart';
+import 'content_group_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
-import '../mixins/offline_management_mixin.dart';
-import 'permission_request_sheet.dart';
-import 'progressive_image_widget.dart';
 
 /// Reusable widget that displays offline content with search and filtering
 /// Used by OfflineContentScreen and OfflineMode in MainScreen
@@ -45,7 +40,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
-  bool _isFabVisible = true;
+  final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
 
   @override
   void initState() {
@@ -80,20 +75,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
 
     unawaited(_tagBlacklistService.syncAllAvailableSources());
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels > 100) {
-        // Hide FAB on scroll down, show on scroll up
-        if (_scrollController.position.userScrollDirection ==
-            ScrollDirection.reverse) {
-          if (_isFabVisible) setState(() => _isFabVisible = false);
-        } else if (_scrollController.position.userScrollDirection ==
-            ScrollDirection.forward) {
-          if (!_isFabVisible) setState(() => _isFabVisible = true);
-        }
-      } else {
-        if (!_isFabVisible) setState(() => _isFabVisible = true);
-      }
-    });
+    // The _scrollController listener has been moved to NotificationListener
+    // to handle hide-on-scroll and show-on-idle logic.
   }
 
   @override
@@ -102,6 +85,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _scrollController.dispose();
+    _isFabVisible.dispose();
     super.dispose();
   }
 
@@ -123,6 +107,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       body: Column(
         children: [
           _buildSearchBar(),
+          _buildFilterChips(),
           Expanded(
             child: BlocListener<DownloadBloc, DownloadBlocState>(
               listenWhen: (previous, current) {
@@ -150,61 +135,22 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: AnimatedSlide(
-        duration: const Duration(milliseconds: 300),
-        offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: _isFabVisible ? 1.0 : 0.0,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.tertiary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: _isFabVisible,
+        builder: (context, isVisible, child) {
+          return AnimatedSlide(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOutCubic,
+            offset: isVisible ? Offset.zero : const Offset(0, 2),
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutCubic,
+              scale: isVisible ? 1.0 : 0.8,
+              child: child,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _showSortFilterModal,
-                borderRadius: BorderRadius.circular(30),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.tune_rounded, color: Theme.of(context).colorScheme.onPrimary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Sort & Filter',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+          );
+        },
+        child: _buildFloatingSortButton(),
       ),
     );
   }
@@ -225,7 +171,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
             return Container(
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -234,71 +181,31 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   )
                 ],
               ),
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 48,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2.5),
-                      ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2.5),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Library Options',
-                      style: TextStyleConst.titleLarge.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Sort Options',
+                    style: TextStyleConst.titleLarge.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      height: 44,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: TabBar(
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        splashBorderRadius: BorderRadius.circular(22),
-                        indicator: BoxDecoration(
-                          borderRadius: BorderRadius.circular(22),
-                          color: colorScheme.primary,
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        labelColor: colorScheme.onPrimary,
-                        unselectedLabelColor: colorScheme.onSurfaceVariant,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                        dividerColor: Colors.transparent,
-                        tabs: const [
-                          Tab(text: 'Sort'),
-                          Tab(text: 'Filter'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildSortTab(scrollController),
-                          _buildFilterTab(scrollController),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _buildSortTab(scrollController),
+                  ),
+                ],
               ),
             );
           },
@@ -318,26 +225,33 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           currentDescending = state.descending;
         }
 
-        Widget buildSortTile(String title, String orderBy, bool descending, IconData icon) {
-          final isSelected = currentOrderBy == orderBy && currentDescending == descending;
+        Widget buildSortTile(
+            String title, String orderBy, bool descending, IconData icon) {
+          final isSelected =
+              currentOrderBy == orderBy && currentDescending == descending;
           final colorScheme = Theme.of(context).colorScheme;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Material(
-              color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.5) : colorScheme.surfaceContainer,
+              color: isSelected
+                  ? colorScheme.primaryContainer.withValues(alpha: 0.5)
+                  : colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(16),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () {
-                  _offlineSearchCubit.changeSorting(orderBy: orderBy, descending: descending);
+                  _offlineSearchCubit.changeSorting(
+                      orderBy: orderBy, descending: descending);
                   Navigator.pop(context);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? colorScheme.primary : Colors.transparent,
+                      color:
+                          isSelected ? colorScheme.primary : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
@@ -346,12 +260,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isSelected ? colorScheme.primary.withValues(alpha: 0.2) : colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                          color: isSelected
+                              ? colorScheme.primary.withValues(alpha: 0.2)
+                              : colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(icon, 
-                            size: 20, 
-                            color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
+                        child: Icon(icon,
+                            size: 20,
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -359,13 +278,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           title,
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? colorScheme.onPrimaryContainer
+                                : colorScheme.onSurface,
                           ),
                         ),
                       ),
                       if (isSelected)
-                        Icon(Icons.check_circle_rounded, color: colorScheme.primary)
+                        Icon(Icons.check_circle_rounded,
+                            color: colorScheme.primary)
                     ],
                   ),
                 ),
@@ -380,23 +303,29 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           children: [
             buildSortTile('A - Z', 'title', false, Icons.sort_by_alpha_rounded),
             buildSortTile('Z - A', 'title', true, Icons.sort_by_alpha_rounded),
-            buildSortTile('New to Old', 'created_at', true, Icons.new_releases_rounded),
-            buildSortTile('Old to New', 'created_at', false, Icons.history_rounded),
-            buildSortTile('Pages (Ascending)', 'total_pages', false, Icons.format_list_numbered_rounded),
-            buildSortTile('Pages (Descending)', 'total_pages', true, Icons.format_list_numbered_rtl_rounded),
+            buildSortTile(
+                'New to Old', 'created_at', true, Icons.new_releases_rounded),
+            buildSortTile(
+                'Old to New', 'created_at', false, Icons.history_rounded),
+            buildSortTile('Pages (Ascending)', 'total_pages', false,
+                Icons.format_list_numbered_rounded),
+            buildSortTile('Pages (Descending)', 'total_pages', true,
+                Icons.format_list_numbered_rtl_rounded),
           ],
         );
       },
     );
   }
 
-  Widget _buildFilterTab(ScrollController scrollController) {
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _buildFilterChips(),
+  Widget _buildFloatingSortButton() {
+    return FloatingActionButton.extended(
+      onPressed: _showSortFilterModal,
+      icon: const Icon(Icons.sort),
+      label: Text(
+        'Sort',
+        style: TextStyleConst.buttonMedium,
       ),
+      elevation: 4,
     );
   }
 
@@ -515,65 +444,72 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         if (state is OfflineSearchLoaded) {
           selectedSourceId = state.selectedSourceId;
         } else {
-          selectedSourceId = getIt<SharedPreferences>().getString('offline_selected_source_filter');
+          selectedSourceId = getIt<SharedPreferences>()
+              .getString('offline_selected_source_filter');
         }
 
         final remoteConfig = getIt<RemoteConfigService>();
         final sourceConfigs = remoteConfig.getAllSourceConfigs();
 
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildFilterChip(
-              context,
-              label: AppLocalizations.of(context)?.all ?? 'All',
-              isSelected: selectedSourceId == null,
-              onSelected: (selected) {
-                if (selected) _offlineSearchCubit.filterBySource(null);
-              },
-            ),
-            _buildFilterChip(
-              context,
-              label: 'Local',
-              isSelected: selectedSourceId == 'local',
-              onSelected: (selected) {
-                if (selected) _offlineSearchCubit.filterBySource('local');
-              },
-            ),
-            ...sourceConfigs.map((config) {
-              final sourceId = config.source;
-              final displayName = config.ui?.displayName ?? sourceId;
-              final themeColor = config.ui?.activeColor;
-
-              Color? chipColor;
-              if (themeColor != null) {
-                try {
-                  chipColor =
-                      Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
-                } catch (e) {
-                  // Fallback if color parsing fails
-                }
-              }
-
-              return _buildFilterChip(
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              _buildFilterChip(
                 context,
-                label: displayName,
-                isSelected: selectedSourceId == sourceId,
+                label: AppLocalizations.of(context)?.all ?? 'All',
+                isSelected: selectedSourceId == null,
                 onSelected: (selected) {
-                  if (selected) {
-                    _offlineSearchCubit.filterBySource(sourceId);
-                  }
+                  if (selected) _offlineSearchCubit.filterBySource(null);
                 },
-                color: chipColor?.withValues(alpha: 0.2),
-                selectedColor: chipColor,
-                textColor:
-                    (selectedSourceId == sourceId && chipColor != null)
-                        ? Colors.white
-                        : null,
-              );
-            }),
-          ],
+              ),
+              const SizedBox(width: 8),
+              _buildFilterChip(
+                context,
+                label: 'Local',
+                isSelected: selectedSourceId == 'local',
+                onSelected: (selected) {
+                  if (selected) _offlineSearchCubit.filterBySource('local');
+                },
+              ),
+              ...sourceConfigs.map((config) {
+                final sourceId = config.source;
+                final displayName = config.ui?.displayName ?? sourceId;
+                final themeColor = config.ui?.activeColor;
+
+                Color? chipColor;
+                if (themeColor != null) {
+                  try {
+                    chipColor =
+                        Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+                  } catch (e) {
+                    // Fallback if color parsing fails
+                  }
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: _buildFilterChip(
+                    context,
+                    label: displayName,
+                    isSelected: selectedSourceId == sourceId,
+                    onSelected: (selected) {
+                      if (selected) {
+                        _offlineSearchCubit.filterBySource(sourceId);
+                      }
+                    },
+                    color: chipColor?.withValues(alpha: 0.2),
+                    selectedColor: chipColor,
+                    textColor:
+                        (selectedSourceId == sourceId && chipColor != null)
+                            ? Colors.white
+                            : null,
+                  ),
+                );
+              }),
+            ],
+          ),
         );
       },
     );
@@ -602,21 +538,25 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? baseColor.withValues(alpha: 0.15) 
+            color: isSelected
+                ? baseColor.withValues(alpha: 0.15)
                 : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? baseColor : colorScheme.outlineVariant.withValues(alpha: 0.5),
+              color: isSelected
+                  ? baseColor
+                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
               width: isSelected ? 1.5 : 1,
             ),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: baseColor.withValues(alpha: 0.2),
-                blurRadius: 8,
-                spreadRadius: 1,
-              )
-            ] : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: baseColor.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -779,7 +719,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       return Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 12),
             child: Row(
               children: [
                 Text(
@@ -801,13 +742,16 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           Expanded(
             child: BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
-                final localBlacklistEntries = settingsState is SettingsLoaded
-                    ? settingsState.preferences.blacklistedTags
-                    : const <String>[];
-
                 // Wrap GridView with NotificationListener for infinite scroll
                 return NotificationListener<ScrollNotification>(
                   onNotification: (scrollInfo) {
+                    // Hide FAB when scrolling, show when idle
+                    if (scrollInfo is ScrollUpdateNotification) {
+                      if (_isFabVisible.value) _isFabVisible.value = false;
+                    } else if (scrollInfo is ScrollEndNotification) {
+                      if (!_isFabVisible.value) _isFabVisible.value = true;
+                    }
+
                     // Trigger load more when user scrolls to 80% of content
                     if (scrollInfo.metrics.pixels >=
                         scrollInfo.metrics.maxScrollExtent * 0.8) {
@@ -820,13 +764,18 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   child: GridView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    gridDelegate:
-                        ResponsiveGridDelegate.createStandardGridDelegate(
-                      context,
-                      context.read<SettingsCubit>(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
+                    gridDelegate: state.isListMode
+                        ? const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 1,
+                            mainAxisSpacing: 16,
+                            mainAxisExtent: 120, // Height for list mode items
+                          )
+                        : ResponsiveGridDelegate.createStandardGridDelegate(
+                            context,
+                            context.read<SettingsCubit>(),
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                     // Add 1 for loading indicator if loading more
                     itemCount:
                         state.results.length + (state.isLoadingMore ? 1 : 0),
@@ -857,22 +806,28 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         );
                       }
 
-                      final content = state.results[index];
-                      return ContentCard(
-                        content: content,
-                        onTap: () => _openReader(context, content),
-                        onLongPress: () =>
-                            _showContentActions(context, content),
-                        showOfflineIndicator: true,
-                        isHighlighted: false,
-                        isBlurred: _tagBlacklistService.isContentBlacklisted(
-                          content,
-                          localEntries: localBlacklistEntries,
-                        ),
-                        offlineSize: state.offlineSizes[content.id],
-                        highlightQuery:
-                            state.query, // Pass search query for highlighting
-                        preferStaticCover: true,
+                      final contentGroup = state.results[index];
+                      return ContentGroupCardWidget(
+                        key: ValueKey(
+                            '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
+                        contentGroup: contentGroup,
+                        isListMode: state.isListMode,
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OfflineSeriesDetailScreen(
+                                contentGroup: contentGroup,
+                              ),
+                            ),
+                          );
+                          if (context.mounted) {
+                            await _offlineSearchCubit.forceRefresh();
+                          }
+                        },
+                        onLongPress: () {
+                          _showGroupContentActions(context, contentGroup);
+                        },
                       );
                     },
                   ),
@@ -909,35 +864,41 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
-  Future<void> _showContentActions(
-      BuildContext context, Content content) async {
+  Future<void> _showGroupContentActions(
+      BuildContext context, ContentGroup group) async {
     final colorScheme = Theme.of(context).colorScheme;
     final offlineManager = getIt<OfflineContentManager>();
-    final l10n = AppLocalizations.of(context)!;
 
-    // Calculate content size for info
-    final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
-    int totalBytes = 0;
-    for (final imagePath in imagePaths) {
-      final file = File(imagePath);
-      if (await file.exists()) {
-        totalBytes += await file.length();
+    final representative = group.representativeContent;
+
+    final chapterPaths = <({String title, String path})>[];
+    for (final item in group.items) {
+      try {
+        final firstImage = await offlineManager.getOfflineFirstImagePath(
+          item.id,
+        );
+        if (firstImage != null) {
+          chapterPaths
+              .add((title: item.title, path: File(firstImage).parent.path));
+        }
+      } catch (_) {
+        // Best effort only. Missing paths should not block the info sheet.
       }
     }
-    final sizeText = OfflineContentManager.formatStorageSize(totalBytes);
-    final contentPath = await offlineManager.getOfflineContentPath(content.id);
 
     if (!context.mounted) return;
 
+    final parentContext = context;
+
     await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (bottomSheetContext) {
-        // Capture parent context safely
-        final parentContext = context;
+        final sizeText =
+            OfflineContentManager.formatStorageSize(group.totalSize);
+        final chapterLabel =
+            '${group.chapterCount} Chapter${group.chapterCount > 1 ? 's' : ''} tersedia';
 
         return SafeArea(
           child: Column(
@@ -957,25 +918,18 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: ProgressiveImageWidget(
-                        networkUrl: content.coverUrl,
-                        contentId: content.id,
-                        isThumbnail: true,
-                        width: 50,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(4),
-                        preferStaticPreview: true,
-                        errorWidget: Container(
-                          width: 50,
-                          height: 70,
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.broken_image,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.library_books_rounded,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 28,
                         ),
                       ),
                     ),
@@ -985,17 +939,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            content.title,
+                            group.baseTitle,
                             style: TextStyleConst.titleMedium.copyWith(
                               color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
-                            AppLocalizations.of(context)!
-                                .pagesWithSize(content.pageCount, sizeText),
+                            chapterLabel,
                             style: TextStyleConst.bodySmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -1006,101 +960,162 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   ],
                 ),
               ),
-              const Divider(),
-              if (contentPath != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.auto_stories_rounded,
+                        label: 'Chapters',
+                        value: '${group.chapterCount}',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.storage_rounded,
+                        label: 'Storage',
+                        value: sizeText,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildInfoPill(
+                        context,
+                        icon: Icons.public_rounded,
+                        label: 'Source',
+                        value: representative.sourceId.toUpperCase(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              if (chapterPaths.isNotEmpty) ...[
                 ListTile(
-                  leading: Icon(Icons.folder_open_rounded, color: colorScheme.secondary),
+                  leading: Icon(Icons.folder_copy_rounded,
+                      color: colorScheme.secondary),
                   title: Text(
-                    contentPath,
-                    style: TextStyleConst.labelSmall.copyWith(
+                    'Chapter paths',
+                    style: TextStyleConst.titleSmall.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${chapterPaths.length} lokasi tersimpan',
+                    style: TextStyleConst.bodySmall.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy_rounded, size: 20),
-                        tooltip: 'Copy path',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: contentPath));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Path copied to clipboard')),
-                          );
-                          Navigator.pop(bottomSheetContext);
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.open_in_new_rounded, size: 20),
-                        tooltip: 'Open in explorer',
-                        onPressed: () {
-                          OpenFile.open(contentPath);
-                          Navigator.pop(bottomSheetContext);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
-              ],
-              FutureBuilder<bool>(
-                future: _checkPdfExists(content.id),
-                builder: (context, snapshot) {
-                  final isPdf = snapshot.data ?? false;
-                  return ListTile(
-                    leading: Icon(
-                        isPdf ? Icons.picture_as_pdf : Icons.remove_red_eye,
-                        color:
-                            isPdf ? colorScheme.tertiary : colorScheme.primary),
-                    title: Text(isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
-                    onTap: () {
-                      Navigator.pop(bottomSheetContext);
-                      _openReader(parentContext, content);
+                  trailing: IconButton(
+                    icon: const Icon(Icons.copy_all_rounded),
+                    tooltip: 'Copy all paths',
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(
+                          text: chapterPaths
+                              .map((entry) => entry.path)
+                              .join('\n'),
+                        ),
+                      );
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        const SnackBar(content: Text('Paths copied')),
+                      );
                     },
-                  );
-                },
-              ),
-              Builder(
-                builder: (context) {
-                  try {
-                    // Check feature flag
-                    final remoteConfig = getIt<RemoteConfigService>();
-                    // Offline content always has sourceId
-                    final isEnabled = remoteConfig.isFeatureEnabled(
-                        content.sourceId, (f) => f.generatePdf);
-
-                    if (!isEnabled) return const SizedBox.shrink();
-
-                    return ListTile(
-                      leading: Icon(Icons.picture_as_pdf,
-                          color: colorScheme.tertiary),
-                      title: Text(l10n.convertToPdf),
-                      subtitle: Text(AppLocalizations.of(context)!
-                          .nPages(content.pageCount)),
-                      onTap: () {
-                        Navigator.pop(bottomSheetContext);
-                        _generatePdf(parentContext, content);
-                      },
-                    );
-                  } catch (e) {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                title: Text(
-                  l10n.delete,
-                  style: TextStyle(color: colorScheme.error),
+                  ),
                 ),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  _showDeleteConfirmation(parentContext, content);
-                },
-              ),
-              const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    itemCount: chapterPaths.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final entry = chapterPaths[index];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          leading: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyleConst.labelSmall.copyWith(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyleConst.labelMedium.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          subtitle: Text(
+                            entry.path,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyleConst.labelSmall.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.copy_rounded, size: 18),
+                                tooltip: 'Copy path',
+                                onPressed: () {
+                                  Clipboard.setData(
+                                      ClipboardData(text: entry.path));
+                                  ScaffoldMessenger.of(parentContext)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Path copied')),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.open_in_new_rounded,
+                                    size: 18),
+                                tooltip: 'Open in explorer',
+                                onPressed: () => OpenFile.open(entry.path),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ] else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  child: Text(
+                    'Path chapter belum tersedia.',
+                    style: TextStyleConst.bodySmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
             ],
           ),
         );
@@ -1108,252 +1123,48 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
-  /// Generate PDF from offline content
-  Future<void> _generatePdf(BuildContext context, Content content) async {
-    final l10n = AppLocalizations.of(context)!;
-    final offlineManager = getIt<OfflineContentManager>();
-    // Queue manager will handle conversion sequentially
-
-    try {
-      // Check permissions before starting PDF conversion
-      if (!context.mounted) return;
-
-      final hasPermissions = await showPermissionRequestSheet(
-        context,
-        requireStorage: true,
-        requireNotification: true,
-      );
-
-      if (!context.mounted || !hasPermissions) {
-        if (context.mounted && !hasPermissions) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.permissionDenied),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-        return;
-      }
-
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.convertingToPdf),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
-
-      if (imagePaths.isEmpty) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.pdfConversionFailedWithError(
-              content.title,
-              AppLocalizations.of(context)!.noImagesFound,
-            )),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        return;
-      }
-
-      // Queue PDF conversion instead of converting immediately
-      final queueManager = getIt<PdfConversionQueueManager>();
-      await queueManager.queueConversion(
-        contentId: content.id,
-        title: content.title,
-        imagePaths: imagePaths,
-        sourceId: content.sourceId,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.pdfConversionFailedWithError(
-            content.title,
-            e.toString(),
-          )),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  /// Show delete confirmation dialog
-  Future<void> _showDeleteConfirmation(
-      BuildContext context, Content content) async {
+  Widget _buildInfoPill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-
-    final prefs = await SharedPreferences.getInstance();
-    final skipConfirmation = prefs.getBool('skip_delete_confirmation') ?? false;
-
-    if (skipConfirmation) {
-      if (!context.mounted) return;
-      await _deleteContent(context, content);
-      return;
-    }
-
-    final dontAskAgainNotifier = ValueNotifier<bool>(false);
-
-    if (!context.mounted) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n
-                .removeDownloadConfirmation), // Ensure this key exists or use fallback
-            const SizedBox(height: 12),
-            ValueListenableBuilder<bool>(
-              valueListenable: dontAskAgainNotifier,
-              builder: (context, dontAskAgain, child) => CheckboxListTile(
-                value: dontAskAgain,
-                onChanged: (value) =>
-                    dontAskAgainNotifier.value = value ?? false,
-                title: Text(AppLocalizations.of(context)!.dontAskAgain),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.45),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.primary),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyleConst.labelSmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
-            child: Text(l10n.delete),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyleConst.labelMedium.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      if (dontAskAgainNotifier.value) {
-        await prefs.setBool('skip_delete_confirmation', true);
-      }
-      if (!context.mounted) return;
-      await _deleteContent(context, content);
-    }
-    dontAskAgainNotifier.dispose();
-  }
-
-  /// Delete offline content
-  Future<void> _deleteContent(BuildContext context, Content content) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    try {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.deletingContent(content.title)),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-
-      await context.read<OfflineSearchCubit>().deleteOfflineContent(content.id);
-
-      // Add a small delay to ensure DB transaction is committed
-      // Use getIt to access the singleton DownloadBloc, bypassing context entirely
-      Future.delayed(const Duration(milliseconds: 500), () {
-        getIt<DownloadBloc>().add(const DownloadRefreshEvent());
-      });
-
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.contentDeleted),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.errorGeneric(e.toString())),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  Future<void> _openReader(BuildContext context, Content content) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    // Try to find PDF
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(content.id);
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          final pdfs = files
-              .where((f) => f.path.toLowerCase().endsWith('.pdf'))
-              .toList();
-          if (pdfs.isNotEmpty) {
-            // Found PDF!
-            final pdfFile = pdfs.first;
-            if (context.mounted) {
-              AppRouter.goToReaderPdf(context,
-                  filePath: pdfFile.path,
-                  contentId: content.id,
-                  title: content.title);
-              return;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking for PDF: $e');
-    }
-
-    // Fallback to Image Reader
-    if (context.mounted) {
-      await AppRouter.goToReader(
-        context,
-        content.id,
-        content: content,
-        forceStartFromBeginning: true,
-      );
-    }
-  }
-
-  Future<bool> _checkPdfExists(String contentId) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(contentId);
-      debugPrint('First image path: $firstImagePath');
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        debugPrint('contentDir: $contentDir');
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        debugPrint('pdfDir: $pdfDir');
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          return files.any((f) => f.path.toLowerCase().endsWith('.pdf'));
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking PDF existence: $e');
-    }
-    return false;
   }
 }

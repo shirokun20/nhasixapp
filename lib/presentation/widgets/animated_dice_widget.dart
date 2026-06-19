@@ -5,12 +5,14 @@ class AnimatedDiceWidget extends StatefulWidget {
   final Duration duration;
   final VoidCallback? onSpinComplete;
   final bool isSpinning;
+  final Color? color;
 
   const AnimatedDiceWidget({
     super.key,
     this.duration = const Duration(milliseconds: 600),
     this.onSpinComplete,
     required this.isSpinning,
+    this.color,
   });
 
   @override
@@ -57,30 +59,38 @@ class _AnimatedDiceWidgetState extends State<AnimatedDiceWidget>
 
   @override
   Widget build(BuildContext context) {
+    final color = widget.color ??
+        IconTheme.of(context).color ??
+        Theme.of(context).colorScheme.onSurface;
+
     return RotationTransition(
       turns: _controller,
-      child: _buildDiceSvg(),
+      child: _buildDiceSvg(color),
     );
   }
 
-  Widget _buildDiceSvg() {
+  Widget _buildDiceSvg(Color color) {
     return CustomPaint(
-      painter: _DicePainter(),
+      painter: _DicePainter(color: color),
       size: const Size(24, 24),
     );
   }
 }
 
 class _DicePainter extends CustomPainter {
+  const _DicePainter({required this.color});
+
+  final Color color;
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
     final fillPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
+      ..color = color.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     // Main cube outline (isometric-style dice)
@@ -125,7 +135,7 @@ class _DicePainter extends CustomPainter {
 
     // Draw dots on front face (like a die)
     final dotRadius = size.width * 0.05;
-    final dotPaint = Paint()..color = Colors.white;
+    final dotPaint = Paint()..color = color;
 
     // Center dot (always visible)
     final centerX = size.width * 0.5;
@@ -148,5 +158,5 @@ class _DicePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DicePainter oldDelegate) => false;
+  bool shouldRepaint(_DicePainter oldDelegate) => oldDelegate.color != color;
 }

@@ -110,6 +110,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // 🎯 Tap-to-toggle detection for continuous scroll
   Offset _tapDownPosition = Offset.zero;
   DateTime _tapDownTime = DateTime.now();
+  Offset? _miniChromeToggleOffset;
 
   // 🎯 Floating page indicator (ValueNotifiers avoid full-screen rebuild)
   final ValueNotifier<int> _visiblePageNotifier = ValueNotifier<int>(1);
@@ -579,6 +580,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   void dispose() {
+    _flushReaderProgressBeforeDispose();
+
     // 🚀 REMOVED: Old scroll listener (now using NotificationListener)
     // _scrollController.removeListener(_onScrollChanged);
     _pageController.dispose();
@@ -600,6 +603,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
 
     super.dispose();
+  }
+
+  void _flushReaderProgressBeforeDispose() {
+    final state = _readerCubit.state;
+    final content = state.content;
+    if (content == null || content.pageCount <= 0) return;
+
+    var pageToSave = state.currentPage ?? widget.initialPage;
+    final visiblePage = _visiblePageNotifier.value;
+    if (visiblePage > pageToSave) {
+      pageToSave = visiblePage;
+    }
+
+    final validPage = pageToSave.clamp(1, content.pageCount);
+    if (state.readingMode == ReadingMode.continuousScroll) {
+      _readerCubit.updateCurrentPageSilent(validPage);
+    } else {
+      _readerCubit.updateCurrentPageFromSwipe(validPage);
+    }
   }
 
   /// 🎬 Toggle immersive mode (hide/show status bar & navigation bar)
@@ -1081,6 +1103,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // 🎬 Animated UI overlay (always in tree for smooth transitions)
         _buildAnimatedUIOverlay(state),
 
+        _buildMiniChromeToggle(state),
+
         // 🎯 Floating page indicator for continuous scroll
         if (state.readingMode == ReadingMode.continuousScroll)
           _buildFloatingPageIndicator(state),
@@ -1101,14 +1125,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _buildReaderContent(ReaderState state) {
     final showNav = _shouldShowNavigationItem(state);
 
-    switch (state.readingMode ?? ReadingMode.singlePage) {
-      case ReadingMode.singlePage:
-        return _buildSinglePageReader(state, showNavigation: showNav);
-      case ReadingMode.verticalPage:
-        return _buildVerticalPageReader(state, showNavigation: showNav);
-      case ReadingMode.continuousScroll:
-        return _buildContinuousReader(state, showNavigation: showNav);
+    final content = switch (state.readingMode ?? ReadingMode.singlePage) {
+      ReadingMode.singlePage =>
+        _buildSinglePageReader(state, showNavigation: showNav),
+      ReadingMode.verticalPage =>
+        _buildVerticalPageReader(state, showNavigation: showNav),
+      ReadingMode.continuousScroll =>
+        _buildContinuousReader(state, showNavigation: showNav),
+    };
+
+    if ((state.readingMode ?? ReadingMode.singlePage) ==
+        ReadingMode.continuousScroll) {
+      return content;
     }
+
+    return _buildPaginatedTapListener(state, child: content);
   }
 
   bool _shouldShowNavigationItem(ReaderState state) {
@@ -1133,6 +1164,70 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _isPrevTap(double tapX, double screenWidth, TapDirection tapDirection) {
     final isLeftSide = tapX < screenWidth * 0.3;
     return tapDirection == TapDirection.inverted ? !isLeftSide : isLeftSide;
+  }
+
+  Widget _buildPaginatedTapListener(ReaderState state,
+      {required Widget child}) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) {
+        _tapDownPosition = event.position;
+        _tapDownTime = DateTime.now();
+      },
+      onPointerUp: (event) {
+        final distance = (event.position - _tapDownPosition).distance;
+        final duration = DateTime.now().difference(_tapDownTime);
+        if (distance >= 20 || duration.inMilliseconds >= 300) return;
+
+        if ((state.showUI ?? false) && _isTapInsideChrome(event.position)) {
+          return;
+        }
+
+        _handlePaginatedTap(event.position, state);
+      },
+      child: child,
+    );
+  }
+
+  bool _isTapInsideChrome(Offset position) {
+    final size = MediaQuery.of(context).size;
+    final topInset = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    return position.dy <= topInset + 64 ||
+        position.dy >= size.height - bottomInset - 76;
+  }
+
+  void _handlePaginatedTap(Offset position, ReaderState state) {
+    final tapDir = state.tapDirection ?? TapDirection.normal;
+    final mode = state.readingMode ?? ReadingMode.singlePage;
+
+    if (mode == ReadingMode.verticalPage) {
+      final screenHeight = MediaQuery.of(context).size.height;
+      final isTopArea = position.dy < screenHeight * 0.3;
+      final isBottomArea = position.dy > screenHeight * 0.7;
+      final prevArea =
+          tapDir == TapDirection.inverted ? isBottomArea : isTopArea;
+      final nextArea =
+          tapDir == TapDirection.inverted ? isTopArea : isBottomArea;
+
+      if (prevArea) {
+        _readerCubit.previousPage();
+      } else if (nextArea) {
+        _readerCubit.nextPage();
+      } else {
+        _readerCubit.toggleUI();
+      }
+      return;
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (_isPrevTap(position.dx, screenWidth, tapDir)) {
+      _readerCubit.previousPage();
+    } else if (_isNextTap(position.dx, screenWidth, tapDir)) {
+      _readerCubit.nextPage();
+    } else {
+      _readerCubit.toggleUI();
+    }
   }
 
   Widget _buildChapterNavigationPage(ReaderState state) {
@@ -1162,70 +1257,51 @@ class _ReaderScreenState extends State<ReaderScreen> {
     debugPrint(
         '📖 SinglePageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
-    return GestureDetector(
-      onTapUp: (details) {
-        // Simple tap gesture: center = toggle UI, sides = navigate
-        final screenWidth = MediaQuery.of(context).size.width;
-        final tapX = details.globalPosition.dx;
-        final tapDir = state.tapDirection ?? TapDirection.normal;
+    return PageView.builder(
+      key: const ValueKey('horizontal_page_view'),
+      controller: _pageController,
+      scrollDirection: Axis.horizontal,
+      onPageChanged: (index) {
+        // Convert 0-indexed to 1-indexed page number
+        // For navigation page (index == pageCount), report pageCount + 1
+        final reportPage = index + 1;
 
-        if (_isPrevTap(tapX, screenWidth, tapDir)) {
-          // Previous page (respects tap direction setting)
-          _readerCubit.previousPage();
-        } else if (_isNextTap(tapX, screenWidth, tapDir)) {
-          // Next page (respects tap direction setting)
-          _readerCubit.nextPage();
-        } else {
-          // Center - toggle UI
-          _readerCubit.toggleUI();
+        // Update visible page notifier so off-screen animations pause
+        _visiblePageNotifier.value = reportPage;
+
+        debugPrint(
+            '📖 PageView changed to index=$index (reporting page $reportPage)');
+
+        // Only handle UI tasks, no navigation logic
+        final imageUrls = state.content?.imageUrls ?? [];
+        // Don't prefetch for navigation page
+        if (index < pageCount) {
+          _prefetchImages(
+            reportPage,
+            imageUrls,
+            state.imageMetadata,
+            sourceId: state.content?.sourceId,
+          );
+          // LRU eviction: release images far from current position
+          _evictDistantPages(reportPage, imageUrls,
+              isOffline: state.isOfflineMode ?? false);
+        }
+
+        // Update ReaderCubit state
+        if (!_isProgrammaticAnimation) {
+          _readerCubit.updateCurrentPageFromSwipe(reportPage);
         }
       },
-      child: PageView.builder(
-        key: const ValueKey('horizontal_page_view'),
-        controller: _pageController,
-        scrollDirection: Axis.horizontal,
-        onPageChanged: (index) {
-          // Convert 0-indexed to 1-indexed page number
-          // For navigation page (index == pageCount), report pageCount + 1
-          final reportPage = index + 1;
+      itemCount: totalItems,
+      itemBuilder: (context, index) {
+        if (showNavigation && index == pageCount) {
+          return _buildChapterNavigationPage(state);
+        }
+        final imageUrl = state.content?.imageUrls[index] ?? '';
+        final pageNumber = index + 1;
 
-          // Update visible page notifier so off-screen animations pause
-          _visiblePageNotifier.value = reportPage;
-
-          debugPrint(
-              '📖 PageView changed to index=$index (reporting page $reportPage)');
-
-          // Only handle UI tasks, no navigation logic
-          final imageUrls = state.content?.imageUrls ?? [];
-          // Don't prefetch for navigation page
-          if (index < pageCount) {
-            _prefetchImages(
-              reportPage,
-              imageUrls,
-              state.imageMetadata,
-              sourceId: state.content?.sourceId,
-            );
-            // LRU eviction: release images far from current position
-            _evictDistantPages(reportPage, imageUrls,
-                isOffline: state.isOfflineMode ?? false);
-          }
-
-          // Update ReaderCubit state
-          if (!_isProgrammaticAnimation) {
-            _readerCubit.updateCurrentPageFromSwipe(reportPage);
-          }
-        },
-        itemCount: totalItems,
-        itemBuilder: (context, index) {
-          if (showNavigation && index == pageCount) {
-            return _buildChapterNavigationPage(state);
-          }
-          final imageUrl = state.content?.imageUrls[index] ?? '';
-          final pageNumber = index + 1;
-
-          return _buildImageViewer(imageUrl, pageNumber);
-        },
-      ),
+        return _buildImageViewer(imageUrl, pageNumber);
+      },
     );
   }
 
@@ -1237,79 +1313,53 @@ class _ReaderScreenState extends State<ReaderScreen> {
     debugPrint(
         '📖 VerticalPageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
-    return GestureDetector(
-      onTapUp: (details) {
-        // Simple tap gesture: center = toggle UI, top/bottom = navigate
-        final screenHeight = MediaQuery.of(context).size.height;
-        final tapY = details.globalPosition.dy;
-        final tapDir = state.tapDirection ?? TapDirection.normal;
-        final isTopArea = tapY < screenHeight * 0.3;
-        final isBottomArea = tapY > screenHeight * 0.7;
-        // For vertical mode: inverted means top=next, bottom=prev
-        final prevArea =
-            tapDir == TapDirection.inverted ? isBottomArea : isTopArea;
-        final nextArea =
-            tapDir == TapDirection.inverted ? isTopArea : isBottomArea;
+    return PageView.builder(
+      key: const ValueKey('vertical_page_view'),
+      controller: _verticalPageController,
+      scrollDirection: Axis.vertical,
+      onPageChanged: (index) {
+        // Convert 0-indexed to 1-indexed page number
+        // For navigation page (index == pageCount), report pageCount + 1
+        final reportPage = index + 1;
 
-        if (prevArea) {
-          // Top area (or bottom if inverted) - previous page
-          _readerCubit.previousPage();
-        } else if (nextArea) {
-          // Bottom area (or top if inverted) - next page
-          _readerCubit.nextPage();
-        } else {
-          // Center - toggle UI
-          _readerCubit.toggleUI();
-        }
-      },
-      child: PageView.builder(
-        key: const ValueKey('vertical_page_view'),
-        controller: _verticalPageController,
-        scrollDirection: Axis.vertical,
-        onPageChanged: (index) {
-          // Convert 0-indexed to 1-indexed page number
-          // For navigation page (index == pageCount), report pageCount + 1
-          final reportPage = index + 1;
+        // Update visible page notifier so off-screen animations pause
+        _visiblePageNotifier.value = reportPage;
 
-          // Update visible page notifier so off-screen animations pause
-          _visiblePageNotifier.value = reportPage;
+        debugPrint(
+            '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
 
-          debugPrint(
-              '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
-
-          // Only handle UI tasks, no navigation logic
-          final imageUrls = state.content?.imageUrls ?? [];
-          // Don't prefetch for navigation page
-          if (index < pageCount) {
-            _prefetchImages(
-              reportPage,
-              imageUrls,
-              state.imageMetadata,
-              sourceId: state.content?.sourceId,
-            );
-            // LRU eviction: release images far from current position
-            _evictDistantPages(reportPage, imageUrls,
-                isOffline: state.isOfflineMode ?? false);
-          }
-
-          // Update ReaderCubit state
-          if (!_isProgrammaticAnimation) {
-            _readerCubit.updateCurrentPageFromSwipe(reportPage);
-          }
-        },
-        itemCount: totalItems,
-        itemBuilder: (context, index) {
-          if (showNavigation && index == pageCount) {
-            return _buildChapterNavigationPage(state);
-          }
-          final imageUrl = state.content?.imageUrls[index] ?? '';
-          return _buildImageViewer(
-            imageUrl,
-            index + 1,
+        // Only handle UI tasks, no navigation logic
+        final imageUrls = state.content?.imageUrls ?? [];
+        // Don't prefetch for navigation page
+        if (index < pageCount) {
+          _prefetchImages(
+            reportPage,
+            imageUrls,
+            state.imageMetadata,
             sourceId: state.content?.sourceId,
           );
-        },
-      ),
+          // LRU eviction: release images far from current position
+          _evictDistantPages(reportPage, imageUrls,
+              isOffline: state.isOfflineMode ?? false);
+        }
+
+        // Update ReaderCubit state
+        if (!_isProgrammaticAnimation) {
+          _readerCubit.updateCurrentPageFromSwipe(reportPage);
+        }
+      },
+      itemCount: totalItems,
+      itemBuilder: (context, index) {
+        if (showNavigation && index == pageCount) {
+          return _buildChapterNavigationPage(state);
+        }
+        final imageUrl = state.content?.imageUrls[index] ?? '';
+        return _buildImageViewer(
+          imageUrl,
+          index + 1,
+          sourceId: state.content?.sourceId,
+        );
+      },
     );
   }
 
@@ -1766,6 +1816,99 @@ class _ReaderScreenState extends State<ReaderScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniChromeToggle(ReaderState state) {
+    final isVisible = state.showUI ?? false;
+    final colorScheme = Theme.of(context).colorScheme;
+    final mediaQuery = MediaQuery.of(context);
+    final defaultOffset = Offset(
+      mediaQuery.size.width - _miniChromeToggleSize - 12,
+      mediaQuery.padding.top + 82,
+    );
+    final offset = _clampMiniChromeToggleOffset(
+      _miniChromeToggleOffset ?? defaultOffset,
+      mediaQuery,
+    );
+
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: (details) {
+          setState(() {
+            final currentOffset = _miniChromeToggleOffset ?? offset;
+            _miniChromeToggleOffset = _clampMiniChromeToggleOffset(
+              currentOffset + details.delta,
+              MediaQuery.of(context),
+            );
+          });
+        },
+        child: AnimatedOpacity(
+          opacity: isVisible ? 0.55 : 0.9,
+          duration: const Duration(milliseconds: 180),
+          child: Material(
+            color: Colors.transparent,
+            child: Tooltip(
+              message: isVisible ? 'Hide controls' : 'Show controls',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(_miniChromeToggleSize / 2),
+                onTap: _readerCubit.toggleUI,
+                child: Container(
+                  width: _miniChromeToggleSize,
+                  height: _miniChromeToggleSize,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colorScheme.inverseSurface.withValues(alpha: 0.72),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color:
+                          colorScheme.onInverseSurface.withValues(alpha: 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isVisible
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.more_horiz_rounded,
+                    size: 22,
+                    color: colorScheme.onInverseSurface,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const double _miniChromeToggleSize = 40;
+
+  Offset _clampMiniChromeToggleOffset(
+    Offset offset,
+    MediaQueryData mediaQuery,
+  ) {
+    const margin = 8.0;
+    const minX = margin;
+    final maxX = mediaQuery.size.width - _miniChromeToggleSize - margin;
+    final minY = mediaQuery.padding.top + margin;
+    final maxY = mediaQuery.size.height -
+        mediaQuery.padding.bottom -
+        _miniChromeToggleSize -
+        margin;
+
+    return Offset(
+      offset.dx.clamp(minX, maxX),
+      offset.dy.clamp(minY, maxY),
     );
   }
 

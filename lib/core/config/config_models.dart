@@ -174,6 +174,7 @@ sealed class CheckboxGroupConfig with _$CheckboxGroupConfig {
     @Default(3) int columns,
     @Default(false) bool loadFromTags,
     String? tagType,
+    String? tagSourceUrl,
   }) = _CheckboxGroupConfig;
 
   factory CheckboxGroupConfig.fromJson(Map<String, dynamic> json) =>

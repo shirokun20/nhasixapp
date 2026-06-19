@@ -12,6 +12,7 @@ import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CrotpediaRequestListScreen extends StatelessWidget {
   const CrotpediaRequestListScreen({super.key});
 
@@ -244,7 +245,8 @@ class _RequestCard extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
-                            AppLocalizations.of(context)!.nMoreGenres(genres.length - 5),
+                            AppLocalizations.of(context)!
+                                .nMoreGenres(genres.length - 5),
                             style: TextStyleConst.labelSmall.copyWith(
                               color: colorScheme.onSurfaceVariant,
                               fontStyle: FontStyle.italic,

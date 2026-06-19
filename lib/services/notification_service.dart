@@ -1126,8 +1126,7 @@ class NotificationService {
     try {
       await _notificationsPlugin.show(
         _zipExtractionNotificationId,
-        _getLocalized('zipExtractionInProgress',
-            fallback: 'Extracting ZIP'),
+        _getLocalized('zipExtractionInProgress', fallback: 'Extracting ZIP'),
         message ??
             _getLocalized('extractingZipContent',
                 fallback: 'Preparing extraction...'),
@@ -1161,12 +1160,12 @@ class NotificationService {
       await _notificationsPlugin.show(
         _zipExtractionNotificationId,
         _getLocalized('extractingProgress',
-            args: {'progress': progress},
-            fallback: 'Extracting ($progress%)'),
+            args: {'progress': progress}, fallback: 'Extracting ($progress%)'),
         message,
         NotificationDetailsBuilder.progress(
           progress: progress,
-          highPriority: false, // Lower priority during extraction to reduce spam
+          highPriority:
+              false, // Lower priority during extraction to reduce spam
           playSound: false,
           enableVibration: false,
         ),
@@ -1202,8 +1201,8 @@ class NotificationService {
         payload: 'zip_extraction',
       );
 
-      _logger.i(
-          'ZIP extraction completed notification shown: $imageCount images');
+      _logger
+          .i('ZIP extraction completed notification shown: $imageCount images');
 
       // Auto-dismiss after 3 seconds
       Future.delayed(const Duration(seconds: 3), () {

@@ -218,7 +218,7 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
         icon: const AnimatedDiceWidget(isSpinning: false),
         tooltip: l10n.randomGallery,
         splashRadius: 24,
-        disabledColor: colorScheme.onSurface.withValues(alpha: 0.3),
+        color: colorScheme.onSurface,
       ),
     );
   }

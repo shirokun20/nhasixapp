@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/models/content_group.dart';
 
 class MockOfflineContentManager extends Mock implements OfflineContentManager {}
 
@@ -29,6 +30,9 @@ void main() {
     mockUserDataRepository = MockUserDataRepository();
     mockLogger = MockLogger();
     mockPrefs = MockSharedPreferences();
+
+    when(() => mockPrefs.getString(any())).thenReturn(null);
+    when(() => mockPrefs.getBool(any())).thenReturn(null);
 
     cubit = OfflineSearchCubit(
       offlineContentManager: mockOfflineContentManager,
@@ -78,6 +82,9 @@ void main() {
               downloadPath: any(named: 'downloadPath'),
             )).thenAnswer((_) async => '/path/to/image.jpg');
 
+        when(() => mockUserDataRepository.getHistoryEntry(any()))
+            .thenAnswer((_) async => null);
+
         return cubit;
       },
       act: (cubit) => cubit.getAllOfflineContent(),
@@ -94,21 +101,30 @@ void main() {
       'loadMoreContent should append items when hasMore is true',
       build: () {
         // Mock initial state as loaded
-        final initialContent = Content(
-          id: 'initial',
-          title: 'Initial',
-          coverUrl: '',
-          sourceId: 'nhentai',
-          tags: [],
-          artists: [],
-          characters: [],
-          parodies: [],
-          groups: [],
-          language: '',
-          pageCount: 0,
-          imageUrls: [],
-          uploadDate: DateTime.now(),
-          favorites: 0,
+        final initialContentGroup = ContentGroup(
+          baseTitle: 'Initial',
+          items: [
+            Content(
+              id: 'initial',
+              title: 'Initial',
+              coverUrl: '',
+              sourceId: 'nhentai',
+              tags: [],
+              artists: [],
+              characters: [],
+              parodies: [],
+              groups: [],
+              language: '',
+              pageCount: 0,
+              imageUrls: [],
+              uploadDate: DateTime.now(),
+              favorites: 0,
+            ),
+          ],
+          totalSize: 0,
+          readProgress: 0.0,
+          isRead: false,
+          isReading: false,
         );
 
         // Setup mocks for loadMore call
@@ -129,9 +145,12 @@ void main() {
               downloadPath: any(named: 'downloadPath'),
             )).thenAnswer((_) async => '/path/to/image.jpg');
 
+        when(() => mockUserDataRepository.getHistoryEntry(any()))
+            .thenAnswer((_) async => null);
+
         cubit.emit(OfflineSearchLoaded(
           query: '',
-          results: [initialContent],
+          results: [initialContentGroup],
           totalResults: 2,
           currentPage: 1,
           hasMore: true,

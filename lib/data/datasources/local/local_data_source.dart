@@ -515,7 +515,7 @@ class LocalDataSource {
       // Map orderBy field names to actual column names
       final columnName = _mapOrderByField(orderBy);
       final orderDirection = descending ? 'DESC' : 'ASC';
-      final String orderClause = columnName == 'title' 
+      final String orderClause = columnName == 'title'
           ? 'COALESCE(title, id) $orderDirection'
           : '$columnName $orderDirection';
 
@@ -703,7 +703,7 @@ class LocalDataSource {
 
       final String columnName = _mapOrderByField(orderBy);
       final String orderDirection = descending ? 'DESC' : 'ASC';
-      final String orderClause = columnName == 'title' 
+      final String orderClause = columnName == 'title'
           ? 'COALESCE(title, id) $orderDirection'
           : '$columnName $orderDirection';
 

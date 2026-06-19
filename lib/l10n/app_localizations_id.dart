@@ -5154,4 +5154,20 @@ class AppLocalizationsId extends AppLocalizations {
   String failedToOpenCaptcha(String error) {
     return 'Gagal membuka pemecah CAPTCHA bawaan: $error';
   }
+
+  @override
+  String get readFirstChapter => 'Baca Chapter Pertama';
+
+  @override
+  String get convertAllToPdf => 'Konversi Semua ke PDF';
+
+  @override
+  String deleteSeriesConfirmation(int count, String title) {
+    return 'Apakah Anda yakin ingin menghapus $count chapter dari \"$title\"?';
+  }
+
+  @override
+  String deleteSeriesWithCount(int count) {
+    return 'Hapus Series ($count)';
+  }
 }

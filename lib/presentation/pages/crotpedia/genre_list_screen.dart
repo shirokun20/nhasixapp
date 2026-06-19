@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+
 class CrotpediaGenreListScreen extends StatelessWidget {
   const CrotpediaGenreListScreen({super.key});
 
