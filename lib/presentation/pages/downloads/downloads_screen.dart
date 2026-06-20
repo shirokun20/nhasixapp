@@ -747,13 +747,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context.read<DownloadBloc>().add(const DownloadCancelAllEvent());
             },
             child: Text(
@@ -784,13 +784,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context
                   .read<DownloadBloc>()
                   .add(DownloadCancelEvent(download.contentId));
@@ -823,13 +823,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context
                   .read<DownloadBloc>()
                   .add(DownloadRemoveEvent(download.contentId));
@@ -862,13 +862,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context
                   .read<DownloadBloc>()
                   .add(const DownloadCleanupStorageEvent());
@@ -899,13 +899,13 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel,
                 style: TextStyleConst.labelLarge),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context
                   .read<DownloadBloc>()
                   .add(DownloadBulkDeleteEvent(state.selectedItems.toList()));
@@ -971,7 +971,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                     child: Text(AppLocalizations.of(context)!.close,
                         style: TextStyleConst.labelLarge),
                   ),

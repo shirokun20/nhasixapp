@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/source_auth/source_auth_cubit.dart';
-import 'package:nhasixapp/presentation/pages/auth/captcha_solver_page.dart';
 import 'package:nhasixapp/presentation/widgets/animated_dice_widget.dart';
 
 class SourceLoginPage extends StatefulWidget {
@@ -617,7 +618,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
 
   void _closeLoginProgressDialog() {
     if (!_isLoginDialogOpen || !mounted) return;
-    Navigator.of(context, rootNavigator: false).pop();
+    context.pop();
     _isLoginDialogOpen = false;
   }
 
@@ -754,14 +755,11 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
     String? baseUrl,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
-    final token = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (_) => CaptchaSolverPage(
-          provider: provider,
-          siteKey: siteKey,
-          baseUrl: baseUrl,
-        ),
-      ),
+    final token = await AppRouter.goToCaptchaSolver(
+      context,
+      provider: provider,
+      siteKey: siteKey,
+      baseUrl: baseUrl,
     );
 
     if (!context.mounted || token == null || token.isEmpty) return;

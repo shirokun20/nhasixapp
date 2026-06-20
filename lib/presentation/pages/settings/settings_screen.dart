@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
@@ -1429,7 +1430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const Duration(milliseconds: 100),
                               );
                               if (sheetContext.mounted) {
-                                Navigator.of(sheetContext).pop();
+                                sheetContext.pop();
                               }
                             },
                             child: Text(AppLocalizations.of(context)!.done),
@@ -1654,7 +1655,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
+                        onPressed: () => ctx.pop(false),
                         child: Text(l10n.cancel),
                       ),
                       FilledButton(
@@ -1662,7 +1663,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           backgroundColor: theme.colorScheme.error,
                           foregroundColor: theme.colorScheme.onError,
                         ),
-                        onPressed: () => Navigator.pop(ctx, true),
+                        onPressed: () => ctx.pop(true),
                         child: Text(l10n.reset),
                       ),
                     ],
@@ -2052,7 +2053,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => ctx.pop(false),
                 child: Text(l10n.cancel),
               ),
               FilledButton(
@@ -2060,7 +2061,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   backgroundColor: theme.colorScheme.error,
                   foregroundColor: theme.colorScheme.onError,
                 ),
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () => ctx.pop(true),
                 child: Text(l10n.reset),
               ),
             ],
@@ -2317,11 +2318,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => ctx.pop(false),
                 child: Text(l10n.cancel),
               ),
               FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () => ctx.pop(true),
                 child: Text(AppLocalizations.of(context)!.uninstall),
               ),
             ],
@@ -2395,11 +2396,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            onPressed: () => ctx.pop(controller.text.trim()),
             child: Text(l10n.sourceImportConfirmInstall),
           ),
         ],
@@ -2807,7 +2808,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return ListTile(
                     title: Text(entry.displayName ?? entry.id),
                     subtitle: Text('${entry.id} • v${entry.version}'),
-                    onTap: () => Navigator.pop(ctx, entry),
+                    onTap: () => ctx.pop(entry),
                   );
                 },
               ),
@@ -2873,7 +2874,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Expanded(
                         child: TextButton(
-                          onPressed: () => Navigator.pop(ctx, const []),
+                          onPressed: () => ctx.pop(const []),
                           child: Text(AppLocalizations.of(context)!.cancel),
                         ),
                       ),
@@ -2882,8 +2883,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: FilledButton(
                           onPressed: selected.isEmpty
                               ? null
-                              : () => Navigator.pop(
-                                    ctx,
+                              : () => ctx.pop(
                                     entries
                                         .where(
                                             (entry) => selected.contains(entry))
@@ -3296,11 +3296,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: Text(l10n.sourceImportConfirmInstall),
           ),
         ],
@@ -3346,11 +3346,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: Text(AppLocalizations.of(context)!.installSelected),
           ),
         ],

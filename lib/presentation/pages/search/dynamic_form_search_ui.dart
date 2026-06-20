@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_generic/kuron_generic.dart'
     show DynamicSearchFormContract;
 import 'package:logger/logger.dart';
@@ -474,9 +475,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     }
 
     if (!mounted) return;
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop(true);
+    if (context.canPop()) {
+      context.pop(true);
       return;
     }
 
@@ -1279,7 +1279,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                     selectedState[o.value] ==
                                     _TagPickState.exclude)
                                 .toList();
-                            Navigator.of(context).pop(
+                            context.pop(
                               _CombinedPickerResult(
                                 included: include,
                                 excluded: exclude,
@@ -1566,7 +1566,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                             final applied = options
                                 .where((o) => selectedValues.contains(o.value))
                                 .toList();
-                            Navigator.of(context).pop(applied);
+                            context.pop(applied);
                           },
                           child: Text(AppLocalizations.of(context)!
                               .applyWithCount(selectedValues.length)),

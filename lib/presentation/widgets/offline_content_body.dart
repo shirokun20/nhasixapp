@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -19,7 +20,6 @@ import '../../services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';
-import '../pages/offline/offline_series_detail_screen.dart';
 import 'content_group_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
@@ -45,38 +45,27 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   @override
   void initState() {
     super.initState();
-    // Assuming OfflineSearchCubit is provided in the context or via GetIt
-    // For safety, we use GetIt here as it's a singleton
-    _offlineSearchCubit = getIt<OfflineSearchCubit>();
+    _offlineSearchCubit = context.read<OfflineSearchCubit>();
     _tagBlacklistService = getIt<TagBlacklistService>()
       ..addListener(_handleBlacklistChanged);
 
     // Ensure content is loaded if not already
     if (_offlineSearchCubit.state is OfflineSearchInitial) {
       _offlineSearchCubit.getAllOfflineContent();
-    } else {
-      // Check for stale data (e.g. downloaded while on another screen)
-      // If the count differs from DownloadBloc, refresh it
-      try {
-        final downloadState = context.read<DownloadBloc>().state;
-        if (downloadState is DownloadLoaded &&
-            _offlineSearchCubit.state is OfflineSearchLoaded) {
-          final offlineCount =
-              (_offlineSearchCubit.state as OfflineSearchLoaded).results.length;
-          final downloadCount = downloadState.completedDownloads.length;
-          if (offlineCount != downloadCount) {
-            _offlineSearchCubit.getAllOfflineContent();
-          }
-        }
-      } catch (e) {
-        debugPrint('Error syncing offline state with downloads: $e');
-      }
     }
 
     unawaited(_tagBlacklistService.syncAllAvailableSources());
 
     // The _scrollController listener has been moved to NotificationListener
     // to handle hide-on-scroll and show-on-idle logic.
+  }
+
+  Future<void> _openSeriesDetail(ContentGroup contentGroup) async {
+    final changed =
+        await AppRouter.goToOfflineSeriesDetail(context, contentGroup);
+    if (changed == true && mounted) {
+      await _offlineSearchCubit.forceRefresh();
+    }
   }
 
   @override
@@ -242,7 +231,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 onTap: () {
                   _offlineSearchCubit.changeSorting(
                       orderBy: orderBy, descending: descending);
-                  Navigator.pop(context);
+                  context.pop();
                 },
                 child: Container(
                   padding:
@@ -812,19 +801,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
                         contentGroup: contentGroup,
                         isListMode: state.isListMode,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OfflineSeriesDetailScreen(
-                                contentGroup: contentGroup,
-                              ),
-                            ),
-                          );
-                          if (context.mounted) {
-                            await _offlineSearchCubit.forceRefresh();
-                          }
-                        },
+                        onTap: () => _openSeriesDetail(contentGroup),
                         onLongPress: () {
                           _showGroupContentActions(context, contentGroup);
                         },

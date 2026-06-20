@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/utils/app_state_manager.dart';
 import '../../core/constants/text_style_const.dart';
@@ -56,9 +57,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
 
           // If we are at the root/home, show exit confirmation
           // Check if we can pop the navigator
-          final navigator = Navigator.of(context);
-          if (navigator.canPop()) {
-            navigator.pop();
+          if (context.canPop()) {
+            context.pop();
             return;
           }
 
@@ -71,11 +71,11 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                   AppLocalizations.of(context)!.confirmExit),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
+                  onPressed: () => context.pop(false),
                   child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
                 ),
                 FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
+                  onPressed: () => context.pop(true),
                   child: Text(AppLocalizations.of(context)?.exit ?? 'Exit'),
                 ),
               ],

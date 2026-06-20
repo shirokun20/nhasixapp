@@ -22,7 +22,6 @@ class AppMainHeaderWidget extends StatelessWidget
 
   const AppMainHeaderWidget({
     super.key,
-    required this.context,
     this.onSearchPressed,
     this.onOpenBrowser,
     this.onDownloadAll,
@@ -38,7 +37,6 @@ class AppMainHeaderWidget extends StatelessWidget
     this.onToggleViewMode,
   });
 
-  final BuildContext context;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onOpenBrowser;
   final VoidCallback? onDownloadAll;

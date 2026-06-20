@@ -1241,7 +1241,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return EndOfChapterOverlay(
       state: state,
       isChapterMode: isChapterMode,
-      onBackToDetail: () => Navigator.of(context).pop(),
+      onBackToDetail: () => context.pop(),
       onPreviousChapter:
           hasPrevChapter ? () => _readerCubit.loadPreviousChapter() : null,
       onNextChapter:
@@ -1927,7 +1927,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             children: [
               // Back button
               IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 iconSize: 22,
                 visualDensity: VisualDensity.compact,
@@ -2217,7 +2217,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
@@ -2227,7 +2227,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               final page = int.tryParse(controller.text);
               if (page != null &&
                   page >= 1 &&
@@ -2403,7 +2403,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                   onTap: () {
                     // Show chapter list in a dialog
-                    Navigator.pop(context); // Close settings
+                    context.pop(); // Close settings
                     _showChapterSelector(currentState);
                   },
                 ),
@@ -2544,7 +2544,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
@@ -2554,7 +2554,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               _resetReaderSettings();
             },
             child: Text(
@@ -2710,7 +2710,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () => Navigator.pop(sheetContext),
+                              onPressed: () => sheetContext.pop(),
                               icon: Icon(
                                 Icons.close_rounded,
                                 color: Theme.of(context)
@@ -2758,7 +2758,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
                               onTap: () {
-                                Navigator.pop(sheetContext);
+                                sheetContext.pop();
                                 if (!isCurrent) {
                                   _readerCubit.loadChapter(chapter.id);
                                 }
@@ -2925,7 +2925,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _clearReaderImageCache() async {
-    Navigator.of(context).pop(); // close settings sheet
+    context.pop(); // close settings sheet
     await ExtendedImageReaderWidget.clearNativeAnimatedCache();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2941,7 +2941,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Future<void> _resetReaderSettings() async {
     try {
       // Close the settings modal first
-      Navigator.of(context).pop();
+      context.pop();
 
       // Reset the settings
       await _readerCubit.resetReaderSettings();

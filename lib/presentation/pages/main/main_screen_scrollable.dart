@@ -33,7 +33,6 @@ import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
-import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
@@ -49,6 +48,7 @@ import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/presentation/widgets/dynamic_sorting_widget.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
+import 'package:nhasixapp/presentation/pages/main/services/main_screen_utils.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
 
 class MainScreenScrollable extends StatefulWidget {
@@ -66,6 +66,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   late final OfflineSearchCubit _offlineSearchCubit;
   late final UpdateCubit _updateCubit;
   late final TagBlacklistService _tagBlacklistService;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   bool _isShowingSearchResults = false;
   SearchFilter? _currentSearchFilter;
@@ -93,13 +94,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       ..addListener(_handleTagBlacklistChanged);
 
     _checkConnectivity();
-    Connectivity().onConnectivityChanged.listen((results) {
-      if (mounted) {
-        setState(() {
-          _isOffline = results.contains(ConnectivityResult.none);
-        });
-      }
-    });
+    _observeConnectivity();
 
     _initializeContent();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -177,11 +172,25 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   Future<void> _checkConnectivity() async {
     final results = await Connectivity().checkConnectivity();
+    _setOfflineFromResults(results);
+  }
+
+  void _observeConnectivity() {
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_setOfflineFromResults);
+  }
+
+  void _setOfflineFromResults(List<ConnectivityResult> results) {
     if (mounted) {
       setState(() {
         _isOffline = results.contains(ConnectivityResult.none);
       });
     }
+  }
+
+  void _loadDefaultContent() {
+    _isShowingSearchResults = false;
+    _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
   }
 
   /// Initialize content - check for saved search state first
@@ -196,8 +205,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       _currentSortOption = await userDataRepository.getSortingPreference();
 
       if (sourceId == null) {
-        _isShowingSearchResults = false;
-        _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+        _loadDefaultContent();
         setState(() {});
         return;
       }
@@ -221,29 +229,25 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           } else {
             // Invalid or empty filter, clear it and load normal content
             await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
-            _isShowingSearchResults = false;
-            _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+            _loadDefaultContent();
           }
         } catch (filterError) {
           // Error parsing filter data, clear it and load normal content
           Logger().w(
               'MainScreen: Error parsing saved filter, clearing it: $filterError');
           await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
-          _isShowingSearchResults = false;
-          _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+          _loadDefaultContent();
         }
       } else {
         // No saved filter, load normal content list with saved sort option
-        _isShowingSearchResults = false;
-        _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+        _loadDefaultContent();
       }
 
       setState(() {});
     } catch (e) {
       Logger().e('MainScreen: Error initializing content: $e');
       // Fallback to normal content loading
-      _isShowingSearchResults = false;
-      _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
+      _loadDefaultContent();
     }
   }
 
@@ -258,27 +262,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         filter.artists.isNotEmpty ||
         filter.language != null ||
         filter.category != null;
-  }
-
-  String? _removeRawSearchQueryParam(String? query, String paramName) {
-    if (query == null || !query.startsWith('raw:')) return query;
-
-    final raw = query.substring(4);
-    final kept = <String>[];
-    for (final pair in raw.split('&')) {
-      if (pair.isEmpty) continue;
-      final idx = pair.indexOf('=');
-      if (idx < 0) {
-        kept.add(pair);
-        continue;
-      }
-      final key = Uri.decodeComponent(pair.substring(0, idx));
-      if (key != paramName) {
-        kept.add(pair);
-      }
-    }
-
-    return kept.isEmpty ? null : 'raw:${kept.join('&')}';
   }
 
   /// Reload search filter from storage and apply to content bloc
@@ -299,7 +282,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
           final sanitizedQuery = savedFilter.query == '{query}'
               ? ''
-              : _removeRawSearchQueryParam(savedFilter.query, 'sort');
+              : MainScreenUtils.removeRawSearchQueryParam(
+                  savedFilter.query,
+                  'sort',
+                );
           _currentSearchFilter = savedFilter.copyWith(
             query: sanitizedQuery,
             sortBy: _currentSortOption,
@@ -314,6 +300,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       // No valid filter, clear search state
       _isShowingSearchResults = false;
+      _currentSearchFilter = null;
       setState(() {});
     } catch (e) {
       Logger().e('MainScreen: Error reloading search filter: $e');
@@ -323,6 +310,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   @override
   void dispose() {
     _tagBlacklistService.removeListener(_handleTagBlacklistChanged);
+    _connectivitySubscription?.cancel();
     _homeBloc.close();
     // Don't close ContentBloc - it's a singleton managed by DI container
     // _contentBloc.close();
@@ -338,6 +326,56 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         setState(() {});
       }
     });
+  }
+
+  void _showUpdateSheet(UpdateAvailable state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => UpdateAvailableSheet(updateInfo: state.updateInfo),
+    );
+  }
+
+  Future<void> _handleSourceChanged() async {
+    if (!mounted) return;
+    _isShowingSearchResults = false;
+    _currentSearchFilter = null;
+    await _initializeContent();
+    await _refreshBlacklistForActiveSource(forceRefresh: true);
+  }
+
+  void _clearSwitchingSource() {
+    final sourceCubit = context.read<SourceCubit>();
+    if (sourceCubit.state.isSwitching) {
+      sourceCubit.clearSwitching();
+    }
+  }
+
+  Future<void> _handleSearchPressed() async {
+    final result = await context.push(AppRoute.search);
+    if (result == true && context.mounted) {
+      await _reloadSearchFilter();
+    }
+  }
+
+  Widget _buildHomeShell() {
+    final l10n = AppLocalizations.of(context)!;
+
+    return AppScaffoldWithOffline(
+      title: l10n.appTitle,
+      appBar: AppMainHeaderWidget(
+        isOffline: _isOffline,
+        offlineStats: _isOffline ? _offlineSearchCubit.getOfflineStats() : null,
+        onRefresh: _isOffline ? _offlineSearchCubit.forceRefresh : null,
+        onImport: _isOffline ? () => importFromBackup(context) : null,
+        onSearchPressed: _handleSearchPressed,
+        onOpenBrowser: _openInBrowser,
+        onDownloadAll: _downloadAllGalleries,
+      ),
+      drawer: AppMainDrawerWidget(context: context),
+      body: _isOffline ? const OfflineContentBody() : _buildScrollableBody(),
+    );
   }
 
   @override
@@ -372,7 +410,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           BlocProvider.value(value: _homeBloc),
           BlocProvider.value(value: _contentBloc),
           BlocProvider.value(value: _searchBloc),
-          BlocProvider.value(value: getIt<OfflineSearchCubit>()),
+          BlocProvider.value(value: _offlineSearchCubit),
           BlocProvider.value(value: _updateCubit),
         ],
         child: MultiBlocListener(
@@ -380,43 +418,24 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             BlocListener<UpdateCubit, UpdateState>(
               listener: (context, state) {
                 if (state is UpdateAvailable) {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    isScrollControlled: true,
-                    builder: (context) =>
-                        UpdateAvailableSheet(updateInfo: state.updateInfo),
-                  );
+                  _showUpdateSheet(state);
                 }
               },
             ),
             BlocListener<SourceCubit, SourceState>(
               listenWhen: (previous, current) =>
                   previous.activeSource?.id != current.activeSource?.id,
-              listener: (context, state) async {
-                if (mounted) {
-                  _isShowingSearchResults = false;
-                  _currentSearchFilter = null;
-                  await _initializeContent();
-                  await _refreshBlacklistForActiveSource(forceRefresh: true);
-                  // clearSwitching() is handled by the ContentBloc listener below.
-                }
-              },
+              listener: (context, state) => _handleSourceChanged(),
             ),
             BlocListener<ContentBloc, ContentState>(
               listenWhen: (previous, current) =>
                   current is ContentLoaded ||
                   current is ContentError ||
                   current is ContentEmpty,
-              listener: (context, state) {
-                if (context.read<SourceCubit>().state.isSwitching) {
-                  context.read<SourceCubit>().clearSwitching();
-                }
-              },
+              listener: (context, state) => _clearSwitchingSource(),
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
-            buildWhen: (previous, current) => true,
             builder: (context, homeState) {
               // Show full screen loading during home initialization or source switching
               final isSwitchingSource =
@@ -430,49 +449,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               }
 
               // Main screen UI when home is loaded
-              return BlocProvider<OfflineSearchCubit>.value(
-                value: _offlineSearchCubit,
-                child: BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
-                  buildWhen: (previous, current) =>
-                      _isOffline, // Only rebuild if offline
-                  builder: (context, offlineState) {
-                    final l10n = AppLocalizations.of(context)!;
-                    return AppScaffoldWithOffline(
-                      title: l10n.appTitle,
-                      appBar: AppMainHeaderWidget(
-                        context: context,
-                        isOffline: _isOffline,
-                        offlineStats: _isOffline
-                            ? context
-                                .read<OfflineSearchCubit>()
-                                .getOfflineStats()
-                            : null,
-                        onRefresh: _isOffline
-                            ? () => context
-                                .read<OfflineSearchCubit>()
-                                .forceRefresh()
-                            : null,
-                        onImport:
-                            _isOffline ? () => importFromBackup(context) : null,
-                        onSearchPressed: () async {
-                          // Navigate to search and wait for result
-                          final result = await context.push(AppRoute.search);
-                          if (result == true && context.mounted) {
-                            // Search was performed, reload saved filter
-                            await _reloadSearchFilter();
-                          }
-                        },
-                        onOpenBrowser: () => _openInBrowser(),
-                        onDownloadAll: () => _downloadAllGalleries(),
-                      ),
-                      drawer: AppMainDrawerWidget(context: context),
-                      body: _isOffline
-                          ? const OfflineContentBody()
-                          : _buildScrollableBody(),
-                    );
-                  },
-                ),
-              );
+              return _buildHomeShell();
             },
           ),
         ),
@@ -482,50 +459,29 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build the new scrollable body with all components integrated
   Widget _buildScrollableBody() {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: BlocConsumer<ContentBloc, ContentState>(
-        buildWhen: (previous, current) {
-          return previous != current;
-        },
-        listenWhen: (previous, current) {
-          return previous != current;
-        },
-        listener: (context, state) {
-          if (state is ContentError) {
-            // Show error snackbar
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.userFriendlyMessage),
-                action: state.canRetry
-                    ? SnackBarAction(
-                        label: AppLocalizations.of(context)!.retry,
-                        onPressed: () {
-                          // Use smart retry that preserves pagination context
-                          _contentBloc.add(const ContentRetryEvent());
-                        },
-                      )
-                    : null,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              // Offline banner - tetap di atas
-              const OfflineBanner(),
+    return BlocConsumer<ContentBloc, ContentState>(
+      listenWhen: (previous, current) =>
+          previous != current && current is ContentError,
+      listener: (context, state) {
+        if (state is! ContentError) return;
 
-              // Content area dengan semua komponen dalam scroll
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: _buildScrollableContent(state),
-                ),
-              ),
-            ],
-          );
-        },
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.userFriendlyMessage),
+            action: state.canRetry
+                ? SnackBarAction(
+                    label: AppLocalizations.of(context)!.retry,
+                    onPressed: () {
+                      _contentBloc.add(const ContentRetryEvent());
+                    },
+                  )
+                : null,
+          ),
+        );
+      },
+      builder: (context, state) => Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: _buildScrollableContent(state),
       ),
     );
   }
@@ -1137,6 +1093,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Future<void> _onSortingChanged(SortOption newSort) async {
     if (_currentSortOption == newSort) return;
 
+    final previousSort = _currentSortOption;
     setState(() {
       _currentSortOption = newSort;
     });
@@ -1160,7 +1117,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       Logger().e('MainScreen: Error changing sorting: $e');
       // Revert sort option on error
       setState(() {
-        _currentSortOption = _currentSortOption;
+        _currentSortOption = previousSort;
       });
     }
   }
@@ -1314,7 +1271,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _getSearchFilterSummary(_currentSearchFilter!),
+                  MainScreenUtils.getSearchFilterSummary(
+                    context,
+                    _currentSearchFilter!,
+                  ),
                   style: TextStyleConst.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1327,118 +1287,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         ],
       ),
     );
-  }
-
-  /// Get search filter summary for display
-  String _getSearchFilterSummary(SearchFilter filter) {
-    final parts = <String>[];
-
-    if (filter.query != null && filter.query!.isNotEmpty) {
-      parts.add(
-          '${AppLocalizations.of(context)?.queryLabel ?? 'Query'}: "${filter.query}"');
-    }
-
-    if (filter.tags.isNotEmpty) {
-      final includeTags = filter.tags
-          .where((item) => !item.isExcluded)
-          .map((item) => item.value);
-      final excludeTags = filter.tags
-          .where((item) => item.isExcluded)
-          .map((item) => item.value);
-
-      if (includeTags.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.tagsLabel ?? 'Tags'}: ${includeTags.join(', ')}');
-      }
-      if (excludeTags.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.excludeTagsLabel ?? 'Exclude Tags'}: ${excludeTags.join(', ')}');
-      }
-    }
-
-    if (filter.groups.isNotEmpty) {
-      final includeGroups = filter.groups
-          .where((item) => !item.isExcluded)
-          .map((item) => item.value);
-      final excludeGroups = filter.groups
-          .where((item) => item.isExcluded)
-          .map((item) => item.value);
-
-      if (includeGroups.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.groupsLabel ?? 'Groups'}: ${includeGroups.join(', ')}');
-      }
-      if (excludeGroups.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.excludeGroupsLabel ?? 'Exclude Groups'}: ${excludeGroups.join(', ')}');
-      }
-    }
-
-    if (filter.characters.isNotEmpty) {
-      final includeCharacters = filter.characters
-          .where((item) => !item.isExcluded)
-          .map((item) => item.value);
-      final excludeCharacters = filter.characters
-          .where((item) => item.isExcluded)
-          .map((item) => item.value);
-
-      if (includeCharacters.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.charactersLabel ?? 'Characters'}: ${includeCharacters.join(', ')}');
-      }
-      if (excludeCharacters.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.excludeCharactersLabel ?? 'Exclude Characters'}: ${excludeCharacters.join(', ')}');
-      }
-    }
-
-    if (filter.parodies.isNotEmpty) {
-      final includeParodies = filter.parodies
-          .where((item) => !item.isExcluded)
-          .map((item) => item.value);
-      final excludeParodies = filter.parodies
-          .where((item) => item.isExcluded)
-          .map((item) => item.value);
-
-      if (includeParodies.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.parodiesLabel ?? 'Parodies'}: ${includeParodies.join(', ')}');
-      }
-      if (excludeParodies.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.excludeParodiesLabel ?? 'Exclude Parodies'}: ${excludeParodies.join(', ')}');
-      }
-    }
-
-    if (filter.artists.isNotEmpty) {
-      final includeArtists = filter.artists
-          .where((item) => !item.isExcluded)
-          .map((item) => item.value);
-      final excludeArtists = filter.artists
-          .where((item) => item.isExcluded)
-          .map((item) => item.value);
-
-      if (includeArtists.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.artistsLabel ?? 'Artists'}: ${includeArtists.join(', ')}');
-      }
-      if (excludeArtists.isNotEmpty) {
-        parts.add(
-            '${AppLocalizations.of(context)?.excludeArtistsLabel ?? 'Exclude Artists'}: ${excludeArtists.join(', ')}');
-      }
-    }
-
-    if (filter.language != null) {
-      parts.add(
-          '${AppLocalizations.of(context)?.languageLabel ?? 'Language'}: ${filter.language}');
-    }
-
-    if (filter.category != null) {
-      parts.add(
-          '${AppLocalizations.of(context)?.categoryLabel ?? 'Category'}: ${filter.category}');
-    }
-
-    return parts.join(' • ');
   }
 
   /// Clear search results and return to normal content
@@ -1566,7 +1414,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       }
 
       // Clean up URL (remove trailing ? or & and empty parameters)
-      url = _cleanUrl(url);
+      url = MainScreenUtils.cleanUrl(url);
 
       // Validate URL format
       if (url.isEmpty) {
@@ -1660,95 +1508,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       final sourceId = _getActiveSource()?.id;
       if (sourceId == null) return null;
 
-      final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
-      final ui = rawConfig?['ui'] as Map<String, dynamic>?;
-      if (ui == null) return null;
-
-      final templateKey = isSearch ? 'searchUrlTemplate' : 'browseUrlTemplate';
-      final template = ui[templateKey] as String?;
-      if (template == null || template.trim().isEmpty) return null;
-
-      final baseUrl = _getSourceBaseUrl();
-
-      // Resolve sort apiValue via config options for the active source
-      final sort = sortBy ?? SortOption.newest;
-      final sortApiValue = _resolveSortApiValue(sort, sourceId, rawConfig);
-
-      return template
-          .replaceAll('{baseUrl}', baseUrl)
-          .replaceAll('{sort}', sortApiValue)
-          .replaceAll('{query}', Uri.encodeComponent(query));
+      return MainScreenUtils.buildConfigDrivenUrl(
+        isSearch: isSearch,
+        sourceId: sourceId,
+        baseUrl: _getSourceBaseUrl(),
+        remoteConfig: getIt<RemoteConfigService>(),
+        sortName: (sortBy ?? SortOption.newest).name,
+        fallbackSortApiValue: (sortBy ?? SortOption.newest).apiValue,
+        query: query,
+      );
     } catch (e) {
       Logger().w('_buildConfigDrivenUrl failed: $e');
       return null;
-    }
-  }
-
-  /// Resolve the API sort value for a given SortOption using source config options.
-  String _resolveSortApiValue(
-    SortOption sort,
-    String sourceId,
-    Map<String, dynamic>? rawConfig,
-  ) {
-    try {
-      final rawOptions =
-          rawConfig?['searchConfig']?['sortingConfig']?['options'] as List?;
-      final options = rawOptions?.cast<Map<String, dynamic>>();
-      if (options == null) return sort.apiValue;
-
-      // First try matching by enum name
-      final byName =
-          options.firstWhere((o) => o['value'] == sort.name, orElse: () => {});
-      if (byName.isNotEmpty && byName['apiValue'] != null) {
-        return byName['apiValue'] as String;
-      }
-
-      // Fallback: match by apiValue
-      final byApi = options.firstWhere((o) => o['apiValue'] == sort.apiValue,
-          orElse: () => {});
-      if (byApi.isNotEmpty && byApi['apiValue'] != null) {
-        return byApi['apiValue'] as String;
-      }
-    } catch (_) {}
-    return sort.apiValue;
-  }
-
-  /// Clean URL by removing trailing ? or & characters and empty parameters
-  String _cleanUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-
-      // Clean query parameters by removing empty values
-      final cleanParams = <String, String>{};
-      uri.queryParameters.forEach((key, value) {
-        // Only add non-empty values
-        if (value.trim().isNotEmpty) {
-          cleanParams[key] = value;
-        }
-      });
-
-      // Rebuild the URL with clean parameters
-      final cleanUri = uri.replace(
-          queryParameters: cleanParams.isEmpty ? null : cleanParams);
-      final String cleanedUrl = cleanUri.toString();
-
-      return cleanedUrl;
-    } catch (e) {
-      Logger().e('Error cleaning URL: $e');
-      // Fallback: simple string cleaning
-      String cleaned = url;
-      if (cleaned.endsWith('?') || cleaned.endsWith('&')) {
-        cleaned = cleaned.substring(0, cleaned.length - 1);
-      }
-      // Remove empty parameters (basic approach)
-      cleaned =
-          cleaned.replaceAllMapped(RegExp(r'[?&]([^=]+)=(?=[&]|$)'), (match) {
-        // Remove empty parameters, but keep the separator if needed
-        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?')
-            ? '?'
-            : '';
-      });
-      return cleaned;
     }
   }
 
@@ -1776,47 +1547,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   String? _getConfiguredOpenBrowserUrl() {
     final sourceId = _getActiveSource()?.id;
     if (sourceId == null || sourceId.isEmpty) return null;
-
-    final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
-    final ui = rawConfig?['ui'] as Map<String, dynamic>?;
-    final candidate =
-        (ui?['openInBrowserUrl'] ?? rawConfig?['openInBrowserUrl']) as String?;
-
-    if (candidate != null && candidate.trim().isNotEmpty) {
-      return candidate.trim();
-    }
-
-    // Fallback for API-first sources (e.g. api.mangadex.org) so browser opens
-    // the public website root instead of API/search query endpoints.
-    final inferredWebUrl = _inferPublicWebBaseUrlFromApi();
-    if (inferredWebUrl != null) {
-      return inferredWebUrl;
-    }
-
-    return null;
-  }
-
-  String? _inferPublicWebBaseUrlFromApi() {
-    final sourceBaseUrl = _getSourceBaseUrl();
-    if (sourceBaseUrl.trim().isEmpty) return null;
-
-    try {
-      final uri = Uri.parse(sourceBaseUrl);
-      final host = uri.host.toLowerCase();
-      if (host.isEmpty) return null;
-
-      if (host.startsWith('api.')) {
-        final publicHost = host.replaceFirst('api.', '');
-        if (publicHost.isNotEmpty) {
-          return '${uri.scheme}://$publicHost';
-        }
-      }
-
-      return null;
-    } catch (e) {
-      Logger().w('Failed to infer public web URL from source base URL: $e');
-      return null;
-    }
+    return MainScreenUtils.configuredOpenBrowserUrl(
+      sourceId: sourceId,
+      sourceBaseUrl: _getSourceBaseUrl(),
+      remoteConfig: getIt<RemoteConfigService>(),
+    );
   }
 
   /// Download all galleries in current page
@@ -1950,11 +1685,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => ctx.pop(false),
                 child: Text(AppLocalizations.of(context)!.cancel),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () => ctx.pop(true),
                 child: Text(AppLocalizations.of(context)!
                     .downloadNew(galleriesNeedDownload.length)),
               ),

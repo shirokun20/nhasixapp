@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -56,7 +57,7 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
       final token = result?['token']?.toString().trim() ?? '';
       final success = result?['success'] == true && token.isNotEmpty;
       if (success) {
-        Navigator.of(context).pop(token);
+        context.pop(token);
         return;
       }
 

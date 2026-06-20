@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/comments/comments_state.dart';
-import 'package:nhasixapp/presentation/pages/auth/captcha_solver_page.dart';
 import 'package:nhasixapp/presentation/pages/detail/widgets/comment_item_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -178,14 +178,11 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
       }
 
       if (!mounted) return;
-      final token = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (_) => CaptchaSolverPage(
-            provider: provider,
-            siteKey: siteKey,
-            baseUrl: bootstrap.captchaBaseUrl,
-          ),
-        ),
+      final token = await AppRouter.goToCaptchaSolver(
+        context,
+        provider: provider,
+        siteKey: siteKey,
+        baseUrl: bootstrap.captchaBaseUrl,
       );
 
       final normalizedToken = token?.trim() ?? '';

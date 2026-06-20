@@ -146,7 +146,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop();
+              dialogContext.pop();
               context.read<SplashBloc>().add(SplashRetryBypassEvent());
             },
             child: Row(
@@ -170,7 +170,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop();
+              dialogContext.pop();
               context.read<SplashBloc>().add(SplashForceOfflineModeEvent());
             },
             child: Row(
@@ -194,7 +194,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop();
+              dialogContext.pop();
               SystemNavigator.pop();
             },
             child: Row(

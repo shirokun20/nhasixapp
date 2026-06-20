@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/network/dns_models.dart';
 import '../../../core/di/service_locator.dart';
 import '../../cubits/dns_settings/dns_settings_cubit.dart';
@@ -276,13 +277,13 @@ class _DnsSettingsViewState extends State<_DnsSettingsView> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => dialogContext.pop(),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<DnsSettingsCubit>().resetToDefaults();
-              Navigator.pop(dialogContext);
+              dialogContext.pop();
             },
             child: Text(AppLocalizations.of(context)!.reset),
           ),

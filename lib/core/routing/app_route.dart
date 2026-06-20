@@ -14,6 +14,7 @@ class AppRoute {
   static const String downloads = '/downloads';
   static const String history = '/history';
   static const String offline = '/offline';
+  static const String offlineSeriesDetail = '/offline/detail';
 
   // Settings and management
   static const String settings = '/settings';
@@ -27,6 +28,7 @@ class AppRoute {
   static const String about = '/about';
   static const String crotpediaLogin = '/crotpedia-login';
   static const String sourceLogin = '/source-login';
+  static const String captchaSolver = '/captcha-solver';
   static const String dohTest = '/doh-test';
 
   // Crotpedia Routes
@@ -51,6 +53,7 @@ class AppRoute {
   static const String downloadsName = 'downloads';
   static const String historyName = 'history';
   static const String offlineName = 'offline';
+  static const String offlineSeriesDetailName = 'offline-series-detail';
   static const String settingsName = 'settings';
   static const String tagsName = 'tags';
   static const String artistsName = 'artists';
@@ -59,6 +62,7 @@ class AppRoute {
   static const String statusName = 'status';
   static const String aboutName = 'about';
   static const String sourceLoginName = 'source-login';
+  static const String captchaSolverName = 'captcha-solver';
   static const String mainName = 'main';
   static const String dohTestName = 'doh-test';
 

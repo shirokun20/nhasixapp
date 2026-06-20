@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -224,7 +225,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: () {
-                                Navigator.pop(context);
+                                context.pop();
                                 widget.detailCubit.openChapter(chapter);
                               },
                               borderRadius: BorderRadius.circular(16),

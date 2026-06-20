@@ -11,6 +11,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
+import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
@@ -28,10 +29,11 @@ import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/progressive_image_widget.dart';
-import '../../widgets/shimmer_loading_widgets.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
 import 'widgets/comments_section_widget.dart';
+import 'widgets/detail_content_view.dart';
+import 'widgets/detail_state_views.dart';
 import 'services/detail_tag_query_resolver.dart';
 import 'services/reader_launch_payload_builder.dart';
 
@@ -89,6 +91,67 @@ class _DetailScreenState extends State<DetailScreen> {
       return;
     }
     await _detailCubit.refreshChapterHistory();
+  }
+
+  void _goToCrotpediaLogin() {
+    context.push(AppRoute.crotpediaLogin);
+  }
+
+  void _showLoginRequiredSnackBar(String message) {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: l10n.login,
+          onPressed: _goToCrotpediaLogin,
+        ),
+      ),
+    );
+  }
+
+  void _showDetailActionFailure(DetailActionFailure state) {
+    final l10n = AppLocalizations.of(context)!;
+    if (state.needsLogin) {
+      _showLoginRequiredSnackBar(l10n.loginRequiredForAction);
+      return;
+    }
+
+    final message =
+        ErrorMessageUtils.getFriendlyErrorMessage(state.error, l10n);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildDetailStateBody(DetailState state, bool isOfflineMode) {
+    if (state is DetailLoading) {
+      return _buildLoadingState();
+    }
+    if (state is DetailLoaded) {
+      return Stack(
+        children: [
+          _buildDetailContent(state, isOfflineMode),
+          if (state is DetailOpeningChapter)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
+      );
+    }
+    if (state is DetailError) {
+      return _buildErrorState(state);
+    }
+
+    return const SizedBox.shrink();
   }
 
   String? _resolveTagIdFromLoadedContent(
@@ -175,14 +238,14 @@ class _DetailScreenState extends State<DetailScreen> {
                     ? null
                     : Text(AppLocalizations.of(context)!.addToFavoritesFirst),
                 onTap: detailState.isFavorited
-                    ? () => Navigator.of(context).pop('manage_collections')
+                    ? () => context.pop('manage_collections')
                     : null,
               ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.phone_android),
                 title: Text(AppLocalizations.of(context)!.favoriteOffline),
-                onTap: () => Navigator.of(context).pop('offline'),
+                onTap: () => context.pop('offline'),
               ),
               ListTile(
                 leading: const Icon(Icons.cloud),
@@ -193,7 +256,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     : Text(
                         AppLocalizations.of(context)!.loginRequiredForAction),
                 onTap: hasSession
-                    ? () => Navigator.of(context).pop('online')
+                    ? () => context.pop('online')
                     : null,
               ),
               ListTile(
@@ -205,7 +268,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     : Text(
                         AppLocalizations.of(context)!.loginRequiredForAction),
                 onTap:
-                    hasSession ? () => Navigator.of(context).pop('both') : null,
+                    hasSession ? () => context.pop('both') : null,
               ),
               const SizedBox(height: 8),
             ],
@@ -518,79 +581,17 @@ class _DetailScreenState extends State<DetailScreen> {
                     );
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
-                    if (state.needsLogin) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(AppLocalizations.of(context)!
-                              .loginRequiredForAction),
-                          behavior: SnackBarBehavior.floating,
-                          action: SnackBarAction(
-                            label: AppLocalizations.of(context)!.login,
-                            onPressed: () {
-                              context.push('/crotpedia-login');
-                            },
-                          ),
-                        ),
-                      );
-                    } else {
-                      final message = ErrorMessageUtils.getFriendlyErrorMessage(
-                          state.error, AppLocalizations.of(context));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(message),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
+                    _showDetailActionFailure(state);
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailNeedsLogin) {
-                    // Legacy support or fallback
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            AppLocalizations.of(context)!.loginRequiredAction),
-                        action: SnackBarAction(
-                          label: AppLocalizations.of(context)!.login,
-                          onPressed: () {
-                            context.push('/crotpedia-login');
-                          },
-                        ),
-                      ),
+                    _showLoginRequiredSnackBar(
+                      AppLocalizations.of(context)!.loginRequiredAction,
                     );
-                  }
-
-                  if (state is DetailLoaded &&
-                      state.content.sourceId == SourceType.crotpedia.id &&
-                      state.isFavorited &&
-                      !state.isTogglingFavorite) {
-                    // This is where we might check if user was prompted to login
-                    // and came back? Not strictly needed if Cubit handles it.
                   }
                 },
                 child: BlocBuilder<DetailCubit, DetailState>(
-                  builder: (context, state) {
-                    if (state is DetailLoading) {
-                      return _buildLoadingState(context);
-                    } else if (state is DetailLoaded) {
-                      return Stack(
-                        children: [
-                          _buildDetailContent(state, isOfflineMode),
-                          if (state is DetailOpeningChapter)
-                            Container(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            ),
-                        ],
-                      );
-                    } else if (state is DetailError) {
-                      return _buildErrorState(state);
-                    }
-
-                    return const SizedBox.shrink();
-                  },
+                  builder: (context, state) =>
+                      _buildDetailStateBody(state, isOfflineMode),
                 ),
               );
             },
@@ -600,325 +601,56 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildLoadingState(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          AppLocalizations.of(context)!.loadingContentTitle,
-          style: TextStyleConst.headingMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      body: const DetailScreenShimmer(),
+  Widget _buildLoadingState() {
+    return DetailLoadingView(
+      title: AppLocalizations.of(context)!.loadingContentTitle,
+      onBack: context.pop,
     );
   }
 
   Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
     final content = state.content;
     final shouldBlurPrimaryCover = _shouldBlurCover(content);
-
-    return Column(children: [
-      // Offline banner
-      if (isOfflineMode)
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          child: Row(
-            children: [
-              Icon(
-                Icons.wifi_off,
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context)!.youAreOffline,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _showGoOnlineDialog(context),
-                child: Text(
-                  AppLocalizations.of(context)!.goOnline,
-                  style: TextStyleConst.labelMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                ),
-              ),
-            ],
+    return DetailContentView(
+      scrollController: _scrollController,
+      isOfflineMode: isOfflineMode,
+      headerImageUrl: _resolveDetailHeaderImageUrl(content),
+      contentId: content.id,
+      sourceId: content.sourceId,
+      pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
+      imageHeaders: getIt<ContentSourceRegistry>()
+          .getSource(content.sourceId)
+          ?.getImageDownloadHeaders(
+            imageUrl: _resolveDetailHeaderImageUrl(content),
           ),
+      blurOverlay: shouldBlurPrimaryCover
+          ? _buildBlacklistedCoverOverlay(compact: false)
+          : null,
+      onBack: context.pop,
+      onGoOnline: () => _showGoOnlineDialog(context),
+      appBarActions: _buildDetailAppBarActions(content, isOfflineMode),
+      sections: [
+        _buildTitleSection(content),
+        const SizedBox(height: 12),
+        _buildBlacklistMatchBanner(content),
+        const SizedBox(height: 24),
+        _buildMetadataSection(content),
+        const SizedBox(height: 24),
+        _buildTagsSection(content),
+        const SizedBox(height: 24),
+        _buildActionButtons(content),
+        const SizedBox(height: 24),
+        if (state.relatedContent != null && state.relatedContent!.isNotEmpty) ...[
+          _buildRelatedContentSection(state),
+          const SizedBox(height: 20),
+        ],
+        _buildCommentsGate(
+          content,
+          preloadedComments: state.comments ?? const [],
         ),
-      // Main content
-      Expanded(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // App bar with cover image
-            SliverAppBar(
-              expandedHeight: 300,
-              pinned: true,
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back,
-                    color: Theme.of(context).colorScheme.onSurface),
-                onPressed: () => context.pop(),
-              ),
-              actions: [
-                // Offline indicator badge
-                if (isOfflineMode)
-                  Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.wifi_off,
-                        color: Theme.of(context).colorScheme.error,
-                        size: 20,
-                      ),
-                      onPressed: () => _showGoOnlineDialog(context),
-                      tooltip: AppLocalizations.of(context)!
-                          .youAreOfflineTapToGoOnline,
-                    ),
-                  ),
-                // Favorite button with feature flag check
-                BlocBuilder<DetailCubit, DetailState>(
-                  builder: (context, detailState) {
-                    if (detailState is! DetailLoaded) {
-                      return const SizedBox.shrink();
-                    }
-
-                    final remoteConfig = getIt<RemoteConfigService>();
-                    final favoriteEnabled = remoteConfig.isFeatureEnabled(
-                      detailState.content.sourceId,
-                      (f) => f.favorite,
-                    );
-
-                    return GestureDetector(
-                      onLongPress: !favoriteEnabled
-                          ? null
-                          : () => _onFavoriteLongPressed(detailState),
-                      child: IconButton(
-                        icon: Icon(
-                          detailState.isFavorited
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: detailState.isFavorited
-                              ? Theme.of(context).colorScheme.error
-                              : (favoriteEnabled
-                                  ? Theme.of(context).colorScheme.onSurface
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.3)),
-                        ),
-                        onPressed: !favoriteEnabled
-                            ? null
-                            : () => _onFavoritePressed(detailState),
-                      ),
-                    );
-                  },
-                ),
-                // Share button
-                IconButton(
-                  icon: Icon(Icons.share,
-                      color: Theme.of(context).colorScheme.onSurface),
-                  onPressed: () => _shareContent(content),
-                ),
-                // More options
-                BlocBuilder<DetailCubit, DetailState>(
-                  builder: (context, detailState) {
-                    if (detailState is! DetailLoaded) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return PopupMenuButton<String>(
-                      icon: Icon(Icons.more_vert,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      onSelected: (value) => _handleMenuAction(value, content),
-                      itemBuilder: (context) {
-                        final items = <PopupMenuEntry<String>>[];
-
-                        if (detailState.isFavorited) {
-                          items.add(
-                            PopupMenuItem(
-                              value: 'manage_collections',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.folder_special_outlined,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)!
-                                        .manageCollections,
-                                    style: TextStyleConst.bodyMedium.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        items.add(
-                          PopupMenuItem(
-                            value: 'copy_link',
-                            child: Row(
-                              children: [
-                                Icon(Icons.link,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface),
-                                const SizedBox(width: 12),
-                                Text(
-                                  AppLocalizations.of(context)!.copyLink,
-                                  style: TextStyleConst.bodyMedium.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-
-                        return items;
-                      },
-                    );
-                  },
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Cover image with progressive loading
-                    ProgressiveImageWidget(
-                      networkUrl: _resolveDetailHeaderImageUrl(content),
-                      contentId: content.id,
-                      pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
-                      isThumbnail: false,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 800,
-                      memCacheHeight: 1200,
-                      httpHeaders: getIt<ContentSourceRegistry>()
-                          .getSource(content.sourceId)
-                          ?.getImageDownloadHeaders(
-                            imageUrl: _resolveDetailHeaderImageUrl(content),
-                          ),
-                      placeholder: Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      errorWidget: Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 64,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (shouldBlurPrimaryCover)
-                      _buildBlacklistedCoverOverlay(compact: false),
-                    // Gradient overlay
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.transparent,
-                            Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.5),
-                            Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.8),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content details
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title section
-                    _buildTitleSection(content),
-                    const SizedBox(height: 12),
-                    _buildBlacklistMatchBanner(content),
-                    const SizedBox(height: 24),
-
-                    // Metadata section
-                    _buildMetadataSection(content),
-                    const SizedBox(height: 24),
-
-                    // Tags section
-                    _buildTagsSection(content),
-                    const SizedBox(height: 24),
-
-                    // Action buttons
-                    _buildActionButtons(content),
-                    const SizedBox(height: 24),
-
-                    // Related content section
-                    if (state.relatedContent != null &&
-                        state.relatedContent!.isNotEmpty) ...[
-                      _buildRelatedContentSection(state),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Comments section — gated by feature flag + maintenance check
-                    _buildCommentsGate(
-                      content,
-                      preloadedComments: state.comments ?? const [],
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ]);
+        const SizedBox(height: 32),
+      ],
+    );
   }
 
   Widget _buildTitleSection(Content content) {
@@ -955,6 +687,122 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       ],
     );
+  }
+
+  List<Widget> _buildDetailAppBarActions(Content content, bool isOfflineMode) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    return [
+      if (isOfflineMode)
+        Container(
+          margin: const EdgeInsets.only(right: 8),
+          child: IconButton(
+            icon: Icon(
+              Icons.wifi_off,
+              color: colorScheme.error,
+              size: 20,
+            ),
+            onPressed: () => _showGoOnlineDialog(context),
+            tooltip: l10n.youAreOfflineTapToGoOnline,
+          ),
+        ),
+      BlocBuilder<DetailCubit, DetailState>(
+        builder: (context, detailState) {
+          if (detailState is! DetailLoaded) {
+            return const SizedBox.shrink();
+          }
+
+          final remoteConfig = getIt<RemoteConfigService>();
+          final favoriteEnabled = remoteConfig.isFeatureEnabled(
+            detailState.content.sourceId,
+            (f) => f.favorite,
+          );
+
+          return GestureDetector(
+            onLongPress:
+                favoriteEnabled ? () => _onFavoriteLongPressed(detailState) : null,
+            child: IconButton(
+              icon: Icon(
+                detailState.isFavorited
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: detailState.isFavorited
+                    ? colorScheme.error
+                    : (favoriteEnabled
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurface.withValues(alpha: 0.3)),
+              ),
+              onPressed:
+                  favoriteEnabled ? () => _onFavoritePressed(detailState) : null,
+            ),
+          );
+        },
+      ),
+      IconButton(
+        icon: Icon(Icons.share, color: colorScheme.onSurface),
+        onPressed: () => _shareContent(content),
+      ),
+      BlocBuilder<DetailCubit, DetailState>(
+        builder: (context, detailState) {
+          if (detailState is! DetailLoaded) {
+            return const SizedBox.shrink();
+          }
+
+          return PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
+            color: colorScheme.surfaceContainer,
+            onSelected: (value) => _handleMenuAction(value, content),
+            itemBuilder: (context) {
+              final items = <PopupMenuEntry<String>>[];
+
+              if (detailState.isFavorited) {
+                items.add(
+                  PopupMenuItem(
+                    value: 'manage_collections',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.folder_special_outlined,
+                          color: colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n.manageCollections,
+                          style: TextStyleConst.bodyMedium.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              items.add(
+                PopupMenuItem(
+                  value: 'copy_link',
+                  child: Row(
+                    children: [
+                      Icon(Icons.link, color: colorScheme.onSurface),
+                      const SizedBox(width: 12),
+                      Text(
+                        l10n.copyLink,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+
+              return items;
+            },
+          );
+        },
+      ),
+    ];
   }
 
   Widget _buildMetadataSection(Content content) {
@@ -2381,171 +2229,19 @@ class _DetailScreenState extends State<DetailScreen> {
     // Check if it's a login required error
     final isLoginError = state.errorType == 'login_required';
     final l10n = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          isLoginError ? 'Authentication Required' : l10n.error,
-          style: TextStyleConst.headingMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      body: Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Error icon with enhanced styling
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: isLoginError
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.errorContainer,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isLoginError
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.5)
-                          : Theme.of(context)
-                              .colorScheme
-                              .error
-                              .withValues(alpha: 0.5),
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    isLoginError ? Icons.lock_person : Icons.error_outline,
-                    size: 64,
-                    color: isLoginError
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Error title
-                Text(
-                  isLoginError ? 'Login Required' : l10n.failedToLoadContent,
-                  style: TextStyleConst.headingLarge.copyWith(
-                    color: isLoginError
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-
-                // Error message in a container
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    isLoginError
-                        ? AppLocalizations.of(context)!.loginRequiredForContent
-                        : ErrorMessageUtils.getFriendlyErrorMessage(
-                            state.error, l10n),
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Action buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isLoginError) ...[
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/crotpedia-login'),
-                        icon: const Icon(Icons.login),
-                        label: Text(l10n.login),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                    ] else if (state.canRetry) ...[
-                      ElevatedButton.icon(
-                        onPressed: () => _detailCubit.retryLoading(),
-                        icon: const Icon(Icons.refresh),
-                        label: Text(l10n.retry),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                    ],
-                    OutlinedButton.icon(
-                      onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_back),
-                      label: Text(l10n.goBack),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return DetailErrorView(
+      headerTitle: isLoginError ? 'Authentication Required' : l10n.error,
+      errorTitle: isLoginError ? 'Login Required' : l10n.failedToLoadContent,
+      errorMessage: isLoginError
+          ? l10n.loginRequiredForContent
+          : ErrorMessageUtils.getFriendlyErrorMessage(state.error, l10n),
+      backLabel: l10n.goBack,
+      loginLabel: l10n.login,
+      retryLabel: l10n.retry,
+      onBack: context.pop,
+      onLogin: isLoginError ? _goToCrotpediaLogin : null,
+      onRetry: !isLoginError && state.canRetry ? _detailCubit.retryLoading : null,
+      isLoginError: isLoginError,
     );
   }
 
@@ -2972,7 +2668,7 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: Text(AppLocalizations.of(context)!.ok),
           ),
         ],
@@ -3097,7 +2793,7 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.closeDialog,
               style: TextStyleConst.bodyMedium.copyWith(
@@ -3137,7 +2833,7 @@ class _DetailScreenState extends State<DetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.bodyMedium.copyWith(
@@ -3147,7 +2843,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               AppStateManager().setOfflineMode(false);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -3266,13 +2962,13 @@ class _DetailScreenState extends State<DetailScreen> {
                     children: [
                       const Spacer(),
                       TextButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        onPressed: () => sheetContext.pop(),
                         child: Text(AppLocalizations.of(context)!.cancel),
                       ),
                       const SizedBox(width: 8),
                       TextButton.icon(
                         onPressed: () async {
-                          Navigator.of(sheetContext).pop();
+                          sheetContext.pop();
                           final created =
                               await _showCreateCollectionFromDetailDialog();
                           if (!created || !mounted) return;
@@ -3285,7 +2981,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: () async {
-                          Navigator.of(sheetContext).pop();
+                          sheetContext.pop();
                           await favoriteCubit.setFavoriteCollectionIds(
                             favoriteId: favoriteId,
                             sourceId: sourceId,
@@ -3344,21 +3040,21 @@ class _DetailScreenState extends State<DetailScreen> {
                     },
                     onSubmitted: (value) {
                       if (value.trim().isNotEmpty) {
-                        Navigator.of(dialogBuilderContext).pop(true);
+                        dialogBuilderContext.pop(true);
                       }
                     },
                   ),
                   actions: [
                     TextButton(
                       onPressed: () =>
-                          Navigator.of(dialogBuilderContext).pop(false),
+                          dialogBuilderContext.pop(false),
                       child: Text(
                           AppLocalizations.of(dialogBuilderContext)!.cancel),
                     ),
                     FilledButton(
                       onPressed: inputName.trim().isEmpty
                           ? null
-                          : () => Navigator.of(dialogBuilderContext).pop(true),
+                          : () => dialogBuilderContext.pop(true),
                       child:
                           Text(AppLocalizations.of(dialogBuilderContext)!.save),
                     ),
