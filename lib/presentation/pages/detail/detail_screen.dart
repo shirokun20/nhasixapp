@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,11 +26,11 @@ import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
-import '../../widgets/progressive_image_widget.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
 import 'widgets/comments_section_widget.dart';
 import 'widgets/detail_content_view.dart';
+import 'widgets/detail_info_sections.dart';
 import 'widgets/detail_state_views.dart';
 import 'services/detail_tag_query_resolver.dart';
 import 'services/reader_launch_payload_builder.dart';
@@ -624,13 +622,13 @@ class _DetailScreenState extends State<DetailScreen> {
             imageUrl: _resolveDetailHeaderImageUrl(content),
           ),
       blurOverlay: shouldBlurPrimaryCover
-          ? _buildBlacklistedCoverOverlay(compact: false)
+          ? const DetailBlacklistedCoverOverlay(compact: false)
           : null,
       onBack: context.pop,
       onGoOnline: () => _showGoOnlineDialog(context),
       appBarActions: _buildDetailAppBarActions(content, isOfflineMode),
       sections: [
-        _buildTitleSection(content),
+        DetailTitleSection(content: content),
         const SizedBox(height: 12),
         _buildBlacklistMatchBanner(content),
         const SizedBox(height: 24),
@@ -649,42 +647,6 @@ class _DetailScreenState extends State<DetailScreen> {
           preloadedComments: state.comments ?? const [],
         ),
         const SizedBox(height: 32),
-      ],
-    );
-  }
-
-  Widget _buildTitleSection(Content content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          content.title,
-          style: TextStyleConst.headingLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            height: 1.3,
-          ),
-        ),
-        if (content.englishTitle != null &&
-            content.englishTitle != content.title) ...[
-          const SizedBox(height: 8),
-          Text(
-            content.englishTitle!,
-            style: TextStyleConst.bodyLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-        if (content.japaneseTitle != null &&
-            content.japaneseTitle != content.title) ...[
-          const SizedBox(height: 4),
-          Text(
-            content.japaneseTitle!,
-            style: TextStyleConst.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -806,75 +768,75 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildMetadataSection(Content content) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    final l10n = AppLocalizations.of(context)!;
+    final items = <DetailMetadataItem>[
+      DetailMetadataItem(
+        label: l10n.source,
+        value: content.source,
+        icon: Icons.dns_rounded,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.contentInformation,
-                style: TextStyleConst.headingMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+      DetailMetadataItem(
+        label: l10n.idLabel,
+        value: content.id,
+        icon: Icons.tag,
+      ),
+      if (content.chapters != null && content.chapters!.isNotEmpty)
+        DetailMetadataItem(
+          label: l10n.chaptersTitle,
+          value: '${content.chapters!.length}',
+          icon: Icons.menu_book,
+        )
+      else if (content.pageCount > 0)
+        DetailMetadataItem(
+          label: l10n.pagesLabel,
+          value: '${content.pageCount}',
+          icon: Icons.menu_book,
+        ),
+      DetailMetadataItem(
+        label: l10n.languageLabel,
+        value: _resolveDisplayLanguage(content),
+        icon: Icons.language,
+      ),
+      if (content.artists.isNotEmpty)
+        DetailMetadataItem(
+          label: l10n.artistsLabel,
+          value: content.artists.join(', '),
+          icon: Icons.person,
+        ),
+      if (content.characters.isNotEmpty)
+        DetailMetadataItem(
+          label: l10n.charactersLabel,
+          value: content.characters.join(', '),
+          icon: Icons.people,
+        ),
+      if (content.parodies.isNotEmpty)
+        DetailMetadataItem(
+          label: l10n.parodiesLabel,
+          value: content.parodies.join(', '),
+          icon: Icons.movie,
+        ),
+      if (content.groups.isNotEmpty)
+        DetailMetadataItem(
+          label: l10n.groupsLabel,
+          value: content.groups.join(', '),
+          icon: Icons.group,
+        ),
+      if (_formatDate(content.uploadDate) != l10n.unknown)
+        DetailMetadataItem(
+          label: l10n.uploadedLabel,
+          value: _formatDate(content.uploadDate),
+          icon: Icons.schedule,
+        ),
+      DetailMetadataItem(
+        label: l10n.favoritesLabel,
+        value: _formatNumber(content.favorites),
+        icon: Icons.favorite,
+      ),
+    ];
 
-          // Metadata rows with enhanced styling
-          _buildMetadataRow(AppLocalizations.of(context)!.source,
-              content.source, Icons.dns_rounded),
-          _buildMetadataRow(
-              AppLocalizations.of(context)!.idLabel, content.id, Icons.tag),
-          if (content.chapters != null && content.chapters!.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.chaptersTitle,
-                '${content.chapters!.length}', Icons.menu_book)
-          else if (content.pageCount > 0)
-            _buildMetadataRow(AppLocalizations.of(context)!.pagesLabel,
-                '${content.pageCount}', Icons.menu_book),
-          _buildMetadataRow(AppLocalizations.of(context)!.languageLabel,
-              _resolveDisplayLanguage(content), Icons.language),
-          if (content.artists.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.artistsLabel,
-                content.artists.join(', '), Icons.person),
-          if (content.characters.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.charactersLabel,
-                content.characters.join(', '), Icons.people),
-          if (content.parodies.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.parodiesLabel,
-                content.parodies.join(', '), Icons.movie),
-          if (content.groups.isNotEmpty)
-            _buildMetadataRow(AppLocalizations.of(context)!.groupsLabel,
-                content.groups.join(', '), Icons.group),
-          if (_formatDate(content.uploadDate) !=
-              AppLocalizations.of(context)!.unknown)
-            _buildMetadataRow(AppLocalizations.of(context)!.uploadedLabel,
-                _formatDate(content.uploadDate), Icons.schedule),
-          _buildMetadataRow(AppLocalizations.of(context)!.favoritesLabel,
-              _formatNumber(content.favorites), Icons.favorite),
-        ],
-      ),
+    return DetailMetadataSection(
+      title: l10n.contentInformation,
+      items: items,
     );
   }
 
@@ -893,37 +855,8 @@ class _DetailScreenState extends State<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.colorScheme.error.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.visibility_off_rounded,
-            color: theme.colorScheme.onErrorContainer,
-            size: 18,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context)!.blacklistMatchWarning,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onErrorContainer,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return DetailBlacklistBanner(
+      message: AppLocalizations.of(context)!.blacklistMatchWarning,
     );
   }
 
@@ -937,101 +870,6 @@ class _DetailScreenState extends State<DetailScreen> {
     return _tagBlacklistService.isContentBlacklisted(
       content,
       localEntries: settingsState.preferences.blacklistedTags,
-    );
-  }
-
-  Widget _buildBlacklistedCoverOverlay({required bool compact}) {
-    final theme = Theme.of(context);
-
-    return Positioned.fill(
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.62),
-            alignment: Alignment.center,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 10 : 12,
-                vertical: compact ? 6 : 8,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: theme.colorScheme.error.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.visibility_off_rounded,
-                    size: compact ? 14 : 16,
-                    color: theme.colorScheme.error,
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      'BLACKLISTED',
-                      style: TextStyleConst.labelSmall.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMetadataRow(String label, String value, [IconData? icon]) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null) ...[
-            Icon(
-              icon,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 18,
-            ),
-            const SizedBox(width: 12),
-          ],
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: TextStyleConst.labelMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyleConst.bodyLarge.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1068,66 +906,17 @@ class _DetailScreenState extends State<DetailScreen> {
       addTag(Tag(id: 0, name: g, type: 'group', count: 0));
     }
 
-    if (allTags.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.tagsLabel,
-          style: TextStyleConst.headingSmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: allTags.map((tag) {
-            return GestureDetector(
-              onTap: () => _searchByTag(
-                tag.name,
-                tagId: tag.slug ?? tag.id.toString(),
-                tagType: tag.type,
-                sourceId: content.sourceId,
-              ),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getTagColor(context, tag.type).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color:
-                        _getTagColor(context, tag.type).withValues(alpha: 0.8),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tag.name,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: _getTagColor(context, tag.type),
-                      ),
-                    ),
-                    if (tag.count > 0) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatNumber(tag.count),
-                        style: TextStyleConst.overline.copyWith(
-                          color: _getTagColor(context, tag.type)
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    return DetailTagSection(
+      title: AppLocalizations.of(context)!.tagsLabel,
+      tags: allTags,
+      resolveColor: (type) => _getTagColor(context, type),
+      formatCount: _formatNumber,
+      onTagTap: (tag) => _searchByTag(
+        tag.name,
+        tagId: tag.slug ?? tag.id.toString(),
+        tagType: tag.type,
+        sourceId: content.sourceId,
+      ),
     );
   }
 
@@ -1147,7 +936,30 @@ class _DetailScreenState extends State<DetailScreen> {
     // no-chapters message (without Read Now button).
     if (hasChaptersFeature) {
       if (hasChapters) {
-        return _buildChapterList(content);
+        final currentState = _detailCubit.state;
+        final chapterHistory = currentState is DetailLoaded
+            ? (currentState.chapterHistory ?? {})
+            : <String, History>{};
+        return DetailChapterSection(
+          content: content,
+          chapterHistory: chapterHistory,
+          canDownload: getIt<RemoteConfigService>()
+              .isFeatureEnabled(content.sourceId, (f) => f.download),
+          formatDate: _formatDate,
+          formatLanguageLabel: _formatChapterLanguageLabel,
+          onChapterTap: _detailCubit.openChapter,
+          onViewAll: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => ChapterListBottomSheet(
+                content: content,
+                detailCubit: _detailCubit,
+              ),
+            );
+          },
+        );
       }
       return _buildNoChaptersNotice();
     }
@@ -1245,751 +1057,6 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildChapterList(Content content) {
-    final chapters = content.chapters!;
-    final l10n = AppLocalizations.of(context)!;
-    final groupedChapters = _groupChaptersByLanguage(chapters);
-    final previewEntries = _buildChapterPreviewEntries(groupedChapters);
-    // Get chapter history from current state
-    final currentState = _detailCubit.state;
-    final chapterHistory = currentState is DetailLoaded
-        ? (currentState.chapterHistory ?? {})
-        : <String, History>{};
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context)
-                .colorScheme
-                .primaryContainer
-                .withValues(alpha: 0.15),
-            Theme.of(context).colorScheme.surfaceContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Modern header with gradient background
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-                ],
-              ),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(18)),
-            ),
-            child: Row(
-              children: [
-                // Icon with gradient container
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.secondary,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.menu_book,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Title and count
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.chaptersTitle,
-                      style: TextStyleConst.headingMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.chapterCount(chapters.length),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Modern interactive chapter cards
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(12),
-            // Show max 5 chapter rows initially (+ language headers)
-            itemCount: previewEntries.length,
-            itemBuilder: (context, index) {
-              final entry = previewEntries[index];
-              if (entry.isHeader) {
-                return Container(
-                  margin: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .secondaryContainer
-                        .withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .secondary
-                          .withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.translate,
-                        size: 14,
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        entry.languageLabel ??
-                            AppLocalizations.of(context)!.languageLabel,
-                        style: TextStyleConst.labelMedium.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSecondaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final chapter = entry.chapter!;
-              final displayIndex = entry.chapterIndex ?? (index + 1);
-
-              // Create Content object for download widget
-              final chapterContent = Content(
-                id: chapter.id,
-                title: '${content.title} - ${chapter.title}',
-                coverUrl: content.coverUrl,
-                uploadDate: chapter.uploadDate ?? DateTime.now(),
-                language: content.language,
-                pageCount: 0,
-                imageUrls: const [],
-                sourceId: content.sourceId,
-                relatedContent: const [],
-                tags: content.tags,
-                artists: content.artists,
-                groups: content.groups,
-                characters: content.characters,
-                parodies: content.parodies,
-                favorites: 0,
-              );
-
-              // Check reading status for creative indicators
-              final isRead = chapterHistory.containsKey(chapter.id);
-              final isCompleted =
-                  isRead && chapterHistory[chapter.id]!.isCompleted;
-              final progress = isRead
-                  ? chapterHistory[chapter.id]!.lastPage /
-                      chapterHistory[chapter.id]!.totalPages
-                  : 0.0;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isCompleted
-                        ? Theme.of(context)
-                            .colorScheme
-                            .tertiary
-                            .withValues(alpha: 0.5)
-                        : isRead
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.3)
-                            : Theme.of(context)
-                                .colorScheme
-                                .outline
-                                .withValues(alpha: 0.2),
-                    width: isRead ? 2 : 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isCompleted
-                          ? Theme.of(context)
-                              .colorScheme
-                              .tertiary
-                              .withValues(alpha: 0.15)
-                          : isRead
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.1)
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .shadow
-                                  .withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _detailCubit.openChapter(chapter),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          // Chapter number badge with status-based styling
-                          Stack(
-                            children: [
-                              Container(
-                                width: 52,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isCompleted
-                                        ? [
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .tertiary,
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .tertiaryContainer,
-                                          ]
-                                        : isRead
-                                            ? [
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .secondary,
-                                              ]
-                                            : [
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .secondary,
-                                              ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .tertiary
-                                              .withValues(alpha: 0.4)
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.25),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: isCompleted
-                                      ? Icon(
-                                          Icons.check,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onTertiary,
-                                          size: 28,
-                                        )
-                                      : isRead
-                                          ? Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                Text(
-                                                  '$displayIndex',
-                                                  style: TextStyleConst
-                                                      .headingSmall
-                                                      .copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onPrimary,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 18,
-                                                  ),
-                                                ),
-                                                // Progress ring for in-progress
-                                                SizedBox(
-                                                  width: 40,
-                                                  height: 40,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    value: progress,
-                                                    strokeWidth: 3,
-                                                    backgroundColor: Colors
-                                                        .white
-                                                        .withValues(alpha: 0.3),
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                            Color>(
-                                                      Colors.white.withValues(
-                                                          alpha: 0.9),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : Text(
-                                              '$displayIndex',
-                                              style: TextStyleConst.headingSmall
-                                                  .copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                              ),
-                                            ),
-                                ),
-                              ),
-                              // Status dot indicator
-                              if (isRead)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: isCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .tertiary
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: (isCompleted
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .tertiary
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .primary)
-                                              .withValues(alpha: 0.5),
-                                          blurRadius: 4,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      isCompleted
-                                          ? Icons.done
-                                          : Icons.play_arrow,
-                                      size: 8,
-                                      color: isCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onTertiary
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(width: 16),
-
-                          // Chapter info
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        chapter.title,
-                                        style:
-                                            TextStyleConst.bodyLarge.copyWith(
-                                          fontWeight: isRead
-                                              ? FontWeight.w700
-                                              : FontWeight.w600,
-                                          color: isCompleted
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .tertiary
-                                              : isRead
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                // Subtitle row with reading info or upload date
-                                Row(
-                                  children: [
-                                    if (isRead) ...[
-                                      Icon(
-                                        isCompleted
-                                            ? Icons.check_circle
-                                            : Icons.auto_stories,
-                                        size: 12,
-                                        color: isCompleted
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .tertiary
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          isCompleted
-                                              ? AppLocalizations.of(context)!
-                                                  .chapterCompleted
-                                              : AppLocalizations.of(context)!
-                                                  .continueFromPage(
-                                                      chapterHistory[
-                                                              chapter.id]!
-                                                          .lastPage),
-                                          style:
-                                              TextStyleConst.bodySmall.copyWith(
-                                            color: isCompleted
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .tertiary
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ] else if (chapter.uploadDate != null) ...[
-                                      Icon(
-                                        Icons.schedule,
-                                        size: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          _formatDate(chapter.uploadDate!),
-                                          style:
-                                              TextStyleConst.bodySmall.copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Action buttons
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Download button (if feature enabled)
-                              if (getIt<RemoteConfigService>().isFeatureEnabled(
-                                  content.sourceId, (f) => f.download)) ...[
-                                SizedBox(
-                                  width: 44,
-                                  height: 44,
-                                  child: DownloadButtonWidget(
-                                    content: chapterContent,
-                                    size: DownloadButtonSize.small,
-                                    showText: false,
-                                    showProgress: true,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-
-                              // Read button with status-based styling
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isCompleted
-                                        ? [
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .tertiary,
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .tertiary
-                                                .withValues(alpha: 0.8),
-                                          ]
-                                        : [
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withValues(alpha: 0.8),
-                                          ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .tertiary
-                                              .withValues(alpha: 0.3)
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.3),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Status icon based on reading progress
-                                    if (isCompleted)
-                                      Icon(
-                                        Icons.emoji_events,
-                                        size: 16,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onTertiary,
-                                      )
-                                    else if (isRead)
-                                      SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          value: progress,
-                                          strokeWidth: 2,
-                                          backgroundColor: Colors.white
-                                              .withValues(alpha: 0.3),
-                                          valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                  Color>(
-                                            Colors.white,
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Icon(
-                                        Icons.menu_book,
-                                        size: 16,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                      ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      isCompleted
-                                          ? AppLocalizations.of(context)!
-                                              .readAgain
-                                          : isRead
-                                              ? AppLocalizations.of(context)!
-                                                  .continueReading
-                                              : l10n.readChapter,
-                                      style:
-                                          TextStyleConst.labelMedium.copyWith(
-                                        color: isCompleted
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .onTertiary
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward,
-                                      size: 16,
-                                      color: isCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onTertiary
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-
-          if (chapters.length > 5)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => ChapterListBottomSheet(
-                        content: content,
-                        detailCubit: _detailCubit,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.list),
-                  label: Text(l10n.viewAllChapters),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
-    final grouped = <String, List<Chapter>>{};
-    for (final chapter in chapters) {
-      final key = (chapter.language ?? '').trim().toLowerCase();
-      final normalized = key.isEmpty ? 'unknown' : key;
-      grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
-    }
-
-    final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) {
-        if (a == 'unknown') return 1;
-        if (b == 'unknown') return -1;
-        return a.compareTo(b);
-      });
-
-    return {for (final key in sortedKeys) key: grouped[key]!};
-  }
-
-  List<_ChapterListEntry> _buildChapterPreviewEntries(
-    Map<String, List<Chapter>> grouped,
-  ) {
-    final entries = <_ChapterListEntry>[];
-    var displayIndex = 1;
-    var chapterCount = 0;
-
-    for (final language in grouped.keys) {
-      final chapters = grouped[language]!;
-      final label = _formatChapterLanguageLabel(language);
-      entries.add(_ChapterListEntry.header(label));
-
-      for (final chapter in chapters) {
-        if (chapterCount >= 5) {
-          return entries;
-        }
-        entries.add(_ChapterListEntry.chapter(chapter, displayIndex));
-        displayIndex += 1;
-        chapterCount += 1;
-      }
-    }
-
-    return entries;
-  }
-
   String _formatChapterLanguageLabel(String languageCode) {
     final normalized = languageCode.trim().toLowerCase();
     if (normalized.isEmpty || normalized == 'unknown') {
@@ -2014,28 +1081,14 @@ class _DetailScreenState extends State<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.moreLikeThis,
-          style: TextStyleConst.headingSmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 280,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: relatedContent.length,
-            itemBuilder: (context, index) {
-              final relatedItem = relatedContent[index];
-              return _buildRelatedContentCard(relatedItem);
-            },
-          ),
-        ),
-      ],
+    return DetailRelatedSection(
+      title: AppLocalizations.of(context)!.moreLikeThis,
+      items: relatedContent,
+      onTap: _navigateToRelatedContent,
+      shouldBlurCover: _shouldBlurCover,
+      resolveHeaders: (relatedContent) => getIt<ContentSourceRegistry>()
+          .getSource(relatedContent.sourceId)
+          ?.getImageDownloadHeaders(imageUrl: relatedContent.coverUrl),
     );
   }
 
@@ -2130,98 +1183,6 @@ class _DetailScreenState extends State<DetailScreen> {
       contentId: content.id,
       sourceId: sourceId,
       preloadedComments: preloadedComments,
-    );
-  }
-
-  Widget _buildRelatedContentCard(Content relatedContent) {
-    final shouldBlurRelatedCover = _shouldBlurCover(relatedContent);
-
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () => _navigateToRelatedContent(relatedContent),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover image
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Theme.of(context).colorScheme.surfaceContainer,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ProgressiveImageWidget(
-                      networkUrl: relatedContent.coverUrl,
-                      contentId: relatedContent.id,
-                      isThumbnail: true,
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 320,
-                      memCacheHeight: 400,
-                      httpHeaders: getIt<ContentSourceRegistry>()
-                          .getSource(relatedContent.sourceId)
-                          ?.getImageDownloadHeaders(
-                              imageUrl: relatedContent.coverUrl),
-                      placeholder: Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.primary,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      ),
-                      errorWidget: Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 32,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (shouldBlurRelatedCover)
-                      _buildBlacklistedCoverOverlay(compact: true),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Title
-            Text(
-              relatedContent.title,
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-
-            // Metadata
-            if (relatedContent.artists.isNotEmpty)
-              Text(
-                relatedContent.artists.first,
-                style: TextStyleConst.overline.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -3089,28 +2050,4 @@ class _DetailScreenState extends State<DetailScreen> {
       return false;
     }
   }
-}
-
-class _ChapterListEntry {
-  const _ChapterListEntry._({
-    required this.isHeader,
-    this.languageLabel,
-    this.chapter,
-    this.chapterIndex,
-  });
-
-  factory _ChapterListEntry.header(String label) =>
-      _ChapterListEntry._(isHeader: true, languageLabel: label);
-
-  factory _ChapterListEntry.chapter(Chapter chapter, int chapterIndex) =>
-      _ChapterListEntry._(
-        isHeader: false,
-        chapter: chapter,
-        chapterIndex: chapterIndex,
-      );
-
-  final bool isHeader;
-  final String? languageLabel;
-  final Chapter? chapter;
-  final int? chapterIndex;
 }

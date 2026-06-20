@@ -1554,223 +1554,221 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
+  void _showMainSnackBar(
+    Widget content, {
+    Color? backgroundColor,
+    Duration? duration,
+    SnackBarAction? action,
+  }) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: backgroundColor,
+        duration: duration ?? const Duration(seconds: 3),
+        action: action,
+      ),
+    );
+  }
+
+  Future<List<Content>> _getBulkDownloadCandidates(
+    List<Content> contents,
+  ) async {
+    final candidates = <Content>[];
+
+    for (final content in contents) {
+      try {
+        final isDownloaded = await ContentDownloadCache.isDownloaded(
+          content.id,
+          sourceId: content.sourceId,
+          context: mounted ? context : null,
+        );
+        if (!isDownloaded) {
+          candidates.add(content);
+        }
+      } catch (e) {
+        Logger().e('Error checking download status for ${content.id}: $e');
+        candidates.add(content);
+      }
+    }
+
+    return candidates;
+  }
+
+  Future<bool> _confirmBulkDownload({
+    required int totalCount,
+    required int downloadCount,
+    required int alreadyDownloadedCount,
+  }) async {
+    if (!mounted) return false;
+
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.downloadNewGalleries),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.foundGalleries),
+            const SizedBox(height: 8),
+            Text(l10n.newGalleriesToDownload(downloadCount)),
+            Text(l10n.alreadyDownloaded(alreadyDownloadedCount)),
+            const SizedBox(height: 12),
+            if (downloadCount > 0)
+              Text(
+                l10n.downloadInfo(totalCount),
+                style: const TextStyle(fontWeight: FontWeight.normal),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => ctx.pop(true),
+            child: Text(l10n.downloadNew(downloadCount)),
+          ),
+        ],
+      ),
+    );
+
+    return confirm == true;
+  }
+
+  int _queueBulkDownloads(List<Content> contents) {
+    final downloadBloc = context.read<DownloadBloc>();
+    var queuedCount = 0;
+
+    for (final content in contents) {
+      try {
+        downloadBloc.add(DownloadQueueEvent(content: content));
+        queuedCount++;
+      } catch (e) {
+        Logger().e('Failed to queue download for ${content.id}: $e');
+      }
+    }
+
+    return queuedCount;
+  }
+
   /// Download all galleries in current page
   Future<void> _downloadAllGalleries() async {
     try {
+      final l10n = AppLocalizations.of(context)!;
       final contentState = _contentBloc.state;
       if (contentState is! ContentLoaded) {
         Logger().w('Cannot download all: no content loaded');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.noContentToDownload),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+        _showMainSnackBar(
+          Text(l10n.noContentToDownload),
+          backgroundColor: Colors.orange,
+        );
         return;
       }
 
       if (contentState.contents.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.noGalleriesFound),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+        _showMainSnackBar(
+          Text(l10n.noGalleriesFound),
+          backgroundColor: Colors.orange,
+        );
         return;
       }
 
-      // Show loading while checking download status
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(AppLocalizations.of(context)!.checkingDownloadStatus),
-              ],
+      _showMainSnackBar(
+        Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
             ),
-            duration: const Duration(
-                seconds: 10), // Longer duration for checking process
-          ),
-        );
-      }
+            const SizedBox(width: 12),
+            Text(l10n.checkingDownloadStatus),
+          ],
+        ),
+        duration: const Duration(seconds: 10),
+      );
 
-      // Filter out already downloaded galleries
-      final galleriesNeedDownload = <Content>[];
-      int alreadyDownloadedCount = 0;
+      final galleriesNeedDownload =
+          await _getBulkDownloadCandidates(contentState.contents);
+      final alreadyDownloadedCount =
+          contentState.contents.length - galleriesNeedDownload.length;
 
-      for (final content in contentState.contents) {
-        try {
-          final isDownloaded = await ContentDownloadCache.isDownloaded(
-            content.id,
-            sourceId: content.sourceId,
-            context: mounted ? context : null,
-          );
-          if (isDownloaded) {
-            alreadyDownloadedCount++;
-          } else {
-            galleriesNeedDownload.add(content);
-          }
-        } catch (e) {
-          Logger().e('Error checking download status for ${content.id}: $e');
-          // If we can't check status, assume it needs download to be safe
-          galleriesNeedDownload.add(content);
-        }
-      }
-
-      // Hide the loading snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
       }
 
-      // Check if there are any galleries to download
       if (galleriesNeedDownload.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                        AppLocalizations.of(context)!.allGalleriesDownloaded),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.blue,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+        _showMainSnackBar(
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.allGalleriesDownloaded)),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+        );
         return;
       }
 
-      // Show confirmation dialog with accurate count
-      if (mounted) {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.downloadNewGalleries),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(AppLocalizations.of(context)!.foundGalleries),
-                const SizedBox(height: 8),
-                Text(AppLocalizations.of(context)!
-                    .newGalleriesToDownload(galleriesNeedDownload.length)),
-                Text(AppLocalizations.of(context)!
-                    .alreadyDownloaded(alreadyDownloadedCount)),
-                const SizedBox(height: 12),
-                if (galleriesNeedDownload.isNotEmpty)
-                  Text(
-                    AppLocalizations.of(context)!
-                        .downloadInfo(galleriesNeedDownload.length),
-                    style: const TextStyle(fontWeight: FontWeight.normal),
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => ctx.pop(false),
-                child: Text(AppLocalizations.of(context)!.cancel),
+      final confirmed = await _confirmBulkDownload(
+        totalCount: galleriesNeedDownload.length,
+        downloadCount: galleriesNeedDownload.length,
+        alreadyDownloadedCount: alreadyDownloadedCount,
+      );
+      if (!confirmed || !mounted) return;
+
+      final queuedCount = _queueBulkDownloads(galleriesNeedDownload);
+
+      _showMainSnackBar(
+        Row(
+          children: [
+            const Icon(Icons.download, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.queuedDownloads(queuedCount)),
+                  if (alreadyDownloadedCount > 0)
+                    Text(
+                      l10n.countAlreadyDownloaded(alreadyDownloadedCount),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.white70),
+                    ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () => ctx.pop(true),
-                child: Text(AppLocalizations.of(context)!
-                    .downloadNew(galleriesNeedDownload.length)),
-              ),
-            ],
-          ),
-        );
-
-        if (confirm != true) return;
-      }
-
-      if (!mounted) return;
-
-      // Get download bloc and queue only new downloads
-      final downloadBloc = context.read<DownloadBloc>();
-      int queuedCount = 0;
-
-      for (final content in galleriesNeedDownload) {
-        try {
-          downloadBloc.add(DownloadQueueEvent(content: content));
-          queuedCount++;
-        } catch (e) {
-          Logger().e('Failed to queue download for ${content.id}: $e');
-        }
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.download, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(AppLocalizations.of(context)!
-                          .queuedDownloads(queuedCount)),
-                      if (alreadyDownloadedCount > 0)
-                        Text(
-                          AppLocalizations.of(context)!
-                              .countAlreadyDownloaded(alreadyDownloadedCount),
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.white70),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
             ),
-            backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)?.viewDownloads ??
-                  AppLocalizations.of(context)!.viewDownloads,
-              textColor: Colors.white,
-              onPressed: () {
-                AppRouter.goToDownloads(context);
-              },
-            ),
-          ),
-        );
-      }
+          ],
+        ),
+        backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: l10n.viewDownloads,
+          textColor: Colors.white,
+          onPressed: () => AppRouter.goToDownloads(context),
+        ),
+      );
     } catch (e) {
       Logger().e('Error in bulk download: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(AppLocalizations.of(context)!.failedToDownload),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+      _showMainSnackBar(
+        Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(AppLocalizations.of(context)!.failedToDownload),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      );
     }
   }
 }
