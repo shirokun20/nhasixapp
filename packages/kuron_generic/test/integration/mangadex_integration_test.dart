@@ -786,6 +786,32 @@ void main() {
       expect(result.content.chapters![1].language, 'id');
     });
 
+    test('detail chapters stop at first page when autoPaginate is false',
+        () async {
+      final firstPageOnlyConfig = _cloneConfig();
+      final chaptersCfg = (((firstPageOnlyConfig['api'] as Map)['detail']
+          as Map)['chapters'] as Map);
+      chaptersCfg['autoPaginate'] = false;
+
+      dioAdapter.onGet(
+        '$_baseUrl/manga/$_mangaId?includes[]=cover_art&includes[]=author&includes[]=artist',
+        (server) => server.reply(200, _detailResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/statistics/manga/$_mangaId',
+        (server) => server.reply(200, _statsResponse),
+      );
+      dioAdapter.onGet(
+        '$_baseUrl/chapter?manga=$_mangaId&limit=100&order[chapter]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic&translatedLanguage[]=id&translatedLanguage[]=en&translatedLanguage[]=ja&translatedLanguage[]=zh',
+        (server) => server.reply(200, _chaptersPage1Response),
+      );
+
+      final result = await adapter.fetchDetail(_mangaId, firstPageOnlyConfig);
+
+      expect(result.content.chapters, hasLength(1));
+      expect(result.content.chapters!.single.id, 'page-1-chapter-id');
+    });
+
     test('detail returns empty chapter list when API has no chapters',
         () async {
       dioAdapter.onGet(

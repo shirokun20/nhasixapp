@@ -19,6 +19,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
+import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -39,6 +40,7 @@ class ReaderScreen extends StatefulWidget {
     this.parentContent, // Parent series for chapter mode
     this.allChapters, // All chapters for navigation
     this.currentChapter, // Current chapter being read
+    this.activeChapterLanguage,
   });
 
   final String contentId;
@@ -50,6 +52,7 @@ class ReaderScreen extends StatefulWidget {
   final Content? parentContent; // Parent series
   final List<Chapter>? allChapters; // All chapters
   final Chapter? currentChapter; // Current chapter
+  final String? activeChapterLanguage;
 
   @visibleForTesting
   static bool shouldSkipHeavyImageAutoSwitchForSource(String? sourceId) {
@@ -128,6 +131,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Content? _preloadedParentContent; // Parent series for chapters
   List<Chapter>? _preloadedAllChapters; // All chapters for navigation
   Chapter? _preloadedCurrentChapter; // Current chapter
+  String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
 
   @override
@@ -256,6 +260,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (parsedCurrentChapter != null && widget.currentChapter == null) {
         _preloadedCurrentChapter = parsedCurrentChapter;
         Logger().i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
+      }
+
+      final parsedActiveChapterLanguage = readReaderActiveChapterLanguage(
+        routeExtra['activeChapterLanguage'],
+      );
+      if (parsedActiveChapterLanguage != null &&
+          widget.activeChapterLanguage == null) {
+        _preloadedActiveChapterLanguage = parsedActiveChapterLanguage;
       }
     } else if (widget.preloadedContent == null) {
       // Fallback for direct Content object (backward compatibility)
@@ -949,7 +961,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _preloadedAllChapters ?? widget.allChapters;
         final effectiveCurrentChapter =
             _preloadedCurrentChapter ?? widget.currentChapter;
-
         // Always call loadContent with preloaded content if available
         return _readerCubit
           ..loadContent(
@@ -2582,7 +2593,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final allChapters = _readerCubit.allChapters!;
     final activeLanguage = _normalizeLanguageForFilter(
-      state.currentChapter?.language,
+      state.currentChapter?.language ??
+          _preloadedActiveChapterLanguage ??
+          widget.activeChapterLanguage,
     );
 
     final chapters = activeLanguage == null
@@ -2898,11 +2911,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   String? _normalizeLanguageForFilter(String? value) {
-    final raw = value?.trim().toLowerCase();
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
-    return raw.split('-').first;
+    if (value == null || value.trim().isEmpty) return null;
+    return ChapterLanguagePresenter.normalize(value);
   }
 
   String _formatChapterDate(DateTime date) {

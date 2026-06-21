@@ -43,6 +43,7 @@ void main() {
         chapterData: chapterData,
         allChapters: allChapters,
         currentChapter: allChapters.first,
+        activeChapterLanguage: 'en-US',
       );
 
       final parsedExtra = asReaderRouteExtra(extra);
@@ -55,11 +56,14 @@ void main() {
       final parsedAllChapters = readReaderChapters(parsedExtra['allChapters']);
       final parsedCurrentChapter =
           readReaderChapter(parsedExtra['currentChapter']);
+      final parsedActiveLanguage =
+          readReaderActiveChapterLanguage(parsedExtra['activeChapterLanguage']);
 
       expect(parsedImageMetadata, imageMetadata);
       expect(parsedChapterData, chapterData);
       expect(parsedAllChapters, allChapters);
       expect(parsedCurrentChapter, allChapters.first);
+      expect(parsedActiveLanguage, 'en-US');
     });
 
     test('parses mixed dynamic image metadata lists safely', () {

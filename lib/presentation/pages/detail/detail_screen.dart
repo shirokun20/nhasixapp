@@ -23,6 +23,7 @@ import 'package:nhasixapp/core/utils/tag_color_palette.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
 import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
+import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
@@ -253,9 +254,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     ? null
                     : Text(
                         AppLocalizations.of(context)!.loginRequiredForAction),
-                onTap: hasSession
-                    ? () => context.pop('online')
-                    : null,
+                onTap: hasSession ? () => context.pop('online') : null,
               ),
               ListTile(
                 leading: const Icon(Icons.cloud_done),
@@ -265,8 +264,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     ? null
                     : Text(
                         AppLocalizations.of(context)!.loginRequiredForAction),
-                onTap:
-                    hasSession ? () => context.pop('both') : null,
+                onTap: hasSession ? () => context.pop('both') : null,
               ),
               const SizedBox(height: 8),
             ],
@@ -638,7 +636,8 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 24),
         _buildActionButtons(content),
         const SizedBox(height: 24),
-        if (state.relatedContent != null && state.relatedContent!.isNotEmpty) ...[
+        if (state.relatedContent != null &&
+            state.relatedContent!.isNotEmpty) ...[
           _buildRelatedContentSection(state),
           const SizedBox(height: 20),
         ],
@@ -682,8 +681,9 @@ class _DetailScreenState extends State<DetailScreen> {
           );
 
           return GestureDetector(
-            onLongPress:
-                favoriteEnabled ? () => _onFavoriteLongPressed(detailState) : null,
+            onLongPress: favoriteEnabled
+                ? () => _onFavoriteLongPressed(detailState)
+                : null,
             child: IconButton(
               icon: Icon(
                 detailState.isFavorited
@@ -695,8 +695,9 @@ class _DetailScreenState extends State<DetailScreen> {
                         ? colorScheme.onSurface
                         : colorScheme.onSurface.withValues(alpha: 0.3)),
               ),
-              onPressed:
-                  favoriteEnabled ? () => _onFavoritePressed(detailState) : null,
+              onPressed: favoriteEnabled
+                  ? () => _onFavoritePressed(detailState)
+                  : null,
             ),
           );
         },
@@ -948,7 +949,7 @@ class _DetailScreenState extends State<DetailScreen> {
           formatDate: _formatDate,
           formatLanguageLabel: _formatChapterLanguageLabel,
           onChapterTap: _detailCubit.openChapter,
-          onViewAll: () {
+          onViewAll: (selectedLanguageKey) {
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,
@@ -956,6 +957,7 @@ class _DetailScreenState extends State<DetailScreen> {
               builder: (context) => ChapterListBottomSheet(
                 content: content,
                 detailCubit: _detailCubit,
+                initialLanguageKey: selectedLanguageKey,
               ),
             );
           },
@@ -1058,8 +1060,8 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   String _formatChapterLanguageLabel(String languageCode) {
-    final normalized = languageCode.trim().toLowerCase();
-    if (normalized.isEmpty || normalized == 'unknown') {
+    final normalized = ChapterLanguagePresenter.normalize(languageCode);
+    if (normalized == unknownChapterLanguageKey) {
       return AppLocalizations.of(context)!.languageLabel;
     }
     final langService = getIt<LanguageService>();
@@ -1201,7 +1203,8 @@ class _DetailScreenState extends State<DetailScreen> {
       retryLabel: l10n.retry,
       onBack: context.pop,
       onLogin: isLoginError ? _goToCrotpediaLogin : null,
-      onRetry: !isLoginError && state.canRetry ? _detailCubit.retryLoading : null,
+      onRetry:
+          !isLoginError && state.canRetry ? _detailCubit.retryLoading : null,
       isLoginError: isLoginError,
     );
   }
@@ -1331,6 +1334,7 @@ class _DetailScreenState extends State<DetailScreen> {
       parentContent: launchPayload.parentContent,
       allChapters: launchPayload.allChapters,
       currentChapter: launchPayload.currentChapter,
+      activeChapterLanguage: launchPayload.currentChapter?.language,
     );
 
     if (!mounted) {
@@ -2007,8 +2011,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () =>
-                          dialogBuilderContext.pop(false),
+                      onPressed: () => dialogBuilderContext.pop(false),
                       child: Text(
                           AppLocalizations.of(dialogBuilderContext)!.cancel),
                     ),

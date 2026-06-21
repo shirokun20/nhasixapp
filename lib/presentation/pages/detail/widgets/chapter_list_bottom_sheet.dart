@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -7,26 +10,42 @@ import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
-  final Content content;
-  final DetailCubit detailCubit;
-
   const ChapterListBottomSheet({
     super.key,
     required this.content,
     required this.detailCubit,
+    this.initialLanguageKey,
   });
+
+  final Content content;
+  final DetailCubit detailCubit;
+  final String? initialLanguageKey;
 
   @override
   State<ChapterListBottomSheet> createState() => _ChapterListBottomSheetState();
 }
 
 class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
+  late final List<Chapter> _chapters;
+  String? _selectedLanguageKey;
+  bool _isLoadingMore = false;
+  String? _loadMoreError;
+  final Set<String> _fullyLoadedLanguages = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _chapters = [...?widget.content.chapters];
+    _selectedLanguageKey = widget.initialLanguageKey;
+  }
+
   String _formatDate(DateTime date) {
     return DateFormat.yMMMd().format(date);
   }
@@ -34,9 +53,29 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final chapters = widget.content.chapters ?? [];
-    final groupedChapters = _groupChaptersByLanguage(chapters);
-    final entries = _buildGroupedEntries(groupedChapters);
+    final chapters = _chapters;
+    final chapterLanguages = ChapterLanguagePresenter.build(
+      chapters,
+      selectedKey: _selectedLanguageKey,
+      labelForKey: _languageLabel,
+    );
+    _selectedLanguageKey = chapterLanguages.selectedKey;
+    final loadMoreLanguageKey = chapterLanguages.selectedKey ??
+        (chapterLanguages.lanes.length == 1
+            ? chapterLanguages.lanes.first.key
+            : null);
+    final canLoadMore = _canLoadMore(loadMoreLanguageKey);
+    final entries = chapterLanguages.hasMultipleLanes
+        ? _buildGroupedEntries(chapterLanguages.selectedChapters)
+        : _buildGroupedEntries(chapters, labelForKey: _languageLabel);
+    ChapterLanguageLane? selectedLane;
+    for (final lane in chapterLanguages.lanes) {
+      if (lane.key == loadMoreLanguageKey) {
+        selectedLane = lane;
+        break;
+      }
+    }
+    final loadedCount = selectedLane?.chapters.length ?? chapters.length;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -75,18 +114,34 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                     ),
                   ),
 
-                  // Title
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          l10n.chaptersTitle,
-                          style: TextStyleConst.headingMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.chaptersTitle,
+                              style: TextStyleConst.headingMedium.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (selectedLane != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '${selectedLane.label} • $loadedCount loaded',
+                                style: TextStyleConst.bodySmall.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -114,7 +169,39 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                     ),
                   ),
 
-                  const Divider(height: 1),
+                  Divider(
+                    height: 1,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outlineVariant
+                        .withValues(alpha: 0.6),
+                  ),
+
+                  if (chapterLanguages.hasMultipleLanes)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainer
+                          .withValues(alpha: 0.7),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final lane in chapterLanguages.lanes) ...[
+                              _buildLanguageChip(
+                                context,
+                                lane: lane,
+                                selected:
+                                    lane.key == chapterLanguages.selectedKey,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
 
                   // List
                   Expanded(
@@ -202,7 +289,16 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                           favorites: 0,
                         );
 
-                        return Container(
+                        final subtitleParts = [
+                          if ((chapter.scanGroup ?? '').trim().isNotEmpty)
+                            chapter.scanGroup!.trim(),
+                          if (chapter.uploadDate != null)
+                            _formatDate(chapter.uploadDate!),
+                        ];
+                        final hasScanGroup =
+                            (chapter.scanGroup ?? '').trim().isNotEmpty;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
                             color: isRead
@@ -213,12 +309,17 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                 : Theme.of(context)
                                     .colorScheme
                                     .surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outlineVariant
-                                  .withValues(alpha: 0.5),
+                              color: isCompleted
+                                  ? Theme.of(context).colorScheme.tertiary
+                                  : isRead
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant
+                                          .withValues(alpha: 0.5),
+                              width: isRead ? 1.4 : 1,
                             ),
                           ),
                           child: Material(
@@ -237,8 +338,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                     Stack(
                                       children: [
                                         Container(
-                                          width: 44,
-                                          height: 44,
+                                          width: 46,
+                                          height: 46,
                                           decoration: BoxDecoration(
                                             color: isCompleted
                                                 ? Theme.of(context)
@@ -252,7 +353,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                                         .colorScheme
                                                         .primaryContainer,
                                             borderRadius:
-                                                BorderRadius.circular(12),
+                                                BorderRadius.circular(13),
                                           ),
                                           child: Center(
                                             child: isCompleted
@@ -365,7 +466,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          // Chapter title
                                           Text(
                                             chapter.title,
                                             style: TextStyleConst.bodyLarge
@@ -382,16 +482,36 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          if (chapter.uploadDate != null) ...[
+                                          if (subtitleParts.isNotEmpty) ...[
                                             const SizedBox(height: 4),
-                                            Text(
-                                              _formatDate(chapter.uploadDate!),
-                                              style: TextStyleConst.bodySmall
-                                                  .copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  hasScanGroup
+                                                      ? Icons.groups_2_outlined
+                                                      : Icons.schedule,
+                                                  size: 13,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    subtitleParts.join(' • '),
+                                                    style: TextStyleConst
+                                                        .bodySmall
+                                                        .copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ],
@@ -435,6 +555,32 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                       },
                     ),
                   ),
+                  if (canLoadMore)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.tonalIcon(
+                          onPressed: _isLoadingMore
+                              ? null
+                              : () => _loadMoreMangaDexChapters(
+                                    loadMoreLanguageKey!,
+                                  ),
+                          icon: _isLoadingMore
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.expand_more),
+                          label: Text(_isLoadingMore
+                              ? l10n.loading
+                              : _loadMoreError ??
+                                  'Load 100 more ${selectedLane?.label ?? 'chapters'}'),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
@@ -444,33 +590,174 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     );
   }
 
-  Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
-    final grouped = <String, List<Chapter>>{};
-    for (final chapter in chapters) {
-      final key = (chapter.language ?? '').trim().toLowerCase();
-      final normalized = key.isEmpty ? 'unknown' : key;
-      grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
-    }
+  bool _canLoadMore(String? key) {
+    return widget.content.sourceId == 'mangadex' &&
+        key != null &&
+        !_fullyLoadedLanguages.contains(key);
+  }
 
-    final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) {
-        if (a == 'unknown') return 1;
-        if (b == 'unknown') return -1;
-        return a.compareTo(b);
+  Widget _buildLanguageChip(
+    BuildContext context, {
+    required ChapterLanguageLane lane,
+    required bool selected,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ChoiceChip(
+      selected: selected,
+      avatar: selected ? const Icon(Icons.check, size: 16) : null,
+      label: Text('${lane.label}  ${lane.chapters.length}'),
+      labelStyle: TextStyleConst.labelMedium.copyWith(
+        color:
+            selected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      selectedColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+        alpha: 0.6,
+      ),
+      side: BorderSide(
+        color: selected
+            ? colorScheme.primary.withValues(alpha: 0.55)
+            : colorScheme.outlineVariant,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onSelected: (_) {
+        setState(() {
+          _selectedLanguageKey = lane.key;
+          _loadMoreError = null;
+        });
+      },
+    );
+  }
+
+  Future<void> _loadMoreMangaDexChapters(String languageKey) async {
+    if (_isLoadingMore) return;
+    setState(() {
+      _isLoadingMore = true;
+      _loadMoreError = null;
+    });
+
+    try {
+      final rawConfig = getIt<RemoteConfigService>().getRawConfig('mangadex');
+      final baseUrl =
+          rawConfig?['baseUrl'] as String? ?? 'https://api.mangadex.org';
+      final api = rawConfig?['api'] as Map<String, dynamic>?;
+      final detail = api?['detail'] as Map<String, dynamic>?;
+      final chaptersCfg = detail?['chapters'] as Map<String, dynamic>?;
+      final endpoint = chaptersCfg?['endpoint'] as String? ??
+          '/chapter?manga={id}&limit=100&order[chapter]=desc';
+      final limitMatch = RegExp(r'limit=(\d+)').firstMatch(endpoint)?.group(1);
+      final limit = int.tryParse(limitMatch ?? '') ?? 100;
+      final offset = _chapters
+          .where((chapter) =>
+              ChapterLanguagePresenter.normalize(chapter.language) ==
+              languageKey)
+          .length;
+      final url = _mangaDexChapterUrl(
+        baseUrl: baseUrl,
+        endpoint: endpoint,
+        languageKey: languageKey,
+        offset: offset,
+      );
+
+      final response = await Dio().get<dynamic>(url);
+      final data = response.data is String
+          ? jsonDecode(response.data as String) as Map<String, dynamic>
+          : response.data as Map<String, dynamic>;
+      final items = (data['data'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(_mangaDexChapterFromJson)
+          .whereType<Chapter>()
+          .toList();
+      final existingIds = _chapters.map((chapter) => chapter.id).toSet();
+      final nextChapters = items
+          .where((chapter) => existingIds.add(chapter.id))
+          .toList(growable: false);
+
+      setState(() {
+        _chapters.addAll(nextChapters);
+        if (items.length < limit) {
+          _fullyLoadedLanguages.add(languageKey);
+        }
       });
+    } catch (_) {
+      setState(() => _loadMoreError = 'Retry load more');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
+  }
 
-    return {for (final key in sortedKeys) key: grouped[key]!};
+  String _mangaDexChapterUrl({
+    required String baseUrl,
+    required String endpoint,
+    required String languageKey,
+    required int offset,
+  }) {
+    final uri = Uri.parse(
+      '$baseUrl${endpoint.startsWith('/') ? endpoint : '/$endpoint'}'
+          .replaceAll('{id}', Uri.encodeQueryComponent(widget.content.id)),
+    );
+    final params = Map<String, List<String>>.from(uri.queryParametersAll)
+      ..remove('translatedLanguage[]')
+      ..remove('offset');
+    params['translatedLanguage[]'] = [languageKey];
+    params['offset'] = ['$offset'];
+    return uri.replace(queryParameters: params).toString();
+  }
+
+  Chapter? _mangaDexChapterFromJson(Map<String, dynamic> item) {
+    final attributes = item['attributes'] as Map<String, dynamic>?;
+    if (attributes == null) return null;
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return null;
+    final chapter = attributes['chapter']?.toString() ?? '';
+    final volume = attributes['volume']?.toString() ?? '';
+    final title = [
+      if (volume.isNotEmpty) 'Vol.$volume',
+      if (chapter.isNotEmpty) 'Ch.$chapter',
+    ].join(' ');
+    final groups = (item['relationships'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .where((rel) => rel['type'] == 'scanlation_group')
+        .map((rel) => (rel['attributes'] as Map?)?['name']?.toString())
+        .whereType<String>()
+        .toList();
+    return Chapter(
+      id: id,
+      title: title.isEmpty ? 'Chapter' : title,
+      url: id,
+      uploadDate: DateTime.tryParse(
+        attributes['readableAt']?.toString() ?? '',
+      ),
+      scanGroup: groups.isEmpty ? null : groups.join(', '),
+      language: attributes['translatedLanguage']?.toString(),
+    );
   }
 
   List<_GroupedChapterEntry> _buildGroupedEntries(
-    Map<String, List<Chapter>> grouped,
-  ) {
+    List<Chapter> chapters, {
+    String Function(String languageCode)? labelForKey,
+  }) {
     final entries = <_GroupedChapterEntry>[];
     var index = 1;
-    for (final language in grouped.keys) {
-      entries.add(_GroupedChapterEntry.header(_languageLabel(language)));
-      final chapters = grouped[language]!;
+
+    if (labelForKey == null) {
       for (final chapter in chapters) {
+        entries.add(_GroupedChapterEntry.chapter(chapter, index));
+        index += 1;
+      }
+      return entries;
+    }
+
+    final grouped = ChapterLanguagePresenter.build(
+      chapters,
+      labelForKey: labelForKey,
+    );
+    for (final lane in grouped.lanes) {
+      entries.add(_GroupedChapterEntry.header(lane.label));
+      for (final chapter in lane.chapters) {
         entries.add(_GroupedChapterEntry.chapter(chapter, index));
         index += 1;
       }
@@ -479,8 +766,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   }
 
   String _languageLabel(String code) {
-    final normalized = code.trim().toLowerCase();
-    if (normalized.isEmpty || normalized == 'unknown') {
+    final normalized = ChapterLanguagePresenter.normalize(code);
+    if (normalized == unknownChapterLanguageKey) {
       return AppLocalizations.of(context)!.languageLabel;
     }
     final languageService = getIt<LanguageService>();

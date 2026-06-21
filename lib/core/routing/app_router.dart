@@ -179,6 +179,9 @@ class AppRouter {
           final parentContent = readReaderContent(extra?['parentContent']);
           final allChapters = readReaderChapters(extra?['allChapters']);
           final currentChapter = readReaderChapter(extra?['currentChapter']);
+          final activeChapterLanguage = readReaderActiveChapterLanguage(
+            extra?['activeChapterLanguage'],
+          );
 
           return ReaderScreen(
             contentId: contentId,
@@ -190,6 +193,7 @@ class AppRouter {
             parentContent: parentContent,
             allChapters: allChapters,
             currentChapter: currentChapter,
+            activeChapterLanguage: activeChapterLanguage,
           );
         },
       ),
@@ -533,7 +537,8 @@ class AppRouter {
       ChapterData? chapterData,
       Content? parentContent, // Parent series for chapter mode
       List<Chapter>? allChapters, // All chapters for navigation
-      Chapter? currentChapter}) {
+      Chapter? currentChapter,
+      String? activeChapterLanguage}) {
     // Current chapter being read
     final encodedContentId = Uri.encodeComponent(contentId);
     return context.push(
@@ -545,6 +550,7 @@ class AppRouter {
           parentContent: parentContent,
           allChapters: allChapters,
           currentChapter: currentChapter,
+          activeChapterLanguage: activeChapterLanguage,
         ));
   }
 

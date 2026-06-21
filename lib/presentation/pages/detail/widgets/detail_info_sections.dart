@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:kuron_core/kuron_core.dart' show Chapter;
@@ -358,7 +359,7 @@ class DetailTagSection extends StatelessWidget {
   }
 }
 
-class DetailChapterSection extends StatelessWidget {
+class DetailChapterSection extends StatefulWidget {
   const DetailChapterSection({
     super.key,
     required this.content,
@@ -373,42 +374,64 @@ class DetailChapterSection extends StatelessWidget {
   final Content content;
   final Map<String, History> chapterHistory;
   final ValueChanged<Chapter> onChapterTap;
-  final VoidCallback onViewAll;
+  final ValueChanged<String?> onViewAll;
   final String Function(DateTime date) formatDate;
   final String Function(String languageCode) formatLanguageLabel;
   final bool canDownload;
 
   @override
+  State<DetailChapterSection> createState() => _DetailChapterSectionState();
+}
+
+class _DetailChapterSectionState extends State<DetailChapterSection> {
+  String? _selectedLanguageKey;
+
+  void _selectLanguage(String key) {
+    setState(() => _selectedLanguageKey = key);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final chapters = content.chapters!;
+    final chapters = widget.content.chapters!;
     final l10n = AppLocalizations.of(context)!;
-    final groupedChapters = _groupChaptersByLanguage(chapters);
-    final previewEntries = _buildChapterPreviewEntries(
-      groupedChapters,
-      formatLanguageLabel,
+    final chapterLanguages = ChapterLanguagePresenter.build(
+      chapters,
+      selectedKey: _selectedLanguageKey,
+      labelForKey: widget.formatLanguageLabel,
     );
+    _selectedLanguageKey = chapterLanguages.selectedKey;
+    final previewEntries = chapterLanguages.hasMultipleLanes
+        ? _buildChapterPreviewEntries(chapterLanguages.selectedChapters)
+        : _buildChapterPreviewEntries(
+            chapters,
+            labelForKey: widget.formatLanguageLabel,
+          );
+    final visibleChapterCount = chapterLanguages.hasMultipleLanes
+        ? chapterLanguages.selectedChapters.length
+        : chapters.length;
+    final viewAllLanguageKey = chapterLanguages.selectedKey ??
+        (chapterLanguages.lanes.length == 1
+            ? chapterLanguages.lanes.first.key
+            : null);
     final colorScheme = Theme.of(context).colorScheme;
+    final selectedLane = viewAllLanguageKey == null
+        ? null
+        : chapterLanguages.lanes
+            .where((lane) => lane.key == viewAllLanguageKey)
+            .firstOrNull;
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.15),
-            colorScheme.surfaceContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.3),
-          width: 2,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.65),
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -417,71 +440,106 @@ class DetailChapterSection extends StatelessWidget {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary.withValues(alpha: 0.15),
-                  colorScheme.primary.withValues(alpha: 0.05),
-                ],
-              ),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(18)),
+                  const BorderRadius.vertical(top: Radius.circular(15)),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.secondary,
-                      ],
-                    ),
+                    color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Icon(
                     Icons.menu_book,
-                    color: colorScheme.onPrimary,
-                    size: 24,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.chaptersTitle,
-                      style: TextStyleConst.headingMedium.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.chaptersTitle,
+                        style: TextStyleConst.headingSmall.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.chapterCount(chapters.length),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 2),
+                      Text(
+                        selectedLane == null
+                            ? l10n.chapterCount(chapters.length)
+                            : '${selectedLane.label} • ${selectedLane.chapters.length} loaded',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                Text(
+                  '${chapters.length}',
+                  style: TextStyleConst.labelLarge.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
           ),
+          if (chapterLanguages.hasMultipleLanes)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final lane in chapterLanguages.lanes) ...[
+                      ChoiceChip(
+                        selected: lane.key == chapterLanguages.selectedKey,
+                        avatar: lane.key == chapterLanguages.selectedKey
+                            ? const Icon(Icons.check, size: 16)
+                            : null,
+                        label: Text('${lane.label}  ${lane.chapters.length}'),
+                        selectedColor: colorScheme.primaryContainer,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        labelStyle: TextStyleConst.labelMedium.copyWith(
+                          color: lane.key == chapterLanguages.selectedKey
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurfaceVariant,
+                          fontWeight: lane.key == chapterLanguages.selectedKey
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                        side: BorderSide(
+                          color: lane.key == chapterLanguages.selectedKey
+                              ? colorScheme.primary.withValues(alpha: 0.5)
+                              : colorScheme.outlineVariant,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        onSelected: (_) => _selectLanguage(lane.key),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
             itemCount: previewEntries.length,
             itemBuilder: (context, index) {
               final entry = previewEntries[index];
@@ -493,7 +551,8 @@ class DetailChapterSection extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                    color:
+                        colorScheme.secondaryContainer.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: colorScheme.secondary.withValues(alpha: 0.35),
@@ -521,100 +580,86 @@ class DetailChapterSection extends StatelessWidget {
 
               final chapter = entry.chapter!;
               final displayIndex = entry.chapterIndex ?? (index + 1);
-              final isRead = chapterHistory.containsKey(chapter.id);
+              final isRead = widget.chapterHistory.containsKey(chapter.id);
               final isCompleted =
-                  isRead && chapterHistory[chapter.id]!.isCompleted;
+                  isRead && widget.chapterHistory[chapter.id]!.isCompleted;
               final progress = isRead
-                  ? chapterHistory[chapter.id]!.lastPage /
-                      chapterHistory[chapter.id]!.totalPages
+                  ? widget.chapterHistory[chapter.id]!.lastPage /
+                      widget.chapterHistory[chapter.id]!.totalPages
                   : 0.0;
               final chapterContent = Content(
                 id: chapter.id,
-                title: '${content.title} - ${chapter.title}',
-                coverUrl: content.coverUrl,
+                title: '${widget.content.title} - ${chapter.title}',
+                coverUrl: widget.content.coverUrl,
                 uploadDate: chapter.uploadDate ?? DateTime.now(),
-                language: content.language,
+                language: widget.content.language,
                 pageCount: 0,
                 imageUrls: const [],
-                sourceId: content.sourceId,
+                sourceId: widget.content.sourceId,
                 relatedContent: const [],
-                tags: content.tags,
-                artists: content.artists,
-                groups: content.groups,
-                characters: content.characters,
-                parodies: content.parodies,
+                tags: widget.content.tags,
+                artists: widget.content.artists,
+                groups: widget.content.groups,
+                characters: widget.content.characters,
+                parodies: widget.content.parodies,
                 favorites: 0,
               );
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
+              final subtitleParts = [
+                if ((chapter.scanGroup ?? '').trim().isNotEmpty)
+                  chapter.scanGroup!.trim(),
+                if (isRead)
+                  isCompleted
+                      ? l10n.chapterCompleted
+                      : l10n.continueFromPage(
+                          widget.chapterHistory[chapter.id]!.lastPage,
+                        )
+                else if (chapter.uploadDate != null)
+                  widget.formatDate(chapter.uploadDate!),
+              ];
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isCompleted
-                        ? colorScheme.tertiary.withValues(alpha: 0.5)
+                        ? colorScheme.tertiary
                         : isRead
-                            ? colorScheme.primary.withValues(alpha: 0.3)
-                            : colorScheme.outline.withValues(alpha: 0.2),
-                    width: isRead ? 2 : 1,
+                            ? colorScheme.primary.withValues(alpha: 0.55)
+                            : colorScheme.outlineVariant.withValues(alpha: 0.6),
+                    width: isRead ? 1.4 : 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isCompleted
-                          ? colorScheme.tertiary.withValues(alpha: 0.15)
-                          : isRead
-                              ? colorScheme.primary.withValues(alpha: 0.1)
-                              : colorScheme.shadow.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => onChapterTap(chapter),
-                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => widget.onChapterTap(chapter),
+                    borderRadius: BorderRadius.circular(14),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
                           Stack(
                             children: [
                               Container(
-                                width: 52,
-                                height: 52,
+                                width: 48,
+                                height: 48,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isCompleted
-                                        ? [
-                                            colorScheme.tertiary,
-                                            colorScheme.tertiaryContainer,
-                                          ]
-                                        : [
-                                            colorScheme.primary,
-                                            colorScheme.secondary,
-                                          ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (isCompleted
-                                              ? colorScheme.tertiary
-                                              : colorScheme.primary)
-                                          .withValues(alpha: 0.25),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                                  color: isCompleted
+                                      ? colorScheme.tertiaryContainer
+                                      : colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(13),
                                 ),
                                 child: Center(
                                   child: isCompleted
                                       ? Icon(
                                           Icons.check,
-                                          color: colorScheme.onTertiary,
-                                          size: 28,
+                                          color:
+                                              colorScheme.onTertiaryContainer,
+                                          size: 24,
                                         )
                                       : isRead
                                           ? Stack(
@@ -625,7 +670,8 @@ class DetailChapterSection extends StatelessWidget {
                                                   style: TextStyleConst
                                                       .headingSmall
                                                       .copyWith(
-                                                    color: colorScheme.onPrimary,
+                                                    color: colorScheme
+                                                        .onPrimaryContainer,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 18,
                                                   ),
@@ -654,9 +700,9 @@ class DetailChapterSection extends StatelessWidget {
                                               '$displayIndex',
                                               style: TextStyleConst.headingSmall
                                                   .copyWith(
-                                                color: colorScheme.onPrimary,
+                                                color: colorScheme
+                                                    .onPrimaryContainer,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 18,
                                               ),
                                             ),
                                 ),
@@ -691,7 +737,7 @@ class DetailChapterSection extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,66 +757,27 @@ class DetailChapterSection extends StatelessWidget {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    if (isRead) ...[
-                                      Icon(
-                                        isCompleted
-                                            ? Icons.check_circle
-                                            : Icons.auto_stories,
-                                        size: 12,
-                                        color: isCompleted
-                                            ? colorScheme.tertiary
-                                            : colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          isCompleted
-                                              ? l10n.chapterCompleted
-                                              : l10n.continueFromPage(
-                                                  chapterHistory[chapter.id]!
-                                                      .lastPage,
-                                                ),
-                                          style:
-                                              TextStyleConst.bodySmall.copyWith(
-                                            color: isCompleted
-                                                ? colorScheme.tertiary
-                                                : colorScheme.primary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ] else if (chapter.uploadDate != null) ...[
-                                      Icon(
-                                        Icons.schedule,
-                                        size: 12,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          formatDate(chapter.uploadDate!),
-                                          style:
-                                              TextStyleConst.bodySmall.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                if (subtitleParts.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    subtitleParts.join(' • '),
+                                    style: TextStyleConst.bodySmall.copyWith(
+                                      color: isRead
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (canDownload) ...[
+                              if (widget.canDownload) ...[
                                 SizedBox(
                                   width: 44,
                                   height: 44,
@@ -781,82 +788,34 @@ class DetailChapterSection extends StatelessWidget {
                                     showProgress: true,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                               ],
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
+                              const SizedBox(width: 6),
+                              FilledButton.tonalIcon(
+                                onPressed: () => widget.onChapterTap(chapter),
+                                icon: Icon(
+                                  isCompleted
+                                      ? Icons.replay
+                                      : Icons.menu_book_outlined,
+                                  size: 16,
                                 ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isCompleted
-                                        ? [
-                                            colorScheme.tertiary,
-                                            colorScheme.tertiary
-                                                .withValues(alpha: 0.8),
-                                          ]
-                                        : [
-                                            colorScheme.primary,
-                                            colorScheme.primary
-                                                .withValues(alpha: 0.8),
-                                          ],
+                                label: Text(
+                                  isCompleted
+                                      ? l10n.readAgain
+                                      : isRead
+                                          ? l10n.continueReading
+                                          : l10n.readChapter,
+                                ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isCompleted)
-                                      Icon(
-                                        Icons.emoji_events,
-                                        size: 16,
-                                        color: colorScheme.onTertiary,
-                                      )
-                                    else if (isRead)
-                                      SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          value: progress,
-                                          strokeWidth: 2,
-                                          backgroundColor: Colors.white
-                                              .withValues(alpha: 0.3),
-                                          valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                  Color>(Colors.white),
-                                        ),
-                                      )
-                                    else
-                                      Icon(
-                                        Icons.menu_book,
-                                        size: 16,
-                                        color: colorScheme.onPrimary,
-                                      ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      isCompleted
-                                          ? l10n.readAgain
-                                          : isRead
-                                              ? l10n.continueReading
-                                              : l10n.readChapter,
-                                      style:
-                                          TextStyleConst.labelMedium.copyWith(
-                                        color: isCompleted
-                                            ? colorScheme.onTertiary
-                                            : colorScheme.onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward,
-                                      size: 16,
-                                      color: isCompleted
-                                          ? colorScheme.onTertiary
-                                          : colorScheme.onPrimary,
-                                    ),
-                                  ],
+                                  minimumSize: const Size(0, 40),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ],
@@ -869,13 +828,15 @@ class DetailChapterSection extends StatelessWidget {
               );
             },
           ),
-          if (chapters.length > 5)
+          if (visibleChapterCount > 5 ||
+              (widget.content.sourceId == 'mangadex' &&
+                  viewAllLanguageKey != null))
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: onViewAll,
+                  onPressed: () => widget.onViewAll(viewAllLanguageKey),
                   icon: const Icon(Icons.list),
                   label: Text(l10n.viewAllChapters),
                   style: OutlinedButton.styleFrom(
@@ -1022,37 +983,34 @@ class DetailRelatedSection extends StatelessWidget {
   }
 }
 
-Map<String, List<Chapter>> _groupChaptersByLanguage(List<Chapter> chapters) {
-  final grouped = <String, List<Chapter>>{};
-  for (final chapter in chapters) {
-    final key = (chapter.language ?? '').trim().toLowerCase();
-    final normalized = key.isEmpty ? 'unknown' : key;
-    grouped.putIfAbsent(normalized, () => <Chapter>[]).add(chapter);
-  }
-
-  final sortedKeys = grouped.keys.toList()
-    ..sort((a, b) {
-      if (a == 'unknown') return 1;
-      if (b == 'unknown') return -1;
-      return a.compareTo(b);
-    });
-
-  return {for (final key in sortedKeys) key: grouped[key]!};
-}
-
 List<_ChapterListEntry> _buildChapterPreviewEntries(
-  Map<String, List<Chapter>> grouped,
-  String Function(String languageCode) formatLanguageLabel,
-) {
+  List<Chapter> chapters, {
+  String Function(String languageCode)? labelForKey,
+}) {
   final entries = <_ChapterListEntry>[];
   var displayIndex = 1;
   var chapterCount = 0;
 
-  for (final language in grouped.keys) {
-    final chapters = grouped[language]!;
-    entries.add(_ChapterListEntry.header(formatLanguageLabel(language)));
-
+  if (labelForKey == null) {
     for (final chapter in chapters) {
+      if (chapterCount >= 5) {
+        return entries;
+      }
+      entries.add(_ChapterListEntry.chapter(chapter, displayIndex));
+      displayIndex += 1;
+      chapterCount += 1;
+    }
+    return entries;
+  }
+
+  final grouped = ChapterLanguagePresenter.build(
+    chapters,
+    labelForKey: labelForKey,
+  );
+
+  for (final lane in grouped.lanes) {
+    entries.add(_ChapterListEntry.header(lane.label));
+    for (final chapter in lane.chapters) {
       if (chapterCount >= 5) {
         return entries;
       }
