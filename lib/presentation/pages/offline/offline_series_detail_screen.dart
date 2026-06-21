@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
@@ -36,6 +37,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   final Map<String, double> _progressMap = {};
   late List<Content> _items;
   late final OfflineSearchCubit _offlineSearchCubit;
+  bool _didChange = false;
 
   int _sizeFor(Content content) =>
       widget.contentGroup.sizeForContent(content.id);
@@ -95,23 +97,31 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       content: content,
     );
     if (!mounted) return;
-    await Future<void>.delayed(const Duration(milliseconds: 120));
     await _loadProgress();
-    await _offlineSearchCubit.forceRefresh();
   }
 
   @override
   Widget build(BuildContext context) {
     final items = _items;
 
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.pop(_didChange);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(_didChange),
+          ),
         title: Text(
           widget.contentGroup.baseTitle,
           style: TextStyleConst.titleLarge,
         ),
       ),
-      body: ListView.separated(
+        body: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         itemCount: items.length,
         separatorBuilder: (context, index) => const SizedBox(height: 8),
@@ -272,6 +282,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -425,7 +436,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                             const SnackBar(
                                 content: Text('Path copied to clipboard')),
                           );
-                          Navigator.pop(bottomSheetContext);
+                          bottomSheetContext.pop();
                         },
                       ),
                       IconButton(
@@ -433,7 +444,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                         tooltip: 'Open in explorer',
                         onPressed: () {
                           OpenFile.open(contentPath!);
-                          Navigator.pop(bottomSheetContext);
+                          bottomSheetContext.pop();
                         },
                       ),
                     ],
@@ -452,7 +463,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                             isPdf ? colorScheme.tertiary : colorScheme.primary),
                     title: Text(isPdf ? '${l10n.readNow} (PDF)' : l10n.readNow),
                     onTap: () {
-                      Navigator.pop(bottomSheetContext);
+                      bottomSheetContext.pop();
                       _openReader(content);
                     },
                   );
@@ -476,7 +487,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       subtitle: Text(AppLocalizations.of(context)!
                           .nPages(content.pageCount)),
                       onTap: () {
-                        Navigator.pop(bottomSheetContext);
+                        bottomSheetContext.pop();
                         _generatePdf(parentContext, content);
                       },
                     );
@@ -492,7 +503,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                   style: TextStyle(color: colorScheme.error),
                 ),
                 onTap: () {
-                  Navigator.pop(bottomSheetContext);
+                  bottomSheetContext.pop();
                   _showDeleteConfirmation(parentContext, content);
                 },
               ),
@@ -623,11 +634,11 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => dialogContext.pop(false),
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: () => dialogContext.pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: colorScheme.error,
               foregroundColor: colorScheme.onError,
@@ -663,8 +674,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
       await _offlineSearchCubit.deleteOfflineContent(content.id);
       getIt<DownloadBloc>().add(const DownloadRefreshEvent());
-
-      await _offlineSearchCubit.forceRefresh();
+      _didChange = true;
 
       if (!context.mounted) return;
 
@@ -682,7 +692,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       });
 
       if (_items.isEmpty && context.mounted) {
-        Navigator.of(context).pop(true);
+        context.pop(_didChange);
       }
     } catch (e) {
       if (!context.mounted) return;

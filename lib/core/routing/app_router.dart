@@ -15,15 +15,18 @@ import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart
 import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
 import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
+import 'package:nhasixapp/presentation/pages/offline/offline_series_detail_screen.dart';
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
+import 'package:nhasixapp/presentation/pages/auth/captcha_solver_page.dart';
 import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/core/utils/uri_component_utils.dart';
+import 'package:nhasixapp/presentation/models/content_group.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/genre_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/doujin_list_screen.dart'; // NEW
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart'; // NEW
@@ -176,6 +179,9 @@ class AppRouter {
           final parentContent = readReaderContent(extra?['parentContent']);
           final allChapters = readReaderChapters(extra?['allChapters']);
           final currentChapter = readReaderChapter(extra?['currentChapter']);
+          final activeChapterLanguage = readReaderActiveChapterLanguage(
+            extra?['activeChapterLanguage'],
+          );
 
           return ReaderScreen(
             contentId: contentId,
@@ -187,6 +193,7 @@ class AppRouter {
             parentContent: parentContent,
             allChapters: allChapters,
             currentChapter: currentChapter,
+            activeChapterLanguage: activeChapterLanguage,
           );
         },
       ),
@@ -243,6 +250,25 @@ class AppRouter {
           const OfflineContentScreen(),
           type: RouteTransitionType.fade,
         ),
+      ),
+      GoRoute(
+        path: AppRoute.offlineSeriesDetail,
+        name: AppRoute.offlineSeriesDetailName,
+        pageBuilder: (context, state) {
+          final contentGroup = state.extra;
+          if (contentGroup is! ContentGroup) {
+            throw ArgumentError(
+              'Offline series detail requires ContentGroup in route extra.',
+            );
+          }
+
+          return AppAnimations.animatedPageBuilder(
+            context,
+            state,
+            OfflineSeriesDetailScreen(contentGroup: contentGroup),
+            type: RouteTransitionType.slideLeft,
+          );
+        },
       ),
 
       // History Screen
@@ -384,6 +410,33 @@ class AppRouter {
           );
         },
       ),
+      GoRoute(
+        path: AppRoute.captchaSolver,
+        name: AppRoute.captchaSolverName,
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is! Map<String, dynamic>) {
+            throw ArgumentError(
+              'Captcha solver requires provider/siteKey route extra.',
+            );
+          }
+
+          final provider = extra['provider'] as String?;
+          final siteKey = extra['siteKey'] as String?;
+          final baseUrl = extra['baseUrl'] as String?;
+          if (provider == null || siteKey == null) {
+            throw ArgumentError(
+              'Captcha solver route extra must include provider and siteKey.',
+            );
+          }
+
+          return CaptchaSolverPage(
+            provider: provider,
+            siteKey: siteKey,
+            baseUrl: baseUrl,
+          );
+        },
+      ),
 
       // Crotpedia Genre List
       GoRoute(
@@ -484,7 +537,8 @@ class AppRouter {
       ChapterData? chapterData,
       Content? parentContent, // Parent series for chapter mode
       List<Chapter>? allChapters, // All chapters for navigation
-      Chapter? currentChapter}) {
+      Chapter? currentChapter,
+      String? activeChapterLanguage}) {
     // Current chapter being read
     final encodedContentId = Uri.encodeComponent(contentId);
     return context.push(
@@ -496,6 +550,7 @@ class AppRouter {
           parentContent: parentContent,
           allChapters: allChapters,
           currentChapter: currentChapter,
+          activeChapterLanguage: activeChapterLanguage,
         ));
   }
 
@@ -517,6 +572,16 @@ class AppRouter {
 
   static void goToOffline(BuildContext context) {
     context.go(AppRoute.offline);
+  }
+
+  static Future<bool?> goToOfflineSeriesDetail(
+    BuildContext context,
+    ContentGroup contentGroup,
+  ) {
+    return context.push<bool>(
+      AppRoute.offlineSeriesDetail,
+      extra: contentGroup,
+    );
   }
 
   static void goToHistory(BuildContext context) {
@@ -553,6 +618,22 @@ class AppRouter {
 
   static void goToSourceLogin(BuildContext context, String sourceId) {
     context.push('${AppRoute.sourceLogin}?source=$sourceId');
+  }
+
+  static Future<String?> goToCaptchaSolver(
+    BuildContext context, {
+    required String provider,
+    required String siteKey,
+    String? baseUrl,
+  }) {
+    return context.push<String>(
+      AppRoute.captchaSolver,
+      extra: <String, dynamic>{
+        'provider': provider,
+        'siteKey': siteKey,
+        'baseUrl': baseUrl,
+      },
+    );
   }
 
   static Future<List<FilterItem>?> goToFilterData(

@@ -91,7 +91,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
                     ),
                     const Spacer(),
                     IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.pop(),
                       icon: const Icon(Icons.close),
                     ),
                   ],
@@ -378,7 +378,7 @@ class _HistoryCleanupInfoWidgetState extends State<HistoryCleanupInfoWidget> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(

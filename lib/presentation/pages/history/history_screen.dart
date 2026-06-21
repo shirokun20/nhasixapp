@@ -318,12 +318,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               _historyCubit.clearHistory();
             },
             child: Text(AppLocalizations.of(context)!.clearAll),
@@ -343,12 +343,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               _historyCubit.performManualCleanup();
             },
             child: Text(AppLocalizations.of(context)!.cleanup),
@@ -366,12 +366,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         content: Text(AppLocalizations.of(context)!.removeFromHistoryQuestion),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               _historyCubit.removeHistoryItem(contentId);
             },
             child: Text(AppLocalizations.of(context)!.remove),

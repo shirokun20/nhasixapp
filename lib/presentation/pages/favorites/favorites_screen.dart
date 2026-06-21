@@ -554,7 +554,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => context.pop(false),
                 child: Text(
                   AppLocalizations.of(context)!.cancel,
                   style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
@@ -562,7 +562,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () => context.pop(true),
                 child: Text(
                   AppLocalizations.of(context)!.delete,
                   style: TextStyleConst.withColor(TextStyleConst.buttonMedium,
@@ -665,7 +665,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       await Future<void>.delayed(const Duration(milliseconds: 120));
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        context.pop(); // Close loading dialog
 
         if (filePath != null) {
           // ✅ Show success notification
@@ -700,7 +700,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        context.pop(); // Close loading dialog
 
         // ❌ Show error notification
         ScaffoldMessenger.of(context).showSnackBar(
@@ -755,7 +755,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           await BackupUtils.importJson(fileName: 'favorites.json');
 
       if (jsonString == null) {
-        if (mounted) Navigator.of(context).pop(); // Close loading dialog
+        if (mounted) context.pop(); // Close loading dialog
         return; // User cancelled
       }
 
@@ -766,7 +766,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       await _favoriteCubit.importFavorites(jsonData);
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        context.pop(); // Close loading dialog
 
         // Show success result
         final importedCount = (jsonData['favorites'] as List?)?.length ?? 0;
@@ -787,7 +787,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        context.pop(); // Close loading dialog
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1060,19 +1060,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   hintText: AppLocalizations.of(context)!.collectionName,
                 ),
                 onSubmitted: (value) {
-                  Navigator.of(context).pop(value.trim());
+                  context.pop(value.trim());
                 },
               ),
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    context.pop();
                   },
                   child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(controller?.text.trim());
+                    context.pop(controller?.text.trim());
                   },
                   child: Text(AppLocalizations.of(context)!.save),
                 ),
@@ -1126,7 +1126,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               leading: const Icon(Icons.edit_outlined),
               title: Text(AppLocalizations.of(context)!.renameCollection),
               onTap: () {
-                Navigator.of(sheetContext).pop();
+                sheetContext.pop();
                 _showCreateCollectionDialog(collection: collection);
               },
             ),
@@ -1143,7 +1143,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               onTap: () async {
-                Navigator.of(sheetContext).pop();
+                sheetContext.pop();
                 final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
@@ -1158,13 +1158,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         actions: [
                           TextButton(
                             onPressed: () =>
-                                Navigator.of(dialogContext).pop(false),
+                                dialogContext.pop(false),
                             child: Text(
                                 AppLocalizations.of(dialogContext)!.cancel),
                           ),
                           TextButton(
                             onPressed: () =>
-                                Navigator.of(dialogContext).pop(true),
+                                dialogContext.pop(true),
                             child: Text(
                               AppLocalizations.of(dialogContext)!.delete,
                               style: TextStyleConst.withColor(
@@ -1266,7 +1266,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     children: [
                       TextButton.icon(
                         onPressed: () {
-                          Navigator.of(sheetContext).pop();
+                          sheetContext.pop();
                           _showCreateCollectionDialog();
                         },
                         icon: const Icon(Icons.create_new_folder_outlined),
@@ -1275,13 +1275,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        onPressed: () => sheetContext.pop(),
                         child: Text(AppLocalizations.of(context)!.cancel),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: () async {
-                          Navigator.of(sheetContext).pop();
+                          sheetContext.pop();
                           await _favoriteCubit.setFavoriteCollectionIds(
                             favoriteId: favoriteId,
                             sourceId: sourceId,
@@ -1996,7 +1996,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () => context.pop(),
                               child: Text(
                                 AppLocalizations.of(context)!.cancel,
                                 style: TextStyleConst.withColor(
@@ -2008,7 +2008,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             ),
                             TextButton(
                               onPressed: () {
-                                Navigator.of(context).pop();
+                                context.pop();
                                 _removeFavorite(
                                   contentId,
                                   sourceId: sourceId,

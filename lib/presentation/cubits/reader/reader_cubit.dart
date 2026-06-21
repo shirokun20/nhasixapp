@@ -25,6 +25,7 @@ import '../../../core/models/image_metadata.dart';
 import '../../../core/config/remote_config_service.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/local_image_preloader.dart';
+import '../../utils/chapter_language_presenter.dart';
 import '../network/network_cubit.dart';
 import '../../../core/utils/webtoon_detector.dart';
 
@@ -652,11 +653,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   String? _normalizeLanguageKey(String? value) {
-    final raw = value?.trim().toLowerCase();
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
-    return raw.split('-').first;
+    if (value == null || value.trim().isEmpty) return null;
+    return ChapterLanguagePresenter.normalize(value);
   }
 
   bool? _isAscendingByChapterNumber(List<Chapter> chapters) {

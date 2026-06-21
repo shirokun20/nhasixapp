@@ -19,6 +19,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
+import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -39,6 +40,7 @@ class ReaderScreen extends StatefulWidget {
     this.parentContent, // Parent series for chapter mode
     this.allChapters, // All chapters for navigation
     this.currentChapter, // Current chapter being read
+    this.activeChapterLanguage,
   });
 
   final String contentId;
@@ -50,6 +52,7 @@ class ReaderScreen extends StatefulWidget {
   final Content? parentContent; // Parent series
   final List<Chapter>? allChapters; // All chapters
   final Chapter? currentChapter; // Current chapter
+  final String? activeChapterLanguage;
 
   @visibleForTesting
   static bool shouldSkipHeavyImageAutoSwitchForSource(String? sourceId) {
@@ -128,6 +131,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Content? _preloadedParentContent; // Parent series for chapters
   List<Chapter>? _preloadedAllChapters; // All chapters for navigation
   Chapter? _preloadedCurrentChapter; // Current chapter
+  String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
 
   @override
@@ -256,6 +260,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (parsedCurrentChapter != null && widget.currentChapter == null) {
         _preloadedCurrentChapter = parsedCurrentChapter;
         Logger().i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
+      }
+
+      final parsedActiveChapterLanguage = readReaderActiveChapterLanguage(
+        routeExtra['activeChapterLanguage'],
+      );
+      if (parsedActiveChapterLanguage != null &&
+          widget.activeChapterLanguage == null) {
+        _preloadedActiveChapterLanguage = parsedActiveChapterLanguage;
       }
     } else if (widget.preloadedContent == null) {
       // Fallback for direct Content object (backward compatibility)
@@ -949,7 +961,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _preloadedAllChapters ?? widget.allChapters;
         final effectiveCurrentChapter =
             _preloadedCurrentChapter ?? widget.currentChapter;
-
         // Always call loadContent with preloaded content if available
         return _readerCubit
           ..loadContent(
@@ -1241,7 +1252,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return EndOfChapterOverlay(
       state: state,
       isChapterMode: isChapterMode,
-      onBackToDetail: () => Navigator.of(context).pop(),
+      onBackToDetail: () => context.pop(),
       onPreviousChapter:
           hasPrevChapter ? () => _readerCubit.loadPreviousChapter() : null,
       onNextChapter:
@@ -1927,7 +1938,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             children: [
               // Back button
               IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 iconSize: 22,
                 visualDensity: VisualDensity.compact,
@@ -2217,7 +2228,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
@@ -2227,7 +2238,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               final page = int.tryParse(controller.text);
               if (page != null &&
                   page >= 1 &&
@@ -2403,7 +2414,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                   onTap: () {
                     // Show chapter list in a dialog
-                    Navigator.pop(context); // Close settings
+                    context.pop(); // Close settings
                     _showChapterSelector(currentState);
                   },
                 ),
@@ -2544,7 +2555,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: Text(
               AppLocalizations.of(context)!.cancel,
               style: TextStyleConst.buttonMedium.copyWith(
@@ -2554,7 +2565,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               _resetReaderSettings();
             },
             child: Text(
@@ -2582,7 +2593,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final allChapters = _readerCubit.allChapters!;
     final activeLanguage = _normalizeLanguageForFilter(
-      state.currentChapter?.language,
+      state.currentChapter?.language ??
+          _preloadedActiveChapterLanguage ??
+          widget.activeChapterLanguage,
     );
 
     final chapters = activeLanguage == null
@@ -2710,7 +2723,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () => Navigator.pop(sheetContext),
+                              onPressed: () => sheetContext.pop(),
                               icon: Icon(
                                 Icons.close_rounded,
                                 color: Theme.of(context)
@@ -2758,7 +2771,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
                               onTap: () {
-                                Navigator.pop(sheetContext);
+                                sheetContext.pop();
                                 if (!isCurrent) {
                                   _readerCubit.loadChapter(chapter.id);
                                 }
@@ -2898,11 +2911,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   String? _normalizeLanguageForFilter(String? value) {
-    final raw = value?.trim().toLowerCase();
-    if (raw == null || raw.isEmpty) {
-      return null;
-    }
-    return raw.split('-').first;
+    if (value == null || value.trim().isEmpty) return null;
+    return ChapterLanguagePresenter.normalize(value);
   }
 
   String _formatChapterDate(DateTime date) {
@@ -2925,7 +2935,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _clearReaderImageCache() async {
-    Navigator.of(context).pop(); // close settings sheet
+    context.pop(); // close settings sheet
     await ExtendedImageReaderWidget.clearNativeAnimatedCache();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2941,7 +2951,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Future<void> _resetReaderSettings() async {
     try {
       // Close the settings modal first
-      Navigator.of(context).pop();
+      context.pop();
 
       // Reset the settings
       await _readerCubit.resetReaderSettings();

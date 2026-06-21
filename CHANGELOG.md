@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Highlights
 
+#### 🧭 Chapter Language Tabs & MangaDex Paging
+- **Tabbed Chapter Lanes**: Detail pages now group multi-language chapters into explicit lanes/chips, keep the selected lane stable across reader launches, and preserve reader same-language navigation with shared language normalization.
+- **Scoped Chapter Browsing**: `View all chapters` now opens on the active lane, MangaDex detail fetches stop at the first chapter page by default, and the bottom sheet loads more chapters per selected language instead of pulling the entire feed at once.
+- **Chapter Preview Polish**: The detail chapter preview section now uses a lighter container, compact language chips, slimmer rows, and clearer read/download actions for better scanability.
+
+#### 🔎 Search Runtime Autowiring
+- **Canonical Search Bridge**: Search runtime wiring now routes canonical form-backed configs into the dynamic search UI while keeping legacy configs available for compatibility.
+- **Safer Search UX**: Picker-backed filters, query construction, and config-driven search behavior are preserved through the runtime bridge so search screens can render the right controls without duplicate field logic.
+
 #### 🎨 Offline Library UI Polish
 - **Ganteng UI Updates**: Improved Offline Content sorting/filter UI with a Glowing Gradient floating action button, modern AnimatedContainer filter chips, and pill-shaped TabBar ripples.
 - **Smart FAB Auto-Hide**: Fixed FAB auto-hide behavior during scroll by implementing a `NotificationListener<ScrollUpdateNotification>`.

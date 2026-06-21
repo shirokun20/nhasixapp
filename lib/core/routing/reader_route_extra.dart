@@ -9,6 +9,7 @@ Map<String, dynamic> buildReaderRouteExtra({
   Content? parentContent,
   List<Chapter>? allChapters,
   Chapter? currentChapter,
+  String? activeChapterLanguage,
 }) {
   return <String, dynamic>{
     'content': content,
@@ -17,6 +18,7 @@ Map<String, dynamic> buildReaderRouteExtra({
     'parentContent': parentContent,
     'allChapters': allChapters?.map(_serializeChapter).toList(),
     'currentChapter': _serializeChapter(currentChapter),
+    'activeChapterLanguage': activeChapterLanguage,
   };
 }
 
@@ -146,6 +148,8 @@ Chapter? readReaderChapter(Object? value) {
     language: _readString(map['language']),
   );
 }
+
+String? readReaderActiveChapterLanguage(Object? value) => _readString(value);
 
 Map<String, dynamic>? _serializeChapterData(ChapterData? chapterData) {
   if (chapterData == null) {

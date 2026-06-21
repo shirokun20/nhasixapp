@@ -1006,6 +1006,7 @@ class GenericRestAdapter implements GenericAdapter {
                 cFields: cFields,
                 rawConfig: rawConfig,
                 fallbackFields: fallbackFields,
+                autoPaginate: chaptersCfg['autoPaginate'] != false,
               );
               chapters = _composeChapterIdsWithContentId(
                 chapters,
@@ -2348,6 +2349,7 @@ class GenericRestAdapter implements GenericAdapter {
     required Map<String, dynamic> cFields,
     required Map<String, dynamic> rawConfig,
     Map<String, dynamic>? fallbackFields,
+    bool autoPaginate = true,
   }) async {
     final chapters = <Chapter>[];
     var pageUrl = url;
@@ -2369,7 +2371,7 @@ class GenericRestAdapter implements GenericAdapter {
         chapters.add(GenericContentMapper.toChapter(cFieldsExtracted));
       }
 
-      final nextUrl = _nextOffsetPageUrl(pageUrl, cData);
+      final nextUrl = autoPaginate ? _nextOffsetPageUrl(pageUrl, cData) : null;
       if (nextUrl == null) {
         break;
       }

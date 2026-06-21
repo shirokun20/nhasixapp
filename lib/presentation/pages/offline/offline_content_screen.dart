@@ -41,7 +41,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen>
           return AppScaffoldWithOffline(
             title: AppLocalizations.of(context)!.offlineContent,
             appBar: AppMainHeaderWidget(
-              context: context,
               isOffline: true,
               offlineStats: _offlineSearchCubit.getOfflineStats(),
               onRefresh: () => _offlineSearchCubit.forceRefresh(),
