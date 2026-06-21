@@ -795,7 +795,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         );
                       }
 
-                      final contentGroup = state.results[index];
+                      final contentGroup = _dedupedGroup(state.results[index]);
                       return ContentGroupCardWidget(
                         key: ValueKey(
                             '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
@@ -817,6 +817,22 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     }
 
     return const OfflineContentGridShimmer();
+  }
+
+  ContentGroup _dedupedGroup(ContentGroup group) {
+    final items = group.uniqueItems;
+    return ContentGroup(
+      baseTitle: group.baseTitle,
+      items: items,
+      totalSize: items.fold(
+        0,
+        (sum, item) => sum + group.sizeForContent(item.id),
+      ),
+      itemSizes: group.itemSizes,
+      readProgress: group.readProgress,
+      isRead: group.isRead,
+      isReading: group.isReading,
+    );
   }
 
   Widget _buildTipRow(ColorScheme colorScheme, String text) {
@@ -849,7 +865,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     final representative = group.representativeContent;
 
     final chapterPaths = <({String title, String path})>[];
-    for (final item in group.items) {
+    for (final item in group.uniqueItems) {
       try {
         final firstImage = await offlineManager.getOfflineFirstImagePath(
           item.id,

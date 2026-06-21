@@ -35,6 +35,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
   final Map<String, int> _sizeBytesByContentId = {};
+  int _dbOffset = 0; // ponytail: raw DB offset, immune to skip-on-null-image
+  int _searchDbOffset = 0;
   static const String _keySelectedSourceFilter =
       'offline_selected_source_filter';
   static const String _keyIsListMode = 'offline_is_list_mode';
@@ -239,9 +241,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
 
       // Calculate offset based on current page
-      final offset = loadMore && state is OfflineSearchLoaded
-          ? (state as OfflineSearchLoaded).results.expand((g) => g.items).length
-          : 0;
+      final offset = loadMore ? _searchDbOffset : 0;
+      if (!loadMore) _searchDbOffset = 0;
 
       // Load page from database
       final searchResults = await _userDataRepository.searchDownloads(
@@ -336,8 +337,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (!loadMore) {
         _sizeBytesByContentId.clear();
+        _searchDbOffset = 0;
       }
       _sizeBytesByContentId.addAll(newSizeBytes);
+      _searchDbOffset += searchResults.length; // track raw fetched count
 
       final List<ContentGroup> groupedResults = await _groupContent(
         finalResultsFlat,
@@ -496,9 +499,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
 
       // Calculate offset based on current page
-      final offset = loadMore && state is OfflineSearchLoaded
-          ? (state as OfflineSearchLoaded).results.expand((g) => g.items).length
-          : 0;
+      final offset = loadMore ? _dbOffset : 0;
+      if (!loadMore) _dbOffset = 0;
 
       // Load page from database
       final downloads = await _userDataRepository.getAllDownloads(
@@ -595,8 +597,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (!loadMore) {
         _sizeBytesByContentId.clear();
+        _dbOffset = 0;
       }
       _sizeBytesByContentId.addAll(newSizeBytes);
+      _dbOffset += downloads.length; // track raw fetched count
 
       final List<ContentGroup> groupedResults = await _groupContent(
         finalResultsFlat,
@@ -965,7 +969,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
     final List<ContentGroup> groups = [];
     for (final entry in groupedMap.entries) {
-      final items = entry.value;
+      final items = ContentGroup.dedupeItems(entry.value);
       if (items.isEmpty) continue;
 
       final baseTitle = TitleParserUtils.getBaseTitle(items.first.title);

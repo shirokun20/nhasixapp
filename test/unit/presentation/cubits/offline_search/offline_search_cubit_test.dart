@@ -46,6 +46,37 @@ void main() {
     cubit.close();
   });
 
+  test('ContentGroup dedupes duplicate offline entries with same path/title',
+      () {
+    Content content(String id) => Content(
+          id: id,
+          title: '(GIF)First Meeting on Aocang[Ai generated] - Part 1',
+          coverUrl: '/downloads/ehentai/aocang-part-1/images/page_001.webp',
+          sourceId: 'ehentai',
+          tags: const [],
+          artists: const [],
+          characters: const [],
+          parodies: const [],
+          groups: const [],
+          language: '',
+          pageCount: 12,
+          imageUrls: const [],
+          uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
+          favorites: 0,
+        );
+
+    final group = ContentGroup(
+      baseTitle: '(GIF)First Meeting on Aocang[Ai generated]',
+      items: [content('old-id'), content('new-id')],
+      totalSize: 1,
+    );
+
+    expect(group.items, hasLength(1));
+    expect(group.chapterCount, 1);
+    expect(ContentGroup.dedupeItems([content('old-id'), content('new-id')]),
+        hasLength(1));
+  });
+
   group('OfflineSearchCubit Pagination', () {
     const tContentId = '123';
     const tDownloadStatus = DownloadStatus(

@@ -80,7 +80,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     _contentGroup = contentGroup;
     _items = contentGroup == null
         ? const []
-        : List<Content>.from(contentGroup.items);
+        : ContentGroup.dedupeItems(contentGroup.items);
   }
 
   Future<void> _resolveContentGroup() async {
@@ -154,12 +154,16 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       }
     }
 
-    if (items.isEmpty) return null;
+    final uniqueItems = ContentGroup.dedupeItems(items);
+    if (uniqueItems.isEmpty) return null;
 
     return ContentGroup(
       baseTitle: widget.baseTitle,
-      items: items,
-      totalSize: itemSizes.values.fold(0, (sum, size) => sum + size),
+      items: uniqueItems,
+      totalSize: uniqueItems.fold(
+        0,
+        (sum, item) => sum + (itemSizes[item.id] ?? 0),
+      ),
       itemSizes: itemSizes,
       readProgress: maxProgress,
       isRead: isRead,
