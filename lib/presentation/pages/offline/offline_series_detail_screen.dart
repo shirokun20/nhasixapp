@@ -19,13 +19,18 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/permission_request_sheet.dart';
 import 'package:nhasixapp/domain/repositories/reader_repository.dart';
+import 'package:nhasixapp/core/utils/title_parser_utils.dart';
 
 class OfflineSeriesDetailScreen extends StatefulWidget {
-  final ContentGroup contentGroup;
+  final ContentGroup? initialContentGroup;
+  final String sourceId;
+  final String baseTitle;
 
   const OfflineSeriesDetailScreen({
     super.key,
-    required this.contentGroup,
+    this.initialContentGroup,
+    required this.sourceId,
+    required this.baseTitle,
   });
 
   @override
@@ -35,37 +40,153 @@ class OfflineSeriesDetailScreen extends StatefulWidget {
 
 class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   final Map<String, double> _progressMap = {};
-  late List<Content> _items;
+  ContentGroup? _contentGroup;
+  List<Content> _items = const [];
   late final OfflineSearchCubit _offlineSearchCubit;
   bool _didChange = false;
+  bool _isResolving = false;
 
   int _sizeFor(Content content) =>
-      widget.contentGroup.sizeForContent(content.id);
+      _contentGroup?.sizeForContent(content.id) ?? 0;
 
   @override
   void initState() {
     super.initState();
-    _items = List<Content>.from(widget.contentGroup.items);
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
-    _loadProgress();
+    _applyContentGroup(widget.initialContentGroup);
+    if (_contentGroup == null) {
+      _resolveContentGroup();
+    } else {
+      _loadProgress();
+    }
   }
 
   @override
   void didUpdateWidget(covariant OfflineSeriesDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.contentGroup != widget.contentGroup) {
-      _items = List<Content>.from(widget.contentGroup.items);
-      _loadProgress();
+    if (oldWidget.initialContentGroup != widget.initialContentGroup ||
+        oldWidget.sourceId != widget.sourceId ||
+        oldWidget.baseTitle != widget.baseTitle) {
+      _applyContentGroup(widget.initialContentGroup);
+      if (_contentGroup == null) {
+        _resolveContentGroup();
+      } else {
+        _loadProgress();
+      }
     }
   }
 
-  Future<void> _loadProgress() async {
-    ReaderRepository? readerPosRepo;
-    try {
-      readerPosRepo = getIt<ReaderRepository>();
-    } catch (_) {
-      readerPosRepo = null;
+  void _applyContentGroup(ContentGroup? contentGroup) {
+    _contentGroup = contentGroup;
+    _items = contentGroup == null
+        ? const []
+        : List<Content>.from(contentGroup.items);
+  }
+
+  Future<void> _resolveContentGroup() async {
+    if (_isResolving) return;
+    setState(() => _isResolving = true);
+
+    ContentGroup? resolved;
+    final currentState = _offlineSearchCubit.state;
+    if (currentState is OfflineSearchLoaded) {
+      for (final group in currentState.results) {
+        final sourceId = group.representativeContent.sourceId;
+        if (sourceId == widget.sourceId &&
+            group.baseTitle == widget.baseTitle) {
+          resolved = group;
+          break;
+        }
+      }
     }
+
+    resolved ??= await _resolveFromOfflineStorage();
+    if (!mounted) return;
+
+    setState(() {
+      _isResolving = false;
+      _applyContentGroup(resolved);
+    });
+
+    if (resolved != null) {
+      await _loadProgress();
+    }
+  }
+
+  Future<ContentGroup?> _resolveFromOfflineStorage() async {
+    final offlineManager = getIt<OfflineContentManager>();
+    final readerRepository = _tryGetReaderRepository();
+    final ids = await offlineManager.getOfflineContentIds();
+    final items = <Content>[];
+    final itemSizes = <String, int>{};
+    double maxProgress = 0.0;
+    bool isRead = false;
+    bool isReading = false;
+
+    for (final id in ids) {
+      final content = await offlineManager.createOfflineContent(id);
+      if (content == null) continue;
+      if (content.sourceId != widget.sourceId) continue;
+      if (TitleParserUtils.getBaseTitle(content.title) != widget.baseTitle) {
+        continue;
+      }
+
+      items.add(content);
+      final contentPath = await offlineManager.getOfflineContentPath(id);
+      if (contentPath != null) {
+        itemSizes[id] = await _dirSize(Directory(contentPath));
+      }
+
+      if (readerRepository != null) {
+        try {
+          final position = await readerRepository.getReaderPosition(id);
+          if (position != null && position.totalPages > 0) {
+            final progress =
+                (position.currentPage / position.totalPages).clamp(0.0, 1.0);
+            if (progress > maxProgress) maxProgress = progress;
+            if (position.currentPage >= position.totalPages - 1) {
+              isRead = true;
+            } else if (position.currentPage > 1) {
+              isReading = true;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (items.isEmpty) return null;
+
+    return ContentGroup(
+      baseTitle: widget.baseTitle,
+      items: items,
+      totalSize: itemSizes.values.fold(0, (sum, size) => sum + size),
+      itemSizes: itemSizes,
+      readProgress: maxProgress,
+      isRead: isRead,
+      isReading: isReading,
+    );
+  }
+
+  ReaderRepository? _tryGetReaderRepository() {
+    try {
+      return getIt<ReaderRepository>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<int> _dirSize(Directory directory) async {
+    int size = 0;
+    try {
+      await for (final entity in directory.list(recursive: true)) {
+        if (entity is File) size += await entity.length();
+      }
+    } catch (_) {}
+    return size;
+  }
+
+  Future<void> _loadProgress() async {
+    final readerPosRepo = _tryGetReaderRepository();
 
     if (readerPosRepo == null) return;
 
@@ -116,173 +237,202 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.pop(_didChange),
           ),
-        title: Text(
-          widget.contentGroup.baseTitle,
-          style: TextStyleConst.titleLarge,
+          title: Text(
+            widget.baseTitle,
+            style: TextStyleConst.titleLarge,
+          ),
         ),
-      ),
-        body: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        itemCount: items.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final content = items[index];
-          final progress = _progressMap[content.id] ?? 0.0;
+        body: _contentGroup == null
+            ? Center(
+                child: _isResolving
+                    ? const CircularProgressIndicator()
+                    : Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Offline content not found.',
+                          style: TextStyleConst.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+              )
+            : ListView.separated(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final content = items[index];
+                  final progress = _progressMap[content.id] ?? 0.0;
 
-          final dateStr = DateFormat('MMM dd, yyyy').format(content.uploadDate);
+                  final dateStr =
+                      DateFormat('MMM dd, yyyy').format(content.uploadDate);
 
-          return Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: 0,
-            color: Theme.of(context).colorScheme.surface,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: 0.5),
-                width: 1,
-              ),
-            ),
-            child: InkWell(
-              onTap: () => _openReader(content),
-              onLongPress: () => _showBottomSheet(context, content),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
+                  return Card(
+                    clipBehavior: Clip.antiAlias,
+                    elevation: 0,
+                    color: Theme.of(context).colorScheme.surface,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
                         color: Theme.of(context)
                             .colorScheme
-                            .primaryContainer
+                            .outlineVariant
                             .withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.auto_stories,
-                        color: Theme.of(context).colorScheme.primary,
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            content.title.isNotEmpty
-                                ? content.title
-                                : content.id,
-                            style: TextStyleConst.contentTitle.copyWith(
-                              fontSize: 15,
-                              color: Theme.of(context).colorScheme.onSurface,
+                    child: InkWell(
+                      onTap: () => _openReader(content),
+                      onLongPress: () => _showBottomSheet(context, content),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.auto_stories,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _buildBadge(
-                                context,
-                                Icons.pages,
-                                '${content.pageCount} P',
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              _buildBadge(
-                                context,
-                                Icons.public,
-                                content.sourceId.toUpperCase(),
-                                Theme.of(context)
-                                    .colorScheme
-                                    .secondaryContainer,
-                                Theme.of(context)
-                                    .colorScheme
-                                    .onSecondaryContainer,
-                              ),
-                              _buildBadge(
-                                context,
-                                Icons.calendar_today,
-                                dateStr,
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              if (_sizeFor(content) > 0)
-                                _buildBadge(
-                                  context,
-                                  Icons.storage,
-                                  OfflineContentManager.formatStorageSize(
-                                      _sizeFor(content)),
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                            ],
-                          ),
-                          if (progress > 0) ...[
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: progress,
-                                      backgroundColor: Theme.of(context)
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    content.title.isNotEmpty
+                                        ? content.title
+                                        : content.id,
+                                    style: TextStyleConst.contentTitle.copyWith(
+                                      fontSize: 15,
+                                      color: Theme.of(context)
                                           .colorScheme
-                                          .surfaceContainerHighest,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          .onSurface,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _buildBadge(
+                                        context,
+                                        Icons.pages,
+                                        '${content.pageCount} P',
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      _buildBadge(
+                                        context,
+                                        Icons.public,
+                                        content.sourceId.toUpperCase(),
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondaryContainer,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onSecondaryContainer,
+                                      ),
+                                      _buildBadge(
+                                        context,
+                                        Icons.calendar_today,
+                                        dateStr,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      if (_sizeFor(content) > 0)
+                                        _buildBadge(
+                                          context,
+                                          Icons.storage,
+                                          OfflineContentManager
+                                              .formatStorageSize(
+                                                  _sizeFor(content)),
                                           Theme.of(context)
                                               .colorScheme
-                                              .primary),
-                                      minHeight: 4,
+                                              .surfaceContainerHighest,
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                    ],
+                                  ),
+                                  if (progress > 0) ...[
+                                    const SizedBox(height: 14),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            child: LinearProgressIndicator(
+                                              value: progress,
+                                              backgroundColor: Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Theme.of(context)
+                                                          .colorScheme
+                                                          .primary),
+                                              minHeight: 4,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${(progress * 100).toInt()}%',
+                                          style: TextStyleConst.labelSmall
+                                              .copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${(progress * 100).toInt()}%',
-                                  style: TextStyleConst.labelSmall.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                                  ],
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.more_vert),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              onPressed: () =>
+                                  _showBottomSheet(context, content),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      onPressed: () => _showBottomSheet(context, content),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            ),
-          );
-        },
-        ),
       ),
     );
   }

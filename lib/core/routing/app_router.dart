@@ -256,16 +256,29 @@ class AppRouter {
         name: AppRoute.offlineSeriesDetailName,
         pageBuilder: (context, state) {
           final contentGroup = state.extra;
-          if (contentGroup is! ContentGroup) {
+          final typedContentGroup =
+              contentGroup is ContentGroup ? contentGroup : null;
+          final sourceId = state.uri.queryParameters['source'];
+          final baseTitle = state.uri.queryParameters['title'];
+          if (typedContentGroup == null &&
+              (sourceId == null ||
+                  sourceId.isEmpty ||
+                  baseTitle == null ||
+                  baseTitle.isEmpty)) {
             throw ArgumentError(
-              'Offline series detail requires ContentGroup in route extra.',
+              'Offline series detail requires ContentGroup or source/title query params.',
             );
           }
 
           return AppAnimations.animatedPageBuilder(
             context,
             state,
-            OfflineSeriesDetailScreen(contentGroup: contentGroup),
+            OfflineSeriesDetailScreen(
+              initialContentGroup: typedContentGroup,
+              sourceId:
+                  sourceId ?? typedContentGroup!.representativeContent.sourceId,
+              baseTitle: baseTitle ?? typedContentGroup!.baseTitle,
+            ),
             type: RouteTransitionType.slideLeft,
           );
         },
@@ -578,8 +591,15 @@ class AppRouter {
     BuildContext context,
     ContentGroup contentGroup,
   ) {
+    final location = Uri(
+      path: AppRoute.offlineSeriesDetail,
+      queryParameters: {
+        'source': contentGroup.representativeContent.sourceId,
+        'title': contentGroup.baseTitle,
+      },
+    ).toString();
     return context.push<bool>(
-      AppRoute.offlineSeriesDetail,
+      location,
       extra: contentGroup,
     );
   }
