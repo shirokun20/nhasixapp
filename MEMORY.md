@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-06-02
+> Tracked via `openspec/` — Last updated: 2026-06-21
 
 ### ✅ Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -92,7 +92,7 @@ lib/
 - `2026-03-31-fix-import-zip-metadata`
 - `2026-03-xx-crotpedia-ui-modernization`
 - `2026-03-xx-fix-app-drawer-transparency`
-- `2026-03-xx-komiktap-navigation-lists`
+- `2026-04-xx-komiktap-navigation-lists`
 - `2026-03-xx-multi-provider-integration`
 - `2026-03-xx-smart-caching-and-fixes`
 - `2026-03-xx-unity-ads-fix`
@@ -105,6 +105,13 @@ lib/
 - `2026-05-24-avif-to-webp-conversion`
 - `2026-05-24-ehentai-part-mode-metadata-sync`
 - `2026-05-28-fix-generic-rest-adapter-schema-support`
+- `2026-06-01-doujindesuv2-scraper`
+- `2026-06-01-reader-ux-revamp`
+- `2026-06-16-offline-library-sorting-source-buckets`
+- `2026-06-16-offline-library-v2`
+- `2026-06-16-tachiyomi-extensions-integration`
+- `2026-06-21-search-runtime-autowiring`
+- `2026-06-21-tabbed-multilang-chapters`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
