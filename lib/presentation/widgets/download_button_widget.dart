@@ -509,7 +509,6 @@ class DownloadButtonWidget extends StatelessWidget {
 
   Widget _buildDownloadOptionsButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasValidPageCount = content.pageCount > 0;
     final remoteConfig = getIt<RemoteConfigService>();
     final rawConfig = remoteConfig.getRawConfig(content.sourceId);
     final ehentaiStrategies = EhentaiDownloadStrategyResolver.resolve(
@@ -517,7 +516,7 @@ class DownloadButtonWidget extends StatelessWidget {
       rawConfig: rawConfig,
     );
 
-    if (ehentaiStrategies.isEmpty && !hasValidPageCount) {
+    if (ehentaiStrategies.isEmpty) {
       return _buildButton(
         context: context,
         icon: Icons.download,

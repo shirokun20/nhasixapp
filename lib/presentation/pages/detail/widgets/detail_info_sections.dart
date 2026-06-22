@@ -1,11 +1,14 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
+import 'package:nhasixapp/presentation/widgets/ehentai_download_strategy.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:kuron_core/kuron_core.dart' show Chapter;
 
@@ -394,6 +397,13 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
   Widget build(BuildContext context) {
     final chapters = widget.content.chapters!;
     final l10n = AppLocalizations.of(context)!;
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig(widget.content.sourceId);
+    final supportsEhentaiGalleryDownload =
+        EhentaiDownloadStrategyResolver.supports(
+      widget.content,
+      rawConfig: rawConfig,
+    );
     final chapterLanguages = ChapterLanguagePresenter.build(
       chapters,
       selectedKey: _selectedLanguageKey,
@@ -499,95 +509,10 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
           if (widget.canDownload)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer.withValues(alpha: 0.28),
-                      colorScheme.tertiaryContainer.withValues(alpha: 0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.22),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(
-                            Icons.download_for_offline_rounded,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.download,
-                                style: TextStyleConst.labelLarge.copyWith(
-                                  color: colorScheme.onSurface,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${l10n.downloadAll} • ${l10n.downloadRange}',
-                                style: TextStyleConst.bodySmall.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: colorScheme.outlineVariant
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          child: Text(
-                            '${chapters.length} part',
-                            style: TextStyleConst.labelSmall.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    DownloadButtonWidget(
-                      content: widget.content,
-                      size: DownloadButtonSize.large,
-                      showText: true,
-                      showProgress: true,
-                    ),
-                  ],
-                ),
+              child: _buildGalleryDownloadPanel(
+                context: context,
+                chapters: chapters,
+                supportsEhentaiGalleryDownload: supportsEhentaiGalleryDownload,
               ),
             ),
           if (chapterLanguages.hasMultipleLanes)
@@ -942,6 +867,167 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGalleryDownloadPanel({
+    required BuildContext context,
+    required List<Chapter> chapters,
+    required bool supportsEhentaiGalleryDownload,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final panel = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: supportsEhentaiGalleryDownload
+              ? [
+                  colorScheme.primaryContainer.withValues(alpha: 0.28),
+                  colorScheme.tertiaryContainer.withValues(alpha: 0.2),
+                ]
+              : [
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+                  colorScheme.surfaceContainer.withValues(alpha: 0.96),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: supportsEhentaiGalleryDownload
+              ? colorScheme.primary.withValues(alpha: 0.22)
+              : colorScheme.outlineVariant.withValues(alpha: 0.8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: supportsEhentaiGalleryDownload
+                      ? colorScheme.primary.withValues(alpha: 0.14)
+                      : colorScheme.surface.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(
+                  supportsEhentaiGalleryDownload
+                      ? Icons.download_for_offline_rounded
+                      : Icons.lock_outline_rounded,
+                  color: supportsEhentaiGalleryDownload
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      supportsEhentaiGalleryDownload
+                          ? l10n.download
+                          : 'Special Series Download',
+                      style: TextStyleConst.labelLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      supportsEhentaiGalleryDownload
+                          ? '${l10n.downloadAll} • ${l10n.downloadRange}'
+                          : 'Only available for E-Hentai galleries.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Text(
+                  '${chapters.length} part',
+                  style: TextStyleConst.labelSmall.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (supportsEhentaiGalleryDownload)
+            DownloadButtonWidget(
+              content: widget.content,
+              size: DownloadButtonSize.large,
+              showText: true,
+              showProgress: true,
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _showUnsupportedGalleryDownloadAlert(context),
+                icon: const Icon(Icons.info_outline_rounded),
+                label: const Text('Show availability'),
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    if (supportsEhentaiGalleryDownload) {
+      return panel;
+    }
+
+    return InkWell(
+      onTap: () => _showUnsupportedGalleryDownloadAlert(context),
+      borderRadius: BorderRadius.circular(14),
+      child: panel,
+    );
+  }
+
+  void _showUnsupportedGalleryDownloadAlert(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('E-Hentai Only'),
+        content: const Text(
+          'Gallery download options for whole-series and range are only available on E-Hentai.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppLocalizations.of(context)!.ok),
+          ),
         ],
       ),
     );
