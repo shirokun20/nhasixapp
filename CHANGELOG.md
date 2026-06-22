@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Info-Only Offline Group Sheet**: Offline library long-press sheet now focuses on information only; read, delete, and PDF conversion actions live in `OfflineSeriesDetailScreen`.
 - **Offline Detail Actions Fix**: Fixed offline detail delete/PDF/read flow by using the shared offline search cubit, refreshing local detail items after deletion, and keeping progress state in sync after returning from reader.
 - **Offline Duplicate Chapter Fix**: Offline series detail now collapses duplicate chapter rows that point to the same source/title/local path, so stale duplicate DB IDs no longer inflate the visible chapter count.
+- **Offline Content Body Dedupe**: `OfflineContentBody` now renders the deduped chapter set directly, so the grid card, chapter badge, and long-press info sheet all agree on the same count.
 
 #### 📖 Reader Interaction & Progress
 - **Offline Progress Flush**: Reader now force-saves offline reading progress into `reader_positions` before dispose, so offline library and detail progress update without requiring an app restart.
