@@ -496,6 +496,100 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
               ],
             ),
           ),
+          if (widget.canDownload)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primaryContainer.withValues(alpha: 0.28),
+                      colorScheme.tertiaryContainer.withValues(alpha: 0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.22),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Icon(
+                            Icons.download_for_offline_rounded,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.download,
+                                style: TextStyleConst.labelLarge.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${l10n.downloadAll} • ${l10n.downloadRange}',
+                                style: TextStyleConst.bodySmall.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface.withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant
+                                  .withValues(alpha: 0.6),
+                            ),
+                          ),
+                          child: Text(
+                            '${chapters.length} part',
+                            style: TextStyleConst.labelSmall.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DownloadButtonWidget(
+                      content: widget.content,
+                      size: DownloadButtonSize.large,
+                      showText: true,
+                      showProgress: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           if (chapterLanguages.hasMultipleLanes)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),

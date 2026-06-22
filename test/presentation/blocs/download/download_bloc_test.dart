@@ -380,6 +380,95 @@ void main() {
     );
 
     blocTest<DownloadBloc, DownloadBlocState>(
+      'downloads full EHentai gallery by aggregating linked parts in order',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: '123456/tokenabc',
+            state: DownloadState.queued,
+            totalPages: 0,
+            title: 'Gallery Title',
+            sourceId: 'ehentai',
+            downloadPath: '/tmp/ehentai-gallery',
+          ),
+        ],
+        settings: const DownloadSettings(
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 6, 22),
+      ),
+      setUp: () {
+        when(() => mockGetContentDetailUseCase.call(any())).thenAnswer(
+          (_) async => Content(
+            id: '123456/tokenabc',
+            sourceId: 'ehentai',
+            title: 'Gallery Title',
+            coverUrl: 'https://example.com/cover.jpg',
+            tags: const [],
+            artists: const [],
+            characters: const [],
+            parodies: const [],
+            groups: const [],
+            language: 'en',
+            pageCount: 0,
+            imageUrls: const [],
+            uploadDate: DateTime(2026, 6, 22),
+            url: 'https://e-hentai.org/g/123456/tokenabc/',
+          ),
+        );
+        when(() => mockGetChapterImagesUseCase.call(any()))
+            .thenAnswer((inv) async {
+          final params =
+              inv.positionalArguments.single as GetChapterImagesParams;
+          switch (params.chapterId.value) {
+            case '123456/tokenabc':
+              return const ChapterData(
+                images: [
+                  'https://img.e-hentai.org/gallery-page-1.jpg',
+                  'https://img.e-hentai.org/gallery-page-2.jpg',
+                ],
+                nextChapterId: '__ehpart__:123456:tokenabc:1',
+                nextChapterTitle: 'Part 2',
+              );
+            case '__ehpart__:123456:tokenabc:1':
+              return const ChapterData(
+                images: [
+                  'https://img.e-hentai.org/gallery-page-3.jpg',
+                  'https://img.e-hentai.org/gallery-page-4.jpg',
+                ],
+              );
+          }
+          throw StateError('Unexpected chapter id: ${params.chapterId.value}');
+        });
+        when(() => mockDownloadContentUseCase.call(any())).thenAnswer(
+          (_) async => const DownloadStatus(
+            contentId: '123456/tokenabc',
+            state: DownloadState.downloading,
+            totalPages: 4,
+            title: 'Gallery Title',
+            sourceId: 'ehentai',
+          ),
+        );
+      },
+      act: (bloc) => bloc.add(const DownloadStartEvent('123456/tokenabc')),
+      verify: (_) {
+        final captured = verify(
+          () => mockDownloadContentUseCase.call(captureAny()),
+        ).captured.single as DownloadContentParams;
+
+        expect(captured.content.imageUrls, const [
+          'https://img.e-hentai.org/gallery-page-1.jpg',
+          'https://img.e-hentai.org/gallery-page-2.jpg',
+          'https://img.e-hentai.org/gallery-page-3.jpg',
+          'https://img.e-hentai.org/gallery-page-4.jpg',
+        ]);
+        expect(captured.content.pageCount, 4);
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
       'downloads only the selected EHentai part instead of traversing next parts',
       build: () => downloadBloc,
       seed: () => DownloadLoaded(
@@ -497,6 +586,55 @@ void main() {
             ),
           ),
         ).called(1);
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'queues EHentai part-local range download with selected bounds',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [],
+        settings: const DownloadSettings(
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 6, 22),
+      ),
+      act: (bloc) => bloc.add(
+        DownloadRangeEvent(
+          content: Content(
+            id: '__ehpart__:123456:tokenabc:1',
+            sourceId: 'ehentai',
+            title: 'Gallery Title - Part 2',
+            coverUrl: 'https://example.com/cover.jpg',
+            tags: const [],
+            artists: const [],
+            characters: const [],
+            parodies: const [],
+            groups: const [],
+            language: 'en',
+            pageCount: 12,
+            imageUrls: const [],
+            uploadDate: DateTime(2026, 6, 22),
+          ),
+          startPage: 3,
+          endPage: 7,
+        ),
+      ),
+      verify: (_) {
+        verify(
+          () => mockRepo.saveDownloadStatus(
+            any(
+              that: predicate<DownloadStatus>(
+                (status) =>
+                    status.contentId == '__ehpart__:123456:tokenabc:1' &&
+                    status.startPage == 3 &&
+                    status.endPage == 7 &&
+                    status.sourceId == 'ehentai',
+              ),
+            ),
+          ),
+        ).called(greaterThanOrEqualTo(1));
       },
     );
 

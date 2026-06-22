@@ -9,12 +9,16 @@ class DownloadRangeSelector extends StatefulWidget {
   final int totalPages;
   final Function(int startPage, int endPage) onRangeSelected;
   final String contentTitle;
+  final String? scopeTitle;
+  final String? scopeDescription;
 
   const DownloadRangeSelector({
     super.key,
     required this.totalPages,
     required this.onRangeSelected,
     required this.contentTitle,
+    this.scopeTitle,
+    this.scopeDescription,
   });
 
   @override
@@ -122,6 +126,25 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
+                  if ((widget.scopeTitle ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.scopeTitle!,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  if ((widget.scopeDescription ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.scopeDescription!,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

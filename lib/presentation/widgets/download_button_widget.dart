@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../core/routing/app_router.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
+import 'ehentai_download_strategy.dart';
 import 'download_range_selector.dart';
 import 'download_settings_widget.dart';
 
@@ -509,8 +510,14 @@ class DownloadButtonWidget extends StatelessWidget {
   Widget _buildDownloadOptionsButton(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasValidPageCount = content.pageCount > 0;
+    final remoteConfig = getIt<RemoteConfigService>();
+    final rawConfig = remoteConfig.getRawConfig(content.sourceId);
+    final ehentaiStrategies = EhentaiDownloadStrategyResolver.resolve(
+      content,
+      rawConfig: rawConfig,
+    );
 
-    if (!hasValidPageCount) {
+    if (ehentaiStrategies.isEmpty && !hasValidPageCount) {
       return _buildButton(
         context: context,
         icon: Icons.download,
@@ -520,68 +527,144 @@ class DownloadButtonWidget extends StatelessWidget {
       );
     }
 
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'download_all') {
-          _startDownload(context);
-        } else if (value == 'download_range') {
-          _showRangeSelector(context);
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'download_all',
-          child: Row(
-            children: [
-              Icon(Icons.download, color: colorScheme.tertiary),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.downloadAll),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'download_range',
-          child: Row(
-            children: [
-              Icon(Icons.folder_open, color: colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.downloadRange),
-            ],
-          ),
-        ),
-      ],
-      child: _buildButton(
-        context: context,
-        icon: Icons.download,
-        text: AppLocalizations.of(context)!.download,
-        onPressed: null,
-        color: colorScheme.tertiary,
+    return _buildButton(
+      context: context,
+      icon: Icons.download,
+      text: AppLocalizations.of(context)!.download,
+      onPressed: () => _showDownloadOptionsSheet(
+        context,
+        ehentaiStrategies: ehentaiStrategies,
+        colorScheme: colorScheme,
       ),
+      color: colorScheme.tertiary,
     );
   }
 
-  void _showRangeSelector(BuildContext context) {
+  Future<void> _showDownloadOptionsSheet(
+    BuildContext context, {
+    required List<EhentaiDownloadStrategy> ehentaiStrategies,
+    required ColorScheme colorScheme,
+  }) async {
+    if (ehentaiStrategies.length == 1 &&
+        ehentaiStrategies.first.kind == EhentaiDownloadStrategyKind.partOnly) {
+      _startDownload(context);
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Text(
+                  l10n.download,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+              ),
+              if (ehentaiStrategies.isNotEmpty)
+                ...ehentaiStrategies.map(
+                  (strategy) => ListTile(
+                    leading: Icon(
+                      strategy.isRange ? Icons.folder_open : Icons.download,
+                      color: colorScheme.tertiary,
+                    ),
+                    title: Text(strategy.title),
+                    subtitle: Text(strategy.description),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _handleEhentaiStrategy(context, strategy);
+                    },
+                  ),
+                )
+              else ...[
+                ListTile(
+                  leading: Icon(Icons.download, color: colorScheme.tertiary),
+                  title: Text(l10n.downloadAll),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _startDownload(context);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.folder_open, color: colorScheme.primary),
+                  title: Text(l10n.downloadRange),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _showRangeSelector(context, content);
+                  },
+                ),
+              ],
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleEhentaiStrategy(
+    BuildContext context,
+    EhentaiDownloadStrategy strategy,
+  ) async {
+    switch (strategy.kind) {
+      case EhentaiDownloadStrategyKind.wholeGallery:
+      case EhentaiDownloadStrategyKind.partOnly:
+        _startDownload(context);
+        return;
+      case EhentaiDownloadStrategyKind.galleryRange:
+        _showRangeSelector(
+          context,
+          content,
+          scopeTitle: 'Gallery-wide range',
+          scopeDescription: 'Uses original E-Hentai gallery page numbers.',
+        );
+        return;
+      case EhentaiDownloadStrategyKind.partRange:
+        return;
+    }
+  }
+
+  void _showRangeSelector(
+    BuildContext context,
+    Content targetContent, {
+    String? scopeTitle,
+    String? scopeDescription,
+  }) {
     showDialog(
       context: context,
       builder: (context) => DownloadRangeSelector(
-        totalPages: content.pageCount,
-        contentTitle: content.title,
+        totalPages: targetContent.pageCount,
+        contentTitle: targetContent.title,
+        scopeTitle: scopeTitle,
+        scopeDescription: scopeDescription,
         onRangeSelected: (startPage, endPage) {
-          _startRangeDownload(context, startPage, endPage);
+          _startRangeDownload(context, targetContent, startPage, endPage);
         },
       ),
     );
   }
 
-  void _startRangeDownload(BuildContext context, int startPage, int endPage) {
+  void _startRangeDownload(
+    BuildContext context,
+    Content targetContent,
+    int startPage,
+    int endPage,
+  ) {
     if (!_checkStorageAndProceed(context)) return;
 
     context.read<DownloadBloc>().add(DownloadRangeEvent(
-          content: content,
+          content: targetContent,
           startPage: startPage,
           endPage: endPage,
         ));
-    context.read<DownloadBloc>().add(DownloadStartEvent(content.id));
+    context.read<DownloadBloc>().add(DownloadStartEvent(targetContent.id));
 
     final pageText = startPage == endPage
         ? AppLocalizations.of(context)!.pageText(startPage)
@@ -590,7 +673,7 @@ class DownloadButtonWidget extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context)!
-            .rangeDownloadStarted(content.title, pageText)),
+            .rangeDownloadStarted(targetContent.title, pageText)),
         duration: const Duration(seconds: 3),
       ),
     );
