@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.webkit.WebResourceResponse
 import android.os.Bundle
 import android.view.MenuItem
 import android.webkit.CookieManager
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import java.io.ByteArrayInputStream
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -32,11 +34,16 @@ class WebViewActivity : AppCompatActivity() {
         const val EXTRA_DOM_IMAGE_SELECTORS = "extra_dom_image_selectors"
         const val EXTRA_DOM_IMAGE_ATTRIBUTES = "extra_dom_image_attributes"
         const val EXTRA_DOM_LINK_SELECTORS = "extra_dom_link_selectors"
+        const val EXTRA_CAPTURE_REQUEST_PATTERNS = "extra_capture_request_patterns"
+        const val EXTRA_ALLOW_REQUEST_PATTERNS = "extra_allow_request_patterns"
+        const val EXTRA_PAGE_FINISHED_SCRIPT = "extra_page_finished_script"
+        const val EXTRA_BLOCK_NETWORK_IMAGES = "extra_block_network_images"
 
         const val RESULT_COOKIES = "result_cookies" // ArrayList<String>
         const val RESULT_USER_AGENT = "result_user_agent"
         const val RESULT_CURRENT_URL = "result_current_url"
         const val RESULT_RESOLVED_IMAGE_URL = "result_resolved_image_url"
+        const val RESULT_CAPTURED_REQUEST_URL = "result_captured_request_url"
         
         fun createIntent(
             context: Context, 
@@ -49,6 +56,10 @@ class WebViewActivity : AppCompatActivity() {
             domImageSelectors: List<String>? = null,
             domImageAttributes: List<String>? = null,
             domLinkSelectors: List<String>? = null,
+            captureRequestPatterns: List<String>? = null,
+            allowRequestPatterns: List<String>? = null,
+            pageFinishedScript: String? = null,
+            blockNetworkImages: Boolean = false,
             enableAdBlock: Boolean = false,
             clearCookies: Boolean = false
         ): Intent {
@@ -62,6 +73,10 @@ class WebViewActivity : AppCompatActivity() {
                 if (domImageSelectors != null) putStringArrayListExtra(EXTRA_DOM_IMAGE_SELECTORS, ArrayList(domImageSelectors))
                 if (domImageAttributes != null) putStringArrayListExtra(EXTRA_DOM_IMAGE_ATTRIBUTES, ArrayList(domImageAttributes))
                 if (domLinkSelectors != null) putStringArrayListExtra(EXTRA_DOM_LINK_SELECTORS, ArrayList(domLinkSelectors))
+                if (captureRequestPatterns != null) putStringArrayListExtra(EXTRA_CAPTURE_REQUEST_PATTERNS, ArrayList(captureRequestPatterns))
+                if (allowRequestPatterns != null) putStringArrayListExtra(EXTRA_ALLOW_REQUEST_PATTERNS, ArrayList(allowRequestPatterns))
+                if (pageFinishedScript != null) putExtra(EXTRA_PAGE_FINISHED_SCRIPT, pageFinishedScript)
+                putExtra(EXTRA_BLOCK_NETWORK_IMAGES, blockNetworkImages)
                 putExtra(EXTRA_ENABLE_AD_BLOCK, enableAdBlock)
                 if (clearCookies) putExtra(EXTRA_CLEAR_COOKIES, true)
             }
@@ -76,6 +91,10 @@ class WebViewActivity : AppCompatActivity() {
     private var domImageSelectors: List<String> = emptyList()
     private var domImageAttributes: List<String> = emptyList()
     private var domLinkSelectors: List<String> = emptyList()
+    private var captureRequestPatterns: List<String> = emptyList()
+    private var allowRequestPatterns: List<String> = emptyList()
+    private var pageFinishedScript: String? = null
+    private var blockNetworkImages: Boolean = false
     private var hasFinishedResult = false
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -148,6 +167,10 @@ class WebViewActivity : AppCompatActivity() {
         domImageSelectors = intent.getStringArrayListExtra(EXTRA_DOM_IMAGE_SELECTORS) ?: emptyList()
         domImageAttributes = intent.getStringArrayListExtra(EXTRA_DOM_IMAGE_ATTRIBUTES) ?: emptyList()
         domLinkSelectors = intent.getStringArrayListExtra(EXTRA_DOM_LINK_SELECTORS) ?: emptyList()
+        captureRequestPatterns = intent.getStringArrayListExtra(EXTRA_CAPTURE_REQUEST_PATTERNS) ?: emptyList()
+        allowRequestPatterns = intent.getStringArrayListExtra(EXTRA_ALLOW_REQUEST_PATTERNS) ?: emptyList()
+        pageFinishedScript = intent.getStringExtra(EXTRA_PAGE_FINISHED_SCRIPT)
+        blockNetworkImages = intent.getBooleanExtra(EXTRA_BLOCK_NETWORK_IMAGES, false)
 
         // Sync Initial Cookies if provided
         val cookieManager = CookieManager.getInstance()
@@ -174,6 +197,7 @@ class WebViewActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
+            this.blockNetworkImage = blockNetworkImages
             if (userAgent != null) {
                 userAgentString = userAgent
             }
@@ -196,6 +220,11 @@ class WebViewActivity : AppCompatActivity() {
                 if (checkSsoRedirect(url)) return
                 
                 checkForSuccess(url)
+
+                val script = pageFinishedScript
+                if (!script.isNullOrBlank()) {
+                    view?.evaluateJavascript(script, null)
+                }
                 
                 // Update title
                 view?.title?.let {
@@ -217,12 +246,30 @@ class WebViewActivity : AppCompatActivity() {
 
             // AdBlock Implementation
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
+                val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
+
+                if (captureRequestPatterns.any { requestUrl.contains(it) }) {
+                    view?.post {
+                        finishWithSuccess(
+                            currentUrl = webView.url ?: url,
+                            capturedRequestUrl = requestUrl,
+                        )
+                    }
+                    return emptyResponse()
+                }
+
+                if (captureRequestPatterns.isNotEmpty() &&
+                    requestUrl != url &&
+                    allowRequestPatterns.none { requestUrl.contains(it) }
+                ) {
+                    return emptyResponse()
+                }
+
                 if (enableAdBlock && request != null) {
-                    val url = request.url.toString()
-                    if (AdBlocker.isAd(url)) {
-                        android.util.Log.d("KuronNative", "🚫 Blocked Ad: $url")
+                    if (AdBlocker.isAd(requestUrl)) {
+                        android.util.Log.d("KuronNative", "🚫 Blocked Ad: $requestUrl")
                         // Return empty response to block
-                        return android.webkit.WebResourceResponse("text/plain", "utf-8", null)
+                        return emptyResponse()
                     }
                 }
                 return super.shouldInterceptRequest(view, request)
@@ -278,7 +325,7 @@ class WebViewActivity : AppCompatActivity() {
         return false
     }
 
-    private fun finishWithSuccess(currentUrl: String) {
+    private fun finishWithSuccess(currentUrl: String, capturedRequestUrl: String? = null) {
         if (hasFinishedResult) {
             return
         }
@@ -286,23 +333,34 @@ class WebViewActivity : AppCompatActivity() {
 
         val fallbackCurrentUrl = if (currentUrl.isBlank()) webView.url ?: "" else currentUrl
 
+        if (!capturedRequestUrl.isNullOrBlank()) {
+            completeWithSuccessResult(
+                currentUrl = fallbackCurrentUrl,
+                resolvedImageUrl = null,
+                capturedRequestUrl = capturedRequestUrl,
+            )
+            return
+        }
+
         try {
             webView.evaluateJavascript(buildImageExtractionScript()) { rawResult ->
                 val extraction = parseImageExtractionResult(rawResult)
                 completeWithSuccessResult(
                     currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
                     resolvedImageUrl = extraction.imageUrl,
+                    capturedRequestUrl = null,
                 )
             }
         } catch (_: Exception) {
             completeWithSuccessResult(
                 currentUrl = fallbackCurrentUrl,
                 resolvedImageUrl = null,
+                capturedRequestUrl = null,
             )
         }
     }
 
-    private fun completeWithSuccessResult(currentUrl: String, resolvedImageUrl: String?) {
+    private fun completeWithSuccessResult(currentUrl: String, resolvedImageUrl: String?, capturedRequestUrl: String?) {
         val cookieManager = CookieManager.getInstance()
         cookieManager.flush() // Ensure sync
         
@@ -327,9 +385,20 @@ class WebViewActivity : AppCompatActivity() {
         if (!resolvedImageUrl.isNullOrBlank()) {
             resultIntent.putExtra(RESULT_RESOLVED_IMAGE_URL, resolvedImageUrl)
         }
+        if (!capturedRequestUrl.isNullOrBlank()) {
+            resultIntent.putExtra(RESULT_CAPTURED_REQUEST_URL, capturedRequestUrl)
+        }
         
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
+    }
+
+    private fun emptyResponse(): WebResourceResponse {
+        return WebResourceResponse(
+            "text/plain",
+            "utf-8",
+            ByteArrayInputStream(ByteArray(0)),
+        )
     }
 
     private fun buildImageExtractionScript(): String {

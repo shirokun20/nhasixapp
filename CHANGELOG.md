@@ -58,6 +58,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### 🧩 Source Config Baseline
 - Added baseline `network.rateLimit` blocks (`enabled`, `requestsPerSecond`, `maxConcurrentRequests`) for multiple source configs under `informations/configs` for safer default request pacing.
 
+### 🐛 Bug Fixes & UX
+- **MangaFire Tag Routing**: Fixed an issue where tapping Author or Magazine tags on MangaFire detail pages triggered a generic keyword search instead of navigating to the specific author/magazine routes.
+
 ---
 
 ## [0.9.20+30] - 2026-06-01

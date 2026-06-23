@@ -2,10 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/pages/detail/widgets/detail_info_sections.dart';
 
+class MockRemoteConfigService extends Mock implements RemoteConfigService {}
+
 void main() {
+  setUp(() async {
+    await getIt.reset();
+    final mockConfig = MockRemoteConfigService();
+    when(() => mockConfig.getRawConfig(any())).thenReturn({});
+    getIt.registerSingleton<RemoteConfigService>(mockConfig);
+  });
+
   Chapter chapter(String id, String title, String language) => Chapter(
         id: id,
         title: title,

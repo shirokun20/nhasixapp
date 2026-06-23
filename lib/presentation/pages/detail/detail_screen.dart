@@ -60,6 +60,7 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _isNavigating =
       false; // Add navigation lock to prevent multiple simultaneous navigation
   int _historyRefreshToken = 0;
+  String _mangafireSelectedType = 'Chapter';
 
   String _resolveDetailHeaderImageUrl(Content content) {
     final firstImage =
@@ -605,7 +606,18 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
-    final content = state.content;
+    var content = state.content;
+
+    // Filter MangaFire chapters if both chapters and volumes exist
+    if (content.sourceId == 'mangafire' && content.chapters != null) {
+      final types = content.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
+      if (types.contains('Chapter') && types.contains('Volume')) {
+        content = content.copyWith(
+          chapters: content.chapters!.where((c) => c.scanGroup == _mangafireSelectedType).toList(),
+        );
+      }
+    }
+
     final shouldBlurPrimaryCover = _shouldBlurCover(content);
     return DetailContentView(
       scrollController: _scrollController,
@@ -634,6 +646,7 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 24),
         _buildTagsSection(content),
         const SizedBox(height: 24),
+        if (state.content.sourceId == 'mangafire') _buildMangaFireToggle(state.content),
         _buildActionButtons(content),
         const SizedBox(height: 24),
         if (state.relatedContent != null &&
@@ -921,6 +934,48 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  Widget _buildMangaFireToggle(Content originalContent) {
+    if (originalContent.chapters == null) return const SizedBox.shrink();
+    final types = originalContent.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
+    if (!types.contains('Chapter') || !types.contains('Volume')) {
+      return const SizedBox.shrink();
+    }
+    
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(
+              value: 'Chapter', 
+              label: Text('Chapters'),
+              icon: Icon(Icons.menu_book),
+            ),
+            ButtonSegment(
+              value: 'Volume', 
+              label: Text('Volumes'),
+              icon: Icon(Icons.library_books),
+            ),
+          ],
+          selected: {_mangafireSelectedType},
+          onSelectionChanged: (selection) {
+            setState(() {
+              _mangafireSelectedType = selection.first;
+            });
+          },
+          style: SegmentedButton.styleFrom(
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            selectedForegroundColor: colorScheme.onPrimaryContainer,
+            selectedBackgroundColor: colorScheme.primaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButtons(Content content) {
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
@@ -941,8 +996,19 @@ class _DetailScreenState extends State<DetailScreen> {
         final chapterHistory = currentState is DetailLoaded
             ? (currentState.chapterHistory ?? {})
             : <String, History>{};
+
+        var displayContent = content;
+        if (content.sourceId == 'mangafire' && _mangafireSelectedType.isNotEmpty) {
+          final types = content.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
+          if (types.contains('Chapter') && types.contains('Volume')) {
+            displayContent = content.copyWith(
+              chapters: content.chapters!.where((c) => c.scanGroup == _mangafireSelectedType).toList(),
+            );
+          }
+        }
+
         return DetailChapterSection(
-          content: content,
+          content: displayContent,
           chapterHistory: chapterHistory,
           canDownload: getIt<RemoteConfigService>()
               .isFeatureEnabled(content.sourceId, (f) => f.download),
@@ -955,7 +1021,7 @@ class _DetailScreenState extends State<DetailScreen> {
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (context) => ChapterListBottomSheet(
-                content: content,
+                content: displayContent,
                 detailCubit: _detailCubit,
                 initialLanguageKey: selectedLanguageKey,
               ),

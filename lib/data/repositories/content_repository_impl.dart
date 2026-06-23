@@ -235,9 +235,48 @@ class ContentRepositoryImpl implements ContentRepository {
     try {
       _logger.i('Getting content by tag: ${tag.name}, page: $page');
 
-      // Create search filter for tag
+      // Map tag type to the appropriate filter category
+      final List<FilterItem> tags = [];
+      final List<FilterItem> artists = [];
+      final List<FilterItem> characters = [];
+      final List<FilterItem> parodies = [];
+      final List<FilterItem> groups = [];
+
+      final filterItem = FilterItem.include(tag.name);
+
+      // We pass the raw slug as well using a special prefix so the scraper knows the exact type if it needs it.
+      // E.g. 'artist:', 'magazine:'
+      final mappedItem =
+          FilterItem.include('${tag.type}:${tag.slug ?? tag.name}');
+
+      switch (tag.type) {
+        case TagType.artist:
+        case 'author':
+          artists.add(mappedItem);
+          break;
+        case TagType.character:
+          characters.add(mappedItem);
+          break;
+        case TagType.parody:
+          parodies.add(mappedItem);
+          break;
+        case TagType.group:
+          groups.add(mappedItem);
+          break;
+        case 'magazine':
+          // Put magazine in tags but with a prefix
+          tags.add(mappedItem);
+          break;
+        default:
+          tags.add(filterItem);
+      }
+
       final filter = SearchFilter(
-        tags: [FilterItem.include(tag.name)],
+        tags: tags,
+        artists: artists,
+        characters: characters,
+        parodies: parodies,
+        groups: groups,
         page: page,
         sortBy: sortBy,
       );
@@ -458,7 +497,16 @@ class ContentRepositoryImpl implements ContentRepository {
       return false;
     }
 
-    return content.chapters == null;
+    if (content.chapters == null) {
+      return true;
+    }
+
+    // If we previously cached an empty chapter list due to a scraper bug, force refresh
+    if (source == 'mangafire' && content.chapters!.isEmpty) {
+      return true;
+    }
+
+    return false;
   }
 
   bool _isNicomangaTagCacheIncomplete(Content content) {

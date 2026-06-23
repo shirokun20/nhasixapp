@@ -506,6 +506,10 @@ void _setupDataSources() {
           dio: getIt<Dio>(),
           logger: getIt<Logger>(),
         ),
+        MangaFireSourceFactory(
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
     );

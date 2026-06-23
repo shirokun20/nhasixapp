@@ -221,6 +221,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   late AnimationController _pinchHintController;
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
+  Future<Uint8List?>? _mangaFireResolvedImageFuture;
 
   /// Whether this specific image URL has been identified as heavy/animated.
   /// Mirrors the static [_heavyImageUrls] set but as instance flag so that
@@ -357,6 +358,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     _prepareEhentaiResolveFuture();
+    _prepareMangaFireImageFuture();
   }
 
   /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
@@ -836,6 +838,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     if (sourceChanged || imageChanged) {
       _ehentaiResolveRetries = 0;
       _prepareEhentaiResolveFuture();
+      _prepareMangaFireImageFuture();
 
       if (_isLocalFilePath(widget.imageUrl)) {
         final localPath = _normalizeLocalPath(widget.imageUrl);
@@ -1216,7 +1219,43 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _ehentaiResolvedImageFuture = null;
   }
 
+  void _prepareMangaFireImageFuture() {
+    if (_shouldResolveMangaFireImageBytes(widget.imageUrl)) {
+      _mangaFireResolvedImageFuture =
+          _resolveMangaFireImageBytes(widget.imageUrl);
+      return;
+    }
+
+    _mangaFireResolvedImageFuture = null;
+  }
+
   Widget _buildNetworkImage(
+    BuildContext context,
+    String url, {
+    Map<String, String>? headers,
+  }) {
+    if (_shouldResolveMangaFireImageBytes(url)) {
+      return FutureBuilder<Uint8List?>(
+        future: _mangaFireResolvedImageFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return _buildLoadingIndicator(context);
+          }
+
+          final bytes = snapshot.data;
+          if (bytes == null || bytes.isEmpty) {
+            return _buildStandardNetworkImage(context, url, headers: headers);
+          }
+
+          return _buildMemoryImage(context, bytes);
+        },
+      );
+    }
+
+    return _buildStandardNetworkImage(context, url, headers: headers);
+  }
+
+  Widget _buildStandardNetworkImage(
     BuildContext context,
     String url, {
     Map<String, String>? headers,
@@ -2017,6 +2056,65 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  Widget _buildMemoryImage(BuildContext context, Uint8List bytes) {
+    final decodeWidth = _targetDecodeWidth(
+      context,
+      imageUrl: widget.imageUrl,
+      isLikelyAnimatedUrl: false,
+    );
+
+    return ExtendedImage.memory(
+      bytes,
+      key: ValueKey('extended_memory_${widget.contentId}_${widget.pageNumber}'),
+      fit: _getAdaptiveBoxFit(),
+      filterQuality: FilterQuality.high,
+      mode: widget.enableZoom &&
+              widget.readingMode != ReadingMode.continuousScroll
+          ? ExtendedImageMode.gesture
+          : ExtendedImageMode.none,
+      clearMemoryCacheWhenDispose:
+          ExtendedImageReaderWidget.shouldClearMemoryCacheOnDisposeForTesting(
+        readingMode: widget.readingMode,
+        isHeavy: _isHeavyImage,
+        isHeavyReaderSource: _isHeavyReaderSource(),
+      ),
+      cacheWidth: decodeWidth,
+      extendedImageGestureKey: _gestureKey,
+      initGestureConfigHandler: (state) {
+        return GestureConfig(
+          minScale: 0.5,
+          maxScale: 5.0,
+          animationMinScale: 0.4,
+          animationMaxScale: 5.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialScale: 1.0,
+          inPageView: widget.readingMode != ReadingMode.continuousScroll,
+          initialAlignment: InitialAlignment.center,
+        );
+      },
+      onDoubleTap: widget.onDoubleTapGesture != null
+          ? null
+          : (state) => _handleDoubleTap(state),
+    );
+  }
+
+  bool _shouldResolveMangaFireImageBytes(String url) {
+    return widget.sourceId == 'mangafire' && url.contains('#scrambled_');
+  }
+
+  Future<Uint8List?> _resolveMangaFireImageBytes(String url) async {
+    try {
+      return await KuronNative.instance.downloadBinary(
+        url: url,
+        headers: widget.httpHeaders ?? const <String, String>{},
+      );
+    } catch (e) {
+      _logger.w('Failed to resolve MangaFire image bytes: $e');
+      return null;
+    }
   }
 
   /// Build a card for a page that was skipped during download (timeout/error).

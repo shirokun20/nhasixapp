@@ -34,6 +34,8 @@ import androidx.core.content.FileProvider
 import android.webkit.CookieManager
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
+import kotlin.math.min
 
 /** KuronNativePlugin */
 class KuronNativePlugin :
@@ -810,6 +812,10 @@ class KuronNativePlugin :
         val domImageSelectors = call.argument<List<String>>("domImageSelectors")
         val domImageAttributes = call.argument<List<String>>("domImageAttributes")
         val domLinkSelectors = call.argument<List<String>>("domLinkSelectors")
+        val captureRequestPatterns = call.argument<List<String>>("captureRequestPatterns")
+        val allowRequestPatterns = call.argument<List<String>>("allowRequestPatterns")
+        val pageFinishedScript = call.argument<String>("pageFinishedScript")
+        val blockNetworkImages = call.argument<Boolean>("blockNetworkImages") ?: false
         val enableAdBlock = call.argument<Boolean>("enableAdBlock") ?: false
 
         if (url == null) {
@@ -842,6 +848,10 @@ class KuronNativePlugin :
                 domImageSelectors,
                 domImageAttributes,
                 domLinkSelectors,
+                captureRequestPatterns,
+                allowRequestPatterns,
+                pageFinishedScript,
+                blockNetworkImages,
                 enableAdBlock,
                 call.argument<Boolean>("clearCookies") ?: false
             )
@@ -902,12 +912,14 @@ class KuronNativePlugin :
                     val userAgent = data.getStringExtra(WebViewActivity.RESULT_USER_AGENT)
                     val currentUrl = data.getStringExtra(WebViewActivity.RESULT_CURRENT_URL)
                     val resolvedImageUrl = data.getStringExtra(WebViewActivity.RESULT_RESOLVED_IMAGE_URL)
+                    val capturedRequestUrl = data.getStringExtra(WebViewActivity.RESULT_CAPTURED_REQUEST_URL)
                     
                     val resultMap = HashMap<String, Any?>()
                     resultMap["cookies"] = cookies
                     resultMap["userAgent"] = userAgent
                     resultMap["currentUrl"] = currentUrl
                     resultMap["resolvedImageUrl"] = resolvedImageUrl
+                    resultMap["capturedRequestUrl"] = capturedRequestUrl
                     resultMap["success"] = true
                     
                     pendingResult?.success(resultMap)
@@ -1325,15 +1337,33 @@ class KuronNativePlugin :
 
         executor.execute {
             try {
+                val uri = Uri.parse(url)
+                val fragment = uri.fragment
+                val sanitizedUrl = buildString {
+                    append(uri.scheme ?: "https")
+                    append("://")
+                    append(uri.encodedAuthority ?: "")
+                    append(uri.encodedPath ?: "")
+                    if (!uri.encodedQuery.isNullOrEmpty()) {
+                        append('?')
+                        append(uri.encodedQuery)
+                    }
+                }
+
                 val client = dnsResolver.getHttpClient()
-                val requestBuilder = okhttp3.Request.Builder().url(url)
+                val requestBuilder = okhttp3.Request.Builder().url(sanitizedUrl)
 
                 headers.forEach { (key, value) ->
                     requestBuilder.addHeader(key, value)
                 }
 
                 val response = client.newCall(requestBuilder.build()).execute()
-                val bytes = response.body?.bytes()
+                val rawBytes = response.body?.bytes()
+                val bytes = if (rawBytes != null && fragment?.contains("scrambled_") == true) {
+                    descrambleIfNeeded(rawBytes, fragment)
+                } else {
+                    rawBytes
+                }
 
                 mainThread {
                     if (bytes != null) {
@@ -1348,5 +1378,60 @@ class KuronNativePlugin :
                 }
             }
         }
+    }
+
+    private fun descrambleIfNeeded(bytes: ByteArray, fragment: String): ByteArray {
+        val offset = fragment.substringAfterLast('_').toIntOrNull() ?: return bytes
+        return try {
+            descrambleImage(bytes, offset)
+        } catch (_: Exception) {
+            bytes
+        }
+    }
+
+    private fun descrambleImage(bytes: ByteArray, offset: Int): ByteArray {
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return bytes
+        val width = bitmap.width
+        val height = bitmap.height
+        val pieceWidth = min(200, ceilDiv(width, 5))
+        val pieceHeight = min(200, ceilDiv(height, 5))
+        val xMax = ceilDiv(width, pieceWidth) - 1
+        val yMax = ceilDiv(height, pieceHeight) - 1
+
+        val resultBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(resultBitmap)
+
+        for (y in 0..yMax) {
+            for (x in 0..xMax) {
+                val xDst = pieceWidth * x
+                val yDst = pieceHeight * y
+                val w = min(pieceWidth, width - xDst)
+                val h = min(pieceHeight, height - yDst)
+
+                val xSrc = pieceWidth * if (x == xMax || xMax <= 0) {
+                    x
+                } else {
+                    (xMax - x + offset) % xMax
+                }
+                val ySrc = pieceHeight * if (y == yMax || yMax <= 0) {
+                    y
+                } else {
+                    (yMax - y + offset) % yMax
+                }
+
+                val srcRect = Rect(xSrc, ySrc, xSrc + w, ySrc + h)
+                val dstRect = Rect(xDst, yDst, xDst + w, yDst + h)
+                canvas.drawBitmap(bitmap, srcRect, dstRect, null)
+            }
+        }
+
+        return ByteArrayOutputStream().use { output ->
+            resultBitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+            output.toByteArray()
+        }
+    }
+
+    private fun ceilDiv(value: Int, divisor: Int): Int {
+        return (value + (divisor - 1)) / divisor
     }
 }

@@ -169,6 +169,10 @@ abstract class KuronNativePlatform extends PlatformInterface {
     List<String>? domImageSelectors,
     List<String>? domImageAttributes,
     List<String>? domLinkSelectors,
+    List<String>? captureRequestPatterns,
+    List<String>? allowRequestPatterns,
+    String? pageFinishedScript,
+    bool blockNetworkImages = false,
     bool enableAdBlock = false, // NEW
     bool clearCookies = false,
   }) {

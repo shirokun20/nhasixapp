@@ -150,6 +150,10 @@ class KuronNative {
     List<String>? domImageSelectors,
     List<String>? domImageAttributes,
     List<String>? domLinkSelectors,
+    List<String>? captureRequestPatterns,
+    List<String>? allowRequestPatterns,
+    String? pageFinishedScript,
+    bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
   }) {
@@ -163,6 +167,10 @@ class KuronNative {
       domImageSelectors: domImageSelectors,
       domImageAttributes: domImageAttributes,
       domLinkSelectors: domLinkSelectors,
+      captureRequestPatterns: captureRequestPatterns,
+      allowRequestPatterns: allowRequestPatterns,
+      pageFinishedScript: pageFinishedScript,
+      blockNetworkImages: blockNetworkImages,
       enableAdBlock: enableAdBlock,
       clearCookies: clearCookies,
     );
