@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:kuron_native/kuron_native.dart';
@@ -12,6 +13,7 @@ class MangaFireWebViewHelper {
 
   final Logger _logger;
   final KuronNative _native;
+  Completer<void>? _activeCapture;
 
   Future<String?> captureSearchRequestUrl({
     required String baseUrl,
@@ -66,21 +68,43 @@ class MangaFireWebViewHelper {
     required List<String> allowPatterns,
     String? pageFinishedScript,
   }) async {
-    final result = await _native.showLoginWebView(
-      url: url,
-      successUrlFilters: const <String>[],
-      captureRequestPatterns: capturePatterns,
-      allowRequestPatterns: allowPatterns,
-      pageFinishedScript: pageFinishedScript,
-      blockNetworkImages: true,
-      clearCookies: false,
-    );
+    return _runExclusive(() async {
+      final result = await _native.showLoginWebView(
+        url: url,
+        successUrlFilters: const <String>[],
+        captureRequestPatterns: capturePatterns,
+        allowRequestPatterns: allowPatterns,
+        pageFinishedScript: pageFinishedScript,
+        blockNetworkImages: true,
+        clearCookies: false,
+      );
 
-    final captured = result?['capturedRequestUrl'] as String?;
-    if (captured == null || captured.isEmpty) {
-      _logger.w('MangaFire WebView capture failed for $url');
-      return null;
+      final captured = result?['capturedRequestUrl'] as String?;
+      if (captured == null || captured.isEmpty) {
+        _logger.w('MangaFire WebView capture failed for $url');
+        return null;
+      }
+      return captured;
+    });
+  }
+
+  Future<T> _runExclusive<T>(Future<T> Function() action) async {
+    while (_activeCapture != null) {
+      await _activeCapture!.future;
     }
-    return captured;
+
+    final completer = Completer<void>();
+    _activeCapture = completer;
+
+    try {
+      return await action();
+    } finally {
+      if (identical(_activeCapture, completer)) {
+        _activeCapture = null;
+      }
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
   }
 }

@@ -70,7 +70,7 @@ lib/
 
 ## 📊 Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-06-21
+> Tracked via `openspec/` — Last updated: 2026-06-23
 
 ### ✅ Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -112,6 +112,8 @@ lib/
 - `2026-06-16-tachiyomi-extensions-integration`
 - `2026-06-21-search-runtime-autowiring`
 - `2026-06-21-tabbed-multilang-chapters`
+- `2026-06-23-lazy-load-chapters`
+- `2026-06-23-mangafire-integration`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
@@ -198,6 +200,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-06-23 | Codex | MangaFire integration + lazy chapter lanes archive | ✅ Done | Finalized MangaFire integration and its follow-up lazy chapter lane behavior. MangaFire detail now keeps non-default language/volume lanes deferred until selected, shows loading for the active lane, reuses embedded related content, hides empty related UI, and avoids leaking internal lane metadata tags into the public tag list. Recorded the changes in `CHANGELOG.md` / `MEMORY.md` and archived `openspec/changes/mangafire-integration` plus `openspec/changes/lazy-load-chapters` with the known caveat that some OpenSpec verification/task checkboxes were left incomplete even though the shipped implementation landed. |
 | 2026-06-23 | Antigravity | MangaFire generic tag routing intercept | ✅ Done | Fixed `MangaFireAdapter` search so that generic tag queries generated from `rawParam` config mappings (like `raw:author:{value}=` or `raw:magazine:{value}=`) are intercepted and converted into explicit `author:` / `magazine:` prefixes before routing. This restores MangaFire detail-page tag navigation (author, magazine) which had been falling back to generic keyword search. |
 | 2026-06-22 | Codex | E-Hentai download strategy chooser | ✅ Done | Added a minimal E-Hentai-specific strategy resolver/chooser gated by the live E-Hentai config shape (`source=ehentai`, `download`, `chapters`, `imageUrls.mode=ehentai_page_fetch`). Follow-up fix: the main gallery download button now opens an action sheet reliably for `Download whole gallery` and `Choose gallery range`, while part-row buttons no longer offer range and go straight to part-only download. Verified focused resolver tests and analyze. |
 | 2026-06-22 | Codex | Offline content body duplicate chapter fix | ✅ Done | Fixed duplicate chapter counts/rows in `OfflineContentBody` and offline detail by normalizing `ContentGroup` to unique items and reusing the deduped list in the body/detail consumers. Chapter badges, long-press info, and detail fallback now all derive from the same unique chapter set, so stale duplicate DB IDs no longer show as extra chapters. Verified with focused offline cubit test and analyze. |

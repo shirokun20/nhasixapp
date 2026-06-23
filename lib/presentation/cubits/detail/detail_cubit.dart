@@ -13,6 +13,26 @@ import '../../../domain/entities/history.dart';
 
 part 'detail_state.dart';
 
+bool shouldReuseEmbeddedRelated(Content content) {
+  return content.sourceId == 'mangafire' || content.relatedContent.isNotEmpty;
+}
+
+List<Chapter> mergeChaptersById(
+  List<Chapter> existing,
+  List<Chapter> incoming,
+) {
+  final merged = <Chapter>[
+    ...existing,
+  ];
+  final seenIds = merged.map((chapter) => chapter.id).toSet();
+  for (final chapter in incoming) {
+    if (seenIds.add(chapter.id)) {
+      merged.add(chapter);
+    }
+  }
+  return merged;
+}
+
 /// Cubit for managing content detail view and favorite toggle
 /// Simple state management for detail screen operations
 class DetailCubit extends BaseCubit<DetailState> {
@@ -117,21 +137,29 @@ class DetailCubit extends BaseCubit<DetailState> {
         // Get the content source to call getRelated and getComments
         final source = _contentSourceRegistry.getSource(content.sourceId);
         if (source != null) {
-          final relatedFuture =
-              source.getRelated(content.id).catchError((_) => <Content>[]);
+          Future<List<Content>>? relatedFuture;
+          if (shouldReuseEmbeddedRelated(content)) {
+            relatedContent = content.relatedContent;
+          } else {
+            relatedFuture =
+                source.getRelated(content.id).catchError((_) => <Content>[]);
+          }
           final commentsFuture =
               source.getComments(content.id).catchError((_) => <Comment>[]);
 
-          final results = await Future.wait([
-            relatedFuture,
-            commentsFuture,
-          ]);
-
-          relatedContent = results[0] as List<Content>;
-          comments = results[1] as List<Comment>;
+          if (relatedFuture != null) {
+            final results = await Future.wait([
+              relatedFuture,
+              commentsFuture,
+            ]);
+            relatedContent = results[0] as List<Content>;
+            comments = results[1] as List<Comment>;
+          } else {
+            comments = await commentsFuture;
+          }
 
           logInfo(
-              'Fetched ${relatedContent.length} related, ${comments.length} comments for content: ${content.id}');
+              'Fetched ${(relatedContent ?? const <Content>[]).length} related, ${comments.length} comments for content: ${content.id}');
         }
       } catch (e, stackTrace) {
         handleError(e, stackTrace, 'fetch related/comments');
@@ -249,6 +277,39 @@ class DetailCubit extends BaseCubit<DetailState> {
       handleError(e, stackTrace, 'load related content');
       logWarning('Failed to load related content: ${e.toString()}');
     }
+  }
+
+  Future<void> loadChapterLane({
+    required String language,
+    required String scanGroup,
+  }) async {
+    final currentState = state;
+    if (currentState is! DetailLoaded) {
+      return;
+    }
+
+    final source = _contentSourceRegistry.getSource(currentState.content.sourceId);
+    if (source == null) {
+      return;
+    }
+
+    final incoming = await source.getChapters(
+      currentState.content.id,
+      language: language,
+      scanGroup: scanGroup,
+    );
+    if (incoming.isEmpty || isClosed) {
+      return;
+    }
+
+    final merged = mergeChaptersById(
+      currentState.content.chapters ?? const <Chapter>[],
+      incoming,
+    );
+    emit(currentState.copyWith(
+      content: currentState.content.copyWith(chapters: merged),
+      lastUpdated: DateTime.now(),
+    ));
   }
 
   /// Toggle favorite status of current content

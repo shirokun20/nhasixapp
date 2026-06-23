@@ -102,6 +102,15 @@ class GenericScraperAdapter implements GenericAdapter {
         _delayApplier = delayApplier,
         _rateLimiter = rateLimiter;
 
+  @override
+  Future<List<Chapter>> fetchChapters(
+    String contentId,
+    Map<String, dynamic> rawConfig, {
+    String? language,
+    String? scanGroup,
+  }) async =>
+      const <Chapter>[];
+
   Future<void> _prepareRequestDelay() async {
     if (_delayApplier != null) {
       await _delayApplier();

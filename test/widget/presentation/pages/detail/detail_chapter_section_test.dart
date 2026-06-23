@@ -45,6 +45,7 @@ void main() {
   String label(String key) => switch (key) {
         'en' => 'English',
         'id' => 'Indonesian',
+        'es' => 'Spanish',
         _ => 'Language',
       };
 
@@ -67,6 +68,31 @@ void main() {
           formatDate: (_) => 'today',
           formatLanguageLabel: label,
           canDownload: false,
+        ),
+      );
+
+  Widget loadingSection(Content content) => wrap(
+        DetailChapterSection(
+          content: content,
+          chapterHistory: const {},
+          onChapterTap: (_) {},
+          onViewAll: (_) {},
+          formatDate: (_) => 'today',
+          formatLanguageLabel: label,
+          canDownload: false,
+          availableLanguageKeys: const ['en', 'es'],
+          selectedLanguageKey: 'es',
+          isLoadingSelectedLanguage: true,
+        ),
+      );
+
+  Widget relatedSection(List<Content> items) => wrap(
+        DetailRelatedSection(
+          title: 'More Like This',
+          items: items,
+          onTap: (_) {},
+          shouldBlurCover: (_) => false,
+          resolveHeaders: (_) => null,
         ),
       );
 
@@ -106,5 +132,66 @@ void main() {
     expect(find.byType(ChoiceChip), findsNothing);
     expect(find.text('English 1'), findsOneWidget);
     expect(find.text('English 2'), findsOneWidget);
+  });
+
+  testWidgets('shows lazy language chips and loading state for unloaded lane', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      loadingSection(
+        content([
+          chapter('en-1', 'English 1', 'en'),
+          chapter('en-2', 'English 2', 'english'),
+        ]),
+      ),
+    );
+
+    expect(find.text('English  2'), findsOneWidget);
+    expect(find.text('Language'), findsNothing);
+    expect(find.text('Loading... Spanish'), findsOneWidget);
+    expect(find.text('English 1'), findsNothing);
+  });
+
+  testWidgets('renders coverless related items as a simple list', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      relatedSection([
+        Content(
+          id: 'one',
+          sourceId: 'mangafire',
+          title: 'One Piece: Naoshi Komi Covers Vivi\'s Adventure',
+          coverUrl: '',
+          tags: const [],
+          artists: const [],
+          characters: const [],
+          parodies: const [],
+          groups: const [],
+          language: 'en',
+          pageCount: 0,
+          imageUrls: const [],
+          uploadDate: DateTime(2026),
+        ),
+        Content(
+          id: 'two',
+          sourceId: 'mangafire',
+          title: 'ONE PIECE x Toriko',
+          coverUrl: '',
+          tags: const [],
+          artists: const [],
+          characters: const [],
+          parodies: const [],
+          groups: const [],
+          language: 'en',
+          pageCount: 0,
+          imageUrls: const [],
+          uploadDate: DateTime(2026),
+        ),
+      ]),
+    );
+
+    expect(find.byIcon(Icons.broken_image), findsNothing);
+    expect(find.byIcon(Icons.menu_book_rounded), findsNWidgets(2));
+    expect(find.text('ONE PIECE x Toriko'), findsOneWidget);
   });
 }

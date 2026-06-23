@@ -61,6 +61,8 @@ class _DetailScreenState extends State<DetailScreen> {
       false; // Add navigation lock to prevent multiple simultaneous navigation
   int _historyRefreshToken = 0;
   String _mangafireSelectedType = 'Chapter';
+  String? _mangafireSelectedLanguageKey;
+  bool _isLoadingMangaFireLane = false;
 
   String _resolveDetailHeaderImageUrl(Content content) {
     final firstImage =
@@ -606,18 +608,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
-    var content = state.content;
-
-    // Filter MangaFire chapters if both chapters and volumes exist
-    if (content.sourceId == 'mangafire' && content.chapters != null) {
-      final types = content.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
-      if (types.contains('Chapter') && types.contains('Volume')) {
-        content = content.copyWith(
-          chapters: content.chapters!.where((c) => c.scanGroup == _mangafireSelectedType).toList(),
-        );
-      }
-    }
-
+    final content = state.content;
     final shouldBlurPrimaryCover = _shouldBlurCover(content);
     return DetailContentView(
       scrollController: _scrollController,
@@ -646,7 +637,8 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 24),
         _buildTagsSection(content),
         const SizedBox(height: 24),
-        if (state.content.sourceId == 'mangafire') _buildMangaFireToggle(state.content),
+        if (state.content.sourceId == 'mangafire')
+          _buildMangaFireToggle(state.content),
         _buildActionButtons(content),
         const SizedBox(height: 24),
         if (state.relatedContent != null &&
@@ -895,6 +887,9 @@ class _DetailScreenState extends State<DetailScreen> {
     final allTags = <Tag>[];
 
     void addTag(Tag tag) {
+      if (tag.type.startsWith('__mangafire_')) {
+        return;
+      }
       final key = '${tag.type}:${tag.name.toLowerCase()}';
       if (seen.add(key)) allTags.add(tag);
     }
@@ -934,45 +929,192 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  List<String> _extractMangaFireAvailableLanguageKeys(Content content) {
+    final metadataKeys = content.tags
+        .where((tag) => tag.type == '__mangafire_chapter_language')
+        .map((tag) => ChapterLanguagePresenter.normalize(tag.name))
+        .where((key) => key.isNotEmpty)
+        .toSet()
+        .toList();
+    if (metadataKeys.isNotEmpty) {
+      metadataKeys.sort();
+      return metadataKeys;
+    }
+
+    final chapterKeys = (content.chapters ?? const <Chapter>[])
+        .map((chapter) => ChapterLanguagePresenter.normalize(chapter.language))
+        .toSet()
+        .toList();
+    chapterKeys.sort();
+    return chapterKeys;
+  }
+
+  bool _hasMangaFireGroup(Content content, String group) {
+    return content.tags.any(
+          (tag) => tag.type == '__mangafire_chapter_group' && tag.name == group,
+        ) ||
+        (content.chapters?.any((chapter) => chapter.scanGroup == group) ??
+            false);
+  }
+
+  String? _resolveMangaFireSelectedLanguage(Content content) {
+    final availableKeys = _extractMangaFireAvailableLanguageKeys(content);
+    if (availableKeys.isEmpty) {
+      return null;
+    }
+
+    final selected = _mangafireSelectedLanguageKey == null
+        ? null
+        : ChapterLanguagePresenter.normalize(_mangafireSelectedLanguageKey);
+    if (selected != null && availableKeys.contains(selected)) {
+      return selected;
+    }
+
+    final contentLanguage =
+        ChapterLanguagePresenter.normalize(content.language);
+    if (availableKeys.contains(contentLanguage)) {
+      return contentLanguage;
+    }
+    if (availableKeys.contains('en')) {
+      return 'en';
+    }
+    return availableKeys.first;
+  }
+
+  bool _hasLoadedMangaFireLane({
+    required Content content,
+    required String languageKey,
+    required String scanGroup,
+  }) {
+    return content.chapters?.any(
+          (chapter) =>
+              chapter.scanGroup == scanGroup &&
+              ChapterLanguagePresenter.normalize(chapter.language) ==
+                  languageKey,
+        ) ??
+        false;
+  }
+
+  Future<void> _loadMangaFireLaneIfNeeded({
+    required Content content,
+    required String languageKey,
+    required String scanGroup,
+  }) async {
+    if (_isLoadingMangaFireLane ||
+        _hasLoadedMangaFireLane(
+          content: content,
+          languageKey: languageKey,
+          scanGroup: scanGroup,
+        )) {
+      return;
+    }
+
+    setState(() => _isLoadingMangaFireLane = true);
+    try {
+      await _detailCubit.loadChapterLane(
+        language: languageKey,
+        scanGroup: scanGroup,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingMangaFireLane = false);
+      }
+    }
+  }
+
+  Future<void> _onMangaFireLanguageSelected(
+    Content content,
+    String languageKey,
+  ) async {
+    setState(() => _mangafireSelectedLanguageKey = languageKey);
+    await _loadMangaFireLaneIfNeeded(
+      content: content,
+      languageKey: ChapterLanguagePresenter.normalize(languageKey),
+      scanGroup: _mangafireSelectedType,
+    );
+  }
+
+  Future<void> _onMangaFireTypeSelected(
+    Content content,
+    String scanGroup,
+  ) async {
+    setState(() => _mangafireSelectedType = scanGroup);
+    final languageKey = _resolveMangaFireSelectedLanguage(content);
+    if (languageKey == null) {
+      return;
+    }
+    await _loadMangaFireLaneIfNeeded(
+      content: content,
+      languageKey: languageKey,
+      scanGroup: scanGroup,
+    );
+  }
+
   Widget _buildMangaFireToggle(Content originalContent) {
-    if (originalContent.chapters == null) return const SizedBox.shrink();
-    final types = originalContent.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
-    if (!types.contains('Chapter') || !types.contains('Volume')) {
+    final hasChapterGroup = _hasMangaFireGroup(originalContent, 'Chapter');
+    final hasVolumeGroup = _hasMangaFireGroup(originalContent, 'Volume');
+    if (!hasChapterGroup || !hasVolumeGroup) {
       return const SizedBox.shrink();
     }
-    
+
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(
-              value: 'Chapter', 
-              label: Text('Chapters'),
-              icon: Icon(Icons.menu_book),
+      padding: const EdgeInsets.only(bottom: 24),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildMangaFireTypeChip(
+              label: 'Chapters',
+              value: 'Chapter',
+              icon: Icons.menu_book,
+              colorScheme: colorScheme,
+              content: originalContent,
             ),
-            ButtonSegment(
-              value: 'Volume', 
-              label: Text('Volumes'),
-              icon: Icon(Icons.library_books),
+            const SizedBox(width: 8),
+            _buildMangaFireTypeChip(
+              label: 'Volumes',
+              value: 'Volume',
+              icon: Icons.library_books,
+              colorScheme: colorScheme,
+              content: originalContent,
             ),
           ],
-          selected: {_mangafireSelectedType},
-          onSelectionChanged: (selection) {
-            setState(() {
-              _mangafireSelectedType = selection.first;
-            });
-          },
-          style: SegmentedButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            selectedForegroundColor: colorScheme.onPrimaryContainer,
-            selectedBackgroundColor: colorScheme.primaryContainer,
-          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMangaFireTypeChip({
+    required Content content,
+    required String label,
+    required String value,
+    required IconData icon,
+    required ColorScheme colorScheme,
+  }) {
+    final selected = _mangafireSelectedType == value;
+    return ChoiceChip(
+      selected: selected,
+      avatar: Icon(icon, size: 16),
+      label: Text(label),
+      selectedColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      labelStyle: TextStyleConst.labelMedium.copyWith(
+        color: selected
+            ? colorScheme.onPrimaryContainer
+            : colorScheme.onSurfaceVariant,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      side: BorderSide(
+        color: selected
+            ? colorScheme.primary.withValues(alpha: 0.5)
+            : colorScheme.outlineVariant,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onSelected: (_) {
+        unawaited(_onMangaFireTypeSelected(content, value));
+      },
     );
   }
 
@@ -997,21 +1139,27 @@ class _DetailScreenState extends State<DetailScreen> {
             ? (currentState.chapterHistory ?? {})
             : <String, History>{};
 
-        var displayContent = content;
-        if (content.sourceId == 'mangafire' && _mangafireSelectedType.isNotEmpty) {
-          final types = content.chapters!.map((c) => c.scanGroup).whereType<String>().toSet();
-          if (types.contains('Chapter') && types.contains('Volume')) {
-            displayContent = content.copyWith(
-              chapters: content.chapters!.where((c) => c.scanGroup == _mangafireSelectedType).toList(),
-            );
-          }
-        }
+        final displayContent = _resolveChapterDisplayContent(content);
+        final mangafireLanguageKey = content.sourceId == 'mangafire'
+            ? _resolveMangaFireSelectedLanguage(content)
+            : null;
 
         return DetailChapterSection(
           content: displayContent,
           chapterHistory: chapterHistory,
           canDownload: getIt<RemoteConfigService>()
               .isFeatureEnabled(content.sourceId, (f) => f.download),
+          availableLanguageKeys: content.sourceId == 'mangafire'
+              ? _extractMangaFireAvailableLanguageKeys(content)
+              : null,
+          selectedLanguageKey: mangafireLanguageKey,
+          isLoadingSelectedLanguage:
+              content.sourceId == 'mangafire' && _isLoadingMangaFireLane,
+          onLanguageSelected: content.sourceId == 'mangafire'
+              ? (languageKey) => unawaited(
+                    _onMangaFireLanguageSelected(content, languageKey),
+                  )
+              : null,
           formatDate: _formatDate,
           formatLanguageLabel: _formatChapterLanguageLabel,
           onChapterTap: _detailCubit.openChapter,
@@ -1092,6 +1240,23 @@ class _DetailScreenState extends State<DetailScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  Content _resolveChapterDisplayContent(Content content) {
+    if (content.sourceId != 'mangafire' || content.chapters == null) {
+      return content;
+    }
+
+    if (!_hasMangaFireGroup(content, 'Chapter') ||
+        !_hasMangaFireGroup(content, 'Volume')) {
+      return content;
+    }
+
+    return content.copyWith(
+      chapters: content.chapters!
+          .where((c) => c.scanGroup == _mangafireSelectedType)
+          .toList(),
     );
   }
 

@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Highlights
 
+#### 🔥 MangaFire Integration & Deferred Chapter Lanes
+- **MangaFire Source Support**: Added MangaFire with config-driven browse/detail parsing, VRF-backed search and reader capture, AJAX chapter lane support, and native image descrambling for scrambled pages.
+- **Lazy Chapter Lane Loading**: MangaFire detail now prioritizes the default chapter lane on first load, keeps other language and volume lanes visible as selectable chips, and fetches those lanes only when the user activates them.
+- **Related/Tag Detail Polish**: MangaFire detail now hides empty related sections, falls back to a simple list when related covers are missing, and keeps internal lane metadata out of the public tag UI.
+
 #### 🧭 Chapter Language Tabs & MangaDex Paging
 - **Tabbed Chapter Lanes**: Detail pages now group multi-language chapters into explicit lanes/chips, keep the selected lane stable across reader launches, and preserve reader same-language navigation with shared language normalization.
 - **Scoped Chapter Browsing**: `View all chapters` now opens on the active lane, MangaDex detail fetches stop at the first chapter page by default, and the bottom sheet loads more chapters per selected language instead of pulling the entire feed at once.

@@ -335,6 +335,20 @@ class GenericHttpSource implements ContentSource {
     return _adapter.fetchChapterImages(chapterId, _rawConfig);
   }
 
+  @override
+  Future<List<Chapter>> getChapters(
+    String contentId, {
+    String? language,
+    String? scanGroup,
+  }) async {
+    return _adapter.fetchChapters(
+      contentId,
+      _rawConfig,
+      language: language,
+      scanGroup: scanGroup,
+    );
+  }
+
   /// Build the web-facing content URL from the `contentUrl` endpoint
   /// template in config (e.g. `"/g/{id}/"`). Returns empty string if
   /// the template is not defined in the config.

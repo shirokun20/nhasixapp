@@ -1,5 +1,6 @@
 import '../entities/content.dart';
 import '../entities/content_list_result.dart';
+import '../entities/chapter.dart';
 import '../entities/comment.dart';
 import '../entities/search_filter.dart';
 import '../entities/chapter_data.dart';
@@ -62,6 +63,17 @@ abstract class ContentSource {
   /// Get chapter image URLs and navigation data for a specific chapter ID.
   /// Used primarily by manga/manhwa sources. Default implementation returns null.
   Future<ChapterData?> getChapterImages(String chapterId) async => null;
+
+  /// Get chapters for a specific content lane.
+  ///
+  /// Default implementation returns an empty list so sources can opt in only
+  /// when they support lazy lane fetching.
+  Future<List<Chapter>> getChapters(
+    String contentId, {
+    String? language,
+    String? scanGroup,
+  }) async =>
+      const [];
 
   /// Build full image URL for this source
   String buildImageUrl({

@@ -64,4 +64,13 @@ abstract class GenericAdapter {
     String chapterId,
     Map<String, dynamic> rawConfig,
   );
+
+  /// Fetch chapters for a specific content lane.
+  Future<List<Chapter>> fetchChapters(
+    String contentId,
+    Map<String, dynamic> rawConfig, {
+    String? language,
+    String? scanGroup,
+  }) async =>
+      const [];
 }

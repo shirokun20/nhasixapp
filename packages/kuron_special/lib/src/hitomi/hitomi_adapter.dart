@@ -28,6 +28,15 @@ class HitomiAdapter implements GenericAdapter {
         _logger = logger;
 
   @override
+  Future<List<Chapter>> fetchChapters(
+    String contentId,
+    Map<String, dynamic> rawConfig, {
+    String? language,
+    String? scanGroup,
+  }) async =>
+      const <Chapter>[];
+
+  @override
   Future<AdapterSearchResult> search(
     SearchFilter filter,
     Map<String, dynamic> rawConfig,

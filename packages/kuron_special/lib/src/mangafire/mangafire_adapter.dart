@@ -10,6 +10,10 @@ import 'package:logger/logger.dart';
 import 'mangafire_vrf_cache.dart';
 import 'mangafire_webview_helper.dart';
 
+const mangafireChapterLanguageTagType = '__mangafire_chapter_language';
+const mangafireChapterGroupTagType = '__mangafire_chapter_group';
+const mangafireUnknownLanguageKey = 'unknown';
+
 String resolveMangaFireSearchQuery(
   SearchFilter filter,
   Map<String, dynamic> rawConfig,
@@ -142,6 +146,117 @@ List<dom.Element> selectMangaFireListNodes(dom.Document document) {
   return document.querySelectorAll('.unit .inner');
 }
 
+List<dom.Element> selectMangaFireDetailChapterNodes(
+  dom.Document document, {
+  required String dataName,
+}) {
+  return document.querySelectorAll(
+    '.tab-content[data-name="$dataName"] .list-body li.item',
+  );
+}
+
+List<dom.Element> selectMangaFireRelatedNodes(dom.Document document) {
+  return document.querySelectorAll('section.m-related .unit');
+}
+
+List<({String language, String type})> computeMissingMangaFireChapterRequests({
+  required List<Chapter> chapters,
+  required Set<String> languages,
+}) {
+  final availableLanguages = languages
+      .map((language) => language.trim().toLowerCase())
+      .where((language) => language.isNotEmpty)
+      .toSet();
+  final seenByType = <String, Set<String>>{
+    'chapter': <String>{},
+    'volume': <String>{},
+  };
+
+  for (final chapter in chapters) {
+    final language = (chapter.language ?? '').trim().toLowerCase();
+    if (language.isEmpty) {
+      continue;
+    }
+
+    final scanGroup = (chapter.scanGroup ?? '').trim().toLowerCase();
+    final type = scanGroup.startsWith('vol') ? 'volume' : 'chapter';
+    seenByType[type]!.add(language);
+  }
+
+  final requests = <({String language, String type})>[];
+  for (final type in const <String>['chapter', 'volume']) {
+    final seenLanguages = seenByType[type] ?? const <String>{};
+    final missingLanguages = seenLanguages.isEmpty
+        ? availableLanguages
+        : availableLanguages.difference(seenLanguages);
+    for (final language in missingLanguages) {
+      requests.add((language: language, type: type));
+    }
+  }
+
+  return requests;
+}
+
+String? resolveMangaFireReaderLanguage(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) {
+    return null;
+  }
+
+  final segments = uri.pathSegments;
+  final readIndex = segments.indexOf('read');
+  if (readIndex < 0 || readIndex + 2 >= segments.length) {
+    return null;
+  }
+
+  final value = segments[readIndex + 2].trim().toLowerCase();
+  if (value.isEmpty || value.contains('chapter') || value.contains('volume')) {
+    return null;
+  }
+  return value;
+}
+
+bool hasMangaFireChapterGroupMetadata(Content content, String group) {
+  return content.tags.any(
+    (tag) => tag.type == mangafireChapterGroupTagType && tag.name == group,
+  );
+}
+
+List<String> extractMangaFireAvailableLanguageKeys(Content content) {
+  final keys = content.tags
+      .where((tag) => tag.type == mangafireChapterLanguageTagType)
+      .map((tag) => normalizeMangaFireLanguageKey(tag.name))
+      .where((key) => key.isNotEmpty)
+      .toList(growable: false);
+  if (keys.isNotEmpty) {
+    return keys;
+  }
+  return content.chapters
+          ?.map((chapter) => normalizeMangaFireLanguageKey(chapter.language))
+          .toSet()
+          .toList(growable: false) ??
+      const <String>[];
+}
+
+String normalizeMangaFireLanguageKey(String? value) {
+  final raw = value?.trim().toLowerCase().replaceAll('_', '-');
+  if (raw == null || raw.isEmpty) return mangafireUnknownLanguageKey;
+  final base = raw.split('-').first;
+  return switch (base) {
+    'english' => 'en',
+    'eng' => 'en',
+    'indonesian' => 'id',
+    'indo' => 'id',
+    'japanese' => 'ja',
+    'jpn' => 'ja',
+    'korean' => 'ko',
+    'kor' => 'ko',
+    'chinese' => 'zh',
+    'unknown' => mangafireUnknownLanguageKey,
+    _ => base,
+  };
+}
+
 class MangaFireAdapter implements GenericAdapter {
   MangaFireAdapter({
     required Dio dio,
@@ -178,26 +293,35 @@ class MangaFireAdapter implements GenericAdapter {
     // Pre-process raw tag queries from generic mapping config
     var baseQuery = filter.query.trim();
     if (baseQuery.startsWith('raw:author:{value}=')) {
-      baseQuery = 'author:${baseQuery.replaceFirst('raw:author:{value}=', '').trim()}';
+      baseQuery =
+          'author:${baseQuery.replaceFirst('raw:author:{value}=', '').trim()}';
     } else if (baseQuery.startsWith('raw:magazine:{value}=')) {
-      baseQuery = 'magazine:${baseQuery.replaceFirst('raw:magazine:{value}=', '').trim()}';
+      baseQuery =
+          'magazine:${baseQuery.replaceFirst('raw:magazine:{value}=', '').trim()}';
     } else if (baseQuery.startsWith('raw:genre:{value}=')) {
-      baseQuery = 'genre:${baseQuery.replaceFirst('raw:genre:{value}=', '').trim()}';
+      baseQuery =
+          'genre:${baseQuery.replaceFirst('raw:genre:{value}=', '').trim()}';
     }
 
     if (baseQuery.startsWith('author:')) {
       final value = baseQuery.replaceFirst('author:', '').trim();
-      return _fetchList(_absoluteUrl('/author/${_slugify(value)}?page=${filter.page}'), sourceLanguage: language);
+      return _fetchList(
+          _absoluteUrl('/author/${_slugify(value)}?page=${filter.page}'),
+          sourceLanguage: language);
     }
 
     if (baseQuery.startsWith('magazine:')) {
       final value = baseQuery.replaceFirst('magazine:', '').trim();
-      return _fetchList(_absoluteUrl('/magazine/${_slugify(value)}?page=${filter.page}'), sourceLanguage: language);
+      return _fetchList(
+          _absoluteUrl('/magazine/${_slugify(value)}?page=${filter.page}'),
+          sourceLanguage: language);
     }
 
     if (baseQuery.startsWith('genre:')) {
       final value = baseQuery.replaceFirst('genre:', '').trim();
-      return _fetchList(_absoluteUrl('/genre/${_slugify(value)}?page=${filter.page}'), sourceLanguage: language);
+      return _fetchList(
+          _absoluteUrl('/genre/${_slugify(value)}?page=${filter.page}'),
+          sourceLanguage: language);
     }
 
     final query = resolveMangaFireSearchQuery(filter, rawConfig);
@@ -336,94 +460,27 @@ class MangaFireAdapter implements GenericAdapter {
       ));
     }
 
-    final contentIdStr = _contentIdFromUrl(detailUrl) ?? contentId;
-    final parts = contentIdStr.split('.');
-    final ajaxId = parts.length > 1 ? parts.last : contentIdStr;
+    final hasChapterGroup =
+        document.querySelector('.tab-content[data-name="chapter"]') != null;
+    final hasVolumeGroup =
+        document.querySelector('.tab-content[data-name="volume"]') != null;
+    tags.addAll(_buildMangaFireLaneMetadataTags(
+      languages: langCodes,
+      hasChapterGroup: hasChapterGroup,
+      hasVolumeGroup: hasVolumeGroup,
+    ));
 
-    final chapters = <Chapter>[];
-    final fetchResults = <Future<List<Chapter>>>[];
-    for (final lang in langCodes) {
-      for (final type in ['chapter', 'volume']) {
-        fetchResults.add((() async {
-          final list = <Chapter>[];
-          final ajaxUrl = _absoluteUrl('/ajax/manga/$ajaxId/$type/$lang');
-          Map<String, dynamic> ajaxRes;
-          try {
-            ajaxRes = await _getJson(ajaxUrl);
-          } catch (e) {
-            return list;
-          }
-
-          if (ajaxRes.isEmpty) return list;
-
-          final resultStr = ajaxRes['result'] as String?;
-          if (resultStr == null || resultStr.isEmpty) return list;
-
-          final doc = html.parse(resultStr);
-          // Fallback to more generic `.item a` if specific ones fail
-          var items = type == 'volume'
-              ? doc.querySelectorAll('.vol-list .item a')
-              : doc.querySelectorAll('li.item a');
-
-          if (items.isEmpty) {
-            items = doc.querySelectorAll('.item a');
-          }
-          for (final item in items) {
-            final href = item.attributes['href'] ?? '';
-            if (href.isEmpty) continue;
-            final chapterUrl = _absoluteUrl(href);
-
-            final spans = item.querySelectorAll('span');
-            final titleText = spans.isNotEmpty ? spans.first.text.trim() : '';
-            final dateText = spans.length > 1 ? spans[1].text.trim() : '';
-
-            final number = item.parent?.attributes['data-number'] ?? '';
-            var displayTitle = titleText;
-            final isVolume = type == 'volume';
-            final defaultLabel = isVolume ? 'Volume' : 'Chapter';
-
-            if (displayTitle.isEmpty) {
-              displayTitle =
-                  number.isEmpty ? defaultLabel : '$defaultLabel $number';
-            } else {
-              // Ensure it has the correct prefix so UI filtering works
-              final lowerTitle = displayTitle.toLowerCase();
-              if (isVolume && !lowerTitle.contains('vol')) {
-                displayTitle = number.isEmpty
-                    ? 'Volume: $displayTitle'
-                    : 'Volume $number: $displayTitle';
-              } else if (!isVolume && !lowerTitle.contains('chap')) {
-                displayTitle = number.isEmpty
-                    ? 'Chapter: $displayTitle'
-                    : 'Chapter $number: $displayTitle';
-              }
-            }
-
-            final uploadDate = _parseDate(dateText);
-
-            list.add(Chapter(
-              id: chapterUrl,
-              title: displayTitle,
-              url: chapterUrl,
-              uploadDate: uploadDate,
-              language: lang,
-              scanGroup: type == 'volume' ? 'Volume' : 'Chapter',
-            ));
-          }
-          return list;
-        })());
-      }
-    }
-
-    final results = await Future.wait(fetchResults);
-    for (final res in results) {
-      chapters.addAll(res);
-    }
+    final fallbackLanguage = langCodes.first;
+    final chapters = _parseChaptersFromDetailDocument(
+      document,
+      fallbackLanguage: fallbackLanguage,
+      allowedGroups: const <String>{'Chapter'},
+    );
 
     final relatedContent = <Content>[];
-    
+
     // First try the regular card format (like "You may also like")
-    final relatedNodes = document.querySelectorAll('section.m-related .unit, section.side-manga .unit');
+    final relatedNodes = selectMangaFireRelatedNodes(document);
     for (final node in relatedNodes) {
       final href = _attr(node, 'href');
       if (href.isEmpty) continue;
@@ -454,9 +511,10 @@ class MangaFireAdapter implements GenericAdapter {
         uploadDate: DateTime.now(),
       ));
     }
-    
+
     // Then try the list format (like "Related Manga" tabs)
-    final relatedListNodes = document.querySelectorAll('section.m-related ul.tab-content li a');
+    final relatedListNodes =
+        document.querySelectorAll('section.m-related ul.tab-content li a');
     for (final node in relatedListNodes) {
       final href = _attr(node, 'href');
       if (href.isEmpty) continue;
@@ -535,6 +593,31 @@ class MangaFireAdapter implements GenericAdapter {
   ) async {
     final detail = await fetchDetail(contentId, rawConfig);
     return detail.content.relatedContent;
+  }
+
+  @override
+  Future<List<Chapter>> fetchChapters(
+    String contentId,
+    Map<String, dynamic> rawConfig, {
+    String? language,
+    String? scanGroup,
+  }) async {
+    final normalizedLanguage = normalizeMangaFireLanguageKey(language);
+    final group = (scanGroup ?? 'Chapter').trim();
+    final requestType =
+        group.toLowerCase().startsWith('vol') ? 'volume' : 'chapter';
+    return _fetchChaptersFromAjax(
+      detailUrl: _absoluteUrl('/manga/$contentId'),
+      requests: <({String language, String type})>[
+        (
+          language: normalizedLanguage == mangafireUnknownLanguageKey
+              ? resolveMangaFireLanguage(const SearchFilter(), rawConfig)
+              : normalizedLanguage,
+          type: requestType,
+        ),
+      ],
+      seenIds: <String>{},
+    );
   }
 
   @override
@@ -710,7 +793,8 @@ class MangaFireAdapter implements GenericAdapter {
     int? totalPages;
     final paginationNode = document.querySelector('.pagination');
     if (paginationNode != null) {
-      final pageLinks = paginationNode.querySelectorAll('.page-item a, .page-item span');
+      final pageLinks =
+          paginationNode.querySelectorAll('.page-item a, .page-item span');
       for (final link in pageLinks) {
         final text = _text(link).trim();
         final pageNum = int.tryParse(text);
@@ -719,7 +803,7 @@ class MangaFireAdapter implements GenericAdapter {
             totalPages = pageNum;
           }
         }
-        
+
         final href = _attr(link, 'href');
         if (href.isNotEmpty) {
           final uri = Uri.tryParse(href);
@@ -737,13 +821,220 @@ class MangaFireAdapter implements GenericAdapter {
 
     final hasNext =
         document.querySelector('.page-item.active + .page-item .page-link') !=
-            null || document.querySelector('.pagination .page-item:last-child a[rel="next"]') != null;
-            
+                null ||
+            document.querySelector(
+                    '.pagination .page-item:last-child a[rel="next"]') !=
+                null;
+
     return AdapterSearchResult(
-      items: items, 
+      items: items,
       hasNextPage: hasNext,
       totalPages: totalPages,
     );
+  }
+
+  List<Chapter> _parseChaptersFromDetailDocument(
+    dom.Document document, {
+    required String fallbackLanguage,
+    Set<String>? allowedGroups,
+  }) {
+    final chapters = <Chapter>[];
+    final seenIds = <String>{};
+    final normalizedAllowedGroups =
+        allowedGroups?.map((group) => group.trim().toLowerCase()).toSet();
+
+    for (final entry in const <(String, String)>[
+      ('chapter', 'Chapter'),
+      ('volume', 'Volume'),
+    ]) {
+      if (normalizedAllowedGroups != null &&
+          !normalizedAllowedGroups.contains(entry.$2.toLowerCase())) {
+        continue;
+      }
+      final items = selectMangaFireDetailChapterNodes(
+        document,
+        dataName: entry.$1,
+      );
+      for (final item in items) {
+        final chapter = _mapDetailChapterItem(
+          item,
+          scanGroup: entry.$2,
+          fallbackLanguage: fallbackLanguage,
+        );
+        if (chapter != null && seenIds.add(chapter.id)) {
+          chapters.add(chapter);
+        }
+      }
+    }
+
+    if (chapters.isEmpty) {
+      _logger.w(
+        'MangaFire detail HTML contained no chapter items '
+        '(chapter=${selectMangaFireDetailChapterNodes(document, dataName: 'chapter').length}, '
+        'volume=${selectMangaFireDetailChapterNodes(document, dataName: 'volume').length})',
+      );
+    }
+
+    return chapters;
+  }
+
+  List<Tag> _buildMangaFireLaneMetadataTags({
+    required Set<String> languages,
+    required bool hasChapterGroup,
+    required bool hasVolumeGroup,
+  }) {
+    final tags = <Tag>[
+      for (final language in languages.toList()..sort())
+        Tag(
+          id: language.hashCode,
+          name: normalizeMangaFireLanguageKey(language),
+          type: mangafireChapterLanguageTagType,
+          count: 0,
+        ),
+    ];
+
+    if (hasChapterGroup) {
+      tags.add(
+        const Tag(
+          id: 1,
+          name: 'Chapter',
+          type: mangafireChapterGroupTagType,
+          count: 0,
+        ),
+      );
+    }
+    if (hasVolumeGroup) {
+      tags.add(
+        const Tag(
+          id: 2,
+          name: 'Volume',
+          type: mangafireChapterGroupTagType,
+          count: 0,
+        ),
+      );
+    }
+
+    return tags;
+  }
+
+  Chapter? _mapDetailChapterItem(
+    dom.Element item, {
+    required String scanGroup,
+    required String fallbackLanguage,
+  }) {
+    final anchor = item.querySelector('a');
+    final href = _attr(anchor, 'href');
+    if (href.isEmpty) {
+      return null;
+    }
+
+    final spans = anchor?.querySelectorAll('span') ?? const <dom.Element>[];
+    final titleText = spans.isNotEmpty ? spans.first.text.trim() : '';
+    final dateText = spans.length > 1 ? spans[1].text.trim() : '';
+    final number = item.attributes['data-number']?.trim() ?? '';
+    final language = resolveMangaFireReaderLanguage(href) ?? fallbackLanguage;
+
+    return Chapter(
+      id: href,
+      title: _buildChapterTitle(
+        label: scanGroup,
+        number: number,
+        titleText: titleText,
+      ),
+      url: href,
+      uploadDate: _parseDate(dateText),
+      language: language,
+      scanGroup: scanGroup,
+    );
+  }
+
+  Future<List<Chapter>> _fetchChaptersFromAjax({
+    required String detailUrl,
+    required List<({String language, String type})> requests,
+    Set<String>? seenIds,
+  }) async {
+    final contentIdStr = _contentIdFromUrl(detailUrl);
+    if (contentIdStr == null || contentIdStr.isEmpty) {
+      return const <Chapter>[];
+    }
+
+    final parts = contentIdStr.split('.');
+    final ajaxId = parts.length > 1 ? parts.last : contentIdStr;
+    final chapters = <Chapter>[];
+    final knownIds = seenIds ?? <String>{};
+
+    for (final request in requests) {
+      final ajaxUrl = _absoluteUrl(
+        '/ajax/manga/$ajaxId/${request.type}/${request.language}',
+      );
+      Map<String, dynamic> ajaxRes;
+      try {
+        ajaxRes = await _getJson(ajaxUrl);
+      } on DioException catch (error) {
+        _logger.w(
+          'MangaFire chapter AJAX failed for $ajaxUrl '
+          '(${error.response?.statusCode})',
+        );
+        continue;
+      } catch (_) {
+        _logger.w('MangaFire chapter AJAX failed for $ajaxUrl');
+        continue;
+      }
+
+      final resultStr = ajaxRes['result'] as String?;
+      if (resultStr == null || resultStr.isEmpty) {
+        _logger.w('MangaFire chapter AJAX returned empty result for $ajaxUrl');
+        continue;
+      }
+
+      final doc = html.parse(resultStr);
+      var items = request.type == 'volume'
+          ? doc.querySelectorAll('.vol-list .item')
+          : doc.querySelectorAll('li.item');
+      if (items.isEmpty) {
+        items = doc.querySelectorAll('.item');
+      }
+
+      for (final item in items) {
+        final chapter = _mapDetailChapterItem(
+          item,
+          scanGroup: request.type == 'volume' ? 'Volume' : 'Chapter',
+          fallbackLanguage: request.language,
+        );
+        if (chapter == null || !knownIds.add(chapter.id)) {
+          continue;
+        }
+        chapters.add(chapter);
+      }
+    }
+
+    if (chapters.isEmpty) {
+      _logger.w('MangaFire chapter parsing returned no entries for $detailUrl');
+    }
+
+    return chapters;
+  }
+
+  String _buildChapterTitle({
+    required String label,
+    required String number,
+    required String titleText,
+  }) {
+    final cleanLabel = label.trim().isEmpty ? 'Chapter' : label.trim();
+    final cleanTitle = titleText.trim();
+    if (cleanTitle.isEmpty) {
+      return number.isEmpty ? cleanLabel : '$cleanLabel $number';
+    }
+
+    final lowerTitle = cleanTitle.toLowerCase();
+    final lowerLabel = cleanLabel.toLowerCase();
+    if (lowerTitle.contains(lowerLabel == 'volume' ? 'vol' : 'chap')) {
+      return cleanTitle;
+    }
+
+    return number.isEmpty
+        ? '$cleanLabel: $cleanTitle'
+        : '$cleanLabel $number: $cleanTitle';
   }
 
   Content? _mapListItem(
