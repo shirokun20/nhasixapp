@@ -241,6 +241,9 @@ List<String> extractMangaFireAvailableLanguageKeys(Content content) {
 String normalizeMangaFireLanguageKey(String? value) {
   final raw = value?.trim().toLowerCase().replaceAll('_', '-');
   if (raw == null || raw.isEmpty) return mangafireUnknownLanguageKey;
+  if (raw == 'pt-br' || raw == 'es-la') {
+    return raw;
+  }
   final base = raw.split('-').first;
   return switch (base) {
     'english' => 'en',

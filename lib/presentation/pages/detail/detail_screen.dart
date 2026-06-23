@@ -639,7 +639,7 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 24),
         if (state.content.sourceId == 'mangafire')
           _buildMangaFireToggle(state.content),
-        _buildActionButtons(content),
+        _buildActionButtons(state),
         const SizedBox(height: 24),
         if (state.relatedContent != null &&
             state.relatedContent!.isNotEmpty) ...[
@@ -1118,7 +1118,8 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildActionButtons(Content content) {
+  Widget _buildActionButtons(DetailLoaded detailState) {
+    final content = detailState.content;
     // Check if chapters feature is enabled for this source
     final remoteConfig = getIt<RemoteConfigService>();
     final hasChaptersFeature =
@@ -1133,19 +1134,19 @@ class _DetailScreenState extends State<DetailScreen> {
     // Chapter-based sources should either show chapter list or an explicit
     // no-chapters message (without Read Now button).
     if (hasChaptersFeature) {
-      if (hasChapters) {
-        final currentState = _detailCubit.state;
-        final chapterHistory = currentState is DetailLoaded
-            ? (currentState.chapterHistory ?? {})
-            : <String, History>{};
-
+      if (hasChapters || detailState.isChaptersLoading) {
+        final chapterHistory =
+            detailState.chapterHistory ?? <String, History>{};
         final displayContent = _resolveChapterDisplayContent(content);
+        final safeDisplayContent = displayContent.copyWith(
+          chapters: displayContent.chapters ?? const <Chapter>[],
+        );
         final mangafireLanguageKey = content.sourceId == 'mangafire'
             ? _resolveMangaFireSelectedLanguage(content)
             : null;
 
         return DetailChapterSection(
-          content: displayContent,
+          content: safeDisplayContent,
           chapterHistory: chapterHistory,
           canDownload: getIt<RemoteConfigService>()
               .isFeatureEnabled(content.sourceId, (f) => f.download),
@@ -1153,8 +1154,9 @@ class _DetailScreenState extends State<DetailScreen> {
               ? _extractMangaFireAvailableLanguageKeys(content)
               : null,
           selectedLanguageKey: mangafireLanguageKey,
-          isLoadingSelectedLanguage:
-              content.sourceId == 'mangafire' && _isLoadingMangaFireLane,
+          isLoadingSelectedLanguage: content.sourceId == 'mangafire'
+              ? _isLoadingMangaFireLane
+              : detailState.isChaptersLoading,
           onLanguageSelected: content.sourceId == 'mangafire'
               ? (languageKey) => unawaited(
                     _onMangaFireLanguageSelected(content, languageKey),
@@ -1169,7 +1171,7 @@ class _DetailScreenState extends State<DetailScreen> {
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (context) => ChapterListBottomSheet(
-                content: displayContent,
+                content: safeDisplayContent,
                 detailCubit: _detailCubit,
                 initialLanguageKey: selectedLanguageKey,
               ),
@@ -1296,7 +1298,10 @@ class _DetailScreenState extends State<DetailScreen> {
       return AppLocalizations.of(context)!.languageLabel;
     }
     final langService = getIt<LanguageService>();
-    final name = langService.displayName(normalized);
+    final name = langService.resolve(normalized)?.displayName ??
+        (normalized.contains('-')
+            ? langService.displayName(normalized.split('-').first)
+            : langService.displayName(normalized));
     final upper = normalized.toUpperCase();
     return '$name ($upper)';
   }

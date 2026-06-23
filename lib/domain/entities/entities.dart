@@ -1,7 +1,7 @@
 // Domain Entities Export File
 // Core entities from kuron_core package
 export 'package:kuron_core/kuron_core.dart'
-    show Content, Tag, TagType, Comment, ChapterData;
+    show Content, Tag, TagType, Comment, ChapterData, Chapter;
 
 // App-specific extensions for core entities
 export 'package:nhasixapp/domain/extensions/content_extensions.dart';

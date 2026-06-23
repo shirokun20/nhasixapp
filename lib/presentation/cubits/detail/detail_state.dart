@@ -28,6 +28,7 @@ class DetailLoaded extends DetailState {
     required this.isFavorited,
     required this.lastUpdated,
     this.isTogglingFavorite = false,
+    this.isChaptersLoading = false,
     this.imageMetadata,
     this.chapterHistory,
     this.relatedContent,
@@ -37,6 +38,7 @@ class DetailLoaded extends DetailState {
   final Content content;
   final bool isFavorited;
   final bool isTogglingFavorite;
+  final bool isChaptersLoading;
   final DateTime lastUpdated;
   final List<ImageMetadata>? imageMetadata;
   final Map<String, History>? chapterHistory;
@@ -48,6 +50,7 @@ class DetailLoaded extends DetailState {
         content,
         isFavorited,
         isTogglingFavorite,
+        isChaptersLoading,
         lastUpdated,
         imageMetadata,
         chapterHistory,
@@ -60,6 +63,7 @@ class DetailLoaded extends DetailState {
     Content? content,
     bool? isFavorited,
     bool? isTogglingFavorite,
+    bool? isChaptersLoading,
     DateTime? lastUpdated,
     List<ImageMetadata>? imageMetadata,
     Map<String, History>? chapterHistory,
@@ -70,6 +74,7 @@ class DetailLoaded extends DetailState {
       content: content ?? this.content,
       isFavorited: isFavorited ?? this.isFavorited,
       isTogglingFavorite: isTogglingFavorite ?? this.isTogglingFavorite,
+      isChaptersLoading: isChaptersLoading ?? this.isChaptersLoading,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       imageMetadata: imageMetadata ?? this.imageMetadata,
       chapterHistory: chapterHistory ?? this.chapterHistory,

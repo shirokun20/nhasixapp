@@ -10,7 +10,6 @@ import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:nhasixapp/presentation/widgets/ehentai_download_strategy.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
-import 'package:kuron_core/kuron_core.dart' show Chapter;
 
 class DetailTitleSection extends StatelessWidget {
   const DetailTitleSection({super.key, required this.content});

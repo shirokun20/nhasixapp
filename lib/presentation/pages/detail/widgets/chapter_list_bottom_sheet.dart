@@ -771,7 +771,10 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
       return AppLocalizations.of(context)!.languageLabel;
     }
     final languageService = getIt<LanguageService>();
-    final displayName = languageService.displayName(normalized);
+    final displayName = languageService.resolve(normalized)?.displayName ??
+        (normalized.contains('-')
+            ? languageService.displayName(normalized.split('-').first)
+            : languageService.displayName(normalized));
     return '$displayName (${normalized.toUpperCase()})';
   }
 }

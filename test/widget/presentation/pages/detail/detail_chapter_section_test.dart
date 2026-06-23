@@ -46,6 +46,9 @@ void main() {
         'en' => 'English',
         'id' => 'Indonesian',
         'es' => 'Spanish',
+        'es-la' => 'Spanish',
+        'pt' => 'Portuguese',
+        'pt-br' => 'Portuguese',
         _ => 'Language',
       };
 
@@ -193,5 +196,21 @@ void main() {
     expect(find.byIcon(Icons.broken_image), findsNothing);
     expect(find.byIcon(Icons.menu_book_rounded), findsNWidgets(2));
     expect(find.text('ONE PIECE x Toriko'), findsOneWidget);
+  });
+
+  testWidgets('keeps regional language lanes separate', (tester) async {
+    await tester.pumpWidget(
+      section(
+        content([
+          chapter('pt-1', 'Portuguese 1', 'pt'),
+          chapter('ptbr-1', 'Portuguese BR 1', 'pt-BR'),
+          chapter('es-1', 'Spanish 1', 'es'),
+          chapter('esla-1', 'Spanish LA 1', 'es-LA'),
+        ]),
+      ),
+    );
+
+    expect(find.text('Portuguese  1'), findsNWidgets(2));
+    expect(find.text('Spanish  1'), findsNWidgets(2));
   });
 }

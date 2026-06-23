@@ -23,7 +23,6 @@ import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart
 import 'package:nhasixapp/presentation/pages/auth/captcha_solver_page.dart';
 import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
-import 'package:kuron_core/kuron_core.dart' hide FilterItem, SearchFilter;
 import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/core/utils/uri_component_utils.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';

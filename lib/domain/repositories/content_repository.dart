@@ -90,6 +90,14 @@ abstract class ContentRepository {
   /// Returns chapter data containing images and navigation
   Future<ChapterData> getChapterImages(ContentId chapterId, {String? sourceId});
 
+  /// Get chapters for a specific content detail or lane.
+  Future<List<Chapter>> getContentChapters(
+    ContentId contentId, {
+    String? sourceId,
+    String? language,
+    String? scanGroup,
+  });
+
   /// Get comments for a specific gallery
   ///
   /// [contentId] - The ID of the gallery

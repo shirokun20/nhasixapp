@@ -417,6 +417,27 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   @override
+  Future<List<Chapter>> getContentChapters(
+    ContentId contentId, {
+    String? sourceId,
+    String? language,
+    String? scanGroup,
+  }) async {
+    final source = sourceId != null
+        ? contentSourceRegistry.getSource(sourceId)
+        : _activeSource;
+    if (source == null) {
+      return const [];
+    }
+
+    return source.getChapters(
+      contentId.value,
+      language: language,
+      scanGroup: scanGroup,
+    );
+  }
+
+  @override
   Future<List<Comment>> getComments(String contentId) async {
     try {
       _logger.i('Getting comments for: $contentId');

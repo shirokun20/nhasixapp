@@ -44,6 +44,9 @@ class ChapterLanguagePresenter {
   static String normalize(String? value) {
     final raw = value?.trim().toLowerCase().replaceAll('_', '-');
     if (raw == null || raw.isEmpty) return unknownChapterLanguageKey;
+    if (raw == 'pt-br' || raw == 'es-la') {
+      return raw;
+    }
     final base = raw.split('-').first;
     return switch (base) {
       'english' => 'en',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
@@ -170,15 +172,24 @@ class DetailCubit extends BaseCubit<DetailState> {
 
       if (isClosed) return;
 
+      final shouldLoadChaptersAsync = content.chapters?.isEmpty ?? true;
+
       emit(DetailLoaded(
         content: content,
         isFavorited: isFavorited,
+        isChaptersLoading: shouldLoadChaptersAsync,
         lastUpdated: DateTime.now(),
         imageMetadata: imageMetadata,
         chapterHistory: chapterHistory,
         relatedContent: relatedContent,
         comments: comments,
       ));
+
+      if (shouldLoadChaptersAsync) {
+        unawaited(
+          _loadInitialChapters(content.id, sourceId: content.sourceId),
+        );
+      }
 
       logInfo('Successfully loaded content detail: ${content.title}');
     } on LoginRequiredException catch (e) {
@@ -288,26 +299,62 @@ class DetailCubit extends BaseCubit<DetailState> {
       return;
     }
 
-    final source = _contentSourceRegistry.getSource(currentState.content.sourceId);
-    if (source == null) {
-      return;
-    }
+    emit(currentState.copyWith(isChaptersLoading: true));
 
-    final incoming = await source.getChapters(
-      currentState.content.id,
+    final incoming = await _contentRepository.getContentChapters(
+      ContentId(currentState.content.id),
+      sourceId: currentState.content.sourceId,
       language: language,
       scanGroup: scanGroup,
     );
-    if (incoming.isEmpty || isClosed) {
+    if (isClosed) {
+      return;
+    }
+
+    final latestState = state;
+    if (latestState is! DetailLoaded) {
       return;
     }
 
     final merged = mergeChaptersById(
-      currentState.content.chapters ?? const <Chapter>[],
+      latestState.content.chapters ?? const <Chapter>[],
       incoming,
     );
-    emit(currentState.copyWith(
-      content: currentState.content.copyWith(chapters: merged),
+    emit(latestState.copyWith(
+      content: latestState.content.copyWith(chapters: merged),
+      isChaptersLoading: false,
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
+  Future<void> _loadInitialChapters(
+    String contentId, {
+    required String sourceId,
+  }) async {
+    final currentState = state;
+    if (currentState is! DetailLoaded) {
+      return;
+    }
+
+    final incoming = await _contentRepository.getContentChapters(
+      ContentId(contentId),
+      sourceId: sourceId,
+    );
+
+    if (isClosed) {
+      return;
+    }
+
+    final latestState = state;
+    if (latestState is! DetailLoaded) {
+      return;
+    }
+
+    emit(latestState.copyWith(
+      content: latestState.content.copyWith(
+        chapters: incoming.isEmpty ? latestState.content.chapters : incoming,
+      ),
+      isChaptersLoading: false,
       lastUpdated: DateTime.now(),
     ));
   }
