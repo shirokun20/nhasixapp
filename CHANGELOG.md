@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Highlights
 
+#### 🏗️ Kuron Config Generator (Developer Tooling)
+- **Interactive CLI Wizard**: New `packages/kuron_config_generator` with guided question flow for source identity, mode (REST/scraper), features, endpoints, and headers. Generates valid Source Config v2 JSON without manual writing.
+- **URL-Assisted HTML Discovery**: `generate --url` probes any manga site, detects CMS (Madara/WordPress/custom), infers selectors for list/detail/chapters/reader, and produces a draft scraper config. Recognizes Cloudflare blocks and adds bypass annotations.
+- **URL-Assisted API Discovery**: `generate --url` against JSON endpoints auto-detects response structure (arrays, `data[]`, `results[]`, or single detail objects), pagination hints, and outputs a REST API config with inferred endpoints.
+- **Source Config Validator Integration**: Generated configs can be immediately validated with `kuron_config_validate` for compatibility status.
+- **27 Unit Tests**: Coverage for wizard flow, CMS detection (Madara/WordPress/custom), API inference (array/map/detail patterns), probe response classification, and end-to-end smoke tests.
+
 #### 🔥 MangaFire Integration & Deferred Chapter Lanes
 - **MangaFire Source Support**: Added MangaFire with config-driven browse/detail parsing, VRF-backed search and reader capture, AJAX chapter lane support, and native image descrambling for scrambled pages.
 - **Lazy Chapter Lane Loading**: MangaFire detail now prioritizes the default chapter lane on first load, keeps other language and volume lanes visible as selectable chips, and fetches those lanes only when the user activates them.
