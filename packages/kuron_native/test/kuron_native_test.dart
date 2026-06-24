@@ -30,6 +30,9 @@ class MockKuronNativePlatform
   Future<String?> pickZipFile() => Future.value(null);
 
   @override
+  Future<List<String>?> pickZipFiles() => Future.value(null);
+
+  @override
   Future<Uint8List?> readZipBytes(String contentUri) => Future.value(null);
 
   @override

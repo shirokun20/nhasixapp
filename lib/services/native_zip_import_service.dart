@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 /// Native service for importing ZIP files containing doujin/manga content
 ///
-/// This service provides a native Android file picker for selecting ZIP files
-/// and returns the content URI for further processing in Dart.
+/// This service provides native Android file pickers for selecting ZIP files
+/// and returns content URIs for further processing in Dart.
 class NativeZipImportService {
   /// Launches the native file picker to select a ZIP file.
   ///
@@ -15,6 +15,18 @@ class NativeZipImportService {
       return result;
     } catch (e) {
       throw Exception('Failed to pick ZIP file: $e');
+    }
+  }
+
+  /// Launches the native file picker to select multiple ZIP files.
+  ///
+  /// Returns the content URIs of the selected ZIP files, or null if cancelled.
+  Future<List<String>?> pickZipFiles() async {
+    try {
+      final result = await KuronNative.instance.pickZipFiles();
+      return result;
+    } catch (e) {
+      throw Exception('Failed to pick ZIP files: $e');
     }
   }
 

@@ -60,6 +60,7 @@ void main() {
 
     when(() => kuronNative.pickZipFile()).thenAnswer((_) async =>
         'content://com.android.providers.media.documents/document/1234');
+    when(() => kuronNative.pickZipFiles()).thenAnswer((_) async => null);
     when(() => kuronNative.extractZipFile(
           contentUri: any(named: 'contentUri'),
           destinationPath: any(named: 'destinationPath'),
@@ -132,5 +133,33 @@ void main() {
     final saved = verification.captured.single as DownloadStatus;
     expect(saved.contentId, 'collision-2');
     expect(saved.downloadPath, contains(path.join('local', 'collision-2')));
+  });
+
+  test('imports multiple zip files into separate content folders', () async {
+    when(() => kuronNative.pickZipFiles()).thenAnswer((_) async => [
+          'content://com.android.providers.media.documents/document/first',
+          'content://com.android.providers.media.documents/document/second',
+        ]);
+    when(() => kuronNative.getZipDisplayName(any()))
+        .thenAnswer((invocation) async {
+      final uri = invocation.positionalArguments.first as String;
+      return uri.endsWith('first') ? 'First Batch.zip' : 'Second Batch.zip';
+    });
+
+    final result = await useCase.call(const ImportZipParams());
+
+    expect(result['success'], isTrue);
+    expect(result['importedCount'], 2);
+    expect(result['contentIds'], ['first-batch', 'second-batch']);
+
+    final verification =
+        verify(() => userDataRepository.saveDownloadStatus(captureAny()));
+    verification.called(2);
+
+    final savedStatuses = verification.captured.cast<DownloadStatus>().toList();
+    expect(savedStatuses, hasLength(2));
+    expect(savedStatuses.map((s) => s.contentId),
+        containsAll(['first-batch', 'second-batch']));
+    expect(savedStatuses.map((s) => s.downloadPath).toSet().length, 2);
   });
 }

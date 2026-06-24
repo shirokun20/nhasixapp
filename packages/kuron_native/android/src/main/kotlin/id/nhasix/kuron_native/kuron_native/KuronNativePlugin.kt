@@ -147,6 +147,9 @@ class KuronNativePlugin :
             "pickZipFile" -> {
                 handlePickZipFile(result)
             }
+            "pickZipFiles" -> {
+                handlePickZipFiles(result)
+            }
             "readZipBytes" -> {
                 handleReadZipBytes(call, result)
             }
@@ -1173,6 +1176,20 @@ class KuronNativePlugin :
         }
 
         zipImportHandler?.pickZipFile(result)
+    }
+
+    private fun handlePickZipFiles(result: Result) {
+        val activity = activityBinding?.activity
+        if (activity == null) {
+            result.error("NO_ACTIVITY", "Activity is not available", null)
+            return
+        }
+
+        if (zipImportHandler == null) {
+            zipImportHandler = ZipImportHandler(activity)
+        }
+
+        zipImportHandler?.pickZipFiles(result)
     }
 
     private fun handleReadZipBytes(call: MethodCall, result: Result) {

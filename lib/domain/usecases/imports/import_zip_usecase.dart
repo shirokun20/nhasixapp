@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
@@ -20,7 +21,7 @@ class ImportZipParams {
 /// UseCase for importing ZIP files containing doujin/manga content
 ///
 /// This handles:
-/// 1. Picking a ZIP file using native file picker
+/// 1. Picking one or more ZIP files using native file picker
 /// 2. Extracting the ZIP natively with progress notifications
 /// 3. Auto-generating metadata.json
 /// 4. Registering the content in the database
@@ -45,147 +46,203 @@ class ImportZipUseCase {
     try {
       _logger.i('Starting native ZIP import flow');
 
-      // Step 1: Pick ZIP file
-      final zipUri = await _kuronNative.pickZipFile();
-      if (zipUri == null) {
+      final zipUris = await _pickZipUris();
+      if (zipUris.isEmpty) {
         _logger.i('User cancelled ZIP file selection');
         return {'success': false, 'error': 'Cancelled'};
       }
 
-      _logger.i('ZIP file selected: $zipUri');
-
-      // Step 2: Resolve ZIP display name and build unique content ID
-      final zipDisplayName = await _kuronNative.getZipDisplayName(zipUri);
-      final zipFileName =
-          (zipDisplayName != null && zipDisplayName.trim().isNotEmpty)
-              ? zipDisplayName.trim()
-              : _extractFileNameFromUri(zipUri);
-      final baseContentId = _sanitizeContentId(zipFileName);
-      final contentId =
-          await _ensureUniqueContentId(baseContentId, sourceId: 'local');
-
-      _logger.i('Content ID: $contentId');
-
-      // Step 3: Get destination directory BEFORE extraction
-      final destDir = await DownloadStorageUtils.getNewContentDirectory(
-        contentId,
-        sourceId: 'local',
-      );
-
-      _logger.i('Destination directory: $destDir');
-
-      // Step 4: Create images directory
-      final imagesDir =
-          Directory(path.join(destDir, AppStorage.imagesSubfolder));
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
+      if (zipUris.length > 1) {
+        _logger.i('ZIP files selected: ${zipUris.join(', ')}');
+      } else {
+        _logger.i('ZIP file selected: ${zipUris.first}');
       }
 
-      // Step 5: Extract using native implementation with progress
-      _logger.i('Starting native ZIP extraction with progress callbacks');
+      final importedResults = <Map<String, dynamic>>[];
+      final failedResults = <Map<String, dynamic>>[];
 
-      final extractionResult = await _kuronNative.extractZipFile(
-        contentUri: zipUri,
-        destinationPath: imagesDir.path,
-        onProgress: (processed, total, imageCount, currentFile) {
-          _logger.d(
-              'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile');
-          // Forward progress to UI callback if provided
-          params.onProgress?.call(processed, total, imageCount, currentFile);
-        },
-      );
-
-      if (extractionResult == null || extractionResult['success'] != true) {
-        _logger.e('Extraction failed: ${extractionResult?['error']}');
-        // Clean up empty directory
-        if (await Directory(destDir).exists()) {
-          await Directory(destDir).delete(recursive: true);
+      for (final zipUri in zipUris) {
+        final result = await _importSingleZip(zipUri, params);
+        if (result['success'] == true) {
+          importedResults.add(result);
+        } else {
+          failedResults.add(result);
         }
+      }
+
+      if (importedResults.isEmpty) {
         return {
           'success': false,
-          'error': extractionResult?['error'] ?? 'Extraction failed'
+          'error': failedResults.isNotEmpty
+              ? (failedResults.first['error'] as String? ?? 'Extraction failed')
+              : 'Extraction failed',
         };
       }
 
-      final imageCount = extractionResult['imageCount'] as int;
-      _logger.i('Extracted $imageCount images natively');
-
-      // Step 6: Get first image for cover
-      final imageFiles = await imagesDir.list().toList();
-      final imageExtensions = [
-        '.jpg',
-        '.jpeg',
-        '.png',
-        '.gif',
-        '.webp',
-        '.avif',
-        '.bmp'
-      ];
-
-      final sortedImages = imageFiles
-          .whereType<File>()
-          .where((f) =>
-              imageExtensions.contains(path.extension(f.path).toLowerCase()))
-          .toList()
-        ..sort(
-            (a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
-
-      final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
-
-      // Step 7: Calculate total file size
-      int totalFileSize = 0;
-      for (final file in sortedImages) {
-        if (await file.exists()) {
-          totalFileSize += await file.length();
-        }
-      }
-      _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
-
-      // Step 8: Generate metadata.json
-      await DownloadStorageUtils.saveLocalMetadata(
-        contentId: contentId,
-        sourceId: 'local',
-        title: _formatTitle(contentId),
-        savePath: destDir,
-        coverUrl: coverUrl,
-        totalImages: imageCount,
-        extraData: {
-          'autoGenerated': true,
-          'importedAt': DateTime.now().toIso8601String(),
-          'importedFrom': 'zip',
-          'originalFileName': zipFileName,
-          'extractedNatively': true,
-        },
-      );
-
-      _logger.i('Metadata.json generated');
-
-      // Step 9: Register in database
-      final downloadStatus = DownloadStatus(
-        contentId: contentId,
-        state: DownloadState.completed,
-        totalPages: imageCount,
-        downloadPath: destDir,
-        title: _formatTitle(contentId),
-        sourceId: 'local',
-        coverUrl: coverUrl,
-        downloadedPages: imageCount,
-        fileSize: totalFileSize,
-      );
-
-      await _userDataRepository.saveDownloadStatus(downloadStatus);
-
-      _logger.i('Content registered in database');
-
       return {
         'success': true,
-        'contentId': contentId,
-        'imageCount': imageCount,
+        'contentId': importedResults.first['contentId'],
+        'contentIds': importedResults
+            .map((result) => result['contentId'] as String)
+            .toList(growable: false),
+        'imageCount': importedResults.fold<int>(
+          0,
+          (sum, result) => sum + (result['imageCount'] as int? ?? 0),
+        ),
+        'importedCount': importedResults.length,
+        'failedCount': failedResults.length,
+        if (failedResults.isNotEmpty)
+          'errors': failedResults
+              .map(
+                  (result) => result['error'] as String? ?? 'Extraction failed')
+              .toList(growable: false),
       };
     } catch (e, stackTrace) {
       _logger.e('Error importing ZIP file', error: e, stackTrace: stackTrace);
       return {'success': false, 'error': e.toString()};
     }
+  }
+
+  Future<List<String>> _pickZipUris() async {
+    try {
+      final zipUris = await _kuronNative.pickZipFiles();
+      if (zipUris != null) {
+        return zipUris;
+      }
+    } on MissingPluginException {
+      // Fallback to single picker on platforms without multi-select support.
+    }
+
+    final singleZipUri = await _kuronNative.pickZipFile();
+    if (singleZipUri == null || singleZipUri.trim().isEmpty) {
+      return const [];
+    }
+
+    return [singleZipUri];
+  }
+
+  Future<Map<String, dynamic>> _importSingleZip(
+    String zipUri,
+    ImportZipParams params,
+  ) async {
+    final zipDisplayName = await _kuronNative.getZipDisplayName(zipUri);
+    final zipFileName =
+        (zipDisplayName != null && zipDisplayName.trim().isNotEmpty)
+            ? zipDisplayName.trim()
+            : _extractFileNameFromUri(zipUri);
+    final baseContentId = _sanitizeContentId(zipFileName);
+    final contentId =
+        await _ensureUniqueContentId(baseContentId, sourceId: 'local');
+
+    _logger.i('Content ID: $contentId');
+
+    final destDir = await DownloadStorageUtils.getNewContentDirectory(
+      contentId,
+      sourceId: 'local',
+    );
+
+    _logger.i('Destination directory: $destDir');
+
+    final imagesDir = Directory(path.join(destDir, AppStorage.imagesSubfolder));
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    _logger.i('Starting native ZIP extraction with progress callbacks');
+
+    final extractionResult = await _kuronNative.extractZipFile(
+      contentUri: zipUri,
+      destinationPath: imagesDir.path,
+      onProgress: (processed, total, imageCount, currentFile) {
+        _logger.d(
+          'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile',
+        );
+        params.onProgress?.call(processed, total, imageCount, currentFile);
+      },
+    );
+
+    if (extractionResult == null || extractionResult['success'] != true) {
+      _logger.e('Extraction failed: ${extractionResult?['error']}');
+      if (await Directory(destDir).exists()) {
+        await Directory(destDir).delete(recursive: true);
+      }
+      return {
+        'success': false,
+        'error': extractionResult?['error'] ?? 'Extraction failed',
+      };
+    }
+
+    final imageCount = extractionResult['imageCount'] as int;
+    _logger.i('Extracted $imageCount images natively');
+
+    final imageFiles = await imagesDir.list(recursive: true).toList();
+    final imageExtensions = [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.avif',
+      '.bmp',
+    ];
+
+    final sortedImages = imageFiles
+        .whereType<File>()
+        .where(
+          (f) => imageExtensions.contains(path.extension(f.path).toLowerCase()),
+        )
+        .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
+
+    final coverUrl = sortedImages.isNotEmpty ? sortedImages.first.path : '';
+
+    int totalFileSize = 0;
+    for (final file in sortedImages) {
+      if (await file.exists()) {
+        totalFileSize += await file.length();
+      }
+    }
+    _logger.i('Total file size: ${_formatBytes(totalFileSize)}');
+
+    await DownloadStorageUtils.saveLocalMetadata(
+      contentId: contentId,
+      sourceId: 'local',
+      title: _formatTitle(contentId),
+      savePath: destDir,
+      coverUrl: coverUrl,
+      totalImages: imageCount,
+      extraData: {
+        'autoGenerated': true,
+        'importedAt': DateTime.now().toIso8601String(),
+        'importedFrom': 'zip',
+        'originalFileName': zipFileName,
+        'extractedNatively': true,
+      },
+    );
+
+    _logger.i('Metadata.json generated');
+
+    final downloadStatus = DownloadStatus(
+      contentId: contentId,
+      state: DownloadState.completed,
+      totalPages: imageCount,
+      downloadPath: destDir,
+      title: _formatTitle(contentId),
+      sourceId: 'local',
+      coverUrl: coverUrl,
+      downloadedPages: imageCount,
+      fileSize: totalFileSize,
+    );
+
+    await _userDataRepository.saveDownloadStatus(downloadStatus);
+
+    _logger.i('Content registered in database');
+
+    return {
+      'success': true,
+      'contentId': contentId,
+      'imageCount': imageCount,
+    };
   }
 
   /// Extracts file name from URI and decodes URL encoding

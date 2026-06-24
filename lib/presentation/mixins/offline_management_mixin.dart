@@ -177,8 +177,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
               total > 0 ? ((processed / total) * 100).toInt() : 0;
           notificationService.updateSyncProgress(
             progress: percentage,
-            message: AppLocalizations.of(context)!
-                .syncProgressMessage(processed, total),
+            message: 'Sync $processed/$total',
           );
         },
       );
@@ -314,8 +313,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       if (!context.mounted) return;
 
       if (result['success'] == true) {
-        final contentId = result['contentId'] as String;
-        final imageCount = result['imageCount'] as int;
+        final contentId = result['contentId'] as String? ?? '';
+        final imageCount = (result['imageCount'] as num?)?.toInt() ?? 0;
+        final importedCount = (result['importedCount'] as num?)?.toInt() ?? 1;
 
         // Show completion notification
         await notificationService.showZipExtractionCompleted(
@@ -327,15 +327,18 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!
-                  .importedContentWithImages(contentId, imageCount),
+              importedCount > 1
+                  ? '$importedCount ZIP diimpor ke folder terpisah'
+                  : AppLocalizations.of(context)!
+                      .importedContentWithImages(contentId, imageCount),
             ),
             duration: const Duration(seconds: 3),
           ),
         );
 
-        // Refresh offline content list
-        await context.read<OfflineSearchCubit>().forceRefresh();
+        // ZIP import is always local content, so switch the offline view to local
+        // instead of preserving an unrelated source filter that would hide it.
+        await context.read<OfflineSearchCubit>().filterBySource('local');
 
         // Refresh download bloc if available
         if (context.mounted) {

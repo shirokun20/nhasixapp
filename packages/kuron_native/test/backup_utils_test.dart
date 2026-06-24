@@ -27,6 +27,9 @@ class MockKuronNativePlatform
   Future<String?> pickZipFile() async => null;
 
   @override
+  Future<List<String>?> pickZipFiles() async => null;
+
+  @override
   Future<Uint8List?> readZipBytes(String contentUri) async => null;
 
   @override

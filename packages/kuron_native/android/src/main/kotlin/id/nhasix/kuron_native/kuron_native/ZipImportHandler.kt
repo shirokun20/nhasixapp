@@ -26,15 +26,27 @@ import java.util.zip.ZipInputStream
 class ZipImportHandler(private val activity: Activity) {
     companion object {
         const val REQUEST_CODE_PICK_ZIP = 2003
+        const val REQUEST_CODE_PICK_ZIP_MULTIPLE = 2004
         private const val BUFFER_SIZE = 8192 // 8KB buffer for streaming
     }
 
     private var pendingResult: MethodChannel.Result? = null
+    private var pendingPickMultiple = false
 
     /**
      * Launches the native file picker for ZIP files
      */
     fun pickZipFile(result: MethodChannel.Result) {
+        pendingPickMultiple = false
+        launchZipPicker(result, false)
+    }
+
+    fun pickZipFiles(result: MethodChannel.Result) {
+        pendingPickMultiple = true
+        launchZipPicker(result, true)
+    }
+
+    private fun launchZipPicker(result: MethodChannel.Result, allowMultiple: Boolean) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/zip"
@@ -44,12 +56,16 @@ class ZipImportHandler(private val activity: Activity) {
                 "application/x-zip",
                 "application/x-zip-compressed"
             ))
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, allowMultiple)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
 
         try {
             pendingResult = result
-            activity.startActivityForResult(intent, REQUEST_CODE_PICK_ZIP)
+            activity.startActivityForResult(
+                intent,
+                if (allowMultiple) REQUEST_CODE_PICK_ZIP_MULTIPLE else REQUEST_CODE_PICK_ZIP,
+            )
         } catch (e: Exception) {
             pendingResult = null
             result.error("PICK_FAILED", "Failed to open file picker: ${e.message}", null)
@@ -159,12 +175,37 @@ class ZipImportHandler(private val activity: Activity) {
                 while (entry != null) {
                     try {
                         if (!entry.isDirectory) {
-                            val fileName = File(entry.name).name
+                            val relativePath = entry.name.replace('\\', '/').trimStart('/')
+                            val fileName = File(relativePath).name
                             val extension = fileName.substringAfterLast('.', "").lowercase()
 
                             // Only extract image files
                             if (imageExtensions.contains(".$extension")) {
-                                val outputFile = File(destDir, fileName)
+                                if (relativePath.isBlank()) {
+                                    zipStream.closeEntry()
+                                    entry = zipStream.nextEntry
+                                    continue
+                                }
+
+                                val outputFile = File(destDir, relativePath)
+                                val destCanonical = destDir.canonicalFile
+                                val outputParent = outputFile.parentFile?.canonicalFile
+                                val destPath = destCanonical.path
+                                val parentPath = outputParent?.path
+                                if (parentPath == null ||
+                                    (parentPath != destPath &&
+                                        !parentPath.startsWith("$destPath${File.separator}"))
+                                ) {
+                                    android.util.Log.w(
+                                        "ZipImportHandler",
+                                        "Skipped unsafe ZIP entry path: ${entry.name}"
+                                    )
+                                    zipStream.closeEntry()
+                                    entry = zipStream.nextEntry
+                                    continue
+                                }
+
+                                outputFile.parentFile?.mkdirs()
 
                                 // Stream directly to file with buffering
                                 BufferedOutputStream(FileOutputStream(outputFile), BUFFER_SIZE).use { output ->
@@ -186,7 +227,7 @@ class ZipImportHandler(private val activity: Activity) {
                                         "processed" to processedEntries,
                                         "total" to totalEntries,
                                         "imageCount" to imageCount,
-                                        "currentFile" to fileName
+                                        "currentFile" to relativePath
                                     ))
                                 }
                             } else {
@@ -233,26 +274,48 @@ class ZipImportHandler(private val activity: Activity) {
      * Handles the activity result from file picker
      */
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        if (requestCode == REQUEST_CODE_PICK_ZIP) {
+        if (requestCode == REQUEST_CODE_PICK_ZIP || requestCode == REQUEST_CODE_PICK_ZIP_MULTIPLE) {
             if (resultCode == Activity.RESULT_OK && data != null) {
-                val uri = data.data
-                if (uri != null) {
-                    // Grant persistent read permission
+                val uris = mutableListOf<Uri>()
+                data.data?.let { uris.add(it) }
+                data.clipData?.let { clipData ->
+                    for (index in 0 until clipData.itemCount) {
+                        clipData.getItemAt(index).uri?.let { uris.add(it) }
+                    }
+                }
+
+                val uniqueUris = uris.distinctBy { it.toString() }
+                if (uniqueUris.isNotEmpty()) {
                     try {
                         val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                        activity.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                        for (uri in uniqueUris) {
+                            try {
+                                activity.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                            } catch (e: Exception) {
+                                // Permission might not be persistable, that's okay
+                            }
+                        }
                     } catch (e: Exception) {
-                        // Permission might not be persistable, that's okay
+                        // Ignore permission issues
                     }
 
-                    pendingResult?.success(uri.toString())
+                    if (pendingPickMultiple) {
+                        pendingResult?.success(uniqueUris.map { it.toString() })
+                    } else {
+                        pendingResult?.success(uniqueUris.first().toString())
+                    }
                 } else {
                     pendingResult?.error("NO_URI", "No URI returned from file picker", null)
                 }
             } else {
-                pendingResult?.success(null) // User cancelled
+                if (pendingPickMultiple) {
+                    pendingResult?.success(emptyList<String>())
+                } else {
+                    pendingResult?.success(null) // User cancelled
+                }
             }
             pendingResult = null
+            pendingPickMultiple = false
             return true
         }
         return false

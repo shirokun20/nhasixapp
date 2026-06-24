@@ -42,6 +42,11 @@ class KuronNative {
     return KuronNativePlatform.instance.pickZipFile();
   }
 
+  /// Pick multiple ZIP files using native file picker and return content URIs.
+  Future<List<String>?> pickZipFiles() {
+    return KuronNativePlatform.instance.pickZipFiles();
+  }
+
   /// Read ZIP file bytes from content URI.
   /// Returns the bytes of the ZIP file.
   Future<Uint8List?> readZipBytes(String contentUri) {

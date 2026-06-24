@@ -125,6 +125,14 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<List<String>?> pickZipFiles() async {
+    final uris = await methodChannel.invokeMethod<List<dynamic>>(
+      'pickZipFiles',
+    );
+    return uris?.whereType<String>().toList(growable: false);
+  }
+
+  @override
   Future<Uint8List?> readZipBytes(String contentUri) async {
     final bytes = await methodChannel.invokeMethod<Uint8List>('readZipBytes', {
       'contentUri': contentUri,
