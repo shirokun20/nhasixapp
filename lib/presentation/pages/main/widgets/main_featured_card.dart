@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors, KuronColors;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -38,28 +38,28 @@ class MainFeaturedCard extends StatelessWidget {
       builder: (context, snapshot) {
         final isDownloaded = snapshot.data ?? false;
         final theme = Theme.of(context);
-        final isDarkMode = theme.brightness == Brightness.dark;
+        final kuronColors = theme.extension<KuronColors>();
+        final gradientStart = kuronColors?.cardGradientStart ?? AppColors.darkGradientStart;
+        final gradientEnd = kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
+        final cardBorder = kuronColors?.cardBorder ?? AppColors.darkBorder;
+        final accentColor = isDownloaded ? (kuronColors?.readGold ?? AppColors.readGold) : AppColors.brandCoral;
 
         return Container(
           height: 160,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-            color: theme.colorScheme.surfaceContainer,
-            border: isDownloaded
-                ? Border.all(
-                    color: isDarkMode
-                        ? AppColors.success
-                        : AppColors.success,
-                    width: 2.5,
-                  )
-                : null,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [gradientStart, gradientEnd],
+            ),
+            border: Border.all(
+              color: isDownloaded ? accentColor : cardBorder,
+              width: isDownloaded ? 2.0 : 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: isDownloaded
-                    ? (isDarkMode
-                        ? AppColors.success.withValues(alpha: 0.3)
-                        : AppColors.success.withValues(alpha: 0.3))
-                    : theme.colorScheme.shadow.withValues(alpha: 0.15),
+                color: accentColor.withValues(alpha: isDownloaded ? 0.25 : 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -169,8 +169,8 @@ class MainFeaturedCard extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              theme.colorScheme.surfaceContainer,
-                              theme.colorScheme.surfaceContainerHighest,
+                              gradientStart,
+                              gradientEnd,
                             ],
                           ),
                         ),

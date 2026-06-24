@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../core/constants/colors_const.dart' show AppColors;
+import '../../core/constants/colors_const.dart' show AppColors, KuronColors;
 import '../../core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
@@ -80,29 +80,39 @@ class ContentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final kuronColors = Theme.of(context).extension<KuronColors>();
+    final cardBorderColor = kuronColors?.cardBorder ?? AppColors.darkBorder;
+    final gradientStart =
+        kuronColors?.cardGradientStart ?? AppColors.darkGradientStart;
+    final gradientEnd =
+        kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
+    final readGoldColor = kuronColors?.readGold ?? AppColors.readGold;
 
-    final cardWidget = Card(
+    // Determine if content is fully read for gold styling
+    final isRead = readProgress != null && readProgress! >= 1.0;
+    final activeBorder = isRead ? readGoldColor : cardBorderColor;
+
+    final cardWidget = Container(
       clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: isHighlighted ? 6 : 2,
-      shadowColor: isHighlighted
-          ? (isDarkMode
-              ? AppColors.success
-                  .withValues(alpha: 0.5) // Neon green for dark mode
-              : AppColors.success
-                  .withValues(alpha: 0.5)) // Dark green for light mode
-          : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        side: isHighlighted
-            ? BorderSide(
-                color: isDarkMode
-                    ? AppColors.success
-                    : AppColors.success,
-                width: 2.5,
-              )
-            : BorderSide.none,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [gradientStart, gradientEnd],
+        ),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        border: Border.all(
+          color: isHighlighted ? AppColors.brandCoral : activeBorder,
+          width: 1.5,
+        ),
+        boxShadow: [
+          if (isHighlighted)
+            BoxShadow(
+              color: AppColors.brandCoral.withValues(alpha: 0.3),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+        ],
       ),
       child: InkWell(
         onTap: onTap,
@@ -110,7 +120,7 @@ class ContentCard extends StatelessWidget {
         splashColor:
             Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         child: AspectRatio(
           aspectRatio: aspectRatio,
           child: Column(
@@ -224,23 +234,6 @@ class ContentCard extends StatelessWidget {
       ),
     );
 
-    // Apply additional highlight effect untuk downloaded content
-    if (isHighlighted) {
-      return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.success.withValues(alpha: 0.3),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: cardWidget,
-      );
-    }
-
     return cardWidget;
   }
 
@@ -248,7 +241,8 @@ class ContentCard extends StatelessWidget {
   Widget _buildHighlightOverlay() {
     return Builder(
       builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        final kuron = Theme.of(context).extension<KuronColors>();
+        final accent = kuron?.readGold ?? AppColors.readGold;
 
         return Positioned(
           top: 8,
@@ -256,9 +250,7 @@ class ContentCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: isDarkMode
-                  ? AppColors.success
-                  : AppColors.success,
+              color: accent.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               boxShadow: [
                 BoxShadow(
@@ -271,9 +263,9 @@ class ContentCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.download_done,
-                  color: Theme.of(context).colorScheme.onSecondary,
+                  color: Colors.white,
                   size: 12,
                 ),
                 const SizedBox(width: 3),
@@ -281,7 +273,7 @@ class ContentCard extends StatelessWidget {
                   (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
                       .toUpperCase(),
                   style: TextStyleConst.labelSmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSecondary,
+                    color: Colors.white,
                     fontSize: 8,
                   ),
                 ),
@@ -477,7 +469,8 @@ class ContentCard extends StatelessWidget {
                               .colorScheme
                               .surface
                               .withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                         child: Text(
                           '${content.pageCount}${AppLocalizations.of(context)?.pages ?? 'p'}',
@@ -501,7 +494,8 @@ class ContentCard extends StatelessWidget {
                           .colorScheme
                           .tertiary
                           .withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -682,8 +676,6 @@ class ContentCard extends StatelessWidget {
   Widget _buildBottomRow() {
     return Builder(
       builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
         return Row(
           children: [
             // Upload date (only show if enabled)
@@ -724,12 +716,10 @@ class ContentCard extends StatelessWidget {
 
             // Downloaded indicator icon
             if (isHighlighted) ...[
-              Icon(
+              const Icon(
                 Icons.offline_pin,
                 size: 14,
-                color: isDarkMode
-                    ? AppColors.success
-                    : AppColors.success,
+                color: AppColors.brandCoral,
               ),
               const SizedBox(width: 4),
             ],
@@ -962,9 +952,24 @@ class CompactContentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: DesignTokens.elevationSm,
+    final kuronColors = Theme.of(context).extension<KuronColors>();
+    final gradientStart =
+        kuronColors?.cardGradientStart ?? AppColors.darkGradientStart;
+    final gradientEnd =
+        kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
+    final cardBorder = kuronColors?.cardBorder ?? AppColors.darkBorder;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [gradientStart, gradientEnd],
+        ),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: cardBorder, width: 1.5),
+      ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
         onTap: onTap,
@@ -1058,7 +1063,8 @@ class CompactContentCard extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusSm),
                             ),
                             child: Text(
                               content.language.toUpperCase(),

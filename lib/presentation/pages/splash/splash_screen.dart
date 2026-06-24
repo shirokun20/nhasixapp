@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors, KuronColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -301,8 +302,10 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
 
   @override
   Widget build(BuildContext context) {
+    final kuron = Theme.of(context).extension<KuronColors>();
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: kuron?.readerBg ?? Theme.of(context).colorScheme.surface,
       body: BlocConsumer<SplashBloc, SplashState>(
         listenWhen: (previous, current) => previous != current,
         listener: (_, state) {
@@ -360,12 +363,16 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         .surfaceContainer
                         .withValues(alpha: 0.3),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.2),
+                      color: AppColors.brandCoral.withValues(alpha: 0.3),
                       width: 2,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.brandCoral.withValues(alpha: 0.2),
+                        blurRadius: 30,
+                        spreadRadius: 4,
+                      ),
+                    ],
                   ),
                   child: const Image(
                     height: 200,
@@ -891,7 +898,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(
+                color: AppColors.brandCoral.withValues(
                       alpha: _dotAnimations[index].value,
                     ),
                 shape: BoxShape.circle,

@@ -3272,27 +3272,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     _InstallCandidate candidate,
   ) async {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.sourceImportPreviewTitle),
+        backgroundColor: cs.surface,
+        title: Text(l10n.sourceImportPreviewTitle,
+            style: TextStyle(color: cs.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}'),
+            Text('${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}',
+                style: TextStyle(color: cs.onSurface)),
             const SizedBox(height: 6),
-            Text('${l10n.sourceImportPreviewVersion}: ${candidate.version}'),
+            Text('${l10n.sourceImportPreviewVersion}: ${candidate.version}',
+                style: TextStyle(color: cs.onSurface)),
             if (candidate.displayName != null &&
                 candidate.displayName!.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                  '${l10n.sourceImportPreviewDisplayName}: ${candidate.displayName}'),
+                  '${l10n.sourceImportPreviewDisplayName}: ${candidate.displayName}',
+                  style: TextStyle(color: cs.onSurface)),
             ],
             const SizedBox(height: 6),
             Text(
               '${l10n.sourceImportPreviewVerified}: ${candidate.isVerified ? l10n.sourceImportPreviewVerifiedYes : l10n.sourceImportPreviewVerifiedNo}',
+              style: TextStyle(color: cs.onSurface),
             ),
           ],
         ),

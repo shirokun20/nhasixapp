@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import '../../../core/constants/colors_const.dart' show KuronColors;
 import '../../../core/constants/design_tokens.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/config/remote_config_service.dart';
@@ -1804,7 +1805,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           .colorScheme
                           .inverseSurface
                           .withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radius2xl),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.2),
@@ -1925,22 +1927,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildTopBar(ReaderState state) {
+    final kuron = Theme.of(context).extension<KuronColors>();
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final glassBg =
+        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
+    final iconColor = isDark ? Colors.white : const Color(0xFF2E2722);
+    final textColor = isDark ? Colors.white : const Color(0xFF2E2722);
+    final subColor = isDark ? Colors.white60 : const Color(0xFF7A6E66);
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          decoration: const BoxDecoration(
-            color: Color(0x8C000000), // semi-transparent dark
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+          decoration: BoxDecoration(
+            color: glassBg,
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(16)),
           ),
           child: Row(
             children: [
               // Back button
               IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: iconColor),
                 iconSize: 22,
                 visualDensity: VisualDensity.compact,
               ),
@@ -1959,7 +1971,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 AppLocalizations.of(context)?.loading ??
                                 '',
                             style: TextStyleConst.headingMedium.copyWith(
-                              color: Colors.white,
+                              color: textColor,
                               fontSize: 14,
                             ),
                             maxLines: 1,
@@ -1973,18 +1985,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                              color: iconColor.withValues(alpha: 0.2),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusSm),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.offline_bolt,
-                                    size: 11, color: Colors.white70),
-                                SizedBox(width: 2),
+                                    size: 11, color: subColor),
+                                const SizedBox(width: 2),
                                 Text('offline',
                                     style: TextStyle(
-                                        color: Colors.white70, fontSize: 10)),
+                                        color: subColor, fontSize: 10)),
                               ],
                             ),
                           ),
@@ -2004,8 +2017,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 AppLocalizations.of(context)!.pageOfContent(
                                     state.currentPage ?? 1,
                                     state.content?.pageCount ?? 1)),
-                        style: const TextStyle(
-                            color: Colors.white60, fontSize: 11),
+                        style: TextStyle(color: subColor, fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -2022,7 +2034,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       : Icons.screen_lock_portrait_outlined,
                   color: (state.keepScreenOn ?? false)
                       ? Colors.amberAccent
-                      : Colors.white70,
+                      : subColor,
                 ),
                 iconSize: 20,
                 visualDensity: VisualDensity.compact,
@@ -2031,7 +2043,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               // Settings button
               IconButton(
                 onPressed: () => _showReaderSettings(state),
-                icon: const Icon(Icons.settings, color: Colors.white70),
+                icon: Icon(Icons.settings, color: subColor),
                 iconSize: 20,
                 visualDensity: VisualDensity.compact,
               ),
@@ -2054,6 +2066,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         .clamp(1.0, totalPages.toDouble())
         .toDouble();
     final displayPage = sliderValue.round().clamp(1, totalPages);
+    final kuron = Theme.of(context).extension<KuronColors>();
+    final glassBg =
+        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -2062,7 +2077,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.55),
+            color: glassBg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: Row(
@@ -2266,234 +2281,251 @@ class _ReaderScreenState extends State<ReaderScreen> {
   */
 
   void _showReaderSettings(ReaderState state) {
+    final kuron = Theme.of(context).extension<KuronColors>();
+    final glassBg = kuron?.readerBg.withValues(alpha: 0.92) ??
+        Theme.of(context).colorScheme.surfaceContainer;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => BlocBuilder<ReaderCubit, ReaderState>(
         bloc: _readerCubit,
-        builder: (context, currentState) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.38),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-
-              Text(
-                AppLocalizations.of(context)?.readerSettings ??
-                    AppLocalizations.of(context)!.readerSettings,
-                style: TextStyleConst.headingMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Reading mode
-              ListTile(
-                title: Text(
-                  AppLocalizations.of(context)!.readingMode,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  _isContinuousScrollDisabledForCurrentContent()
-                      ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • ${AppLocalizations.of(context)!.readerContinuousOffHeavyImage}'
-                      : _getReadingModeLabel(
-                          currentState.readingMode ?? ReadingMode.singlePage),
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: IconButton(
-                  onPressed: () {
-                    final currentMode =
-                        currentState.readingMode ?? ReadingMode.singlePage;
-                    final newMode = _getNextReadingMode(
-                      currentMode,
-                      disableContinuousScroll:
-                          _isContinuousScrollDisabledForCurrentContent(),
-                    );
-
-                    _readerCubit.changeReadingMode(newMode);
-                  },
-                  icon: Icon(
-                    _getReadingModeIcon(
-                        currentState.readingMode ?? ReadingMode.singlePage),
-                    color: Theme.of(context).colorScheme.primary,
+        builder: (context, currentState) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: glassBg,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border(
+                  top: BorderSide(
+                    color: kuron?.cardBorder.withValues(alpha: 0.3) ??
+                        Colors.white12,
                   ),
                 ),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: glassBg.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
 
-              // Tap Direction (only for non-continuous-scroll modes)
-              if (currentState.readingMode != ReadingMode.continuousScroll) ...[
-                const Divider(height: 1),
-                ListTile(
-                  title: Text(
-                    AppLocalizations.of(context)!.readerTapDirectionLabel,
-                    style: TextStyleConst.bodyMedium.copyWith(
+                  Text(
+                    AppLocalizations.of(context)?.readerSettings ??
+                        AppLocalizations.of(context)!.readerSettings,
+                    style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  subtitle: Text(
-                    _getTapDirectionDescription(
-                      currentState.tapDirection ?? TapDirection.normal,
+
+                  const SizedBox(height: 16),
+
+                  // Reading mode
+                  ListTile(
+                    title: Text(
+                      AppLocalizations.of(context)!.readingMode,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    subtitle: Text(
+                      _isContinuousScrollDisabledForCurrentContent()
+                          ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • ${AppLocalizations.of(context)!.readerContinuousOffHeavyImage}'
+                          : _getReadingModeLabel(currentState.readingMode ??
+                              ReadingMode.singlePage),
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () {
+                        final currentMode =
+                            currentState.readingMode ?? ReadingMode.singlePage;
+                        final newMode = _getNextReadingMode(
+                          currentMode,
+                          disableContinuousScroll:
+                              _isContinuousScrollDisabledForCurrentContent(),
+                        );
+
+                        _readerCubit.changeReadingMode(newMode);
+                      },
+                      icon: Icon(
+                        _getReadingModeIcon(
+                            currentState.readingMode ?? ReadingMode.singlePage),
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
-                  trailing: SegmentedButton<TapDirection>(
-                    segments: [
-                      ButtonSegment(
-                        value: TapDirection.normal,
-                        icon: const Icon(Icons.arrow_forward, size: 16),
-                        label: Text(
-                          AppLocalizations.of(context)!
-                              .readerTapDirectionNormal,
+
+                  // Tap Direction (only for non-continuous-scroll modes)
+                  if (currentState.readingMode !=
+                      ReadingMode.continuousScroll) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.readerTapDirectionLabel,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      ButtonSegment(
-                        value: TapDirection.inverted,
-                        icon: const Icon(Icons.arrow_back, size: 16),
-                        label: Text(
-                          AppLocalizations.of(context)!
-                              .readerTapDirectionInverted,
+                      subtitle: Text(
+                        _getTapDirectionDescription(
+                          currentState.tapDirection ?? TapDirection.normal,
+                        ),
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                    selected: {
-                      currentState.tapDirection ?? TapDirection.normal
-                    },
-                    onSelectionChanged: (s) =>
-                        _readerCubit.setTapDirection(s.first),
-                    style: const ButtonStyle(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
+                      trailing: SegmentedButton<TapDirection>(
+                        segments: [
+                          ButtonSegment(
+                            value: TapDirection.normal,
+                            icon: const Icon(Icons.arrow_forward, size: 16),
+                            label: Text(
+                              AppLocalizations.of(context)!
+                                  .readerTapDirectionNormal,
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: TapDirection.inverted,
+                            icon: const Icon(Icons.arrow_back, size: 16),
+                            label: Text(
+                              AppLocalizations.of(context)!
+                                  .readerTapDirectionInverted,
+                            ),
+                          ),
+                        ],
+                        selected: {
+                          currentState.tapDirection ?? TapDirection.normal
+                        },
+                        onSelectionChanged: (s) =>
+                            _readerCubit.setTapDirection(s.first),
+                        style: const ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
 
-              // Chapter Selector (only in chapter mode)
-              if (currentState.chapterData != null ||
-                  currentState.currentChapter != null) ...[
-                const Divider(height: 32),
-                ListTile(
-                  title: Text(
-                    AppLocalizations.of(context)!.chapterLabel,
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+                  // Chapter Selector (only in chapter mode)
+                  if (currentState.chapterData != null ||
+                      currentState.currentChapter != null) ...[
+                    const Divider(height: 32),
+                    ListTile(
+                      title: Text(
+                        AppLocalizations.of(context)!.chapterLabel,
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      subtitle: Text(
+                        currentState.currentChapter?.title ??
+                            currentState.content?.title.split(' - ').last ??
+                            AppLocalizations.of(context)!.noChapterSelected,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Icon(
+                        Icons.list,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      onTap: () {
+                        // Show chapter list in a dialog
+                        context.pop(); // Close settings
+                        _showChapterSelector(currentState);
+                      },
                     ),
-                  ),
-                  subtitle: Text(
-                    currentState.currentChapter?.title ??
-                        currentState.content?.title.split(' - ').last ??
-                        AppLocalizations.of(context)!.noChapterSelected,
-                    style: TextStyleConst.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Icon(
-                    Icons.list,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  onTap: () {
-                    // Show chapter list in a dialog
-                    context.pop(); // Close settings
-                    _showChapterSelector(currentState);
-                  },
-                ),
-              ],
+                  ],
 
-              // Keep screen on
-              ListTile(
-                title: Text(
-                  AppLocalizations.of(context)!.keepScreenOn,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                  // Keep screen on
+                  ListTile(
+                    title: Text(
+                      AppLocalizations.of(context)!.keepScreenOn,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)!.keepScreenOnDescription,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: Switch(
+                      value: currentState.keepScreenOn ?? false,
+                      onChanged: (_) => _readerCubit.toggleKeepScreenOn(),
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                ),
-                subtitle: Text(
-                  AppLocalizations.of(context)!.keepScreenOnDescription,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+
+                  const SizedBox(height: 24),
+
+                  // Clear image cache button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _clearReaderImageCache,
+                      icon: Icon(
+                        Icons.delete_sweep_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      label: Text(
+                        AppLocalizations.of(context)!.readerClearImageCache,
+                        style: TextStyleConst.buttonMedium.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
                   ),
-                ),
-                trailing: Switch(
-                  value: currentState.keepScreenOn ?? false,
-                  onChanged: (_) => _readerCubit.toggleKeepScreenOn(),
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                ),
+
+                  const SizedBox(height: 8),
+
+                  // Reset settings button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showResetConfirmationDialog(),
+                      icon: Icon(
+                        Icons.restore,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      label: Text(
+                        AppLocalizations.of(context)!.resetToDefaults,
+                        style: TextStyleConst.buttonMedium.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.error),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 24),
-
-              // Clear image cache button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _clearReaderImageCache,
-                  icon: Icon(
-                    Icons.delete_sweep_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  label: Text(
-                    AppLocalizations.of(context)!.readerClearImageCache,
-                    style: TextStyleConst.buttonMedium.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Reset settings button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showResetConfirmationDialog(),
-                  icon: Icon(
-                    Icons.restore,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  label: Text(
-                    AppLocalizations.of(context)!.resetToDefaults,
-                    style: TextStyleConst.buttonMedium.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side:
-                        BorderSide(color: Theme.of(context).colorScheme.error),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),
@@ -2768,9 +2800,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     .primaryContainer
                                     .withValues(alpha: 0.4)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusLg),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusLg),
                               onTap: () {
                                 sheetContext.pop();
                                 if (!isCurrent) {
@@ -2876,8 +2910,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                           color: Theme.of(context)
                                               .colorScheme
                                               .primary,
-                                          borderRadius:
-                                              BorderRadius.circular(DesignTokens.radiusMd),
+                                          borderRadius: BorderRadius.circular(
+                                              DesignTokens.radiusMd),
                                         ),
                                         child: Text(
                                           AppLocalizations.of(context)!

@@ -638,13 +638,15 @@ class _AppDrawerContentState extends State<AppDrawerContent>
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: isSelected
-                  ? colorScheme.primaryContainer
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(14),
               border: isSelected
-                  ? Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.3),
-                      width: 1,
+                  ? Border(
+                      left: BorderSide(
+                        color: colorScheme.primary,
+                        width: 3,
+                      ),
                     )
                   : null,
             ),
@@ -655,7 +657,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? colorScheme.primary.withValues(alpha: 0.2)
+                        ? colorScheme.primary.withValues(alpha: 0.15)
                         : colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),

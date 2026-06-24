@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/constants/colors_const.dart' show AppColors;
+import '../../../core/constants/colors_const.dart' show AppColors, KuronColors;
 import '../../../core/constants/design_tokens.dart';
 import '../settings/settings_cubit.dart';
 
@@ -78,24 +79,42 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Create light theme - warm, elegant, inviting
+  /// Text theme using Playfair Display (headings) + Inter (body)
+  TextTheme _googleFontsTextTheme([TextTheme? base]) {
+    final b = base ?? ThemeData.light().textTheme;
+    return GoogleFonts.playfairDisplayTextTheme(b).copyWith(
+      titleLarge: GoogleFonts.inter(textStyle: b.titleLarge),
+      titleMedium: GoogleFonts.inter(textStyle: b.titleMedium),
+      titleSmall: GoogleFonts.inter(textStyle: b.titleSmall),
+      bodyLarge: GoogleFonts.inter(textStyle: b.bodyLarge),
+      bodyMedium: GoogleFonts.inter(textStyle: b.bodyMedium),
+      bodySmall: GoogleFonts.inter(textStyle: b.bodySmall),
+      labelLarge: GoogleFonts.inter(textStyle: b.labelLarge),
+      labelMedium: GoogleFonts.inter(textStyle: b.labelMedium),
+      labelSmall: GoogleFonts.inter(textStyle: b.labelSmall),
+    );
+  }
+
+  /// Create light theme — warm cream, aged paper feel
   ThemeData _createLightTheme() {
     return ThemeData(
       brightness: Brightness.light,
       useMaterial3: true,
+      textTheme: _googleFontsTextTheme(),
+      extensions: const [KuronColors.light],
       colorScheme: const ColorScheme.light(
-        primary: AppColors.brandCoral,
+        primary: AppColors.lightCoral,
         onPrimary: Colors.white,
-        primaryContainer: AppColors.brandDusty,
+        primaryContainer: AppColors.warmMuted,
         onPrimaryContainer: Colors.white,
-        secondary: AppColors.brandMuted,
+        secondary: AppColors.warmMuted,
         onSecondary: Colors.white,
-        secondaryContainer: Color(0xFFF5E0DE),
-        onSecondaryContainer: AppColors.brandDusty,
-        tertiary: AppColors.brandDusty,
+        secondaryContainer: Color(0xFFF0E4DE),
+        onSecondaryContainer: AppColors.warm,
+        tertiary: AppColors.warmMuted,
         onTertiary: Colors.white,
         tertiaryContainer: Color(0xFFEDE0DF),
-        onTertiaryContainer: AppColors.brandDusty,
+        onTertiaryContainer: AppColors.warm,
         error: AppColors.error,
         onError: Colors.white,
         errorContainer: Color(0xFFFFDAD6),
@@ -105,12 +124,12 @@ class ThemeCubit extends Cubit<ThemeState> {
         onSurfaceVariant: AppColors.lightTextSub,
         surfaceContainerHighest: AppColors.lightCard,
         outline: AppColors.lightBorder,
-        outlineVariant: Color(0xFFD5D0CA),
-        shadow: Colors.black26,
+        outlineVariant: Color(0xFFE0D4CA),
+        shadow: Color(0x1A000000),
         scrim: Colors.black54,
         inverseSurface: AppColors.brandDark,
         onInverseSurface: AppColors.lightBg,
-        inversePrimary: AppColors.brandCoral,
+        inversePrimary: AppColors.lightCoral,
       ),
       scaffoldBackgroundColor: AppColors.lightBg,
       appBarTheme: const AppBarTheme(
@@ -139,11 +158,11 @@ class ThemeCubit extends Cubit<ThemeState> {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.lightCard,
-        indicatorColor: AppColors.brandCoral.withValues(alpha: 0.15),
+        indicatorColor: AppColors.lightNavIndicator,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
-              color: AppColors.brandCoral,
+              color: AppColors.lightCoral,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             );
@@ -156,13 +175,13 @@ class ThemeCubit extends Cubit<ThemeState> {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.brandCoral);
+            return const IconThemeData(color: AppColors.lightCoral);
           }
           return const IconThemeData(color: AppColors.lightTextSub);
         }),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.brandCoral,
+        backgroundColor: AppColors.lightCoral,
         foregroundColor: Colors.white,
         elevation: DesignTokens.elevationMd,
       ),
@@ -179,45 +198,47 @@ class ThemeCubit extends Cubit<ThemeState> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-          borderSide: const BorderSide(color: AppColors.brandCoral, width: 2),
+          borderSide: const BorderSide(color: AppColors.lightCoral, width: 2),
         ),
       ),
     );
   }
 
-  /// Create dark theme - deep, rich, comfortable
+  /// Create dark theme — warm library night feel
   ThemeData _createDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
+      textTheme: _googleFontsTextTheme(),
+      extensions: const [KuronColors.dark],
       colorScheme: const ColorScheme.dark(
         primary: AppColors.brandCoral,
         onPrimary: Colors.white,
-        primaryContainer: AppColors.brandDusty,
+        primaryContainer: AppColors.warmMuted,
         onPrimaryContainer: Color(0xFFFFD8D4),
-        secondary: AppColors.brandMuted,
+        secondary: AppColors.warm,
         onSecondary: Colors.white,
-        secondaryContainer: Color(0xFF4A2A28),
+        secondaryContainer: Color(0xFF3A2824),
         onSecondaryContainer: Color(0xFFFFD8D4),
-        tertiary: AppColors.brandDusty,
+        tertiary: AppColors.warmMuted,
         onTertiary: Colors.white,
-        tertiaryContainer: Color(0xFF3D2022),
+        tertiaryContainer: Color(0xFF31201E),
         onTertiaryContainer: Color(0xFFFFD8D4),
         error: AppColors.error,
         onError: Colors.white,
-        errorContainer: Color(0xFF4A1A1A),
+        errorContainer: Color(0xFF3A1A1A),
         onErrorContainer: Color(0xFFFFDAD6),
         surface: AppColors.darkSurface,
         onSurface: AppColors.darkText,
         onSurfaceVariant: AppColors.darkTextSub,
         surfaceContainerHighest: AppColors.darkCard,
         outline: AppColors.darkBorder,
-        outlineVariant: Color(0xFF444450),
-        shadow: Colors.black54,
+        outlineVariant: Color(0xFF38322E),
+        shadow: Color(0x30000000),
         scrim: Colors.black87,
         inverseSurface: AppColors.lightBg,
         onInverseSurface: AppColors.brandDark,
-        inversePrimary: AppColors.brandDusty,
+        inversePrimary: AppColors.brandCoral,
       ),
       scaffoldBackgroundColor: AppColors.darkBg,
       appBarTheme: const AppBarTheme(
@@ -246,7 +267,7 @@ class ThemeCubit extends Cubit<ThemeState> {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
-        indicatorColor: AppColors.brandCoral.withValues(alpha: 0.2),
+        indicatorColor: AppColors.darkCard,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
@@ -292,21 +313,23 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create AMOLED theme - pure black, vibrant coral accents
+  /// Create AMOLED theme — pure black, warm off-white text
   ThemeData _createAmoledTheme() {
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
+      textTheme: _googleFontsTextTheme(),
+      extensions: const [KuronColors.amoled],
       colorScheme: const ColorScheme.dark(
         primary: AppColors.brandCoral,
         onPrimary: Colors.white,
-        primaryContainer: AppColors.brandDusty,
+        primaryContainer: AppColors.warmMuted,
         onPrimaryContainer: Color(0xFFFFD8D4),
-        secondary: AppColors.brandMuted,
+        secondary: AppColors.warm,
         onSecondary: Colors.white,
         secondaryContainer: Color(0xFF2A1518),
         onSecondaryContainer: Color(0xFFFFD8D4),
-        tertiary: AppColors.brandDusty,
+        tertiary: AppColors.warmMuted,
         onTertiary: Colors.white,
         tertiaryContainer: Color(0xFF251214),
         onTertiaryContainer: Color(0xFFFFD8D4),
@@ -314,46 +337,46 @@ class ThemeCubit extends Cubit<ThemeState> {
         onError: Colors.white,
         errorContainer: Color(0xFF2A0A0A),
         onErrorContainer: Color(0xFFFFDAD6),
-        surface: Color(0xFF0A0A0F),
-        onSurface: Color(0xFFE8E4E0),
-        onSurfaceVariant: Color(0xFF7A7570),
-        surfaceContainerHighest: Color(0xFF141418),
-        outline: Color(0xFF282830),
-        outlineVariant: Color(0xFF1A1A22),
-        shadow: Colors.black87,
+        surface: AppColors.amoledSurface,
+        onSurface: AppColors.amoledText,
+        onSurfaceVariant: AppColors.amoledTextSub,
+        surfaceContainerHighest: AppColors.amoledCard,
+        outline: AppColors.amoledBorder,
+        outlineVariant: Color(0xFF1E1A18),
+        shadow: Color(0x40000000),
         scrim: Colors.black,
         inverseSurface: AppColors.lightBg,
         onInverseSurface: AppColors.brandDark,
-        inversePrimary: AppColors.brandDusty,
+        inversePrimary: AppColors.brandCoral,
       ),
-      scaffoldBackgroundColor: Colors.black,
+      scaffoldBackgroundColor: AppColors.amoledBg,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.black,
-        foregroundColor: Color(0xFFE8E4E0),
+        backgroundColor: AppColors.amoledBg,
+        foregroundColor: AppColors.amoledText,
         elevation: DesignTokens.elevationNone,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF141418),
+        color: AppColors.amoledCard,
         elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-          side: const BorderSide(color: Color(0xFF282830), width: 1),
+          side: const BorderSide(color: AppColors.amoledBorder, width: 1),
         ),
       ),
       listTileTheme: const ListTileThemeData(
-        tileColor: Color(0xFF0A0A0F),
-        textColor: Color(0xFFE8E4E0),
+        tileColor: AppColors.amoledSurface,
+        textColor: AppColors.amoledText,
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFF282830),
+        color: AppColors.amoledBorder,
         thickness: 1,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.black,
-        indicatorColor: AppColors.brandCoral.withValues(alpha: 0.25),
+        backgroundColor: AppColors.amoledBg,
+        indicatorColor: AppColors.amoledCard,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
@@ -363,7 +386,7 @@ class ThemeCubit extends Cubit<ThemeState> {
             );
           }
           return const TextStyle(
-            color: Color(0xFF7A7570),
+            color: AppColors.amoledTextSub,
             fontWeight: FontWeight.w500,
             fontSize: 12,
           );
@@ -372,7 +395,7 @@ class ThemeCubit extends Cubit<ThemeState> {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.brandCoral);
           }
-          return const IconThemeData(color: Color(0xFF7A7570));
+          return const IconThemeData(color: AppColors.amoledTextSub);
         }),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -382,14 +405,14 @@ class ThemeCubit extends Cubit<ThemeState> {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF0A0A0F),
+        fillColor: AppColors.amoledSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-          borderSide: const BorderSide(color: Color(0xFF282830)),
+          borderSide: const BorderSide(color: AppColors.amoledBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-          borderSide: const BorderSide(color: Color(0xFF282830)),
+          borderSide: const BorderSide(color: AppColors.amoledBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),

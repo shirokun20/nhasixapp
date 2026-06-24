@@ -1,115 +1,161 @@
 import 'package:flutter/material.dart';
 
 /// Brand colors extracted from Frame.svg
+/// Updated 2026-06-24: Warm human palette (physical-object inspired)
 class AppColors {
-  // Core brand colors
-  static const Color brandCoral = Color(0xFFF1958E); // #F1958E - Main coral
-  static const Color brandMuted = Color(0xFFE0827E); // #E0827E - Muted coral
-  static const Color brandDusty = Color(0xFF9D555B); // #9D555B - Dusty rose
-  static const Color brandDark = Color(0xFF1A1A1F); // #1A1A1F - Near black
+  // Core brand — UNCHANGED (logo identity)
+  static const Color brandCoral = Color(0xFFF1958E);
+  static const Color brandMuted = Color(0xFFE0827E);
+  static const Color brandDusty = Color(0xFF9D555B);
+  static const Color brandDark = Color(0xFF1A1A1F);
 
-  // Light theme - warm, elegant, readable
-  static const Color lightBg = Color(0xFFFBF9F7); // Warm off-white
-  static const Color lightSurface = Color(0xFFF3F0EC); // Cream
-  static const Color lightCard = Color(0xFFFFFFFF); // Pure white
-  static const Color lightElevated = Color(0xFFFAF8F5); // Slight warm tint
-  static const Color lightBorder =
-      Color.fromARGB(255, 255, 190, 105); // Warm gray
-  static const Color lightText = Color(0xFF2C2926); // Warm black
-  static const Color lightTextSub = Color(0xFF7A716A); // Muted brown
+  // Light theme — warm cream (like aged paper)
+  static const Color lightBg = Color(0xFFEFE6DC);
+  static const Color lightSurface = Color(0xFFF5EDE4);
+  static const Color lightCard = Color(0xFFFCF7F0);
+  static const Color lightCardAlt = Color(0xFFFAF3EC);
+  static const Color lightBorder = Color(0xFFD6C8BC);
+  static const Color lightText = Color(0xFF2E2722);
+  static const Color lightTextSub = Color(0xFF7A6E66);
+  static const Color lightCoral = Color(0xFFC76A62); // deeper for AA
+  static const Color lightNavIndicator = Color(0xFFF0E4DE); // nav pill bg
 
-  // Dark theme - deep, rich, comfortable
-  static const Color darkBg = Color(0xFF121215); // Deep dark
-  static const Color darkSurface = Color(0xFF1A1A1F); // Surface from brand
-  static const Color darkCard = Color(0xFF222228); // Slightly elevated
-  static const Color darkElevated = Color(0xFF2A2A32); // Cards
-  static const Color darkBorder =
-      Color.fromARGB(255, 89, 55, 52); // Subtle borders
-  static const Color darkText =
-      Color.fromARGB(255, 255, 255, 255); // Warm white
-  static const Color darkTextSub = Color(0xFF9A9590); // Muted
+  // Dark theme — warm dark (library at night)
+  static const Color darkBg = Color(0xFF1C1816);
+  static const Color darkSurface = Color(0xFF221E1C);
+  static const Color darkCard = Color(0xFF2A2522);
+  static const Color darkCardAlt = Color(0xFF2E2926);
+  static const Color darkBorder = Color(0xFF4A3D36);
+  static const Color darkText = Color(0xFFD4CCC4);
+  static const Color darkTextSub = Color(0xFF9E948C);
 
-  // AMOLED - pure black, coral accents
-  static const Color amoledBg = Color(0xFF000000); // Pure black
-  static const Color amoledSurface = Color(0xFF0A0A0F); // Slight tint
-  static const Color amoledCard = Color(0xFF141418); // Card
-  static const Color amoledBorder = Color(0xFF282830); // Border
+  // AMOLED — pure black, warm text
+  static const Color amoledBg = Color(0xFF000000);
+  static const Color amoledSurface = Color(0xFF0C0A08);
+  static const Color amoledCard = Color(0xFF12100E);
+  static const Color amoledCardAlt = Color(0xFF161412);
+  static const Color amoledBorder = Color(0xFF362C28);
+  static const Color amoledText = Color(0xFFCCC4BC);
+  static const Color amoledTextSub = Color(0xFF8E847C);
 
-  // Semantic - derived from brand palette
+  // New tokens — warm secondary accent
+  static const Color warm = Color(0xFFD48A6A);
+  static const Color warmMuted = Color(0xFFB87054);
+
+  // Read/completed gold — like vintage bookstore stamp
+  static const Color readGold = Color(0xFFC8A06A);
+  static const Color readGoldLight = Color(0xFFB89060);
+
+  // Reader backgrounds
+  static const Color readerBgDark = Color(0xFF1A1614);
+  static const Color readerTextDark = Color(0xFFD0C8C0);
+  static const Color readerBgLight = Color(0xFFF5EDE4);
+  static const Color readerTextLight = Color(0xFF2E2722);
+  static const Color readerBgAmoled = Color(0xFF000000);
+  static const Color readerTextAmoled = Color(0xFFCCC4BC);
+
+  // Card gradient anchors
+  static const Color darkGradientStart = Color(0xFF2A2522);
+  static const Color darkGradientEnd = Color(0xFF221E1C);
+  static const Color lightGradientStart = Color(0xFFFCF7F0);
+  static const Color lightGradientEnd = Color(0xFFF5EDE4);
+  static const Color amoledGradientStart = Color(0xFF12100E);
+  static const Color amoledGradientEnd = Color(0xFF0C0A08);
+
+  // Semantic — derived from brand
   static const Color primary = brandCoral;
-  static const Color primaryContainer = Color(0xFF4A2A28); // Dark coral bg
+  static const Color primaryContainer = Color(0xFF4A2A28);
   static const Color onPrimaryContainer = Color(0xFFFFD8D4);
-
-  static const Color secondary = brandDusty;
+  static const Color secondary = warm;
   static const Color secondaryContainer = Color(0xFF3D2022);
   static const Color onSecondaryContainer = Color(0xFFFFD8D4);
-
   static const Color tertiary = brandMuted;
   static const Color tertiaryContainer = Color(0xFF3A1E20);
   static const Color onTertiaryContainer = Color(0xFFFFD8D4);
 
-  // Utility colors
-  static const Color surfaceDim = Color(0xFF3A3A42);
-  static const Color surfaceBright = Color(0xFFE8E4E0);
-
-  // Status colors
-  static const Color error = Color(0xFFFF6B6B);
+  // Status
+  static const Color error = Color(0xFFC86858); // muted brick
   static const Color errorContainer = Color(0xFF4A1A1A);
-  static const Color success = Color(0xFF7DD3A8);
-  static const Color warning = Color(0xFFFFD076);
+  static const Color success = Color(0xFF8AB87A); // muted leaf green
+  static const Color warning = Color(0xFFD4A060);
   static const Color info = Color(0xFF7BB8FF);
 }
 
-/// Backward compatibility wrapper
-class ColorsConst {
-  static const Color primaryColor = AppColors.brandCoral;
-  static const Color secondaryColor = AppColors.brandMuted;
-  static const Color tertiaryColor = AppColors.brandDusty;
-  static const Color accentDark = AppColors.brandDark;
+/// Theme extension exposing Kuron-specific colors.
+/// Access via: `Theme.of(context).extension<KuronColors>()`
+class KuronColors extends ThemeExtension<KuronColors> {
+  const KuronColors({
+    required this.cardGradientStart,
+    required this.cardGradientEnd,
+    required this.cardBorder,
+    required this.readGold,
+    required this.readerBg,
+    required this.readerText,
+  });
 
-  // Legacy dark theme
-  static const Color darkBackground = AppColors.darkBg;
-  static const Color darkSurface = AppColors.darkSurface;
-  static const Color darkCard = AppColors.darkCard;
-  static const Color darkElevated = AppColors.darkElevated;
-  static const Color darkTextPrimary = AppColors.darkText;
-  static const Color darkTextSecondary = AppColors.darkTextSub;
-  static const Color borderDefault = AppColors.darkBorder;
+  final Color cardGradientStart;
+  final Color cardGradientEnd;
+  final Color cardBorder;
+  final Color readGold;
+  final Color readerBg;
+  final Color readerText;
 
-  // Legacy light theme
-  static const Color lightBackground = AppColors.lightBg;
-  static const Color lightSurface = AppColors.lightSurface;
-  static const Color lightCard = AppColors.lightCard;
-  static const Color lightTextPrimary = AppColors.lightText;
-  static const Color lightTextSecondary = AppColors.lightTextSub;
+  @override
+  KuronColors copyWith({
+    Color? cardGradientStart,
+    Color? cardGradientEnd,
+    Color? cardBorder,
+    Color? readGold,
+    Color? readerBg,
+    Color? readerText,
+  }) {
+    return KuronColors(
+      cardGradientStart: cardGradientStart ?? this.cardGradientStart,
+      cardGradientEnd: cardGradientEnd ?? this.cardGradientEnd,
+      cardBorder: cardBorder ?? this.cardBorder,
+      readGold: readGold ?? this.readGold,
+      readerBg: readerBg ?? this.readerBg,
+      readerText: readerText ?? this.readerText,
+    );
+  }
 
-  // Legacy accents
-  static const Color accentBlue = AppColors.info;
-  static const Color accentGreen = AppColors.success;
-  static const Color accentYellow = AppColors.warning;
-  static const Color accentOrange = AppColors.warning;
-  static const Color accentRed = AppColors.error;
-  static const Color accentPink = Color(0xFFFF8A9A);
+  @override
+  KuronColors lerp(ThemeExtension<KuronColors>? other, double t) {
+    if (other is! KuronColors) return this;
+    return KuronColors(
+      cardGradientStart: Color.lerp(cardGradientStart, other.cardGradientStart, t)!,
+      cardGradientEnd: Color.lerp(cardGradientEnd, other.cardGradientEnd, t)!,
+      cardBorder: Color.lerp(cardBorder, other.cardBorder, t)!,
+      readGold: Color.lerp(readGold, other.readGold, t)!,
+      readerBg: Color.lerp(readerBg, other.readerBg, t)!,
+      readerText: Color.lerp(readerText, other.readerText, t)!,
+    );
+  }
 
-  // Tag colors
-  static const Color tagArtist = AppColors.info;
-  static const Color tagCharacter = Color(0xFFC8A8FF);
-  static const Color tagParody = AppColors.success;
-  static const Color tagGroup = AppColors.warning;
-  static const Color tagLanguage = Color(0xFFFF8A9A);
-  static const Color tagCategory = AppColors.darkTextSub;
+  static const dark = KuronColors(
+    cardGradientStart: AppColors.darkGradientStart,
+    cardGradientEnd: AppColors.darkGradientEnd,
+    cardBorder: AppColors.darkBorder,
+    readGold: AppColors.readGold,
+    readerBg: AppColors.readerBgDark,
+    readerText: AppColors.readerTextDark,
+  );
 
-  // Download status
-  static const Color downloadPending = AppColors.darkTextSub;
-  static const Color downloadProgress = AppColors.info;
-  static const Color downloadComplete = AppColors.success;
-  static const Color downloadError = AppColors.error;
-  static const Color downloadPaused = AppColors.warning;
+  static const light = KuronColors(
+    cardGradientStart: AppColors.lightGradientStart,
+    cardGradientEnd: AppColors.lightGradientEnd,
+    cardBorder: AppColors.lightBorder,
+    readGold: AppColors.readGoldLight,
+    readerBg: AppColors.readerBgLight,
+    readerText: AppColors.readerTextLight,
+  );
 
-  // Gradient
-  static const LinearGradient cardGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [AppColors.darkCard, AppColors.darkSurface],
+  static const amoled = KuronColors(
+    cardGradientStart: AppColors.amoledGradientStart,
+    cardGradientEnd: AppColors.amoledGradientEnd,
+    cardBorder: AppColors.amoledBorder,
+    readGold: AppColors.readGold,
+    readerBg: AppColors.readerBgAmoled,
+    readerText: AppColors.readerTextAmoled,
   );
 }

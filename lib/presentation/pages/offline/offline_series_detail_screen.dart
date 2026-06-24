@@ -766,13 +766,15 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.delete),
+        backgroundColor: colorScheme.surface,
+        title: Text(l10n.delete, style: TextStyle(color: colorScheme.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n
-                .removeDownloadConfirmation), // Ensure this key exists or use fallback
+                .removeDownloadConfirmation,
+                style: TextStyle(color: colorScheme.onSurface)),
             const SizedBox(height: 12),
             ValueListenableBuilder<bool>(
               valueListenable: dontAskAgainNotifier,

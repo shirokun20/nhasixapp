@@ -12,7 +12,7 @@ class TagColorPalette {
     'artist': Color(0xFFB8655E),
     'character': Color(0xFF4F7FB8),
     'parody': Color(0xFFAE6D67),
-    'group': Color(0xFFB55A5A),
+    'group': Color(0xFFA85A5A),
     'language': Color(0xFFB8873B),
     'category': Color(0xFF7D7269),
     'uploader': Color(0xFF5FA383),
