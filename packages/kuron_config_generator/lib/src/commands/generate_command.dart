@@ -8,6 +8,7 @@ import '../wizard/wizard_runner.dart';
 import '../generator/config_generator.dart';
 import '../discovery/http_probe.dart';
 import '../discovery/cms_detector.dart';
+import '../discovery/api_detector.dart';
 
 /// Generate a Kuron source config through interactive questions or URL-assisted discovery.
 class GenerateCommand extends Command<void> {
@@ -108,10 +109,15 @@ class GenerateCommand extends Command<void> {
       return;
     }
 
-    logger.i('✓ HTTP ${probe.statusCode}, ${probe.html.length} bytes received');
+    logger.i('✓ HTTP ${probe.statusCode}, ${probe.body.length} bytes received (${probe.contentType.name})');
+
+    if (probe.contentType == ProbeContentType.json) {
+      await _handleApiResponse(probe, output, logger);
+      return;
+    }
 
     // Detect CMS from HTML
-    final cms = detectCms(probe.html);
+    final cms = detectCms(probe.body);
     logger.i('📋 CMS detected: ${cms.cmsId} (${(cms.confidence * 100).round()}% confidence)');
 
     if (cms.isKnown) {
@@ -183,5 +189,58 @@ class GenerateCommand extends Command<void> {
       logger.i('💡 Review suggested selectors in the config — '
           'adjust paths, CSS classes, and image selectors as needed.');
     }
+  }
+
+  Future<void> _handleApiResponse(
+    ProbeResult probe,
+    String output,
+    Logger logger,
+  ) async {
+    final url = argResults?['url'] as String;
+    final json = probe.jsonBody;
+    if (json == null) {
+      logger.w('JSON body is empty or malformed.');
+      return;
+    }
+
+    final api = inferApi(url, json);
+    logger.i('📡 API mode detected — inferred structure:');
+    logger.i('  isList=${api.hasList} isDetail=${api.hasDetail} confidence=${(api.confidence * 100).round()}%');
+
+    final uri = Uri.tryParse(url);
+    final host = uri?.host.replaceAll(RegExp(r'^www\.'), '') ?? 'unknown';
+
+    final answers = <String, String?>{
+      'sourceId': host,
+      'displayName': host,
+      'homeUrl': '${uri?.scheme}://${uri?.host}',
+      'version': '1.0.0',
+      'contentType': 'manga',
+      'mode': 'rest_json',
+      'supportsSearch': 'y',
+      'supportsChapters': 'n',
+      'supportsComments': 'n',
+      'needsHeaders': 'n',
+      if (api.listEndpoint != null)
+        'listEndpoint': api.listEndpoint,
+      if (api.detailEndpoint != null)
+        'detailEndpoint': api.detailEndpoint,
+      'apiBase': api.baseUrl,
+    };
+
+    logger.i('Generating config with REST API mode...');
+    final config = ConfigGenerator.generateConfig(answers);
+
+    // Write config
+    final outputDir = Directory(output);
+    if (!outputDir.existsSync()) {
+      outputDir.createSync(recursive: true);
+    }
+    final configFile = File('$output/$host-config.json');
+    await configFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(config),
+    );
+    logger.i('✓ Config generated: ${configFile.path}');
+    logger.i('💡 This is a draft — review endpoints, paths, and pagination.');
   }
 }
