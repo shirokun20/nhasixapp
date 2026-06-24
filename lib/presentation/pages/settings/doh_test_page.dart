@@ -113,7 +113,7 @@ class _DohTestPageState extends State<DohTestPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Text(_status,

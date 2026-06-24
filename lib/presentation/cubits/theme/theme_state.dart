@@ -38,9 +38,9 @@ class ThemeState {
       ),
       cardTheme: const CardThemeData(
         color: AppColors.darkCard,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(DesignTokens.radiusXl)),
           side: BorderSide(
             color: AppColors.darkBorder,
             width: 1,

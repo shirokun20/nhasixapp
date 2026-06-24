@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -1370,7 +1371,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.noContentToBrowse),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
             ),
           );
         }
@@ -1443,7 +1444,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 ),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: AppLocalizations.of(context)?.retry ?? 'Retry',
@@ -1665,7 +1666,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         Logger().w('Cannot download all: no content loaded');
         _showMainSnackBar(
           Text(l10n.noContentToDownload),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         );
         return;
       }
@@ -1673,7 +1674,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       if (contentState.contents.isEmpty) {
         _showMainSnackBar(
           Text(l10n.noGalleriesFound),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         );
         return;
       }
@@ -1714,7 +1715,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
               Expanded(child: Text(l10n.allGalleriesDownloaded)),
             ],
           ),
-          backgroundColor: Colors.blue,
+          backgroundColor: AppColors.success,
         );
         return;
       }
@@ -1750,7 +1751,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ),
           ],
         ),
-        backgroundColor: queuedCount > 0 ? Colors.green : Colors.orange,
+        backgroundColor: queuedCount > 0 ? AppColors.success : AppColors.warning,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: l10n.viewDownloads,
@@ -1768,7 +1769,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             Text(AppLocalizations.of(context)!.failedToDownload),
           ],
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       );
     }
   }

@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/colors_const.dart' show AppColors;
+import '../../../core/constants/design_tokens.dart';
 import '../settings/settings_cubit.dart';
 
 part 'theme_state.dart';
@@ -115,16 +116,16 @@ class ThemeCubit extends Cubit<ThemeState> {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.lightBg,
         foregroundColor: AppColors.lightText,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
         color: AppColors.lightCard,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           side: const BorderSide(color: AppColors.lightBorder, width: 1),
         ),
       ),
@@ -163,21 +164,21 @@ class ThemeCubit extends Cubit<ThemeState> {
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.brandCoral,
         foregroundColor: Colors.white,
-        elevation: 2,
+        elevation: DesignTokens.elevationMd,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.lightSurface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.lightBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.lightBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.brandCoral, width: 2),
         ),
       ),
@@ -222,16 +223,16 @@ class ThemeCubit extends Cubit<ThemeState> {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.darkBg,
         foregroundColor: AppColors.darkText,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
         color: AppColors.darkCard,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           side: const BorderSide(color: AppColors.darkBorder, width: 1),
         ),
       ),
@@ -270,21 +271,21 @@ class ThemeCubit extends Cubit<ThemeState> {
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.brandCoral,
         foregroundColor: Colors.white,
-        elevation: 2,
+        elevation: DesignTokens.elevationMd,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.darkSurface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.brandCoral, width: 2),
         ),
       ),
@@ -329,16 +330,16 @@ class ThemeCubit extends Cubit<ThemeState> {
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.black,
         foregroundColor: Color(0xFFE8E4E0),
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
         color: const Color(0xFF141418),
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           side: const BorderSide(color: Color(0xFF282830), width: 1),
         ),
       ),
@@ -377,21 +378,21 @@ class ThemeCubit extends Cubit<ThemeState> {
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.brandCoral,
         foregroundColor: Colors.white,
-        elevation: 1,
+        elevation: DesignTokens.elevationSm,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF0A0A0F),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: Color(0xFF282830)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: Color(0xFF282830)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.brandCoral, width: 2),
         ),
       ),

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../core/constants/colors_const.dart' show AppColors;
 import '../../core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
@@ -87,9 +88,9 @@ class ContentCard extends StatelessWidget {
       elevation: isHighlighted ? 6 : 2,
       shadowColor: isHighlighted
           ? (isDarkMode
-              ? const Color(0xFF00FF88)
+              ? AppColors.success
                   .withValues(alpha: 0.5) // Neon green for dark mode
-              : const Color(0xFF2E7D32)
+              : AppColors.success
                   .withValues(alpha: 0.5)) // Dark green for light mode
           : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
@@ -97,8 +98,8 @@ class ContentCard extends StatelessWidget {
         side: isHighlighted
             ? BorderSide(
                 color: isDarkMode
-                    ? const Color(0xFF00FF88) // Neon green for dark mode
-                    : const Color(0xFF2E7D32), // Dark green for light mode
+                    ? AppColors.success
+                    : AppColors.success,
                 width: 2.5,
               )
             : BorderSide.none,
@@ -225,17 +226,12 @@ class ContentCard extends StatelessWidget {
 
     // Apply additional highlight effect untuk downloaded content
     if (isHighlighted) {
-      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
-              color: (isDarkMode
-                      ? const Color(0xFF00FF88) // Neon green for dark mode
-                      : const Color(0xFF2E7D32)) // Dark green for light mode
-                  .withValues(alpha: 0.3),
+              color: AppColors.success.withValues(alpha: 0.3),
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -261,8 +257,8 @@ class ContentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? const Color(0xFF00FF88) // Neon green for dark mode
-                  : const Color(0xFF2E7D32), // Dark green for light mode
+                  ? AppColors.success
+                  : AppColors.success,
               borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               boxShadow: [
                 BoxShadow(
@@ -732,8 +728,8 @@ class ContentCard extends StatelessWidget {
                 Icons.offline_pin,
                 size: 14,
                 color: isDarkMode
-                    ? const Color(0xFF00FF88) // Neon green for dark mode
-                    : const Color(0xFF2E7D32), // Dark green for light mode
+                    ? AppColors.success
+                    : AppColors.success,
               ),
               const SizedBox(width: 4),
             ],

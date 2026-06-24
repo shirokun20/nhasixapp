@@ -222,7 +222,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Text(
             AppLocalizations.of(context)!.nItemsInHistory(state.history.length),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
             textAlign: TextAlign.center,
           ),

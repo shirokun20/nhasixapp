@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
@@ -45,8 +46,8 @@ class MainGridCard extends StatelessWidget {
               border: isDownloaded
                   ? Border.all(
                       color: isDarkMode
-                          ? const Color(0xFF00FF88)
-                          : const Color(0xFF2E7D32),
+                          ? AppColors.success
+                          : AppColors.success,
                       width: 2.5,
                     )
                   : null,
@@ -54,8 +55,8 @@ class MainGridCard extends StatelessWidget {
                 BoxShadow(
                   color: isDownloaded
                       ? (isDarkMode
-                          ? const Color(0xFF00FF88).withValues(alpha: 0.4)
-                          : const Color(0xFF2E7D32).withValues(alpha: 0.4))
+                          ? AppColors.success.withValues(alpha: 0.4)
+                          : AppColors.success.withValues(alpha: 0.4))
                       : theme.colorScheme.shadow.withValues(alpha: 0.1),
                   blurRadius: isDownloaded ? 12 : 8,
                   offset: const Offset(0, 2),

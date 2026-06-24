@@ -45,7 +45,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -105,7 +105,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                   Text(
                     AppLocalizations.of(context)!.newVersion,
                     style:
-                        TextStyleConst.bodyMedium.copyWith(color: Colors.grey),
+                        TextStyleConst.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   Container(
                     padding:
@@ -209,7 +209,7 @@ class UpdateAvailableSheet extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 child: Text(AppLocalizations.of(context)!.maybeLater),
               ),

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -47,8 +48,8 @@ class MainFeaturedCard extends StatelessWidget {
             border: isDownloaded
                 ? Border.all(
                     color: isDarkMode
-                        ? const Color(0xFF00FF88)
-                        : const Color(0xFF2E7D32),
+                        ? AppColors.success
+                        : AppColors.success,
                     width: 2.5,
                   )
                 : null,
@@ -56,8 +57,8 @@ class MainFeaturedCard extends StatelessWidget {
               BoxShadow(
                 color: isDownloaded
                     ? (isDarkMode
-                        ? const Color(0xFF00FF88).withValues(alpha: 0.3)
-                        : const Color(0xFF2E7D32).withValues(alpha: 0.3))
+                        ? AppColors.success.withValues(alpha: 0.3)
+                        : AppColors.success.withValues(alpha: 0.3))
                     : theme.colorScheme.shadow.withValues(alpha: 0.15),
                 blurRadius: 12,
                 offset: const Offset(0, 4),

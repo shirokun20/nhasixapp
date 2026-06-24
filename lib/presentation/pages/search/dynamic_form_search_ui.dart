@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
@@ -1696,10 +1697,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final Color foreground;
     switch (state) {
       case _TagPickState.include:
-        accent = isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853);
+        accent = isDark ? AppColors.success : AppColors.success;
         foreground = isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45);
       case _TagPickState.exclude:
-        accent = isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F);
+        accent = isDark ? AppColors.error : AppColors.error;
         foreground = isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D);
     }
 

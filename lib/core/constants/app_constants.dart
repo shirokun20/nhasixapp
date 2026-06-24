@@ -3,6 +3,7 @@ library;
 import 'dart:core';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
 /// Pagination and data fetching limits
@@ -154,11 +155,11 @@ class AppUI {
 
   /// Border radius for cards
   static double get cardBorderRadius =>
-      _remoteConfig.appConfig?.ui?.cardBorderRadius ?? 12.0;
+      _remoteConfig.appConfig?.ui?.cardBorderRadius ?? DesignTokens.radiusLg;
 
   /// Default padding
   static double get defaultPadding =>
-      _remoteConfig.appConfig?.ui?.defaultPadding ?? 16.0;
+      _remoteConfig.appConfig?.ui?.defaultPadding ?? DesignTokens.spaceLg;
 
   /// Title max length before truncation
   static int get titleMaxLength =>

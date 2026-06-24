@@ -13,6 +13,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -1614,7 +1615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       content: Text(
                         l10n.downloadDirectoryUpdated,
                       ),
-                      backgroundColor: Colors.green.shade700,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                   setState(() {}); // Refresh UI
@@ -2360,7 +2361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SnackBar(
           content:
               Text(AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e, stackTrace) {
@@ -2372,7 +2373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SnackBar(
           content: Text(AppLocalizations.of(context)!
               .failedToUninstall(sourceId, e.toString())),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -2451,7 +2452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.sourceImportInstalledFromLink(candidate.sourceId)),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e, stackTrace) {
@@ -2463,7 +2464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.sourceImportFailedFromLink(e.toString())),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -2550,7 +2551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: AppColors.success,
           ),
         );
       } else {
@@ -2562,7 +2563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             content: Text(
               'Installed ${installed.length}, failed ${failed.length}: ${failed.join(', ')}$reasonHint',
             ),
-            backgroundColor: Colors.orange.shade700,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
@@ -2575,7 +2576,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.sourceImportFailedFromZip(e.toString())),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
