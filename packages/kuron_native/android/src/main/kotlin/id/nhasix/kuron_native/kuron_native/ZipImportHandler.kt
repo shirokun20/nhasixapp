@@ -176,36 +176,19 @@ class ZipImportHandler(private val activity: Activity) {
                     try {
                         if (!entry.isDirectory) {
                             val relativePath = entry.name.replace('\\', '/').trimStart('/')
+                            // ponytail: flatten ZIP image paths; page archives are expected to use unique filenames.
                             val fileName = File(relativePath).name
                             val extension = fileName.substringAfterLast('.', "").lowercase()
 
                             // Only extract image files
                             if (imageExtensions.contains(".$extension")) {
-                                if (relativePath.isBlank()) {
+                                if (fileName.isBlank()) {
                                     zipStream.closeEntry()
                                     entry = zipStream.nextEntry
                                     continue
                                 }
 
-                                val outputFile = File(destDir, relativePath)
-                                val destCanonical = destDir.canonicalFile
-                                val outputParent = outputFile.parentFile?.canonicalFile
-                                val destPath = destCanonical.path
-                                val parentPath = outputParent?.path
-                                if (parentPath == null ||
-                                    (parentPath != destPath &&
-                                        !parentPath.startsWith("$destPath${File.separator}"))
-                                ) {
-                                    android.util.Log.w(
-                                        "ZipImportHandler",
-                                        "Skipped unsafe ZIP entry path: ${entry.name}"
-                                    )
-                                    zipStream.closeEntry()
-                                    entry = zipStream.nextEntry
-                                    continue
-                                }
-
-                                outputFile.parentFile?.mkdirs()
+                                val outputFile = File(destDir, fileName)
 
                                 // Stream directly to file with buffering
                                 BufferedOutputStream(FileOutputStream(outputFile), BUFFER_SIZE).use { output ->
@@ -227,7 +210,7 @@ class ZipImportHandler(private val activity: Activity) {
                                         "processed" to processedEntries,
                                         "total" to totalEntries,
                                         "imageCount" to imageCount,
-                                        "currentFile" to relativePath
+                                        "currentFile" to fileName
                                     ))
                                 }
                             } else {

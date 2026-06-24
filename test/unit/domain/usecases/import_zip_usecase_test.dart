@@ -80,6 +80,8 @@ void main() {
     });
     when(() => userDataRepository.getDownloadStatus(any()))
         .thenAnswer((_) async => null);
+    when(() => userDataRepository.deleteDownloadStatus(any()))
+        .thenAnswer((_) async {});
     when(() => userDataRepository.saveDownloadStatus(any()))
         .thenAnswer((_) async {});
   });
@@ -181,9 +183,37 @@ void main() {
     expect(result['success'], isTrue);
     expect(result['contentId'], 'collision');
 
+    verify(() => userDataRepository.deleteDownloadStatus('collision'))
+        .called(1);
+
     final verification =
         verify(() => userDataRepository.saveDownloadStatus(captureAny()));
     final saved = verification.captured.single as DownloadStatus;
     expect(saved.contentId, 'collision');
+  });
+
+  test('separates local import from installed source record', () async {
+    when(() => kuronNative.getZipDisplayName(any()))
+        .thenAnswer((_) async => 'Collision.zip');
+    when(() => userDataRepository.getDownloadStatus('collision')).thenAnswer(
+      (_) async => const DownloadStatus(
+        contentId: 'collision',
+        state: DownloadState.completed,
+        sourceId: 'nhentai',
+      ),
+    );
+
+    final result = await useCase.call(const ImportZipParams());
+
+    expect(result['success'], isTrue);
+    expect(result['contentId'], 'collision-2');
+
+    verifyNever(() => userDataRepository.deleteDownloadStatus('collision'));
+
+    final verification =
+        verify(() => userDataRepository.saveDownloadStatus(captureAny()));
+    final saved = verification.captured.single as DownloadStatus;
+    expect(saved.contentId, 'collision-2');
+    expect(saved.sourceId, 'local');
   });
 }

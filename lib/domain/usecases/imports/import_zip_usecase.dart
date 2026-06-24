@@ -293,8 +293,23 @@ class ImportZipUseCase {
       final existingStatus = await _userDataRepository.getDownloadStatus(
         candidate,
       );
-      if (existingStatus?.sourceId?.toLowerCase() == sourceId.toLowerCase()) {
-        return candidate;
+      if (existingStatus != null) {
+        final existingSourceId = existingStatus.sourceId?.toLowerCase();
+        if (existingSourceId == sourceId.toLowerCase()) {
+          final existingDir = await DownloadStorageUtils.getContentDirectory(
+            candidate,
+            sourceId: sourceId,
+          );
+          if (await Directory(existingDir).exists()) {
+            await Directory(existingDir).delete(recursive: true);
+          }
+          await _userDataRepository.deleteDownloadStatus(candidate);
+          return candidate;
+        }
+
+        candidate = '$baseContentId-$suffix';
+        suffix++;
+        continue;
       }
 
       final existingDir = await DownloadStorageUtils.getContentDirectory(
