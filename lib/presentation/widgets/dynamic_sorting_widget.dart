@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/config/config_models.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// A dynamic sorting widget that adapts based on [SortingConfig].
 ///
@@ -50,7 +51,7 @@ class DynamicSortingWidget extends StatelessWidget {
         color: isDark
             ? colorScheme.surfaceContainerHigh
             : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
           color: colorScheme.outline.withValues(alpha: 0.15),
         ),
@@ -79,7 +80,7 @@ class DynamicSortingWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -178,7 +179,7 @@ class DynamicSortingWidget extends StatelessWidget {
       },
       offset: const Offset(0, 48),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
       ),
       color: isDark ? colorScheme.surfaceContainerHigh : colorScheme.surface,
       elevation: 8,
@@ -235,7 +236,7 @@ class DynamicSortingWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
               color: colorScheme.primary.withValues(alpha: 0.3),
@@ -277,12 +278,12 @@ class DynamicSortingWidget extends StatelessWidget {
       BuildContext context, ColorScheme colorScheme, SortOptionConfig option) {
     return InkWell(
       onTap: onNavigateToSearch,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           border: Border.all(
             color: colorScheme.outline.withValues(alpha: 0.2),
           ),
@@ -332,9 +333,9 @@ class DynamicSortingWidget extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => onSortChanged?.call(option.value),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+            duration: DesignTokens.durationPageTurn,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -343,7 +344,7 @@ class DynamicSortingWidget extends StatelessWidget {
                     color: isSelected
                         ? colorScheme.primary
                         : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     border: Border.all(
                       color: isSelected
                           ? colorScheme.primary

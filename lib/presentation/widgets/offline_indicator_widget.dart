@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../cubits/network/network_cubit.dart';
@@ -29,7 +30,7 @@ class OfflineIndicatorWidget extends StatelessWidget {
             state is NetworkConnected ? state.connectionType : null;
 
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: DesignTokens.durationNormal,
           padding: EdgeInsets.symmetric(
             horizontal: compact ? 6 : 8,
             vertical: compact ? 2 : 4,
@@ -174,7 +175,7 @@ class OfflineBanner extends StatelessWidget {
         }
 
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: DesignTokens.durationNormal,
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
@@ -239,7 +240,7 @@ class OfflineModeToggle extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
           color: isOfflineMode
               ? Theme.of(context).colorScheme.tertiary

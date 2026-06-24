@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/download_service.dart';
 import '../../services/pdf_conversion_service.dart';
 import '../../core/utils/download_storage_utils.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Widget for displaying individual download item with progress and actions
 class DownloadItemWidget extends StatelessWidget {
@@ -38,7 +39,7 @@ class DownloadItemWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -72,7 +73,7 @@ class DownloadItemWidget extends StatelessWidget {
                                 color: _getSourceColor(
                                     download.sourceId ?? SourceType.nhentai.id,
                                     colorScheme),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                               ),
                               child: Text(
                                 (download.sourceId ?? SourceType.nhentai.id)
@@ -226,7 +227,7 @@ class DownloadItemWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: colorScheme.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     border: Border.all(
                       color: colorScheme.error.withValues(alpha: 0.3),
                       width: 1,

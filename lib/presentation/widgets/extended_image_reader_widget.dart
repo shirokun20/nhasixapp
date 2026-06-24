@@ -13,6 +13,7 @@ import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
 import '../../data/models/reader_settings_model.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Enhanced image viewer widget optimized for manga/comic reading
 /// with adaptive fitting and zoom-on-demand functionality.
@@ -297,7 +298,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   void initState() {
     super.initState();
     _zoomController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: DesignTokens.durationPageTurn,
       vsync: this,
     );
     // Initialize with dummy animation (will be replaced on double-tap)
@@ -2201,7 +2202,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         vertical: 10,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                   ),
@@ -2340,7 +2341,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           shadowColor:
               Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           ),
           child: Container(
             width: cardWidth,
@@ -2367,7 +2368,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: LinearProgressIndicator(
                     value:
                         showIndeterminateFromRealBytes ? null : indicatorValue,
@@ -2564,7 +2565,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2626,7 +2627,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2651,7 +2652,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2671,11 +2672,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor:
                             Theme.of(context).colorScheme.onPrimary,
-                        elevation: 2,
+                        elevation: DesignTokens.elevationMd,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2698,7 +2699,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2779,7 +2780,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -2812,7 +2813,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

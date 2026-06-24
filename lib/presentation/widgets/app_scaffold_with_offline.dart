@@ -9,7 +9,8 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 
 import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
-import 'package:nhasixapp/presentation/widgets/global_download_progress_widget.dart'; // NEW
+import 'package:nhasixapp/presentation/widgets/global_download_progress_widget.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
 /// This widget wraps around any page content to provide consistent offline mode UI
@@ -243,7 +244,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border:
             Border.all(color: Theme.of(context).colorScheme.error, width: 1),
       ),
@@ -334,7 +335,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
               backgroundColor: Theme.of(context).colorScheme.surface,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                 side: BorderSide(
                     color: Theme.of(context).colorScheme.outline, width: 1),
               ),

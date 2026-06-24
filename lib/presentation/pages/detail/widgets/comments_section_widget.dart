@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
@@ -487,7 +488,7 @@ class _CommentsComposer extends StatelessWidget {
           color: theme.colorScheme.surfaceContainerHighest.withValues(
             alpha: 0.22,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/constants/design_tokens.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for displaying download statistics and overall progress
@@ -20,7 +21,7 @@ class DownloadStatsWidget extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
@@ -152,7 +153,7 @@ class DownloadStatsWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color:
                     Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 border: Border.all(
                   color: Theme.of(context)
                       .colorScheme
@@ -246,7 +247,7 @@ class DownloadStatsWidget extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
           color: color.withValues(alpha: 0.2),
           width: 1,

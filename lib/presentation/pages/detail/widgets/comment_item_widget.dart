@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:markdown_widget/markdown_widget.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -21,10 +22,10 @@ class CommentItemWidget extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: BorderSide(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),

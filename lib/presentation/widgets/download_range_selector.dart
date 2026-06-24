@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Widget for selecting download range (page X to page Y)
 /// Allows users to download partial content instead of all pages
@@ -105,7 +106,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 border: Border.all(color: colorScheme.outline),
               ),
               child: Column(
@@ -155,7 +156,7 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 border: Border.all(
                     color: colorScheme.primary.withValues(alpha: 0.3)),
               ),
@@ -250,15 +251,15 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide:
                             BorderSide(color: colorScheme.primary, width: 2),
                       ),
@@ -286,15 +287,15 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide:
                             BorderSide(color: colorScheme.primary, width: 2),
                       ),

@@ -13,6 +13,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -74,7 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text(l10n.settings),
         centerTitle: true,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         backgroundColor: Colors.transparent,
       ),
       drawer: AppMainDrawerWidget(context: context),
@@ -405,7 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: Icon(icon, size: 16, color: theme.colorScheme.primary),
           ),
@@ -426,9 +427,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSettingsCard(List<Widget> children, ThemeData theme) {
     return Card(
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(children: children),
@@ -492,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontWeight: FontWeight.w500,
           ),
           dropdownColor: theme.colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           items: items,
           onChanged: enabled ? onChanged : null,
         ),
@@ -576,7 +577,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: theme.colorScheme.primary.withValues(alpha: 0.2),
         ),
@@ -823,7 +824,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
       ),
       child: Text(
         chipLabel,
@@ -1153,7 +1154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.outline
                                       .withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                                 ),
                               ),
                             ),
@@ -1165,7 +1166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.primary
                                         .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                                   ),
                                   child: Icon(
                                     Icons.visibility_off_rounded,
@@ -1454,7 +1455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
           color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
@@ -1528,7 +1529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontWeight: FontWeight.w500,
               ),
               dropdownColor: theme.colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               items: [
                 DropdownMenuItem(
                   value: 'default',
@@ -2044,7 +2045,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           builder: (ctx) => AlertDialog(
             backgroundColor: theme.colorScheme.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             ),
             title: Text(l10n.resetSettings, style: TextStyleConst.headingSmall),
             content: Text(
@@ -2077,7 +2078,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: theme.colorScheme.error,
         foregroundColor: theme.colorScheme.onError,
         minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       ),
     );
   }
@@ -2224,7 +2225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             decoration: BoxDecoration(
                               color: theme.colorScheme.primary
                                   .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                             child: Text(
                               l10n.sourceSelectorActiveSource,

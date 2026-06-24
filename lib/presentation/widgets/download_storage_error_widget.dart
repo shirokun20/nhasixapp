@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/routing/app_router.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// A dedicated widget to show when a download error occurs due to missing storage path.
 class DownloadStorageErrorWidget extends StatelessWidget {
@@ -64,7 +65,7 @@ class DownloadStorageErrorWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                   child: Text(l10n.cancel),
@@ -84,7 +85,7 @@ class DownloadStorageErrorWidget extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                 ),
               ),
@@ -100,7 +101,7 @@ class DownloadStorageErrorWidget extends StatelessWidget {
         appBar: AppBar(
           title: Text(l10n.downloads),
           backgroundColor: colorScheme.surface,
-          elevation: 0,
+          elevation: DesignTokens.elevationNone,
         ),
         body: Center(
           child: SingleChildScrollView(

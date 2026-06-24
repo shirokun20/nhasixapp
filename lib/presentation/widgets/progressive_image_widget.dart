@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/image_cache_service.dart';
@@ -48,7 +49,7 @@ class ProgressiveImageWidget extends StatefulWidget {
     this.borderRadius,
     this.placeholder,
     this.errorWidget,
-    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.fadeInDuration = DesignTokens.durationNormal,
     this.fadeOutDuration = const Duration(milliseconds: 100),
     this.httpHeaders,
     this.preferStaticPreview = false,
@@ -440,7 +441,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: colorScheme.surface.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                 ),
@@ -939,7 +940,7 @@ class _ProgressiveReaderImageWidgetState
       memCacheHeight: 1200,
       placeholder: (context, url) => _buildReaderPlaceholder(context),
       errorWidget: (context, url, error) => _buildReaderErrorWidget(context),
-      fadeInDuration: const Duration(milliseconds: 200),
+      fadeInDuration: DesignTokens.durationPageTurn,
       // Cache image in ImageCacheService when loaded
       imageBuilder: (context, imageProvider) {
         // Listen to image stream to get dimensions

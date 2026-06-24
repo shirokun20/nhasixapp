@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
@@ -589,7 +590,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         labelText: _labelFor(name),
         hintText: field.placeholder,
         prefixIcon: _iconFor(name),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
         filled: true,
       ),
       textInputAction: TextInputAction.search,
@@ -605,7 +606,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         labelText: _labelFor(name),
         hintText: field.placeholder ?? 'Enter ${_labelFor(name).toLowerCase()}',
         prefixIcon: const Icon(Icons.tag),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
         filled: true,
       ),
       textInputAction: TextInputAction.search,
@@ -653,7 +654,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               tooltip: AppLocalizations.of(context)!.addTag,
               onPressed: addCurrentInput,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
             filled: true,
           ),
           textInputAction: TextInputAction.done,
@@ -723,15 +724,15 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         const SizedBox(height: 8),
         Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             onTap: () => _openPicker(name, field),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 border: Border.all(
                   color: hasLoadError
                       ? Theme.of(context).colorScheme.error
@@ -856,9 +857,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         const SizedBox(height: 8),
         Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             onTap: () => _openCombinedPicker(
               includedName: includedName,
               includedField: includedField,
@@ -869,7 +870,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 border: Border.all(
                   color: hasLoadError
                       ? Theme.of(context).colorScheme.error
@@ -1109,7 +1110,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               .colorScheme
                               .outlineVariant
                               .withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -1152,7 +1153,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           hintText:
                               AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                           ),
                           filled: true,
                         ),
@@ -1432,7 +1433,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               .colorScheme
                               .outlineVariant
                               .withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -1465,7 +1466,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           hintText:
                               AppLocalizations.of(context)!.searchTagsHint,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                           ),
                           filled: true,
                         ),
@@ -1978,7 +1979,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: Theme.of(context).colorScheme.outlineVariant,
         ),
@@ -2438,7 +2439,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                     color: isError
                         ? colorScheme.errorContainer
                         : colorScheme.primaryContainer.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                   child: Icon(
                     isError
@@ -2513,7 +2514,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             const SizedBox(height: 14),
             if (isLoading) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 child: LinearProgressIndicator(
                   minHeight: 6,
                   backgroundColor: colorScheme.primary.withValues(alpha: 0.10),
@@ -2635,7 +2636,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             : filled
                 ? colorScheme.primaryContainer.withValues(alpha: 0.75)
                 : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
         border: Border.all(
           color: isError
               ? colorScheme.error.withValues(alpha: 0.30)
@@ -2665,7 +2666,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       height: 34,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
@@ -2684,7 +2685,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         color: emphasized
             ? colorScheme.primaryContainer.withValues(alpha: 0.7)
             : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
         border: Border.all(
           color: emphasized
               ? colorScheme.primary.withValues(alpha: 0.35)

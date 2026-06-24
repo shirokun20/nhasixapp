@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_core/kuron_core.dart' show Tag;
 import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart' hide TagType;
 import 'package:nhasixapp/domain/entities/search_filter.dart';
@@ -392,11 +393,11 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
           filled: true,
           fillColor: Theme.of(context).cardColor,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           prefixIcon: _getIconForField(field.name),
@@ -430,7 +431,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,7 +488,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           border: Border.all(color: Theme.of(context).dividerColor),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,7 +567,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
@@ -147,7 +148,7 @@ class DetailErrorView extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         border: Border.all(
                           color: colorScheme.outline,
                           width: 1,
@@ -178,7 +179,7 @@ class DetailErrorView extends StatelessWidget {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                               ),
                             ),
                           ),
@@ -196,7 +197,7 @@ class DetailErrorView extends StatelessWidget {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                               ),
                             ),
                           ),
@@ -214,7 +215,7 @@ class DetailErrorView extends StatelessWidget {
                               vertical: 12,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                           ),
                         ),

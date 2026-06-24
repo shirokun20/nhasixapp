@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
@@ -225,9 +226,9 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               color: isSelected
                   ? colorScheme.primaryContainer.withValues(alpha: 0.5)
                   : colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                 onTap: () {
                   _offlineSearchCubit.changeSorting(
                       orderBy: orderBy, descending: descending);
@@ -237,7 +238,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                     border: Border.all(
                       color:
                           isSelected ? colorScheme.primary : Colors.transparent,
@@ -314,7 +315,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         'Sort',
         style: TextStyleConst.buttonMedium,
       ),
-      elevation: 4,
+      elevation: DesignTokens.elevationLg,
     );
   }
 
@@ -368,11 +369,11 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           )
                         : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       borderSide: BorderSide(color: colorScheme.outline),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       borderSide: BorderSide(color: colorScheme.primary),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
@@ -410,7 +411,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
             ),
             child: Text(
@@ -520,17 +521,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onSelected(!isSelected),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         splashColor: baseColor.withValues(alpha: 0.2),
         highlightColor: baseColor.withValues(alpha: 0.1),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: DesignTokens.durationPageTurn,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
                 ? baseColor.withValues(alpha: 0.15)
                 : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             border: Border.all(
               color: isSelected
                   ? baseColor
@@ -650,7 +651,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,7 +917,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       height: 54,
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                       ),
                       child: Center(
                         child: Icon(
@@ -1035,7 +1036,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                           border: Border.all(
                             color: colorScheme.outlineVariant
                                 .withValues(alpha: 0.45),

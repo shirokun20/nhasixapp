@@ -13,6 +13,7 @@ import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -123,7 +124,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
     if (index != -1) {
       _itemScrollController.scrollTo(
         index: index,
-        duration: const Duration(milliseconds: 300),
+        duration: DesignTokens.durationNormal,
         curve: Curves.easeInOut,
       );
       HapticFeedback.selectionClick();
@@ -198,7 +199,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(DesignTokens.radius2xl + 8),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                     ),
@@ -246,7 +247,7 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -369,7 +370,7 @@ class _SectionHeader extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             ),
             child: Center(
               child: Text(
@@ -422,15 +423,15 @@ class _DoujinListTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Material(
         color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: InkWell(
           onTap: () => _navigateToDetail(context),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           splashColor: colorScheme.primary.withValues(alpha: 0.08),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.2),
               ),
@@ -500,7 +501,7 @@ class _AlphabetNavigator extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
@@ -508,7 +509,7 @@ class _AlphabetNavigator extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             border: Border.all(
               color: colorScheme.outlineVariant.withValues(alpha: 0.3),
             ),
@@ -605,7 +606,7 @@ class _DoujinListShimmer extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -627,7 +628,7 @@ class _DoujinListShimmer extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                 ),

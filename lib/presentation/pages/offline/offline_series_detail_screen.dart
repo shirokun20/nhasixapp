@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';
@@ -273,11 +274,11 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
                   return Card(
                     clipBehavior: Clip.antiAlias,
-                    elevation: 0,
+                    elevation: DesignTokens.elevationNone,
                     color: Theme.of(context).colorScheme.surface,
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       side: BorderSide(
                         color: Theme.of(context)
                             .colorScheme
@@ -302,7 +303,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                     .colorScheme
                                     .primaryContainer
                                     .withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               ),
                               child: Icon(
                                 Icons.auto_stories,
@@ -388,7 +389,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                         Expanded(
                                           child: ClipRRect(
                                             borderRadius:
-                                                BorderRadius.circular(4),
+                                                BorderRadius.circular(DesignTokens.radiusSm),
                                             child: LinearProgressIndicator(
                                               value: progress,
                                               backgroundColor: Theme.of(context)
@@ -527,7 +528,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       height: 64,
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                       ),
                       child: Center(
                         child: Text(

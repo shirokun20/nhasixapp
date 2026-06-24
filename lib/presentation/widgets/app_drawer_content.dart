@@ -14,6 +14,7 @@ import 'package:nhasixapp/services/source_auth_service.dart';
 import '../../core/routing/app_route.dart';
 import 'common/source_selector.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 class _SourceAuthIdentity {
   final bool authenticated;
@@ -132,7 +133,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
     return Drawer(
       backgroundColor: Colors.transparent,
       width: 300,
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -596,7 +597,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
               border: Border.all(
                 color: theme.colorScheme.outline.withValues(alpha: 0.2),
               ),
@@ -633,7 +634,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
           onTap: () => _handleNavigation(context, route),
           borderRadius: BorderRadius.circular(14),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: DesignTokens.durationPageTurn,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: isSelected
@@ -714,7 +715,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
           color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),

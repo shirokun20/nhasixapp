@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
 import '../../domain/entities/search_filter.dart';
 import 'widgets.dart';
@@ -251,7 +252,8 @@ class _WidgetExamplesScreenState extends State<WidgetExamplesScreen> {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusMd),
                         ),
                         child: Center(
                           child: Text(

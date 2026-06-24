@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/web.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -428,7 +429,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     _scrollController.animateTo(
       approximateOffset.toDouble(),
-      duration: const Duration(milliseconds: 500),
+      duration: DesignTokens.durationSlow,
       curve: Curves.easeInOut,
     );
 
@@ -1111,7 +1112,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ? colorScheme.primary.withValues(alpha: 0.5)
             : colorScheme.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
       onSelected: (_) {
         unawaited(_onMangaFireTypeSelected(content, value));
       },
@@ -1186,7 +1187,7 @@ class _DetailScreenState extends State<DetailScreen> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
@@ -1210,13 +1211,13 @@ class _DetailScreenState extends State<DetailScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  elevation: 4,
+                  elevation: DesignTokens.elevationLg,
                   shadowColor: Theme.of(context)
                       .colorScheme
                       .primary
                       .withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                 ),
               ),
@@ -1269,7 +1270,7 @@ class _DetailScreenState extends State<DetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
@@ -1357,7 +1358,7 @@ class _DetailScreenState extends State<DetailScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           border: Border.all(
             color:
                 Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
@@ -1977,7 +1978,7 @@ class _DetailScreenState extends State<DetailScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outline,
                 ),

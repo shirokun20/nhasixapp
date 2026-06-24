@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Shimmer loading widget for offline content cards
 class OfflineContentShimmer extends StatelessWidget {
@@ -17,7 +18,7 @@ class OfflineContentShimmer extends StatelessWidget {
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
               color: colorScheme.shadow.withValues(alpha: 0.1),

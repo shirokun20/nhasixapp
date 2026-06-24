@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../domain/entities/search_filter.dart';
@@ -99,7 +100,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
   void _setupAnimations() {
     _expandController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: DesignTokens.durationNormal,
       vsync: this,
     );
     _expandAnimation = CurvedAnimation(
@@ -211,7 +212,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline,
           width: 1,
@@ -273,13 +274,13 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                       )
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   borderSide: BorderSide(
                     color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   borderSide: BorderSide(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -299,7 +300,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               onPressed: _toggleExpanded,
               icon: AnimatedRotation(
                 turns: _isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 300),
+                duration: DesignTokens.durationNormal,
                 child: const Icon(Icons.expand_more),
               ),
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -418,7 +419,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
         labelText: AppLocalizations.of(context)?.sortByLabel ?? 'Sort by',
         labelStyle: TextStyleConst.label,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -466,7 +467,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
         labelText: AppLocalizations.of(context)?.languageLabel ?? 'Language',
         labelStyle: TextStyleConst.label,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -500,7 +501,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
         labelText: AppLocalizations.of(context)?.categoryLabel ?? 'Category',
         labelStyle: TextStyleConst.label,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -568,7 +569,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             hintText: AppLocalizations.of(context)!.includeTagsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             prefixIcon: Icon(
               Icons.add_circle_outline,
@@ -587,7 +588,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             hintText: AppLocalizations.of(context)!.excludeTagsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             prefixIcon: Icon(
               Icons.remove_circle_outline,
@@ -612,7 +613,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             hintText: AppLocalizations.of(context)!.artistsHint,
             hintStyle: TextStyleConst.placeholderText,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             prefixIcon: Icon(
               Icons.brush,
@@ -632,7 +633,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   labelText: AppLocalizations.of(context)!.charactersLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   prefixIcon: Icon(
                     Icons.person,
@@ -651,7 +652,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   labelText: AppLocalizations.of(context)!.parodiesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   prefixIcon: Icon(
                     Icons.movie,
@@ -671,7 +672,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             labelText: AppLocalizations.of(context)!.groupsLabel,
             labelStyle: TextStyleConst.label,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             prefixIcon: Icon(
               Icons.group,
@@ -706,7 +707,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   labelText: AppLocalizations.of(context)!.minPagesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                 ),
                 onChanged: (_) => _updateFilter(),
@@ -728,7 +729,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
                   labelText: AppLocalizations.of(context)!.maxPagesLabel,
                   labelStyle: TextStyleConst.label,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                 ),
                 onChanged: (_) => _updateFilter(),
@@ -819,7 +820,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               ),
               child: Text(
                 '${widget.filter.activeFilterCount} ${AppLocalizations.of(context)?.filtersActiveLabel ?? 'active'}',

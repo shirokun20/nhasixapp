@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/source_config_display_utils.dart';
@@ -47,7 +48,7 @@ class SourceSelector extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               onTap: () => _showSourceMenu(context, state, colorScheme),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: DesignTokens.durationPageTurn,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
@@ -197,7 +198,7 @@ class SourceSelector extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary
                                       .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                                 ),
                                 child: Icon(
                                   Icons.hub_outlined,
@@ -310,7 +311,7 @@ class SourceSelector extends StatelessWidget {
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                                 borderSide: BorderSide.none,
                               ),
                             ),

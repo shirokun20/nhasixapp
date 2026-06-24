@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -149,7 +150,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,7 +317,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: colorScheme.surface.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import '../../../core/constants/design_tokens.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/config/remote_config_service.dart';
 import '../../../core/di/service_locator.dart';
@@ -98,7 +99,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Throttle expensive continuous-scroll computations.
   // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms to reduce frame pressure
   // More throttling = better GPU utilization, less buffer starvation
-  static const Duration _scrollProcessInterval = Duration(milliseconds: 200);
+  static const Duration _scrollProcessInterval = DesignTokens.durationPageTurn;
   DateTime _lastScrollProcessAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Debounce mechanism to prevent onPageChanged loops
@@ -499,7 +500,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam
   void _debounceSaveHistory(ReaderState state, int page) {
     _saveDebounceTimer?.cancel();
-    _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+    _saveDebounceTimer = Timer(DesignTokens.durationSlow, () {
       // Only save if still at bottom after 500ms
       if (state.readingMode == ReadingMode.continuousScroll) {
         _readerCubit.updateCurrentPageSilent(page);
@@ -545,7 +546,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (_lastUIVisibleState == shouldShow) return;
 
     _uiToggleDebounceTimer?.cancel();
-    _uiToggleDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+    _uiToggleDebounceTimer = Timer(DesignTokens.durationFast, () {
       _lastUIVisibleState = shouldShow;
       if (shouldShow && !(state.showUI ?? false)) {
         _readerCubit.showUI();
@@ -873,7 +874,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _pageController
               .animateToPage(
             targetPageIndex,
-            duration: const Duration(milliseconds: 200),
+            duration: DesignTokens.durationPageTurn,
             curve: Curves.easeOutCubic,
           )
               .then((_) {
@@ -910,7 +911,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _verticalPageController
               .animateToPage(
             targetPageIndex,
-            duration: const Duration(milliseconds: 300),
+            duration: DesignTokens.durationNormal,
             curve: Curves.easeInOut,
           )
               .then((_) {
@@ -933,7 +934,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             approximateItemHeight * 0.5) {
           _scrollController.animateTo(
             targetScrollOffset,
-            duration: const Duration(milliseconds: 300),
+            duration: DesignTokens.durationNormal,
             curve: Curves.easeInOut,
           );
         }
@@ -1803,7 +1804,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           .colorScheme
                           .inverseSurface
                           .withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.2),
@@ -1973,7 +1974,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -2767,9 +2768,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     .primaryContainer
                                     .withValues(alpha: 0.4)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               onTap: () {
                                 sheetContext.pop();
                                 if (!isCurrent) {
@@ -2876,7 +2877,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                               .colorScheme
                                               .primary,
                                           borderRadius:
-                                              BorderRadius.circular(8),
+                                              BorderRadius.circular(DesignTokens.radiusMd),
                                         ),
                                         child: Text(
                                           AppLocalizations.of(context)!
@@ -2972,7 +2973,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
           ),
         );
@@ -2996,7 +2997,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,

@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
@@ -153,7 +154,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                 .colorScheme
                                 .primaryContainer
                                 .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                           ),
                           child: Text(
                             l10n.chapterCount(chapters.length),
@@ -223,7 +224,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                   .colorScheme
                                   .secondaryContainer
                                   .withValues(alpha: 0.55),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               border: Border.all(
                                 color: Theme.of(context)
                                     .colorScheme
@@ -309,7 +310,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                 : Theme.of(context)
                                     .colorScheme
                                     .surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                             border: Border.all(
                               color: isCompleted
                                   ? Theme.of(context).colorScheme.tertiary
@@ -329,7 +330,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                 context.pop();
                                 widget.detailCubit.openChapter(chapter);
                               },
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Row(
@@ -353,7 +354,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                                         .colorScheme
                                                         .primaryContainer,
                                             borderRadius:
-                                                BorderRadius.circular(13),
+                                                BorderRadius.circular(DesignTokens.radiusMd),
                                           ),
                                           child: Center(
                                             child: isCompleted
@@ -620,7 +621,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
             ? colorScheme.primary.withValues(alpha: 0.55)
             : colorScheme.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
       onSelected: (_) {
         setState(() {
           _selectedLanguageKey = lane.key;

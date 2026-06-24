@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
@@ -40,7 +41,7 @@ class MainGridCard extends StatelessWidget {
           aspectRatio: 0.7,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               border: isDownloaded
                   ? Border.all(
                       color: isDarkMode
@@ -62,7 +63,7 @@ class MainGridCard extends StatelessWidget {
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -151,7 +152,7 @@ class MainGridCard extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                                 ),
                                 child: Text(
                                   content.language.toUpperCase(),
@@ -181,7 +182,7 @@ class MainGridCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color:
                               theme.colorScheme.tertiary.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -211,7 +212,7 @@ class MainGridCard extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: onTap,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         splashColor:
                             theme.colorScheme.primary.withValues(alpha: 0.3),
                         highlightColor:
@@ -242,7 +243,7 @@ class MainGridCard extends StatelessWidget {
 
     if (blurThumbnails) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: image,
@@ -337,7 +338,7 @@ class MainGridCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),

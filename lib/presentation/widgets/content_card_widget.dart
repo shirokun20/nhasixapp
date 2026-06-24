@@ -12,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'progressive_image_widget.dart';
 import 'highlighted_text_widget.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Enhanced content card widget with image caching and improved UI
 ///
@@ -92,7 +93,7 @@ class ContentCard extends StatelessWidget {
                   .withValues(alpha: 0.5)) // Dark green for light mode
           : Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: isHighlighted
             ? BorderSide(
                 color: isDarkMode
@@ -108,7 +109,7 @@ class ContentCard extends StatelessWidget {
         splashColor:
             Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: AspectRatio(
           aspectRatio: aspectRatio,
           child: Column(
@@ -228,7 +229,7 @@ class ContentCard extends StatelessWidget {
 
       return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
               color: (isDarkMode
@@ -262,7 +263,7 @@ class ContentCard extends StatelessWidget {
               color: isDarkMode
                   ? const Color(0xFF00FF88) // Neon green for dark mode
                   : const Color(0xFF2E7D32), // Dark green for light mode
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.3),
@@ -355,7 +356,7 @@ class ContentCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),
@@ -469,7 +470,7 @@ class ContentCard extends StatelessWidget {
                 // Page count badge
                 if (showPageCount && content.pageCount > 0)
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                       child: Container(
@@ -480,7 +481,7 @@ class ContentCard extends StatelessWidget {
                               .colorScheme
                               .surface
                               .withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                         child: Text(
                           '${content.pageCount}${AppLocalizations.of(context)?.pages ?? 'p'}',
@@ -504,7 +505,7 @@ class ContentCard extends StatelessWidget {
                           .colorScheme
                           .tertiary
                           .withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -654,7 +655,7 @@ class ContentCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         _getTagColor(context, tag.type).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     border: Border.all(
                       color: _getTagColor(context, tag.type)
                           .withValues(alpha: 0.5),
@@ -967,7 +968,7 @@ class CompactContentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: 1,
+      elevation: DesignTokens.elevationSm,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
         onTap: onTap,
@@ -977,7 +978,7 @@ class CompactContentCard extends StatelessWidget {
             children: [
               // Thumbnail
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 child: SizedBox(
                   width: 60,
                   height: 80,
@@ -1061,7 +1062,7 @@ class CompactContentCard extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                             ),
                             child: Text(
                               content.language.toUpperCase(),

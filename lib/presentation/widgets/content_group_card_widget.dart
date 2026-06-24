@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/utils/offline_content_manager.dart';
+import '../../core/constants/design_tokens.dart';
 import '../models/content_group.dart';
 import 'progressive_image_widget.dart';
 
@@ -39,9 +40,9 @@ class ContentGroupCardWidget extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: 2,
+      elevation: DesignTokens.elevationMd,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: InkWell(
         onTap: onTap,
@@ -147,10 +148,10 @@ class ContentGroupCardWidget extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       color: Theme.of(context).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
-      elevation: 2,
+      elevation: DesignTokens.elevationMd,
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: BorderSide(
           color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1,
@@ -225,7 +226,7 @@ class ContentGroupCardWidget extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                                     child: LinearProgressIndicator(
                                       value: contentGroup.readProgress,
                                       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -301,7 +302,7 @@ class ContentGroupCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
               child: Container(
@@ -311,7 +312,7 @@ class ContentGroupCardWidget extends StatelessWidget {
                       .colorScheme
                       .surface
                       .withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -337,7 +338,7 @@ class ContentGroupCardWidget extends StatelessWidget {
           ),
           Flexible(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                 child: Container(
@@ -348,7 +349,7 @@ class ContentGroupCardWidget extends StatelessWidget {
                         .colorScheme
                         .primaryContainer
                         .withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                   child: Text(
                     contentGroup.representativeContent.sourceId.toUpperCase(),

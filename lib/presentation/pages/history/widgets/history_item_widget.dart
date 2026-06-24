@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:kuron_core/kuron_core.dart';
 
@@ -32,10 +33,10 @@ class HistoryItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: 2,
+      elevation: DesignTokens.elevationMd,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -66,7 +67,7 @@ class HistoryItemWidget extends StatelessWidget {
             width: 80,
             height: 120,
             fit: BoxFit.cover,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             httpHeaders: getIt<ContentSourceRegistry>()
                 .getSource(history.sourceId)
                 ?.getImageDownloadHeaders(imageUrl: history.coverUrl!),
@@ -89,7 +90,7 @@ class HistoryItemWidget extends StatelessWidget {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       child: SizedBox(
         width: 80,
         height: 120,
@@ -118,7 +119,7 @@ class HistoryItemWidget extends StatelessWidget {
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),
@@ -194,7 +195,7 @@ class HistoryItemWidget extends StatelessWidget {
 
         // Progress bar
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           child: LinearProgressIndicator(
             value: progressPercentage,
             backgroundColor:

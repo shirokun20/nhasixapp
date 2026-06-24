@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Base shimmer widget providing consistent styling across the app
 class BaseShimmer extends StatelessWidget {
@@ -51,7 +52,7 @@ class ShimmerBox extends StatelessWidget {
       margin: margin,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: borderRadius ?? BorderRadius.circular(4),
+        borderRadius: borderRadius ?? BorderRadius.circular(DesignTokens.radiusSm),
       ),
     );
   }
@@ -70,7 +71,7 @@ class ContentCardShimmer extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
               color: colorScheme.shadow.withValues(alpha: 0.1),
@@ -159,7 +160,7 @@ class ContentGridCardShimmer extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           boxShadow: [
             BoxShadow(
               color: colorScheme.shadow.withValues(alpha: 0.1),
@@ -359,7 +360,7 @@ class ReaderThumbnailShimmer extends StatelessWidget {
         margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),
         child: const Center(
           child: ShimmerBox(
@@ -393,7 +394,7 @@ class GenreListShimmer extends StatelessWidget {
                   ShimmerBox(
                     height: 20,
                     width: 20,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   const SizedBox(width: 8),
                   const ShimmerBox(height: 20, width: 140),
@@ -401,7 +402,7 @@ class GenreListShimmer extends StatelessWidget {
                   ShimmerBox(
                     height: 24,
                     width: 36,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                 ],
               ),
@@ -426,7 +427,7 @@ class GenreListShimmer extends StatelessWidget {
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                       border: Border.all(
                         color:
                             colorScheme.outlineVariant.withValues(alpha: 0.3),
@@ -446,7 +447,7 @@ class GenreListShimmer extends StatelessWidget {
                         Expanded(
                           child: ShimmerBox(
                             height: 14,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -490,7 +491,7 @@ class SimpleListShimmer extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                   ),
                 ),

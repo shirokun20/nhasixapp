@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 
 /// Modern sorting widget for MainScreen
@@ -31,7 +32,7 @@ class SortingWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
             color:
                 Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
@@ -174,7 +175,7 @@ class SortingDropdown extends StatelessWidget {
       onSelected: onSortChanged,
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         side: BorderSide(
             color:
                 Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
@@ -183,7 +184,7 @@ class SortingDropdown extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           border: Border.all(
               color:
                   Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),

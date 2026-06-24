@@ -4,6 +4,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Bottom sheet widget for displaying legal content (T&C, Privacy, FAQ)
@@ -172,7 +173,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
             const SizedBox(height: 16),
@@ -181,7 +182,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
             const SizedBox(height: 8),
@@ -190,7 +191,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               width: MediaQuery.of(context).size.width * 0.7,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
             const SizedBox(height: 24),
@@ -199,7 +200,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               width: MediaQuery.of(context).size.width * 0.5,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
             const SizedBox(height: 12),
@@ -208,7 +209,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
           ],

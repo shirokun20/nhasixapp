@@ -6,6 +6,7 @@ import 'package:kuron_core/kuron_core.dart' show Tag;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
@@ -690,10 +691,10 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             color: hasSelection
                 ? cs.primaryContainer.withValues(alpha: 0.3)
                 : cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             child: InkWell(
               onTap: () => _openFilterPicker(type),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -704,7 +705,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
                         : cs.outline.withValues(alpha: 0.3),
                     width: hasSelection ? 1.5 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -774,7 +775,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         boxShadow: [
           BoxShadow(
               color: bg.withValues(alpha: 0.35),
@@ -810,7 +811,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             height: 34,
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
             ),
           ),
         ),
@@ -866,11 +867,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: DesignTokens.durationFast,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected ? cs.primary : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
           border: isSelected
               ? null
               : Border.all(color: cs.outline.withValues(alpha: 0.4)),
@@ -934,11 +935,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           onTap: () =>
               setState(() => _uploadedPreset = isSelected ? '' : value),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: DesignTokens.durationFast,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
               color: isSelected ? cs.tertiary : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
               border: isSelected
                   ? null
                   : Border.all(color: cs.outline.withValues(alpha: 0.4)),

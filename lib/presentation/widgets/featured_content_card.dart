@@ -10,6 +10,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Featured content card widget - Full-width horizontal layout
 /// Designed to highlight the first/featured item at the top of content lists
@@ -37,14 +38,14 @@ class FeaturedContentCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Card(
-        elevation: 4,
+        elevation: DesignTokens.elevationLg,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           child: SizedBox(
             height: 180,
             child: Row(
@@ -74,7 +75,7 @@ class FeaturedContentCard extends StatelessWidget {
                                   theme.colorScheme.secondary,
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               boxShadow: [
                                 BoxShadow(
                                   color: theme.colorScheme.primary
@@ -119,7 +120,7 @@ class FeaturedContentCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surface
                                   .withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -249,7 +250,7 @@ class FeaturedContentCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -338,7 +339,7 @@ class FeaturedContentCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 class DohTestPage extends StatefulWidget {
   const DohTestPage({super.key});
@@ -113,7 +114,7 @@ class _DohTestPageState extends State<DohTestPage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Text(_status,
                   style: const TextStyle(fontFamily: 'monospace')),

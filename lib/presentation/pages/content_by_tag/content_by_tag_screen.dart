@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -207,7 +208,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
             onPressed: () => context.pop(),
           ),
           backgroundColor: Theme.of(context).colorScheme.surface,
-          elevation: 1,
+          elevation: DesignTokens.elevationSm,
         ),
         body: _buildBody(),
       ),

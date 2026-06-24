@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../domain/entities/download_status.dart';
@@ -63,7 +64,7 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
     final speed = state.formattedTotalSpeed;
 
     return Material(
-      elevation: 4,
+      elevation: DesignTokens.elevationLg,
       color: Theme.of(context).colorScheme.primaryContainer,
       child: InkWell(
         onTap: () {
@@ -83,7 +84,7 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                       .colorScheme
                       .surface
                       .withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Icon(
                   Icons.downloading,
@@ -161,7 +162,7 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
     final progress = download.progress;
 
     return Material(
-      elevation: 4,
+      elevation: DesignTokens.elevationLg,
       color: Theme.of(context).colorScheme.primaryContainer,
       child: InkWell(
         onTap: () {
@@ -180,7 +181,7 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                       .colorScheme
                       .surface
                       .withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Icon(
                   isPaused ? Icons.pause : Icons.downloading,

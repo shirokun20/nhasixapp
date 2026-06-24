@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Horizontal scrollable widget for displaying selected filters
@@ -64,7 +65,7 @@ class SelectedFilterChip extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
         border: Border.all(color: colors.accent),
         boxShadow: [
           BoxShadow(
@@ -173,7 +174,7 @@ class SelectedFiltersWidgetCompact extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             ),
             child: Text(
               AppLocalizations.of(context)!.nMoreFilters(remainingCount),
@@ -203,7 +204,7 @@ class SelectedFilterChipCompact extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: _getChipColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
           color: _getBorderColor(context),
           width: 1,

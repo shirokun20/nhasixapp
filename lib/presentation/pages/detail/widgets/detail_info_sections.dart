@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
@@ -73,7 +74,7 @@ class DetailBlacklistBanner extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorScheme.errorContainer.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: colorScheme.error.withValues(alpha: 0.35),
         ),
@@ -128,7 +129,7 @@ class DetailBlacklistedCoverOverlay extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: colorScheme.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: colorScheme.error.withValues(alpha: 0.35),
                 ),
@@ -180,7 +181,7 @@ class DetailMetadataSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(color: colorScheme.outline),
         boxShadow: [
           BoxShadow(
@@ -243,7 +244,7 @@ class DetailMetadataRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
           color: colorScheme.outline.withValues(alpha: 0.5),
         ),
@@ -327,7 +328,7 @@ class DetailTagSection extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                   border: Border.all(
                     color: color.withValues(alpha: 0.8),
                   ),
@@ -475,7 +476,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.65),
         ),
@@ -505,7 +506,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                   child: Icon(
                     Icons.menu_book,
@@ -589,7 +590,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
@@ -626,7 +627,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
@@ -658,7 +659,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     decoration: BoxDecoration(
                       color:
                           colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       border: Border.all(
                         color: colorScheme.secondary.withValues(alpha: 0.35),
                       ),
@@ -728,7 +729,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     border: Border.all(
                       color: isCompleted
                           ? colorScheme.tertiary
@@ -743,7 +744,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () => widget.onChapterTap(chapter),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -757,7 +758,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                                     color: isCompleted
                                         ? colorScheme.tertiaryContainer
                                         : colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(13),
+                                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                                   ),
                                   child: Center(
                                     child: isCompleted
@@ -923,7 +924,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                                     ),
                                   ),
                                 ),
@@ -951,7 +952,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                 ),
@@ -987,7 +988,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
             ? colorScheme.primary.withValues(alpha: 0.5)
             : colorScheme.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
       onSelected: (_) => _selectLanguage(languageKey),
     );
   }
@@ -1016,7 +1017,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   colorScheme.surfaceContainer.withValues(alpha: 0.96),
                 ],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: supportsEhentaiGalleryDownload
               ? colorScheme.primary.withValues(alpha: 0.22)
@@ -1081,7 +1082,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surface.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
@@ -1115,7 +1116,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                 ),
               ),
@@ -1130,7 +1131,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
 
     return InkWell(
       onTap: () => _showUnsupportedGalleryDownloadAlert(context),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       child: panel,
     );
   }
@@ -1221,11 +1222,11 @@ class DetailRelatedSection extends StatelessWidget {
                         Container(
                           height: 200,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                             color: colorScheme.surfaceContainer,
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
@@ -1304,10 +1305,10 @@ class DetailRelatedSection extends StatelessWidget {
   ) {
     return Material(
       color: colorScheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       child: InkWell(
         onTap: () => onTap(relatedContent),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -1317,7 +1318,7 @@ class DetailRelatedSection extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,

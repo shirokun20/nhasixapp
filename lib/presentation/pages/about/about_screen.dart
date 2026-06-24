@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
@@ -78,7 +79,7 @@ class _AboutContentState extends State<_AboutContent>
       appBar: AppBar(
         title: Text(l10n.aboutTitle),
         centerTitle: true,
-        elevation: 0,
+        elevation: DesignTokens.elevationNone,
         backgroundColor: Colors.transparent,
       ),
       drawer: AppMainDrawerWidget(context: context),
@@ -164,7 +165,7 @@ class _AboutContentState extends State<_AboutContent>
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                     ),
                     child: Text(
                       _version,
@@ -345,17 +346,17 @@ class _AboutContentState extends State<_AboutContent>
         }
 
         return Card(
-          elevation: 0,
+          elevation: DesignTokens.elevationNone,
           color: theme.colorScheme.surfaceContainer,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
           child: InkWell(
             onTap: isLoading
                 ? null
                 : () {
                     context.read<UpdateCubit>().checkForUpdate(isManual: true);
                   },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -408,9 +409,9 @@ class _AboutContentState extends State<_AboutContent>
 
   Widget _buildMenuCard(List<Widget> children, ThemeData theme) {
     return Card(
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
       child: Column(
         children: children,
       ),
@@ -462,7 +463,7 @@ class _AboutContentState extends State<_AboutContent>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
@@ -506,7 +507,7 @@ class _AboutContentState extends State<_AboutContent>
             Text(l10n.donateMessage),
             const SizedBox(height: 16),
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               child: Image.asset(
                 'assets/images/donation_qris.jpeg',
                 width: 200,

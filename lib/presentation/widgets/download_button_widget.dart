@@ -6,6 +6,7 @@ import '../../core/config/remote_config_service.dart';
 import '../../core/di/service_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/constants/design_tokens.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
 import 'ehentai_download_strategy.dart';
@@ -290,7 +291,7 @@ class DownloadButtonWidget extends StatelessWidget {
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -308,7 +309,7 @@ class DownloadButtonWidget extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
               ),
             ),
@@ -383,7 +384,7 @@ class DownloadButtonWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: progressColor,
                 foregroundColor: Colors.white,
-                elevation: 2,
+                elevation: DesignTokens.elevationMd,
                 shadowColor: progressColor.withValues(alpha: 0.3),
                 padding: EdgeInsets.symmetric(
                   horizontal:

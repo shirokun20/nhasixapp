@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 
+import '../../../core/constants/design_tokens.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../l10n/app_localizations.dart';
@@ -107,7 +108,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
 
   void _onSearchChanged(String query) {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+    _searchDebounce = Timer(DesignTokens.durationSlow, () {
       _filterDataCubit.searchFilterData(query);
     });
   }
@@ -176,7 +177,7 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       leading: IconButton(
         icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
         onPressed: _onCancel,
@@ -556,7 +557,7 @@ class _FilterTagChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: DesignTokens.durationFast,
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
           horizontal: isIncluded || isExcluded ? 10 : 12,
@@ -564,7 +565,7 @@ class _FilterTagChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
           border: borderWidth > 0
               ? Border.all(color: border, width: borderWidth)
               : null,

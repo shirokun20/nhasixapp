@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -550,7 +551,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                 ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   boxShadow: [
                     BoxShadow(
                       color:
@@ -1264,7 +1265,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),
             child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/constants/design_tokens.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for configuring download settings
@@ -237,17 +238,17 @@ class _DownloadSettingsWidgetState extends State<DownloadSettingsWidget> {
           initialValue: _settings.imageQuality,
           decoration: InputDecoration(
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               borderSide:
                   BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               borderSide:
                   BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               borderSide:
                   BorderSide(color: Theme.of(context).colorScheme.primary),
             ),

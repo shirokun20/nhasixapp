@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -251,7 +252,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0x2212D8A0),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                                     border: Border.all(
                                       color: const Color(0x5551E2BA),
                                     ),
@@ -353,7 +354,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               color: _hasCaptchaToken
                                   ? const Color(0xFF113525)
                                   : const Color(0xFF2A1A1A),
@@ -491,7 +492,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
                       child: Material(
                         color: const Color(0xFF0A1320),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                           side: BorderSide(
                             color: Colors.white.withValues(alpha: 0.1),
                           ),
@@ -522,7 +523,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
                                             child: AnimatedDiceWidget(
                                               isSpinning: true,
                                               duration:
-                                                  Duration(milliseconds: 600),
+                                                    Duration(milliseconds: 600),
                                             ),
                                           ),
                                   ),
@@ -573,7 +574,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
                               ),
                               const SizedBox(height: 14),
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(999),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                                 child: LinearProgressIndicator(
                                   minHeight: 9,
                                   value: progress,
@@ -624,7 +625,7 @@ class _SourceLoginPageState extends State<SourceLoginPage> {
 
   Future<void> _submitLogin(BuildContext context) async {
     FocusScope.of(context).unfocus();
-    await Future<void>.delayed(const Duration(milliseconds: 180));
+    await Future<void>.delayed(DesignTokens.durationPageTurn - const Duration(milliseconds: 20));
     if (!context.mounted || !_canSubmitLogin) return;
 
     unawaited(context.read<SourceAuthCubit>().login(

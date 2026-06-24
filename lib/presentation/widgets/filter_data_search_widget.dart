@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 
 /// Search widget for filter data with modern design
@@ -24,7 +25,7 @@ class FilterDataSearchWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: focusNode.hasFocus
               ? Theme.of(context).colorScheme.primary
@@ -176,7 +177,7 @@ class _FilterDataSearchWithSuggestionsState
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(

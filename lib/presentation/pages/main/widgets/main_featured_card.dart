@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
@@ -41,7 +42,7 @@ class MainFeaturedCard extends StatelessWidget {
         return Container(
           height: 160,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             color: theme.colorScheme.surfaceContainer,
             border: isDownloaded
                 ? Border.all(
@@ -64,7 +65,7 @@ class MainFeaturedCard extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             child: Stack(
               children: [
                 // Main content Row
@@ -96,7 +97,7 @@ class MainFeaturedCard extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.black.withValues(alpha: 0.7),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -131,7 +132,7 @@ class MainFeaturedCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.tertiary
                                       .withValues(alpha: 0.9),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -375,7 +376,7 @@ class MainFeaturedCard extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: onTap,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                       splashColor:
                           theme.colorScheme.primary.withValues(alpha: 0.3),
                       highlightColor:
@@ -405,7 +406,7 @@ class MainFeaturedCard extends StatelessWidget {
 
     if (blurThumbnails) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: image,
@@ -500,7 +501,7 @@ class MainFeaturedCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
                   color: theme.colorScheme.error.withValues(alpha: 0.35),
                 ),

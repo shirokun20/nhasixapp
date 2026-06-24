@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 
@@ -128,7 +129,7 @@ class FilterTypeTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: DesignTokens.durationPageTurn,
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 8,
@@ -137,7 +138,7 @@ class FilterTypeTab extends StatelessWidget {
           color: isSelected
               ? colorScheme.primary
               : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
           border: Border.all(
             color: isSelected ? colorScheme.primary : colorScheme.outline,
             width: 1,
@@ -181,7 +182,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Row(
         children: filterTypes.asMap().entries.map((entry) {
@@ -195,7 +196,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onChanged(index),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: DesignTokens.durationPageTurn,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected ? colorScheme.primary : Colors.transparent,

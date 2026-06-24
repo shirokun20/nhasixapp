@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -80,7 +81,7 @@ class CrotpediaGenreListScreen extends StatelessWidget {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .secondaryContainer,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                               ),
                               child: Text(
                                 '${state.genres.length}',
@@ -214,16 +215,16 @@ class _GenreCard extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         splashColor: colorScheme.primary.withValues(alpha: 0.08),
         highlightColor: colorScheme.primary.withValues(alpha: 0.04),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             border: Border.all(
               color: colorScheme.outlineVariant.withValues(alpha: 0.3),
             ),

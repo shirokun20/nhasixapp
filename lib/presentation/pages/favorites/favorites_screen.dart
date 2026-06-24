@@ -12,6 +12,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/web.dart';
 import 'package:kuron_native/utils/backup_utils.dart';
 
+import '../../../core/constants/design_tokens.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/config/remote_config_service.dart';
 import '../../../core/di/service_locator.dart';
@@ -40,7 +41,7 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   static const int _onlineFavoritesMaxAttempts = 3;
   static const Duration _onlineFavoritesRetryDelay =
-      Duration(milliseconds: 700);
+      DesignTokens.durationPageEnter;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _onlineSearchController = TextEditingController();
@@ -426,7 +427,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             borderSide: BorderSide.none,
           ),
           contentPadding:
@@ -599,7 +600,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 return LinearProgressIndicator(
                   value: value,
                   minHeight: 8,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                   color: Theme.of(context).colorScheme.primary,
                   backgroundColor:
                       Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -865,7 +866,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       title: Text(
         _isSelectionMode && !isOnlineTab
             ? AppLocalizations.of(context)!
@@ -1017,7 +1018,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             borderSide: BorderSide.none,
           ),
           contentPadding:
@@ -1401,7 +1402,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 minVerticalPadding: 6,
                 minLeadingWidth: 64,
                 leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: SizedBox(
                     width: 64,
                     height: 84,
@@ -1785,7 +1786,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           border: isSelected
               ? Border.all(
                   color: Theme.of(context).colorScheme.primary, width: 2)

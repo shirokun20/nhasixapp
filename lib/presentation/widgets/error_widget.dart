@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Custom error widget with black theme and contextual information
 class AppErrorWidget extends StatelessWidget {
@@ -94,7 +95,7 @@ class AppErrorWidget extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
@@ -153,7 +154,7 @@ class AppErrorWidget extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           ),
           child: Text(
             details!,
@@ -181,7 +182,7 @@ class AppErrorWidget extends StatelessWidget {
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
               ),
               child: Text(
@@ -210,7 +211,7 @@ class AppErrorWidget extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
               ),
               child: Text(
@@ -423,7 +424,7 @@ class EmptyStateWidget extends StatelessWidget {
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
               ),
               child: Text(

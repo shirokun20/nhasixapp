@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -99,7 +100,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         ),
         title: Row(
           children: [
@@ -107,7 +108,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Icon(
                 Icons.wifi_off,
@@ -312,7 +313,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
             _dotsAnimationController.stop();
             _successAnimationController.forward().then((_) {
               // Navigate after success animation completes
-              Timer(const Duration(milliseconds: 200), () {
+              Timer(DesignTokens.durationPageTurn, () {
                 // Optimized from 1200ms
                 if (mounted) {
                   context.go(AppRoute.main);
@@ -323,7 +324,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
             // Has offline content - auto navigate to main
             _dotsAnimationController.stop();
             _successAnimationController.forward().then((_) {
-              Timer(const Duration(milliseconds: 200), () {
+              Timer(DesignTokens.durationPageTurn, () {
                 if (mounted) {
                   context.go(AppRoute.main);
                 }
@@ -333,7 +334,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
             // Limited offline mode - still can navigate
             _dotsAnimationController.stop();
             _successAnimationController.forward().then((_) {
-              Timer(const Duration(milliseconds: 200), () {
+              Timer(DesignTokens.durationPageTurn, () {
                 if (mounted) {
                   context.go(AppRoute.main);
                 }
@@ -457,7 +458,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               .colorScheme
                               .surfaceContainer
                               .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.outline,
                             width: 1,
@@ -502,7 +503,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           child: Column(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                                 child: LinearProgressIndicator(
                                   value: state.progress,
                                   backgroundColor: Theme.of(context)

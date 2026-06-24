@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/services/update_service.dart';
 
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class UpdateAvailableSheet extends StatelessWidget {
@@ -114,7 +115,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                           .colorScheme
                           .primary
                           .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       border: Border.all(
                         color: Theme.of(context)
                             .colorScheme
@@ -140,7 +141,7 @@ class UpdateAvailableSheet extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                 ),
                 constraints: const BoxConstraints(maxHeight: 200),
                 child: Column(
@@ -189,9 +190,9 @@ class UpdateAvailableSheet extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    elevation: 0,
+                    elevation: DesignTokens.elevationNone,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

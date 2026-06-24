@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Modern card widget for filter items with include/exclude toggle
 class FilterItemCard extends StatelessWidget {
@@ -28,10 +29,10 @@ class FilterItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       color: _getCardColor(context),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: BorderSide(
           color: _getBorderColor(context),
           width: _getBorderWidth(),
@@ -39,7 +40,7 @@ class FilterItemCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -140,7 +141,7 @@ class FilterItemCard extends StatelessWidget {
                           .colorScheme
                           .error
                           .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -315,10 +316,10 @@ class FilterItemCardCompact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
+      elevation: DesignTokens.elevationNone,
       color: _getCardColor(context),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         side: BorderSide(
           color: _getBorderColor(context),
           width: _getBorderWidth(),
@@ -326,7 +327,7 @@ class FilterItemCardCompact extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
