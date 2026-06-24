@@ -1651,9 +1651,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: Text(l10n.resetToDefault),
+                    backgroundColor: theme.colorScheme.surface,
+                    title: Text(l10n.resetToDefault, style: TextStyle(color: theme.colorScheme.onSurface)),
                     content: Text(
                       l10n.confirmResetStorageDirectory,
+                      style: TextStyle(color: theme.colorScheme.onSurface),
                     ),
                     actions: [
                       TextButton(
@@ -2311,12 +2313,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final sourceCubit = context.read<SourceCubit>();
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.uninstallSourceTitle),
+            backgroundColor: theme.colorScheme.surface,
+            title: Text(AppLocalizations.of(context)!.uninstallSourceTitle,
+                style: TextStyle(color: theme.colorScheme.onSurface)),
             content: Text(
               AppLocalizations.of(context)!.removeSourceConfirmation(sourceId),
+              style: TextStyle(color: theme.colorScheme.onSurface),
             ),
             actions: [
               TextButton(
@@ -2384,10 +2390,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
 
+    final theme = Theme.of(context);
     final link = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.sourceImportLinkDialogTitle),
+        backgroundColor: theme.colorScheme.surface,
+        title: Text(l10n.sourceImportLinkDialogTitle,
+            style: TextStyle(color: theme.colorScheme.onSurface)),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -3324,11 +3333,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     List<_InstallCandidate> candidates,
   ) async {
+    final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.sourceImportPreviewTitle),
+        backgroundColor: cs.surface,
+        title: Text(l10n.sourceImportPreviewTitle,
+            style: TextStyle(color: cs.onSurface)),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
@@ -3336,7 +3348,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(AppLocalizations.of(context)!
-                  .selectedSourcesCount(candidates.length)),
+                  .selectedSourcesCount(candidates.length),
+                  style: TextStyle(color: cs.onSurface)),
               const SizedBox(height: 8),
               Flexible(
                 child: ListView.separated(
@@ -3347,6 +3360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final candidate = candidates[index];
                     return Text(
                       '- ${candidate.displayName ?? candidate.sourceId} (v${candidate.version})',
+                      style: TextStyle(color: cs.onSurface),
                     );
                   },
                 ),

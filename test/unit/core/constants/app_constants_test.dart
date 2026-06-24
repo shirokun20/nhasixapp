@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/config_models.dart' as cfg;
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+
+final testSourceRegistry = ContentSourceRegistry();
 
 // Mock RemoteConfigService for testing
 class MockRemoteConfigService extends RemoteConfigService {
@@ -62,6 +65,7 @@ void main() {
     // Initialize GetIt with mock RemoteConfigService
     final mockService = MockRemoteConfigService();
     GetIt.I.registerSingleton<RemoteConfigService>(mockService);
+    GetIt.I.registerSingleton<ContentSourceRegistry>(testSourceRegistry);
   });
 
   tearDownAll(() {
@@ -125,6 +129,15 @@ void main() {
   });
 
   group('AppStorage', () {
+    test('knownSources always includes local when registry is populated', () {
+      testSourceRegistry.register(_FakeContentSource('custom-source'));
+
+      final knownSources = AppStorage.knownSources;
+
+      expect(knownSources, contains('custom-source'));
+      expect(knownSources, contains('local'));
+    });
+
     test('backupFolderName is not empty', () {
       expect(AppStorage.backupFolderName, isNotEmpty);
     });
@@ -185,4 +198,101 @@ void main() {
       expect(AppConfig.enableAnalytics, isA<bool>());
     });
   });
+}
+
+class _FakeContentSource extends ContentSource {
+  _FakeContentSource(this._id);
+
+  final String _id;
+
+  @override
+  String get id => _id;
+
+  @override
+  String get displayName => _id;
+
+  @override
+  String get iconPath => '';
+
+  @override
+  String get baseUrl => '';
+
+  @override
+  bool get requiresBypass => false;
+
+  @override
+  SearchCapabilities get searchCapabilities =>
+      SearchCapabilities.defaultCapabilities;
+
+  @override
+  Future<ContentListResult> search(SearchFilter filter) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Content> getDetail(String contentId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ContentListResult> getList({
+    int page = 1,
+    SortOption sort = SortOption.newest,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ContentListResult> getPopular({
+    PopularTimeframe timeframe = PopularTimeframe.allTime,
+    int page = 1,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Content>> getRandom({int count = 1}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Content>> getRelated(String contentId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  String buildImageUrl({
+    required String contentId,
+    required String mediaId,
+    required int page,
+    required String extension,
+    bool thumbnail = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  String buildThumbnailUrl({
+    required String contentId,
+    required String mediaId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  String? parseContentIdFromUrl(String url) => null;
+
+  @override
+  bool isValidContentId(String contentId) => true;
+
+  @override
+  String get refererHeader => '';
+
+  @override
+  Map<String, String> getImageDownloadHeaders({
+    required String imageUrl,
+    Map<String, String>? cookies,
+  }) {
+    return const {};
+  }
 }

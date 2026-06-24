@@ -103,7 +103,7 @@ class AppStorage {
     try {
       final registry = getIt<ContentSourceRegistry>();
       if (registry.isNotEmpty) {
-        return registry.sourceIds;
+        return {...registry.sourceIds, 'local'}.toList(growable: false);
       }
     } catch (_) {
       // Fallback if getIt not ready
