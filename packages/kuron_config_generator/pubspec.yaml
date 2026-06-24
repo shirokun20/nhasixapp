@@ -1,0 +1,22 @@
+name: kuron_config_generator
+description: Config generator tooling for Kuron source configs
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  args: ^2.4.0
+  http: ^1.1.0
+  logger: ^2.0.0
+  path: ^1.8.0
+
+  # Kuron packages (path dependencies)
+  kuron_core:
+    path: ../kuron_core
+  kuron_generic:
+    path: ../kuron_generic
+
+dev_dependencies:
+  test: ^1.24.0
