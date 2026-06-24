@@ -8,6 +8,7 @@ import '../../../core/constants/design_tokens.dart';
 import '../../../core/constants/text_style_const.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../l10n/app_localizations.dart';
+import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import '../../../domain/entities/entities.dart';
 import '../../cubits/filter_data/filter_data_cubit.dart';
 import '../../widgets/filter_data_search_widget.dart';
@@ -634,11 +635,13 @@ class _FilterTagChip extends StatelessWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isExclude
-        ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFD32F2F))
-        : (isDark ? const Color(0xFF69F0AE) : const Color(0xFF00C853));
+        ? (isDark ? AppColors.error : AppColors.error)
+        : (isDark ? AppColors.success : AppColors.success);
     final foreground = isExclude
-        ? (isDark ? const Color(0xFFFFD6D6) : const Color(0xFF9F1D1D))
-        : (isDark ? const Color(0xFFB9F6CA) : const Color(0xFF006C45));
+        ? (isDark ? AppColors.error.withValues(alpha: 0.8) : AppColors.error)
+        : (isDark
+            ? AppColors.success.withValues(alpha: 0.8)
+            : AppColors.success);
 
     return _FilterSelectionColors(
       accent: accent,
