@@ -11,12 +11,16 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
 import 'package:nhasixapp/services/export_service.dart';
 import 'package:nhasixapp/services/notification_service.dart';
+import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mixin providing common offline content management functionality
 /// Used by screens that need to import/export/refresh offline content
 mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
   /// Import content from backup folder to database
   Future<void> importFromBackup(BuildContext context) async {
+    final selectedSourceId = _currentOfflineSourceId(context);
+
     // Check permission first
     final hasPermission = await PermissionHelper.hasStoragePermission();
     if (!hasPermission) {
@@ -43,7 +47,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
     // Scan and sync backup folder
     if (context.mounted) {
-      await _autoScanBackupFolder(context);
+      await _autoScanBackupFolder(context, sourceId: selectedSourceId);
     }
 
     // Note: forceRefresh() inside _autoScanBackupFolder already reloads from database
@@ -152,7 +156,10 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// Internal method to auto scan backup folder
-  Future<void> _autoScanBackupFolder(BuildContext context) async {
+  Future<void> _autoScanBackupFolder(
+    BuildContext context, {
+    String? sourceId,
+  }) async {
     debugPrint('OFFLINE_AUTO_SCAN: Starting auto-scan for backup folder...');
 
     final backupPath = await DirectoryUtils.findNhasixBackupFolder();
@@ -160,8 +167,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         'OFFLINE_AUTO_SCAN: DirectoryUtils.findNhasixBackupFolder() returned: $backupPath');
 
     if (backupPath != null) {
+      final scanPath = _resolveBackupSourcePath(backupPath, sourceId);
       debugPrint(
-          'OFFLINE_AUTO_SCAN: Found backup path: $backupPath, starting sync...');
+          'OFFLINE_AUTO_SCAN: Found backup path: $scanPath, starting sync...');
 
       // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
@@ -171,7 +179,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       await notificationService.showSyncStarted();
 
       final syncResult = await offlineManager.syncBackupToDatabase(
-        backupPath,
+        scanPath,
+        sourceId: sourceId,
         onProgress: (processed, total) {
           final percentage =
               total > 0 ? ((processed / total) * 100).toInt() : 0;
@@ -246,7 +255,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         final pickedPath = await StorageSettings.pickAndSaveCustomRoot(context);
         if (pickedPath != null && context.mounted) {
           // Recursive call to try again with new path
-          await _autoScanBackupFolder(context);
+          await _autoScanBackupFolder(context, sourceId: sourceId);
           return;
         }
       }
@@ -256,6 +265,29 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
     }
+  }
+
+  String? _currentOfflineSourceId(BuildContext context) {
+    final currentState = context.read<OfflineSearchCubit>().state;
+    if (currentState is OfflineSearchLoaded) {
+      return currentState.selectedSourceId;
+    }
+
+    return getIt<SharedPreferences>().getString('offline_selected_source_filter');
+  }
+
+  String _resolveBackupSourcePath(String backupPath, String? sourceId) {
+    if (sourceId == null || sourceId.trim().isEmpty) {
+      return backupPath;
+    }
+
+    final normalizedBackupPath = path.normalize(backupPath);
+    final backupBase = path.basename(normalizedBackupPath);
+    if (backupBase.toLowerCase() == sourceId.toLowerCase()) {
+      return normalizedBackupPath;
+    }
+
+    return path.join(backupPath, sourceId);
   }
 
   /// Import content from a ZIP file to the local folder

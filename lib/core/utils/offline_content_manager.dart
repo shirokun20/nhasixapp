@@ -2203,36 +2203,74 @@ class OfflineContentManager {
   /// [onProgress] - Optional callback (processed, total)
   Future<Map<String, int>> syncBackupToDatabase(
     String backupPath, {
+    String? sourceId,
     void Function(int processed, int total)? onProgress,
   }) async {
-    // NEW: Auto-migrate legacy content before scanning
-    try {
-      final backupDir = Directory(backupPath);
-      if (await backupDir.exists()) {
-        await for (final entity in backupDir.list()) {
-          if (entity is Directory) {
-            final folderName = path.basename(entity.path);
-            if (!AppStorage.knownSources.contains(folderName)) {
-              // Potential legacy content - attempt migration
-              // This moves nhasix/{id} -> nhasix/nhentai/{id}
-              final migrated = await DownloadStorageUtils.migrateToSourceFolder(
-                folderName,
-                sourceId:
-                    AppStorage.defaultSourceId, // Default for legacy content
-              );
-              if (migrated) {
-                _logger.i(
-                    'Auto-migrated legacy content $folderName to nhentai source');
+    final scanPath = _resolveBackupScanPath(backupPath, sourceId);
+    final scanDir = Directory(scanPath);
+
+    if (sourceId != null && !await scanDir.exists()) {
+      _logger.w('Source folder does not exist for sync: $scanPath');
+      return {'synced': 0, 'updated': 0};
+    }
+
+    if (sourceId == null) {
+      // NEW: Auto-migrate legacy content before scanning root backup folder.
+      try {
+        final backupDir = Directory(backupPath);
+        if (await backupDir.exists()) {
+          await for (final entity in backupDir.list()) {
+            if (entity is Directory) {
+              final folderName = path.basename(entity.path);
+              if (!AppStorage.knownSources.contains(folderName)) {
+                // Potential legacy content - attempt migration
+                // This moves nhasix/{id} -> nhasix/nhentai/{id}
+                final migrated =
+                    await DownloadStorageUtils.migrateToSourceFolder(
+                  folderName,
+                  sourceId:
+                      AppStorage.defaultSourceId, // Default for legacy content
+                );
+                if (migrated) {
+                  _logger.i(
+                      'Auto-migrated legacy content $folderName to nhentai source');
+                }
               }
             }
           }
         }
+      } catch (e) {
+        _logger.w('Auto-migration check failed: $e');
       }
-    } catch (e) {
-      _logger.w('Auto-migration check failed: $e');
     }
 
-    final contents = await scanBackupFolder(backupPath);
+    if (sourceId != null) {
+      final completedCount = await _userDataRepository.getDownloadsCount(
+        state: DownloadState.completed,
+        sourceId: sourceId,
+      );
+
+      if (completedCount > 0) {
+        final existingDownloads = await _userDataRepository.getAllDownloads(
+          state: DownloadState.completed,
+          sourceId: sourceId,
+          limit: completedCount,
+          offset: 0,
+          orderBy: 'created_at',
+          descending: true,
+        );
+
+        for (final download in existingDownloads) {
+          await _userDataRepository.deleteDownloadStatus(download.contentId);
+        }
+
+        _logger.i(
+          'Cleared $completedCount completed ${sourceId.toLowerCase()} records before resync',
+        );
+      }
+    }
+
+    final contents = await scanBackupFolder(scanPath);
     int syncedCount = 0;
     int updatedCount = 0;
     final int total = contents.length;
@@ -2321,6 +2359,20 @@ class OfflineContentManager {
 
     _logger.i('Sync complete: $syncedCount new, $updatedCount updated');
     return {'synced': syncedCount, 'updated': updatedCount};
+  }
+
+  String _resolveBackupScanPath(String backupPath, String? sourceId) {
+    if (sourceId == null || sourceId.trim().isEmpty) {
+      return backupPath;
+    }
+
+    final normalizedBackupPath = path.normalize(backupPath);
+    final backupBase = path.basename(normalizedBackupPath);
+    if (backupBase.toLowerCase() == sourceId.toLowerCase()) {
+      return normalizedBackupPath;
+    }
+
+    return path.join(backupPath, sourceId);
   }
 
   /// Delete offline content and free up storage

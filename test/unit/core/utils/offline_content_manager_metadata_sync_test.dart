@@ -10,11 +10,22 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 
 class MockUserDataRepository extends Mock implements UserDataRepository {}
 
+void _registerFallbacks() {
+  registerFallbackValue(
+    const DownloadStatus(
+      contentId: 'fallback',
+      state: DownloadState.completed,
+    ),
+  );
+}
+
 void main() {
   group('OfflineContentManager metadata reconciliation', () {
     late MockUserDataRepository userDataRepository;
     late OfflineContentManager manager;
     late Directory tempDir;
+
+    setUpAll(_registerFallbacks);
 
     setUp(() async {
       userDataRepository = MockUserDataRepository();
@@ -147,6 +158,63 @@ void main() {
 
       final metadata = await readMetadata();
       expect(metadata['failed_pages'], isEmpty);
+    });
+
+    test('syncBackupToDatabase clears local rows before local-only resync',
+        () async {
+      final localContentDir =
+          Directory('${tempDir.path}/local/new-local-content/images');
+      await localContentDir.create(recursive: true);
+      await File('${localContentDir.path}/page_001.png').writeAsBytes(
+        <int>[
+          0x89,
+          0x50,
+          0x4E,
+          0x47,
+          0x0D,
+          0x0A,
+          0x1A,
+          0x0A,
+        ],
+      );
+
+      when(() => userDataRepository.getDownloadStatus(any()))
+          .thenAnswer((_) async => null);
+      when(() => userDataRepository.getDownloadsCount(
+            state: DownloadState.completed,
+            sourceId: 'local',
+          )).thenAnswer((_) async => 1);
+      when(() => userDataRepository.getAllDownloads(
+            state: DownloadState.completed,
+            sourceId: 'local',
+            limit: 1,
+            offset: 0,
+            orderBy: 'created_at',
+            descending: true,
+          )).thenAnswer((_) async => [
+            DownloadStatus.completed(
+              'stale-local',
+              1,
+              '/stale/path',
+              0,
+              sourceId: 'local',
+            ),
+          ]);
+      when(() => userDataRepository.deleteDownloadStatus('stale-local'))
+          .thenAnswer((_) async {});
+      when(() => userDataRepository.saveDownloadStatus(any()))
+          .thenAnswer((_) async {});
+
+      final result = await manager.syncBackupToDatabase(
+        tempDir.path,
+        sourceId: 'local',
+      );
+
+      expect(result['synced'], 1);
+      expect(result['updated'], 0);
+      verify(() => userDataRepository.deleteDownloadStatus('stale-local'))
+          .called(1);
+      verify(() => userDataRepository.saveDownloadStatus(any())).called(1);
     });
   });
 }

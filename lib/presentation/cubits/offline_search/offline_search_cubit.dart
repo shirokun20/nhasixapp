@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/offline_content_manager.dart';
@@ -681,8 +682,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       loadPath = nhasixPath;
     }
 
-    final contents = await _offlineContentManager
-        .getAllOfflineContentFromFileSystem(loadPath);
+    final syncSourceId = state is OfflineSearchLoaded
+        ? (state as OfflineSearchLoaded).selectedSourceId
+        : _prefs.getString(_keySelectedSourceFilter);
+
+    final scanPath = _resolveBackupSourcePath(loadPath, syncSourceId);
+
+    final contents =
+        await _offlineContentManager.getAllOfflineContentFromFileSystem(
+      scanPath,
+    );
 
     if (contents.isEmpty) {
       emit(const OfflineSearchEmpty(query: ''));
@@ -724,8 +733,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       logInfo(
           'Auto-syncing ${contents.length} items from filesystem to database...');
-      final syncResult =
-          await _offlineContentManager.syncBackupToDatabase(loadPath);
+      final syncResult = await _offlineContentManager.syncBackupToDatabase(
+        scanPath,
+        sourceId: syncSourceId,
+      );
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
       logInfo('Auto-sync complete: $synced new, $updated updated');
@@ -769,6 +780,20 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// Clear search results
   void clearSearch() {
     emit(const OfflineSearchInitial());
+  }
+
+  String _resolveBackupSourcePath(String backupPath, String? sourceId) {
+    if (sourceId == null || sourceId.trim().isEmpty) {
+      return backupPath;
+    }
+
+    final normalizedBackupPath = path.normalize(backupPath);
+    final backupBase = path.basename(normalizedBackupPath);
+    if (backupBase.toLowerCase() == sourceId.toLowerCase()) {
+      return normalizedBackupPath;
+    }
+
+    return path.join(backupPath, sourceId);
   }
 
   /// Set loading state (for external triggers like import operations)
