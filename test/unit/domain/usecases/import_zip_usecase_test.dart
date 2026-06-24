@@ -78,6 +78,8 @@ void main() {
         'destinationPath': destinationPath,
       };
     });
+    when(() => userDataRepository.getDownloadStatus(any()))
+        .thenAnswer((_) async => null);
     when(() => userDataRepository.saveDownloadStatus(any()))
         .thenAnswer((_) async {});
   });
@@ -161,5 +163,27 @@ void main() {
     expect(savedStatuses.map((s) => s.contentId),
         containsAll(['first-batch', 'second-batch']));
     expect(savedStatuses.map((s) => s.downloadPath).toSet().length, 2);
+  });
+
+  test('reuses existing local content id instead of creating suffix', () async {
+    when(() => kuronNative.getZipDisplayName(any()))
+        .thenAnswer((_) async => 'Collision.zip');
+    when(() => userDataRepository.getDownloadStatus('collision')).thenAnswer(
+      (_) async => const DownloadStatus(
+        contentId: 'collision',
+        state: DownloadState.completed,
+        sourceId: 'local',
+      ),
+    );
+
+    final result = await useCase.call(const ImportZipParams());
+
+    expect(result['success'], isTrue);
+    expect(result['contentId'], 'collision');
+
+    final verification =
+        verify(() => userDataRepository.saveDownloadStatus(captureAny()));
+    final saved = verification.captured.single as DownloadStatus;
+    expect(saved.contentId, 'collision');
   });
 }

@@ -290,6 +290,13 @@ class ImportZipUseCase {
     var suffix = 2;
 
     while (true) {
+      final existingStatus = await _userDataRepository.getDownloadStatus(
+        candidate,
+      );
+      if (existingStatus?.sourceId?.toLowerCase() == sourceId.toLowerCase()) {
+        return candidate;
+      }
+
       final existingDir = await DownloadStorageUtils.getContentDirectory(
           candidate,
           sourceId: sourceId);
