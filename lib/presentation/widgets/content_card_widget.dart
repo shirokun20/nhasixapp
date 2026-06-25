@@ -39,6 +39,7 @@ class ContentCard extends StatelessWidget {
     this.showUploadDate = false, // Hidden by default for main screen
     this.maxTagsToShow = 3,
     this.showOfflineIndicator = false,
+    this.showDownloadBadge = false,
     this.isHighlighted = false, // NEW: for highlight matching content
     this.highlightReason, // NEW: reason for highlight
     this.blurThumbnails = false, // NEW: global blur setting
@@ -66,6 +67,7 @@ class ContentCard extends StatelessWidget {
   final bool showUploadDate;
   final int maxTagsToShow;
   final bool showOfflineIndicator;
+  final bool showDownloadBadge;
   final bool isHighlighted; // NEW: for highlight matching content
   final String? highlightReason; // NEW: reason for highlight
   final bool blurThumbnails; // NEW: global blur setting
@@ -90,9 +92,34 @@ class ContentCard extends StatelessWidget {
 
     // Determine if content is fully read for gold styling
     final isRead = readProgress != null && readProgress! >= 1.0;
-    final activeBorder = isRead ? readGoldColor : cardBorderColor;
+    final borderStyle = switch ((isHighlighted, isRead)) {
+      (true, true) => (
+          color: AppColors.brandCoral,
+          outerColor: readGoldColor,
+          outerWidth: 2.2,
+          shadowColor: readGoldColor.withValues(alpha: 0.18),
+        ),
+      (true, false) => (
+          color: AppColors.brandCoral,
+          outerColor: AppColors.brandCoral,
+          outerWidth: 0.0,
+          shadowColor: AppColors.brandCoral.withValues(alpha: 0.3),
+        ),
+      (false, true) => (
+          color: readGoldColor,
+          outerColor: readGoldColor,
+          outerWidth: 0.0,
+          shadowColor: readGoldColor.withValues(alpha: 0.3),
+        ),
+      _ => (
+          color: cardBorderColor,
+          outerColor: cardBorderColor,
+          outerWidth: 0.0,
+          shadowColor: Colors.transparent,
+        ),
+    };
 
-    final cardWidget = Container(
+    final innerCard = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -102,13 +129,13 @@ class ContentCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         border: Border.all(
-          color: isHighlighted ? AppColors.brandCoral : activeBorder,
+          color: borderStyle.color,
           width: 1.5,
         ),
         boxShadow: [
-          if (isHighlighted)
+          if (borderStyle.shadowColor.a > 0)
             BoxShadow(
-              color: AppColors.brandCoral.withValues(alpha: 0.3),
+              color: borderStyle.shadowColor,
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -133,6 +160,13 @@ class ContentCard extends StatelessWidget {
                   children: [
                     // Main cover image
                     _buildCoverImage(),
+
+                    if (showDownloadBadge || isRead)
+                      _buildCoverStatusBadge(
+                        context: context,
+                        isDownloaded: showDownloadBadge,
+                        isRead: isRead,
+                      ),
 
                     // Download progress overlay
                     if (showDownloadStatus && downloadProgress != null)
@@ -234,7 +268,30 @@ class ContentCard extends StatelessWidget {
       ),
     );
 
-    return cardWidget;
+    if (borderStyle.outerWidth == 0) {
+      return innerCard;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        border: Border.all(
+          color: borderStyle.outerColor,
+          width: borderStyle.outerWidth,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: borderStyle.outerColor.withValues(alpha: 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(1.2),
+        child: innerCard,
+      ),
+    );
   }
 
   /// Build highlight overlay indicator for downloaded content
@@ -545,6 +602,103 @@ class ContentCard extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverStatusBadge({
+    required BuildContext context,
+    required bool isDownloaded,
+    required bool isRead,
+  }) {
+    final theme = Theme.of(context);
+    final readColor =
+        theme.extension<KuronColors>()?.readGold ?? AppColors.readGold;
+    const downloadColor = AppColors.brandCoral;
+
+    return switch ((isDownloaded, isRead)) {
+      (true, true) => Positioned(
+          top: 8,
+          right: 8,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBadgePill(
+                context,
+                icon: Icons.download_done_rounded,
+                label: 'OFF',
+                color: downloadColor,
+              ),
+              const SizedBox(width: 4),
+              _buildBadgePill(
+                context,
+                icon: Icons.menu_book_rounded,
+                label: 'READ',
+                color: readColor,
+              ),
+            ],
+          ),
+        ),
+      (true, false) => Positioned(
+          top: 8,
+          right: 8,
+          child: _buildBadgePill(
+            context,
+            icon: Icons.download_done_rounded,
+            label: 'OFF',
+            color: downloadColor,
+          ),
+        ),
+      (false, true) => Positioned(
+          top: 8,
+          right: 8,
+          child: _buildBadgePill(
+            context,
+            icon: Icons.menu_book_rounded,
+            label: 'READ',
+            color: readColor,
+          ),
+        ),
+      _ => const SizedBox.shrink(),
+    };
+  }
+
+  Widget _buildBadgePill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.88),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 10,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                label,
+                style: TextStyleConst.labelSmall.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
