@@ -14,10 +14,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Theme-Aware UI Cleanup**: Fixed lingering hardcoded text/color mismatches across home, about, search, and bottom-sheet surfaces.
 - **Cover Badge Polish**: Content covers now surface read/offline state directly on the image for quicker scanability.
 
-## [Unreleased]
-
-### ✨ Highlights
-
 #### 🏗️ Kuron Config Generator (Developer Tooling)
 - **Interactive CLI Wizard**: New `packages/kuron_config_generator` with guided question flow for source identity, mode (REST/scraper), features, endpoints, and headers. Generates valid Source Config v2 JSON without manual writing.
 - **URL-Assisted HTML Discovery**: `generate --url` probes any manga site, detects CMS (Madara/WordPress/custom), infers selectors for list/detail/chapters/reader, and produces a draft scraper config. Recognizes Cloudflare blocks and adds bypass annotations.
