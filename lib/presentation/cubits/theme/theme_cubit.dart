@@ -209,7 +209,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
-      textTheme: _googleFontsTextTheme(),
+      textTheme: _googleFontsTextTheme(ThemeData.dark().textTheme),
       extensions: const [KuronColors.dark],
       colorScheme: const ColorScheme.dark(
         primary: AppColors.brandCoral,
@@ -318,7 +318,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
-      textTheme: _googleFontsTextTheme(),
+      textTheme: _googleFontsTextTheme(ThemeData.dark().textTheme),
       extensions: const [KuronColors.amoled],
       colorScheme: const ColorScheme.dark(
         primary: AppColors.brandCoral,

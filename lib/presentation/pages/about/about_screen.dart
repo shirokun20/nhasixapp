@@ -73,14 +73,21 @@ class _AboutContentState extends State<_AboutContent>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final onSurface = colorScheme.onSurface;
+    final onSurfaceVariant = colorScheme.onSurfaceVariant;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.aboutTitle),
+        title: Text(
+          l10n.aboutTitle,
+          style: TextStyleConst.titleLarge.copyWith(color: onSurface),
+        ),
         centerTitle: true,
         elevation: DesignTokens.elevationNone,
         backgroundColor: Colors.transparent,
+        foregroundColor: onSurface,
       ),
       drawer: AppMainDrawerWidget(context: context),
       extendBodyBehindAppBar: true,
@@ -155,7 +162,10 @@ class _AboutContentState extends State<_AboutContent>
 
                 Text(
                   l10n.appTitle,
-                  style: TextStyleConst.headingLarge.copyWith(fontSize: 32),
+                  style: TextStyleConst.headingLarge.copyWith(
+                    fontSize: 32,
+                    color: onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -165,12 +175,13 @@ class _AboutContentState extends State<_AboutContent>
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radius2xl),
                     ),
                     child: Text(
                       _version,
                       style: TextStyleConst.bodyMedium.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: onSurfaceVariant,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -272,11 +283,14 @@ class _AboutContentState extends State<_AboutContent>
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    _buildTechBadge('Flutter', Colors.blue),
-                    _buildTechBadge('Dart', Colors.blueAccent),
-                    _buildTechBadge('Bloc', Colors.orange),
-                    _buildTechBadge('Clean Arch', Colors.green),
-                    _buildTechBadge('GetIt', Colors.purple),
+                    _buildTechBadge('Flutter', colorScheme.primary),
+                    _buildTechBadge('Dart', colorScheme.secondary),
+                    _buildTechBadge('Bloc', colorScheme.tertiary),
+                    _buildTechBadge('Clean Arch', colorScheme.error),
+                    _buildTechBadge(
+                      'GetIt',
+                      colorScheme.onSurfaceVariant,
+                    ),
                   ],
                 ),
 
@@ -286,8 +300,7 @@ class _AboutContentState extends State<_AboutContent>
                 Text(
                   l10n.madeWithLoveBy,
                   style: TextStyleConst.caption.copyWith(
-                    color: theme.textTheme.bodySmall?.color
-                        ?.withValues(alpha: 0.6),
+                    color: onSurfaceVariant.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -295,8 +308,7 @@ class _AboutContentState extends State<_AboutContent>
                   l10n.allRightsReserved,
                   style: TextStyleConst.caption.copyWith(
                     fontSize: 10,
-                    color: theme.textTheme.bodySmall?.color
-                        ?.withValues(alpha: 0.4),
+                    color: onSurfaceVariant.withValues(alpha: 0.4),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -310,6 +322,7 @@ class _AboutContentState extends State<_AboutContent>
   }
 
   Widget _buildSectionTitle(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: Text(
@@ -318,7 +331,7 @@ class _AboutContentState extends State<_AboutContent>
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
-          color: Theme.of(context).colorScheme.primary,
+          color: colorScheme.primary,
         ),
       ),
     );
@@ -328,6 +341,7 @@ class _AboutContentState extends State<_AboutContent>
     return BlocBuilder<UpdateCubit, UpdateState>(
       builder: (context, state) {
         final l10n = AppLocalizations.of(context)!;
+        final colorScheme = Theme.of(context).colorScheme;
         String status = l10n.checkForUpdates;
         IconData icon = Icons.refresh;
         final bool isLoading = state is UpdateChecking;
@@ -348,8 +362,8 @@ class _AboutContentState extends State<_AboutContent>
         return Card(
           elevation: DesignTokens.elevationNone,
           color: theme.colorScheme.surfaceContainer,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
           child: InkWell(
             onTap: isLoading
                 ? null
@@ -372,9 +386,11 @@ class _AboutContentState extends State<_AboutContent>
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: theme.colorScheme.primary))
-                        : Icon(icon, color: theme.colorScheme.primary),
+                              strokeWidth: 2,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        : Icon(icon, color: colorScheme.primary),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -383,14 +399,15 @@ class _AboutContentState extends State<_AboutContent>
                       children: [
                         Text(
                           l10n.appUpdates,
-                          style: TextStyleConst.bodyLarge
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: TextStyleConst.bodyLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         Text(
                           status,
                           style: TextStyleConst.bodyMedium.copyWith(
-                            color: theme.textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.7),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -411,7 +428,8 @@ class _AboutContentState extends State<_AboutContent>
     return Card(
       elevation: DesignTokens.elevationNone,
       color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
       child: Column(
         children: children,
       ),
@@ -426,26 +444,28 @@ class _AboutContentState extends State<_AboutContent>
     required VoidCallback onTap,
     bool isExternal = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading:
-          Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      leading: Icon(icon, color: colorScheme.onSurfaceVariant),
       title: Text(
         title,
-        style: TextStyleConst.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        style: TextStyleConst.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyleConst.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       trailing: isExternal
           ? Icon(Icons.open_in_new,
-              size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant)
-          : Icon(Icons.chevron_right,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
+              size: 16, color: colorScheme.onSurfaceVariant)
+          : Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
     );
   }
 
@@ -491,20 +511,31 @@ class _AboutContentState extends State<_AboutContent>
   }
 
   void _showDonationDialog(BuildContext context, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.coffee, color: Colors.orange),
+            Icon(Icons.coffee, color: colorScheme.primary),
             const SizedBox(width: 8),
-            Text(l10n.supportDeveloper),
+            Text(
+              l10n.supportDeveloper,
+              style: TextStyleConst.titleLarge.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.donateMessage),
+            Text(
+              l10n.donateMessage,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
@@ -517,8 +548,10 @@ class _AboutContentState extends State<_AboutContent>
             const SizedBox(height: 16),
             Text(
               l10n.thankYouMessage,
-              style: TextStyleConst.bodyMedium
-                  .copyWith(fontWeight: FontWeight.bold),
+              style: TextStyleConst.bodyMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -526,7 +559,10 @@ class _AboutContentState extends State<_AboutContent>
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: Text(l10n.close),
+            child: Text(
+              l10n.close,
+              style: TextStyle(color: colorScheme.primary),
+            ),
           ),
         ],
       ),

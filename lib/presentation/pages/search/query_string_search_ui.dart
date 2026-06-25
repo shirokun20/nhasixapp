@@ -540,6 +540,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 16,
+              ),
+              cursorColor: cs.primary,
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.searchByTitleHint,
                 hintStyle: TextStyle(

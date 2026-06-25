@@ -302,8 +302,9 @@ class ContentCard extends StatelessWidget {
                   networkUrl: content.coverUrl,
                   contentId: content.id,
                   aspectRatio: aspectRatio,
-                  borderRadius:
-                      BorderRadius.zero, // No border radius, handled by parent
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(DesignTokens.radiusXl),
+                  ),
                   showOfflineIndicator:
                       false, // Disable to prevent duplicate with ContentCard's own indicator
                   httpHeaders: headers,
@@ -763,9 +764,9 @@ class ContentCard extends StatelessWidget {
                 border: Border.all(
                   color: Theme.of(context)
                       .colorScheme
-                      .outline
-                      .withValues(alpha: 0.5),
-                  width: 0.5,
+                      .outlineVariant
+                      .withValues(alpha: 0.35),
+                  width: 0.4,
                 ),
               ),
               child: ClipRRect(

@@ -172,7 +172,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               height: 24,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
@@ -181,7 +181,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               height: 16,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
@@ -190,7 +190,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               height: 16,
               width: MediaQuery.of(context).size.width * 0.7,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
@@ -199,7 +199,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               height: 20,
               width: MediaQuery.of(context).size.width * 0.5,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),
@@ -208,7 +208,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
               height: 16,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
             ),

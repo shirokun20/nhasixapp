@@ -67,9 +67,20 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
         return AlertDialog(
-          title: Text(l10n.randomGalleryUnavailableTitle),
-          content: Text(l10n.randomGalleryUnavailableMessage),
+          title: Text(
+            l10n.randomGalleryUnavailableTitle,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          content: Text(
+            l10n.randomGalleryUnavailableMessage,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -89,6 +100,7 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
         final l10n = AppLocalizations.of(dialogContext)!;
         return PopScope(
           canPop: false,
@@ -114,13 +126,19 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
                             found
                                 ? l10n.randomGalleryFoundTitle
                                 : l10n.randomGalleryLoadingTitle,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             found
                                 ? l10n.randomGalleryFoundMessage
                                 : l10n.randomGalleryLoadingMessage,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),

@@ -75,7 +75,8 @@ class FeaturedContentCard extends StatelessWidget {
                                   theme.colorScheme.secondary,
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusLg),
                               boxShadow: [
                                 BoxShadow(
                                   color: theme.colorScheme.primary
@@ -120,7 +121,8 @@ class FeaturedContentCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surface
                                   .withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -250,7 +252,8 @@ class FeaturedContentCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radius2xl),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -301,7 +304,10 @@ class FeaturedContentCard extends StatelessWidget {
             networkUrl: content.coverUrl,
             contentId: content.id,
             aspectRatio: 0.7,
-            borderRadius: BorderRadius.zero,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(DesignTokens.radiusXl),
+              bottomLeft: Radius.circular(DesignTokens.radiusXl),
+            ),
             showOfflineIndicator: false,
             httpHeaders: getIt<ContentSourceRegistry>()
                 .getSource(content.sourceId)
@@ -394,9 +400,11 @@ class FeaturedContentCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(3),
             border: Border.all(
-              color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
-              width: 0.5,
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: 0.35),
+              width: 0.4,
             ),
           ),
           child: ClipRRect(

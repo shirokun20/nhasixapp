@@ -632,6 +632,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Build empty state UI
   Widget _buildEmptyState(ContentEmpty state) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     // Translate l10n key to actual message
     String getDisplayMessage(String key) {
@@ -665,13 +666,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           Text(
             getDisplayMessage(state.contextualMessage),
             textAlign: TextAlign.center,
-            style: TextStyleConst.bodyMedium,
+            style: TextStyleConst.bodyMedium.copyWith(
+              color: colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           if (state.suggestions.isNotEmpty) ...[
             Text(
               l10n.suggestions,
-              style: TextStyleConst.bodyMedium,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 4),
             ...state.suggestions.map((suggestionKey) {
@@ -695,7 +700,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
               return Text(
                 '• ${getSuggestionText(suggestionKey)}',
-                style: TextStyleConst.bodyMedium,
+                style: TextStyleConst.bodyMedium.copyWith(
+                  color: colorScheme.onSurface,
+                ),
               );
             }),
           ],
@@ -717,6 +724,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
   /// Build error state UI
   Widget _buildErrorState(ContentError state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -724,19 +733,23 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           Text(
             state.errorIcon,
             style: TextStyleConst.displayLarge.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             state.errorType.displayName,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             state.userFriendlyMessage,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
           ),
           if (state.canRetry) ...[
             const SizedBox(height: 16),
@@ -1127,18 +1140,22 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   /// Handle refresh indicator pull-to-refresh
   Future<void> _handleRefresh() async {
     try {
+      final colorScheme = Theme.of(context).colorScheme;
+
       // Show refresh feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      colorScheme.onPrimary,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1368,9 +1385,13 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       if (contentState is! ContentLoaded) {
         Logger().w('Cannot open in browser: no content loaded');
         if (mounted) {
+          final foreground = _snackForegroundColor(AppColors.warning);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.noContentToBrowse),
+              content: Text(
+                AppLocalizations.of(context)!.noContentToBrowse,
+                style: TextStyle(color: foreground),
+              ),
               backgroundColor: AppColors.warning,
             ),
           );
@@ -1432,15 +1453,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     } catch (e) {
       Logger().e('Error opening in browser: $e');
       if (mounted) {
+        final foreground = _snackForegroundColor(AppColors.error);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error, color: Colors.white),
+                Icon(Icons.error, color: foreground),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                      '${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}'),
+                    '${AppLocalizations.of(context)?.failedToOpenBrowser ?? 'Failed to open browser'}: ${e.toString().replaceAll('Exception: ', '')}',
+                    style: TextStyle(color: foreground),
+                  ),
                 ),
               ],
             ),
@@ -1448,7 +1472,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: AppLocalizations.of(context)?.retry ?? 'Retry',
-              textColor: Colors.white,
+              textColor: foreground,
               onPressed: () => _openInBrowser(),
             ),
           ),
@@ -1661,11 +1685,15 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
   Future<void> _downloadAllGalleries() async {
     try {
       final l10n = AppLocalizations.of(context)!;
+      final loadingForeground = Theme.of(context).colorScheme.onInverseSurface;
       final contentState = _contentBloc.state;
       if (contentState is! ContentLoaded) {
         Logger().w('Cannot download all: no content loaded');
         _showMainSnackBar(
-          Text(l10n.noContentToDownload),
+          Text(
+            l10n.noContentToDownload,
+            style: TextStyle(color: _snackForegroundColor(AppColors.warning)),
+          ),
           backgroundColor: AppColors.warning,
         );
         return;
@@ -1673,7 +1701,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       if (contentState.contents.isEmpty) {
         _showMainSnackBar(
-          Text(l10n.noGalleriesFound),
+          Text(
+            l10n.noGalleriesFound,
+            style: TextStyle(color: _snackForegroundColor(AppColors.warning)),
+          ),
           backgroundColor: AppColors.warning,
         );
         return;
@@ -1682,16 +1713,19 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       _showMainSnackBar(
         Row(
           children: [
-            const SizedBox(
+            SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(loadingForeground),
               ),
             ),
             const SizedBox(width: 12),
-            Text(l10n.checkingDownloadStatus),
+            Text(
+              l10n.checkingDownloadStatus,
+              style: TextStyle(color: loadingForeground),
+            ),
           ],
         ),
         duration: const Duration(seconds: 10),
@@ -1707,12 +1741,18 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       }
 
       if (galleriesNeedDownload.isEmpty) {
+        final successForeground = _snackForegroundColor(AppColors.success);
         _showMainSnackBar(
           Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              Icon(Icons.check_circle, color: successForeground),
               const SizedBox(width: 8),
-              Expanded(child: Text(l10n.allGalleriesDownloaded)),
+              Expanded(
+                child: Text(
+                  l10n.allGalleriesDownloaded,
+                  style: TextStyle(color: successForeground),
+                ),
+              ),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -1732,45 +1772,70 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       _showMainSnackBar(
         Row(
           children: [
-            const Icon(Icons.download, color: Colors.white),
+            Icon(Icons.download,
+                color: _snackForegroundColor(AppColors.success)),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.queuedDownloads(queuedCount)),
+                  Text(
+                    l10n.queuedDownloads(queuedCount),
+                    style: TextStyle(
+                      color: _snackForegroundColor(
+                        queuedCount > 0 ? AppColors.success : AppColors.warning,
+                      ),
+                    ),
+                  ),
                   if (alreadyDownloadedCount > 0)
                     Text(
                       l10n.countAlreadyDownloaded(alreadyDownloadedCount),
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.white70),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _snackForegroundColor(AppColors.success)
+                            .withValues(alpha: 0.72),
+                      ),
                     ),
                 ],
               ),
             ),
           ],
         ),
-        backgroundColor: queuedCount > 0 ? AppColors.success : AppColors.warning,
+        backgroundColor:
+            queuedCount > 0 ? AppColors.success : AppColors.warning,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: l10n.viewDownloads,
-          textColor: Colors.white,
+          textColor: _snackForegroundColor(
+            queuedCount > 0 ? AppColors.success : AppColors.warning,
+          ),
           onPressed: () => AppRouter.goToDownloads(context),
         ),
       );
     } catch (e) {
       Logger().e('Error in bulk download: $e');
+      final foreground = _snackForegroundColor(AppColors.error);
       _showMainSnackBar(
         Row(
           children: [
-            const Icon(Icons.error, color: Colors.white),
+            Icon(Icons.error, color: foreground),
             const SizedBox(width: 8),
-            Text(AppLocalizations.of(context)!.failedToDownload),
+            Text(
+              AppLocalizations.of(context)!.failedToDownload,
+              style: TextStyle(color: foreground),
+            ),
           ],
         ),
         backgroundColor: AppColors.error,
       );
     }
+  }
+
+  Color _snackForegroundColor(Color backgroundColor) {
+    return ThemeData.estimateBrightnessForColor(backgroundColor) ==
+            Brightness.dark
+        ? Colors.white
+        : Colors.black87;
   }
 }
