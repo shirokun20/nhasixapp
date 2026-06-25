@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.21+31] - 2026-06-25
+
+### ✨ Highlights
+
+- **Home Card Status Borders**: Main cards now show read, offline, or combined read+offline borders with matching cover badges.
+- **Theme-Aware UI Cleanup**: Fixed lingering hardcoded text/color mismatches across home, about, search, and bottom-sheet surfaces.
+- **Cover Badge Polish**: Content covers now surface read/offline state directly on the image for quicker scanability.
+
 ## [Unreleased]
 
 ### ✨ Highlights
