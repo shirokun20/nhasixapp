@@ -979,7 +979,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final selected = _mangaFireCoordinator.selectedType == value;
     return ChoiceChip(
       selected: selected,
-      avatar: Icon(icon, size: 16),
+      showCheckmark: false,
+      avatar: Icon(icon, size: 16, color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant),
       label: Text(label),
       selectedColor: colorScheme.primaryContainer,
       backgroundColor: colorScheme.surfaceContainerHighest,

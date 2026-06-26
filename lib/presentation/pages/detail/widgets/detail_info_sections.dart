@@ -973,6 +973,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
     final label = widget.formatLanguageLabel(languageKey);
     return ChoiceChip(
       selected: selected,
+      showCheckmark: false,
       avatar: selected ? const Icon(Icons.check, size: 16) : null,
       label: Text(loadedCount > 0 ? '$label  $loadedCount' : label),
       selectedColor: colorScheme.primaryContainer,

@@ -605,6 +605,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     final colorScheme = Theme.of(context).colorScheme;
     return ChoiceChip(
       selected: selected,
+      showCheckmark: false,
       avatar: selected ? const Icon(Icons.check, size: 16) : null,
       label: Text('${lane.label}  ${lane.chapters.length}'),
       labelStyle: TextStyleConst.labelMedium.copyWith(
