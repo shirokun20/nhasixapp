@@ -9,6 +9,7 @@
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
+[![Sponsor shirokun20](https://img.shields.io/badge/Sponsor-shirokun20-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/shirokun20)
 
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
@@ -181,8 +182,11 @@ Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apa
 
 ## ☕ **Dukung Pengembang**
 
-Jika kamu menyukai **Kuron** dan ingin mendukung pengembangannya, kamu bisa mentraktir saya kopi! ☕  
-Scan QRIS di bawah ini untuk berdonasi:
+Jika kamu menyukai **Kuron** dan ingin mendukung pengembangannya, kamu bisa menjadi sponsor di GitHub atau mentraktir saya kopi! ☕  
+
+[![Sponsor shirokun20](https://img.shields.io/badge/Sponsor-shirokun20-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/shirokun20)
+
+Kamu juga bisa scan QRIS di bawah ini untuk berdonasi:
 
 <p align="center">
   <img src="assets/images/donation_qris.jpeg" width="300" alt="Donasi QRIS" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>

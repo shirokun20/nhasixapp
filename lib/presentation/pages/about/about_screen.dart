@@ -546,6 +546,16 @@ class _AboutContentState extends State<_AboutContent>
               ),
             ),
             const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => _launchURL('https://github.com/sponsors/shirokun20'),
+              icon: const Icon(Icons.favorite),
+              label: const Text('GitHub Sponsors'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEA4AAA),
+                foregroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               l10n.thankYouMessage,
               style: TextStyleConst.bodyMedium.copyWith(
