@@ -2,15 +2,14 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of Kuron are
-currently being supported with security updates.
+Currently supported versions of Kuron that receive security and bug fix updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 0.9.x   | :white_check_mark: |
+| < 0.9.0 | :x:                |
 
 ## Reporting a Vulnerability
 
-Please report sensitive security issues via email to the maintainers/owners of this repository.
-Do not report security issues on the public issue tracker.
+Please do not report security vulnerabilities on the public issue tracker.
+Instead, report sensitive security issues via a private GitHub Security Advisory on the [Kuron Repository](https://github.com/shirokun20/nhasixapp) or by contacting the maintainers directly.

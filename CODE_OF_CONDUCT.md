@@ -1,4 +1,4 @@
-# Helper for Kuron Code of Conduct
+# Kuron Code of Conduct
 
 ## Our Pledge
 
