@@ -860,6 +860,7 @@ void _setupCubits() {
         contentSourceRegistry: getIt<ContentSourceRegistry>(),
         ehentaiCookieJar: getIt<PersistCookieJar>(),
         remoteConfigService: getIt<RemoteConfigService>(),
+        logger: getIt<Logger>(),
       ));
 
   // OfflineSearchCubit - Offline content search (Singleton to persist state)

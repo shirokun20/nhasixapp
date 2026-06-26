@@ -42,7 +42,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   final TextEditingController _pagesMinCtrl = TextEditingController();
   final TextEditingController _pagesMaxCtrl = TextEditingController();
   final TextEditingController _favMinCtrl = TextEditingController();
-  final Logger _logger = Logger();
+  Logger get _logger => getIt<Logger>();
 
   // UI State
   bool _showAdvancedFilters = false;

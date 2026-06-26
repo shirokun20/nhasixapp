@@ -185,7 +185,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  static final Logger _logger = Logger();
+  static Logger get _logger => getIt<Logger>();
   static final Dio _ehentaiResolverDio = Dio(
     BaseOptions(
       responseType: ResponseType.plain,
@@ -2876,7 +2876,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // Exponential backoff: 2^retry * 1000ms (2s, 4s, 8s)
     final delayMs = (1000 * (1 << (_imageLoadRetries - 1))).toInt();
 
-    debugPrint(
+    _logger.i(
       '🔄 Auto-retrying HentaiNexus image (page ${widget.pageNumber}): '
       'Attempt $_imageLoadRetries/$_maxImageLoadRetries after ${delayMs}ms',
     );

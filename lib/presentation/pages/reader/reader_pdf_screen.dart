@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/services/native_pdf_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -22,6 +24,8 @@ class ReaderPdfScreen extends StatefulWidget {
 }
 
 class _ReaderPdfScreenState extends State<ReaderPdfScreen> {
+  Logger get _logger => getIt<Logger>();
+
   @override
   void initState() {
     super.initState();
@@ -41,7 +45,7 @@ class _ReaderPdfScreenState extends State<ReaderPdfScreen> {
         context.pop();
       }
     } catch (e) {
-      debugPrint('Error launching native PDF: $e');
+      _logger.d('Error launching native PDF: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

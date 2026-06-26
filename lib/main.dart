@@ -18,6 +18,7 @@ import 'package:nhasixapp/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/services/workers/download_worker.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
+import 'package:logger/logger.dart';
 import 'dart:io';
 
 void main() async {
@@ -49,14 +50,12 @@ void main() async {
   // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
   FlutterError.onError = (FlutterErrorDetails details) {
     // Log the error instead of crashing
-    debugPrint('🔥 Flutter Error: ${details.exception}');
-    debugPrint('Stack: ${details.stack}');
+    Logger().e('🔥 Flutter Error: ${details.exception}', error: details.exception, stackTrace: details.stack);
   };
 
   // Catch errors from platform (including Impeller/Vulkan)
   PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('🔥 Platform Error: $error');
-    debugPrint('Stack: $stack');
+    Logger().e('🔥 Platform Error: $error', error: error, stackTrace: stack);
     return true; // Prevent crash
   };
 
@@ -117,9 +116,9 @@ class MyApp extends StatelessWidget {
                 // Get locale from settings
                 final locale = _getLocaleFromSettings(settingsState);
 
-                debugPrint(
+                Logger().i(
                     '🎨 MaterialApp rebuilt with theme: ${themeState.currentTheme}, mode: ${themeState.themeMode}, brightness: ${themeState.themeData.brightness}');
-                debugPrint(
+                Logger().i(
                     '🌐 MaterialApp rebuilt with locale: ${locale.languageCode}');
 
                 return MaterialApp.router(

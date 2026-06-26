@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as p;
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -492,7 +493,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         contentPath = File(firstImage).parent.path;
       }
     } catch (e) {
-      debugPrint('Error getting content path: $e');
+      getIt<Logger>().e('Error getting content path: $e');
     }
 
     if (!parentContext.mounted) return;
@@ -876,7 +877,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error checking PDF existence: $e');
+      getIt<Logger>().e('Error checking PDF existence: $e');
     }
     return false;
   }

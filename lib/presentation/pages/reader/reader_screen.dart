@@ -67,6 +67,8 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
+  Logger get _logger => getIt<Logger>();
+
   late PageController _pageController;
   late PageController _verticalPageController;
   late ScrollController _scrollController;
@@ -149,7 +151,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // scroll events immediately which can cause false page saves
     if (widget.initialPage > 1) {
       _isProgrammaticAnimation = true;
-      Logger().i(
+      _logger.i(
           '🔒 Locked programmatic animation flag for initial scroll to page ${widget.initialPage}');
     }
 
@@ -179,7 +181,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             _isProgrammaticAnimation = false;
-            Logger().i(
+            _logger.i(
                 '🔓 Unlocked programmatic animation flag - user can scroll freely');
           }
         });
@@ -209,16 +211,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final routeExtra = asReaderRouteExtra(rawRouteExtra);
 
     // 🔍 DEBUG LOGGING - What did we receive from router?
-    Logger().i('📥 ReaderScreen._initializeFromRouteExtra - Received:');
-    Logger().i('  routeExtra type: ${rawRouteExtra.runtimeType}');
+    _logger.i('📥 ReaderScreen._initializeFromRouteExtra - Received:');
+    _logger.i('  routeExtra type: ${rawRouteExtra.runtimeType}');
 
     if (routeExtra != null) {
-      Logger().i('  Map keys: ${routeExtra.keys.toList()}');
+      _logger.i('  Map keys: ${routeExtra.keys.toList()}');
 
       final parsedContent = readReaderContent(routeExtra['content']);
       if (parsedContent != null && widget.preloadedContent == null) {
         _preloadedContent = parsedContent;
-        Logger().i('  ✓ content: ${_preloadedContent?.title}');
+        _logger.i('  ✓ content: ${_preloadedContent?.title}');
       }
 
       final parsedImageMetadata = readReaderImageMetadata(
@@ -234,7 +236,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           readReaderChapterData(routeExtra['chapterData']);
       if (parsedChapterData != null && widget.chapterData == null) {
         _preloadedChapterData = parsedChapterData;
-        Logger().i(
+        _logger.i(
             '  ✓ chapterData: prev=${_preloadedChapterData?.prevChapterId}, next=${_preloadedChapterData?.nextChapterId}');
       }
 
@@ -242,7 +244,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           readReaderContent(routeExtra['parentContent']);
       if (parsedParentContent != null && widget.parentContent == null) {
         _preloadedParentContent = parsedParentContent;
-        Logger().i('  ✓ parentContent: ${_preloadedParentContent?.title}');
+        _logger.i('  ✓ parentContent: ${_preloadedParentContent?.title}');
       }
 
       final parsedAllChapters = readReaderChapters(routeExtra['allChapters']);
@@ -252,8 +254,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
             .i('  ✓ allChapters: ${_preloadedAllChapters?.length} chapters');
         if (_preloadedAllChapters != null &&
             _preloadedAllChapters!.isNotEmpty) {
-          Logger().i('    First: ${_preloadedAllChapters!.first.title}');
-          Logger().i('    Last: ${_preloadedAllChapters!.last.title}');
+          _logger.i('    First: ${_preloadedAllChapters!.first.title}');
+          _logger.i('    Last: ${_preloadedAllChapters!.last.title}');
         }
       }
 
@@ -261,7 +263,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           readReaderChapter(routeExtra['currentChapter']);
       if (parsedCurrentChapter != null && widget.currentChapter == null) {
         _preloadedCurrentChapter = parsedCurrentChapter;
-        Logger().i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
+        _logger.i('  ✓ currentChapter: ${_preloadedCurrentChapter?.title}');
       }
 
       final parsedActiveChapterLanguage = readReaderActiveChapterLanguage(
@@ -276,7 +278,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final parsedDirectContent = readReaderContent(rawRouteExtra);
       if (parsedDirectContent != null) {
         _preloadedContent = parsedDirectContent;
-        Logger().i('  ✓ Direct Content: ${_preloadedContent?.title}');
+        _logger.i('  ✓ Direct Content: ${_preloadedContent?.title}');
       }
     }
   }
@@ -304,7 +306,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       }
     } catch (e) {
       // Ignore preload errors, will fallback to normal loading
-      debugPrint('Reader preload failed: $e');
+      _logger.d('Reader preload failed: $e');
     } finally {
       _isPreloading = false;
     }
@@ -382,7 +384,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     // 🐛 CRITICAL: Skip all processing during programmatic scroll
     // This prevents false page saves during initial positioning
     if (_isProgrammaticAnimation) {
-      Logger().t(
+      _logger.t(
           '⏭️  Skipping scroll event (programmatic): ${notification.metrics.pixels.toStringAsFixed(0)}px');
       return;
     }
@@ -719,10 +721,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
             // Validate using metadata - much faster than URL parsing
             isValid = metadata.imageUrl == imageUrl;
             if (!isValid) {
-              debugPrint(
+              _logger.d(
                   '⚠️ METADATA MISMATCH: Page $targetPage metadata URL != actual URL');
-              debugPrint('   Metadata URL: ${metadata.imageUrl}');
-              debugPrint('   Actual URL: $imageUrl');
+              _logger.d('   Metadata URL: ${metadata.imageUrl}');
+              _logger.d('   Actual URL: $imageUrl');
             }
           } else {
             // Fallback to URL validation if no metadata found
@@ -757,13 +759,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (mounted) {
             // Log success with validation status
             final status = isValid ? '✅' : '❓';
-            debugPrint(
+            _logger.d(
                 '📥 $status Prefetched page $targetPage (metadata validated: $isValid)');
           }
         }).catchError((error) {
           // Remove from prefetched set if failed, so it can be retried
           _prefetchedPages.remove(targetPage);
-          debugPrint('❌ Failed to prefetch page $targetPage: $error');
+          _logger.d('❌ Failed to prefetch page $targetPage: $error');
         });
       }
     }
@@ -862,14 +864,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         if (distance > 5) {
           // Use immediate jump for large distances to avoid animation interruption
-          debugPrint(
+          _logger.d(
               '🔄 SYNC: Jumping PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
           _pageController.jumpToPage(targetPageIndex);
           _isProgrammaticAnimation = false;
         } else {
           // Use smooth animation for small distances
-          debugPrint(
+          _logger.d(
               '🔄 SYNC: Animating PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
           _pageController
@@ -899,14 +901,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         if (distance > 5) {
           // Use immediate jump for large distances to avoid animation interruption
-          debugPrint(
+          _logger.d(
               '🔄 SYNC: Jumping VerticalPageController from $currentVerticalIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
           _verticalPageController.jumpToPage(targetPageIndex);
           _isProgrammaticAnimation = false;
         } else {
           // Use smooth animation for small distances
-          debugPrint(
+          _logger.d(
               '🔄 SYNC: Animating VerticalPageController from $currentVerticalIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
           _verticalPageController
@@ -1157,7 +1159,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   bool _shouldShowNavigationItem(ReaderState state) {
     if (state.isOfflineMode ?? false) {
-      debugPrint('❌ Navigation page disabled: Offline mode');
+      _logger.d('❌ Navigation page disabled: Offline mode');
       return false;
     }
     final hasContent =
@@ -1267,7 +1269,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageCount = state.content?.imageUrls.length ?? 0;
     final totalItems = showNavigation ? pageCount + 1 : pageCount;
 
-    debugPrint(
+    _logger.d(
         '📖 SinglePageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
     return PageView.builder(
@@ -1282,7 +1284,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Update visible page notifier so off-screen animations pause
         _visiblePageNotifier.value = reportPage;
 
-        debugPrint(
+        _logger.d(
             '📖 PageView changed to index=$index (reporting page $reportPage)');
 
         // Only handle UI tasks, no navigation logic
@@ -1323,7 +1325,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageCount = state.content?.imageUrls.length ?? 0;
     final totalItems = showNavigation ? pageCount + 1 : pageCount;
 
-    debugPrint(
+    _logger.d(
         '📖 VerticalPageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
     return PageView.builder(
@@ -1338,7 +1340,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // Update visible page notifier so off-screen animations pause
         _visiblePageNotifier.value = reportPage;
 
-        debugPrint(
+        _logger.d(
             '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
 
         // Only handle UI tasks, no navigation logic
@@ -1456,7 +1458,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
     // Debug logging removed to reduce log spam during normal scrolling
     // Uncomment below for debugging image viewer builds:
-    // debugPrint('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
+    // _logger.d('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
 
     // 🚀 OPTIMIZATION: For continuous scroll mode, avoid BlocBuilder to prevent re-renders
     // Pass enableZoom as parameter instead of reading from state
@@ -2260,7 +2262,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   page >= 1 &&
                   page <= (state.content?.pageCount ?? 1)) {
                 
-                debugPrint('🎯 JUMP DEBUG: User requested page $page');
+                _logger.d('🎯 JUMP DEBUG: User requested page $page');
                 
                 // Let ReaderCubit handle all navigation via BlocListener → _syncControllersWithState()
                 // This prevents race condition between manual PageController animation and automatic sync

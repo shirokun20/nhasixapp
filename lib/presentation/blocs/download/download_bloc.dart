@@ -9,7 +9,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
-import 'package:flutter/foundation.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/config/remote_config_service.dart';
@@ -437,9 +436,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
       final customRoot = await StorageSettings.getCustomRootPath();
       _logger.i('DownloadBloc: Custom storage root loaded: $customRoot');
-      debugPrint(
+      _logger.d(
           '📁 DOWNLOAD_BLOC: Loading customStorageRoot from StorageSettings');
-      debugPrint('📁 DOWNLOAD_BLOC: customRoot value: $customRoot');
+      _logger.d('📁 DOWNLOAD_BLOC: customRoot value: $customRoot');
 
       _settings = DownloadSettings(
         maxConcurrentDownloads: userPrefs.maxConcurrentDownloads != 3
@@ -455,7 +454,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         wifiOnly: userPrefs.wifiOnly,
         customStorageRoot: customRoot,
       );
-      debugPrint(
+      _logger.d(
           '📁 DOWNLOAD_BLOC: DownloadSettings created with customStorageRoot: ${_settings.customStorageRoot}');
 
       emit(DownloadLoaded(
@@ -1798,13 +1797,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // 1. DownloadBloc was initialized before storage location was set
       // 2. User changed storage location via settings dialog
       final customRoot = await StorageSettings.getCustomRootPath();
-      debugPrint(
+      _logger.d(
           '📁 DOWNLOAD_BLOC: Refreshing customStorageRoot from StorageSettings');
-      debugPrint('📁 DOWNLOAD_BLOC: customRoot value on refresh: $customRoot');
+      _logger.d('📁 DOWNLOAD_BLOC: customRoot value on refresh: $customRoot');
 
       // Update settings with latest customStorageRoot
       _settings = _settings.copyWith(customStorageRoot: customRoot);
-      debugPrint(
+      _logger.d(
           '📁 DOWNLOAD_BLOC: Updated _settings.customStorageRoot: ${_settings.customStorageRoot}');
 
       // Reload downloads from database

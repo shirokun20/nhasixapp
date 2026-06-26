@@ -62,7 +62,9 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.contentSourceRegistry,
     required this.ehentaiCookieJar,
     required this.remoteConfigService,
-  }) : super(const ReaderInitial());
+    required Logger logger,
+  })  : _logger = logger,
+        super(const ReaderInitial());
 
   final GetContentDetailUseCase getContentDetailUseCase;
   final GetChapterImagesUseCase getChapterImagesUseCase;
@@ -76,7 +78,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final ContentSourceRegistry contentSourceRegistry;
   final PersistCookieJar ehentaiCookieJar;
   final RemoteConfigService remoteConfigService;
-  final Logger _logger = Logger();
+  final Logger _logger;
 
   Timer? _readingTimer;
   Timer? _autoHideTimer;
