@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
-import 'shimmer_loading_widgets.dart';
 
 /// Custom progress indicator widgets with theme-aware colors
 class AppProgressIndicator extends StatelessWidget {
@@ -150,7 +149,7 @@ class AppShimmerLoading extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Shimmer.fromColors(
+    return KuronShimmer(
       baseColor: baseColor ?? colorScheme.surfaceContainerHighest,
       highlightColor: highlightColor ?? colorScheme.surface,
       child: child,

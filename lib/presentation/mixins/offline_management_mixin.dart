@@ -273,7 +273,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       return currentState.selectedSourceId;
     }
 
-    return getIt<SharedPreferences>().getString('offline_selected_source_filter');
+    return getIt<SharedPreferences>()
+        .getString('offline_selected_source_filter');
   }
 
   String _resolveBackupSourcePath(String backupPath, String? sourceId) {
@@ -318,8 +319,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     // Get notification service
     final notificationService = getIt<NotificationService>();
 
-    // Show ZIP extraction started notification
-    await notificationService.showZipExtractionStarted();
+    // Remove immediate notification, we will call it in onStarted
 
     try {
       final importZipUseCase = getIt<ImportZipUseCase>();
@@ -327,16 +327,23 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       // Execute ZIP import with progress callback
       final result = await importZipUseCase(
         ImportZipParams(
-          onProgress: (processed, total, imgCount, currentFile) {
+          onStarted: (totalFiles) async {
+            await notificationService.showZipExtractionStarted();
+          },
+          onProgress:
+              (fileIndex, totalFiles, processed, total, imgCount, currentFile) {
             // Calculate progress percentage
             final percentage =
                 total > 0 ? ((processed / total) * 100).toInt() : 0;
 
             // Update notification with progress
+            final String prefix =
+                totalFiles > 1 ? '[$fileIndex/$totalFiles] ' : '';
             notificationService.updateZipExtractionProgress(
               progress: percentage,
-              message: AppLocalizations.of(context)!
-                  .syncProgressMessage(processed, total),
+              message: prefix +
+                  AppLocalizations.of(context)!
+                      .syncProgressMessage(processed, total),
             );
           },
         ),

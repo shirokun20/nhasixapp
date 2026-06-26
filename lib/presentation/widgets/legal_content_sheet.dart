@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/services/legal_content_service.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -160,7 +160,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
   }
 
   Widget _buildLoadingState(ThemeData theme) {
-    return Shimmer.fromColors(
+    return KuronShimmer(
       baseColor: theme.colorScheme.surfaceContainerHighest,
       highlightColor: theme.colorScheme.surface,
       child: Padding(

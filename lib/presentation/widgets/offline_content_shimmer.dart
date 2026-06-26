@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// Shimmer loading widget for offline content cards
@@ -10,7 +10,7 @@ class OfflineContentShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Shimmer.fromColors(
+    return KuronShimmer(
       baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       highlightColor:
           colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),

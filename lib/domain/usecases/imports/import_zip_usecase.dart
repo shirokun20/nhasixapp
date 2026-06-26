@@ -11,11 +11,11 @@ import '../../../domain/entities/download_status.dart';
 
 /// Parameters for importing a ZIP file
 class ImportZipParams {
-  /// Optional progress callback: (processed, total, imageCount, currentFile)
-  final Function(int processed, int total, int imageCount, String currentFile)?
-      onProgress;
+  /// Optional progress callback: (fileIndex, totalFiles, processed, total, imageCount, currentFile)
+  final void Function(int fileIndex, int totalFiles, int processed, int total, int imageCount, String currentFile)? onProgress;
+  final Future<void> Function(int totalFiles)? onStarted;
 
-  const ImportZipParams({this.onProgress});
+  const ImportZipParams({this.onProgress, this.onStarted});
 }
 
 /// UseCase for importing ZIP files containing doujin/manga content
@@ -58,11 +58,16 @@ class ImportZipUseCase {
         _logger.i('ZIP file selected: ${zipUris.first}');
       }
 
+      if (params.onStarted != null) {
+        await params.onStarted!(zipUris.length);
+      }
+
       final importedResults = <Map<String, dynamic>>[];
       final failedResults = <Map<String, dynamic>>[];
 
-      for (final zipUri in zipUris) {
-        final result = await _importSingleZip(zipUri, params);
+      for (int i = 0; i < zipUris.length; i++) {
+        final zipUri = zipUris[i];
+        final result = await _importSingleZip(zipUri, params, i + 1, zipUris.length);
         if (result['success'] == true) {
           importedResults.add(result);
         } else {
@@ -124,6 +129,8 @@ class ImportZipUseCase {
   Future<Map<String, dynamic>> _importSingleZip(
     String zipUri,
     ImportZipParams params,
+    int fileIndex,
+    int totalFiles,
   ) async {
     final zipDisplayName = await _kuronNative.getZipDisplayName(zipUri);
     final zipFileName =
@@ -157,7 +164,7 @@ class ImportZipUseCase {
         _logger.d(
           'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile',
         );
-        params.onProgress?.call(processed, total, imageCount, currentFile);
+        params.onProgress?.call(fileIndex, totalFiles, processed, total, imageCount, currentFile);
       },
     );
 

@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import '../../core/constants/colors_const.dart' show AppColors, KuronColors;
 import '../../core/constants/text_style_const.dart';
@@ -1052,7 +1052,7 @@ class ContentCard extends StatelessWidget {
       memCacheWidth: memCacheWidth ?? 400,
       memCacheHeight: memCacheHeight ?? 600,
       httpHeaders: httpHeaders,
-      placeholder: Shimmer.fromColors(
+      placeholder: KuronShimmer(
         baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         highlightColor: Theme.of(context).colorScheme.surfaceContainer,
         child: Container(

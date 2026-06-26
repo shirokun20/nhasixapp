@@ -1,6 +1,106 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    final slide = (slidePercent * 2 - 1) * bounds.width;
+    return Matrix4.translationValues(slide, 0.0, 0.0);
+  }
+}
+
+class KuronShimmer extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+  final Color? baseColor;
+  final Color? highlightColor;
+  final Duration period;
+
+  const KuronShimmer({
+    super.key,
+    required this.child,
+    this.enabled = true,
+    this.baseColor,
+    this.highlightColor,
+    this.period = const Duration(milliseconds: 1500),
+  });
+
+  @override
+  State<KuronShimmer> createState() => _KuronShimmerState();
+}
+
+class _KuronShimmerState extends State<KuronShimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.period);
+    if (widget.enabled) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(KuronShimmer oldWidget) {
+    if (widget.enabled != oldWidget.enabled) {
+      if (widget.enabled) {
+        _controller.repeat();
+      } else {
+        _controller.stop();
+      }
+    }
+    if (widget.period != oldWidget.period) {
+      _controller.duration = widget.period;
+      if (widget.enabled) {
+        _controller.repeat();
+      }
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = widget.baseColor ??
+        colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
+    final highlightColor = widget.highlightColor ??
+        colorScheme.surfaceContainerHighest.withValues(alpha: 0.1);
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: [baseColor, highlightColor, baseColor],
+              stops: const [0.1, 0.5, 0.9],
+              begin: const Alignment(-1.0, -0.3),
+              end: const Alignment(1.0, 0.3),
+              transform: _SlidingGradientTransform(slidePercent: _controller.value),
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
 
 /// Base shimmer widget providing consistent styling across the app
 class BaseShimmer extends StatelessWidget {
@@ -15,15 +115,8 @@ class BaseShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) return child;
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Shimmer.fromColors(
-      baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      highlightColor:
-          colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
-      period: const Duration(milliseconds: 1500),
+    return KuronShimmer(
+      enabled: enabled,
       child: child,
     );
   }

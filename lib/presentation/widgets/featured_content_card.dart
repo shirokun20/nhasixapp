@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import '../../core/constants/text_style_const.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -289,7 +289,7 @@ class FeaturedContentCard extends StatelessWidget {
   }
 
   Widget _buildPlaceholder(BuildContext context) {
-    return Shimmer.fromColors(
+    return KuronShimmer(
       baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       highlightColor: Theme.of(context).colorScheme.surfaceContainer,
       child: Container(

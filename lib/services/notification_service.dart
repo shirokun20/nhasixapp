@@ -157,19 +157,19 @@ class NotificationService {
           'PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('convertingToPdf', fallback: 'Converting to PDF'),
-        _getLocalized('convertingToPdfWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: true,
-          playSound: true,
-          enableVibration: true,
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title:
+              _getLocalized('convertingToPdf', fallback: 'Converting to PDF'),
+          body: _getLocalized('convertingToPdfWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
+          ),
+          payload: contentId);
 
       debugPrint(
           'PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
@@ -202,22 +202,21 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('convertingToPdfProgress',
-            args: {'progress': progress},
-            fallback: 'Converting to PDF ($progress%)'),
-        _getLocalized('convertingToPdfProgressWithTitle',
-            args: {'title': _truncateTitle(title), 'progress': progress},
-            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetailsBuilder.progress(
-          progress:
-              progress, // Fixed: Use actual progress value instead of hardcoded 0
-          highPriority: true,
-          playSound: true,
-          enableVibration: true,
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('convertingToPdfProgress',
+              args: {'progress': progress},
+              fallback: 'Converting to PDF ($progress%)'),
+          body: _getLocalized('convertingToPdfProgressWithTitle',
+              args: {'title': _truncateTitle(title), 'progress': progress},
+              fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress:
+                progress, // Fixed: Use actual progress value instead of hardcoded 0
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
+          ),
+          payload: contentId);
 
       _logger.d('PDF conversion progress updated for $contentId: $progress%');
     } catch (e) {
@@ -258,18 +257,17 @@ class NotificationService {
               fallback: '${_truncateTitle(title)} converted to PDF');
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('pdfCreatedSuccessfully',
-            fallback: 'PDF Created Successfully'),
-        message,
-        NotificationDetailsBuilder.success(
-          bigText: message,
-          contentTitle: 'PDF Created Successfully',
-          summaryText: 'Tap to open PDF',
-          actions: NotificationDetailsBuilder.pdfCompletedActions(),
-        ),
-        payload: pdfPaths.isNotEmpty ? pdfPaths.first : contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('pdfCreatedSuccessfully',
+              fallback: 'PDF Created Successfully'),
+          body: message,
+          notificationDetails: NotificationDetailsBuilder.success(
+            bigText: message,
+            contentTitle: 'PDF Created Successfully',
+            summaryText: 'Tap to open PDF',
+            actions: NotificationDetailsBuilder.pdfCompletedActions(),
+          ),
+          payload: pdfPaths.isNotEmpty ? pdfPaths.first : contentId);
 
       _logger.i('PDF conversion completed notification shown for: $contentId');
       _logger.i(
@@ -312,20 +310,20 @@ class NotificationService {
           'NotificationService: Showing PDF conversion error notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('pdfConversionFailed', fallback: 'PDF Conversion Failed'),
-        _getLocalized('pdfConversionFailedWithError',
-            args: {
-              'title': _truncateTitle(title),
-              'error': _truncateError(error)
-            },
-            fallback:
-                'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
-        NotificationDetailsBuilder.error(
-          actions: NotificationDetailsBuilder.pdfErrorActions(),
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('pdfConversionFailed',
+              fallback: 'PDF Conversion Failed'),
+          body: _getLocalized('pdfConversionFailedWithError',
+              args: {
+                'title': _truncateTitle(title),
+                'error': _truncateError(error)
+              },
+              fallback:
+                  'Failed to convert ${_truncateTitle(title)} to PDF: ${_truncateError(error)}'),
+          notificationDetails: NotificationDetailsBuilder.error(
+            actions: NotificationDetailsBuilder.pdfErrorActions(),
+          ),
+          payload: contentId);
 
       _logger.e(
           'PDF conversion error notification shown for: $contentId - $error');
@@ -354,21 +352,20 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId('pdf_$contentId');
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('convertingPdfQueued',
-            args: {'current': currentIndex, 'total': totalCount},
-            fallback: 'Converting PDF $currentIndex of $totalCount'),
-        _getLocalized('convertingToPdfWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: true,
-          playSound: false, // Only play sound for first item
-          enableVibration: false,
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('convertingPdfQueued',
+              args: {'current': currentIndex, 'total': totalCount},
+              fallback: 'Converting PDF $currentIndex of $totalCount'),
+          body: _getLocalized('convertingToPdfWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Converting ${_truncateTitle(title)} to PDF...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: true,
+            playSound: false, // Only play sound for first item
+            enableVibration: false,
+          ),
+          payload: contentId);
 
       _logger.i(
           'PDF queued notification shown for $contentId ($currentIndex/$totalCount)');
@@ -387,20 +384,19 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _pdfQueueNotificationId,
-        _getLocalized('pdfQueueWaiting',
-            args: {'count': queuedCount},
-            fallback: 'PDF Queue: $queuedCount items waiting'),
-        _getLocalized('pdfQueueNext',
-            args: {'titles': queuedTitles}, fallback: 'Next: $queuedTitles'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: false,
-          playSound: false,
-          enableVibration: false,
-        ),
-        payload: 'pdf_queue',
-      );
+          id: _pdfQueueNotificationId,
+          title: _getLocalized('pdfQueueWaiting',
+              args: {'count': queuedCount},
+              fallback: 'PDF Queue: $queuedCount items waiting'),
+          body: _getLocalized('pdfQueueNext',
+              args: {'titles': queuedTitles}, fallback: 'Next: $queuedTitles'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: false,
+            playSound: false,
+            enableVibration: false,
+          ),
+          payload: 'pdf_queue');
 
       _logger.d('PDF queue status notification shown: $queuedCount items');
     } catch (e) {
@@ -411,7 +407,7 @@ class NotificationService {
   /// Clear PDF queue notification
   Future<void> clearPdfQueueNotification() async {
     try {
-      await _notificationsPlugin.cancel(_pdfQueueNotificationId);
+      await _notificationsPlugin.cancel(id: _pdfQueueNotificationId);
       _logger.d('PDF queue notification cleared');
     } catch (e) {
       _logger.e('Failed to clear PDF queue notification: $e');
@@ -424,14 +420,14 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _pdfQueueNotificationId,
-        _getLocalized('pdfBatchCompleted', fallback: 'PDF Batch Completed'),
-        _getLocalized('pdfBatchCompletedCount',
-            args: {'count': count},
-            fallback: '✅ $count PDFs created successfully'),
-        NotificationDetailsBuilder.success(),
-        payload: 'pdf_batch',
-      );
+          id: _pdfQueueNotificationId,
+          title: _getLocalized('pdfBatchCompleted',
+              fallback: 'PDF Batch Completed'),
+          body: _getLocalized('pdfBatchCompletedCount',
+              args: {'count': count},
+              fallback: '✅ $count PDFs created successfully'),
+          notificationDetails: NotificationDetailsBuilder.success(),
+          payload: 'pdf_batch');
 
       _logger.i('PDF batch completion notification shown: $count items');
 
@@ -497,7 +493,7 @@ class NotificationService {
       );
 
       final initResult = await _notificationsPlugin.initialize(
-        initSettings,
+        settings: initSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
@@ -604,19 +600,18 @@ class NotificationService {
 
       // Use high priority builder with sound and vibration for initial notification
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('downloadStarted', fallback: 'Download Started'),
-        _getLocalized('downloadingWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Downloading: ${_truncateTitle(title)}'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: true, // Enable high priority for initial notification
-          playSound: true, // Enable sound
-          enableVibration: true, // Enable vibration
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('downloadStarted', fallback: 'Download Started'),
+          body: _getLocalized('downloadingWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Downloading: ${_truncateTitle(title)}'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: true, // Enable high priority for initial notification
+            playSound: true, // Enable sound
+            enableVibration: true, // Enable vibration
+          ),
+          payload: contentId);
 
       _logger.d('Download started notification shown for: $contentId');
     } catch (e) {
@@ -646,53 +641,53 @@ class NotificationService {
               fallback: 'Downloading ($progress%)');
 
       await _notificationsPlugin.show(
-        notificationId,
-        statusText,
-        _truncateTitle(title),
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: !isPaused,
-            autoCancel: false,
-            showProgress: true,
-            playSound: false,
-            maxProgress: 100,
-            progress: progress,
-            actions: isPaused
-                ? [
-                    // Show resume action when paused
-                    const AndroidNotificationAction(
-                      'resume',
-                      'Resume',
-                      showsUserInterface: true,
-                    ),
-                    const AndroidNotificationAction(
-                      'cancel',
-                      'Cancel',
-                      showsUserInterface: true,
-                    ),
-                  ]
-                : [
-                    // Show pause action when downloading
-                    const AndroidNotificationAction(
-                      'pause',
-                      'Pause',
-                      showsUserInterface: true,
-                    ),
-                    const AndroidNotificationAction(
-                      'cancel',
-                      'Cancel',
-                      showsUserInterface: true,
-                    ),
-                  ],
+          id: notificationId,
+          title: statusText,
+          body: _truncateTitle(title),
+          notificationDetails: NotificationDetails(
+            android: AndroidNotificationDetails(
+              NotificationChannels.downloadChannelId,
+              NotificationChannels.downloadChannelName,
+              channelDescription:
+                  NotificationChannels.downloadChannelDescription,
+              importance: Importance.low,
+              priority: Priority.low,
+              ongoing: !isPaused,
+              autoCancel: false,
+              showProgress: true,
+              playSound: false,
+              maxProgress: 100,
+              progress: progress,
+              actions: isPaused
+                  ? [
+                      // Show resume action when paused
+                      const AndroidNotificationAction(
+                        'resume',
+                        'Resume',
+                        showsUserInterface: true,
+                      ),
+                      const AndroidNotificationAction(
+                        'cancel',
+                        'Cancel',
+                        showsUserInterface: true,
+                      ),
+                    ]
+                  : [
+                      // Show pause action when downloading
+                      const AndroidNotificationAction(
+                        'pause',
+                        'Pause',
+                        showsUserInterface: true,
+                      ),
+                      const AndroidNotificationAction(
+                        'cancel',
+                        'Cancel',
+                        showsUserInterface: true,
+                      ),
+                    ],
+            ),
           ),
-        ),
-        payload: contentId,
-      );
+          payload: contentId);
 
       // Log progress every 10%
       if (progress % 10 == 0) {
@@ -724,16 +719,16 @@ class NotificationService {
       final notificationId = _getNotificationId(contentId);
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('downloadComplete', fallback: 'Download Complete'),
-        _getLocalized('downloadedWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Downloaded: ${_truncateTitle(title)}'),
-        NotificationDetailsBuilder.success(
-          actions: NotificationDetailsBuilder.downloadCompletedActions(),
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title:
+              _getLocalized('downloadComplete', fallback: 'Download Complete'),
+          body: _getLocalized('downloadedWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Downloaded: ${_truncateTitle(title)}'),
+          notificationDetails: NotificationDetailsBuilder.success(
+            actions: NotificationDetailsBuilder.downloadCompletedActions(),
+          ),
+          payload: contentId);
 
       _logger.i('Download completed notification shown for: $contentId');
     } catch (e) {
@@ -761,19 +756,18 @@ class NotificationService {
       final notificationId = _getNotificationId(contentId);
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('downloadFailed', fallback: 'Download Failed'),
-        _getLocalized('downloadFailedWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Failed: ${_truncateTitle(title)}'),
-        NotificationDetailsBuilder.error(
-          bigText: 'Download failed: ${_truncateError(error)}',
-          contentTitle: 'Download Failed',
-          summaryText: _truncateTitle(title),
-          actions: NotificationDetailsBuilder.downloadErrorActions(),
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('downloadFailed', fallback: 'Download Failed'),
+          body: _getLocalized('downloadFailedWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Failed: ${_truncateTitle(title)}'),
+          notificationDetails: NotificationDetailsBuilder.error(
+            bigText: 'Download failed: ${_truncateError(error)}',
+            contentTitle: 'Download Failed',
+            summaryText: _truncateTitle(title),
+            actions: NotificationDetailsBuilder.downloadErrorActions(),
+          ),
+          payload: contentId);
 
       _logger.w('Download error notification shown for: $contentId - $error');
     } catch (e) {
@@ -799,7 +793,7 @@ class NotificationService {
   Future<void> cancelDownloadNotification(String contentId) async {
     try {
       final notificationId = _getNotificationId(contentId);
-      await _notificationsPlugin.cancel(notificationId);
+      await _notificationsPlugin.cancel(id: notificationId);
 
       _logger.d('Download notification cancelled for: $contentId');
     } catch (e) {
@@ -878,28 +872,29 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        99999, // Fixed test ID
-        'Test Action Buttons',
-        'This is a test notification with action buttons',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            NotificationChannels.downloadChannelId,
-            NotificationChannels.downloadChannelName,
-            channelDescription: NotificationChannels.downloadChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            ongoing: false,
-            autoCancel: true,
-            // Remove icons and actions to avoid drawable resource errors
-            styleInformation: BigTextStyleInformation(
-              'Simple test notification without icons',
-              contentTitle: 'Test Action Buttons',
-              summaryText: 'Testing...',
+          id: 99999,
+          title: // Fixed test ID
+              'Test Action Buttons',
+          body: 'This is a test notification with action buttons',
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              NotificationChannels.downloadChannelId,
+              NotificationChannels.downloadChannelName,
+              channelDescription:
+                  NotificationChannels.downloadChannelDescription,
+              importance: Importance.high,
+              priority: Priority.high,
+              ongoing: false,
+              autoCancel: true,
+              // Remove icons and actions to avoid drawable resource errors
+              styleInformation: BigTextStyleInformation(
+                'Simple test notification without icons',
+                contentTitle: 'Test Action Buttons',
+                summaryText: 'Testing...',
+              ),
             ),
           ),
-        ),
-        payload: '/test/path/test.pdf',
-      );
+          payload: '/test/path/test.pdf');
 
       _logger.i('🧪 Test action notification created');
     } catch (e) {
@@ -1023,19 +1018,18 @@ class NotificationService {
       final notificationId = _getVerificationNotificationId(contentId);
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('verifyingFiles', fallback: 'Verifying Files'),
-        _getLocalized('verifyingFilesWithTitle',
-            args: {'title': _truncateTitle(title)},
-            fallback: 'Verifying ${_truncateTitle(title)}...'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: false, // Low priority - silent notification
-          playSound: false, // No sound for verification
-          enableVibration: false, // No vibration
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('verifyingFiles', fallback: 'Verifying Files'),
+          body: _getLocalized('verifyingFilesWithTitle',
+              args: {'title': _truncateTitle(title)},
+              fallback: 'Verifying ${_truncateTitle(title)}...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: false, // Low priority - silent notification
+            playSound: false, // No sound for verification
+            enableVibration: false, // No vibration
+          ),
+          payload: contentId);
 
       _logger.d('Verification started notification shown for: $contentId');
     } catch (e) {
@@ -1060,18 +1054,17 @@ class NotificationService {
       final notificationId = _getVerificationNotificationId(contentId);
 
       await _notificationsPlugin.show(
-        notificationId,
-        _getLocalized('verifyingProgress',
-            args: {'progress': progress}, fallback: 'Verifying ($progress%)'),
-        _truncateTitle(title),
-        NotificationDetailsBuilder.progress(
-          progress: progress,
-          highPriority: false,
-          playSound: false,
-          enableVibration: false,
-        ),
-        payload: contentId,
-      );
+          id: notificationId,
+          title: _getLocalized('verifyingProgress',
+              args: {'progress': progress}, fallback: 'Verifying ($progress%)'),
+          body: _truncateTitle(title),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: progress,
+            highPriority: false,
+            playSound: false,
+            enableVibration: false,
+          ),
+          payload: contentId);
 
       // Log progress every 20% to reduce spam
       if (progress % 20 == 0) {
@@ -1087,7 +1080,7 @@ class NotificationService {
   Future<void> cancelVerificationNotification(String contentId) async {
     try {
       final notificationId = _getVerificationNotificationId(contentId);
-      await _notificationsPlugin.cancel(notificationId);
+      await _notificationsPlugin.cancel(id: notificationId);
 
       _logger.d('Verification notification cancelled for: $contentId');
     } catch (e) {
@@ -1125,19 +1118,19 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _zipExtractionNotificationId,
-        _getLocalized('zipExtractionInProgress', fallback: 'Extracting ZIP'),
-        message ??
-            _getLocalized('extractingZipContent',
-                fallback: 'Preparing extraction...'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: true,
-          playSound: true,
-          enableVibration: true,
-        ),
-        payload: 'zip_extraction',
-      );
+          id: _zipExtractionNotificationId,
+          title: _getLocalized('zipExtractionInProgress',
+              fallback: 'Extracting ZIP'),
+          body: message ??
+              _getLocalized('extractingZipContent',
+                  fallback: 'Preparing extraction...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
+          ),
+          payload: 'zip_extraction');
 
       _logger.d('ZIP extraction started notification shown');
     } catch (e) {
@@ -1158,19 +1151,19 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _zipExtractionNotificationId,
-        _getLocalized('extractingProgress',
-            args: {'progress': progress}, fallback: 'Extracting ($progress%)'),
-        message,
-        NotificationDetailsBuilder.progress(
-          progress: progress,
-          highPriority:
-              false, // Lower priority during extraction to reduce spam
-          playSound: false,
-          enableVibration: false,
-        ),
-        payload: 'zip_extraction',
-      );
+          id: _zipExtractionNotificationId,
+          title: _getLocalized('extractingProgress',
+              args: {'progress': progress},
+              fallback: 'Extracting ($progress%)'),
+          body: message,
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: progress,
+            highPriority:
+                false, // Lower priority during extraction to reduce spam
+            playSound: false,
+            enableVibration: false,
+          ),
+          payload: 'zip_extraction');
 
       // Log progress every 10% to reduce spam
       if (progress % 10 == 0) {
@@ -1191,15 +1184,14 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _zipExtractionNotificationId,
-        _getLocalized('zipExtractionComplete',
-            fallback: 'ZIP Extraction Complete'),
-        _getLocalized('zipExtractedWithCount',
-            args: {'count': imageCount},
-            fallback: 'Extracted $imageCount images successfully'),
-        NotificationDetailsBuilder.success(),
-        payload: 'zip_extraction',
-      );
+          id: _zipExtractionNotificationId,
+          title: _getLocalized('zipExtractionComplete',
+              fallback: 'ZIP Extraction Complete'),
+          body: _getLocalized('zipExtractedWithCount',
+              args: {'count': imageCount},
+              fallback: 'Extracted $imageCount images successfully'),
+          notificationDetails: NotificationDetailsBuilder.success(),
+          payload: 'zip_extraction');
 
       _logger
           .i('ZIP extraction completed notification shown: $imageCount images');
@@ -1223,14 +1215,14 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _zipExtractionNotificationId,
-        _getLocalized('zipExtractionFailed', fallback: 'ZIP Extraction Failed'),
-        _getLocalized('zipExtractionFailedWithError',
-            args: {'error': _truncateError(error)},
-            fallback: 'Failed to extract ZIP: ${_truncateError(error)}'),
-        NotificationDetailsBuilder.error(),
-        payload: 'zip_extraction',
-      );
+          id: _zipExtractionNotificationId,
+          title: _getLocalized('zipExtractionFailed',
+              fallback: 'ZIP Extraction Failed'),
+          body: _getLocalized('zipExtractionFailedWithError',
+              args: {'error': _truncateError(error)},
+              fallback: 'Failed to extract ZIP: ${_truncateError(error)}'),
+          notificationDetails: NotificationDetailsBuilder.error(),
+          payload: 'zip_extraction');
 
       _logger.w('ZIP extraction error notification shown: $error');
 
@@ -1246,7 +1238,7 @@ class NotificationService {
   /// Cancel ZIP extraction notification
   Future<void> cancelZipExtractionNotification() async {
     try {
-      await _notificationsPlugin.cancel(_zipExtractionNotificationId);
+      await _notificationsPlugin.cancel(id: _zipExtractionNotificationId);
       _logger.d('ZIP extraction notification cancelled');
     } catch (e) {
       _logger.e('Failed to cancel ZIP extraction notification: $e');
@@ -1269,19 +1261,18 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _syncNotificationId,
-        _getLocalized('syncInProgress', fallback: 'Syncing Data'),
-        message ??
-            _getLocalized('syncingOfflineContent',
-                fallback: 'Loading offline content...'),
-        NotificationDetailsBuilder.progress(
-          progress: 0,
-          highPriority: true,
-          playSound: true,
-          enableVibration: true,
-        ),
-        payload: 'sync',
-      );
+          id: _syncNotificationId,
+          title: _getLocalized('syncInProgress', fallback: 'Syncing Data'),
+          body: message ??
+              _getLocalized('syncingOfflineContent',
+                  fallback: 'Loading offline content...'),
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress: 0,
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
+          ),
+          payload: 'sync');
 
       _logger.d('Sync started notification shown');
     } catch (e) {
@@ -1302,19 +1293,18 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _syncNotificationId,
-        _getLocalized('syncingProgress',
-            args: {'progress': progress}, fallback: 'Syncing ($progress%)'),
-        message,
-        NotificationDetailsBuilder.progress(
-          progress:
-              progress, // ✅ FIX: Use actual progress value, not hardcoded 0
-          highPriority: true,
-          playSound: true,
-          enableVibration: true,
-        ),
-        payload: 'sync',
-      );
+          id: _syncNotificationId,
+          title: _getLocalized('syncingProgress',
+              args: {'progress': progress}, fallback: 'Syncing ($progress%)'),
+          body: message,
+          notificationDetails: NotificationDetailsBuilder.progress(
+            progress:
+                progress, // ✅ FIX: Use actual progress value, not hardcoded 0
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
+          ),
+          payload: 'sync');
 
       _logger.d('Sync progress updated: $progress%');
     } catch (e) {
@@ -1332,14 +1322,13 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        _syncNotificationId,
-        _getLocalized('syncComplete', fallback: 'Sync Complete'),
-        _getLocalized('syncCompletedWithCount',
-            args: {'count': itemCount},
-            fallback: 'Found $itemCount offline content'),
-        NotificationDetailsBuilder.success(),
-        payload: 'sync',
-      );
+          id: _syncNotificationId,
+          title: _getLocalized('syncComplete', fallback: 'Sync Complete'),
+          body: _getLocalized('syncCompletedWithCount',
+              args: {'count': itemCount},
+              fallback: 'Found $itemCount offline content'),
+          notificationDetails: NotificationDetailsBuilder.success(),
+          payload: 'sync');
 
       _logger.i('Sync completed notification shown: $itemCount items');
 
@@ -1355,7 +1344,7 @@ class NotificationService {
   /// Cancel sync notification
   Future<void> cancelSyncNotification() async {
     try {
-      await _notificationsPlugin.cancel(_syncNotificationId);
+      await _notificationsPlugin.cancel(id: _syncNotificationId);
       _logger.d('Sync notification cancelled');
     } catch (e) {
       _logger.e('Failed to cancel sync notification: $e');

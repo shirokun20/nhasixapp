@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:shimmer/shimmer.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:logger/logger.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -671,7 +671,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   /// Build shimmer placeholder
   Widget _buildPlaceholder() {
-    return Shimmer.fromColors(
+    return KuronShimmer(
       baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       highlightColor: Theme.of(context)
           .colorScheme
