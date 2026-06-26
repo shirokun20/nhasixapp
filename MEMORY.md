@@ -109,19 +109,24 @@ lib/
 - `2026-06-01-reader-ux-revamp`
 - `2026-06-16-offline-library-sorting-source-buckets`
 - `2026-06-16-offline-library-v2`
-- `2026-06-16-tachiyomi-extensions-integration`
+- `2026-06-16-tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
 - `2026-06-21-search-runtime-autowiring`
 - `2026-06-21-tabbed-multilang-chapters`
 - `2026-06-23-lazy-load-chapters`
 - `2026-06-23-mangafire-integration`
+- `2026-06-26-bloc-pattern-modernization`
+- `2026-06-26-purge-ui-packages`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
-- `tachiyomi-extensions-integration` — Phase 4 pending (deploy config ke kuron-config-providers)
-- `revamp-kuron-config-runtime` — 60/62 tasks complete; targeted verification and provider-repo validation are done. Remaining deferred scope: §6.3 (`kuron_special` plugin migration) and §8.4 (app-layer header/referer dedup via package-level resolved requests). Archive only after those deferrals are explicitly accepted.
+- `add-doujin-desu-xxx-source`
 - `add-kuron-config-generator` — **Phase 1 Complete (Option A)**: Interactive wizard shipped (15/56 tasks = 27%). Sections 1-3 complete: CLI scaffold, wizard flow, config generation. Sections 4-10 deferred (HTTP discovery, browser automation, GitHub mining, validation integration) per Ponytail ultra / YAGNI principles. Tool is functional and generates valid Source Config v2 files.
+- `native-dns-rollout`
+- `pin-biometric-app-lock`
+- `reader-ai-learning-mode`
+- `revamp-kuron-config-runtime` — 60/62 tasks complete; targeted verification and provider-repo validation are done. Remaining deferred scope: §6.3 (`kuron_special` plugin migration) and §8.4 (app-layer header/referer dedup via package-level resolved requests). Archive only after those deferrals are explicitly accepted.
 
 ### 📋 Exploration / Analysis (in `openspec/changes/`)
-- `pin-biometric-app-lock`
+- *(none currently)*
 
 ### 🐛 Open Issues (in `openspec/changes/`)
 - *(none currently)*
@@ -202,6 +207,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
 | 2026-06-26 | Antigravity | Core upgrades & ZIP import polish | ✅ Done | Upgraded `flutter_local_notifications` (v22.0.1) and fixed breaking API changes. Purged UI packages (`shimmer`, `flutter_spinkit`, `pull_to_refresh`) for native/local `KuronShimmer`. Polished offline ZIP import by moving the extraction notification into `onStarted` to fix ghost notifications on picker cancel, and added file progression `[x/y]` to bulk ZIP extraction notifications. |
+| 2026-06-26 | Antigravity | BLoC pattern modernization | ✅ Done | Modernized BLoC patterns by extracting presentation logic (chapter-language grouping, filter-summary formatting) into reusable helpers. Moved display-formatted summary logic out of BLoC/Cubit state classes into dedicated presenters/mappers. Extracted high-risk orchestration logic from oversized widgets into focused coordinators. Replaced ad-hoc `debugPrint` and `Logger` usage with the centralized project logging strategy. Archived `openspec/changes/bloc-pattern-modernization`. |
 | 2026-06-25 | Codex | Release v0.9.21+31 | ✅ Done | Bumped app version/build to `0.9.21+31`, added release notes for home card read/offline borders and cover badges, updated README download links, and tagged the snapshot as `v0.9.21+31`. Verified with `dart format` and `flutter analyze`. |
 | 2026-06-25 | Codex | LifecycleWatcher nhentai config guard | ✅ Done | Guarded `LifecycleWatcher.didChangeAppLifecycleState()` so it skips `DownloadBloc` access until `RemoteConfigService` has loaded the bundled `nhentai` config. This removes the startup/resume crash `Bad state: nhentai config not loaded` without changing the broader bootstrap order. Verified with `fvm flutter analyze lib/presentation/widgets/lifecycle_watcher.dart`. |
 | 2026-06-24 | Kiro | Config Generator Phase 1 (Option A) | ✅ Done | Implemented `add-kuron-config-generator` Phase 1 per Ponytail ultra principles: built complete interactive wizard CLI for generating Kuron source configs without manual JSON writing. Completed 15/56 tasks (27%): §1 Runtime Coordination (confirmed `kuron_core` APIs ready), §2 CLI Scaffold (3 commands with args/logging/tests), §3 Guided Wizard (question flow + stdin/stdout runner + config generator + tests). Deferred 41 tasks (73%): HTTP discovery, browser automation, GitHub mining, validation integration - all YAGNI per design doc. Deliverables: working `packages/kuron_config_generator/` with CLI entry point, WizardBuilder (identity/features/API/scraper/headers questions), WizardRunner (interactive stdin/stdout), ConfigGenerator (answers→JSON), README with usage, all tests passing. Tool generates valid Source Config v2 files. Usage: `cd packages/kuron_config_generator && fvm dart run bin/kuron_config_generator.dart generate --interactive`. Validation via existing `kuron_config_validate` CLI. Decision rationale: 15 configs already written manually prove manual input works; discovery features add heavy dependencies (browser, GitHub API); ship working wizard now, iterate if manual proves too slow. Next: try tool, validate output, consider HTTP discovery (Section 4) only if bulk config creation bottleneck emerges. |
