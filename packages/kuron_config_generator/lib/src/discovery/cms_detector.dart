@@ -1,22 +1,28 @@
 /// CMS signatures and matched selector candidates.
-library;
-
-/// A known CMS pattern we can detect from HTML.
 class CmsSignature {
   CmsSignature({
     required this.id,
+    required this.themeType,
     required this.hints,
     required this.selectors,
+    this.urlPatterns,
+    this.searchDefaults,
+    this.readerDefaults,
   });
 
   final String id;
+  final String themeType; // 'madara-classic', 'madara-tailwind', 'wordpress', 'custom'
   final List<String> hints;
   final Map<String, String> selectors;
+  final Map<String, String>? urlPatterns;
+  final Map<String, Object?>? searchDefaults;
+  final Map<String, Object?>? readerDefaults;
 
   static final List<CmsSignature> known = [
-    // WordPress Madara / Manga+Press
+    // WordPress Madara — classic (standard themes)
     CmsSignature(
       id: 'madara',
+      themeType: 'madara-classic',
       hints: [
         'wp-content/themes/madara',
         'madara',
@@ -30,19 +36,80 @@ class CmsSignature {
         'list.title': 'a[href*="/manhwa/"], a[title]',
         'list.cover': 'img',
         'detail.title': 'h1',
-        'detail.cover': 'img[class*="cover"]',
+        'detail.cover': 'img[class*="cover"], .summary_image img, .tab-summary img',
         'detail.author': 'a[href*="/author/"]',
         'detail.artist': 'a[href*="/artist/"]',
         'detail.genre': 'a[href*="/genre/"]',
         'detail.tags': 'a[href*="/tag/"]',
+        'detail.status': '.post-status .status, .summary-content .status',
         'chapters.item': 'a[href*="chapter"]',
         'reader.image': 'img[class*="page-image"], .reading-content img',
+      },
+      urlPatterns: {
+        'homePage': '/page/{page}/',
+        'search': '/?s={query}&post_type=wp-manga',
+        'searchPage': '/page/{page}/?s={query}&post_type=wp-manga',
+        'genreSearch': '/genre/{tag}/',
+        'genreSearchPage': '/genre/{tag}/page/{page}/',
+        'detail': '/manhwa/{id}',
+        'chapter': '/manhwa/{id}',
+      },
+      searchDefaults: {
+        'searchUrl': '/?s={query}&post_type=wp-manga',
+        'queryParam': 's',
+        'postType': 'wp-manga',
+      },
+    ),
+
+    // WordPress Madara — Tailwind-customized (modern child theme like manhwaread)
+    CmsSignature(
+      id: 'madara',
+      themeType: 'madara-tailwind',
+      hints: [
+        'wp-theme-manhwaread',
+        'manga-item loop-item',
+        'clipboard-copy',
+        'chapter-item',
+        'chapter-item__name',
+        'chapterData',
+        'postid-',
+      ],
+      selectors: {
+        'list.item': '.manga-item',
+        'list.title': 'h3 a[href*="/manhwa/"]',
+        'list.cover': '.manga-item img',
+        'detail.title': 'h1.clipboard-copy',
+        'detail.cover': 'img[src*="mancover"][src*="manhwaread-"]',
+        'detail.author': 'a[href*="/author/"]',
+        'detail.artist': 'a[href*="/artist/"]',
+        'detail.genre': 'a[href*="/genre/"]',
+        'detail.tags': 'a[href*="/tag/"]',
+        'detail.status': '[class*="status"]',
+        'chapters.item': 'a.chapter-item',
+        'reader.image': 'img.reading-image',
+      },
+      urlPatterns: {
+        'homePage': '/page/{page}/',
+        'search': '/?s={query}&post_type=wp-manga',
+        'searchPage': '/page/{page}/?s={query}&post_type=wp-manga',
+        'genreSearch': '/genre/{tag}/',
+        'genreSearchPage': '/genre/{tag}/page/{page}/',
+        'tagSearch': '/tag/{tag}/',
+        'tagSearchPage': '/tag/{tag}/page/{page}/',
+        'detail': '/manhwa/{id}',
+        'chapter': '/manhwa/{id}',
+      },
+      searchDefaults: {
+        'searchUrl': '/?s={query}&post_type=wp-manga',
+        'queryParam': 's',
+        'postType': 'wp-manga',
       },
     ),
 
     // Generic WordPress (any theme)
     CmsSignature(
       id: 'wordpress',
+      themeType: 'wordpress',
       hints: ['wp-content', 'wp-json', 'wordpress'],
       selectors: {
         'list.item': 'article, .post, .entry',
@@ -52,11 +119,19 @@ class CmsSignature {
         'chapters.item': 'a[href*="chapter"], a[href*="episode"]',
         'reader.image': 'img',
       },
+      urlPatterns: {
+        'homePage': '/page/{page}/',
+        'search': '/?s={query}',
+      },
+      searchDefaults: {
+        'queryParam': 's',
+      },
     ),
 
     // Custom manga site (no known CMS)
     CmsSignature(
       id: 'custom',
+      themeType: 'custom',
       hints: [],
       selectors: {
         'list.item': '[class*="item"], [class*="card"]',
@@ -68,7 +143,6 @@ class CmsSignature {
     ),
   ];
 
-  /// Score how likely this CMS matches the HTML.
   int score(String html) {
     var s = 0;
     for (final h in hints) {
@@ -83,21 +157,30 @@ class CmsSignature {
 class CmsResult {
   CmsResult({
     required this.cmsId,
+    required this.themeType,
     required this.confidence,
     required this.selectors,
+    this.urlPatterns,
+    this.searchDefaults,
+    this.readerDefaults,
   });
 
   final String cmsId;
-  final double confidence; // 0.0 - 1.0
+  final String themeType;
+  final double confidence;
   final Map<String, String> selectors;
+  final Map<String, String>? urlPatterns;
+  final Map<String, Object?>? searchDefaults;
+  final Map<String, Object?>? readerDefaults;
 
   bool get isKnown => cmsId != 'custom';
 
   @override
-  String toString() => 'CmsResult($cmsId, ${(confidence * 100).round()}%)';
+  String toString() =>
+      'CmsResult($cmsId/$themeType, ${(confidence * 100).round()}%)';
 }
 
-/// Detect CMS from HTML and return suggested selectors.
+/// Detect CMS from HTML and return suggested selectors + defaults.
 CmsResult detectCms(String html) {
   CmsSignature? best;
   var bestScore = 0;
@@ -111,11 +194,22 @@ CmsResult detectCms(String html) {
   }
 
   final detected = best ?? CmsSignature.known.last;
-  final confidence = bestScore / (detected.hints.isEmpty ? 1 : detected.hints.length);
+  final confidence = bestScore /
+      (detected.hints.isEmpty ? 1 : detected.hints.length);
 
   return CmsResult(
     cmsId: detected.id,
+    themeType: detected.themeType,
     confidence: confidence.clamp(0.0, 1.0),
     selectors: Map.from(detected.selectors),
+    urlPatterns: detected.urlPatterns != null
+        ? Map.from(detected.urlPatterns!)
+        : null,
+    searchDefaults: detected.searchDefaults != null
+        ? Map.from(detected.searchDefaults!)
+        : null,
+    readerDefaults: detected.readerDefaults != null
+        ? Map.from(detected.readerDefaults!)
+        : null,
   );
 }

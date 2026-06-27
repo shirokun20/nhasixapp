@@ -157,21 +157,49 @@ class GenerateCommand extends Command<void> {
       answers['detailTitleSelector'] = cats['detailTitleSelector'];
     }
 
+    // Fill CMS defaults into answers
+    if (cms.isKnown) {
+      answers['cmsThemeType'] = cms.themeType;
+      answers['listSelector'] =
+          cms.selectors['list.item'] ?? cms.selectors['list.title'] ?? '';
+      answers['listTitleSelector'] = cms.selectors['list.title'] ?? '';
+      answers['detailTitleSelector'] =
+          cms.selectors['detail.title'] ?? 'h1';
+      answers['detailCoverSelector'] =
+          cms.selectors['detail.cover'] ?? 'img';
+      answers['chapterContainer'] =
+          cms.selectors['chapters.item'] ?? 'a[href*="chapter"]';
+      answers['readerImageSel'] =
+          cms.selectors['reader.image'] ?? 'img';
+
+      if (cms.searchDefaults != null) {
+        answers['searchUrl'] =
+            cms.searchDefaults!['searchUrl'] as String?;
+        answers['searchQueryParam'] =
+            cms.searchDefaults!['queryParam'] as String?;
+      }
+
+      if (cms.readerDefaults != null) {
+        answers['readerMode'] =
+            cms.readerDefaults!['mode'] as String? ?? 'directUrl';
+      } else {
+        answers['readerMode'] = 'directUrl';
+      }
+
+      if (answers['readerMode'] == 'directUrl' &&
+          probe.body.contains('chapterData')) {
+        answers['readerMode'] = 'chapterDataScript';
+        logger.i(
+            '📖 chapterData script detected — using chapterDataScript reader mode');
+      }
+    }
+
+    if (probe.isBlocked) {
+      answers['needsCloudflare'] = 'y';
+    }
+
     logger.i('Generating config...');
     final config = ConfigGenerator.generateConfig(answers);
-
-    // Add network block for blocked sites
-    if (probe.isBlocked) {
-      config['network'] = <String, Object?>{
-        'headers': <String, String>{
-          'Referer': url,
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'
-              ' (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
-        },
-        'cloudflare': <String, bool>{'bypassRequired': true},
-      };
-    }
 
     // Write config
     final outputDir = Directory(output);

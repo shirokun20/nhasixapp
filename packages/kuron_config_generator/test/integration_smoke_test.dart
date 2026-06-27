@@ -60,7 +60,7 @@ void main() {
       // Verify headers
       final network = config['network'] as Map;
       final headers = network['headers'] as Map;
-      expect(headers['Referer'], 'https://testmanga.example.com/');
+      expect(headers['Referer'], 'https://testmanga.example.com');
 
       // Verify primitives
       final primitives = config['requiredPrimitives'] as List;

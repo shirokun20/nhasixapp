@@ -116,6 +116,7 @@ lib/
 - `2026-06-23-mangafire-integration`
 - `2026-06-26-bloc-pattern-modernization`
 - `2026-06-26-purge-ui-packages`
+- `2026-06-27-update-manhwaread-config`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
