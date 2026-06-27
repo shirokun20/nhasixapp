@@ -679,6 +679,8 @@ void _setupRepositories() {
   // Tag Repository
   getIt.registerLazySingleton<TagRepository>(() => TagRepositoryImpl(
         remoteDataSource: getIt<TagsRemoteDataSource>(),
+        tagDataManager: getIt<TagDataManager>(),
+        configService: getIt<RemoteConfigService>(),
         logger: getIt<Logger>(),
       ));
 }

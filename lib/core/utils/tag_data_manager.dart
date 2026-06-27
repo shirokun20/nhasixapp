@@ -71,6 +71,22 @@ class TagDataManager {
         // Note: For remote-first, assets might be deleted. This handles graceful fail.
         await _loadFromAssets(source);
       }
+
+      // 3. Fallback to tagSource block in source config (e.g. spyfakku)
+      if (!loaded) {
+        final rawConfig = getIt<RemoteConfigService>().getRawConfig(source);
+        final tagSource = rawConfig?['tagSource'] as Map<String, dynamic>?;
+        final url = tagSource?['url'] as String?;
+        if (url != null && url.isNotEmpty) {
+          try {
+            await loadAndCacheTagsFromUrl(url, source);
+            loaded = hasTags(source);
+          } catch (e) {
+            _logger.w('TagDataManager: Failed to load tags from config for $source',
+                error: e);
+          }
+        }
+      }
     } catch (e) {
       _logger.e('TagDataManager: Initialization failed for $source', error: e);
     }
@@ -202,6 +218,19 @@ class TagDataManager {
     }
 
     return _parseTagsPayload(payload);
+  }
+
+  /// Load tags from a remote URL and cache them per [source].
+  ///
+  /// Unlike [loadTagsFromUrl] this persists the result so that [hasTags] and
+  /// [searchTags] with a source argument work afterwards.
+  Future<List<Tag>> loadAndCacheTagsFromUrl(String url, String source) async {
+    final tags = await loadTagsFromUrl(url);
+    if (tags.isNotEmpty) {
+      _cachedTagsBySource[source] = tags;
+      _lastCacheUpdateBySource[source] = DateTime.now();
+    }
+    return tags;
   }
 
   /// Check if tags are loaded for a source

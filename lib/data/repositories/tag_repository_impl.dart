@@ -1,4 +1,6 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/utils/tag_data_manager.dart';
 import 'package:nhasixapp/data/datasources/remote/tags/tags_remote_data_source.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_autocomplete_result.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
@@ -8,12 +10,18 @@ import 'package:nhasixapp/domain/repositories/tag_repository.dart';
 /// Implementation of TagRepository
 class TagRepositoryImpl implements TagRepository {
   final TagsRemoteDataSource _remoteDataSource;
+  final TagDataManager _tagDataManager;
+  final RemoteConfigService _configService;
   final Logger _logger;
 
   TagRepositoryImpl({
     required TagsRemoteDataSource remoteDataSource,
+    required TagDataManager tagDataManager,
+    required RemoteConfigService configService,
     required Logger logger,
   })  : _remoteDataSource = remoteDataSource,
+        _tagDataManager = tagDataManager,
+        _configService = configService,
         _logger = logger;
 
   @override
@@ -44,6 +52,22 @@ class TagRepositoryImpl implements TagRepository {
     String? tagType,
     int limit = 10,
   }) async {
+    // Use local tag data when available (spyfakku etc.),
+    // fall back to remote API (nhentai).
+    if (_tagDataManager.hasTags(sourceId)) {
+      return _searchLocalTags(query, tagType, sourceId, limit);
+    }
+
+    // try loading tags from source config's tagSource block
+    final rawConfig = _configService.getRawConfig(sourceId);
+    final tagSource = rawConfig?['tagSource'] as Map<String, dynamic>?;
+    if (tagSource != null) {
+      await _loadTagsFromConfig(sourceId, tagSource);
+      if (_tagDataManager.hasTags(sourceId)) {
+        return _searchLocalTags(query, tagType, sourceId, limit);
+      }
+    }
+
     try {
       final model = await _remoteDataSource.getAutocomplete(
         query: query,
@@ -55,6 +79,48 @@ class TagRepositoryImpl implements TagRepository {
     } catch (e, stackTrace) {
       _logger.e('Error in getAutocomplete', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  Future<TagAutocompleteResult> _searchLocalTags(
+    String query,
+    String? tagType,
+    String sourceId,
+    int limit,
+  ) async {
+    final tags = await _tagDataManager.searchTags(
+      query,
+      type: tagType,
+      source: sourceId,
+      limit: limit,
+    );
+    return TagAutocompleteResult(
+      suggestions: tags
+          .map((t) => TagEntity(
+                id: t.id,
+                name: t.name,
+                slug: t.slug ?? '',
+                type: t.type,
+                count: t.count,
+                url: t.url,
+              ))
+          .toList(),
+      query: query,
+      totalResults: tags.length,
+    );
+  }
+
+  Future<void> _loadTagsFromConfig(
+    String sourceId,
+    Map<String, dynamic> tagSource,
+  ) async {
+    final url = tagSource['url'] as String?;
+    if (url == null || url.isEmpty) return;
+    try {
+      await _tagDataManager.loadAndCacheTagsFromUrl(url, sourceId);
+    } catch (e) {
+      _logger.e('Failed to load tags from tagSource config for $sourceId',
+          error: e);
     }
   }
 

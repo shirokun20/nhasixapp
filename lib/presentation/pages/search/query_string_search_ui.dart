@@ -215,13 +215,22 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     }
   }
 
-  /// Parse query string and extract date/numeric filters into their respective state variables.
-  /// Returns the cleaned query string without the filter tokens.
+  /// Parse query string and extract date/numeric/tag filters into their respective
+  /// state variables. Returns the cleaned query string without the extracted tokens.
   String _parseAndExtractFilters(String query) {
     final tokens = query.split(' ').toList();
     final cleanTokens = <String>[];
+    var inQuotedTag = false;
 
     for (final token in tokens) {
+      if (token.isEmpty) continue;
+
+      // Track continuation of previously-skipped quoted tag token
+      if (inQuotedTag) {
+        if (token.endsWith('"')) inQuotedTag = false;
+        continue;
+      }
+
       // Extract uploaded: filters (date)
       if (token.startsWith('uploaded:')) {
         final value = token.substring('uploaded:'.length);
@@ -245,8 +254,17 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           _favMinCtrl.text = num;
         }
       }
+      // Skip tag/artist/parody/group tokens — they are restored via _multiSelectFilters
+      else if (RegExp(r'^-?(tag|artist|character|parody|group):"').hasMatch(token)) {
+        if (!token.endsWith('"')) inQuotedTag = true;
+        // already restored from saved filter's separate fields, skip
+      }
+      // Skip bare negated tags (no quotes)
+      else if (RegExp(r'^-?(tag|artist|character|parody|group):[^" ]+').hasMatch(token)) {
+        // skip as well
+      }
       // Keep non-filter tokens
-      else if (token.isNotEmpty) {
+      else {
         cleanTokens.add(token);
       }
     }
@@ -300,10 +318,26 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   SearchFilter _buildSearchFilter() {
     final textQuery = _searchController.text.trim();
     final extraTokens = _buildExtraTokens();
-    final combinedQuery =
-        [textQuery, extraTokens].where((s) => s.isNotEmpty).join(' ');
-
     final includeAdvanced = _supportsAdvancedFilters;
+
+    // Build tag tokens from multi-select filter selections
+    final tagTokens = <String>[];
+    if (includeAdvanced) {
+      for (final entry in _multiSelectFilters.entries) {
+        final type = entry.key;
+        for (final item in entry.value) {
+          final prefix = item.isExcluded ? '-' : '';
+          final token = '$prefix$type:"${item.value}"';
+          tagTokens.add(token);
+        }
+      }
+    }
+
+    final combinedQuery = <String>[
+      textQuery,
+      ...tagTokens,
+      extraTokens,
+    ].where((s) => s.isNotEmpty).join(' ');
 
     return SearchFilter(
       query: combinedQuery.isNotEmpty ? combinedQuery : null,
