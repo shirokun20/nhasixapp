@@ -18,6 +18,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Offline metadata resync for hashed folders**: Full offline resync now rebuilds completed download rows from native `metadata.json` using the real `content_id`/source fields instead of the elegant/hash folder name. This fixes missing offline status detection on cards and detail actions for chapter-based sources like Crotpedia and KomikTap after DB recreation or local filesystem resync.
 
+### 🏗️ ManhwaRead Source Config
+
+- **Full config rewrite**: `informations/configs/manhwaread-config.json` rewritten from v2 compact to full format with `urlPatterns`, `selectors`, pagination, and `chapterDataScript` reader mode.
+- **XHR Proxy reader**: New `chapterDataScript` reader mode extracts base64-encoded `chapterData` script variable → builds direct CDN URLs (`manread.xyz/{mangaId}/{chapterId}/mr_{page}.jpg`). Base64 only for metadata transport (1-2KB), images streamed direct from CDN.
+- **`"self"` pseudo-selector**: `_extractElementFields` handler reads attributes/text from the container element directly (bypasses `querySelectorAll` limitation in `html` Dart package). Supports `regex` + `transform` chains.
+- **Prefix-based tag routing**: `tag:`, `author:`, `artist:`, `publisher:`, `genre:` prefixes map to `tagSearch`/`authorSearch`/`artistSearch`/`publisherSearch`/`genreSearch` URL patterns — supports `{type}/{value}` routing for detail-page tag clicks.
+- **Typed tag injection for author/artist/publisher**: `GenericContentMapper.toDetail()` now injects author, artist, and publisher as typed `Tag` objects (`type:"author"`, `type:"artist"`, `type:"publisher"`) so they appear as tappable chips on detail screens.
+- **Tag count strip**: Author/artist/publisher selectors use regex `^(.*?)\s+\d+$` to strip trailing count (`Hwalhwasan\n7` → `Hwalhwasan`). Tags use `^(.*?)\s+[\d.]+K?$` for same purpose.
+- **Generic html reader padding fix**: `_extractChapterDataScriptImageUrls` now pads base64 input to multiple of 4 (`padRight`) before decoding, fixing `Invalid length` errors on unpadded base64 from `chapterData` script variable.
+
+### 🧪 Tests
+
+- **5 new resolver tests**: `mode:name returns type-prefixed query for tag/author/artist/publisher` and `mode:name with genre type falls back to genreQueryPrefix` in `detail_tag_query_resolver_test.dart`.
+
 ## [0.9.22+32] - 2026-06-27
 
 ### ✨ Highlights
