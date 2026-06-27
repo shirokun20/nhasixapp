@@ -248,8 +248,10 @@ class DownloadStorageUtils {
     if (metadata == null) return formatSlug(contentId);
 
     final title = metadata['title'] as String? ?? '';
-    final rawId = metadata['id'] as String? ?? '';
-    final originalId = rawId.isNotEmpty ? rawId : contentId;
+    final originalId = getOriginalContentIdFromMetadata(
+      metadata,
+      fallbackContentId: contentId,
+    );
 
     // If title is genuinely empty, convert slug to human-readable title
     if (title.isEmpty) {
@@ -262,6 +264,42 @@ class DownloadStorageUtils {
     }
 
     return title;
+  }
+
+  static String getOriginalContentIdFromMetadata(
+    Map<String, dynamic>? metadata, {
+    required String fallbackContentId,
+  }) {
+    if (metadata == null) {
+      return fallbackContentId;
+    }
+
+    final rawId = metadata['id']?.toString().trim() ?? '';
+    if (rawId.isNotEmpty) {
+      return rawId;
+    }
+
+    final rawContentId = metadata['content_id']?.toString().trim() ?? '';
+    if (rawContentId.isNotEmpty) {
+      return rawContentId;
+    }
+
+    return fallbackContentId;
+  }
+
+  static String? getSourceIdFromMetadata(Map<String, dynamic>? metadata) {
+    if (metadata == null) {
+      return null;
+    }
+
+    for (final key in ['sourceId', 'source_id', 'source']) {
+      final value = metadata[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return null;
   }
 
   /// Save metadata to file

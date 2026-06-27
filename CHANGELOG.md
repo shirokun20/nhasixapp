@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+
+- **Offline metadata resync for hashed folders**: Full offline resync now rebuilds completed download rows from native `metadata.json` using the real `content_id`/source fields instead of the elegant/hash folder name. This fixes missing offline status detection on cards and detail actions for chapter-based sources like Crotpedia and KomikTap after DB recreation or local filesystem resync.
+
 ## [0.9.22+32] - 2026-06-27
 
 ### ✨ Highlights

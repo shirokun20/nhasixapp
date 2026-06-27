@@ -14,6 +14,7 @@ import '../../../core/di/service_locator.dart';
 
 import '../base/base_cubit.dart';
 import '../../models/content_group.dart';
+import '../../widgets/content_list_widget.dart';
 import '../../../core/utils/title_parser_utils.dart';
 
 part 'offline_search_state.dart';
@@ -739,6 +740,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       );
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
+      ContentDownloadCache.clearCache();
       logInfo('Auto-sync complete: $synced new, $updated updated');
     } catch (e) {
       logInfo('Auto-sync failed (non-blocking): $e');
@@ -769,6 +771,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       // Clear any cached data in the manager
       _offlineContentManager.clearCache();
+      ContentDownloadCache.clearCache();
 
       // Reload from database
       await getAllOfflineContent(backupPath: backupPath);

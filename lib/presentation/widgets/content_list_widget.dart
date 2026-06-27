@@ -4,6 +4,8 @@ import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/utils/download_storage_utils.dart';
+import '../../core/utils/offline_content_manager.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
 import '../../core/utils/title_parser_utils.dart';
@@ -29,6 +31,8 @@ extension StringCapitalize on String {
 class ContentDownloadCache {
   static final Map<String, bool> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
+  static final Map<String, Set<String>> _sourceOfflineIdsCache = {};
+  static final Map<String, DateTime> _sourceOfflineIdsCacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
   static const String _ehentaiPartPrefix = '__ehpart__:';
   static const String _ehentaiChunkPrefix = '__ehchunk__:';
@@ -50,19 +54,48 @@ class ContentDownloadCache {
       return false;
     }
 
-    if (download.contentId == contentId) {
+    return _matchesDownloadedContentId(
+      download.contentId,
+      contentId,
+    );
+  }
+
+  static bool _matchesDownloadedContentId(
+    String downloadedContentId,
+    String contentId,
+  ) {
+    final normalizedDownloadId = _normalizeContentId(downloadedContentId);
+    final normalizedContentId = _normalizeContentId(contentId);
+
+    if (normalizedDownloadId.isEmpty || normalizedContentId.isEmpty) {
+      return false;
+    }
+
+    if (normalizedDownloadId == normalizedContentId) {
       return true;
     }
 
-    final ehentaiParentId = _ehentaiParentGalleryId(download.contentId);
-    if (ehentaiParentId != null && ehentaiParentId == contentId) {
+    final ehentaiParentId = _ehentaiParentGalleryId(normalizedDownloadId);
+    if (ehentaiParentId != null &&
+        _normalizeContentId(ehentaiParentId) == normalizedContentId) {
+      return true;
+    }
+
+    if (_matchesSlugChapterDownload(
+      normalizedDownloadId,
+      normalizedContentId,
+    )) {
       return true;
     }
 
     // Chapter-based sources keep completed download IDs as composite values
     // like "slug/17". Highlight the parent series card when any descendant
     // chapter under the same source has been downloaded.
-    return download.contentId.startsWith('$contentId/');
+    return normalizedDownloadId.startsWith('$normalizedContentId/');
+  }
+
+  static String _normalizeContentId(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'^/+|/+$'), '');
   }
 
   static String? _ehentaiParentGalleryId(String contentId) {
@@ -77,6 +110,22 @@ class ContentDownloadCache {
     }
 
     return '${parts[1]}/${parts[2]}';
+  }
+
+  static bool _matchesSlugChapterDownload(
+    String downloadContentId,
+    String contentId,
+  ) {
+    final normalizedDownloadId = downloadContentId.trim().toLowerCase();
+    final normalizedContentId = contentId.trim().toLowerCase();
+    if (normalizedDownloadId.isEmpty || normalizedContentId.isEmpty) {
+      return false;
+    }
+
+    final pattern = RegExp(
+      '^${RegExp.escape(normalizedContentId)}-(?:chapter|ch)-.+\$',
+    );
+    return pattern.hasMatch(normalizedDownloadId);
   }
 
   static Future<bool> isDownloaded(
@@ -101,9 +150,11 @@ class ContentDownloadCache {
             ),
           );
 
-          _cache[cacheKey] = isDownloaded;
-          _cacheTime[cacheKey] = DateTime.now();
-          return isDownloaded;
+          if (isDownloaded) {
+            _cache[cacheKey] = true;
+            _cacheTime[cacheKey] = DateTime.now();
+            return true;
+          }
         }
       } catch (e) {
         Logger().w(
@@ -130,6 +181,13 @@ class ContentDownloadCache {
     try {
       isDownloaded = await LocalImagePreloader.isContentDownloaded(contentId);
 
+      if (!isDownloaded && sourceId != null && sourceId.trim().isNotEmpty) {
+        final offlineIds = await _getOfflineContentIdsForSource(sourceId);
+        isDownloaded = offlineIds.any(
+          (offlineId) => _matchesDownloadedContentId(offlineId, contentId),
+        );
+      }
+
       // Cache result
       _cache[cacheKey] = isDownloaded;
       _cacheTime[cacheKey] = DateTime.now();
@@ -149,6 +207,8 @@ class ContentDownloadCache {
       final cacheKey = _buildCacheKey(contentId, sourceId);
       _cache.remove(cacheKey);
       _cacheTime.remove(cacheKey);
+      _sourceOfflineIdsCache.remove(sourceId.trim().toLowerCase());
+      _sourceOfflineIdsCacheTime.remove(sourceId.trim().toLowerCase());
       return;
     }
 
@@ -159,12 +219,48 @@ class ContentDownloadCache {
       _cache.remove(key);
       _cacheTime.remove(key);
     }
+    _sourceOfflineIdsCache.clear();
+    _sourceOfflineIdsCacheTime.clear();
   }
 
   /// Clear all cache entries
   static void clearCache() {
     _cache.clear();
     _cacheTime.clear();
+    _sourceOfflineIdsCache.clear();
+    _sourceOfflineIdsCacheTime.clear();
+  }
+
+  static Future<Set<String>> _getOfflineContentIdsForSource(
+    String sourceId,
+  ) async {
+    final normalizedSource = sourceId.trim().toLowerCase();
+    if (normalizedSource.isEmpty) {
+      return const <String>{};
+    }
+
+    final cachedAt = _sourceOfflineIdsCacheTime[normalizedSource];
+    if (cachedAt != null &&
+        DateTime.now().difference(cachedAt) < _cacheExpiry &&
+        _sourceOfflineIdsCache.containsKey(normalizedSource)) {
+      return _sourceOfflineIdsCache[normalizedSource]!;
+    }
+
+    try {
+      final sourceDirectory =
+          await DownloadStorageUtils.getSourceDirectory(sourceId: sourceId);
+      final offlineContents = await getIt<OfflineContentManager>()
+          .scanBackupFolder(sourceDirectory);
+      final ids = offlineContents
+          .where((content) => content.sourceId.trim().toLowerCase() == normalizedSource)
+          .map((content) => content.id)
+          .toSet();
+      _sourceOfflineIdsCache[normalizedSource] = ids;
+      _sourceOfflineIdsCacheTime[normalizedSource] = DateTime.now();
+      return ids;
+    } catch (_) {
+      return const <String>{};
+    }
   }
 }
 

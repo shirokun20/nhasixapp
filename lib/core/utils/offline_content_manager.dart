@@ -1133,10 +1133,12 @@ class OfflineContentManager {
     Map<String, dynamic>? metadata,
     String contentPath,
   ) {
-    // Try metadata first (v2 format has 'source' field)
-    if (metadata != null && metadata['source'] != null) {
-      return metadata['source'] as String;
+    final metadataSourceId =
+        DownloadStorageUtils.getSourceIdFromMetadata(metadata);
+    if (metadataSourceId != null && metadataSourceId.isNotEmpty) {
+      return metadataSourceId;
     }
+
     // Fallback to path extraction
     return _extractSourceIdFromPath(contentPath);
   }
@@ -1267,9 +1269,9 @@ class OfflineContentManager {
               'coverUrl':
                   fileMetadata['coverUrl'] ?? fileMetadata['cover_url'] ?? '',
               'source': 'metadata_file',
-              'sourceId': fileMetadata['sourceId'] ??
-                  fileMetadata['source_id'] ??
-                  SourceType.nhentai.id,
+              'sourceId':
+                  DownloadStorageUtils.getSourceIdFromMetadata(fileMetadata) ??
+                      SourceType.nhentai.id,
             };
             // Cache the result
             _metadataCache[contentId] = metadata;
@@ -1860,11 +1862,10 @@ class OfflineContentManager {
             contentId,
           );
 
-          // CRITICAL FIX: Use the original ID stored in metadata if available
-          // This handles the case where folder name is Elegant ID but content ID is long
-          if (metadata['id'] != null && metadata['id'].toString().isNotEmpty) {
-            actualContentId = metadata['id'].toString();
-          }
+          actualContentId = DownloadStorageUtils.getOriginalContentIdFromMetadata(
+            metadata,
+            fallbackContentId: contentId,
+          );
         }
       } catch (e) {
         _logger.w('Error reading metadata for $contentId: $e');
@@ -2244,30 +2245,29 @@ class OfflineContentManager {
       }
     }
 
-    if (sourceId != null) {
-      final completedCount = await _userDataRepository.getDownloadsCount(
+    final completedCount = await _userDataRepository.getDownloadsCount(
+      state: DownloadState.completed,
+      sourceId: sourceId,
+    );
+
+    if (completedCount > 0) {
+      final existingDownloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
         sourceId: sourceId,
+        limit: completedCount,
+        offset: 0,
+        orderBy: 'created_at',
+        descending: true,
       );
 
-      if (completedCount > 0) {
-        final existingDownloads = await _userDataRepository.getAllDownloads(
-          state: DownloadState.completed,
-          sourceId: sourceId,
-          limit: completedCount,
-          offset: 0,
-          orderBy: 'created_at',
-          descending: true,
-        );
-
-        for (final download in existingDownloads) {
-          await _userDataRepository.deleteDownloadStatus(download.contentId);
-        }
-
-        _logger.i(
-          'Cleared $completedCount completed ${sourceId.toLowerCase()} records before resync',
-        );
+      for (final download in existingDownloads) {
+        await _userDataRepository.deleteDownloadStatus(download.contentId);
       }
+
+      final scopeLabel = sourceId == null ? 'all sources' : sourceId.toLowerCase();
+      _logger.i(
+        'Cleared $completedCount completed $scopeLabel records before resync',
+      );
     }
 
     final contents = await scanBackupFolder(scanPath);
@@ -2280,10 +2280,9 @@ class OfflineContentManager {
     onProgress?.call(0, total);
 
     for (final content in contents) {
-      final existing = await _userDataRepository.getDownloadStatus(content.id);
-
       // Use derived content path from entity (replaces duplicated logic)
       final contentDir = content.derivedContentPath;
+      final existing = await _userDataRepository.getDownloadStatus(content.id);
       int fileSize = 0;
       if (content.imageUrls.isNotEmpty) {
         for (final imgPath in content.imageUrls) {
