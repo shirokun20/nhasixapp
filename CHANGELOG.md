@@ -6,13 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] 
+## [0.9.22+32] - 2026-06-27
 
 ### ✨ Highlights
 
 - **Offline ZIP Import Polish**: Import notifications no longer appear prematurely if the file picker is cancelled, and bulk ZIP extractions now display progression indices (e.g., `[1/3]`) in the notification.
 - **Core Upgrades & Cleanup**: Upgraded `flutter_local_notifications` to v22.0.1 (fixing breaking API changes) and purged deprecated UI packages (`shimmer`, `flutter_spinkit`, `pull_to_refresh`) in favor of native/local equivalents like `KuronShimmer`.
 - **Tag & Offline Card Revamp**: `content_by_tag` now reuses the stronger home-card visual treatment, and offline library cards were refreshed to match with clearer offline/read badges plus safer bottom spacing near the last row.
+
 ---
 
 ## [0.9.21+31] - 2026-06-25
