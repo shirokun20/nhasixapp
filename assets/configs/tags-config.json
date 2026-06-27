@@ -26,6 +26,7 @@
     "notes": [
         "nhentai: Removed (uses new /api/v2/galleries/tagged endpoint)",
         "crotpedia: Tags loaded from remote (GitHub Raw)",
+        "spyfakku: Tags extracted from hentalk.pw boot data (4,423 tags)",
         "Tag data in configs/tags/ directory",
         "Primary: main branch, Fallback: develop branch",
         "Direct GitHub Raw for simplicity"
