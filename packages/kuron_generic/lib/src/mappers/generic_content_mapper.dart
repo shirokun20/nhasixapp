@@ -87,8 +87,8 @@ class GenericContentMapper {
         ? chapters.length
         : (rawPageCount > 0 ? rawPageCount : imageUrls.length);
 
-    // Inject uploader as a typed Tag so detail screens can display and
-    // navigate to uploader search (e.g. E-Hentai f_search=uploader:name).
+    // Inject uploader/author/artist/publisher as typed Tags so detail screens
+    // can display and navigate to them via tagQueryMapping.
     var resolvedTags = tagsResolved.tags;
     final uploaderName = _str(fields, 'uploader').trim();
     if (uploaderName.isNotEmpty) {
@@ -101,6 +101,55 @@ class GenericContentMapper {
         resolvedTags = [
           ...resolvedTags,
           Tag(id: 0, name: uploaderName, type: 'uploader', count: 0),
+        ];
+      }
+    }
+
+    // Author → type: "author"
+    final authorName = _str(fields, 'author').trim();
+    if (authorName.isNotEmpty) {
+      final alreadyPresent = resolvedTags.any(
+        (t) =>
+            t.type == 'author' &&
+            t.name.toLowerCase() == authorName.toLowerCase(),
+      );
+      if (!alreadyPresent) {
+        resolvedTags = [
+          ...resolvedTags,
+          Tag(id: 0, name: authorName, type: 'author', count: 0),
+        ];
+      }
+    }
+
+    // Artist → type: "artist"
+    final allArtistNames = tagsResolved.artists.isNotEmpty
+        ? tagsResolved.artists
+        : _strListAny(fields, const ['artists', 'artist']);
+    for (final an in allArtistNames) {
+      if (an.isEmpty) continue;
+      final alreadyPresent = resolvedTags.any(
+        (t) => t.type == 'artist' && t.name.toLowerCase() == an.toLowerCase(),
+      );
+      if (!alreadyPresent) {
+        resolvedTags = [
+          ...resolvedTags,
+          Tag(id: 0, name: an, type: 'artist', count: 0),
+        ];
+      }
+    }
+
+    // Publisher → type: "publisher"
+    final publisherName = _str(fields, 'publisher').trim();
+    if (publisherName.isNotEmpty) {
+      final alreadyPresent = resolvedTags.any(
+        (t) =>
+            t.type == 'publisher' &&
+            t.name.toLowerCase() == publisherName.toLowerCase(),
+      );
+      if (!alreadyPresent) {
+        resolvedTags = [
+          ...resolvedTags,
+          Tag(id: 0, name: publisherName, type: 'publisher', count: 0),
         ];
       }
     }

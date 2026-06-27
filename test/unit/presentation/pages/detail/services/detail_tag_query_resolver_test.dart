@@ -146,5 +146,115 @@ void main() {
       expect(result.explicitMappingFailed, isFalse);
       expect(result.query, 'raw:q=tag:"Mating Press"');
     });
+
+    test('mode:name returns type-prefixed query for tag', () {
+      final result = resolver.resolve(
+        sourceId: 'manhwaread',
+        tagName: 'Facial',
+        tagType: 'tag',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {'mode': 'name'},
+              'author': {'mode': 'name'},
+              'artist': {'mode': 'name'},
+              'publisher': {'mode': 'name'},
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'tag:Facial');
+    });
+
+    test('mode:name returns type-prefixed query for author', () {
+      final result = resolver.resolve(
+        sourceId: 'manhwaread',
+        tagName: 'Hwalhwasan',
+        tagType: 'author',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {'mode': 'name'},
+              'author': {'mode': 'name'},
+              'artist': {'mode': 'name'},
+              'publisher': {'mode': 'name'},
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'author:Hwalhwasan');
+    });
+
+    test('mode:name returns type-prefixed query for artist', () {
+      final result = resolver.resolve(
+        sourceId: 'manhwaread',
+        tagName: 'Andrew',
+        tagType: 'artist',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {'mode': 'name'},
+              'author': {'mode': 'name'},
+              'artist': {'mode': 'name'},
+              'publisher': {'mode': 'name'},
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'artist:Andrew');
+    });
+
+    test('mode:name returns type-prefixed query for publisher', () {
+      final result = resolver.resolve(
+        sourceId: 'manhwaread',
+        tagName: 'DAYcomics',
+        tagType: 'publisher',
+        rawConfig: {
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {'mode': 'name'},
+              'author': {'mode': 'name'},
+              'artist': {'mode': 'name'},
+              'publisher': {'mode': 'name'},
+            },
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'publisher:DAYcomics');
+    });
+
+    test('mode:name with genre type falls back to genreQueryPrefix', () {
+      final result = resolver.resolve(
+        sourceId: 'manhwaread',
+        tagName: 'Drama',
+        tagType: 'genre',
+        rawConfig: {
+          'scraper': {
+            'urlPatterns': {
+              'genreSearch': {'url': '/genre/{tag}'},
+            },
+          },
+          'navigation': {
+            'tagQueryMapping': {
+              'tag': {'mode': 'name'},
+              'author': {'mode': 'name'},
+            },
+            'genreQueryPrefix': 'genre:',
+            'genreTagType': 'genre',
+          },
+        },
+      );
+
+      expect(result.explicitMappingFailed, isFalse);
+      expect(result.query, 'genre:drama');
+    });
   });
 }

@@ -139,6 +139,28 @@ class GenericScraperAdapter implements GenericAdapter {
     final urlPatternsCfg =
         (scraper['urlPatterns'] as Map?)?.cast<String, dynamic>() ?? {};
 
+    // ── Prefix-based routing (genre:/tag:/author:/artist:/publisher:) ────
+    // Map each prefix → {searchPattern, searchPagePattern}
+    const prefixMapping = {
+      'genre:':    ('genreSearch',    'genreSearchPage'),
+      'tag:':      ('tagSearch',      'tagSearchPage'),
+      'author:':   ('authorSearch',   'authorSearchPage'),
+      'artist:':   ('artistSearch',   'artistSearchPage'),
+      'publisher:':('publisherSearch','publisherSearchPage'),
+    };
+
+    var prefixPatternKey = <String>{};
+    for (final entry in prefixMapping.entries) {
+      if (filter.query.startsWith(entry.key)) {
+        final tagValue = filter.query.substring(entry.key.length);
+        if (tagValue.isNotEmpty) {
+          filter = filter.copyWith(query: tagValue);
+          prefixPatternKey = <String>{entry.value.$1, entry.value.$2};
+        }
+        break;
+      }
+    }
+
     // ── Raw-param mode (from DynamicFormSearchUI) ──────────────────────────
     // When query starts with "raw:", the form supplied all query-params
     // directly. We build the URL from the searchForm.urlPattern base path and
@@ -153,12 +175,17 @@ class GenericScraperAdapter implements GenericAdapter {
       );
     }
 
-    // 1) Genre/tag filter → genreSearch / genreSearchPage
-    // 2) Non-empty text   → search / searchPage
-    // 3) Empty query      → category-routed browse (if configured)
-    // 4) Empty query      → home/homePage fallback
+    // 1) Prefix pattern (genreSearch / tagSearch / authorSearch / …)
+    // 2) Genre/tag filter via includeTags → genreSearch
+    // 3) Non-empty text   → search / searchPage
+    // 4) Empty query      → category-routed browse (if configured)
+    // 5) Empty query      → home/homePage fallback
     final String patternKey;
-    if (filter.includeTags.isNotEmpty &&
+    if (prefixPatternKey.isNotEmpty) {
+      patternKey = filter.page > 1 && urlPatternsCfg.containsKey(prefixPatternKey.last)
+          ? prefixPatternKey.last
+          : prefixPatternKey.first;
+    } else if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
       patternKey =
           filter.page > 1 && urlPatternsCfg.containsKey('genreSearchPage')
@@ -1031,10 +1058,16 @@ class GenericScraperAdapter implements GenericAdapter {
             (chaptersCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
         if (containerSel != null) {
           final chEls = _parser.selectAll(doc, containerSel);
-          chapters = chEls.map((el) {
-            final chFields = _extractElementFields(el, chFieldsCfg);
-            return GenericContentMapper.toChapter(chFields);
-          }).toList();
+          chapters = chEls
+              .map((el) {
+                final chFields = _extractElementFields(el, chFieldsCfg);
+                return GenericContentMapper.toChapter(chFields);
+              })
+              .where((ch) =>
+                  ch.id.isNotEmpty &&
+                  !ch.title.startsWith('Read First') &&
+                  !ch.title.startsWith('Read Last'))
+              .toList();
           _logger.d(
               '$_sourceId: extracted ${chapters.length} chapters for $contentId');
         }
@@ -1647,6 +1680,14 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
+      if (imageUrls.isEmpty &&
+          readerConfig['mode'] == 'chapterDataScript') {
+        imageUrls = _extractChapterDataScriptImageUrls(
+          htmlContent,
+          readerConfig: readerConfig,
+        );
+      }
+
       if (imageUrls.isEmpty) {
         imageUrls = _extractScriptSlidesImageUrls(htmlContent);
       }
@@ -1757,12 +1798,19 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     final rawQuery = filter.query == '{query}' ? '' : filter.query;
+    final tagValue = filter.includeTags.isNotEmpty
+        ? filter.includeTags.first.name
+            .toLowerCase()
+            .replaceAll(RegExp(r'\s+'), '-')
+            .replaceAll(RegExp(r'^-|-$'), '')
+        : rawQuery
+            .toLowerCase()
+            .replaceAll(RegExp(r'\s+'), '-')
+            .replaceAll(RegExp(r'^-|-$'), '');
     final params = <String, String>{
       'page': filter.page.toString(),
       'query': Uri.encodeQueryComponent(rawQuery),
-      'tag': filter.includeTags.isNotEmpty
-          ? filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-')
-          : '',
+      'tag': tagValue,
     };
 
     // Merge custom params from pattern config (e.g., "params": { "n": "{query}" })
@@ -2054,6 +2102,19 @@ class GenericScraperAdapter implements GenericAdapter {
               .toList();
         }
         result[entry.key] = values;
+      } else if (sel.selector == 'self') {
+        var value = sel.attribute != null
+            ? (el.attributes[sel.attribute] ?? '')
+            : el.text.trim();
+        if (value.isEmpty) continue;
+        if (sel.regex != null) {
+          final matched = _applyRegex(value, sel.regex!);
+          if (matched != null && matched.isNotEmpty) value = matched;
+        }
+        if (transform == 'slug' && value.isNotEmpty) {
+          value = _extractSlugFromUrl(value);
+        }
+        result[entry.key] = value;
       } else {
         var value = _parser.extractFromElement(el, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
@@ -2493,6 +2554,63 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return null;
+  }
+
+  /// Extract image URLs from a `chapterData` JS variable pattern.
+  ///
+  /// Matches `<script>chapterData = {"data":"<base64>","base":"<cdn>"}</script>`
+  /// where `data` is a base64-encoded JSON array of `{src, w, h}` entries.
+  /// Full CDN URL = `$base/$src`.
+  List<String> _extractChapterDataScriptImageUrls(
+    String htmlContent, {
+    required Map<String, dynamic> readerConfig,
+  }) {
+    final match = RegExp(
+      r'''chapterData\s*=\s*\{[^}]*?"data"\s*:\s*"([^"]+)"\s*,\s*"base"\s*:\s*"([^"]+)"\s*\}''',
+      dotAll: true,
+    ).firstMatch(htmlContent);
+    if (match == null) {
+      _logger.d(
+          '$_sourceId chapterDataScript: regex no match in ${htmlContent.length} bytes');
+      return const [];
+    }
+
+    final base64Str = match.group(1);
+    final baseUrl = match.group(2);
+    _logger.d(
+        '$_sourceId chapterDataScript: regex matched, base=$baseUrl, base64Len=${base64Str?.length}');
+    if (base64Str == null || baseUrl == null) return const [];
+
+    String? decodedJson;
+    try {
+      final padded = base64Str.padRight((base64Str.length + 3) ~/ 4 * 4, '=');
+      decodedJson = utf8.decode(base64.decode(padded));
+      _logger.d(
+          '$_sourceId chapterDataScript: base64 decoded OK, len=${decodedJson.length}');
+    } catch (e) {
+      _logger.w('$_sourceId chapterDataScript: base64 decode FAILED', error: e);
+      return const [];
+    }
+
+    try {
+      final items = json.decode(decodedJson) as List<dynamic>;
+      _logger.d(
+          '$_sourceId chapterDataScript: JSON parsed OK, ${items.length} images');
+      return items
+          .map((item) {
+            final src = (item as Map<String, dynamic>)['src'] as String?;
+            if (src == null || src.isEmpty) return null;
+            final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+            final url = src.startsWith('http') ? src : '$base$src';
+            _logger.t('$_sourceId chapterDataScript: image $url');
+            return url;
+          })
+          .whereType<String>()
+          .toList();
+    } catch (e) {
+      _logger.w('$_sourceId chapterDataScript: JSON parse FAILED', error: e);
+      return const [];
+    }
   }
 
   List<String> _normalizeChapterImageUrls(List<String> values) {

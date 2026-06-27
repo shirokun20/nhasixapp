@@ -101,7 +101,8 @@ class DetailTagQueryResolver {
 
     final mode = (mapping['mode'] as String? ?? 'rawParam').trim();
     if (mode == 'name') {
-      return tagName;
+      // Return type-prefixed query for adapter routing
+      return '$normalizedType:$tagName';
     }
 
     final valueSource =
@@ -219,6 +220,8 @@ class DetailTagQueryResolver {
 
     final genrePrefix =
         (navigation['genreQueryPrefix'] as String? ?? 'genre:').trim();
+    final tagPrefix =
+        (navigation['tagQueryPrefix'] as String? ?? '').trim();
     final genreTagType =
         (navigation['genreTagType'] as String? ?? 'genre').trim().toLowerCase();
 
@@ -241,7 +244,13 @@ class DetailTagQueryResolver {
         .replaceAll(RegExp(r'-+'), '-')
         .replaceAll(RegExp(r'^-|-$'), '');
 
-    return '$genrePrefix$slug';
+    final actualPrefix = (tagPrefix.isNotEmpty &&
+            normalizedTagType.isNotEmpty &&
+            normalizedTagType != genreTagType)
+        ? tagPrefix
+        : genrePrefix;
+
+    return '$actualPrefix$slug';
   }
 
   String _quoteEhentaiSearchValue(String value) {
