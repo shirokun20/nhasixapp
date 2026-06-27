@@ -371,7 +371,8 @@ class _DetailScreenState extends State<DetailScreen> {
   void initState() {
     super.initState();
     _detailCubit = getIt<DetailCubit>();
-    _mangaFireCoordinator = DetailMangaFireCoordinator(detailCubit: _detailCubit);
+    _mangaFireCoordinator =
+        DetailMangaFireCoordinator(detailCubit: _detailCubit);
     _tagQueryResolver = const DetailTagQueryResolver();
     _tagBlacklistService = getIt<TagBlacklistService>()
       ..addListener(_handleBlacklistChanged);
@@ -980,7 +981,11 @@ class _DetailScreenState extends State<DetailScreen> {
     return ChoiceChip(
       selected: selected,
       showCheckmark: false,
-      avatar: Icon(icon, size: 16, color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant),
+      avatar: Icon(icon,
+          size: 16,
+          color: selected
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant),
       label: Text(label),
       selectedColor: colorScheme.primaryContainer,
       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -995,7 +1000,8 @@ class _DetailScreenState extends State<DetailScreen> {
             ? colorScheme.primary.withValues(alpha: 0.5)
             : colorScheme.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
       onSelected: (_) {
         unawaited(_mangaFireCoordinator.onTypeSelected(content, value));
       },
@@ -1024,7 +1030,8 @@ class _DetailScreenState extends State<DetailScreen> {
           builder: (context, _) {
             final chapterHistory =
                 detailState.chapterHistory ?? <String, History>{};
-            final displayContent = _mangaFireCoordinator.resolveChapterDisplayContent(content);
+            final displayContent =
+                _mangaFireCoordinator.resolveChapterDisplayContent(content);
             final safeDisplayContent = displayContent.copyWith(
               chapters: displayContent.chapters ?? const <Chapter>[],
             );
@@ -1046,7 +1053,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   : detailState.isChaptersLoading,
               onLanguageSelected: content.sourceId == 'mangafire'
                   ? (languageKey) => unawaited(
-                        _mangaFireCoordinator.onLanguageSelected(content, languageKey),
+                        _mangaFireCoordinator.onLanguageSelected(
+                            content, languageKey),
                       )
                   : null,
               formatDate: _formatDate,

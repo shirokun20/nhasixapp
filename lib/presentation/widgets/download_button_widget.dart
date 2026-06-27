@@ -69,8 +69,9 @@ class DownloadButtonWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.check_circle,
                   text: AppLocalizations.of(context)!.downloaded('').trim(),
-                  onPressed: () =>
-                      context.read<DownloadBloc>().add(const DownloadRefreshEvent()),
+                  onPressed: () => context
+                      .read<DownloadBloc>()
+                      .add(const DownloadRefreshEvent()),
                   color: colorScheme.tertiary,
                 );
               }
@@ -307,6 +308,7 @@ class DownloadButtonWidget extends StatelessWidget {
               icon: Icon(icon, size: 20),
               label: Text(
                 text,
+                maxLines: 1,
                 style: TextStyleConst.buttonMedium.copyWith(
                   color: color,
                 ),
@@ -330,7 +332,7 @@ class DownloadButtonWidget extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onPressed,
               icon: Icon(icon, size: 20),
-              label: Text(text, style: TextStyleConst.labelLarge),
+              label: Text(text, maxLines: 1, style: TextStyleConst.labelLarge),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
