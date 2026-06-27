@@ -81,6 +81,7 @@ abstract class SearchFilter with _$SearchFilter {
     bool highlightMode, // Enable blur effect for excluded content
     String?
         highlightQuery, // Specific query to highlight (can differ from main query)
+    @Default({}) Map<String, String> radioGroupSelections,
   }) = _SearchFilter;
 
   factory SearchFilter.fromJson(Map<String, dynamic> json) =>
@@ -292,7 +293,16 @@ extension SearchFilterExtension on SearchFilter {
       params.add('popular=true');
     }
 
-    params.add('sort=${sortBy.apiValue}');
+    if (!radioGroupSelections.containsKey('sort')) {
+      params.add('sort=${sortBy.apiValue}');
+    }
+    
+    radioGroupSelections.forEach((key, value) {
+      if (value.isNotEmpty) {
+        params.add('$key=$value');
+      }
+    });
+
     params.add('page=$page');
 
     return params.join('&');
@@ -378,6 +388,7 @@ extension SearchFilterExtension on SearchFilter {
       'source': source.apiValue,
       'highlightMode': highlightMode,
       'highlightQuery': highlightQuery,
+      'radioGroupSelections': radioGroupSelections,
     };
   }
 }

@@ -12,6 +12,7 @@ class SearchFilter extends Equatable {
     this.excludeTags = const [],
     this.language,
     this.category,
+    this.radioGroupSelections = const {},
   });
 
   /// Search query string
@@ -35,6 +36,9 @@ class SearchFilter extends Equatable {
   /// Category filter
   final String? category;
 
+  /// Dynamic radio group selections from the config
+  final Map<String, String> radioGroupSelections;
+
   @override
   List<Object?> get props => [
         query,
@@ -44,6 +48,7 @@ class SearchFilter extends Equatable {
         excludeTags,
         language,
         category,
+        radioGroupSelections,
       ];
 
   SearchFilter copyWith({
@@ -54,6 +59,7 @@ class SearchFilter extends Equatable {
     List<FilterItem>? excludeTags,
     String? language,
     String? category,
+    Map<String, String>? radioGroupSelections,
   }) {
     return SearchFilter(
       query: query ?? this.query,
@@ -63,6 +69,7 @@ class SearchFilter extends Equatable {
       excludeTags: excludeTags ?? this.excludeTags,
       language: language ?? this.language,
       category: category ?? this.category,
+      radioGroupSelections: radioGroupSelections ?? this.radioGroupSelections,
     );
   }
 

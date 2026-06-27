@@ -631,6 +631,7 @@ class ContentRepositoryImpl implements ContentRepository {
       excludeTags: excludeTags,
       language: appFilter.language,
       category: appFilter.category,
+      radioGroupSelections: appFilter.radioGroupSelections,
     );
   }
 }

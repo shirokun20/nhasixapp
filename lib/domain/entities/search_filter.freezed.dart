@@ -432,7 +432,9 @@ mixin _$SearchFilter {
   IntRange? get pageCountRange;
   SearchSource get source; // Navigation source tracking
   bool get highlightMode; // Enable blur effect for excluded content
-  String? get highlightQuery;
+  String?
+      get highlightQuery; // Specific query to highlight (can differ from main query)
+  Map<String, String> get radioGroupSelections;
 
   /// Create a copy of SearchFilter
   /// with the given fields replaced by the non-null parameter values.
@@ -470,7 +472,9 @@ mixin _$SearchFilter {
             (identical(other.highlightMode, highlightMode) ||
                 other.highlightMode == highlightMode) &&
             (identical(other.highlightQuery, highlightQuery) ||
-                other.highlightQuery == highlightQuery));
+                other.highlightQuery == highlightQuery) &&
+            const DeepCollectionEquality()
+                .equals(other.radioGroupSelections, radioGroupSelections));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -491,11 +495,12 @@ mixin _$SearchFilter {
       pageCountRange,
       source,
       highlightMode,
-      highlightQuery);
+      highlightQuery,
+      const DeepCollectionEquality().hash(radioGroupSelections));
 
   @override
   String toString() {
-    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
+    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery, radioGroupSelections: $radioGroupSelections)';
   }
 }
 
@@ -520,7 +525,8 @@ abstract mixin class $SearchFilterCopyWith<$Res> {
       IntRange? pageCountRange,
       SearchSource source,
       bool highlightMode,
-      String? highlightQuery});
+      String? highlightQuery,
+      Map<String, String> radioGroupSelections});
 
   $IntRangeCopyWith<$Res>? get pageCountRange;
 }
@@ -552,6 +558,7 @@ class _$SearchFilterCopyWithImpl<$Res> implements $SearchFilterCopyWith<$Res> {
     Object? source = null,
     Object? highlightMode = null,
     Object? highlightQuery = freezed,
+    Object? radioGroupSelections = null,
   }) {
     return _then(_self.copyWith(
       query: freezed == query
@@ -614,6 +621,10 @@ class _$SearchFilterCopyWithImpl<$Res> implements $SearchFilterCopyWith<$Res> {
           ? _self.highlightQuery
           : highlightQuery // ignore: cast_nullable_to_non_nullable
               as String?,
+      radioGroupSelections: null == radioGroupSelections
+          ? _self.radioGroupSelections
+          : radioGroupSelections // ignore: cast_nullable_to_non_nullable
+              as Map<String, String>,
     ));
   }
 
@@ -740,7 +751,8 @@ extension SearchFilterPatterns on SearchFilter {
             IntRange? pageCountRange,
             SearchSource source,
             bool highlightMode,
-            String? highlightQuery)?
+            String? highlightQuery,
+            Map<String, String> radioGroupSelections)?
         $default, {
     required TResult orElse(),
   }) {
@@ -762,7 +774,8 @@ extension SearchFilterPatterns on SearchFilter {
             _that.pageCountRange,
             _that.source,
             _that.highlightMode,
-            _that.highlightQuery);
+            _that.highlightQuery,
+            _that.radioGroupSelections);
       case _:
         return orElse();
     }
@@ -798,7 +811,8 @@ extension SearchFilterPatterns on SearchFilter {
             IntRange? pageCountRange,
             SearchSource source,
             bool highlightMode,
-            String? highlightQuery)
+            String? highlightQuery,
+            Map<String, String> radioGroupSelections)
         $default,
   ) {
     final _that = this;
@@ -819,7 +833,8 @@ extension SearchFilterPatterns on SearchFilter {
             _that.pageCountRange,
             _that.source,
             _that.highlightMode,
-            _that.highlightQuery);
+            _that.highlightQuery,
+            _that.radioGroupSelections);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -854,7 +869,8 @@ extension SearchFilterPatterns on SearchFilter {
             IntRange? pageCountRange,
             SearchSource source,
             bool highlightMode,
-            String? highlightQuery)?
+            String? highlightQuery,
+            Map<String, String> radioGroupSelections)?
         $default,
   ) {
     final _that = this;
@@ -875,7 +891,8 @@ extension SearchFilterPatterns on SearchFilter {
             _that.pageCountRange,
             _that.source,
             _that.highlightMode,
-            _that.highlightQuery);
+            _that.highlightQuery,
+            _that.radioGroupSelections);
       case _:
         return null;
     }
@@ -900,12 +917,14 @@ class _SearchFilter implements SearchFilter {
       this.pageCountRange,
       this.source = SearchSource.unknown,
       this.highlightMode = false,
-      this.highlightQuery})
+      this.highlightQuery,
+      final Map<String, String> radioGroupSelections = const {}})
       : _tags = tags,
         _artists = artists,
         _characters = characters,
         _parodies = parodies,
-        _groups = groups;
+        _groups = groups,
+        _radioGroupSelections = radioGroupSelections;
   factory _SearchFilter.fromJson(Map<String, dynamic> json) =>
       _$SearchFilterFromJson(json);
 
@@ -984,6 +1003,17 @@ class _SearchFilter implements SearchFilter {
 // Enable blur effect for excluded content
   @override
   final String? highlightQuery;
+// Specific query to highlight (can differ from main query)
+  final Map<String, String> _radioGroupSelections;
+// Specific query to highlight (can differ from main query)
+  @override
+  @JsonKey()
+  Map<String, String> get radioGroupSelections {
+    if (_radioGroupSelections is EqualUnmodifiableMapView)
+      return _radioGroupSelections;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_radioGroupSelections);
+  }
 
   /// Create a copy of SearchFilter
   /// with the given fields replaced by the non-null parameter values.
@@ -1025,7 +1055,9 @@ class _SearchFilter implements SearchFilter {
             (identical(other.highlightMode, highlightMode) ||
                 other.highlightMode == highlightMode) &&
             (identical(other.highlightQuery, highlightQuery) ||
-                other.highlightQuery == highlightQuery));
+                other.highlightQuery == highlightQuery) &&
+            const DeepCollectionEquality()
+                .equals(other._radioGroupSelections, _radioGroupSelections));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1046,11 +1078,12 @@ class _SearchFilter implements SearchFilter {
       pageCountRange,
       source,
       highlightMode,
-      highlightQuery);
+      highlightQuery,
+      const DeepCollectionEquality().hash(_radioGroupSelections));
 
   @override
   String toString() {
-    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery)';
+    return 'SearchFilter(query: $query, tags: $tags, artists: $artists, characters: $characters, parodies: $parodies, groups: $groups, language: $language, category: $category, page: $page, sortBy: $sortBy, popular: $popular, pageCountRange: $pageCountRange, source: $source, highlightMode: $highlightMode, highlightQuery: $highlightQuery, radioGroupSelections: $radioGroupSelections)';
   }
 }
 
@@ -1077,7 +1110,8 @@ abstract mixin class _$SearchFilterCopyWith<$Res>
       IntRange? pageCountRange,
       SearchSource source,
       bool highlightMode,
-      String? highlightQuery});
+      String? highlightQuery,
+      Map<String, String> radioGroupSelections});
 
   @override
   $IntRangeCopyWith<$Res>? get pageCountRange;
@@ -1111,6 +1145,7 @@ class __$SearchFilterCopyWithImpl<$Res>
     Object? source = null,
     Object? highlightMode = null,
     Object? highlightQuery = freezed,
+    Object? radioGroupSelections = null,
   }) {
     return _then(_SearchFilter(
       query: freezed == query
@@ -1173,6 +1208,10 @@ class __$SearchFilterCopyWithImpl<$Res>
           ? _self.highlightQuery
           : highlightQuery // ignore: cast_nullable_to_non_nullable
               as String?,
+      radioGroupSelections: null == radioGroupSelections
+          ? _self._radioGroupSelections
+          : radioGroupSelections // ignore: cast_nullable_to_non_nullable
+              as Map<String, String>,
     ));
   }
 

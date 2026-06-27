@@ -58,6 +58,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   // Multi-select filter selections (tag type -> list of selected items)
   final Map<String, List<FilterItem>> _multiSelectFilters = {};
 
+  // Radio Group Selections (dynamic, like sort, status)
+  final Map<String, String> _radioSelections = {};
+
   // API-loaded tags for language/category chips
   final Map<String, List<Tag>> _tagsByType = {};
   bool _tagsLoading = false;
@@ -71,7 +74,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       widget.config.sortingConfig?.options ?? [];
 
   bool get _supportsAdvancedFilters =>
-      _singleSelectFilters.isNotEmpty || _multiSelectFilters2.isNotEmpty;
+      _singleSelectFilters.isNotEmpty || 
+      _multiSelectFilters2.isNotEmpty ||
+      (widget.config.radioGroups?.isNotEmpty ?? false);
 
   @override
   void initState() {
@@ -90,6 +95,13 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
     for (var type in _multiSelectFilters2) {
       _multiSelectFilters[type] = [];
+    }
+
+    if (widget.config.radioGroups != null) {
+      for (var group in widget.config.radioGroups!) {
+        final def = group.options.where((o) => o.isDefault).firstOrNull;
+        _radioSelections[group.name] = def?.value ?? '';
+      }
     }
 
     _loadTagsFromApi();
@@ -164,6 +176,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       if (savedFilter.sortBy.apiValue.isNotEmpty) {
         _selectedSort = savedFilter.sortBy.apiValue;
       }
+      savedFilter.radioGroupSelections.forEach((key, value) {
+        if (_radioSelections.containsKey(key)) {
+          _radioSelections[key] = value;
+        }
+      });
       if (savedFilter.language != null) {
         _selectedLanguage = savedFilter.language!;
       }
@@ -306,6 +323,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       parodies:
           includeAdvanced ? (_multiSelectFilters['parody'] ?? []) : const [],
       groups: includeAdvanced ? (_multiSelectFilters['group'] ?? []) : const [],
+      radioGroupSelections: includeAdvanced ? Map.from(_radioSelections) : const {},
     );
   }
 
@@ -447,6 +465,20 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           const SizedBox(height: 20),
         ],
 
+        // Radio Groups (Dynamic Sorts, etc.)
+        if (widget.config.radioGroups != null) 
+          ...widget.config.radioGroups!.map((group) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionTitle(group.label.toUpperCase()),
+                const SizedBox(height: 10),
+                _buildRadioGroup(group, colorScheme),
+                const SizedBox(height: 20),
+              ],
+            );
+          }),
+
         // Language
         if (_singleSelectFilters.contains('language')) ...[
           _buildSectionTitle('LANGUAGE'),
@@ -574,13 +606,14 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   Widget _buildAdvancedToggle(ColorScheme cs) {
     final totalSelected = _multiSelectFilters2.fold(
         0, (sum, t) => sum + (_multiSelectFilters[t]?.length ?? 0));
+    final totalRadios = _radioSelections.values.where((v) => v.isNotEmpty).length;
     final hasExtra = _uploadedPreset.isNotEmpty ||
         _pagesMinCtrl.text.isNotEmpty ||
         _pagesMaxCtrl.text.isNotEmpty ||
         _favMinCtrl.text.isNotEmpty ||
         _selectedLanguage.isNotEmpty ||
         _selectedCategory.isNotEmpty;
-    final activeCount = totalSelected + (hasExtra ? 1 : 0);
+    final activeCount = totalSelected + totalRadios + (hasExtra ? 1 : 0);
 
     return InkWell(
       onTap: () => setState(() => _showAdvancedFilters = !_showAdvancedFilters),
@@ -591,12 +624,12 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: _showAdvancedFilters
-              ? cs.primaryContainer.withValues(alpha: 0.6)
+              ? cs.primary
               : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: _showAdvancedFilters
-                ? cs.primary.withValues(alpha: 0.5)
+                ? Colors.transparent
                 : cs.outline.withValues(alpha: 0.3),
           ),
         ),
@@ -608,7 +641,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               scale: _showAdvancedFilters ? 1.08 : 1.0,
               child: Icon(
                 Icons.tune_rounded,
-                color: _showAdvancedFilters ? cs.primary : cs.onSurfaceVariant,
+                color: _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
                 size: 20,
               ),
             ),
@@ -616,7 +649,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
             Text(
               AppLocalizations.of(context)!.advancedFilters,
               style: TextStyle(
-                color: _showAdvancedFilters ? cs.primary : cs.onSurface,
+                color: _showAdvancedFilters ? cs.onPrimary : cs.onSurface,
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
@@ -625,24 +658,21 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               const SizedBox(width: 8),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(
-                    scale: animation,
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return ScaleTransition(scale: animation, child: child);
                 },
                 child: Container(
                   key: ValueKey(activeCount),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: cs.primary,
+                    color: _showAdvancedFilters ? cs.onPrimary : cs.primary,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '$activeCount',
                     style: TextStyle(
-                      color: cs.onPrimary,
+                      color: _showAdvancedFilters ? cs.primary : cs.onPrimary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -657,7 +687,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               turns: _showAdvancedFilters ? 0.5 : 0,
               child: Icon(
                 Icons.expand_more,
-                color: cs.onSurfaceVariant,
+                color: _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
               ),
             ),
           ],
@@ -677,6 +707,32 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         letterSpacing: 0.8,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
+    );
+  }
+
+  // ── Radio Groups ────────────────────────────────────────────────────────────
+
+  Widget _buildRadioGroup(RadioGroupConfig group, ColorScheme cs) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: group.options.map((option) {
+        final isSelected = _radioSelections[group.name] == option.value;
+        return _singleSelectChip(
+          label: option.label,
+          isSelected: isSelected,
+          onTap: () {
+            setState(() {
+              // If already selected, maybe we want to allow unselecting? 
+              // The user might just want standard radio behavior (tap selects).
+              // Since earlier code toggled it (selected ? value : ''), I will keep toggle.
+              _radioSelections[group.name] =
+                  isSelected ? '' : option.value;
+            });
+          },
+          cs: cs,
+        );
+      }).toList(),
     );
   }
 

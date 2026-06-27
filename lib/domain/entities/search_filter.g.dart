@@ -61,6 +61,11 @@ _SearchFilter _$SearchFilterFromJson(Map<String, dynamic> json) =>
           SearchSource.unknown,
       highlightMode: json['highlightMode'] as bool? ?? false,
       highlightQuery: json['highlightQuery'] as String?,
+      radioGroupSelections:
+          (json['radioGroupSelections'] as Map<String, dynamic>?)?.map(
+                (k, e) => MapEntry(k, e as String),
+              ) ??
+              const {},
     );
 
 Map<String, dynamic> _$SearchFilterToJson(_SearchFilter instance) =>
@@ -80,6 +85,7 @@ Map<String, dynamic> _$SearchFilterToJson(_SearchFilter instance) =>
       'source': _$SearchSourceEnumMap[instance.source]!,
       'highlightMode': instance.highlightMode,
       'highlightQuery': instance.highlightQuery,
+      'radioGroupSelections': instance.radioGroupSelections,
     };
 
 const _$SortOptionEnumMap = {

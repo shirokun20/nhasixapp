@@ -217,6 +217,20 @@ class GenericRestAdapter implements GenericAdapter {
       );
     }
 
+    if (adjustedFilter.radioGroupSelections.isNotEmpty) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        final newParams =
+            Map<String, List<String>>.from(uri.queryParametersAll);
+        for (final entry in adjustedFilter.radioGroupSelections.entries) {
+          if (entry.value.trim().isNotEmpty) {
+            newParams[entry.key] = [entry.value.trim()];
+          }
+        }
+        url = _rebuildUrlWithQueryParams(url, newParams);
+      }
+    }
+
     _logger.d('$_sourceId REST search: Built URL: $url');
 
     try {
@@ -776,6 +790,20 @@ class GenericRestAdapter implements GenericAdapter {
     final queryRules = (api['queryRules'] as Map<String, dynamic>?)?['search']
         as Map<String, dynamic>?;
     url = _applyQueryRules(url, queryRules);
+
+    if (filter.radioGroupSelections.isNotEmpty) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        final newParams = Map<String, List<String>>.from(uri.queryParametersAll);
+        for (final entry in filter.radioGroupSelections.entries) {
+          if (entry.value.trim().isNotEmpty) {
+            newParams[entry.key] = [entry.value.trim()];
+          }
+        }
+        url = _rebuildUrlWithQueryParams(url, newParams);
+      }
+    }
+
     _logger.d('$_sourceId REST [new schema] search: $url');
 
     try {
