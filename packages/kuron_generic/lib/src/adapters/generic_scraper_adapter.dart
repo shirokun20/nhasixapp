@@ -142,11 +142,11 @@ class GenericScraperAdapter implements GenericAdapter {
     // ── Prefix-based routing (genre:/tag:/author:/artist:/publisher:) ────
     // Map each prefix → {searchPattern, searchPagePattern}
     const prefixMapping = {
-      'genre:':    ('genreSearch',    'genreSearchPage'),
-      'tag:':      ('tagSearch',      'tagSearchPage'),
-      'author:':   ('authorSearch',   'authorSearchPage'),
-      'artist:':   ('artistSearch',   'artistSearchPage'),
-      'publisher:':('publisherSearch','publisherSearchPage'),
+      'genre:': ('genreSearch', 'genreSearchPage'),
+      'tag:': ('tagSearch', 'tagSearchPage'),
+      'author:': ('authorSearch', 'authorSearchPage'),
+      'artist:': ('artistSearch', 'artistSearchPage'),
+      'publisher:': ('publisherSearch', 'publisherSearchPage'),
     };
 
     var prefixPatternKey = <String>{};
@@ -182,9 +182,10 @@ class GenericScraperAdapter implements GenericAdapter {
     // 5) Empty query      → home/homePage fallback
     final String patternKey;
     if (prefixPatternKey.isNotEmpty) {
-      patternKey = filter.page > 1 && urlPatternsCfg.containsKey(prefixPatternKey.last)
-          ? prefixPatternKey.last
-          : prefixPatternKey.first;
+      patternKey =
+          filter.page > 1 && urlPatternsCfg.containsKey(prefixPatternKey.last)
+              ? prefixPatternKey.last
+              : prefixPatternKey.first;
     } else if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
       patternKey =
@@ -1680,8 +1681,7 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
-      if (imageUrls.isEmpty &&
-          readerConfig['mode'] == 'chapterDataScript') {
+      if (imageUrls.isEmpty && readerConfig['mode'] == 'chapterDataScript') {
         imageUrls = _extractChapterDataScriptImageUrls(
           htmlContent,
           readerConfig: readerConfig,
@@ -2565,21 +2565,39 @@ class GenericScraperAdapter implements GenericAdapter {
     String htmlContent, {
     required Map<String, dynamic> readerConfig,
   }) {
-    final match = RegExp(
+    final inlineChapterDataMatch = RegExp(
       r'''chapterData\s*=\s*\{[^}]*?"data"\s*:\s*"([^"]+)"\s*,\s*"base"\s*:\s*"([^"]+)"\s*\}''',
       dotAll: true,
     ).firstMatch(htmlContent);
-    if (match == null) {
+
+    String? base64Str;
+    String? baseUrl;
+
+    if (inlineChapterDataMatch != null) {
+      base64Str = inlineChapterDataMatch.group(1);
+      baseUrl = inlineChapterDataMatch.group(2);
+    } else {
+      final scriptBaseUrlMatch = RegExp(
+        r'''single-chapter-js-extra[^>]*>[\s\S]*?"baseUrl"\s*:\s*"([^"]+)"''',
+        dotAll: true,
+      ).firstMatch(htmlContent);
+      final scriptDataMatch = RegExp(
+        r'''single-chapter-js-before[^>]*>[\s\S]*?([A-Za-z0-9+/=]*ey[A-Za-z0-9+/=]+)''',
+        dotAll: true,
+      ).firstMatch(htmlContent);
+
+      baseUrl = scriptBaseUrlMatch?.group(1);
+      base64Str = scriptDataMatch?.group(1);
+    }
+
+    if (base64Str == null || baseUrl == null) {
       _logger.d(
           '$_sourceId chapterDataScript: regex no match in ${htmlContent.length} bytes');
       return const [];
     }
 
-    final base64Str = match.group(1);
-    final baseUrl = match.group(2);
     _logger.d(
-        '$_sourceId chapterDataScript: regex matched, base=$baseUrl, base64Len=${base64Str?.length}');
-    if (base64Str == null || baseUrl == null) return const [];
+        '$_sourceId chapterDataScript: regex matched, base=$baseUrl, base64Len=${base64Str.length}');
 
     String? decodedJson;
     try {
@@ -2593,14 +2611,25 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     try {
-      final items = json.decode(decodedJson) as List<dynamic>;
+      final decoded = json.decode(decodedJson);
+      final items = switch (decoded) {
+        final List<dynamic> list => list,
+        final Map<String, dynamic> object =>
+          (((object['data'] as Map<String, dynamic>?)?['chapter']
+                  as Map<String, dynamic>?)?['images'] as List<dynamic>?) ??
+              const <dynamic>[],
+        _ => const <dynamic>[],
+      };
       _logger.d(
           '$_sourceId chapterDataScript: JSON parsed OK, ${items.length} images');
+      final resolvedBaseUrl = baseUrl;
       return items
           .map((item) {
             final src = (item as Map<String, dynamic>)['src'] as String?;
             if (src == null || src.isEmpty) return null;
-            final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+            final base = resolvedBaseUrl.endsWith('/')
+                ? resolvedBaseUrl
+                : '$resolvedBaseUrl/';
             final url = src.startsWith('http') ? src : '$base$src';
             _logger.t('$_sourceId chapterDataScript: image $url');
             return url;

@@ -101,7 +101,7 @@ class GenerateCommand extends Command<void> {
 
     if (!probe.isSuccess) {
       if (probe.isBlocked) {
-        logger.w('Site blocked HTTP probe (${probe.statusCode}). '
+        logger.w('Site blocked automated probe (${probe.statusCode}). '
             'Cloudflare or WAF detected. Use --interactive to enter selectors manually.');
       } else {
         logger.e('Probe failed: ${probe.error ?? probe.statusCode}');
@@ -109,7 +109,8 @@ class GenerateCommand extends Command<void> {
       return;
     }
 
-    logger.i('✓ HTTP ${probe.statusCode}, ${probe.body.length} bytes received (${probe.contentType.name})');
+    logger.i(
+        '✓ HTTP ${probe.statusCode}, ${probe.body.length} bytes received (${probe.contentType.name})');
 
     if (probe.contentType == ProbeContentType.json) {
       await _handleApiResponse(probe, output, logger);
@@ -118,7 +119,8 @@ class GenerateCommand extends Command<void> {
 
     // Detect CMS from HTML
     final cms = detectCms(probe.body);
-    logger.i('📋 CMS detected: ${cms.cmsId} (${(cms.confidence * 100).round()}% confidence)');
+    logger.i(
+        '📋 CMS detected: ${cms.cmsId} (${(cms.confidence * 100).round()}% confidence)');
 
     if (cms.isKnown) {
       logger.i('Suggested selectors for $url (${cms.cmsId}):');
@@ -133,7 +135,8 @@ class GenerateCommand extends Command<void> {
 
     // Build wizard answers from probe
     final answers = <String, String?>{
-      'sourceId': Uri.tryParse(url)?.host.replaceAll(RegExp(r'^www\.'), '') ?? 'unknown',
+      'sourceId': Uri.tryParse(url)?.host.replaceAll(RegExp(r'^www\.'), '') ??
+          'unknown',
       'displayName': Uri.tryParse(url)?.host ?? 'Unknown',
       'homeUrl': url,
       'version': '1.0.0',
@@ -150,7 +153,8 @@ class GenerateCommand extends Command<void> {
       // ponytail: merge CMS selectors into wizard answer slots
       // Using the first matched selector category for each slot
       final cats = <String, String>{
-        'listSelector': cms.selectors['list.item'] ?? cms.selectors['list.title'] ?? '',
+        'listSelector':
+            cms.selectors['list.item'] ?? cms.selectors['list.title'] ?? '',
         'detailTitleSelector': cms.selectors['detail.title'] ?? 'h1',
       };
       answers['listSelector'] = cats['listSelector'];
@@ -163,18 +167,14 @@ class GenerateCommand extends Command<void> {
       answers['listSelector'] =
           cms.selectors['list.item'] ?? cms.selectors['list.title'] ?? '';
       answers['listTitleSelector'] = cms.selectors['list.title'] ?? '';
-      answers['detailTitleSelector'] =
-          cms.selectors['detail.title'] ?? 'h1';
-      answers['detailCoverSelector'] =
-          cms.selectors['detail.cover'] ?? 'img';
+      answers['detailTitleSelector'] = cms.selectors['detail.title'] ?? 'h1';
+      answers['detailCoverSelector'] = cms.selectors['detail.cover'] ?? 'img';
       answers['chapterContainer'] =
           cms.selectors['chapters.item'] ?? 'a[href*="chapter"]';
-      answers['readerImageSel'] =
-          cms.selectors['reader.image'] ?? 'img';
+      answers['readerImageSel'] = cms.selectors['reader.image'] ?? 'img';
 
       if (cms.searchDefaults != null) {
-        answers['searchUrl'] =
-            cms.searchDefaults!['searchUrl'] as String?;
+        answers['searchUrl'] = cms.searchDefaults!['searchUrl'] as String?;
         answers['searchQueryParam'] =
             cms.searchDefaults!['queryParam'] as String?;
       }
@@ -233,7 +233,8 @@ class GenerateCommand extends Command<void> {
 
     final api = inferApi(url, json);
     logger.i('📡 API mode detected — inferred structure:');
-    logger.i('  isList=${api.hasList} isDetail=${api.hasDetail} confidence=${(api.confidence * 100).round()}%');
+    logger.i(
+        '  isList=${api.hasList} isDetail=${api.hasDetail} confidence=${(api.confidence * 100).round()}%');
 
     final uri = Uri.tryParse(url);
     final host = uri?.host.replaceAll(RegExp(r'^www\.'), '') ?? 'unknown';
@@ -249,10 +250,8 @@ class GenerateCommand extends Command<void> {
       'supportsChapters': 'n',
       'supportsComments': 'n',
       'needsHeaders': 'n',
-      if (api.listEndpoint != null)
-        'listEndpoint': api.listEndpoint,
-      if (api.detailEndpoint != null)
-        'detailEndpoint': api.detailEndpoint,
+      if (api.listEndpoint != null) 'listEndpoint': api.listEndpoint,
+      if (api.detailEndpoint != null) 'detailEndpoint': api.detailEndpoint,
       'apiBase': api.baseUrl,
     };
 

@@ -49,6 +49,25 @@ void main() {
       );
       expect(result.isBlocked, true);
     });
+
+    test('isBlocked for Cloudflare challenge pages with HTTP 200', () {
+      final result = ProbeResult(
+        url: 'https://hentairead.com/hentai/',
+        statusCode: 200,
+        body: '''
+<!DOCTYPE html>
+<html>
+  <head><title>Just a moment...</title></head>
+  <body>
+    Performing security verification
+    <script>window._cf_chl_opt = {};</script>
+  </body>
+</html>
+''',
+        contentType: ProbeContentType.html,
+      );
+      expect(result.isBlocked, true);
+    });
   });
 
   group('API Detector', () {
@@ -63,21 +82,36 @@ void main() {
     });
 
     test('detects paginated list from data key', () {
-      final json = {'data': [{'id': 1, 'title': 'One'}], 'page': 1};
+      final json = {
+        'data': [
+          {'id': 1, 'title': 'One'}
+        ],
+        'page': 1
+      };
       final result = inferApi('https://api.example.com/manga', json);
       expect(result.hasList, true);
       expect(result.listItemsPath, 'data');
     });
 
     test('detects detail from known manga fields', () {
-      final json = {'id': 1, 'title': 'Test Manga', 'cover': 'cover.jpg', 'description': 'A test'};
+      final json = {
+        'id': 1,
+        'title': 'Test Manga',
+        'cover': 'cover.jpg',
+        'description': 'A test'
+      };
       final result = inferApi('https://api.example.com/manga/1', json);
       expect(result.hasDetail, true);
       expect(result.hasList, false);
     });
 
     test('detects results key pattern', () {
-      final json = {'results': [{'id': 1}], 'total': 100};
+      final json = {
+        'results': [
+          {'id': 1}
+        ],
+        'total': 100
+      };
       final result = inferApi('https://api.example.com/search?q=test', json);
       expect(result.hasList, true);
       expect(result.listItemsPath, 'results');
@@ -94,7 +128,8 @@ void main() {
 
   group('CMS Detector', () {
     test('detects Madara from page-item class', () {
-      const html = '<html><body><div class="page-item">Manga</div></body></html>';
+      const html =
+          '<html><body><div class="page-item">Manga</div></body></html>';
       final result = detectCms(html);
       expect(result.cmsId, 'madara');
     });

@@ -25,7 +25,10 @@ class ProbeResult {
   final String? error;
 
   bool get isSuccess => statusCode == 200 && error == null;
-  bool get isBlocked => statusCode == 403 || statusCode == 503;
+  bool get isBlocked =>
+      statusCode == 403 ||
+      statusCode == 503 ||
+      _looksLikeCloudflareChallenge(body);
 
   /// Parse body as JSON when applicable.
   dynamic get jsonBody {
@@ -38,8 +41,19 @@ class ProbeResult {
   }
 }
 
+bool _looksLikeCloudflareChallenge(String body) {
+  if (body.isEmpty) return false;
+
+  return body.contains('Just a moment...') &&
+      (body.contains('Performing security verification') ||
+          body.contains('Enable JavaScript and cookies to continue') ||
+          body.contains('challenges.cloudflare.com') ||
+          body.contains('_cf_chl_opt'));
+}
+
 /// Infer content type from response headers and body.
-ProbeContentType _inferContentType(int statusCode, Map<String, String> headers, String body) {
+ProbeContentType _inferContentType(
+    int statusCode, Map<String, String> headers, String body) {
   if (statusCode != 200) return ProbeContentType.unknown;
   final ct = headers['content-type']?.toLowerCase() ?? '';
   if (ct.contains('json') || ct.contains('+json')) return ProbeContentType.json;
@@ -66,8 +80,7 @@ Future<ProbeResult> probeUrl(String url) async {
       final response = await client.get(
         Uri.parse(url),
         headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'
               ' (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
           'Accept':
               'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -79,7 +92,8 @@ Future<ProbeResult> probeUrl(String url) async {
         url: url,
         statusCode: response.statusCode,
         body: response.body,
-        contentType: _inferContentType(response.statusCode, response.headers, response.body),
+        contentType: _inferContentType(
+            response.statusCode, response.headers, response.body),
       );
     } finally {
       client.close();

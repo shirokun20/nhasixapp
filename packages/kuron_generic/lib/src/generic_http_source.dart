@@ -177,8 +177,12 @@ class GenericHttpSource implements ContentSource {
               scraper?['randomUrl']?.toString().trim() ??
               '');
 
-      final randomEndpoint = configuredRandomEndpoint;
+      final useApiRandomEndpoint = configuredRandomEndpoint.isNotEmpty;
+      final randomEndpoint = useApiRandomEndpoint
+          ? configuredRandomEndpoint
+          : scraperRandomEndpoint;
       final apiBase = api?['apiBase']?.toString() ?? _baseUrl;
+      final requestBaseUrl = useApiRandomEndpoint ? apiBase : _baseUrl;
 
       if (randomEndpoint.isEmpty) {
         if (api != null) {
@@ -200,7 +204,8 @@ class GenericHttpSource implements ContentSource {
 
       for (var index = 0; index < count; index++) {
         try {
-          final url = Uri.parse(apiBase).resolve(randomEndpoint).toString();
+          final url =
+              Uri.parse(requestBaseUrl).resolve(randomEndpoint).toString();
           _logger.d('$_id: Random request #${index + 1}: GET $url');
 
           await _prepareRandomRequest(referer: _baseUrl);
@@ -209,7 +214,8 @@ class GenericHttpSource implements ContentSource {
               url,
               options: Options(
                 headers: _mergeHeaders(_dio.options.headers, {
-                  if (!_defaultHeaders.containsKey('Accept'))
+                  if (useApiRandomEndpoint &&
+                      !_defaultHeaders.containsKey('Accept'))
                     'Accept': 'application/json',
                   if (!_defaultHeaders.containsKey('Referer'))
                     'Referer': refererHeader,
@@ -275,6 +281,18 @@ class GenericHttpSource implements ContentSource {
   /// Extract content ID from a random API response.
   String? _extractRandomContentId(dynamic data, Response<dynamic> response) {
     try {
+      final candidateUrls = <String>{
+        response.realUri.toString(),
+        response.requestOptions.uri.toString(),
+        ...response.redirects.map((redirect) => redirect.location.toString()),
+      };
+      for (final candidateUrl in candidateUrls) {
+        final contentIdFromUrl = parseContentIdFromUrl(candidateUrl);
+        if (contentIdFromUrl != null && contentIdFromUrl.isNotEmpty) {
+          return contentIdFromUrl;
+        }
+      }
+
       if (data is Map<String, dynamic>) {
         final id = data['id'];
         if (id != null) {
@@ -302,6 +320,11 @@ class GenericHttpSource implements ContentSource {
       }
 
       if (data is String) {
+        final contentIdFromHtml = _extractContentIdFromHtml(data);
+        if (contentIdFromHtml != null && contentIdFromHtml.isNotEmpty) {
+          return contentIdFromHtml;
+        }
+
         final idMatch = RegExp(r'"id"\s*:\s*(\d+)').firstMatch(data);
         if (idMatch != null) {
           return idMatch.group(1);
@@ -430,10 +453,33 @@ class GenericHttpSource implements ContentSource {
 
   @override
   String? parseContentIdFromUrl(String url) {
+    if (url.isEmpty) return null;
+
     final pattern = _rawConfig['contentIdPattern'] as String?;
-    if (pattern == null) return null;
-    final match = RegExp(pattern).firstMatch(url);
-    return match?.group(1);
+    if (pattern != null && pattern.isNotEmpty) {
+      final match = RegExp(pattern).firstMatch(url);
+      final captured = match?.group(1);
+      if (captured != null && captured.isNotEmpty) {
+        return captured;
+      }
+    }
+
+    final detailTemplate = _resolveDetailTemplate();
+    final fromTemplate = _extractContentIdFromDetailTemplate(
+      url,
+      detailTemplate,
+    );
+    if (fromTemplate != null && fromTemplate.isNotEmpty) {
+      return fromTemplate;
+    }
+
+    final parsed = Uri.tryParse(url);
+    if (parsed == null) return null;
+
+    final segments =
+        parsed.pathSegments.where((segment) => segment.isNotEmpty).toList();
+    if (segments.isEmpty) return null;
+    return segments.last;
   }
 
   @override
@@ -441,6 +487,109 @@ class GenericHttpSource implements ContentSource {
     final pattern = _rawConfig['contentIdPattern'] as String?;
     if (pattern == null) return true;
     return RegExp(pattern).hasMatch(contentId);
+  }
+
+  String? _resolveDetailTemplate() {
+    final scraper = _rawConfig['scraper'] as Map<String, dynamic>?;
+    final scraperPatterns = scraper?['urlPatterns'];
+    if (scraperPatterns is Map) {
+      final detail = scraperPatterns['detail'];
+      if (detail is String && detail.isNotEmpty) {
+        return detail;
+      }
+      if (detail is Map) {
+        final url = detail['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          return url;
+        }
+      }
+    }
+
+    final api = _rawConfig['api'] as Map<String, dynamic>?;
+    final endpoints = api?['endpoints'];
+    if (endpoints is Map) {
+      final detail = endpoints['detail'];
+      if (detail is String && detail.isNotEmpty) {
+        return detail;
+      }
+      if (detail is Map) {
+        final url = detail['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          return url;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractContentIdFromDetailTemplate(
+    String url,
+    String? detailTemplate,
+  ) {
+    if (detailTemplate == null ||
+        detailTemplate.isEmpty ||
+        !detailTemplate.contains('{id}')) {
+      return null;
+    }
+
+    final escapedTemplate = RegExp.escape(detailTemplate).replaceFirst(
+      r'\{id\}',
+      r'([^/?#]+)',
+    );
+    final candidates = <String>[
+      url,
+      Uri.tryParse(url)?.path ?? '',
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate.isEmpty) continue;
+      final match = RegExp(escapedTemplate).firstMatch(candidate);
+      final captured = match?.group(1);
+      if (captured != null && captured.isNotEmpty) {
+        return captured;
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractContentIdFromHtml(String html) {
+    final patterns = <RegExp>[
+      RegExp(
+        r'''<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']''',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'''<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']''',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'''<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']''',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'''href=["']([^"']*/manhwa/[^"']+)["']''',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'''href=["']([^"']*/hentai/[^"']+)["']''',
+        caseSensitive: false,
+      ),
+    ];
+
+    for (final pattern in patterns) {
+      for (final match in pattern.allMatches(html)) {
+        final candidate = match.group(1);
+        if (candidate == null || candidate.isEmpty) continue;
+        final contentId = parseContentIdFromUrl(candidate);
+        if (contentId != null && contentId.isNotEmpty) {
+          return contentId;
+        }
+      }
+    }
+
+    return null;
   }
 
   // ── Download headers ───────────────────────────────────────────────────────
