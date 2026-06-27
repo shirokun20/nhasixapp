@@ -196,6 +196,14 @@ You can also scan the QRIS below to donate:
 
 ---
 
+## 👥 Contributors
+
+Thanks to all contributors who helped make kuron better!
+
+[![Contributors](https://contrib.rocks/image?repo=shirokun20/nhasixapp&max=150&columns=15&anon=1&v=20260309)](https://github.com/shirokun20/nhasixapp/graphs/contributors)
+
+---
+
 ## 📈 **Star History**
 
 <div align="center">

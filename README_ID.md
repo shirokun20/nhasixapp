@@ -196,6 +196,14 @@ Kamu juga bisa scan QRIS di bawah ini untuk berdonasi:
 
 ---
 
+## 👥 Contributors
+
+Terimakasih kepada kontributor yang membuat aplikasi kuron ini lebih baik!
+
+[![Contributors](https://contrib.rocks/image?repo=shirokun20/nhasixapp&max=150&columns=15&anon=1&v=20260309)](https://github.com/shirokun20/nhasixapp/graphs/contributors)
+
+---
+
 ## 📈 **Star History**
 
 <div align="center">
