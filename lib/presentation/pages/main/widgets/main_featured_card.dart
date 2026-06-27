@@ -1,12 +1,14 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart'
     show AppColors, KuronColors;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
@@ -31,379 +33,418 @@ class MainFeaturedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: ContentDownloadCache.isDownloaded(
-        content.id,
-        sourceId: content.sourceId,
-        context: context,
-      ),
-      builder: (context, snapshot) {
-        final isDownloaded = snapshot.data ?? false;
+    return BlocBuilder<DownloadBloc, DownloadBlocState>(
+      buildWhen: (previous, current) =>
+          previous.runtimeType != current.runtimeType ||
+          previous.lastUpdated != current.lastUpdated,
+      builder: (context, _) {
         return FutureBuilder<bool>(
-          future: ContentReadCache.readProgress(content)
-              .then((progress) => progress != null && progress > 0),
-          builder: (context, readSnapshot) {
-            final isRead = readSnapshot.data ?? false;
-            final theme = Theme.of(context);
-            final kuronColors = theme.extension<KuronColors>();
-            final gradientStart =
-                kuronColors?.cardGradientStart ?? AppColors.darkGradientStart;
-            final gradientEnd =
-                kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
-            final cardBorder = kuronColors?.cardBorder ?? AppColors.darkBorder;
-            const downloadBorderColor = AppColors.brandCoral;
-            final runningBorderColor =
-                theme.colorScheme.onSurface.withValues(alpha: 0.1);
-            final readGoldColor = kuronColors?.readGold ?? AppColors.readGold;
-            final hasAnimatedBorder = isRead || isDownloaded;
-            final borderColors = isRead && isDownloaded
-                ? <Color>[
-                    downloadBorderColor,
-                    readGoldColor,
-                    downloadBorderColor,
-                    runningBorderColor,
-                  ]
-                : isRead
-                    ? <Color>[readGoldColor]
-                    : <Color>[downloadBorderColor];
-            final borderStyle = switch ((isDownloaded, isRead)) {
-              (true, true) => (
-                  innerColor: readGoldColor,
-                  innerWidth: 2.2,
-                  shadowColor: readGoldColor.withValues(alpha: 0.18),
-                ),
-              (true, false) => (
-                  innerColor: downloadBorderColor,
-                  innerWidth: 2.0,
-                  shadowColor: downloadBorderColor.withValues(alpha: 0.25),
-                ),
-              (false, true) => (
-                  innerColor: readGoldColor,
-                  innerWidth: 2.0,
-                  shadowColor: readGoldColor.withValues(alpha: 0.25),
-                ),
-              _ => (
-                  innerColor: cardBorder,
-                  innerWidth: 1.5,
-                  shadowColor: cardBorder.withValues(alpha: 0.08),
-                ),
-            };
+          future: ContentDownloadCache.isDownloaded(
+            content.id,
+            sourceId: content.sourceId,
+            allowFilesystemFallback: false,
+            context: context,
+          ),
+          builder: (context, snapshot) {
+            final isDownloaded = snapshot.data ?? false;
+            return FutureBuilder<bool>(
+              future: ContentReadCache.readProgress(content)
+                  .then((progress) => progress != null && progress > 0),
+              builder: (context, readSnapshot) {
+                final isRead = readSnapshot.data ?? false;
+                final theme = Theme.of(context);
+                final kuronColors = theme.extension<KuronColors>();
+                final gradientStart = kuronColors?.cardGradientStart ??
+                    AppColors.darkGradientStart;
+                final gradientEnd =
+                    kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
+                final cardBorder =
+                    kuronColors?.cardBorder ?? AppColors.darkBorder;
+                const downloadBorderColor = AppColors.brandCoral;
+                final runningBorderColor =
+                    theme.colorScheme.onSurface.withValues(alpha: 0.1);
+                final readGoldColor =
+                    kuronColors?.readGold ?? AppColors.readGold;
+                final hasAnimatedBorder = isRead || isDownloaded;
+                final borderColors = isRead && isDownloaded
+                    ? <Color>[
+                        downloadBorderColor,
+                        readGoldColor,
+                        downloadBorderColor,
+                        runningBorderColor,
+                      ]
+                    : isRead
+                        ? <Color>[readGoldColor]
+                        : <Color>[downloadBorderColor];
+                final borderStyle = switch ((isDownloaded, isRead)) {
+                  (true, true) => (
+                      innerColor: readGoldColor,
+                      innerWidth: 2.2,
+                      shadowColor: readGoldColor.withValues(alpha: 0.18),
+                    ),
+                  (true, false) => (
+                      innerColor: downloadBorderColor,
+                      innerWidth: 2.0,
+                      shadowColor: downloadBorderColor.withValues(alpha: 0.25),
+                    ),
+                  (false, true) => (
+                      innerColor: readGoldColor,
+                      innerWidth: 2.0,
+                      shadowColor: readGoldColor.withValues(alpha: 0.25),
+                    ),
+                  _ => (
+                      innerColor: cardBorder,
+                      innerWidth: 1.5,
+                      shadowColor: cardBorder.withValues(alpha: 0.08),
+                    ),
+                };
 
-            final innerCard = Container(
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [gradientStart, gradientEnd],
-                ),
-                border: hasAnimatedBorder
-                    ? Border.all(color: Colors.transparent, width: 0)
-                    : Border.all(
-                        color: borderStyle.innerColor,
-                        width: borderStyle.innerWidth,
-                      ),
-                boxShadow: [
-                  BoxShadow(
-                    color: borderStyle.shadowColor,
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-                child: Stack(
-                  children: [
-                    // Main content Row
-                    Row(
-                      children: [
-                        // Cover Image (Left side - 40% width)
-                        Expanded(
-                          flex: 4,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              _buildImageWithBlur(
-                                context: context,
-                                coverUrl: content.coverUrl,
-                                fallbackUrl: content.imageUrls.isNotEmpty
-                                    ? content.imageUrls.first
-                                    : null,
-                              ),
-                              if (isBlacklisted)
-                                _buildBlacklistedOverlay(context),
-                              if (isRead)
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: readGoldColor.withValues(
-                                        alpha: 0.88,
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        DesignTokens.radiusMd,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.menu_book_rounded,
-                                          size: 10,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          'READ',
-                                          style:
-                                              TextStyleConst.overline.copyWith(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              // Page count badge
-                              if (content.pageCount > 0)
-                                Positioned(
-                                  bottom: 8,
-                                  left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.7),
-                                      borderRadius: BorderRadius.circular(
-                                          DesignTokens.radiusMd),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.photo_library_outlined,
-                                          size: 12,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${content.pageCount}',
-                                          style: TextStyleConst.labelSmall
-                                              .copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              // OFFLINE badge
-                              if (isDownloaded)
-                                Positioned(
-                                  top: 8,
-                                  left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.tertiary
-                                          .withValues(alpha: 0.9),
-                                      borderRadius: BorderRadius.circular(
-                                          DesignTokens.radiusMd),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.offline_bolt,
-                                          size: 12,
-                                          color: theme.colorScheme.onTertiary,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          'OFFLINE',
-                                          style:
-                                              TextStyleConst.overline.copyWith(
-                                            color: theme.colorScheme.onTertiary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 9,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
+                final innerCard = Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [gradientStart, gradientEnd],
+                    ),
+                    border: hasAnimatedBorder
+                        ? Border.all(color: Colors.transparent, width: 0)
+                        : Border.all(
+                            color: borderStyle.innerColor,
+                            width: borderStyle.innerWidth,
                           ),
-                        ),
-                        // Content Info (Right side - 60% width)
-                        Expanded(
-                          flex: 6,
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  gradientStart,
-                                  gradientEnd,
-                                ],
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title
-                                Text(
-                                  content.getDisplayTitle(),
-                                  style: TextStyleConst.headingSmall.copyWith(
-                                    color: theme.colorScheme.onSurface,
-                                    fontSize: 15,
-                                    height: 1.2,
+                    boxShadow: [
+                      BoxShadow(
+                        color: borderStyle.shadowColor,
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                    child: Stack(
+                      children: [
+                        // Main content Row
+                        Row(
+                          children: [
+                            // Cover Image (Left side - 40% width)
+                            Expanded(
+                              flex: 4,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _buildImageWithBlur(
+                                    context: context,
+                                    coverUrl: content.coverUrl,
+                                    fallbackUrl: content.imageUrls.isNotEmpty
+                                        ? content.imageUrls.first
+                                        : null,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                // Subtitle (Chapter info)
-                                if (content.subTitle != null &&
-                                    content.subTitle!.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    content.subTitle!,
-                                    style: TextStyleConst.labelSmall.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                      fontSize: 10,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                                const SizedBox(height: 8),
-                                // Artists
-                                if (content.artists.isNotEmpty)
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.brush_rounded,
-                                        size: 14,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          content.artists.take(2).join(', '),
-                                          style:
-                                              TextStyleConst.bodySmall.copyWith(
-                                            color: theme.colorScheme.primary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                const Spacer(),
-                                // Genre/Tags preview
-                                if (content.tags.isNotEmpty) ...[
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 4,
-                                    children: content.tags.take(3).map((tag) {
-                                      return Container(
+                                  if (isBlacklisted)
+                                    _buildBlacklistedOverlay(context),
+                                  if (isRead)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
+                                          horizontal: 6,
                                           vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: theme
-                                              .colorScheme.primaryContainer
-                                              .withValues(alpha: 0.5),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          tag.name,
-                                          style: TextStyleConst.labelSmall
-                                              .copyWith(
-                                            color: theme
-                                                .colorScheme.onPrimaryContainer,
-                                            fontSize: 10,
+                                          color: readGoldColor.withValues(
+                                            alpha: 0.88,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            DesignTokens.radiusMd,
                                           ),
                                         ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(height: 8),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.menu_book_rounded,
+                                              size: 10,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'READ',
+                                              style: TextStyleConst.overline
+                                                  .copyWith(
+                                                color: Colors.white,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  // Page count badge
+                                  if (content.pageCount > 0)
+                                    Positioned(
+                                      bottom: 8,
+                                      left: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.7),
+                                          borderRadius: BorderRadius.circular(
+                                              DesignTokens.radiusMd),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.photo_library_outlined,
+                                              size: 12,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${content.pageCount}',
+                                              style: TextStyleConst.labelSmall
+                                                  .copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  // OFFLINE badge
+                                  if (isDownloaded)
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.tertiary
+                                              .withValues(alpha: 0.9),
+                                          borderRadius: BorderRadius.circular(
+                                              DesignTokens.radiusMd),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.offline_bolt,
+                                              size: 12,
+                                              color:
+                                                  theme.colorScheme.onTertiary,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'OFFLINE',
+                                              style: TextStyleConst.overline
+                                                  .copyWith(
+                                                color: theme
+                                                    .colorScheme.onTertiary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 9,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                 ],
-                                // Language flag
-                                Row(
+                              ),
+                            ),
+                            // Content Info (Right side - 60% width)
+                            Expanded(
+                              flex: 6,
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      gradientStart,
+                                      gradientEnd,
+                                    ],
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (content.language.isNotEmpty)
-                                      Builder(builder: (context) {
-                                        final languageService =
-                                            getIt<LanguageService>();
-                                        final normalizedLanguage = content
-                                            .language
-                                            .toLowerCase()
-                                            .trim();
-                                        final hasLanguage =
-                                            normalizedLanguage.isNotEmpty &&
-                                                normalizedLanguage != 'unknown';
-                                        final flagAssetPath = hasLanguage
-                                            ? languageService.flagAssetPath(
-                                                normalizedLanguage)
-                                            : null;
-                                        final languageBadge = hasLanguage
-                                            ? (normalizedLanguage.length >= 2
-                                                ? normalizedLanguage
-                                                    .substring(0, 2)
-                                                    .toUpperCase()
-                                                : normalizedLanguage
-                                                    .toUpperCase())
-                                            : '--';
-
-                                        return Container(
-                                          width: 28,
-                                          height: 18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                            border: Border.all(
-                                              color: theme.colorScheme.outline
-                                                  .withValues(alpha: 0.5),
-                                              width: 0.5,
+                                    // Title
+                                    Text(
+                                      content.getDisplayTitle(),
+                                      style:
+                                          TextStyleConst.headingSmall.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: 15,
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    // Subtitle (Chapter info)
+                                    if (content.subTitle != null &&
+                                        content.subTitle!.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        content.subTitle!,
+                                        style:
+                                            TextStyleConst.labelSmall.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 10,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    // Artists
+                                    if (content.artists.isNotEmpty)
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.brush_rounded,
+                                            size: 14,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              content.artists
+                                                  .take(2)
+                                                  .join(', '),
+                                              style: TextStyleConst.bodySmall
+                                                  .copyWith(
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                            child: flagAssetPath != null
-                                                ? SvgPicture.asset(
-                                                    flagAssetPath,
-                                                    width: 28,
-                                                    height: 18,
-                                                    fit: BoxFit.cover,
-                                                    placeholderBuilder:
-                                                        (context) {
-                                                      return Container(
+                                        ],
+                                      ),
+                                    const Spacer(),
+                                    // Genre/Tags preview
+                                    if (content.tags.isNotEmpty) ...[
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children:
+                                            content.tags.take(3).map((tag) {
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: theme
+                                                  .colorScheme.primaryContainer
+                                                  .withValues(alpha: 0.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              tag.name,
+                                              style: TextStyleConst.labelSmall
+                                                  .copyWith(
+                                                color: theme.colorScheme
+                                                    .onPrimaryContainer,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    // Language flag
+                                    Row(
+                                      children: [
+                                        if (content.language.isNotEmpty)
+                                          Builder(builder: (context) {
+                                            final languageService =
+                                                getIt<LanguageService>();
+                                            final normalizedLanguage = content
+                                                .language
+                                                .toLowerCase()
+                                                .trim();
+                                            final hasLanguage =
+                                                normalizedLanguage.isNotEmpty &&
+                                                    normalizedLanguage !=
+                                                        'unknown';
+                                            final flagAssetPath = hasLanguage
+                                                ? languageService.flagAssetPath(
+                                                    normalizedLanguage)
+                                                : null;
+                                            final languageBadge = hasLanguage
+                                                ? (normalizedLanguage.length >=
+                                                        2
+                                                    ? normalizedLanguage
+                                                        .substring(0, 2)
+                                                        .toUpperCase()
+                                                    : normalizedLanguage
+                                                        .toUpperCase())
+                                                : '--';
+
+                                            return Container(
+                                              width: 28,
+                                              height: 18,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                                border: Border.all(
+                                                  color: theme
+                                                      .colorScheme.outline
+                                                      .withValues(alpha: 0.5),
+                                                  width: 0.5,
+                                                ),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                                child: flagAssetPath != null
+                                                    ? SvgPicture.asset(
+                                                        flagAssetPath,
+                                                        width: 28,
+                                                        height: 18,
+                                                        fit: BoxFit.cover,
+                                                        placeholderBuilder:
+                                                            (context) {
+                                                          return Container(
+                                                            color: theme
+                                                                .colorScheme
+                                                                .surfaceContainerHighest,
+                                                            child: Center(
+                                                              child: Text(
+                                                                languageBadge,
+                                                                style: TextStyleConst
+                                                                    .labelSmall
+                                                                    .copyWith(
+                                                                  fontSize: 8,
+                                                                  color: theme
+                                                                      .colorScheme
+                                                                      .onSurfaceVariant,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      )
+                                                    : Container(
                                                         color: theme.colorScheme
                                                             .surfaceContainerHighest,
                                                         child: Center(
@@ -420,94 +461,78 @@ class MainFeaturedCard extends StatelessWidget {
                                                             ),
                                                           ),
                                                         ),
-                                                      );
-                                                    },
-                                                  )
-                                                : Container(
-                                                    color: theme.colorScheme
-                                                        .surfaceContainerHighest,
-                                                    child: Center(
-                                                      child: Text(
-                                                        languageBadge,
-                                                        style: TextStyleConst
-                                                            .labelSmall
-                                                            .copyWith(
-                                                          fontSize: 8,
-                                                          color: theme
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                          ),
-                                        );
-                                      }),
-                                    const SizedBox(width: 8),
-                                    if (content.language.isNotEmpty)
-                                      Builder(builder: (context) {
-                                        final languageService =
-                                            getIt<LanguageService>();
-                                        final normalizedLanguage = content
-                                            .language
-                                            .toLowerCase()
-                                            .trim();
-                                        final hasLanguage =
-                                            normalizedLanguage.isNotEmpty &&
-                                                normalizedLanguage != 'unknown';
-                                        final languageLabel = hasLanguage
-                                            ? languageService
-                                                .displayName(normalizedLanguage)
-                                            : content.language;
+                                              ),
+                                            );
+                                          }),
+                                        const SizedBox(width: 8),
+                                        if (content.language.isNotEmpty)
+                                          Builder(builder: (context) {
+                                            final languageService =
+                                                getIt<LanguageService>();
+                                            final normalizedLanguage = content
+                                                .language
+                                                .toLowerCase()
+                                                .trim();
+                                            final hasLanguage =
+                                                normalizedLanguage.isNotEmpty &&
+                                                    normalizedLanguage !=
+                                                        'unknown';
+                                            final languageLabel = hasLanguage
+                                                ? languageService.displayName(
+                                                    normalizedLanguage)
+                                                : content.language;
 
-                                        return Text(
-                                          languageLabel,
-                                          style: TextStyleConst.labelSmall
-                                              .copyWith(
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        );
-                                      }),
+                                            return Text(
+                                              languageLabel,
+                                              style: TextStyleConst.labelSmall
+                                                  .copyWith(
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            );
+                                          }),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Ripple effect overlay (on top of everything)
+                        Positioned.fill(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: onTap,
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusXl),
+                              splashColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.3),
+                              highlightColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.15),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    // Ripple effect overlay (on top of everything)
-                    Positioned.fill(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onTap,
-                          borderRadius:
-                              BorderRadius.circular(DesignTokens.radiusXl),
-                          splashColor:
-                              theme.colorScheme.primary.withValues(alpha: 0.3),
-                          highlightColor:
-                              theme.colorScheme.primary.withValues(alpha: 0.15),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+                  ),
+                );
 
-            if (!hasAnimatedBorder) {
-              return innerCard;
-            }
+                if (!hasAnimatedBorder) {
+                  return innerCard;
+                }
 
-            return AnimatedStatusBorderFrame(
-              colors: borderColors,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-              strokeWidth: 1.2,
-              shadowColor: borderStyle.shadowColor,
-              child: innerCard,
+                return AnimatedStatusBorderFrame(
+                  colors: borderColors,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                  strokeWidth: 1.2,
+                  shadowColor: borderStyle.shadowColor,
+                  child: innerCard,
+                );
+              },
             );
           },
         );

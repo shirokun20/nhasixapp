@@ -82,4 +82,46 @@ void main() {
       isTrue,
     );
   });
+
+  test('matches mangafire reader url download to parent series card', () {
+    const download = DownloadStatus(
+      contentId:
+          'https://mangafire.to/read/the-honor-students-secret-jobb.w1q37/en/volume-1',
+      state: DownloadState.completed,
+      totalPages: 185,
+      title: 'The Honor Student\'s Secret Job - Vol 1',
+      sourceId: 'mangafire',
+      downloadPath: '/tmp/sp8yihdx',
+    );
+
+    expect(
+      ContentDownloadCache.matchesDownload(
+        download,
+        'the-honor-students-secret-jobb.w1q37',
+        sourceId: 'mangafire',
+      ),
+      isTrue,
+    );
+  });
+
+  test('matches mangadex title url download to manga id', () {
+    const download = DownloadStatus(
+      contentId: 'https://mangadex.org/title/3c7854f8-56c4-41d0-ae48-4c9b06c66a06',
+      state: DownloadState.completed,
+      totalPages: 18,
+      title:
+          'Shut Up, Malevolent Dragon! I Don’t Want to Have Any More Children With You - Ch.99',
+      sourceId: 'mangadex',
+      downloadPath: '/tmp/1nmpabyaxp',
+    );
+
+    expect(
+      ContentDownloadCache.matchesDownload(
+        download,
+        '3c7854f8-56c4-41d0-ae48-4c9b06c66a06',
+        sourceId: 'mangadex',
+      ),
+      isTrue,
+    );
+  });
 }

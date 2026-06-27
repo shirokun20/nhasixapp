@@ -88,6 +88,12 @@ class ContentDownloadCache {
       return true;
     }
 
+    final parentIdFromUrl = _extractParentContentIdFromUrl(downloadedContentId);
+    if (parentIdFromUrl != null &&
+        _normalizeContentId(parentIdFromUrl) == normalizedContentId) {
+      return true;
+    }
+
     // Chapter-based sources keep completed download IDs as composite values
     // like "slug/17". Highlight the parent series card when any descendant
     // chapter under the same source has been downloaded.
@@ -128,9 +134,44 @@ class ContentDownloadCache {
     return pattern.hasMatch(normalizedDownloadId);
   }
 
+  static String? _extractParentContentIdFromUrl(String rawValue) {
+    final normalized = rawValue.trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+
+    List<String> segments;
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      final uri = Uri.tryParse(normalized);
+      if (uri == null) {
+        return null;
+      }
+      segments =
+          uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
+    } else {
+      segments = normalized
+          .replaceFirst(RegExp(r'^/+'), '')
+          .split('/')
+          .where((segment) => segment.isNotEmpty)
+          .toList();
+    }
+
+    if (segments.length >= 2 && segments.first == 'read') {
+      return segments[1];
+    }
+    if (segments.length >= 2 && segments.first == 'manga') {
+      return segments[1];
+    }
+    if (segments.length >= 2 && segments.first == 'title') {
+      return segments[1];
+    }
+    return null;
+  }
+
   static Future<bool> isDownloaded(
     String contentId, {
     String? sourceId,
+    bool allowFilesystemFallback = true,
     BuildContext? context,
   }) async {
     final cacheKey = _buildCacheKey(contentId, sourceId);
@@ -155,6 +196,21 @@ class ContentDownloadCache {
             _cacheTime[cacheKey] = DateTime.now();
             return true;
           }
+
+          if (!allowFilesystemFallback) {
+            _cache[cacheKey] = false;
+            _cacheTime[cacheKey] = DateTime.now();
+            return false;
+          }
+        } else if (!allowFilesystemFallback) {
+          if (_cache.containsKey(cacheKey)) {
+            final cacheTime = _cacheTime[cacheKey];
+            if (cacheTime != null &&
+                DateTime.now().difference(cacheTime) < _cacheExpiry) {
+              return _cache[cacheKey]!;
+            }
+          }
+          return false;
         }
       } catch (e) {
         Logger().w(
@@ -181,7 +237,10 @@ class ContentDownloadCache {
     try {
       isDownloaded = await LocalImagePreloader.isContentDownloaded(contentId);
 
-      if (!isDownloaded && sourceId != null && sourceId.trim().isNotEmpty) {
+      if (allowFilesystemFallback &&
+          !isDownloaded &&
+          sourceId != null &&
+          sourceId.trim().isNotEmpty) {
         final offlineIds = await _getOfflineContentIdsForSource(sourceId);
         isDownloaded = offlineIds.any(
           (offlineId) => _matchesDownloadedContentId(offlineId, contentId),
@@ -252,7 +311,8 @@ class ContentDownloadCache {
       final offlineContents = await getIt<OfflineContentManager>()
           .scanBackupFolder(sourceDirectory);
       final ids = offlineContents
-          .where((content) => content.sourceId.trim().toLowerCase() == normalizedSource)
+          .where((content) =>
+              content.sourceId.trim().toLowerCase() == normalizedSource)
           .map((content) => content.id)
           .toSet();
       _sourceOfflineIdsCache[normalizedSource] = ids;

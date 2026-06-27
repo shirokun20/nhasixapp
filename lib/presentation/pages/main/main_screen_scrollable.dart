@@ -89,6 +89,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // Initialize SearchBloc to check for saved search state
     _searchBloc = getIt<SearchBloc>();
     _offlineSearchCubit = getIt<OfflineSearchCubit>();
+    final downloadBloc = context.read<DownloadBloc>();
+    if (downloadBloc.state is DownloadInitial) {
+      downloadBloc.add(const DownloadInitializeEvent());
+    }
 
     // Initialize UpdateCubit and check for updates
     _updateCubit = getIt<UpdateCubit>()..checkForUpdate();
