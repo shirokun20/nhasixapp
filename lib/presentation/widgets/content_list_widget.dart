@@ -30,13 +30,15 @@ class ContentDownloadCache {
   static final Map<String, bool> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
+  static const String _ehentaiPartPrefix = '__ehpart__:';
+  static const String _ehentaiChunkPrefix = '__ehchunk__:';
 
   static String _buildCacheKey(String contentId, String? sourceId) {
     final normalizedSource = (sourceId ?? '').trim().toLowerCase();
     return '$normalizedSource::$contentId';
   }
 
-  static bool _matchesCompletedDownload(
+  static bool matchesDownload(
     DownloadStatus download,
     String contentId, {
     String? sourceId,
@@ -52,10 +54,29 @@ class ContentDownloadCache {
       return true;
     }
 
+    final ehentaiParentId = _ehentaiParentGalleryId(download.contentId);
+    if (ehentaiParentId != null && ehentaiParentId == contentId) {
+      return true;
+    }
+
     // Chapter-based sources keep completed download IDs as composite values
     // like "slug/17". Highlight the parent series card when any descendant
     // chapter under the same source has been downloaded.
     return download.contentId.startsWith('$contentId/');
+  }
+
+  static String? _ehentaiParentGalleryId(String contentId) {
+    if (!contentId.startsWith(_ehentaiPartPrefix) &&
+        !contentId.startsWith(_ehentaiChunkPrefix)) {
+      return null;
+    }
+
+    final parts = contentId.split(':');
+    if (parts.length < 3 || parts[1].isEmpty || parts[2].isEmpty) {
+      return null;
+    }
+
+    return '${parts[1]}/${parts[2]}';
   }
 
   static Future<bool> isDownloaded(
@@ -73,7 +94,7 @@ class ContentDownloadCache {
         final downloadState = context.read<DownloadBloc>().state;
         if (downloadState is DownloadLoaded) {
           final isDownloaded = downloadState.completedDownloads.any(
-            (download) => _matchesCompletedDownload(
+            (download) => matchesDownload(
               download,
               contentId,
               sourceId: sourceId,

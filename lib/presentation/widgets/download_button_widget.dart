@@ -9,6 +9,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/constants/design_tokens.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
+import 'content_list_widget.dart';
 import 'ehentai_download_strategy.dart';
 import 'download_range_selector.dart';
 import 'download_settings_widget.dart';
@@ -45,8 +46,15 @@ class DownloadButtonWidget extends StatelessWidget {
         }
 
         // Find download status for this content
-        final download =
-            state.downloads.where((d) => d.contentId == content.id).firstOrNull;
+        final download = state.downloads
+            .where(
+              (d) => ContentDownloadCache.matchesDownload(
+                d,
+                content.id,
+                sourceId: content.sourceId,
+              ),
+            )
+            .firstOrNull;
 
         if (download == null) {
           // Check if download feature is enabled for this source
