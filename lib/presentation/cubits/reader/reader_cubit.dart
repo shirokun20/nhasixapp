@@ -25,6 +25,7 @@ import '../../../core/models/image_metadata.dart';
 import '../../../core/config/remote_config_service.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/local_image_preloader.dart';
+import '../../widgets/content_list_widget.dart';
 import '../../utils/chapter_language_presenter.dart';
 import '../network/network_cubit.dart';
 import '../../../core/utils/webtoon_detector.dart';
@@ -1014,6 +1015,16 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterTitle: chapterTitle,
       );
       await addToHistoryUseCase(params);
+      ContentReadCache.invalidateCache(
+        historyContentId,
+        sourceId: state.content!.sourceId,
+      );
+      if (historyParentId != null && historyParentId.isNotEmpty) {
+        ContentReadCache.invalidateCache(
+          historyParentId,
+          sourceId: state.content!.sourceId,
+        );
+      }
     } catch (e, stackTrace) {
       _logger.e('Failed to save silent page update to history',
           error: e, stackTrace: stackTrace);
@@ -2379,6 +2390,16 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d(
           '📤 Saving history with contentId: ${params.contentId.value}, parentId: ${params.parentId}, chapterId: ${params.chapterId}');
       await addToHistoryUseCase(params);
+      ContentReadCache.invalidateCache(
+        historyContentId,
+        sourceId: state.content!.sourceId,
+      );
+      if (historyParentId != null && historyParentId.isNotEmpty) {
+        ContentReadCache.invalidateCache(
+          historyParentId,
+          sourceId: state.content!.sourceId,
+        );
+      }
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading progress to history',
           error: e, stackTrace: stackTrace);

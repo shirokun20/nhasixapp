@@ -369,11 +369,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           )
                         : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusMd),
                       borderSide: BorderSide(color: colorScheme.outline),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusMd),
                       borderSide: BorderSide(color: colorScheme.primary),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
@@ -753,12 +755,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   },
                   child: GridView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
                     gridDelegate: state.isListMode
                         ? const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 1,
                             mainAxisSpacing: 16,
-                            mainAxisExtent: 120, // Height for list mode items
+                            mainAxisExtent: 132, // Height for list mode items
                           )
                         : ResponsiveGridDelegate.createStandardGridDelegate(
                             context,
@@ -917,7 +919,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       height: 54,
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusXl),
                       ),
                       child: Center(
                         child: Icon(
@@ -1036,7 +1039,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                           border: Border.all(
                             color: colorScheme.outlineVariant
                                 .withValues(alpha: 0.45),

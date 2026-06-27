@@ -3,15 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 
 import '../../core/constants/text_style_const.dart';
+import '../../core/di/service_locator.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
+import '../../core/utils/title_parser_utils.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/repositories/user_data_repository.dart';
 import '../../services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
 import '../cubits/settings/settings_cubit.dart';
-import 'content_card_widget.dart';
-import 'featured_content_card.dart';
+import '../pages/main/widgets/main_featured_card.dart';
+import '../pages/main/widgets/main_grid_card.dart';
 
 extension StringCapitalize on String {
   String get capitalize {
@@ -138,6 +141,131 @@ class ContentDownloadCache {
   }
 
   /// Clear all cache entries
+  static void clearCache() {
+    _cache.clear();
+    _cacheTime.clear();
+  }
+}
+
+/// Cache for read status to avoid repeated history lookups per card build.
+class ContentReadCache {
+  static final Map<String, double?> _cache = {};
+  static final Map<String, DateTime> _cacheTime = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+
+  static String _buildCacheKey(String contentId, String? sourceId) {
+    final normalizedSource = (sourceId ?? '').trim().toLowerCase();
+    return '$normalizedSource::$contentId';
+  }
+
+  static bool _isValidProgress(History history, String? sourceId) {
+    if (sourceId != null &&
+        sourceId.trim().isNotEmpty &&
+        history.sourceId.trim().toLowerCase() !=
+            sourceId.trim().toLowerCase()) {
+      return false;
+    }
+    return history.isCompleted || history.progress > 0;
+  }
+
+  static double _normalizeProgress(History history) {
+    if (history.isCompleted) return 1.0;
+    return history.progress.clamp(0.0, 1.0);
+  }
+
+  static Future<double?> readProgress(
+    Content content,
+  ) async {
+    final contentId = content.id;
+    final sourceId = content.sourceId;
+    final cacheKey = _buildCacheKey(contentId, sourceId);
+
+    if (_cache.containsKey(cacheKey)) {
+      final cacheTime = _cacheTime[cacheKey];
+      if (cacheTime != null &&
+          DateTime.now().difference(cacheTime) < _cacheExpiry) {
+        return _cache[cacheKey];
+      }
+    }
+
+    try {
+      final userDataRepository = getIt<UserDataRepository>();
+
+      final history = await userDataRepository.getHistoryEntry(contentId);
+      if (history != null && _isValidProgress(history, sourceId)) {
+        final progress = _normalizeProgress(history);
+        _cache[cacheKey] = progress;
+        _cacheTime[cacheKey] = DateTime.now();
+        return progress;
+      }
+
+      final chapterHistory =
+          await userDataRepository.getAllChapterHistory(contentId);
+      final chapterProgress = chapterHistory
+          .where((item) => _isValidProgress(item, sourceId))
+          .map(_normalizeProgress)
+          .fold<double?>(null, (previous, value) {
+        if (previous == null || value > previous) return value;
+        return previous;
+      });
+      if (chapterProgress != null) {
+        _cache[cacheKey] = chapterProgress;
+        _cacheTime[cacheKey] = DateTime.now();
+        return chapterProgress;
+      }
+
+      final cardBaseTitle =
+          TitleParserUtils.getBaseTitle(content.getDisplayTitle())
+              .toLowerCase();
+      final recentHistory = await userDataRepository.getHistory(limit: 100);
+      History? matchedHistory;
+      for (final item in recentHistory) {
+        if (sourceId.isNotEmpty &&
+            item.sourceId.trim().toLowerCase() != sourceId.toLowerCase()) {
+          continue;
+        }
+
+        final historyTitle = item.title?.trim();
+        if (historyTitle == null || historyTitle.isEmpty) continue;
+        if (TitleParserUtils.getBaseTitle(historyTitle).toLowerCase() ==
+            cardBaseTitle) {
+          matchedHistory = item;
+          break;
+        }
+      }
+      if (matchedHistory != null &&
+          _isValidProgress(matchedHistory, sourceId)) {
+        final progress = _normalizeProgress(matchedHistory);
+        _cache[cacheKey] = progress;
+        _cacheTime[cacheKey] = DateTime.now();
+        return progress;
+      }
+    } catch (e) {
+      Logger().w('Failed to resolve read progress for $contentId: $e');
+    }
+
+    _cache[cacheKey] = null;
+    _cacheTime[cacheKey] = DateTime.now();
+    return null;
+  }
+
+  static void invalidateCache(String contentId, {String? sourceId}) {
+    if (sourceId != null) {
+      final cacheKey = _buildCacheKey(contentId, sourceId);
+      _cache.remove(cacheKey);
+      _cacheTime.remove(cacheKey);
+      return;
+    }
+
+    final suffix = '::$contentId';
+    final keysToRemove =
+        _cache.keys.where((key) => key.endsWith(suffix)).toList();
+    for (final key in keysToRemove) {
+      _cache.remove(key);
+      _cacheTime.remove(key);
+    }
+  }
+
   static void clearCache() {
     _cache.clear();
     _cacheTime.clear();
@@ -436,12 +564,22 @@ class _ContentListWidgetState extends State<ContentListWidget> {
         // Featured content card (first item displayed as full-width)
         if (state.contents.isNotEmpty && state.currentPage == 1)
           SliverToBoxAdapter(
-            child: FeaturedContentCard(
-              content: state.contents.first,
-              onTap: () => widget.onContentTap?.call(state.contents.first),
-              blurThumbnails: widget.blurThumbnails,
-              isBlurred:
-                  widget.shouldBlurContent?.call(state.contents.first) ?? false,
+            child: Builder(
+              builder: (context) {
+                final isBlacklisted =
+                    widget.shouldBlurContent?.call(state.contents.first) ??
+                        false;
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: MainFeaturedCard(
+                    content: state.contents.first,
+                    onTap: () =>
+                        widget.onContentTap?.call(state.contents.first),
+                    blurThumbnails: widget.blurThumbnails,
+                    isBlacklisted: isBlacklisted,
+                  ),
+                );
+              },
             ),
           ),
 
@@ -463,34 +601,13 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                 }
                 final content = state.contents[adjustedIndex];
 
-                // Use FutureBuilder to check download status for highlight
-                return FutureBuilder<bool>(
-                  future: ContentDownloadCache.isDownloaded(
-                    content.id,
-                    sourceId: content.sourceId,
-                    context: context,
-                  ),
-                  builder: (context, snapshot) {
-                    final isDownloaded = snapshot.data ?? false;
-
-                    return ContentCard(
-                      content: content,
-                      onTap: () => widget.onContentTap?.call(content),
-                      blurThumbnails: widget.blurThumbnails,
-                      // Using default settings (showUploadDate: false) for main screen style
-                      // For search/browse screens, set showUploadDate: true
-                      // Hide page count for Crotpedia (manga/manhwa) - only show for nhentai
-                      showPageCount: content.sourceId != 'crotpedia',
-                      showDownloadBadge: isDownloaded,
-                      isBlurred: widget.shouldBlurContent?.call(content) ??
-                          false, // NEW: Apply blur logic
-                      isHighlighted:
-                          isDownloaded, // NEW: Highlight downloaded content instead of search match
-                      highlightReason: isDownloaded
-                          ? AppLocalizations.of(context)!.alreadyDownloaded(1)
-                          : null, // NEW: Indicate download status
-                    );
-                  },
+                final isBlacklisted =
+                    widget.shouldBlurContent?.call(content) ?? false;
+                return MainGridCard(
+                  content: content,
+                  onTap: () => widget.onContentTap?.call(content),
+                  blurThumbnails: widget.blurThumbnails,
+                  isBlacklisted: isBlacklisted,
                 );
               },
               // Reduce child count by 1 on first page (featured card is separate)

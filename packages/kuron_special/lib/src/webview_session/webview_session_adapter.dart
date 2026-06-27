@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
 
@@ -15,6 +16,7 @@ class WebViewSessionConfig {
   final String cookieVerifyKey;
   final String nonceRegex;
   final String loginSuccessFilter;
+  final String autoCloseOnCookie;
 
   const WebViewSessionConfig({
     this.bypassEnabled = false,
@@ -25,17 +27,21 @@ class WebViewSessionConfig {
     this.cookieVerifyKey = '',
     this.nonceRegex = '',
     this.loginSuccessFilter = '',
+    this.autoCloseOnCookie = '',
   });
 
   factory WebViewSessionConfig.fromJson(Map<String, dynamic> json) {
     final network = json['network'] as Map<String, dynamic>? ?? {};
     final cf = network['cloudflare'] as Map<String, dynamic>? ?? {};
+    final siteProtection =
+        network['siteProtection'] as Map<String, dynamic>? ?? {};
     final auth = json['auth'] as Map<String, dynamic>? ?? {};
     final requiresBypass = network['requiresBypass'] == true;
     final cloudflareBypass = cf['bypassEnabled'] == true;
+    final bypassEnabled = requiresBypass || cloudflareBypass;
 
     return WebViewSessionConfig(
-      bypassEnabled: requiresBypass || cloudflareBypass,
+      bypassEnabled: bypassEnabled,
       authEnabled: auth['enabled'] == true,
       loginUrl: (auth['loginUrl'] as String?) ?? '',
       registerUrl: (auth['registerUrl'] as String?) ?? '',
@@ -43,6 +49,10 @@ class WebViewSessionConfig {
       cookieVerifyKey: (auth['cookieVerifyKey'] as String?) ?? '',
       nonceRegex: (auth['nonceRegex'] as String?) ?? '',
       loginSuccessFilter: (auth['loginSuccessFilter'] as String?) ?? '',
+      autoCloseOnCookie:
+          (siteProtection['autoCloseOnCookie'] as String?)?.trim() ??
+              (cf['autoCloseOnCookie'] as String?)?.trim() ??
+              (bypassEnabled ? 'cf_clearance' : ''),
     );
   }
 }
@@ -164,6 +174,32 @@ class WebViewSessionAdapter {
         .any((indicator) => lowerHtml.contains(indicator.toLowerCase()));
   }
 
+  @visibleForTesting
+  bool shouldTriggerBypass(Response<dynamic>? response) {
+    if (response == null) return false;
+
+    final statusCode = response.statusCode ?? 0;
+    if (statusCode == 403) {
+      return response.headers.value('cf-mitigated') != null ||
+          (response.data is String &&
+              isCloudflareChallenge(response.data as String));
+    }
+
+    if (statusCode < 300 || statusCode >= 400) {
+      return false;
+    }
+
+    final location = response.headers.value('location')?.trim();
+    if (location != null && location.isNotEmpty) {
+      return false;
+    }
+
+    final server = response.headers.value('server')?.toLowerCase() ?? '';
+    return server.contains('sucuri') ||
+        server.contains('cloudproxy') ||
+        (response.headers.value('x-sucuri-id')?.isNotEmpty ?? false);
+  }
+
   /// Execute a GET request, automatically handling Cloudflare bypass if encountered.
   Future<Response<T>> requestWithBypass<T>(
     String url, {
@@ -181,19 +217,38 @@ class WebViewSessionAdapter {
         options.headers?['User-Agent'] = storedUa;
       }
 
-      return await _dio.get<T>(url, options: options);
-    } on DioException catch (e) {
-      // 2. Detect 403 Challenge
-      final isCloudflare = e.response?.statusCode == 403 &&
-          (e.response?.headers.value('cf-mitigated') != null ||
-              (e.response?.data is String &&
-                  isCloudflareChallenge(e.response!.data as String)));
+      final response = await _dio.get<T>(url, options: options);
+      if (!shouldTriggerBypass(response) || !_config.bypassEnabled) {
+        return response;
+      }
 
-      if (!isCloudflare || !_config.bypassEnabled) {
+      _logger.w(
+        '🔒 Site protection challenge detected for: $url (${response.statusCode})',
+      );
+
+      final bypassResponse = await _attemptNativeBypassAndVerify<T>(
+        targetUrl: url,
+        options: options,
+      );
+      if (bypassResponse == null) {
+        _logger.e('❌ Site protection bypass failed completely.');
+        throw DioException.badResponse(
+          statusCode: response.statusCode ?? 0,
+          requestOptions: response.requestOptions,
+          response: response,
+        );
+      }
+
+      _logger.i('✅ Site protection bypassed. Using verified response.');
+      return bypassResponse;
+    } on DioException catch (e) {
+      if (!shouldTriggerBypass(e.response) || !_config.bypassEnabled) {
         rethrow;
       }
 
-      _logger.w('🔒 Cloudflare 403 challenge detected for: $url');
+      _logger.w(
+        '🔒 Site protection challenge detected for: $url (${e.response?.statusCode})',
+      );
 
       // Prevent concurrent bypass loops
       if (_isBypassing) {
@@ -236,7 +291,9 @@ class WebViewSessionAdapter {
         successUrlFilters: [],
         initialCookie: null,
         userAgent: null,
-        autoCloseOnCookie: 'cf_clearance',
+        autoCloseOnCookie: _config.autoCloseOnCookie.isEmpty
+            ? null
+            : _config.autoCloseOnCookie,
         clearCookies: true,
       );
 

@@ -7,12 +7,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
-import 'package:nhasixapp/core/utils/title_parser_utils.dart';
-import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 /// Horizontal featured card widget: Image left (40%), Content info right (60%)
@@ -41,7 +40,8 @@ class MainFeaturedCard extends StatelessWidget {
       builder: (context, snapshot) {
         final isDownloaded = snapshot.data ?? false;
         return FutureBuilder<bool>(
-          future: _hasReadContent(),
+          future: ContentReadCache.readProgress(content)
+              .then((progress) => progress != null && progress > 0),
           builder: (context, readSnapshot) {
             final isRead = readSnapshot.data ?? false;
             final theme = Theme.of(context);
@@ -52,34 +52,39 @@ class MainFeaturedCard extends StatelessWidget {
                 kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
             final cardBorder = kuronColors?.cardBorder ?? AppColors.darkBorder;
             const downloadBorderColor = AppColors.brandCoral;
+            final runningBorderColor =
+                theme.colorScheme.onSurface.withValues(alpha: 0.1);
             final readGoldColor = kuronColors?.readGold ?? AppColors.readGold;
+            final hasAnimatedBorder = isRead || isDownloaded;
+            final borderColors = isRead && isDownloaded
+                ? <Color>[
+                    downloadBorderColor,
+                    readGoldColor,
+                    downloadBorderColor,
+                    runningBorderColor,
+                  ]
+                : isRead
+                    ? <Color>[readGoldColor]
+                    : <Color>[downloadBorderColor];
             final borderStyle = switch ((isDownloaded, isRead)) {
               (true, true) => (
-                  innerColor: downloadBorderColor,
-                  innerWidth: 2.0,
-                  outerColor: readGoldColor,
-                  outerWidth: 2.2,
+                  innerColor: readGoldColor,
+                  innerWidth: 2.2,
                   shadowColor: readGoldColor.withValues(alpha: 0.18),
                 ),
               (true, false) => (
                   innerColor: downloadBorderColor,
                   innerWidth: 2.0,
-                  outerColor: downloadBorderColor,
-                  outerWidth: 0.0,
                   shadowColor: downloadBorderColor.withValues(alpha: 0.25),
                 ),
               (false, true) => (
                   innerColor: readGoldColor,
                   innerWidth: 2.0,
-                  outerColor: readGoldColor,
-                  outerWidth: 0.0,
                   shadowColor: readGoldColor.withValues(alpha: 0.25),
                 ),
               _ => (
                   innerColor: cardBorder,
                   innerWidth: 1.5,
-                  outerColor: cardBorder,
-                  outerWidth: 0.0,
                   shadowColor: cardBorder.withValues(alpha: 0.08),
                 ),
             };
@@ -93,10 +98,12 @@ class MainFeaturedCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [gradientStart, gradientEnd],
                 ),
-                border: Border.all(
-                  color: borderStyle.innerColor,
-                  width: borderStyle.innerWidth,
-                ),
+                border: hasAnimatedBorder
+                    ? Border.all(color: Colors.transparent, width: 0)
+                    : Border.all(
+                        color: borderStyle.innerColor,
+                        width: borderStyle.innerWidth,
+                      ),
                 boxShadow: [
                   BoxShadow(
                     color: borderStyle.shadowColor,
@@ -490,68 +497,22 @@ class MainFeaturedCard extends StatelessWidget {
                 ),
               ),
             );
-            if (borderStyle.outerWidth == 0) {
+
+            if (!hasAnimatedBorder) {
               return innerCard;
             }
 
-            return Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-                border: Border.all(
-                  color: borderStyle.outerColor,
-                  width: borderStyle.outerWidth,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: borderStyle.outerColor.withValues(alpha: 0.18),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(1.2),
-                child: innerCard,
-              ),
+            return AnimatedStatusBorderFrame(
+              colors: borderColors,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+              strokeWidth: 1.2,
+              shadowColor: borderStyle.shadowColor,
+              child: innerCard,
             );
           },
         );
       },
     );
-  }
-
-  Future<bool> _hasReadContent() async {
-    try {
-      final userDataRepository = getIt<UserDataRepository>();
-      final history = await userDataRepository.getHistoryEntry(content.id);
-      if (history != null && history.progress > 0) {
-        return true;
-      }
-
-      final chapterHistory =
-          await userDataRepository.getAllChapterHistory(content.id);
-      if (chapterHistory.any((item) => item.progress > 0)) {
-        return true;
-      }
-
-      final cardBaseTitle =
-          TitleParserUtils.getBaseTitle(content.getDisplayTitle())
-              .toLowerCase();
-      final recentHistory = await userDataRepository.getHistory(limit: 100);
-      return recentHistory.any((item) {
-        if (item.sourceId.trim().toLowerCase() !=
-            content.sourceId.trim().toLowerCase()) {
-          return false;
-        }
-
-        final historyTitle = item.title?.trim();
-        if (historyTitle == null || historyTitle.isEmpty) return false;
-        return TitleParserUtils.getBaseTitle(historyTitle).toLowerCase() ==
-            cardBaseTitle;
-      });
-    } catch (_) {
-      return false;
-    }
   }
 
   /// Build image with optional blur effect

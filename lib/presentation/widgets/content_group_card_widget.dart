@@ -1,10 +1,12 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+
 import '../../../l10n/app_localizations.dart';
+import '../../core/constants/colors_const.dart' show AppColors, KuronColors;
+import '../../core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/utils/offline_content_manager.dart';
-import '../../core/constants/design_tokens.dart';
 import '../models/content_group.dart';
+import 'animated_status_border_frame.dart';
 import 'progressive_image_widget.dart';
 
 class ContentGroupCardWidget extends StatelessWidget {
@@ -25,34 +27,44 @@ class ContentGroupCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isListMode) {
-      return _buildListMode(context);
-    } else {
-      return _buildGridMode(context);
-    }
+    return isListMode ? _buildListMode(context) : _buildGridMode(context);
   }
 
   Widget _buildGridMode(BuildContext context) {
     final representative = contentGroup.representativeContent;
     final totalSizeStr =
         OfflineContentManager.formatStorageSize(contentGroup.totalSize);
+    final theme = Theme.of(context);
+    final readColor =
+        theme.extension<KuronColors>()?.readGold ?? AppColors.readGold;
+    const offlineColor = AppColors.brandCoral;
+    final hasReadProgress = contentGroup.readProgress > 0;
+    final isCompletedRead =
+        contentGroup.isRead || contentGroup.readProgress >= 1;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: DesignTokens.elevationMd,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
+    final innerCard = AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          border: Border.all(
+            color: hasReadProgress ? Colors.transparent : offlineColor,
+            width: hasReadProgress ? 0 : 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (hasReadProgress ? readColor : offlineColor)
+                  .withValues(alpha: hasReadProgress ? 0.2 : 0.14),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Cover Image
               ProgressiveThumbnailWidget(
                 networkUrl: representative.coverUrl,
                 contentId: representative.id,
@@ -60,82 +72,104 @@ class ContentGroupCardWidget extends StatelessWidget {
                 borderRadius: BorderRadius.zero,
                 showOfflineIndicator: false,
               ),
-
-              // Bottom Gradient Overlay for Title
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
-                  decoration: const BoxDecoration(
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
+                        Colors.black.withValues(alpha: 0.08),
                         Colors.transparent,
-                        Colors.black87,
+                        Colors.black.withValues(alpha: 0.82),
                       ],
+                      stops: const [0.0, 0.38, 1.0],
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        contentGroup.baseTitle,
-                        style: TextStyleConst.contentTitle.copyWith(
-                          color: Colors.white,
-                          fontSize: 13,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (contentGroup.totalSize > 0) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.storage,
-                              size: 11,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              totalSizeStr,
-                              style: TextStyleConst.labelSmall.copyWith(
-                                color: Colors.white70,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
                   ),
                 ),
               ),
-
-              // Top Badges
-              _buildTopOverlay(context),
-
-              // Progress Border
-              if (contentGroup.readProgress > 0)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _ProgressBorderPainter(
-                      progress: contentGroup.readProgress,
-                      color: Theme.of(context).colorScheme.primary,
-                      strokeWidth: 4.0,
-                      borderRadius: 12.0,
-                    ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: _buildStatusPill(
+                  icon: Icons.download_done_rounded,
+                  text: 'OFFLINE',
+                  color: offlineColor.withValues(alpha: 0.9),
+                  textColor: Colors.white,
+                ),
+              ),
+              if (hasReadProgress)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _buildStatusPill(
+                    icon: Icons.menu_book_rounded,
+                    text: isCompletedRead
+                        ? 'READ'
+                        : '${(contentGroup.readProgress * 100).toInt()}%',
+                    color: readColor.withValues(alpha: 0.9),
+                    textColor: Colors.white,
                   ),
                 ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      contentGroup.baseTitle,
+                      style: TextStyleConst.contentTitle.copyWith(
+                        color: Colors.white,
+                        fontSize: 13,
+                        height: 1.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildBadge(
+                          icon: Icons.library_books_rounded,
+                          text: '${contentGroup.chapterCount} Ch',
+                          color: Colors.white.withValues(alpha: 0.18),
+                          textColor: Colors.white,
+                        ),
+                        _buildBadge(
+                          text: representative.sourceId.toUpperCase(),
+                          color: offlineColor.withValues(alpha: 0.82),
+                          textColor: Colors.white,
+                        ),
+                        if (contentGroup.totalSize > 0)
+                          _buildBadge(
+                            icon: Icons.storage_rounded,
+                            text: totalSizeStr,
+                            color: Colors.black.withValues(alpha: 0.36),
+                            textColor: Colors.white,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+
+    return _wrapGridCard(
+      context,
+      child: innerCard,
+      hasReadProgress: hasReadProgress,
+      readColor: readColor,
+      offlineColor: offlineColor,
     );
   }
 
@@ -143,124 +177,247 @@ class ContentGroupCardWidget extends StatelessWidget {
     final representative = contentGroup.representativeContent;
     final totalSizeStr =
         OfflineContentManager.formatStorageSize(contentGroup.totalSize);
+    final theme = Theme.of(context);
+    final readColor =
+        theme.extension<KuronColors>()?.readGold ?? AppColors.readGold;
+    const offlineColor = AppColors.brandCoral;
+    final hasReadProgress = contentGroup.readProgress > 0;
+    final isCompletedRead =
+        contentGroup.isRead || contentGroup.readProgress >= 1;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: DesignTokens.elevationMd,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-          width: 1,
+    final innerCard = Container(
+      height: 132,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.surfaceContainer,
+            theme.colorScheme.surfaceContainerHighest,
+          ],
         ),
+        border: Border.all(
+          color: hasReadProgress ? Colors.transparent : offlineColor,
+          width: hasReadProgress ? 0 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (hasReadProgress ? readColor : offlineColor)
+                .withValues(alpha: hasReadProgress ? 0.16 : 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: IntrinsicHeight(
-          child: Stack(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 104,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  SizedBox(
-                    width: 100,
-                    child: ProgressiveThumbnailWidget(
-                      networkUrl: representative.coverUrl,
-                      contentId: representative.id,
-                      aspectRatio: aspectRatio,
-                      borderRadius: BorderRadius.zero,
-                      showOfflineIndicator: false,
-                    ),
+                  ProgressiveThumbnailWidget(
+                    networkUrl: representative.coverUrl,
+                    contentId: representative.id,
+                    aspectRatio: aspectRatio,
+                    borderRadius: BorderRadius.zero,
+                    showOfflineIndicator: false,
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            contentGroup.baseTitle,
-                            style: TextStyleConst.contentTitle.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const Spacer(),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              _buildBadge(
-                                context,
-                                icon: Icons.library_books,
-                                text: '${contentGroup.chapterCount} Ch',
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              _buildBadge(
-                                context,
-                                text: representative.sourceId.toUpperCase(),
-                                color: Theme.of(context).colorScheme.primaryContainer,
-                                textColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
-                              if (contentGroup.totalSize > 0)
-                                _buildBadge(
-                                  context,
-                                  icon: Icons.storage,
-                                  text: totalSizeStr,
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                            ],
-                          ),
-                          if (contentGroup.readProgress > 0) ...[
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                                    child: LinearProgressIndicator(
-                                      value: contentGroup.readProgress,
-                                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      color: Theme.of(context).colorScheme.primary,
-                                      minHeight: 4,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${AppLocalizations.of(context)?.progress ?? 'Progress'}: ${(contentGroup.readProgress * 100).toInt()}%',
-                                  style: TextStyleConst.labelSmall.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.08),
+                            Colors.black.withValues(alpha: 0.35),
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: _buildStatusPill(
+                      icon: Icons.download_done_rounded,
+                      text: 'OFFLINE',
+                      color: offlineColor.withValues(alpha: 0.9),
+                      textColor: Colors.white,
+                    ),
+                  ),
+                  if (hasReadProgress)
+                    Positioned(
+                      top: 38,
+                      left: 8,
+                      child: _buildStatusPill(
+                        icon: Icons.menu_book_rounded,
+                        text: isCompletedRead
+                            ? 'READ'
+                            : '${(contentGroup.readProgress * 100).toInt()}%',
+                        color: readColor.withValues(alpha: 0.9),
+                        textColor: Colors.white,
+                      ),
+                    ),
                 ],
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contentGroup.baseTitle,
+                      style: TextStyleConst.contentTitle.copyWith(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildBadge(
+                          icon: Icons.library_books_rounded,
+                          text: '${contentGroup.chapterCount} Ch',
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          textColor: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        _buildBadge(
+                          text: representative.sourceId.toUpperCase(),
+                          color: offlineColor.withValues(alpha: 0.14),
+                          textColor: offlineColor,
+                        ),
+                        if (contentGroup.totalSize > 0)
+                          _buildBadge(
+                            icon: Icons.storage_rounded,
+                            text: totalSizeStr,
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            textColor: theme.colorScheme.onSurfaceVariant,
+                          ),
+                      ],
+                    ),
+                    const Spacer(),
+                    if (hasReadProgress) ...[
+                      ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusSm),
+                        child: LinearProgressIndicator(
+                          value: contentGroup.readProgress,
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
+                          color: readColor,
+                          minHeight: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${AppLocalizations.of(context)?.progress ?? 'Progress'}: ${(contentGroup.readProgress * 100).toInt()}%',
+                        style: TextStyleConst.labelSmall.copyWith(
+                          color: readColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+
+    return _wrapListCard(
+      context,
+      child: innerCard,
+      hasReadProgress: hasReadProgress,
+      readColor: readColor,
+      offlineColor: offlineColor,
+    );
   }
 
-  Widget _buildBadge(
+  Widget _wrapGridCard(
     BuildContext context, {
+    required Widget child,
+    required bool hasReadProgress,
+    required Color readColor,
+    required Color offlineColor,
+  }) {
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        child: child,
+      ),
+    );
+
+    if (!hasReadProgress) {
+      return card;
+    }
+
+    return AnimatedStatusBorderFrame(
+      colors: <Color>[
+        offlineColor,
+        readColor,
+        offlineColor,
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+      ],
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+      strokeWidth: 1.2,
+      shadowColor: readColor.withValues(alpha: 0.18),
+      child: card,
+    );
+  }
+
+  Widget _wrapListCard(
+    BuildContext context, {
+    required Widget child,
+    required bool hasReadProgress,
+    required Color readColor,
+    required Color offlineColor,
+  }) {
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        child: child,
+      ),
+    );
+
+    if (!hasReadProgress) {
+      return card;
+    }
+
+    return AnimatedStatusBorderFrame(
+      colors: <Color>[
+        offlineColor,
+        readColor,
+        offlineColor,
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+      ],
+      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+      strokeWidth: 1.2,
+      shadowColor: readColor.withValues(alpha: 0.16),
+      child: card,
+    );
+  }
+
+  Widget _buildBadge({
     IconData? icon,
     required String text,
     required Color color,
@@ -292,140 +449,35 @@ class ContentGroupCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTopOverlay(BuildContext context) {
-    return Positioned(
-      top: 6,
-      left: 6,
-      right: 6,
+  Widget _buildStatusPill({
+    IconData? icon,
+    required String text,
+    required Color color,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.library_books,
-                      size: 10,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${contentGroup.chapterCount} Chapter${contentGroup.chapterCount > 1 ? 's' : ''}',
-                      style: TextStyleConst.labelSmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Flexible(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                  ),
-                  child: Text(
-                    contentGroup.representativeContent.sourceId.toUpperCase(),
-                    style: TextStyleConst.labelSmall.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
+          if (icon != null) ...[
+            Icon(icon, size: 10, color: textColor),
+            const SizedBox(width: 3),
+          ],
+          Text(
+            text,
+            style: TextStyleConst.overline.copyWith(
+              color: textColor,
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class _ProgressBorderPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final double strokeWidth;
-  final double borderRadius;
-
-  _ProgressBorderPainter({
-    required this.progress,
-    required this.color,
-    required this.strokeWidth,
-    required this.borderRadius,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress <= 0) return;
-
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final rect = Rect.fromLTWH(
-      strokeWidth / 2,
-      strokeWidth / 2,
-      size.width - strokeWidth,
-      size.height - strokeWidth,
-    );
-
-    final rrect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(borderRadius - strokeWidth / 2),
-    );
-
-    final path = Path()..addRRect(rrect);
-
-    if (progress >= 1.0) {
-      canvas.drawPath(path, paint);
-      return;
-    }
-
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) return;
-
-    final metric = metrics.first;
-    final extractPath = metric.extractPath(0.0, metric.length * progress);
-
-    canvas.drawPath(extractPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ProgressBorderPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth ||
-        oldDelegate.borderRadius != borderRadius;
   }
 }

@@ -426,6 +426,38 @@ void _setupDataSources() {
     },
   );
 
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'komiktap',
+    () {
+      final rawConfig = Map<String, dynamic>.from(
+        getIt<RemoteConfigService>().getRawConfig('komiktap') ?? {},
+      );
+      final network = Map<String, dynamic>.from(
+        (rawConfig['network'] as Map?)?.cast<String, dynamic>() ?? const {},
+      );
+      final siteProtection = Map<String, dynamic>.from(
+        (network['siteProtection'] as Map?)?.cast<String, dynamic>() ??
+            const {},
+      );
+      network['requiresBypass'] = true;
+      siteProtection.putIfAbsent(
+          'autoCloseOnCookie', () => 'sucuri_cloudproxy_');
+      network['siteProtection'] = siteProtection;
+      rawConfig['network'] = network;
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://komiktap.info';
+      final cookieStorage = GenericCookieStorage('komiktap');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
   // PersistCookieJar for EHentai — cookie persistence for auth & session mgmt
   getIt.registerLazySingleton<PersistCookieJar>(() {
     final cookieStorage = GenericCookieStorage('ehentai');
@@ -491,6 +523,12 @@ void _setupDataSources() {
           dio: getIt<Dio>(),
           sessionAdapter:
               getIt<WebViewSessionAdapter>(instanceName: 'doujindesuv2'),
+          logger: getIt<Logger>(),
+        ),
+        KomiktapSourceFactory(
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'komiktap'),
           logger: getIt<Logger>(),
         ),
         EHentaiSourceFactory(

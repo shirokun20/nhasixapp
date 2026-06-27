@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -89,37 +90,38 @@ class ContentCard extends StatelessWidget {
     final gradientEnd =
         kuronColors?.cardGradientEnd ?? AppColors.darkGradientEnd;
     final readGoldColor = kuronColors?.readGold ?? AppColors.readGold;
+    final offlineColor = Theme.of(context).colorScheme.tertiary;
+    final isRead = readProgress != null && readProgress! > 0;
+    final isOffline = showDownloadBadge || showOfflineIndicator;
+    final showHighlightBorder = isHighlighted && !isRead && !isOffline;
+    BoxBorder? borderDecoration;
+    if (isRead && isOffline) {
+      borderDecoration = Border.all(
+        color: Colors.transparent,
+        width: 0,
+      );
+    } else if (isRead) {
+      borderDecoration = Border.all(
+        color: readGoldColor,
+        width: 1.5,
+      );
+    } else if (isOffline) {
+      borderDecoration = Border(
+        left: BorderSide(color: offlineColor, width: 1.5),
+      );
+    } else if (showHighlightBorder) {
+      borderDecoration = Border.all(
+        color: AppColors.brandCoral,
+        width: 1.5,
+      );
+    } else {
+      borderDecoration = Border.all(
+        color: cardBorderColor,
+        width: showHighlightBorder ? 1.5 : 1.0,
+      );
+    }
 
-    // Determine if content is fully read for gold styling
-    final isRead = readProgress != null && readProgress! >= 1.0;
-    final borderStyle = switch ((isHighlighted, isRead)) {
-      (true, true) => (
-          color: AppColors.brandCoral,
-          outerColor: readGoldColor,
-          outerWidth: 2.2,
-          shadowColor: readGoldColor.withValues(alpha: 0.18),
-        ),
-      (true, false) => (
-          color: AppColors.brandCoral,
-          outerColor: AppColors.brandCoral,
-          outerWidth: 0.0,
-          shadowColor: AppColors.brandCoral.withValues(alpha: 0.3),
-        ),
-      (false, true) => (
-          color: readGoldColor,
-          outerColor: readGoldColor,
-          outerWidth: 0.0,
-          shadowColor: readGoldColor.withValues(alpha: 0.3),
-        ),
-      _ => (
-          color: cardBorderColor,
-          outerColor: cardBorderColor,
-          outerWidth: 0.0,
-          shadowColor: Colors.transparent,
-        ),
-    };
-
-    final innerCard = Container(
+    return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -128,218 +130,224 @@ class ContentCard extends StatelessWidget {
           colors: [gradientStart, gradientEnd],
         ),
         borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(
-          color: borderStyle.color,
-          width: 1.5,
-        ),
-        boxShadow: [
-          if (borderStyle.shadowColor.a > 0)
-            BoxShadow(
-              color: borderStyle.shadowColor,
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-        ],
+        border: borderDecoration,
       ),
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        splashColor:
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        highlightColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Cover image with overlay elements
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  children: [
-                    // Main cover image
-                    _buildCoverImage(),
-
-                    if (showDownloadBadge || isRead)
-                      _buildCoverStatusBadge(
-                        context: context,
-                        isDownloaded: showDownloadBadge,
-                        isRead: isRead,
-                      ),
-
-                    // Download progress overlay
-                    if (showDownloadStatus && downloadProgress != null)
-                      _buildDownloadProgressOverlay(),
-
-                    // Top overlay with favorite button, page count, and new indicator
-                    if (content.pageCount > 0 || showOfflineIndicator || isNew)
-                      _buildTopOverlay(),
-
-                    // Highlight indicator overlay
-                    if (isHighlighted) _buildHighlightOverlay(),
-
-                    // Bottom gradient overlay for better text readability
-                    _buildBottomGradientOverlay(),
-                  ],
+      child: Stack(
+        children: [
+          if (isRead && isOffline)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _buildMixedStatusBorderOverlay(
+                  readColor: readGoldColor,
+                  offlineColor: offlineColor,
                 ),
               ),
+            ),
+          InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            splashColor:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            highlightColor:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cover image with overlay elements
+                  Expanded(
+                    flex: 3,
+                    child: Stack(
+                      children: [
+                        // Main cover image
+                        _buildCoverImage(),
 
-              // Content info section
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      _buildTitle(),
+                        ..._buildCoverStatusBadges(
+                          context: context,
+                          isRead: isRead,
+                          isOffline: isOffline,
+                        ),
 
-                      const SizedBox(height: 4),
+                        // Download progress overlay
+                        if (showDownloadStatus && downloadProgress != null)
+                          _buildDownloadProgressOverlay(),
 
-                      // Subtitle (chapter info for manga/webtoon)
-                      if (content.subTitle != null &&
-                          content.subTitle!.isNotEmpty)
-                        _buildSubtitle(),
+                        // Top overlay with favorite button, page count, and new indicator
+                        if (content.pageCount > 0 || isNew) _buildTopOverlay(),
 
-                      // Offline size (if available) - below title
-                      if (offlineSize != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.storage,
-                              size: 11,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.7),
+                        // Bottom gradient overlay for better text readability
+                        _buildBottomGradientOverlay(),
+                      ],
+                    ),
+                  ),
+
+                  // Content info section
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title
+                          _buildTitle(),
+
+                          const SizedBox(height: 4),
+
+                          // Subtitle (chapter info for manga/webtoon)
+                          if (content.subTitle != null &&
+                              content.subTitle!.isNotEmpty)
+                            _buildSubtitle(),
+
+                          // Offline size (if available) - below title
+                          if (offlineSize != null) ...[
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.storage,
+                                  size: 11,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  offlineSize!,
+                                  style: TextStyleConst.labelSmall.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.7),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 3),
-                            Text(
-                              offlineSize!,
-                              style: TextStyleConst.labelSmall.copyWith(
-                                color: Theme.of(context)
+                            const SizedBox(height: 3),
+                          ],
+
+                          // Artist
+                          if (content.artists.isNotEmpty) _buildArtist(),
+
+                          // Tags (if enabled)
+                          if (showTags && content.tags.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            _buildTags(),
+                          ],
+
+                          const Spacer(),
+
+                          // Bottom row with language flag and metadata
+                          _buildBottomRow(),
+
+                          if (readProgress != null && readProgress! > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: LinearProgressIndicator(
+                                value: readProgress,
+                                backgroundColor: Theme.of(context)
                                     .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.7),
-                                fontSize: 10,
+                                    .surfaceContainerHighest,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Theme.of(context).colorScheme.primary),
+                                minHeight: 3,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                      ],
-
-                      // Artist
-                      if (content.artists.isNotEmpty) _buildArtist(),
-
-                      // Tags (if enabled)
-                      if (showTags && content.tags.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        _buildTags(),
-                      ],
-
-                      const Spacer(),
-
-                      // Bottom row with language flag and metadata
-                      _buildBottomRow(),
-
-                      if (readProgress != null && readProgress! > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: LinearProgressIndicator(
-                            value: readProgress,
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.primary),
-                            minHeight: 3,
-                          ),
-                        ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (borderStyle.outerWidth == 0) {
-      return innerCard;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(
-          color: borderStyle.outerColor,
-          width: borderStyle.outerWidth,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: borderStyle.outerColor.withValues(alpha: 0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            ),
           ),
         ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(1.2),
-        child: innerCard,
       ),
     );
   }
 
-  /// Build highlight overlay indicator for downloaded content
-  Widget _buildHighlightOverlay() {
-    return Builder(
-      builder: (context) {
-        final kuron = Theme.of(context).extension<KuronColors>();
-        final accent = kuron?.readGold ?? AppColors.readGold;
+  Widget _buildMixedStatusBorderOverlay({
+    required Color readColor,
+    required Color offlineColor,
+  }) {
+    return _buildSegmentedStatusBorderOverlay(
+      radius: DesignTokens.radiusXl,
+      strokeWidth: 1.2,
+      topColor: readColor,
+      leftColor: offlineColor,
+    );
+  }
 
-        return Positioned(
+  Widget _buildSegmentedStatusBorderOverlay({
+    required double radius,
+    required double strokeWidth,
+    Color? topColor,
+    Color? rightColor,
+    Color? bottomColor,
+    Color? leftColor,
+  }) {
+    return CustomPaint(
+      painter: _SegmentedStatusBorderPainter(
+        radius: radius,
+        strokeWidth: strokeWidth,
+        topColor: topColor,
+        rightColor: rightColor,
+        bottomColor: bottomColor,
+        leftColor: leftColor,
+      ),
+      child: const SizedBox.expand(),
+    );
+  }
+
+  List<Widget> _buildCoverStatusBadges({
+    required BuildContext context,
+    required bool isRead,
+    required bool isOffline,
+  }) {
+    if (!isRead && !isOffline) {
+      return const [];
+    }
+
+    final readColor = Theme.of(context).extension<KuronColors>()?.readGold ??
+        AppColors.readGold;
+    final offlineColor = Theme.of(context).colorScheme.tertiary;
+    final badges = <Widget>[];
+
+    if (isOffline) {
+      badges.add(
+        Positioned(
+          top: 8,
+          left: 8,
+          child: _buildBadgePill(
+            context,
+            icon: Icons.offline_bolt_rounded,
+            label: (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
+                .toUpperCase(),
+            color: offlineColor,
+          ),
+        ),
+      );
+    }
+
+    if (isRead) {
+      badges.add(
+        Positioned(
           top: 8,
           right: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.download_done,
-                  color: Colors.white,
-                  size: 12,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
-                      .toUpperCase(),
-                  style: TextStyleConst.labelSmall.copyWith(
-                    color: Colors.white,
-                    fontSize: 8,
-                  ),
-                ),
-              ],
-            ),
+          child: _buildBadgePill(
+            context,
+            icon: Icons.menu_book_rounded,
+            label: 'READ',
+            color: readColor,
           ),
-        );
-      },
-    );
+        ),
+      );
+    }
+
+    return badges;
   }
 
   Widget _buildCoverImage() {
@@ -539,43 +547,6 @@ class ContentCard extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                // Offline indicator badge
-                if (showOfflineIndicator) ...[
-                  if (showPageCount && content.pageCount > 0)
-                    const SizedBox(width: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .tertiary
-                          .withValues(alpha: 0.9),
-                      borderRadius:
-                          BorderRadius.circular(DesignTokens.radiusLg),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.offline_bolt,
-                          size: 10,
-                          color: Theme.of(context).colorScheme.onTertiary,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          (AppLocalizations.of(context)?.offline ?? 'OFFLINE')
-                              .toUpperCase(),
-                          style: TextStyleConst.labelSmall.copyWith(
-                            color: Theme.of(context).colorScheme.onTertiary,
-                            fontSize: 8,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
 
@@ -605,63 +576,6 @@ class ContentCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildCoverStatusBadge({
-    required BuildContext context,
-    required bool isDownloaded,
-    required bool isRead,
-  }) {
-    final theme = Theme.of(context);
-    final readColor =
-        theme.extension<KuronColors>()?.readGold ?? AppColors.readGold;
-    const downloadColor = AppColors.brandCoral;
-
-    return switch ((isDownloaded, isRead)) {
-      (true, true) => Positioned(
-          top: 8,
-          right: 8,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildBadgePill(
-                context,
-                icon: Icons.download_done_rounded,
-                label: 'OFF',
-                color: downloadColor,
-              ),
-              const SizedBox(width: 4),
-              _buildBadgePill(
-                context,
-                icon: Icons.menu_book_rounded,
-                label: 'READ',
-                color: readColor,
-              ),
-            ],
-          ),
-        ),
-      (true, false) => Positioned(
-          top: 8,
-          right: 8,
-          child: _buildBadgePill(
-            context,
-            icon: Icons.download_done_rounded,
-            label: 'OFF',
-            color: downloadColor,
-          ),
-        ),
-      (false, true) => Positioned(
-          top: 8,
-          right: 8,
-          child: _buildBadgePill(
-            context,
-            icon: Icons.menu_book_rounded,
-            label: 'READ',
-            color: readColor,
-          ),
-        ),
-      _ => const SizedBox.shrink(),
-    };
   }
 
   Widget _buildBadgePill(
@@ -1085,6 +999,101 @@ class ContentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SegmentedStatusBorderPainter extends CustomPainter {
+  const _SegmentedStatusBorderPainter({
+    required this.radius,
+    required this.strokeWidth,
+    this.topColor,
+    this.rightColor,
+    this.bottomColor,
+    this.leftColor,
+  });
+
+  final double radius;
+  final double strokeWidth;
+  final Color? topColor;
+  final Color? rightColor;
+  final Color? bottomColor;
+  final Color? leftColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final inset = strokeWidth / 2;
+    final left = inset;
+    final top = inset;
+    final right = size.width - inset;
+    final bottom = size.height - inset;
+    final cornerRadius = math.max(0.0, radius - inset);
+
+    Paint paintFor(Color color) => Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    Rect cornerRect(double x, double y) =>
+        Rect.fromLTWH(x, y, cornerRadius * 2, cornerRadius * 2);
+
+    void drawLine(Color? color, Offset start, Offset end) {
+      if (color == null) return;
+      canvas.drawLine(start, end, paintFor(color));
+    }
+
+    void drawArc(
+        Color? color, Rect rect, double startAngle, double sweepAngle) {
+      if (color == null || cornerRadius <= 0) return;
+      canvas.drawArc(rect, startAngle, sweepAngle, false, paintFor(color));
+    }
+
+    final topLeftRect = cornerRect(left, top);
+    final topRightRect = cornerRect(right - cornerRadius * 2, top);
+    final bottomRightRect =
+        cornerRect(right - cornerRadius * 2, bottom - cornerRadius * 2);
+    final bottomLeftRect = cornerRect(left, bottom - cornerRadius * 2);
+
+    drawArc(topColor, topLeftRect, math.pi, -math.pi / 2);
+    drawLine(
+      topColor,
+      Offset(left + cornerRadius, top),
+      Offset(right - cornerRadius, top),
+    );
+    drawArc(topColor, topRightRect, -math.pi / 2, math.pi / 2);
+
+    drawArc(rightColor, topRightRect, -math.pi / 2, math.pi / 2);
+    drawLine(
+      rightColor,
+      Offset(right, top + cornerRadius),
+      Offset(right, bottom - cornerRadius),
+    );
+    drawArc(rightColor, bottomRightRect, 0, math.pi / 2);
+
+    drawArc(bottomColor, bottomRightRect, 0, math.pi / 2);
+    drawLine(
+      bottomColor,
+      Offset(right - cornerRadius, bottom),
+      Offset(left + cornerRadius, bottom),
+    );
+    drawArc(bottomColor, bottomLeftRect, math.pi / 2, math.pi / 2);
+
+    drawArc(leftColor, topLeftRect, -math.pi / 2, -math.pi / 2);
+    drawLine(
+      leftColor,
+      Offset(left, top + cornerRadius),
+      Offset(left, bottom - cornerRadius),
+    );
+    drawArc(leftColor, bottomLeftRect, math.pi, -math.pi / 2);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SegmentedStatusBorderPainter oldDelegate) {
+    return oldDelegate.radius != radius ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.topColor != topColor ||
+        oldDelegate.rightColor != rightColor ||
+        oldDelegate.bottomColor != bottomColor ||
+        oldDelegate.leftColor != leftColor;
   }
 }
 
