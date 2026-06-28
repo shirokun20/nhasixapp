@@ -330,6 +330,9 @@ class ContentReadCache {
   static final Map<String, DateTime> _cacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
 
+  static Future<List<History>>? _recentHistoryFuture;
+  static DateTime? _recentHistoryCacheTime;
+
   static String _buildCacheKey(String contentId, String? sourceId) {
     final normalizedSource = (sourceId ?? '').trim().toLowerCase();
     return '$normalizedSource::$contentId';
@@ -394,7 +397,18 @@ class ContentReadCache {
       final cardBaseTitle =
           TitleParserUtils.getBaseTitle(content.getDisplayTitle())
               .toLowerCase();
-      final recentHistory = await userDataRepository.getHistory(limit: 100);
+              
+      List<History> recentHistory;
+      if (_recentHistoryFuture != null &&
+          _recentHistoryCacheTime != null &&
+          DateTime.now().difference(_recentHistoryCacheTime!) < const Duration(seconds: 10)) {
+        recentHistory = await _recentHistoryFuture!;
+      } else {
+        _recentHistoryFuture = userDataRepository.getHistory(limit: 100);
+        _recentHistoryCacheTime = DateTime.now();
+        recentHistory = await _recentHistoryFuture!;
+      }
+
       History? matchedHistory;
       for (final item in recentHistory) {
         if (sourceId.isNotEmpty &&

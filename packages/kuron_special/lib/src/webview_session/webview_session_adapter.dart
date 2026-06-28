@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -285,15 +288,24 @@ class WebViewSessionAdapter {
       await _cookieJar.delete(uri);
 
       // 2. Launch Native WebView
-      // Note: we let Native WebView use default System UA.
+      // For reader pages: capture henread.xyz image URLs, no auto-close.
+      // CRITICAL: pass allowRequestPatterns with '' (matches everything) so
+      // the Kotlin WebView doesn't block CSS/JS/fonts/CF scripts needed for
+      // the page to render. Only henread.xyz URLs are captured, not blocked.
+      final isReaderPage = targetUrl.contains('/english/p/') ||
+          targetUrl.contains('/chapter/');
       final result = await KuronNative.instance.showLoginWebView(
         url: targetUrl,
         successUrlFilters: [],
         initialCookie: null,
         userAgent: null,
-        autoCloseOnCookie: _config.autoCloseOnCookie.isEmpty
+        autoCloseOnCookie: isReaderPage
             ? null
-            : _config.autoCloseOnCookie,
+            : (_config.autoCloseOnCookie.isEmpty
+                ? null
+                : _config.autoCloseOnCookie),
+        captureRequestPatterns: isReaderPage ? ['henread.xyz/'] : null,
+        allowRequestPatterns: isReaderPage ? [''] : null,
         clearCookies: true,
       );
 
@@ -301,6 +313,7 @@ class WebViewSessionAdapter {
         final cookiesRaw =
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
         final userAgent = result['userAgent'] as String?;
+        final pageHtml = result['pageHtml'] as String?;
 
         if (userAgent != null && userAgent.isNotEmpty) {
           _dio.options.headers['User-Agent'] = userAgent;
@@ -311,7 +324,48 @@ class WebViewSessionAdapter {
           await _saveRawCookies(cookiesRaw, targetUrl);
         }
 
-        // 3. Verify and return success response to caller.
+        // 3. If WebView captured image URLs directly (chapter reader),
+        //    return them — skip Dio verify entirely.
+        final capturedUrls = (result['capturedImageUrls'] as List<dynamic>?)
+            ?.cast<String>()
+            .where((u) => u.isNotEmpty)
+            .toList();
+        if (capturedUrls != null && capturedUrls.isNotEmpty) {
+          _logger.i(
+              '📸 Using WebView-captured image URLs (${capturedUrls.length}) — skipping Dio verify');
+          // Return captured URLs as JSON — fetchChapterImages checks extra data
+          final chapterData = <String, dynamic>{
+            'images': capturedUrls,
+          };
+          return Response<String>(
+            statusCode: 200,
+            data: jsonEncode(chapterData),
+            requestOptions: RequestOptions(path: targetUrl),
+          ) as Response<T>;
+        }
+
+        // 4. If WebView saved HTML to file, use it directly
+        if (pageHtml != null && pageHtml.isNotEmpty && pageHtml.startsWith('/')) {
+          try {
+            final file = File(pageHtml);
+            final rawContent = await file.readAsString();
+            // evaluateJavascript returns JSON-encoded string (quoted + escaped)
+            final htmlContent = rawContent.startsWith('"')
+                ? (jsonDecode(rawContent) as String)
+                : rawContent;
+            _logger.i(
+                '📄 Using WebView-captured HTML (${htmlContent.length} chars) — skipping Dio verify');
+            return Response<String>(
+              statusCode: 200,
+              data: htmlContent,
+              requestOptions: RequestOptions(path: targetUrl),
+            ) as Response<T>;
+          } catch (e) {
+            _logger.w('Failed to read HTML file: $e');
+          }
+        }
+
+        // 4. Fallback: verify with a fresh Dio request using WebView cookies.
         return await _verifyBypass<T>(targetUrl, options: options);
       }
       return null;

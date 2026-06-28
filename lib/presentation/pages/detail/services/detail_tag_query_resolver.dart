@@ -130,6 +130,11 @@ class DetailTagQueryResolver {
       value = tagName.trim();
     } else if (valueSource == 'tagId') {
       value = (resolvedTagId ?? '').trim();
+      // FALLBACK for old corrupted tags (like "Beauty Mark\n4K") that have no ID saved
+      if (value.isEmpty && tagName.isNotEmpty) {
+        final cleanName = tagName.split('\n').first.trim().toLowerCase();
+        value = cleanName.replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+      }
     } else {
       value = (resolvedTagId != null && resolvedTagId.isNotEmpty)
           ? resolvedTagId

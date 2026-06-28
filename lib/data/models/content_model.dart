@@ -456,7 +456,12 @@ class ContentModel extends Content {
     try {
       final decoded = jsonDecode(json);
       if (decoded is List) {
-        return decoded.cast<String>();
+        return decoded.cast<String>().map((s) {
+          s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+          final match =
+              RegExp(r'^(.+?)(?:\s+\d+[.0-9]*[kKmM]?)?$').firstMatch(s);
+          return match != null ? match.group(1)!.trim() : s;
+        }).toList();
       }
       return [];
     } catch (e) {

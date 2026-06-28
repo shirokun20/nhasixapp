@@ -916,13 +916,17 @@ class KuronNativePlugin :
                     val currentUrl = data.getStringExtra(WebViewActivity.RESULT_CURRENT_URL)
                     val resolvedImageUrl = data.getStringExtra(WebViewActivity.RESULT_RESOLVED_IMAGE_URL)
                     val capturedRequestUrl = data.getStringExtra(WebViewActivity.RESULT_CAPTURED_REQUEST_URL)
-                    
+                    val pageHtml = data.getStringExtra(WebViewActivity.RESULT_PAGE_HTML)
+                    val capturedImageUrls = data.getStringArrayListExtra(WebViewActivity.RESULT_CAPTURED_IMAGE_URLS)
+
                     val resultMap = HashMap<String, Any?>()
                     resultMap["cookies"] = cookies
                     resultMap["userAgent"] = userAgent
                     resultMap["currentUrl"] = currentUrl
                     resultMap["resolvedImageUrl"] = resolvedImageUrl
                     resultMap["capturedRequestUrl"] = capturedRequestUrl
+                    resultMap["pageHtml"] = pageHtml
+                    resultMap["capturedImageUrls"] = capturedImageUrls
                     resultMap["success"] = true
                     
                     pendingResult?.success(resultMap)

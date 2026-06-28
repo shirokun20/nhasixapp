@@ -464,6 +464,98 @@ void _setupDataSources() {
     return PersistCookieJar(storage: cookieStorage);
   });
 
+  // ── Cloudflare-protected generic source sessions ─────────────────────────
+
+  Map<String, dynamic> turnstileConfig(String sourceId) {
+    final raw = Map<String, dynamic>.from(
+      (getIt<RemoteConfigService>().getRawConfig(sourceId) ?? {})
+          .cast<String, dynamic>(),
+    );
+    // Turnstile sites set cf_clearance pre-challenge; disable auto-close
+    // so WebView stays open until user solves the interactive challenge
+    // and presses back.
+    final network = Map<String, dynamic>.from(
+        (raw['network'] as Map?)?.cast<String, dynamic>() ?? {});
+    final cf = Map<String, dynamic>.from(
+        (network['cloudflare'] as Map?)?.cast<String, dynamic>() ?? {});
+    cf['autoCloseOnCookie'] = '';
+    network['cloudflare'] = cf;
+    raw['network'] = network;
+    return raw;
+  }
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_hentairead',
+    () {
+      final rawConfig = turnstileConfig('hentairead');
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://hentairead.com';
+      final cookieStorage = GenericCookieStorage('cf_hentairead');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_manhwaread',
+    () {
+      final rawConfig = turnstileConfig('manhwaread');
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://manhwaread.com';
+      final cookieStorage = GenericCookieStorage('cf_manhwaread');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_hentaicosplay',
+    () {
+      final rawConfig = turnstileConfig('hentaicosplay');
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://hentaicosplay.com';
+      final cookieStorage = GenericCookieStorage('cf_hentaicosplay');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_spyfakku',
+    () {
+      final rawConfig = turnstileConfig('spyfakku');
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://spyfakku.com';
+      final cookieStorage = GenericCookieStorage('cf_spyfakku');
+      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
   // Generic Source Factory — catch-all factory for config-driven providers
   getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(
         dio: getIt<Dio>(),
@@ -546,6 +638,35 @@ void _setupDataSources() {
         ),
         MangaFireSourceFactory(
           dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
+        // CF-protected generic sources
+        GenericBypassSourceFactory(
+          sourceId: 'hentairead',
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_hentairead'),
+          logger: getIt<Logger>(),
+        ),
+        GenericBypassSourceFactory(
+          sourceId: 'manhwaread',
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_manhwaread'),
+          logger: getIt<Logger>(),
+        ),
+        GenericBypassSourceFactory(
+          sourceId: 'hentaicosplay',
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_hentaicosplay'),
+          logger: getIt<Logger>(),
+        ),
+        GenericBypassSourceFactory(
+          sourceId: 'spyfakku',
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_spyfakku'),
           logger: getIt<Logger>(),
         ),
       ],

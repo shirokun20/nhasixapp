@@ -44,6 +44,8 @@ class WebViewActivity : AppCompatActivity() {
         const val RESULT_CURRENT_URL = "result_current_url"
         const val RESULT_RESOLVED_IMAGE_URL = "result_resolved_image_url"
         const val RESULT_CAPTURED_REQUEST_URL = "result_captured_request_url"
+        const val RESULT_PAGE_HTML = "result_page_html"
+        const val RESULT_CAPTURED_IMAGE_URLS = "result_captured_image_urls"
         
         fun createIntent(
             context: Context, 
@@ -96,6 +98,8 @@ class WebViewActivity : AppCompatActivity() {
     private var pageFinishedScript: String? = null
     private var blockNetworkImages: Boolean = false
     private var hasFinishedResult = false
+    private var capturedPageHtmlPath: String? = null
+    private val capturedImageUrls = mutableListOf<String>()
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -238,8 +242,21 @@ class WebViewActivity : AppCompatActivity() {
                 if (autoCloseOnCookie != null) {
                     val cookies = CookieManager.getInstance().getCookie(url)
                     if (cookies != null && cookies.contains(autoCloseOnCookie!!)) {
-                        android.util.Log.i("KuronNative", "✅ Auto-close cookie '$autoCloseOnCookie' detected! Closing WebView.")
-                        finishWithSuccess(url ?: "")
+                        // Skip auto-close if the page is still a CF challenge page.
+                        // Turnstile sets cf_clearance pre-challenge — closing early
+                        // would skip user-interactive challenge solving.
+                        val title = view?.title ?: ""
+                        val isChallengePage = title.isBlank() ||
+                            title.contains("Just a moment", ignoreCase = true) ||
+                            title.contains("Attention Required", ignoreCase = true) ||
+                            title.contains("security verification", ignoreCase = true) ||
+                            url?.contains("challenge-platform") == true
+                        if (!isChallengePage) {
+                            android.util.Log.i("KuronNative", "✅ Auto-close cookie '$autoCloseOnCookie' detected! Closing WebView.")
+                            finishWithSuccess(url ?: "")
+                        } else {
+                            android.util.Log.i("KuronNative", "⏳ Auto-close cookie '$autoCloseOnCookie' found but page is still a challenge page ('$title'). Waiting for user interaction.")
+                        }
                     }
                 }
             }
@@ -249,13 +266,8 @@ class WebViewActivity : AppCompatActivity() {
                 val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
 
                 if (captureRequestPatterns.any { requestUrl.contains(it) }) {
-                    view?.post {
-                        finishWithSuccess(
-                            currentUrl = webView.url ?: url,
-                            capturedRequestUrl = requestUrl,
-                        )
-                    }
-                    return emptyResponse()
+                    capturedImageUrls.add(requestUrl)
+                    // Don't block – let the image load normally in WebView
                 }
 
                 if (captureRequestPatterns.isNotEmpty() &&
@@ -345,11 +357,37 @@ class WebViewActivity : AppCompatActivity() {
         try {
             webView.evaluateJavascript(buildImageExtractionScript()) { rawResult ->
                 val extraction = parseImageExtractionResult(rawResult)
-                completeWithSuccessResult(
-                    currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
-                    resolvedImageUrl = extraction.imageUrl,
-                    capturedRequestUrl = null,
-                )
+                // Capture HTML to file before finishing (avoids OOM in Intent)
+                if (capturedPageHtmlPath == null) {
+                    try {
+                        val htmlFile = java.io.File(cacheDir, "captured_${System.currentTimeMillis()}.html")
+                        webView.evaluateJavascript("document.documentElement.outerHTML") { raw ->
+                            if (raw != null) {
+                                try {
+                                    htmlFile.writeText(raw)
+                                    capturedPageHtmlPath = htmlFile.absolutePath
+                                } catch (_: Exception) { }
+                            }
+                            completeWithSuccessResult(
+                                currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
+                                resolvedImageUrl = extraction.imageUrl,
+                                capturedRequestUrl = null,
+                            )
+                        }
+                    } catch (_: Exception) {
+                        completeWithSuccessResult(
+                            currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
+                            resolvedImageUrl = extraction.imageUrl,
+                            capturedRequestUrl = null,
+                        )
+                    }
+                } else {
+                    completeWithSuccessResult(
+                        currentUrl = extraction.currentUrl ?: fallbackCurrentUrl,
+                        resolvedImageUrl = extraction.imageUrl,
+                        capturedRequestUrl = null,
+                    )
+                }
             }
         } catch (_: Exception) {
             completeWithSuccessResult(
@@ -382,6 +420,17 @@ class WebViewActivity : AppCompatActivity() {
         
         resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
         resultIntent.putExtra(RESULT_CURRENT_URL, currentUrl)
+
+        // Pass saved HTML file path if available
+        if (capturedPageHtmlPath != null) {
+            resultIntent.putExtra(RESULT_PAGE_HTML, capturedPageHtmlPath)
+        }
+        // Pass captured image URLs (from shouldInterceptRequest)
+        if (capturedImageUrls.isNotEmpty()) {
+            resultIntent.putStringArrayListExtra(
+                RESULT_CAPTURED_IMAGE_URLS, ArrayList(capturedImageUrls))
+        }
+
         if (!resolvedImageUrl.isNullOrBlank()) {
             resultIntent.putExtra(RESULT_RESOLVED_IMAGE_URL, resolvedImageUrl)
         }

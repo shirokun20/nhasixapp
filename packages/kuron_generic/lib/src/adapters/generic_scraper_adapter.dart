@@ -147,6 +147,10 @@ class GenericScraperAdapter implements GenericAdapter {
       'author:': ('authorSearch', 'authorSearchPage'),
       'artist:': ('artistSearch', 'artistSearchPage'),
       'publisher:': ('publisherSearch', 'publisherSearchPage'),
+      'parody:': ('parodySearch', 'parodySearchPage'),
+      'language:': ('languageSearch', 'languageSearchPage'),
+      'scanlator:': ('scanlatorSearch', 'scanlatorSearchPage'),
+      'release:': ('releaseSearch', 'releaseSearchPage'),
     };
 
     var prefixPatternKey = <String>{};
@@ -269,8 +273,17 @@ class GenericScraperAdapter implements GenericAdapter {
 
     // Determine which URL pattern to use from searchForm config.
     final searchFormCfg = rawConfig['searchForm'] as Map<String, dynamic>?;
-    final basePatternKey =
-        (searchFormCfg?['urlPattern'] as String?) ?? 'search';
+
+    // Check if raw params override the pattern key explicitly
+    final overridePatternKey = firstRawValue('patternKey');
+    if (overridePatternKey != null) {
+      rawMap.remove('patternKey');
+    }
+
+    final basePatternKey = overridePatternKey ??
+        (searchFormCfg?['urlPattern'] as String?) ??
+        'search';
+
     final formParamsCfg =
         (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
     final queryParamName = ((formParamsCfg['query']
@@ -1453,6 +1466,21 @@ class GenericScraperAdapter implements GenericAdapter {
       );
       final htmlContent = response.data ?? '';
 
+      // Check for captured image URLs from WebView bypass (JSON format)
+      if (htmlContent.isNotEmpty && htmlContent.trimLeft().startsWith('{')) {
+        try {
+          final jsonData = json.decode(htmlContent);
+          if (jsonData is Map && jsonData['images'] is List) {
+            final imgList = (jsonData['images'] as List).cast<String>();
+            if (imgList.isNotEmpty) {
+              _logger.d(
+                  '$_sourceId using WebView-captured image URLs: ${imgList.length}');
+              return ChapterData(images: imgList);
+            }
+          }
+        } catch (_) {}
+      }
+
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       if (readerConfig == null) return null;
@@ -1708,7 +1736,99 @@ class GenericScraperAdapter implements GenericAdapter {
 
       imageUrls = _normalizeChapterImageUrls(imageUrls);
 
-      // 3. DOM fallback for navigation via reader.nav.{next,prev}.
+      // 3b. Re-write preview CDN → reader CDN if configured.
+      final cdnHost = readerConfig['cdnHost'] as String?;
+      if (cdnHost != null && cdnHost.isNotEmpty) {
+        final realMangaId = _parser.extractString(
+                doc,
+                const FieldSelector(
+                    selector: '#wp-manga-manga-id', attribute: 'value')) ??
+            _parser.extractString(
+                doc,
+                const FieldSelector(
+                    selector: '[data-bookmark]', attribute: 'data-bookmark')) ??
+            _parser.extractString(
+                doc,
+                const FieldSelector(
+                    selector: '[data-post]', attribute: 'data-post'));
+        final realChapterId = _parser.extractString(
+                doc,
+                const FieldSelector(
+                    selector: '#wp-manga-chapter-id', attribute: 'value')) ??
+            _parser.extractString(
+                doc,
+                const FieldSelector(
+                    selector: '[data-chapter]', attribute: 'data-chapter'));
+
+        imageUrls = imageUrls.map((url) {
+          String replaced = url.replaceAll('hencover.xyz/preview', cdnHost);
+
+          if (realMangaId != null &&
+              realMangaId.isNotEmpty &&
+              realChapterId != null &&
+              realChapterId.isNotEmpty) {
+            try {
+              final uri = Uri.tryParse(replaced);
+              if (uri != null && uri.pathSegments.length >= 3) {
+                final segments = List<String>.from(uri.pathSegments);
+                final len = segments.length;
+                segments[len - 3] = realMangaId;
+                segments[len - 2] = realChapterId;
+                replaced = uri.replace(pathSegments: segments).toString();
+              }
+            } catch (_) {}
+          }
+          return replaced;
+        }).toList();
+
+        // Extrapolate missing image URLs if lazy-loading only provided a few
+        if (realMangaId != null &&
+            realChapterId != null &&
+            imageUrls.isNotEmpty) {
+          int maxPage = imageUrls.length;
+
+          final pageOptions = _parser.selectAll(doc,
+              'select#single-pager option, select.selectpicker.page-selection option, .wp-manga-nav select.selectpicker option');
+          if (pageOptions.isNotEmpty) {
+            maxPage = pageOptions.length;
+          } else {
+            final scriptMatch = RegExp(r'\"pages\"?\s*:\s*(\d+)')
+                    .firstMatch(htmlContent) ??
+                RegExp('total_pages[\\s"\\\'=]+(\\d+)').firstMatch(htmlContent);
+            if (scriptMatch != null) {
+              maxPage = int.tryParse(scriptMatch.group(1) ?? '') ?? maxPage;
+            }
+          }
+
+          // Bulletproof fallback for HentaiRead: scan entire HTML for hr_X.jpg
+          final hrMatches = RegExp(r'hr_(\d+)\.jpg').allMatches(htmlContent);
+          for (final m in hrMatches) {
+            final num = int.tryParse(m.group(1) ?? '0') ?? 0;
+            if (num > maxPage) maxPage = num;
+          }
+
+          if (maxPage > imageUrls.length) {
+            final firstUrl = imageUrls.first;
+            final match = RegExp(r'(.+/)([^/]+?)(\d+)\.([a-zA-Z0-9]+)$')
+                .firstMatch(firstUrl);
+            if (match != null) {
+              final basePath = match.group(1);
+              final prefix = match.group(2);
+              final ext = match.group(4);
+              for (int i = imageUrls.length + 1; i <= maxPage; i++) {
+                imageUrls.add('$basePath$prefix$i.$ext');
+              }
+            } else {
+              for (int i = imageUrls.length + 1; i <= maxPage; i++) {
+                imageUrls.add(
+                    'https://$cdnHost/$realMangaId/$realChapterId/hr_$i.jpg');
+              }
+            }
+          }
+        }
+      }
+
+      // 4. DOM fallback for navigation via reader.nav.{next,prev}.
       final navCfg = readerConfig['nav'] as Map<String, dynamic>?;
       nextId ??= _extractNavChapterId(doc, navCfg?['next']);
       prevId ??= _extractNavChapterId(doc, navCfg?['prev']);
@@ -2010,6 +2130,97 @@ class GenericScraperAdapter implements GenericAdapter {
       final transform = defMap['transform'] as String?;
       final sel = _fieldDefToSelector(defMap);
       if (sel == null) continue;
+
+      if (entry.key == 'tags' && defMap['extractTagObjects'] == true) {
+        final elements = _parser.selectAll(doc, sel.selector);
+        final tagObjects = <Tag>[];
+        for (final el in elements) {
+          // If the element contains multiple spans (like hentairead),
+          // usually the first is the name and the second is the count.
+          // Fallback to the element itself if no spans exist.
+          final spans = el.querySelectorAll('span');
+          final nameEl = spans.isNotEmpty ? spans.first : el;
+
+          String name = nameEl.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+          if (name.isEmpty) continue;
+
+          String type = 'tag';
+          String slug = '';
+          final href = el.attributes['href'] ?? '';
+          if (href.isNotEmpty) {
+            final uri = Uri.tryParse(href);
+            if (uri != null && uri.pathSegments.isNotEmpty) {
+              final segments =
+                  uri.pathSegments.where((s) => s.isNotEmpty).toList();
+              if (segments.length >= 2) {
+                type = segments[segments.length - 2].toLowerCase();
+                slug = segments.last.toLowerCase();
+              } else if (segments.isNotEmpty) {
+                slug = segments.last.toLowerCase();
+              }
+            }
+          }
+
+          // Map source-specific path segments to standard app tag types if necessary
+          if (type == 'circle') type = 'publisher';
+          if (type == 'author') type = 'artist'; // fallback normalization
+
+          int count = 0;
+          if (spans.length > 1) {
+            final countText = spans[1].text.trim().toLowerCase();
+            if (countText.isNotEmpty) {
+              double multiplier = 1.0;
+              String numStr = countText;
+              if (countText.endsWith('k')) {
+                multiplier = 1000.0;
+                numStr = countText.substring(0, countText.length - 1);
+              } else if (countText.endsWith('m')) {
+                multiplier = 1000000.0;
+                numStr = countText.substring(0, countText.length - 1);
+              }
+              final parsedNum = double.tryParse(numStr);
+              if (parsedNum != null) {
+                count = (parsedNum * multiplier).toInt();
+              }
+            }
+          } else {
+            // Fallback for elements without separate spans for count
+            // Try to extract trailing number like "Shiro Marimo 1" -> "Shiro Marimo", count 1
+            final match =
+                RegExp(r'^(.+?)\s+(\d+[.0-9]*[kKmM]?)$').firstMatch(name);
+            if (match != null) {
+              name = match.group(1)!.trim();
+              final countText = match.group(2)!.trim().toLowerCase();
+              double multiplier = 1.0;
+              String numStr = countText;
+              if (countText.endsWith('k')) {
+                multiplier = 1000.0;
+                numStr = countText.substring(0, countText.length - 1);
+              } else if (countText.endsWith('m')) {
+                multiplier = 1000000.0;
+                numStr = countText.substring(0, countText.length - 1);
+              }
+              final parsedNum = double.tryParse(numStr);
+              if (parsedNum != null) {
+                count = (parsedNum * multiplier).toInt();
+              }
+            }
+          }
+
+          tagObjects.add(
+              Tag(id: 0, name: name, type: type, slug: slug, count: count));
+        }
+
+        final seenValues = <String>{};
+        final uniqueTags = tagObjects
+            .where((t) => seenValues.add('${t.type}:${t.name}'))
+            .toList();
+
+        _logger.d(
+            '$_sourceId: parsed ${uniqueTags.length} full Tag objects for "${entry.key}"');
+        result[entry.key] = uniqueTags;
+        continue;
+      }
 
       if (multi) {
         var values = _parser.extractList(doc, sel);
