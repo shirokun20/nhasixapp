@@ -226,7 +226,8 @@ class HttpClientManager {
       return '[redacted-sensitive-endpoint]';
     }
 
-    return '${uri.origin}$path';
+    final query = uri.hasQuery ? '?${uri.query}' : '';
+    return '${uri.origin}$path$query';
   }
 
   static bool _isSensitivePath(String path) {
