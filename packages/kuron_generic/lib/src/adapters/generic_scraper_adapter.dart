@@ -85,6 +85,7 @@ class GenericScraperAdapter implements GenericAdapter {
   final String _sourceId;
   final Future<void> Function()? _delayApplier;
   final RateLimiter? _rateLimiter;
+  final Map<String, String> _paginationCursorCache = <String, String>{};
 
   GenericScraperAdapter({
     required Dio dio,
@@ -213,6 +214,11 @@ class GenericScraperAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
+    final paginationCacheKey = _buildPaginationCacheKey(
+      scope: _paginationScopeForPatternKey(patternKey),
+      filter: filter,
+    );
+
     final (url, listConfig) = _resolvePattern(
       scraper,
       patternKey,
@@ -228,17 +234,27 @@ class GenericScraperAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    final pagedUrl = _ensurePageQueryForStandardSearch(
-      resolvedUrl: url,
-      patternKey: patternKey,
-      filter: filter,
-      rawConfig: rawConfig,
-      urlPatternsCfg: urlPatternsCfg,
-    );
+    final pagedUrl = _resolveListRequestUrlFromCursorCache(
+          page: filter.page,
+          cacheKey: paginationCacheKey,
+        ) ??
+        _ensurePageQueryForStandardSearch(
+          resolvedUrl: url,
+          patternKey: patternKey,
+          filter: filter,
+          rawConfig: rawConfig,
+          urlPatternsCfg: urlPatternsCfg,
+        );
 
     _logger.d('$_sourceId scraper [$patternKey]: $pagedUrl');
-    return _fetchListPage(pagedUrl, rawConfig, listConfig,
-        defaultLanguage: rawConfig['defaultLanguage'] as String?);
+    return _fetchListPage(
+      pagedUrl,
+      rawConfig,
+      listConfig,
+      currentPage: filter.page,
+      paginationCacheKey: paginationCacheKey,
+      defaultLanguage: rawConfig['defaultLanguage'] as String?,
+    );
   }
 
   /// Handle `raw:` query format produced by [DynamicFormSearchUI].
@@ -352,6 +368,10 @@ class GenericScraperAdapter implements GenericAdapter {
       rawConfig: rawConfig,
       urlPatternsCfg: urlPatternsCfg,
       patternKeys: [patternKey, pagedPatternKey, basePatternKey],
+    );
+    final paginationCacheKey = _buildRawPaginationCacheKey(
+      scope: _paginationScopeForPatternKey(patternKey),
+      rawMap: rawMap,
     );
 
     // Build the base URL path and keep template query defaults.
@@ -478,9 +498,21 @@ class GenericScraperAdapter implements GenericAdapter {
     final finalUrl =
         queryParts.isEmpty ? baseUrl : '$baseUrl?${queryParts.join('&')}';
 
-    _logger.d('$_sourceId scraper [raw/$patternKey]: $finalUrl');
-    return _fetchListPage(finalUrl, rawConfig, listConfig,
-        defaultLanguage: rawConfig['defaultLanguage'] as String?);
+    final requestUrl = _resolveListRequestUrlFromCursorCache(
+          page: page,
+          cacheKey: paginationCacheKey,
+        ) ??
+        finalUrl;
+
+    _logger.d('$_sourceId scraper [raw/$patternKey]: $requestUrl');
+    return _fetchListPage(
+      requestUrl,
+      rawConfig,
+      listConfig,
+      currentPage: page,
+      paginationCacheKey: paginationCacheKey,
+      defaultLanguage: rawConfig['defaultLanguage'] as String?,
+    );
   }
 
   String _encodeRawQueryValue(String key, String value) {
@@ -1977,6 +2009,8 @@ class GenericScraperAdapter implements GenericAdapter {
     String url,
     Map<String, dynamic> rawConfig,
     Map<String, dynamic> listConfig, {
+    required int currentPage,
+    String? paginationCacheKey,
     String? defaultLanguage,
   }) async {
     try {
@@ -2067,8 +2101,21 @@ class GenericScraperAdapter implements GenericAdapter {
       final linksSel = paginationConfig['links'] as String?;
       final lastSel = paginationConfig['last'] as String?;
 
-      final hasNext = (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
+      final nextPageUrl = _extractEnabledLinkUrl(doc, nextSel, baseUrl: url) ??
+          _extractEnabledLinkUrl(doc, altSel, baseUrl: url);
+      final hasNext = nextPageUrl != null ||
+          (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
           (altSel != null && _hasEnabledLink(doc, altSel));
+
+      if (paginationCacheKey != null) {
+        final nextPageCacheKey =
+            _paginationCacheEntryKey(paginationCacheKey, currentPage + 1);
+        if (nextPageUrl != null && nextPageUrl.isNotEmpty) {
+          _paginationCursorCache[nextPageCacheKey] = nextPageUrl;
+        } else {
+          _paginationCursorCache.remove(nextPageCacheKey);
+        }
+      }
 
       int? totalPages;
       if (linksSel != null) {
@@ -2109,6 +2156,7 @@ class GenericScraperAdapter implements GenericAdapter {
       return AdapterSearchResult(
         items: items,
         hasNextPage: hasNext,
+        nextPageUrl: nextPageUrl,
         totalPages: totalPages,
       );
     } catch (e) {
@@ -2950,6 +2998,78 @@ class GenericScraperAdapter implements GenericAdapter {
     if (parentClass.contains('disabled')) return false;
 
     return true;
+  }
+
+  String? _extractEnabledLinkUrl(
+    dom.Document doc,
+    String? selector, {
+    required String baseUrl,
+  }) {
+    if (selector == null || selector.trim().isEmpty) return null;
+
+    final link = doc.querySelector(selector);
+    if (link == null) return null;
+
+    final href = (link.attributes['href'] ?? '').trim();
+    final hxGet = (link.attributes['hx-get'] ?? '').trim();
+    if ((href.isEmpty || href == '#') && hxGet.isEmpty) return null;
+
+    final parentClass = link.parent?.attributes['class'] ?? '';
+    if (parentClass.contains('disabled')) return null;
+
+    final candidate = href.isNotEmpty && href != '#' ? href : hxGet;
+    return Uri.parse(baseUrl).resolve(candidate).toString();
+  }
+
+  String _buildPaginationCacheKey({
+    required String scope,
+    required SearchFilter filter,
+  }) {
+    final includeTags = filter.includeTags
+        .map((tag) => tag.name.trim().toLowerCase())
+        .where((value) => value.isNotEmpty)
+        .toList()
+      ..sort();
+
+    return [
+      scope,
+      'query=${filter.query.trim().toLowerCase()}',
+      'category=${(filter.category ?? '').trim().toLowerCase()}',
+      'tags=${includeTags.join(',')}',
+      'sort=${filter.sort.name}',
+    ].join('|');
+  }
+
+  String _buildRawPaginationCacheKey({
+    required String scope,
+    required Map<String, List<String>> rawMap,
+  }) {
+    final entries = rawMap.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final flattened = entries.map((entry) {
+      final values = [...entry.value]..sort();
+      return '${entry.key}=${values.join(',')}';
+    }).join('&');
+
+    return '$scope|raw=$flattened';
+  }
+
+  String _paginationScopeForPatternKey(String patternKey) {
+    return patternKey.endsWith('Page')
+        ? patternKey.substring(0, patternKey.length - 4)
+        : patternKey;
+  }
+
+  String _paginationCacheEntryKey(String cacheKey, int page) {
+    return '$cacheKey|page=$page';
+  }
+
+  String? _resolveListRequestUrlFromCursorCache({
+    required int page,
+    required String cacheKey,
+  }) {
+    if (page <= 1) return null;
+    return _paginationCursorCache[_paginationCacheEntryKey(cacheKey, page)];
   }
 
   String _inferImageExtension(String? imageUrl) {

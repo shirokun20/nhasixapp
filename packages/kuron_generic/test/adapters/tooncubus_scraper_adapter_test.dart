@@ -44,6 +44,8 @@ GenericScraperAdapter _buildAdapter(Dio dio) {
 
 void main() {
   late Map<String, dynamic> config;
+  const nextPageUrl =
+      '$_baseUrl/search/label/Series?updated-max=2025-12-09T02:03:00-08:00&max-results=16&start=16&by-date=false';
 
   setUpAll(() {
     config = loadConfig('tooncubus-config.json').cast<String, dynamic>();
@@ -75,5 +77,46 @@ void main() {
       startsWith('https://blogger.googleusercontent.com/'),
     );
     expect(result.hasNextPage, isTrue);
+  });
+
+  test('page 2 uses Blogger cursor url instead of repeating page 1', () async {
+    final dio = Dio(BaseOptions(baseUrl: _baseUrl));
+    final dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+    final adapter = _buildAdapter(dio);
+    final page1Html = _readFixture('halaman-utama.html');
+    final page2Html = page1Html.replaceFirst(
+      'Love For Amalthea',
+      'Page Two Title',
+    );
+
+    dioAdapter.onGet(
+      '$_baseUrl/search/label/Series?max-results=20',
+      (server) => server.reply(
+        200,
+        page1Html,
+        headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+        },
+      ),
+    );
+
+    dioAdapter.onGet(
+      nextPageUrl,
+      (server) => server.reply(
+        200,
+        page2Html,
+        headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+        },
+      ),
+    );
+
+    final firstPage = await adapter.search(const SearchFilter(page: 1), config);
+    final secondPage =
+        await adapter.search(const SearchFilter(page: 2), config);
+
+    expect(firstPage.items.first.title, 'Love For Amalthea');
+    expect(firstPage.nextPageUrl, nextPageUrl);
+    expect(secondPage.items.first.title, 'Page Two Title');
   });
 }

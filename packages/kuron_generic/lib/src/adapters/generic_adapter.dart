@@ -11,12 +11,14 @@ import 'package:kuron_core/kuron_core.dart';
 class AdapterSearchResult {
   final List<Content> items;
   final bool hasNextPage;
+  final String? nextPageUrl;
   final int? totalPages;
   final int? totalItems;
 
   const AdapterSearchResult({
     required this.items,
     required this.hasNextPage,
+    this.nextPageUrl,
     this.totalPages,
     this.totalItems,
   });
