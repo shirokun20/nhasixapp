@@ -32,6 +32,24 @@ const _detailHtml = '''
 </html>
 ''';
 
+const _detailHtmlWithPreview = '''
+<html>
+  <body>
+    <div class="manga-titles">
+      <h1 class="clipboard-copy">Mama no Saikon Aite wa Papakatsu no Papa</h1>
+    </div>
+    <ul>
+      <li class="chapter-image-item">
+        <img alt="Page 1" src="https://hencover.xyz/preview/294070/87909/hr_0001.jpg">
+      </li>
+      <li class="chapter-image-item">
+        <img alt="Page 2" src="https://hencover.xyz/preview/294070/87909/hr_0002.jpg">
+      </li>
+    </ul>
+  </body>
+</html>
+''';
+
 const _readerHtml = '''
 <html>
   <body>
@@ -41,6 +59,49 @@ const _readerHtml = '''
     <script id="single-chapter-js-before">
       window.mMjM5MjM2 = '(eyJkYXRhIjp7ImNoYXB0ZXIiOnsiaW1hZ2VzIjpbeyJzcmMiOiIwMDEuanBnIn0seyJzcmMiOiIwMDIuanBnIn1dfX19)';
     </script>
+  </body>
+</html>
+''';
+
+const _readerPreviewHtml = '''
+<html>
+  <body>
+    <ul>
+      <li class="chapter-image-item">
+        <img alt="Page 1" src="https://hencover.xyz/preview/294070/87909/hr_0001.jpg">
+      </li>
+      <li class="chapter-image-item">
+        <img alt="Page 2" src="https://hencover.xyz/preview/294070/87909/hr_0002.jpg">
+      </li>
+    </ul>
+  </body>
+</html>
+''';
+
+const _readerLazyPreviewHtml = '''
+<html>
+  <body>
+    <ul>
+      <li class="lazy-listing__item" data-page="1">
+        <img alt="Page 1" data-src="https://hencover.xyz/preview/294070/87909/hr_0001.jpg">
+      </li>
+      <li class="lazy-listing__item" data-page="2">
+        <img alt="Page 2" data-src="https://hencover.xyz/preview/294070/87909/hr_0002.jpg">
+      </li>
+    </ul>
+  </body>
+</html>
+''';
+
+const _readerSinglePreviewHtml = '''
+<html>
+  <body>
+    <ul>
+      <li class="lazy-listing__item" data-page="1">
+        <img alt="Page 1" data-src="https://hencover.xyz/preview/294070/87909/hr_0001.jpg">
+      </li>
+    </ul>
+    <div>"pages":3</div>
   </body>
 </html>
 ''';
@@ -97,6 +158,25 @@ void main() {
       expect(result.imageUrls, isEmpty);
     });
 
+    test('detail preview images do not short-circuit reader image fetching',
+        () async {
+      dioAdapter.onGet(
+        '$_baseUrl/hentai/$_contentId/',
+        (server) => server.reply(
+          200,
+          _detailHtmlWithPreview,
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.fetchDetail(_contentId, config);
+
+      expect(result.imageUrls, isEmpty);
+      expect(result.content.imageUrls, isEmpty);
+    });
+
     test('reads english reader page from chapterDataScript fallback format',
         () async {
       dioAdapter.onGet(
@@ -116,6 +196,109 @@ void main() {
       expect(result!.images, [
         'https://cdn.hentairead.test/gallery/001.jpg',
         'https://cdn.hentairead.test/gallery/002.jpg',
+      ]);
+    });
+
+    test('falls back to preview images when chapterDataScript is absent',
+        () async {
+      dioAdapter.onGet(
+        '$_baseUrl/hentai/$_contentId/english/p/1/',
+        (server) => server.reply(
+          200,
+          _readerPreviewHtml,
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.fetchChapterImages(_contentId, config);
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://henread.xyz/294070/87909/hr_0001.jpg',
+        'https://henread.xyz/294070/87909/hr_0002.jpg',
+      ]);
+    });
+
+    test('falls back to lazy preview images when only data-src is present',
+        () async {
+      dioAdapter.onGet(
+        '$_baseUrl/hentai/$_contentId/english/p/1/',
+        (server) => server.reply(
+          200,
+          _readerLazyPreviewHtml,
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.fetchChapterImages(_contentId, config);
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://henread.xyz/294070/87909/hr_0001.jpg',
+        'https://henread.xyz/294070/87909/hr_0002.jpg',
+      ]);
+    });
+
+    test('falls back to raw preview URL scan when selector config is stale',
+        () async {
+      final staleConfig = Map<String, dynamic>.from(config);
+      final staleScraper =
+          Map<String, dynamic>.from(staleConfig['scraper'] as Map);
+      final staleSelectors =
+          Map<String, dynamic>.from(staleScraper['selectors'] as Map);
+      final staleReader =
+          Map<String, dynamic>.from(staleSelectors['reader'] as Map);
+      staleReader['images'] = {
+        'selector': ".chapter-image-item img[src*='hencover.xyz/preview']",
+        'attribute': 'src',
+      };
+      staleSelectors['reader'] = staleReader;
+      staleScraper['selectors'] = staleSelectors;
+      staleConfig['scraper'] = staleScraper;
+
+      dioAdapter.onGet(
+        '$_baseUrl/hentai/$_contentId/english/p/1/',
+        (server) => server.reply(
+          200,
+          _readerLazyPreviewHtml,
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.fetchChapterImages(_contentId, staleConfig);
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://henread.xyz/294070/87909/hr_0001.jpg',
+        'https://henread.xyz/294070/87909/hr_0002.jpg',
+      ]);
+    });
+
+    test('extrapolates full-size URLs with zero-padded filenames', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/hentai/$_contentId/english/p/1/',
+        (server) => server.reply(
+          200,
+          _readerSinglePreviewHtml,
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result = await adapter.fetchChapterImages(_contentId, config);
+
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://henread.xyz/294070/87909/hr_0001.jpg',
+        'https://henread.xyz/294070/87909/hr_0002.jpg',
+        'https://henread.xyz/294070/87909/hr_0003.jpg',
       ]);
     });
   });

@@ -501,7 +501,11 @@ class LocalImagePreloader {
   /// Download and cache image from network to internal cache
   /// This method can be called when loading network images to cache them locally
   static Future<String?> downloadAndCacheImage(
-      String networkUrl, String contentId, int pageNumber) async {
+    String networkUrl,
+    String contentId,
+    int pageNumber, {
+    Map<String, String>? headers,
+  }) async {
     try {
       // First check if already exists in cache to avoid duplicate downloads
       final existingPath = await getLocalImagePath(contentId, pageNumber);
@@ -524,8 +528,21 @@ class LocalImagePreloader {
       // Download from network (this is a simplified version - in real app use proper HTTP client)
       final httpClient = HttpClient();
       final request = await httpClient.getUrl(Uri.parse(networkUrl));
-      request.headers.set('User-Agent', 'AppleWebKit/537.36');
-      request.headers.set('Referer', 'https://nhentai.net/');
+      final effectiveHeaders = headers ?? const <String, String>{};
+      request.headers.set(
+        'User-Agent',
+        effectiveHeaders['User-Agent'] ?? 'AppleWebKit/537.36',
+      );
+      request.headers.set(
+        'Referer',
+        effectiveHeaders['Referer'] ?? 'https://nhentai.net/',
+      );
+      for (final entry in effectiveHeaders.entries) {
+        if (entry.key == 'User-Agent' || entry.key == 'Referer') {
+          continue;
+        }
+        request.headers.set(entry.key, entry.value);
+      }
 
       final response = await request.close();
       if (response.statusCode == 200) {

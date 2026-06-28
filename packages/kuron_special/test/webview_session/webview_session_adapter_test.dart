@@ -218,22 +218,26 @@ void main() {
       expect(native.lastAllowRequestPatterns, isNull);
     });
 
-    test('hentairead reader bypass uses captured image urls only for reader',
+    test('hentairead reader bypass uses captured html and keeps auto-close',
         () async {
       var calls = 0;
-      final native = _FakeKuronNative()
-        ..result = {
-          'success': true,
-          'capturedImageUrls': ['https://henread.xyz/001.jpg'],
-          'cookies': <String>[],
-          'userAgent': 'ua',
-        };
+      final native = _FakeKuronNative();
+      final htmlFile = await writeCapturedHtml('<html>reader</html>');
+      native.result = {
+        'success': true,
+        'pageHtml': htmlFile.path,
+        'cookies': <String>[],
+        'userAgent': 'ua',
+      };
 
       final dio = buildChallengeDio(callCount: () => ++calls);
       final adapter = WebViewSessionAdapter(
         dio: dio,
         cookieJar: PersistCookieJar(),
-        config: const WebViewSessionConfig(bypassEnabled: true),
+        config: const WebViewSessionConfig(
+          bypassEnabled: true,
+          autoCloseOnCookie: 'cf_clearance',
+        ),
         baseUrl: 'https://hentairead.com',
         native: native,
         bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
@@ -243,12 +247,49 @@ void main() {
         'https://hentairead.com/hentai/sample/english/p/1/',
       );
 
-      final payload = jsonDecode(response.data!) as Map<String, dynamic>;
-      expect(payload['images'], ['https://henread.xyz/001.jpg']);
-      expect(calls, 1);
-      expect(native.lastAutoCloseOnCookie, isNull);
-      expect(native.lastCaptureRequestPatterns, ['henread.xyz/']);
-      expect(native.lastAllowRequestPatterns, ['']);
+      expect(response.data, '<html>reader</html>');
+      expect(calls, 0);
+      expect(native.lastAutoCloseOnCookie, 'cf_clearance');
+      expect(native.lastCaptureRequestPatterns, const ['henread.xyz/']);
+      expect(native.lastAllowRequestPatterns, contains('hentairead.com'));
+    });
+
+    test('hentairead reader bypass prefers captured image urls when present',
+        () async {
+      var calls = 0;
+      final native = _FakeKuronNative();
+      native.result = {
+        'success': true,
+        'capturedImageUrls': <String>[
+          'https://henread.xyz/294075/87911/hr_0001.jpg',
+          'https://henread.xyz/294075/87911/hr_0002.jpg',
+        ],
+        'cookies': <String>[],
+        'userAgent': 'ua',
+      };
+
+      final dio = buildChallengeDio(callCount: () => ++calls);
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: PersistCookieJar(),
+        config: const WebViewSessionConfig(
+          bypassEnabled: true,
+          autoCloseOnCookie: 'cf_clearance',
+        ),
+        baseUrl: 'https://hentairead.com',
+        native: native,
+        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+      );
+
+      final response = await adapter.requestWithBypass<String>(
+        'https://hentairead.com/hentai/sample/english/p/1/',
+      );
+
+      expect(
+        response.data,
+        '{"images":["https://henread.xyz/294075/87911/hr_0001.jpg","https://henread.xyz/294075/87911/hr_0002.jpg"]}',
+      );
+      expect(calls, 0);
     });
   });
 }

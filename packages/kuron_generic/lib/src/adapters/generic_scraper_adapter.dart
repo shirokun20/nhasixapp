@@ -1103,7 +1103,10 @@ class GenericScraperAdapter implements GenericAdapter {
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       List<String> detailImageUrls = const [];
       final hasChapters = chapters?.isNotEmpty == true;
-      if (readerConfig != null && !hasChapters) {
+      final shouldHydrateDetailImages = readerConfig != null &&
+          !hasChapters &&
+          (readerConfig['mode'] as String?) != 'chapterDataScript';
+      if (shouldHydrateDetailImages) {
         final imagesDef = readerConfig['images'];
         final defMap = _toDefMap(imagesDef);
         if (defMap != null) {
@@ -1721,17 +1724,19 @@ class GenericScraperAdapter implements GenericAdapter {
       }
 
       if (imageUrls.isEmpty) {
-        final containerSel = readerConfig['container'] as String?;
-        if (containerSel != null) {
-          final imagesDef = readerConfig['images'];
-          if (imagesDef != null) {
-            final defMap = _toDefMap(imagesDef);
-            if (defMap != null) {
-              final sel = _fieldDefToSelector(defMap);
-              if (sel != null) imageUrls = _parser.extractList(doc, sel);
-            }
+        final imagesDef = readerConfig['images'];
+        if (imagesDef != null) {
+          final defMap = _toDefMap(imagesDef);
+          if (defMap != null) {
+            final sel = _fieldDefToSelector(defMap);
+            if (sel != null) imageUrls = _parser.extractList(doc, sel);
           }
         }
+      }
+
+      if (imageUrls.isEmpty &&
+          (readerConfig['cdnHost'] as String?)?.isNotEmpty == true) {
+        imageUrls = _extractPreviewCdnImageUrls(htmlContent);
       }
 
       imageUrls = _normalizeChapterImageUrls(imageUrls);
@@ -1782,9 +1787,7 @@ class GenericScraperAdapter implements GenericAdapter {
         }).toList();
 
         // Extrapolate missing image URLs if lazy-loading only provided a few
-        if (realMangaId != null &&
-            realChapterId != null &&
-            imageUrls.isNotEmpty) {
+        if (imageUrls.isNotEmpty) {
           int maxPage = imageUrls.length;
 
           final pageOptions = _parser.selectAll(doc,
@@ -1814,14 +1817,17 @@ class GenericScraperAdapter implements GenericAdapter {
             if (match != null) {
               final basePath = match.group(1);
               final prefix = match.group(2);
+              final width = match.group(3)?.length ?? 1;
               final ext = match.group(4);
               for (int i = imageUrls.length + 1; i <= maxPage; i++) {
-                imageUrls.add('$basePath$prefix$i.$ext');
+                final padded = i.toString().padLeft(width, '0');
+                imageUrls.add('$basePath$prefix$padded.$ext');
               }
-            } else {
+            } else if (realMangaId != null && realChapterId != null) {
               for (int i = imageUrls.length + 1; i <= maxPage; i++) {
+                final padded = i.toString().padLeft(4, '0');
                 imageUrls.add(
-                    'https://$cdnHost/$realMangaId/$realChapterId/hr_$i.jpg');
+                    'https://$cdnHost/$realMangaId/$realChapterId/hr_$padded.jpg');
               }
             }
           }
@@ -2888,6 +2894,25 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return normalized;
+  }
+
+  List<String> _extractPreviewCdnImageUrls(String htmlContent) {
+    final matches = RegExp(
+      r'''https?:\/\/hencover\.xyz\/preview\/[^"' <]+''',
+      caseSensitive: false,
+    ).allMatches(htmlContent);
+
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final match in matches) {
+      final raw = match.group(0);
+      if (raw == null || raw.isEmpty) continue;
+      final cleaned = raw.replaceAll(r'\/', '/');
+      if (seen.add(cleaned)) {
+        urls.add(cleaned);
+      }
+    }
+    return urls;
   }
 
   String _sanitizeImageUrl(String value) {

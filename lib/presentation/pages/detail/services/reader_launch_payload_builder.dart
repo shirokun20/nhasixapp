@@ -28,9 +28,12 @@ class ReaderLaunchPayloadBuilder {
           content: content,
           availableChapters: availableChapters,
         );
+    final isSeriesChapterLaunch = availableChapters?.isNotEmpty == true;
+    final shouldReuseDetailContent = content.imageUrls.isNotEmpty ||
+        (!isSeriesChapterLaunch && chapterData == null);
 
     return (
-      content: content.imageUrls.isNotEmpty ? content : null,
+      content: shouldReuseDetailContent ? content : null,
       imageMetadata: imageMetadata,
       chapterData: chapterData,
       parentContent: effectiveParentContent,

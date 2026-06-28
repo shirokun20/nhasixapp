@@ -25,15 +25,30 @@ class HentaiReadSourceFactory implements SourceFactory {
   ) {
     final isReaderPage = targetUrl.contains('/english/p/');
     return WebViewBypassOptions(
-      autoCloseOnCookie: isReaderPage
-          ? null
-          : (config.autoCloseOnCookie.isEmpty
-              ? null
-              : config.autoCloseOnCookie),
-      captureRequestPatterns: isReaderPage ? const ['henread.xyz/'] : null,
-      allowRequestPatterns: isReaderPage ? const [''] : null,
+      autoCloseOnCookie:
+          config.autoCloseOnCookie.isEmpty ? null : config.autoCloseOnCookie,
       preferCapturedHtml: true,
       preferCapturedImageUrls: isReaderPage,
+      captureRequestPatterns: isReaderPage ? const ['henread.xyz/'] : null,
+      allowRequestPatterns: isReaderPage
+          ? const [
+              'hentairead.com',
+              'henread.xyz',
+              'hencover.xyz',
+              'cloudflare.com',
+              'challenge-platform',
+              '.js',
+              '.css',
+              '.jpg',
+              '.jpeg',
+              '.png',
+              '.webp',
+              'fonts.gstatic',
+              'googleapis',
+              'gstatic',
+            ]
+          : null,
+      skipInitialRequest: isReaderPage,
     );
   }
 

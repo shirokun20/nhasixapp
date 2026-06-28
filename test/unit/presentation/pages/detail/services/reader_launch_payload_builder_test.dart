@@ -107,5 +107,19 @@ void main() {
       expect(payload.allChapters, partChapters);
       expect(payload.currentChapter, partChapters.first);
     });
+
+    test('keeps no-chapters content so reader can fetch images directly', () {
+      final galleryContent = buildContent(
+        id: 'mama-no-saikon-aite-wa-papakatsu-no-papa',
+        imageUrls: const [],
+      ).copyWith(sourceId: 'hentairead');
+
+      final payload = ReaderLaunchPayloadBuilder.build(content: galleryContent);
+
+      expect(payload.content, galleryContent);
+      expect(payload.parentContent, isNull);
+      expect(payload.allChapters, isNull);
+      expect(payload.currentChapter, isNull);
+    });
   });
 }

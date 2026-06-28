@@ -674,6 +674,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return;
     }
 
+    final prefetchHeaders = sourceId == null
+        ? null
+        : getIt<ContentSourceRegistry>()
+            .getSource(sourceId)
+            ?.getImageDownloadHeaders(
+              imageUrl:
+                  imageUrls[(currentPage - 1).clamp(0, imageUrls.length - 1)],
+            );
+
     // Backward prefetch: 1 page behind
     for (int i = 1; i <= _prefetchBackCount; i++) {
       final targetPage = currentPage - i;
@@ -685,6 +694,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             imageUrl,
             widget.contentId,
             targetPage,
+            headers: prefetchHeaders,
           ).catchError((_) {
             _prefetchedPages.remove(targetPage);
             return '';
@@ -755,6 +765,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           imageUrl,
           widget.contentId,
           targetPage,
+          headers: prefetchHeaders,
         ).then((_) {
           if (mounted) {
             // Log success with validation status

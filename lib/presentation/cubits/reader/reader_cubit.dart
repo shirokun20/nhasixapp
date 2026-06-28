@@ -180,10 +180,15 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Strategy A: Preloaded Content (Navigation from specialized screens)
       // If preloaded content has local paths (starting with /), use it directly - it's offline content
-      final shouldUsePreloaded =
-          preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
+      final hasPreloadedContent = preloadedContent != null;
+      final shouldUseImagePreloaded =
+          hasPreloadedContent && preloadedContent.imageUrls.isNotEmpty;
+      final shouldUseNoChapterPreloaded = hasPreloadedContent &&
+          preloadedContent.imageUrls.isEmpty &&
+          chapterData == null &&
+          (allChapters == null || allChapters.isEmpty);
 
-      if (shouldUsePreloaded) {
+      if (shouldUseImagePreloaded) {
         // Check if preloaded content has local paths (offline content)
         final hasLocalPaths =
             preloadedContent.imageUrls.any((url) => url.startsWith('/'));
@@ -213,6 +218,11 @@ class ReaderCubit extends Cubit<ReaderState> {
             isOfflineMode = !isConnected;
           }
         }
+      } else if (shouldUseNoChapterPreloaded) {
+        _logger.i(
+            '✅ Strategy A4: Using preloaded no-chapters content shell: $contentId');
+        content = preloadedContent;
+        isOfflineMode = !isConnected;
       }
 
       // Strategy B: Offline Content (Primary Performance Path) - only if content not set yet

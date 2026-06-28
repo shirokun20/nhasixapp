@@ -75,6 +75,7 @@ class WebViewBypassOptions {
     this.clearCookies = true,
     this.preferCapturedHtml = false,
     this.preferCapturedImageUrls = false,
+    this.skipInitialRequest = false,
   });
 
   final String? autoCloseOnCookie;
@@ -85,6 +86,7 @@ class WebViewBypassOptions {
   final bool clearCookies;
   final bool preferCapturedHtml;
   final bool preferCapturedImageUrls;
+  final bool skipInitialRequest;
 }
 
 WebViewBypassOptions _defaultBypassOptionsBuilder(
@@ -252,8 +254,8 @@ class WebViewSessionAdapter {
     String url, {
     Options? options,
   }) async {
+    final bypassOptions = _bypassOptionsBuilder(url, _config);
     try {
-      // 1. First attempt
       options ??= Options();
       options.headers ??= {};
 
@@ -264,6 +266,19 @@ class WebViewSessionAdapter {
         options.headers?['User-Agent'] = storedUa;
       }
 
+      if (_config.bypassEnabled && bypassOptions.skipInitialRequest) {
+        final bypassResponse = await _attemptNativeBypassAndVerify<T>(
+          targetUrl: url,
+          options: options,
+          bypassOptions: bypassOptions,
+        );
+        if (bypassResponse != null) {
+          _logger.i('✅ Site protection bypassed without initial probe.');
+          return bypassResponse;
+        }
+      }
+
+      // 1. First attempt
       final response = await _dio.get<T>(url, options: options);
       if (!shouldTriggerBypass(response) || !_config.bypassEnabled) {
         return response;
@@ -276,6 +291,7 @@ class WebViewSessionAdapter {
       final bypassResponse = await _attemptNativeBypassAndVerify<T>(
         targetUrl: url,
         options: options,
+        bypassOptions: bypassOptions,
       );
       if (bypassResponse == null) {
         _logger.e('❌ Site protection bypass failed completely.');
@@ -308,6 +324,7 @@ class WebViewSessionAdapter {
       final bypassResponse = await _attemptNativeBypassAndVerify<T>(
         targetUrl: url,
         options: options,
+        bypassOptions: bypassOptions,
       );
       if (bypassResponse == null) {
         _logger.e('❌ Cloudflare bypass failed completely.');
@@ -322,6 +339,7 @@ class WebViewSessionAdapter {
   Future<Response<T>?> _attemptNativeBypassAndVerify<T>({
     required String targetUrl,
     Options? options,
+    WebViewBypassOptions? bypassOptions,
   }) async {
     _isBypassing = true;
     try {
@@ -331,7 +349,7 @@ class WebViewSessionAdapter {
       final uri = Uri.parse(targetUrl);
       await _cookieJar.delete(uri);
 
-      final bypassOptions = _bypassOptionsBuilder(targetUrl, _config);
+      bypassOptions ??= _bypassOptionsBuilder(targetUrl, _config);
 
       // 2. Launch Native WebView
       final result = await _native.showLoginWebView(

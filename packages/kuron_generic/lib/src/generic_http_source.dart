@@ -623,6 +623,14 @@ class GenericHttpSource implements ContentSource {
       }
     }
 
+    if (_id == 'hentairead') {
+      headers['Accept'] = 'image/webp,image/*,*/*;q=0.8';
+      headers['Origin'] = _baseUrl;
+      headers['Sec-Fetch-Dest'] = 'image';
+      headers['Sec-Fetch-Mode'] = 'no-cors';
+      headers['Sec-Fetch-Site'] = 'cross-site';
+    }
+
     if (cookies != null && cookies.isNotEmpty) {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
