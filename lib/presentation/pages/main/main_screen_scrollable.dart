@@ -785,6 +785,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return RefreshIndicator(
       onRefresh: _handleRefresh,
       child: CustomScrollView(
+        clipBehavior: Clip.none,
         slivers: [
           // Search results header
           if (_isShowingSearchResults)

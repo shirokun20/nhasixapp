@@ -1494,45 +1494,47 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final cachedHeight = _cachedImageHeights[pageNumber];
       final fallbackHeight = MediaQuery.of(context).size.height;
 
-      return SizedBox(
-        key: ValueKey(
-            'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-        height: cachedHeight ?? fallbackHeight,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: ExtendedImageReaderWidget(
-            imageUrl: imageUrl,
-            contentId: widget.contentId,
-            pageNumber: pageNumber,
-            readingMode: ReadingMode.continuousScroll,
-            sourceId: sourceId,
-            sourceRawConfig: sourceRawConfig,
-            httpHeaders: headers,
-            enableZoom: zoom,
-            visiblePageNotifier: _visiblePageNotifier,
-            onHeavyImageDetected: _onHeavyImageDetected,
-            onRepairBrokenImage:
-                canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
-            onOpenSourcePageForRepair: canOpenSourcePage
-                ? () => _openSourcePageForRepair(pageNumber)
-                : null,
-            onImageLoaded: (int page, Size imageSize) {
-              // Cache rendered height: image scaled to screen width
-              final screenWidth = MediaQuery.of(context).size.width;
-              if (imageSize.width > 0) {
-                final renderedHeight =
-                    imageSize.height * (screenWidth / imageSize.width);
-                // Add margin (8.0) to match the padding
-                final totalHeight = renderedHeight + 8.0;
-                if (_cachedImageHeights[page] != totalHeight) {
-                  _cachedImageHeights[page] = totalHeight;
-                  // Rebuild to apply the accurate height
-                  if (mounted) setState(() {});
+      return RepaintBoundary(
+        child: SizedBox(
+          key: ValueKey(
+              'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
+          height: cachedHeight ?? fallbackHeight,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: ExtendedImageReaderWidget(
+              imageUrl: imageUrl,
+              contentId: widget.contentId,
+              pageNumber: pageNumber,
+              readingMode: ReadingMode.continuousScroll,
+              sourceId: sourceId,
+              sourceRawConfig: sourceRawConfig,
+              httpHeaders: headers,
+              enableZoom: zoom,
+              visiblePageNotifier: _visiblePageNotifier,
+              onHeavyImageDetected: _onHeavyImageDetected,
+              onRepairBrokenImage:
+                  canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
+              onOpenSourcePageForRepair: canOpenSourcePage
+                  ? () => _openSourcePageForRepair(pageNumber)
+                  : null,
+              onImageLoaded: (int page, Size imageSize) {
+                // Cache rendered height: image scaled to screen width
+                final screenWidth = MediaQuery.of(context).size.width;
+                if (imageSize.width > 0) {
+                  final renderedHeight =
+                      imageSize.height * (screenWidth / imageSize.width);
+                  // Add margin (8.0) to match the padding
+                  final totalHeight = renderedHeight + 8.0;
+                  if (_cachedImageHeights[page] != totalHeight) {
+                    _cachedImageHeights[page] = totalHeight;
+                    // Rebuild to apply the accurate height
+                    if (mounted) setState(() {});
+                  }
                 }
-              }
-              // Forward to cubit for webtoon detection
-              _readerCubit.onImageLoaded(page, imageSize);
-            },
+                // Forward to cubit for webtoon detection
+                _readerCubit.onImageLoaded(page, imageSize);
+              },
+            ),
           ),
         ),
       );
@@ -1563,25 +1565,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         if (useExtendedImage) {
           // ✨ NEW: Use ExtendedImageReaderWidget for all modes
-          return ExtendedImageReaderWidget(
-            imageUrl: imageUrl,
-            contentId: widget.contentId,
-            pageNumber: pageNumber,
-            readingMode: state.readingMode ?? ReadingMode.singlePage,
-            sourceId: resolvedSourceId,
-            sourceRawConfig: sourceRawConfig,
-            httpHeaders: headers,
-            enableZoom: zoom,
-            visiblePageNotifier: _visiblePageNotifier,
-            // Double tap = toggle UI (pinch handles zoom)
-            onDoubleTapGesture: () => _readerCubit.toggleUI(),
-            onRepairBrokenImage:
-                canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
-            onOpenSourcePageForRepair: canOpenSourcePage
-                ? () => _openSourcePageForRepair(pageNumber)
-                : null,
-            onImageLoaded:
-                _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
+          return RepaintBoundary(
+            child: ExtendedImageReaderWidget(
+              imageUrl: imageUrl,
+              contentId: widget.contentId,
+              pageNumber: pageNumber,
+              readingMode: state.readingMode ?? ReadingMode.singlePage,
+              sourceId: resolvedSourceId,
+              sourceRawConfig: sourceRawConfig,
+              httpHeaders: headers,
+              enableZoom: zoom,
+              visiblePageNotifier: _visiblePageNotifier,
+              // Double tap = toggle UI (pinch handles zoom)
+              onDoubleTapGesture: () => _readerCubit.toggleUI(),
+              onRepairBrokenImage:
+                  canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
+              onOpenSourcePageForRepair: canOpenSourcePage
+                  ? () => _openSourcePageForRepair(pageNumber)
+                  : null,
+              onImageLoaded:
+                  _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
+            ),
           );
         }
 
