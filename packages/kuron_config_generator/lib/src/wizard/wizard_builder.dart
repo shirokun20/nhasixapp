@@ -76,6 +76,20 @@ class WizardBuilder {
         type: QuestionType.yesNo,
         defaultValue: 'n',
       ),
+      WizardQuestion(
+        id: 'searchFormPreset',
+        prompt: 'Search form preset:',
+        type: QuestionType.choice,
+        choices: [
+          'none',
+          'madara-wp',
+          'mangathemesia-wp',
+          'foolslide',
+          'mangabox',
+          'custom',
+        ],
+        defaultValue: 'none',
+      ),
     ];
   }
 

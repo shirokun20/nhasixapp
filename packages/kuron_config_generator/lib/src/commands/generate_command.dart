@@ -161,6 +161,18 @@ class GenerateCommand extends Command<void> {
       answers['detailTitleSelector'] = cats['detailTitleSelector'];
     }
 
+    // Detect chapterData script for reader mode
+    final hasChapterData =
+        RegExp(r'chapterData\s*=\s*\{').hasMatch(probe.body);
+    String? cdnBase;
+    if (hasChapterData) {
+      final baseMatch =
+          RegExp(r'"base"\s*:\s*"([^"]+)"').firstMatch(probe.body);
+      cdnBase = baseMatch?.group(1);
+      logger.i('📖 chapterData script detected — '
+          '${cdnBase != null ? "CDN base: $cdnBase" : "no CDN base found"}');
+    }
+
     // Fill CMS defaults into answers
     if (cms.isKnown) {
       answers['cmsThemeType'] = cms.themeType;
@@ -186,11 +198,11 @@ class GenerateCommand extends Command<void> {
         answers['readerMode'] = 'directUrl';
       }
 
-      if (answers['readerMode'] == 'directUrl' &&
-          probe.body.contains('chapterData')) {
+      if (answers['readerMode'] == 'directUrl' && hasChapterData) {
         answers['readerMode'] = 'chapterDataScript';
+        if (cdnBase != null) answers['cdnBase'] = cdnBase;
         logger.i(
-            '📖 chapterData script detected — using chapterDataScript reader mode');
+            '📖 Using chapterDataScript reader mode${cdnBase != null ? " (base: $cdnBase)" : ""}');
       }
     }
 

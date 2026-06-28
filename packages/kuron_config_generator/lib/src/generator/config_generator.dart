@@ -210,6 +210,10 @@ class ConfigGenerator {
     Map<String, dynamic> readerCfg;
     if (readerMode == 'chapterDataScript') {
       readerCfg = {'mode': 'chapterDataScript'};
+      final cdnBase = answers['cdnBase'];
+      if (cdnBase != null && cdnBase.isNotEmpty) {
+        readerCfg['cdnBase'] = cdnBase;
+      }
     } else {
       readerCfg = {
         'container': '.reading-content, .chapter-content',
