@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -187,7 +188,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           preloadedContent.imageUrls.isEmpty &&
           chapterData == null &&
           (allChapters == null || allChapters.isEmpty);
-
       if (shouldUseImagePreloaded) {
         // Check if preloaded content has local paths (offline content)
         final hasLocalPaths =
@@ -218,11 +218,23 @@ class ReaderCubit extends Cubit<ReaderState> {
             isOfflineMode = !isConnected;
           }
         }
-      } else if (shouldUseNoChapterPreloaded) {
+      }
+      // Strategy A4: Fast metadata-only shell (no images yet).
+      // Upgrade to offline content with imageUrls if available.
+      // ponytail: single fallback path, add multi-source retry if needed.
+      if (content == null && shouldUseNoChapterPreloaded) {
         _logger.i(
             '✅ Strategy A4: Using preloaded no-chapters content shell: $contentId');
         content = preloadedContent;
         isOfflineMode = !isConnected;
+        if (isOfflineAvailable) {
+          final offlineContent =
+              await offlineContentManager.createOfflineContent(contentId);
+          if (offlineContent != null) {
+            content = offlineContent;
+            isOfflineMode = true;
+          }
+        }
       }
 
       // Strategy B: Offline Content (Primary Performance Path) - only if content not set yet
@@ -252,7 +264,11 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
       // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
       if (content == null) {
+        debugPrint(
+            '🔍 READER_CUBIT all strategies failed, entering Strategy D');
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
+          debugPrint(
+              '🔍 READER_CUBIT Strategy D using preloaded fallback imageUrls=${preloadedContent.imageUrls.length}');
           _logger.w(
               '⚠️ Strategy D: Using preloaded content as fallback: $contentId');
           content = preloadedContent;

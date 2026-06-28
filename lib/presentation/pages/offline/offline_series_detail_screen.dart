@@ -218,6 +218,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   }
 
   Future<void> _openReader(Content content) async {
+    debugPrint(
+        '🔍 OFFLINE_READER: opening content id=${content.id} title=${content.title} imageUrls=${content.imageUrls.length} pageCount=${content.pageCount} sourceId=${content.sourceId}');
     await AppRouter.goToReader(
       context,
       content.id,
