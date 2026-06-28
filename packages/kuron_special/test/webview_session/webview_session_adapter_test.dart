@@ -1,7 +1,44 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:kuron_special/kuron_special.dart';
+
+class _FakeKuronNative extends KuronNative {
+  Map<String, dynamic>? result;
+  String? lastAutoCloseOnCookie;
+  List<String>? lastCaptureRequestPatterns;
+  List<String>? lastAllowRequestPatterns;
+  bool? lastClearCookies;
+
+  @override
+  Future<Map<String, dynamic>?> showLoginWebView({
+    required String url,
+    List<String>? successUrlFilters,
+    String? initialCookie,
+    String? userAgent,
+    String? autoCloseOnCookie,
+    String? ssoRedirectUrl,
+    List<String>? domImageSelectors,
+    List<String>? domImageAttributes,
+    List<String>? domLinkSelectors,
+    List<String>? captureRequestPatterns,
+    List<String>? allowRequestPatterns,
+    String? pageFinishedScript,
+    bool blockNetworkImages = false,
+    bool enableAdBlock = false,
+    bool clearCookies = false,
+  }) async {
+    lastAutoCloseOnCookie = autoCloseOnCookie;
+    lastCaptureRequestPatterns = captureRequestPatterns;
+    lastAllowRequestPatterns = allowRequestPatterns;
+    lastClearCookies = clearCookies;
+    return result;
+  }
+}
 
 void main() {
   group('WebViewSessionConfig.fromJson', () {
@@ -58,6 +95,160 @@ void main() {
       );
 
       expect(adapter.shouldTriggerBypass(response), isFalse);
+    });
+  });
+
+  group('WebViewSessionAdapter bypass options', () {
+    late Directory tempDir;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('kuron_special_test_');
+    });
+
+    tearDown(() {
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true);
+      }
+    });
+
+    Future<File> writeCapturedHtml(String html) async {
+      final file = File('${tempDir.path}/captured.html');
+      await file.writeAsString(jsonEncode(html));
+      return file;
+    }
+
+    Dio buildChallengeDio({
+      required int Function() callCount,
+      String verifyBody = 'verified',
+    }) {
+      final dio = Dio();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (callCount() == 1) {
+              handler.resolve(
+                Response<String>(
+                  requestOptions: options,
+                  statusCode: 403,
+                  data: 'challenge',
+                  headers: Headers.fromMap({
+                    'cf-mitigated': ['challenge'],
+                  }),
+                ),
+              );
+              return;
+            }
+
+            handler.resolve(
+              Response<String>(
+                requestOptions: options,
+                statusCode: 200,
+                data: verifyBody,
+              ),
+            );
+          },
+        ),
+      );
+      return dio;
+    }
+
+    test('generic adapter ignores captured html and re-verifies with Dio',
+        () async {
+      var calls = 0;
+      final native = _FakeKuronNative();
+      final htmlFile = await writeCapturedHtml('<html>captured</html>');
+      native.result = {
+        'success': true,
+        'pageHtml': htmlFile.path,
+        'cookies': <String>[],
+        'userAgent': 'ua',
+      };
+
+      final dio = buildChallengeDio(callCount: () => ++calls);
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: PersistCookieJar(),
+        config: const WebViewSessionConfig(
+          bypassEnabled: true,
+          autoCloseOnCookie: 'cf_clearance',
+        ),
+        baseUrl: 'https://example.com',
+        native: native,
+      );
+
+      final response =
+          await adapter.requestWithBypass<String>('https://example.com/list');
+
+      expect(response.data, 'verified');
+      expect(calls, 2);
+      expect(native.lastAutoCloseOnCookie, 'cf_clearance');
+      expect(native.lastCaptureRequestPatterns, isNull);
+      expect(native.lastAllowRequestPatterns, isNull);
+      expect(native.lastClearCookies, isTrue);
+    });
+
+    test('hentairead adapter uses captured html for non-reader pages',
+        () async {
+      var calls = 0;
+      final native = _FakeKuronNative();
+      final htmlFile = await writeCapturedHtml('<html>captured</html>');
+      native.result = {
+        'success': true,
+        'pageHtml': htmlFile.path,
+        'cookies': <String>[],
+        'userAgent': 'ua',
+      };
+
+      final dio = buildChallengeDio(callCount: () => ++calls);
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: PersistCookieJar(),
+        config: const WebViewSessionConfig(bypassEnabled: true),
+        baseUrl: 'https://hentairead.com',
+        native: native,
+        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+      );
+
+      final response = await adapter
+          .requestWithBypass<String>('https://hentairead.com/hentai/');
+
+      expect(response.data, '<html>captured</html>');
+      expect(calls, 1);
+      expect(native.lastCaptureRequestPatterns, isNull);
+      expect(native.lastAllowRequestPatterns, isNull);
+    });
+
+    test('hentairead reader bypass uses captured image urls only for reader',
+        () async {
+      var calls = 0;
+      final native = _FakeKuronNative()
+        ..result = {
+          'success': true,
+          'capturedImageUrls': ['https://henread.xyz/001.jpg'],
+          'cookies': <String>[],
+          'userAgent': 'ua',
+        };
+
+      final dio = buildChallengeDio(callCount: () => ++calls);
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: PersistCookieJar(),
+        config: const WebViewSessionConfig(bypassEnabled: true),
+        baseUrl: 'https://hentairead.com',
+        native: native,
+        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+      );
+
+      final response = await adapter.requestWithBypass<String>(
+        'https://hentairead.com/hentai/sample/english/p/1/',
+      );
+
+      final payload = jsonDecode(response.data!) as Map<String, dynamic>;
+      expect(payload['images'], ['https://henread.xyz/001.jpg']);
+      expect(calls, 1);
+      expect(native.lastAutoCloseOnCookie, isNull);
+      expect(native.lastCaptureRequestPatterns, ['henread.xyz/']);
+      expect(native.lastAllowRequestPatterns, ['']);
     });
   });
 }

@@ -266,6 +266,15 @@ class WebViewActivity : AppCompatActivity() {
                 val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
 
                 if (captureRequestPatterns.any { requestUrl.contains(it) }) {
+                    // ponytail: MangaFire captures one AJAX URL and exits; HentaiRead
+                    // collects many image URLs, so keep the old list behavior unless
+                    // the caller explicitly enabled blockNetworkImages capture mode.
+                    if (blockNetworkImages) {
+                        view?.post {
+                            finishWithSuccess(webView.url ?: url, requestUrl)
+                        }
+                        return emptyResponse()
+                    }
                     capturedImageUrls.add(requestUrl)
                     // Don't block – let the image load normally in WebView
                 }

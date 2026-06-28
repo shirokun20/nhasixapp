@@ -498,6 +498,7 @@ void _setupDataSources() {
         config: WebViewSessionConfig.fromJson(rawConfig),
         baseUrl: baseUrl,
         logger: getIt<Logger>(),
+        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
       );
     },
   );
@@ -641,8 +642,7 @@ void _setupDataSources() {
           logger: getIt<Logger>(),
         ),
         // CF-protected generic sources
-        GenericBypassSourceFactory(
-          sourceId: 'hentairead',
+        HentaiReadSourceFactory(
           dio: getIt<Dio>(),
           sessionAdapter:
               getIt<WebViewSessionAdapter>(instanceName: 'cf_hentairead'),
