@@ -117,15 +117,16 @@ lib/
 - `2026-06-26-bloc-pattern-modernization`
 - `2026-06-26-purge-ui-packages`
 - `2026-06-27-update-manhwaread-config`
+- `2026-06-28-native-dns-rollout`
+- `2026-06-28-home-scroll-reader-optimization`
 
 ### 🚧 Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
-- `add-kuron-config-generator` — **Phase 1 Complete (Option A)**: Interactive wizard shipped (15/56 tasks = 27%). Sections 1-3 complete: CLI scaffold, wizard flow, config generation. Sections 4-10 deferred (HTTP discovery, browser automation, GitHub mining, validation integration) per Ponytail ultra / YAGNI principles. Tool is functional and generates valid Source Config v2 files.
-- `native-dns-rollout` — ✅ **Complete**. Native DNS promoted to canonical managed path. Dart-side DnsResolver removed from DI. Added Private DNS diagnostics (device-level), DNS settings launch with layered fallback, and settings UI showing device Private DNS status.
-- `source-health-monitor` — 📋 **Proposed**. Per-source HTTP health check in settings (HEAD to baseUrl, timeout 10s, green/red/grey dot indicators, "Check All" button, aggregate "N/N reachable" summary). Advisory only — no auto-disable.
+- `add-kuron-config-generator`
 - `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
-- `revamp-kuron-config-runtime` — 60/62 tasks complete; targeted verification and provider-repo validation are done. Remaining deferred scope: §6.3 (`kuron_special` plugin migration) and §8.4 (app-layer header/referer dedup via package-level resolved requests). Archive only after those deferrals are explicitly accepted.
+- `revamp-kuron-config-runtime`
+- `source-health-monitor` — 📋 **Proposed**. Per-source HTTP health check in settings (HEAD to baseUrl, timeout 10s, green/red/grey dot indicators, "Check All" button, aggregate "N/N reachable" summary). Advisory only — no auto-disable.
 
 ### 📋 Exploration / Analysis (in `openspec/changes/`)
 - *(none currently)*
@@ -210,6 +211,7 @@ Project ini mewajibkan penggunaan **RTK** untuk mengoptimalkan token AI (hemat 6
 |---|---|---|---|---|
 | 2026-06-28 | Antigravity | Tag duplicate fix & slug resolution fallback | ✅ Done | Fixed duplicate tags issue (like "Shiro Marimo\n1" vs "Shiro Marimo") by stripping counts and trailing newlines from generic text fields. Implemented regex-based trailing count stripping in `hentairead-config.json` for future extractions and `ContentModel._decodeStringList` to instantly clean up existing cached tags in the database upon load. Also fixed a tag resolution bug by adding a slug generation fallback when older corrupted tags fail to resolve their `tagId`. |
 | 2026-06-28 | Claude Code | Native DNS roll-out + source health monitor proposal | ✅ Done | Promoted native Android DoH as canonical managed DNS path. Removed Dart-side DnsResolver from DI. Added Private DNS diagnostics (ConnectivityManager API 29+), system DNS settings launch with layered fallback, and settings UI showing device Private DNS status with l10n (en/id/zh). Also proposed `source-health-monitor` — per-source HTTP health check in settings with colored dot indicators, "Check All" button, and advisory-only guidance. |
+| 2026-06-28 | Claude Code | Home scroll + reader performance optimization | ✅ Done | Merged nested FutureBuilders in grid cards into single `Future.wait`, added `RepaintBoundary` to each grid card and reader page, added `buildWhen` to BlocBuilders, set `clipBehavior: Clip.none` on scrollable grids. Also fixed offline→reader blank screen bug by removing Strategy A4 in ReaderCubit that skipped offline content resolution. Fixed home grid badges not updating after navigating back. |
 | 2026-06-28 | Codex | HentaiRead source bootstrap + generator Cloudflare probe hardening | ✅ Done | Added local `hentairead` source config as a no-chapters reader source that falls back to `/hentai/{slug}/english/p/1/` and patched `chapterDataScript` extraction to support the alternate `single-chapter-js-extra` + `single-chapter-js-before` script pair. Added focused config/runtime tests and hardened `kuron_config_generator` probe detection so Cloudflare challenge pages returning HTTP 200 are treated as blocked during `generate --url` smoke tests. Note: the in-app browser skill was requested but `iab` was unavailable in this session, so discovery still had to fall back to source code + protected probe verification. |
 | 2026-06-28 | Codex | ManhwaRead latest feed + chapter scoping + random dice fix | ✅ Done | Fixed `manhwaread` browse feed to use `/manhwa/` latest-release listing, scoped detail chapter extraction to `#groupChapterList #chaptersList a.chapter-item` so unrelated series chapters no longer leak into the detail page, and enabled random dice support via scraper `randomUrl` plus `GenericHttpSource.getRandom()` scraper fallback. Added focused regression tests for config contract, real detail fixture chapter scoping, and scraper-random ID extraction. Note: `informations/configs` is still gitignored, so the config change is local unless mirrored into a tracked config provider path. |
 | 2026-06-28 | Claude Code | ManhwaRead full config + reader + tag routing | ✅ Done | Full `manhwaread-config.json` rewrite: `urlPatterns`, `selectors`, pagination, `chapterDataScript` reader, prefix routing. Added `"self"` pseudo-selector in engine. Injected author/artist/publisher as typed Tags. Tag count strip regexes. 5 unit tests for `mode:name`. |
