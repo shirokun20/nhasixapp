@@ -721,8 +721,6 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                         : l10n.continueFromPage(
                             widget.chapterHistory[chapter.id]!.lastPage,
                           )
-                  else if (chapter.uploadDate != null)
-                    widget.formatDate(chapter.uploadDate!),
                 ];
 
                 return AnimatedContainer(

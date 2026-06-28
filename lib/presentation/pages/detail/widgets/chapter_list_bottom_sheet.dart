@@ -13,7 +13,6 @@ import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
 
@@ -45,10 +44,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     super.initState();
     _chapters = [...?widget.content.chapters];
     _selectedLanguageKey = widget.initialLanguageKey;
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat.yMMMd().format(date);
   }
 
   @override
@@ -295,8 +290,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                         final subtitleParts = [
                           if ((chapter.scanGroup ?? '').trim().isNotEmpty)
                             chapter.scanGroup!.trim(),
-                          if (chapter.uploadDate != null)
-                            _formatDate(chapter.uploadDate!),
                         ];
                         final hasScanGroup =
                             (chapter.scanGroup ?? '').trim().isNotEmpty;

@@ -536,10 +536,44 @@ class GenericContentMapper {
       final absolute = DateTime.tryParse(cleaned);
       if (absolute != null) return absolute;
 
+      final monthNamed = _parseNamedMonthDate(cleaned);
+      if (monthNamed != null) return monthNamed;
+
       final relative = _parseRelativeDate(cleaned);
       if (relative != null) return relative;
     }
     return null;
+  }
+
+  static DateTime? _parseNamedMonthDate(String raw) {
+    if (raw.isEmpty) return null;
+
+    final match = RegExp(
+      r'^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s*(\d{4})$',
+      caseSensitive: false,
+    ).firstMatch(raw.trim());
+    if (match == null) return null;
+
+    const months = {
+      'january': 1,
+      'february': 2,
+      'march': 3,
+      'april': 4,
+      'may': 5,
+      'june': 6,
+      'july': 7,
+      'august': 8,
+      'september': 9,
+      'october': 10,
+      'november': 11,
+      'december': 12,
+    };
+
+    final month = months[match.group(1)!.toLowerCase()];
+    final day = int.tryParse(match.group(2)!);
+    final year = int.tryParse(match.group(3)!);
+    if (month == null || day == null || year == null) return null;
+    return DateTime(year, month, day);
   }
 
   static DateTime? _parseRelativeDate(String raw) {

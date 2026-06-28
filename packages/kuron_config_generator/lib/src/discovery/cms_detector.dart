@@ -283,6 +283,45 @@ class CmsSignature {
       },
     ),
 
+    // ZManga — WordPress manga theme (used by many Indonesian doujin sites)
+    CmsSignature(
+      id: 'zmanga',
+      themeType: 'zmanga',
+      hints: [
+        'themes/ZManga',
+        'flexbox4-item',
+        'flexbox4-content',
+        'class="reader-area"',
+        'class="infox"',
+        'class="chselect"',
+        'class="chapter"',
+      ],
+      selectors: {
+        'list.item': '.flexbox4-item, .post, .entry',
+        'list.title': '.title a[href*="/series/"]',
+        'list.cover': 'img[class*="lazyload"]',
+        'detail.title': 'h1, .entry-title',
+        'detail.cover': 'img[class*="lazyload"], img[class*="thumb"]',
+        'detail.author': 'a[href*="/author/"]',
+        'detail.artist': 'a[href*="/artist/"]',
+        'detail.genre': 'a[href*="/genre/"]',
+        'detail.status': '[class*="status"]',
+        'chapters.item': '.chapter a, a[href*="/series/"]',
+        'reader.image': '.reader-area img[class*="lazyload"]',
+      },
+      urlPatterns: {
+        'homePage': '/page/{page}/',
+        'search': '/?s={query}',
+        'searchPage': '/page/{page}/?s={query}',
+        'detail': '/series/{id}',
+        'chapter': '/{id}',
+      },
+      searchDefaults: {
+        'searchUrl': '/?s={query}',
+        'queryParam': 's',
+      },
+    ),
+
     // WP Comics — WordPress theme specialized for comic/webtoon hosting
     CmsSignature(
       id: 'wpcomics',
@@ -333,6 +372,88 @@ class CmsSignature {
       },
       searchDefaults: {
         'queryParam': 's',
+      },
+    ),
+
+    // Blogger (Blogspot) — used by many independent comic/manhwa sites
+    CmsSignature(
+      id: 'blogger',
+      themeType: 'blogger',
+      hints: [
+        'blogger.com',
+        'blogger.googleusercontent.com',
+        'content="blogger"',
+        'bp.blogspot.com',
+        'feeds/posts/default',
+        'blog-posts',
+      ],
+      selectors: {
+        'list.item': '.bookItem, .post, .entry, article',
+        'list.title': 'h2 a, .post-title a',
+        'list.cover': 'img',
+        'detail.title': 'h1, .post-title',
+        'detail.cover': 'img',
+        'detail.genre': '.label-name, a[rel="tag"]',
+        'chapters.item': 'a[href*="chapter"], .char a',
+        'reader.image': '.separator img, .entry-content img, .post-body img',
+      },
+      urlPatterns: {
+        'homePage': '/search?max-results=20',
+        'homePagePage': '/search?max-results=20&start={start}',
+        'search': '/search?q={query}&max-results=20',
+        'searchPage': '/search?q={query}&start={start}&max-results=20',
+        'labelSearch': '/search/label/{tag}?max-results=20',
+        'labelSearchPage': '/search/label/{tag}?start={start}&max-results=20',
+        'detail': '/{id}',
+        'chapter': '/{id}',
+      },
+      searchDefaults: {
+        'searchUrl': '/search?q={query}&max-results=20',
+        'queryParam': 'q',
+      },
+      readerDefaults: {
+        'mode': 'directUrl',
+      },
+    ),
+
+    // Blogger (Blogspot) — used by many independent comic/manhwa sites.
+    // Pages are JS-rendered from JSONP feeds, so scraper config is a best-effort draft.
+    CmsSignature(
+      id: 'blogger',
+      themeType: 'blogger',
+      hints: [
+        'blogger.com',
+        'blogger.googleusercontent.com',
+        'content="blogger"',
+        'bp.blogspot.com',
+        'feeds/posts/default',
+      ],
+      selectors: {
+        'list.item': '.bookItem, .post, .entry, article',
+        'list.title': 'h2 a, .post-title a',
+        'list.cover': 'img',
+        'detail.title': 'h1, .post-title',
+        'detail.cover': 'img',
+        'detail.genre': '.label-name, a[rel="tag"]',
+        'chapters.item': 'a[href*="chapter"], .char a',
+        'reader.image': '.separator img, .entry-content img, .post-body img',
+      },
+      urlPatterns: {
+        'homePage': '/search?max-results=20',
+        'homePagePage': '/search?max-results=20&start={start}',
+        'search': '/search?q={query}&max-results=20',
+        'searchPage': '/search?q={query}&start={start}&max-results=20',
+        'labelSearch': '/search/label/{tag}?max-results=20',
+        'labelSearchPage': '/search/label/{tag}?start={start}&max-results=20',
+        'detail': '/{id}',
+        'chapter': '/{id}',
+      },
+      searchDefaults: {
+        'searchUrl': '/search?q={query}&max-results=20',
+        'queryParam': 'q',
+      },
+      readerDefaults: {
+        'mode': 'directUrl',
       },
     ),
 
@@ -474,6 +595,13 @@ Map<String, String>? _fallbackFor(String cmsId, String themeType) {
       'list.item': '.item-manga',
       'detail.title': 'h1',
       'reader.image': 'img[class*="page"]',
+    };
+  }
+  if (cmsId == 'zmanga') {
+    return {
+      'list.item': '.post, .entry',
+      'detail.title': 'h1',
+      'reader.image': 'img',
     };
   }
   if (cmsId == 'wpcomics') {

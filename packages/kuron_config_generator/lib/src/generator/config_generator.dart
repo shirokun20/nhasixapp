@@ -39,6 +39,14 @@ class ConfigGenerator {
         'genreQueryPrefix': 'genre:',
         'genreTagType': 'genre',
       };
+    } else if (cmsTheme == 'zmanga') {
+      config['contentIdPattern'] = '/series/([^/]+)';
+      config['navigation'] = <String, String>{
+        'genreQueryPrefix': 'genre:',
+        'genreTagType': 'genre',
+      };
+    } else if (cmsTheme == 'blogger') {
+      config['contentIdPattern'] = '/(\\d{4}/\\d{2}/[^/]+)';
     }
 
     config['notes'] = _buildNotes(answers);
@@ -105,7 +113,58 @@ class ConfigGenerator {
     // urlPatterns
     final urlPatterns = <String, dynamic>{};
 
-    if (cmsTheme.startsWith('madara')) {
+    if (cmsTheme == 'zmanga') {
+      urlPatterns['home'] = {
+        'url': '/',
+        'list': {
+          'container': listSel,
+          'fields': {
+            'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
+            'title': {'selector': '.title a'},
+            'coverUrl': {'selector': 'img.lazyload', 'attribute': 'data-src'},
+          },
+          'pagination': {
+            'next': '.next, a[rel="next"]',
+            'links': 'a.page-numbers',
+          },
+        },
+      };
+      urlPatterns['homePage'] = {'url': '/page/{page}/', 'inherits': 'home'};
+      urlPatterns['search'] = {'url': '/?s={query}', 'inherits': 'home'};
+      urlPatterns['searchPage'] = {
+        'url': '/page/{page}/?s={query}',
+        'inherits': 'home',
+      };
+      urlPatterns['detail'] = '/series/{id}';
+      urlPatterns['chapter'] = '/series/{id}';
+    } else if (cmsTheme == 'blogger') {
+      urlPatterns['home'] = {
+        'url': '/',
+        'list': {
+          'container': listSel,
+          'fields': {
+            'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
+            'title': {'selector': 'a'},
+            'coverUrl': {'selector': 'img', 'attribute': 'src'},
+          },
+        },
+      };
+      // ponytail: Blogger uses ?start= pagination, not /page/. Quirk handled.
+      urlPatterns['homePage'] = {
+        'url': '/search?max-results=20',
+        'inherits': 'home',
+      };
+      urlPatterns['search'] = {
+        'url': '/search?q={query}&max-results=20',
+        'inherits': 'home',
+      };
+      urlPatterns['labelSearch'] = {
+        'url': '/search/label/{tag}?max-results=20',
+        'inherits': 'home',
+      };
+      urlPatterns['detail'] = '/{id}';
+      urlPatterns['chapter'] = '/{id}';
+    } else if (cmsTheme.startsWith('madara')) {
       urlPatterns['home'] = {
         'url': '/',
         'list': {
@@ -181,17 +240,27 @@ class ConfigGenerator {
       }
     }
 
-    // Detail fields
-    final detailFields = <String, dynamic>{
-      'title': {'selector': detailTitleSel},
-      'coverUrl': {'selector': 'img', 'attribute': 'src'},
-      'description': {'selector': 'p'},
-      'author': {'selector': 'a[href*="/author/"]'},
-      'artist': {'selector': 'a[href*="/artist/"]'},
-      'genres': {'selector': 'a[href*="/genre/"]', 'multi': true},
-      'tags': {'selector': 'a[href*="/tag/"]', 'multi': true},
-      'status': {'selector': '[class*="status"]'},
-    };
+    // Detail fields — vary by CMS
+    Map<String, dynamic> detailFields;
+    if (cmsTheme == 'blogger') {
+      detailFields = {
+        'title': {'selector': 'h1, .post-title'},
+        'coverUrl': {'selector': 'img', 'attribute': 'src'},
+        'description': {'selector': '.post-body, .entry-content'},
+        'genres': {'selector': '.label-name, a[rel="tag"]', 'multi': true},
+      };
+    } else {
+      detailFields = {
+        'title': {'selector': detailTitleSel},
+        'coverUrl': {'selector': 'img', 'attribute': 'src'},
+        'description': {'selector': 'p'},
+        'author': {'selector': 'a[href*="/author/"]'},
+        'artist': {'selector': 'a[href*="/artist/"]'},
+        'genres': {'selector': 'a[href*="/genre/"]', 'multi': true},
+        'tags': {'selector': 'a[href*="/tag/"]', 'multi': true},
+        'status': {'selector': '[class*="status"]'},
+      };
+    }
 
     final chaptersCfg = <String, dynamic>{
       'container': answers['chapterContainer'] ?? 'a[href*="chapter"]',

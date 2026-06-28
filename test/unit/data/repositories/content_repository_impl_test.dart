@@ -3,6 +3,7 @@ import 'package:kuron_core/kuron_core.dart' as core;
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
+import 'package:nhasixapp/data/models/content_model.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/value_objects/value_objects.dart';
@@ -82,6 +83,10 @@ void main() {
     ],
   );
 
+  final staleEmptyChapterContent = staleCachedContent.copyWith(
+    chapters: const <core.Chapter>[],
+  );
+
   setUp(() {
     registry = core.ContentSourceRegistry();
     remoteConfigService = MockRemoteConfigService();
@@ -134,6 +139,76 @@ void main() {
     expect(result.chapters!.first.id, 'you-wont-break-me-chapter-37');
     verify(() => source.getDetail(contentId)).called(1);
     verify(() => detailCacheService.getCachedDetail(contentId)).called(1);
+  });
+
+  test('getContentDetail bypasses empty chapter cache for chapter sources',
+      () async {
+    const shiroSourceId = 'shirodoujin';
+    final shiroSource = MockContentSource();
+    final freshShiroContent = freshContent.copyWith(sourceId: shiroSourceId);
+    final staleShiroContent = staleEmptyChapterContent.copyWith(
+      sourceId: shiroSourceId,
+    );
+
+    when(() => shiroSource.id).thenReturn(shiroSourceId);
+    when(() => shiroSource.displayName).thenReturn('ShiroDoujin');
+    when(() => remoteConfigService.isFeatureEnabled(shiroSourceId, any()))
+        .thenReturn(true);
+    when(() => shiroSource.getDetail(contentId))
+        .thenAnswer((_) async => freshShiroContent);
+    when(() => detailCacheService.cacheDetail(freshShiroContent))
+        .thenAnswer((_) async {});
+    when(() => detailCacheService.getCachedDetail(contentId))
+        .thenAnswer((_) async => staleShiroContent);
+    registry.register(shiroSource);
+
+    final result = await repository.getContentDetail(
+      ContentId.fromString(contentId),
+      sourceId: shiroSourceId,
+    );
+
+    expect(result.chapters, isNotEmpty);
+    verify(() => shiroSource.getDetail(contentId)).called(1);
+  });
+
+  test('getContentDetail bypasses invalid memory-cache title and refreshes',
+      () async {
+    const shiroSourceId = 'shirodoujin';
+    final shiroSource = MockContentSource();
+    final staleMemoryMap = {
+      ...ContentModel.fromEntity(
+        staleEmptyChapterContent.copyWith(
+          sourceId: shiroSourceId,
+          title: 'Unknown',
+        ),
+      ).toJson(),
+    };
+    final freshShiroContent = freshContent.copyWith(
+      sourceId: shiroSourceId,
+      title: 'My Body is Atop Her Tongue Bahasa Indonesia',
+    );
+
+    when(() => shiroSource.id).thenReturn(shiroSourceId);
+    when(() => shiroSource.displayName).thenReturn('ShiroDoujin');
+    when(() => remoteConfigService.isFeatureEnabled(shiroSourceId, any()))
+        .thenReturn(true);
+    when(() => contentCacheManager.get('content_$contentId'))
+        .thenAnswer((_) async => staleMemoryMap);
+    when(() => detailCacheService.getCachedDetail(contentId))
+        .thenAnswer((_) async => null);
+    when(() => shiroSource.getDetail(contentId))
+        .thenAnswer((_) async => freshShiroContent);
+    when(() => detailCacheService.cacheDetail(freshShiroContent))
+        .thenAnswer((_) async {});
+    registry.register(shiroSource);
+
+    final result = await repository.getContentDetail(
+      ContentId.fromString(contentId),
+      sourceId: shiroSourceId,
+    );
+
+    expect(result.title, 'My Body is Atop Her Tongue Bahasa Indonesia');
+    verify(() => shiroSource.getDetail(contentId)).called(1);
   });
 
   test(

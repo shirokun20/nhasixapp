@@ -23,12 +23,18 @@ class GenericUrlBuilder {
 
   /// Resolve a URL template by substituting [params].
   String resolve(String template, Map<String, String> params) {
-    // If template is already a full URL, don't prepend baseUrl.
-    final base = template.startsWith('http') ? '' : baseUrl;
-    var url = '$base$template';
+    var url = template;
     for (final entry in params.entries) {
       url = url.replaceAll('{${entry.key}}', entry.value);
     }
+    if (url.startsWith('/http://') || url.startsWith('/https://')) {
+      url = url.substring(1);
+    }
+    // Some scraper configs use `/{id}` while the extracted id is already a
+    // full chapter URL. Prefix only after substitution to avoid
+    // `https://host/https://host/...`.
+    final base = url.startsWith('http') ? '' : baseUrl;
+    url = '$base$url';
     return url;
   }
 

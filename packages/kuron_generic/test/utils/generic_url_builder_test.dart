@@ -66,5 +66,18 @@ void main() {
         'https://nhentai.net/library?sort=released_at&q=aka&page=1',
       );
     });
+
+    test('does not prepend baseUrl when placeholder resolves to absolute url',
+        () {
+      final url = builder.buildPagesUrl(
+        '/{id}',
+        'https://shirodoujin.com/village-special-ordinance-chapter-70-bahasa-indonesia/',
+      );
+
+      expect(
+        url,
+        'https://shirodoujin.com/village-special-ordinance-chapter-70-bahasa-indonesia/',
+      );
+    });
   });
 }

@@ -485,6 +485,10 @@ class ContentRepositoryImpl implements ContentRepository {
     String? requestedSourceId,
   }) {
     final source = (requestedSourceId ?? content.sourceId).toLowerCase();
+    if (_isInvalidCachedTitle(content.title)) {
+      return true;
+    }
+
     if (_isChapterCacheIncomplete(source, content)) {
       return true;
     }
@@ -511,6 +515,13 @@ class ContentRepositoryImpl implements ContentRepository {
         .any((url) => url.contains('gold-usergeneratedcontent.net'));
   }
 
+  bool _isInvalidCachedTitle(String title) {
+    final normalized = title.trim().toLowerCase();
+    return normalized.isEmpty ||
+        normalized == 'unknown' ||
+        normalized == 'unknown title';
+  }
+
   bool _isChapterCacheIncomplete(String source, Content content) {
     final hasChapterFeature =
         remoteConfigService.isFeatureEnabled(source, (f) => f.chapters);
@@ -522,8 +533,8 @@ class ContentRepositoryImpl implements ContentRepository {
       return true;
     }
 
-    // If we previously cached an empty chapter list due to a scraper bug, force refresh
-    if (source == 'mangafire' && content.chapters!.isEmpty) {
+    // Empty chapter lists for chapter-enabled sources are usually stale/bad cache.
+    if (content.chapters!.isEmpty) {
       return true;
     }
 

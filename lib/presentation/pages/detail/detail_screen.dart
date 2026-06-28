@@ -830,7 +830,8 @@ class _DetailScreenState extends State<DetailScreen> {
           value: content.groups.join(', '),
           icon: Icons.group,
         ),
-      if (_formatDate(content.uploadDate) != l10n.unknown)
+      if (content.sourceId != 'shirodoujin' &&
+          _formatDate(content.uploadDate) != l10n.unknown)
         DetailMetadataItem(
           label: l10n.uploadedLabel,
           value: _formatDate(content.uploadDate),

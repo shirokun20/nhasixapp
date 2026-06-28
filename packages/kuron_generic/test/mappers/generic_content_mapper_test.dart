@@ -503,6 +503,17 @@ void main() {
       );
     });
 
+    test('date from named month format', () {
+      final result = GenericContentMapper.toChapter({
+        'id': 'ch-1',
+        'url': '/ch-1/',
+        'title': 'Ch 1',
+        'date': 'April 11, 2026',
+      });
+
+      expect(result.uploadDate, DateTime(2026, 4, 11));
+    });
+
     test('empty fields produce safe defaults', () {
       final result = GenericContentMapper.toChapter({});
       expect(result.id, ''); // both id and url are empty
