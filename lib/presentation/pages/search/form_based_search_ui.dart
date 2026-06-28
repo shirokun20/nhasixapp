@@ -531,9 +531,7 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
                 Text(
                   loadError,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 8),

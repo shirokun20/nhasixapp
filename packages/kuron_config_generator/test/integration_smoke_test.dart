@@ -101,13 +101,15 @@ void main() {
       final flow = WizardBuilder.buildFlow();
 
       // Verify sections exist
-      expect(flow.sections.keys, containsAll([
-        'identity',
-        'features',
-        'api',
-        'scraper',
-        'headers',
-      ]));
+      expect(
+          flow.sections.keys,
+          containsAll([
+            'identity',
+            'features',
+            'api',
+            'scraper',
+            'headers',
+          ]));
 
       // Verify identity section has required questions
       final identity = flow.sections['identity']!;

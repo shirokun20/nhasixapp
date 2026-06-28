@@ -2202,7 +2202,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         vertical: 10,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                   ),
@@ -2565,7 +2566,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2627,7 +2629,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2652,7 +2655,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2676,7 +2680,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2699,7 +2704,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ),
@@ -2813,7 +2819,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radius2xl),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

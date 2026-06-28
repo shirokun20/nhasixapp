@@ -156,6 +156,22 @@ class MockKuronNativePlatform
     required String url,
     Map<String, String>? headers,
   }) async => Uint8List.fromList([1, 2, 3, 4, 5]);
+
+  @override
+  Future<Map<String, dynamic>> getDnsProviderState() async => {
+    'currentProvider': -1,
+    'providerName': 'Disabled',
+    'isEnabled': false,
+  };
+
+  @override
+  Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() async => {
+    'isActive': false,
+    'serverName': null,
+  };
+
+  @override
+  Future<bool> openDnsSettings() async => true;
 }
 
 void main() {

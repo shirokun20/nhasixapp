@@ -380,4 +380,26 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     );
     return result ?? Uint8List(0);
   }
+
+  @override
+  Future<Map<String, dynamic>> getDnsProviderState() async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'getDnsProviderState',
+    );
+    return result ??
+        {'currentProvider': -1, 'providerName': 'Disabled', 'isEnabled': false};
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() async {
+    return await methodChannel.invokeMapMethod<String, dynamic>(
+      'getPrivateDnsDiagnostics',
+    );
+  }
+
+  @override
+  Future<bool> openDnsSettings() async {
+    final result = await methodChannel.invokeMethod<bool>('openDnsSettings');
+    return result ?? false;
+  }
 }

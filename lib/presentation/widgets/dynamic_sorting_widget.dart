@@ -335,7 +335,7 @@ class DynamicSortingWidget extends StatelessWidget {
                 onTap: () => onSortChanged?.call(option.value),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 child: AnimatedContainer(
-            duration: DesignTokens.durationPageTurn,
+                  duration: DesignTokens.durationPageTurn,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,

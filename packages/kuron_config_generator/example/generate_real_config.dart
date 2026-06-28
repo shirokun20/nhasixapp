@@ -25,7 +25,8 @@ void main() {
     'supportsComments': 'n',
 
     // Scraper selectors (Madara WordPress theme)
-    'listSelector': '.page-item, .manga-item, [class*="grid"] a[href*="/manhwa/"]',
+    'listSelector':
+        '.page-item, .manga-item, [class*="grid"] a[href*="/manhwa/"]',
     'detailTitleSelector': 'h1',
 
     // Headers (Cloudflare bypass)
@@ -62,7 +63,8 @@ void main() {
         'tags': 'a[href*="/tag/"]',
       },
       'chapters': {
-        'container': 'a[href*="/manhwa/"][href*="/chapter-"], .wp-manga-chapter a',
+        'container':
+            'a[href*="/manhwa/"][href*="/chapter-"], .wp-manga-chapter a',
         'item': 'a[href*="/chapter-"]',
         'date': '.chapter-release-date, span.date',
       },
@@ -78,7 +80,8 @@ void main() {
   config['network'] = {
     'headers': {
       'Referer': 'https://manhwaread.com/',
-      'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
+      'User-Agent':
+          'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
     },
     'rateLimit': {
       'requestsPerSecond': 1,
@@ -106,5 +109,6 @@ void main() {
   print('─' * 60);
   print('\n✨ Config uses scraper mode with Madara WordPress theme selectors.');
   print('🔧 Cloudflare bypass: WebView-based CF challenge.');
-  print('🔍 Based on live probe: 127 pages, 3K+ manhwa, 71 chapters on sample.');
+  print(
+      '🔍 Based on live probe: 127 pages, 3K+ manhwa, 71 chapters on sample.');
 }

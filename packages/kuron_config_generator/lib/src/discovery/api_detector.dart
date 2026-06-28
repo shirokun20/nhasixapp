@@ -31,7 +31,8 @@ class ApiInference {
 /// Try to infer REST structure from probed JSON data.
 ApiInference inferApi(String url, dynamic json) {
   final uri = Uri.tryParse(url);
-  final base = '${uri?.scheme}://${uri?.host}${uri?.port == 80 || uri?.port == 443 ? '' : ':${uri?.port}'}';
+  final base =
+      '${uri?.scheme}://${uri?.host}${uri?.port == 80 || uri?.port == 443 ? '' : ':${uri?.port}'}';
   final path = uri?.path ?? '';
 
   if (json is List) {
@@ -41,7 +42,8 @@ ApiInference inferApi(String url, dynamic json) {
       hasList: true,
       hasDetail: false,
       listEndpoint: path.isEmpty ? '/' : path,
-      listIsPaginated: json.length == 20 || json.length == 50 || json.length == 100,
+      listIsPaginated:
+          json.length == 20 || json.length == 50 || json.length == 100,
       listItemsPath: '',
       confidence: 0.8,
     );
@@ -126,9 +128,18 @@ String? _detectQueryParam(Map json) {
 }
 
 bool _looksLikeDetail(Map json) {
-  final titleKeys = ['title', 'name', 'name_en', 'english_title', 'japanese_title'];
+  final titleKeys = [
+    'title',
+    'name',
+    'name_en',
+    'english_title',
+    'japanese_title'
+  ];
   final hasTitle = titleKeys.any((k) => json.containsKey(k));
-  final hasId = json.containsKey('id') || json.containsKey('_id') || json.containsKey('slug');
-  final hasCover = ['cover', 'thumbnail', 'image', 'poster'].any((k) => json.containsKey(k));
+  final hasId = json.containsKey('id') ||
+      json.containsKey('_id') ||
+      json.containsKey('slug');
+  final hasCover =
+      ['cover', 'thumbnail', 'image', 'poster'].any((k) => json.containsKey(k));
   return hasTitle && (hasId || hasCover);
 }

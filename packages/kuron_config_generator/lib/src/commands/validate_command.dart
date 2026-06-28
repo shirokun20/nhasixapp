@@ -24,7 +24,8 @@ class ValidateCommand extends Command<void> {
   String get name => 'validate-generated';
 
   @override
-  String get description => 'Validate a generated config using the runtime validator.';
+  String get description =>
+      'Validate a generated config using the runtime validator.';
 
   @override
   Future<void> run() async {
@@ -39,6 +40,7 @@ class ValidateCommand extends Command<void> {
     // DEFERRED: Validation workflow (Section 8) - deferred per Ponytail ultra / YAGNI.
     // Existing kuron_config_validate CLI can validate generated configs.
     // Integration into generator CLI can come later if needed.
-    logger.w('Validation workflow deferred - use fvm dart run kuron_generic:kuron_config_validate <config.json>');
+    logger.w(
+        'Validation workflow deferred - use fvm dart run kuron_generic:kuron_config_validate <config.json>');
   }
 }

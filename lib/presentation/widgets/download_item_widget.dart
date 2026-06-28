@@ -73,7 +73,8 @@ class DownloadItemWidget extends StatelessWidget {
                                 color: _getSourceColor(
                                     download.sourceId ?? SourceType.nhentai.id,
                                     colorScheme),
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusSm),
                               ),
                               child: Text(
                                 (download.sourceId ?? SourceType.nhentai.id)

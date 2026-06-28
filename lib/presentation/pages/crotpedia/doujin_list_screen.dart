@@ -199,7 +199,8 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(DesignTokens.radius2xl + 8),
+                    borderRadius:
+                        BorderRadius.circular(DesignTokens.radius2xl + 8),
                     border: Border.all(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                     ),
@@ -247,7 +248,8 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusXl),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -606,7 +608,8 @@ class _DoujinListShimmer extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusLg),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -628,7 +631,8 @@ class _DoujinListShimmer extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                 ),

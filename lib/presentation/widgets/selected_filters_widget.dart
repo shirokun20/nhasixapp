@@ -127,7 +127,9 @@ class SelectedFilterChip extends StatelessWidget {
         : (isDark ? AppColors.success : AppColors.success);
     final foreground = isExclude
         ? (isDark ? AppColors.error.withValues(alpha: 0.8) : AppColors.error)
-        : (isDark ? AppColors.success.withValues(alpha: 0.8) : AppColors.success);
+        : (isDark
+            ? AppColors.success.withValues(alpha: 0.8)
+            : AppColors.success);
 
     return _SelectedFilterColors(
       accent: accent,

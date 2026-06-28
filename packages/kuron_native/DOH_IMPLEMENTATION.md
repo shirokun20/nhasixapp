@@ -10,6 +10,17 @@ DNS bypass implementation using OkHttp's DNS-over-HTTPS on Android. Allows bypas
 Dart (Dio) → Native Bridge → OkHttp + DoH → Target Server
 ```
 
+## Ownership
+
+Native DNS owns:
+- `KuronNative.instance.makeHttpRequest()`
+- `KuronNative.instance.downloadBinary()`
+- `KuronNativePlugin` OkHttp-backed native request paths
+
+Native DNS does not own:
+- Flutter `Dio` traffic
+- Dart-side `DnsResolver` transport path
+
 ## Usage
 
 ### 1. Set DoH Provider

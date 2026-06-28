@@ -272,7 +272,8 @@ void main() {
       final chapterRoot = Directory('${tempDir.path}/crotpedia/11k38msg3d');
       final chapterDir = Directory('${chapterRoot.path}/images');
       await chapterDir.create(recursive: true);
-      await File('${chapterDir.path}/page_001.jpg').writeAsBytes(<int>[1, 2, 3]);
+      await File('${chapterDir.path}/page_001.jpg')
+          .writeAsBytes(<int>[1, 2, 3]);
       await File('${chapterRoot.path}/metadata.json').writeAsString(
         jsonEncode({
           'schemaVersion': '2.1',

@@ -52,9 +52,14 @@ void main() {
 </body></html>''';
       final result = detectCms(html);
       expect(result.selectors, containsPair('detail.title', 'h1'));
-      expect(result.selectors, containsPair('detail.author', 'a[href*="/author/"]'));
-      expect(result.selectors, containsPair('chapters.item', 'a[href*="chapter"]'));
-      expect(result.selectors, containsPair('reader.image', 'img[class*="page-image"], .reading-content img'));
+      expect(result.selectors,
+          containsPair('detail.author', 'a[href*="/author/"]'));
+      expect(result.selectors,
+          containsPair('chapters.item', 'a[href*="chapter"]'));
+      expect(
+          result.selectors,
+          containsPair('reader.image',
+              'img[class*="page-image"], .reading-content img'));
     });
 
     test('CmsSignature.known contains madara, wordpress, custom', () {

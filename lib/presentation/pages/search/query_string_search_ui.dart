@@ -74,7 +74,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       widget.config.sortingConfig?.options ?? [];
 
   bool get _supportsAdvancedFilters =>
-      _singleSelectFilters.isNotEmpty || 
+      _singleSelectFilters.isNotEmpty ||
       _multiSelectFilters2.isNotEmpty ||
       (widget.config.radioGroups?.isNotEmpty ?? false);
 
@@ -255,12 +255,14 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         }
       }
       // Skip tag/artist/parody/group tokens — they are restored via _multiSelectFilters
-      else if (RegExp(r'^-?(tag|artist|character|parody|group):"').hasMatch(token)) {
+      else if (RegExp(r'^-?(tag|artist|character|parody|group):"')
+          .hasMatch(token)) {
         if (!token.endsWith('"')) inQuotedTag = true;
         // already restored from saved filter's separate fields, skip
       }
       // Skip bare negated tags (no quotes)
-      else if (RegExp(r'^-?(tag|artist|character|parody|group):[^" ]+').hasMatch(token)) {
+      else if (RegExp(r'^-?(tag|artist|character|parody|group):[^" ]+')
+          .hasMatch(token)) {
         // skip as well
       }
       // Keep non-filter tokens
@@ -357,7 +359,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       parodies:
           includeAdvanced ? (_multiSelectFilters['parody'] ?? []) : const [],
       groups: includeAdvanced ? (_multiSelectFilters['group'] ?? []) : const [],
-      radioGroupSelections: includeAdvanced ? Map.from(_radioSelections) : const {},
+      radioGroupSelections:
+          includeAdvanced ? Map.from(_radioSelections) : const {},
     );
   }
 
@@ -500,7 +503,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         ],
 
         // Radio Groups (Dynamic Sorts, etc.)
-        if (widget.config.radioGroups != null) 
+        if (widget.config.radioGroups != null)
           ...widget.config.radioGroups!.map((group) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -640,7 +643,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
   Widget _buildAdvancedToggle(ColorScheme cs) {
     final totalSelected = _multiSelectFilters2.fold(
         0, (sum, t) => sum + (_multiSelectFilters[t]?.length ?? 0));
-    final totalRadios = _radioSelections.values.where((v) => v.isNotEmpty).length;
+    final totalRadios =
+        _radioSelections.values.where((v) => v.isNotEmpty).length;
     final hasExtra = _uploadedPreset.isNotEmpty ||
         _pagesMinCtrl.text.isNotEmpty ||
         _pagesMaxCtrl.text.isNotEmpty ||
@@ -657,9 +661,7 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: _showAdvancedFilters
-              ? cs.primary
-              : cs.surfaceContainerHighest,
+          color: _showAdvancedFilters ? cs.primary : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: _showAdvancedFilters
@@ -675,7 +677,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               scale: _showAdvancedFilters ? 1.08 : 1.0,
               child: Icon(
                 Icons.tune_rounded,
-                color: _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
+                color:
+                    _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
                 size: 20,
               ),
             ),
@@ -721,7 +724,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
               turns: _showAdvancedFilters ? 0.5 : 0,
               child: Icon(
                 Icons.expand_more,
-                color: _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
+                color:
+                    _showAdvancedFilters ? cs.onPrimary : cs.onSurfaceVariant,
               ),
             ),
           ],
@@ -757,11 +761,10 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
           isSelected: isSelected,
           onTap: () {
             setState(() {
-              // If already selected, maybe we want to allow unselecting? 
+              // If already selected, maybe we want to allow unselecting?
               // The user might just want standard radio behavior (tap selects).
               // Since earlier code toggled it (selected ? value : ''), I will keep toggle.
-              _radioSelections[group.name] =
-                  isSelected ? '' : option.value;
+              _radioSelections[group.name] = isSelected ? '' : option.value;
             });
           },
           cs: cs,

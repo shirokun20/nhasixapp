@@ -279,7 +279,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                     color: Theme.of(context).colorScheme.surface,
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                       side: BorderSide(
                         color: Theme.of(context)
                             .colorScheme
@@ -304,7 +305,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                     .colorScheme
                                     .primaryContainer
                                     .withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusLg),
                               ),
                               child: Icon(
                                 Icons.auto_stories,
@@ -389,8 +391,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                                       children: [
                                         Expanded(
                                           child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(DesignTokens.radiusSm),
+                                            borderRadius: BorderRadius.circular(
+                                                DesignTokens.radiusSm),
                                             child: LinearProgressIndicator(
                                               value: progress,
                                               backgroundColor: Theme.of(context)
@@ -529,7 +531,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       height: 64,
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusSm),
                       ),
                       child: Center(
                         child: Text(
@@ -768,13 +771,13 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: colorScheme.surface,
-        title: Text(l10n.delete, style: TextStyle(color: colorScheme.onSurface)),
+        title:
+            Text(l10n.delete, style: TextStyle(color: colorScheme.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n
-                .removeDownloadConfirmation,
+            Text(l10n.removeDownloadConfirmation,
                 style: TextStyle(color: colorScheme.onSurface)),
             const SizedBox(height: 12),
             ValueListenableBuilder<bool>(

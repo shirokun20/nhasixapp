@@ -7488,6 +7488,84 @@ abstract class AppLocalizations {
   /// **'This will reset DNS settings to system defaults. Continue?'**
   String get resetDnsConfirmation;
 
+  /// No description provided for @appDns.
+  ///
+  /// In en, this message translates to:
+  /// **'App DNS'**
+  String get appDns;
+
+  /// No description provided for @devicePrivateDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Private DNS'**
+  String get devicePrivateDns;
+
+  /// No description provided for @dnsModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'ON'**
+  String get dnsModeOn;
+
+  /// No description provided for @dnsModeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'OFF'**
+  String get dnsModeOff;
+
+  /// No description provided for @dnsSystemDns.
+  ///
+  /// In en, this message translates to:
+  /// **'System DNS'**
+  String get dnsSystemDns;
+
+  /// No description provided for @dnsPrivateDnsStrict.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict ({hostname})'**
+  String dnsPrivateDnsStrict(Object hostname);
+
+  /// No description provided for @dnsPrivateDnsOpportunistic.
+  ///
+  /// In en, this message translates to:
+  /// **'Opportunistic'**
+  String get dnsPrivateDnsOpportunistic;
+
+  /// No description provided for @dnsPrivateDnsRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires Android 10+'**
+  String get dnsPrivateDnsRequirements;
+
+  /// No description provided for @dnsPrivateDnsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get dnsPrivateDnsOff;
+
+  /// No description provided for @dnsPrivateDnsGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Private DNS in Android settings to encrypt all DNS queries on your device.'**
+  String get dnsPrivateDnsGuidance;
+
+  /// No description provided for @dnsPrivateDnsRequiresAndroid10.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Private DNS status requires Android 10+.'**
+  String get dnsPrivateDnsRequiresAndroid10;
+
+  /// No description provided for @dnsPrivateDnsCannotAutoSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuron cannot set device-wide Private DNS automatically on standard installs.'**
+  String get dnsPrivateDnsCannotAutoSet;
+
+  /// No description provided for @openDnsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open DNS Settings'**
+  String get openDnsSettings;
+
   /// No description provided for @collections.
   ///
   /// In en, this message translates to:

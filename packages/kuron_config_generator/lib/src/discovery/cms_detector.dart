@@ -11,7 +11,8 @@ class CmsSignature {
   });
 
   final String id;
-  final String themeType; // 'madara-classic', 'madara-tailwind', 'wordpress', 'custom'
+  final String
+      themeType; // 'madara-classic', 'madara-tailwind', 'wordpress', 'custom'
   final List<String> hints;
   final Map<String, String> selectors;
   final Map<String, String>? urlPatterns;
@@ -36,7 +37,8 @@ class CmsSignature {
         'list.title': 'a[href*="/manhwa/"], a[title]',
         'list.cover': 'img',
         'detail.title': 'h1',
-        'detail.cover': 'img[class*="cover"], .summary_image img, .tab-summary img',
+        'detail.cover':
+            'img[class*="cover"], .summary_image img, .tab-summary img',
         'detail.author': 'a[href*="/author/"]',
         'detail.artist': 'a[href*="/artist/"]',
         'detail.genre': 'a[href*="/genre/"]',
@@ -135,7 +137,8 @@ class CmsSignature {
       hints: [],
       selectors: {
         'list.item': '[class*="item"], [class*="card"]',
-        'list.title': 'a[href*="/manga"], a[href*="/manhwa"], a[href*="/series"]',
+        'list.title':
+            'a[href*="/manga"], a[href*="/manhwa"], a[href*="/series"]',
         'list.cover': 'img',
         'detail.title': 'h1',
         'reader.image': 'img',
@@ -194,17 +197,16 @@ CmsResult detectCms(String html) {
   }
 
   final detected = best ?? CmsSignature.known.last;
-  final confidence = bestScore /
-      (detected.hints.isEmpty ? 1 : detected.hints.length);
+  final confidence =
+      bestScore / (detected.hints.isEmpty ? 1 : detected.hints.length);
 
   return CmsResult(
     cmsId: detected.id,
     themeType: detected.themeType,
     confidence: confidence.clamp(0.0, 1.0),
     selectors: Map.from(detected.selectors),
-    urlPatterns: detected.urlPatterns != null
-        ? Map.from(detected.urlPatterns!)
-        : null,
+    urlPatterns:
+        detected.urlPatterns != null ? Map.from(detected.urlPatterns!) : null,
     searchDefaults: detected.searchDefaults != null
         ? Map.from(detected.searchDefaults!)
         : null,

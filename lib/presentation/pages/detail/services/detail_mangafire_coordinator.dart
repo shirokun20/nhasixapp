@@ -8,7 +8,7 @@ class DetailMangaFireCoordinator extends ChangeNotifier {
       : _detailCubit = detailCubit;
 
   final DetailCubit _detailCubit;
-  
+
   String _selectedType = 'Chapter';
   String? _selectedLanguageKey;
   bool _isLoadingLane = false;
@@ -139,15 +139,13 @@ class DetailMangaFireCoordinator extends ChangeNotifier {
       return content;
     }
 
-    if (!hasGroup(content, 'Chapter') ||
-        !hasGroup(content, 'Volume')) {
+    if (!hasGroup(content, 'Chapter') || !hasGroup(content, 'Volume')) {
       return content;
     }
 
     return content.copyWith(
-      chapters: content.chapters!
-          .where((c) => c.scanGroup == _selectedType)
-          .toList(),
+      chapters:
+          content.chapters!.where((c) => c.scanGroup == _selectedType).toList(),
     );
   }
 }

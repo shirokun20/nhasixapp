@@ -123,7 +123,8 @@ class KuronColors extends ThemeExtension<KuronColors> {
   KuronColors lerp(ThemeExtension<KuronColors>? other, double t) {
     if (other is! KuronColors) return this;
     return KuronColors(
-      cardGradientStart: Color.lerp(cardGradientStart, other.cardGradientStart, t)!,
+      cardGradientStart:
+          Color.lerp(cardGradientStart, other.cardGradientStart, t)!,
       cardGradientEnd: Color.lerp(cardGradientEnd, other.cardGradientEnd, t)!,
       cardBorder: Color.lerp(cardBorder, other.cardBorder, t)!,
       readGold: Color.lerp(readGold, other.readGold, t)!,

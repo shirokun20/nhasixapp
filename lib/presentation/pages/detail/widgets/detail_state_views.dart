@@ -138,8 +138,9 @@ class DetailErrorView extends StatelessWidget {
                     Text(
                       errorTitle,
                       style: TextStyleConst.headingLarge.copyWith(
-                        color:
-                            isLoginError ? colorScheme.primary : colorScheme.error,
+                        color: isLoginError
+                            ? colorScheme.primary
+                            : colorScheme.error,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -148,7 +149,8 @@ class DetailErrorView extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusLg),
                         border: Border.all(
                           color: colorScheme.outline,
                           width: 1,
@@ -179,7 +181,8 @@ class DetailErrorView extends StatelessWidget {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusMd),
                               ),
                             ),
                           ),
@@ -197,7 +200,8 @@ class DetailErrorView extends StatelessWidget {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusMd),
                               ),
                             ),
                           ),
@@ -215,7 +219,8 @@ class DetailErrorView extends StatelessWidget {
                               vertical: 12,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                           ),
                         ),

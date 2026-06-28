@@ -794,7 +794,8 @@ class GenericRestAdapter implements GenericAdapter {
     if (filter.radioGroupSelections.isNotEmpty) {
       final uri = Uri.tryParse(url);
       if (uri != null) {
-        final newParams = Map<String, List<String>>.from(uri.queryParametersAll);
+        final newParams =
+            Map<String, List<String>>.from(uri.queryParametersAll);
         for (final entry in filter.radioGroupSelections.entries) {
           if (entry.value.trim().isNotEmpty) {
             newParams[entry.key] = [entry.value.trim()];

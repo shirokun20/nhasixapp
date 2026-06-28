@@ -187,8 +187,6 @@ class SearchEmpty extends SearchState {
 
   @override
   List<Object?> get props => [filter, message, suggestions];
-
-
 }
 
 /// Search error state
@@ -372,8 +370,6 @@ class SearchFilterUpdated extends SearchState {
 
   /// Check if filter has any criteria
   bool get hasFilters => filter.hasFilters;
-
-
 }
 
 /// Search error types

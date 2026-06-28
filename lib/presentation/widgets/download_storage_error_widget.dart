@@ -65,7 +65,8 @@ class DownloadStorageErrorWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                   child: Text(l10n.cancel),

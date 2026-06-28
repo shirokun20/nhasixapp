@@ -229,7 +229,8 @@ class _RequestCard extends StatelessWidget {
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusMd),
                               ),
                               child: Text(
                                 genre,
@@ -318,13 +319,15 @@ class _RequestCardShimmer extends StatelessWidget {
                     ShimmerBox(
                       height: 16,
                       width: double.infinity,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     const SizedBox(height: 6),
                     ShimmerBox(
                       height: 16,
                       width: 140,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     const SizedBox(height: 14),
                     Wrap(
@@ -335,7 +338,8 @@ class _RequestCardShimmer extends StatelessWidget {
                         (i) => ShimmerBox(
                           height: 24,
                           width: 60 + (i * 10).toDouble(),
-                          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radiusMd),
                         ),
                       ),
                     ),

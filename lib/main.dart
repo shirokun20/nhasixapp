@@ -50,7 +50,8 @@ void main() async {
   // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
   FlutterError.onError = (FlutterErrorDetails details) {
     // Log the error instead of crashing
-    Logger().e('🔥 Flutter Error: ${details.exception}', error: details.exception, stackTrace: details.stack);
+    Logger().e('🔥 Flutter Error: ${details.exception}',
+        error: details.exception, stackTrace: details.stack);
   };
 
   // Catch errors from platform (including Impeller/Vulkan)

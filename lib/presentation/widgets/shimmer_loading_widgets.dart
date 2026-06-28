@@ -91,7 +91,8 @@ class _KuronShimmerState extends State<KuronShimmer>
               stops: const [0.1, 0.5, 0.9],
               begin: const Alignment(-1.0, -0.3),
               end: const Alignment(1.0, 0.3),
-              transform: _SlidingGradientTransform(slidePercent: _controller.value),
+              transform:
+                  _SlidingGradientTransform(slidePercent: _controller.value),
             ).createShader(bounds);
           },
           child: child,
@@ -145,7 +146,8 @@ class ShimmerBox extends StatelessWidget {
       margin: margin,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: borderRadius ?? BorderRadius.circular(DesignTokens.radiusSm),
+        borderRadius:
+            borderRadius ?? BorderRadius.circular(DesignTokens.radiusSm),
       ),
     );
   }
@@ -520,7 +522,8 @@ class GenreListShimmer extends StatelessWidget {
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusXl),
                       border: Border.all(
                         color:
                             colorScheme.outlineVariant.withValues(alpha: 0.3),
@@ -540,7 +543,8 @@ class GenreListShimmer extends StatelessWidget {
                         Expanded(
                           child: ShimmerBox(
                             height: 14,
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusSm),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -584,7 +588,8 @@ class SimpleListShimmer extends StatelessWidget {
                     decoration: BoxDecoration(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                   ),
                 ),

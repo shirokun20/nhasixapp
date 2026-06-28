@@ -45,6 +45,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TagBlacklistService _tagBlacklistService;
+  Map<String, dynamic>? _deviceDnsState;
 
   void _ensureDownloadBlocInitialized() {
     final downloadBloc = context.read<DownloadBloc>();
@@ -65,6 +66,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _tagBlacklistService.syncOnlineRules('nhentai'),
       ]),
     );
+    _loadDnsDiagnostics();
+  }
+
+  Future<void> _loadDnsDiagnostics() async {
+    try {
+      final deviceState = await KuronNative.instance.getPrivateDnsDiagnostics();
+      if (mounted) {
+        setState(() {
+          _deviceDnsState = deviceState;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -343,6 +356,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 24),
 
+          // DNS Status Section
+          _buildSectionHeader(
+            Icons.dns_outlined,
+            'DNS',
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildDnsStatusCard(context, theme, l10n),
+
+          const SizedBox(height: 24),
+
           // Available Sources Section
           _buildAvailableSourcesSection(theme, l10n),
 
@@ -430,7 +454,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       elevation: DesignTokens.elevationNone,
       color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(children: children),
@@ -1155,7 +1180,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.outline
                                       .withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+                                  borderRadius: BorderRadius.circular(
+                                      DesignTokens.radiusFull),
                                 ),
                               ),
                             ),
@@ -1167,7 +1193,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.primary
                                         .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                                    borderRadius: BorderRadius.circular(
+                                        DesignTokens.radiusXl),
                                   ),
                                   child: Icon(
                                     Icons.visibility_off_rounded,
@@ -1563,6 +1590,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildDnsStatusCard(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    final deviceActive = _deviceDnsState?['isActive'] == true;
+    final deviceServerName = _deviceDnsState?['serverName'] as String?;
+    final deviceReason = _deviceDnsState?['reason'] as String?;
+
+    return _buildSettingsCard([
+      // ponytail: App DNS status hidden — no user changer yet
+      // Device Private DNS status
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading:
+            Icon(Icons.security_outlined, color: theme.colorScheme.primary),
+        title: Text(
+          l10n.devicePrivateDns,
+          style: TextStyleConst.bodyLarge.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          deviceActive
+              ? (deviceServerName != null
+                  ? l10n.dnsPrivateDnsStrict(deviceServerName)
+                  : l10n.dnsPrivateDnsOpportunistic)
+              : (deviceReason == 'API_29_REQUIRED'
+                  ? l10n.dnsPrivateDnsRequirements
+                  : l10n.dnsPrivateDnsOff),
+          style: TextStyleConst.bodySmall.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: (deviceActive
+                    ? AppColors.success
+                    : theme.colorScheme.surfaceContainerHighest)
+                .withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+          ),
+          child: Text(
+            deviceActive ? l10n.dnsModeOn : l10n.dnsModeOff,
+            style: TextStyleConst.labelMedium.copyWith(
+              color: deviceActive
+                  ? AppColors.success
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+
+      // Open DNS settings + guidance
+      _buildDivider(theme),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              deviceReason == 'API_29_REQUIRED'
+                  ? l10n.dnsPrivateDnsRequiresAndroid10
+                  : l10n.dnsPrivateDnsGuidance,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.dnsPrivateDnsCannotAutoSet,
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (!deviceActive && deviceReason != 'API_29_REQUIRED') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => KuronNative.instance.openDnsSettings(),
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: Text(l10n.openDnsSettings),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ], theme);
+  }
+
   Widget _buildStorageSection(
     BuildContext context,
     ThemeData theme,
@@ -1652,7 +1774,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: theme.colorScheme.surface,
-                    title: Text(l10n.resetToDefault, style: TextStyle(color: theme.colorScheme.onSurface)),
+                    title: Text(l10n.resetToDefault,
+                        style: TextStyle(color: theme.colorScheme.onSurface)),
                     content: Text(
                       l10n.confirmResetStorageDirectory,
                       style: TextStyle(color: theme.colorScheme.onSurface),
@@ -2081,7 +2204,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: theme.colorScheme.error,
         foregroundColor: theme.colorScheme.onError,
         minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       ),
     );
   }
@@ -2228,7 +2352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             decoration: BoxDecoration(
                               color: theme.colorScheme.primary
                                   .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusMd),
                             ),
                             child: Text(
                               l10n.sourceSelectorActiveSource,
@@ -3347,8 +3472,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppLocalizations.of(context)!
-                  .selectedSourcesCount(candidates.length),
+              Text(
+                  AppLocalizations.of(context)!
+                      .selectedSourcesCount(candidates.length),
                   style: TextStyle(color: cs.onSurface)),
               const SizedBox(height: 8),
               Flexible(

@@ -198,7 +198,8 @@ class SourceSelector extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary
                                       .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                  borderRadius: BorderRadius.circular(
+                                      DesignTokens.radiusMd),
                                 ),
                                 child: Icon(
                                   Icons.hub_outlined,
@@ -311,7 +312,8 @@ class SourceSelector extends StatelessWidget {
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusLg),
                                 borderSide: BorderSide.none,
                               ),
                             ),

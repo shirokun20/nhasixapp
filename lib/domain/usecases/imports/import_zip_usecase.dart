@@ -12,7 +12,8 @@ import '../../../domain/entities/download_status.dart';
 /// Parameters for importing a ZIP file
 class ImportZipParams {
   /// Optional progress callback: (fileIndex, totalFiles, processed, total, imageCount, currentFile)
-  final void Function(int fileIndex, int totalFiles, int processed, int total, int imageCount, String currentFile)? onProgress;
+  final void Function(int fileIndex, int totalFiles, int processed, int total,
+      int imageCount, String currentFile)? onProgress;
   final Future<void> Function(int totalFiles)? onStarted;
 
   const ImportZipParams({this.onProgress, this.onStarted});
@@ -67,7 +68,8 @@ class ImportZipUseCase {
 
       for (int i = 0; i < zipUris.length; i++) {
         final zipUri = zipUris[i];
-        final result = await _importSingleZip(zipUri, params, i + 1, zipUris.length);
+        final result =
+            await _importSingleZip(zipUri, params, i + 1, zipUris.length);
         if (result['success'] == true) {
           importedResults.add(result);
         } else {
@@ -164,7 +166,8 @@ class ImportZipUseCase {
         _logger.d(
           'Extraction progress: $processed/$total, images: $imageCount, current: $currentFile',
         );
-        params.onProgress?.call(fileIndex, totalFiles, processed, total, imageCount, currentFile);
+        params.onProgress?.call(
+            fileIndex, totalFiles, processed, total, imageCount, currentFile);
       },
     );
 

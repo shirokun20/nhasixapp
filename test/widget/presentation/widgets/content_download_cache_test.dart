@@ -106,7 +106,8 @@ void main() {
 
   test('matches mangadex title url download to manga id', () {
     const download = DownloadStatus(
-      contentId: 'https://mangadex.org/title/3c7854f8-56c4-41d0-ae48-4c9b06c66a06',
+      contentId:
+          'https://mangadex.org/title/3c7854f8-56c4-41d0-ae48-4c9b06c66a06',
       state: DownloadState.completed,
       totalPages: 18,
       title:

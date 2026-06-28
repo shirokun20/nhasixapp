@@ -86,8 +86,9 @@ class WizardRunner {
   }
 
   String _titleCase(String input) {
-    return input.split(RegExp(r'(?=[A-Z])')).map((word) =>
-      word[0].toUpperCase() + word.substring(1).toLowerCase()
-    ).join(' ');
+    return input
+        .split(RegExp(r'(?=[A-Z])'))
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
   }
 }

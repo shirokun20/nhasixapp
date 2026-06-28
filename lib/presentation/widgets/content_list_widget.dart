@@ -397,11 +397,12 @@ class ContentReadCache {
       final cardBaseTitle =
           TitleParserUtils.getBaseTitle(content.getDisplayTitle())
               .toLowerCase();
-              
+
       List<History> recentHistory;
       if (_recentHistoryFuture != null &&
           _recentHistoryCacheTime != null &&
-          DateTime.now().difference(_recentHistoryCacheTime!) < const Duration(seconds: 10)) {
+          DateTime.now().difference(_recentHistoryCacheTime!) <
+              const Duration(seconds: 10)) {
         recentHistory = await _recentHistoryFuture!;
       } else {
         _recentHistoryFuture = userDataRepository.getHistory(limit: 100);

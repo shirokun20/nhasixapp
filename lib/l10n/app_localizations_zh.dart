@@ -4260,6 +4260,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetDnsConfirmation => '这将把 DNS 设置重置为系统默认值。是否继续？';
 
   @override
+  String get appDns => '应用 DNS';
+
+  @override
+  String get devicePrivateDns => '设备私有 DNS';
+
+  @override
+  String get dnsModeOn => '开';
+
+  @override
+  String get dnsModeOff => '关';
+
+  @override
+  String get dnsSystemDns => '系统 DNS';
+
+  @override
+  String dnsPrivateDnsStrict(Object hostname) {
+    return '严格模式 ($hostname)';
+  }
+
+  @override
+  String get dnsPrivateDnsOpportunistic => '机会模式';
+
+  @override
+  String get dnsPrivateDnsRequirements => '需要 Android 10+';
+
+  @override
+  String get dnsPrivateDnsOff => '关闭';
+
+  @override
+  String get dnsPrivateDnsGuidance =>
+      '在 Android 设置中启用私有 DNS 以加密您设备上的所有 DNS 查询。';
+
+  @override
+  String get dnsPrivateDnsRequiresAndroid10 => '设备私有 DNS 状态需要 Android 10+。';
+
+  @override
+  String get dnsPrivateDnsCannotAutoSet => 'Kuron 无法在标准安装中自动设置设备范围的私有 DNS。';
+
+  @override
+  String get openDnsSettings => '打开 DNS 设置';
+
+  @override
   String get collections => '合集';
 
   @override

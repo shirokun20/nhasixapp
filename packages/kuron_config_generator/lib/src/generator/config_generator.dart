@@ -90,13 +90,13 @@ class ConfigGenerator {
       'detailEndpoint': answers['detailEndpoint'] ?? '/detail/{id}',
     };
     if (supportsChapters) {
-      block['chaptersEndpoint'] = answers['chaptersEndpoint'] ?? '/chapters/{id}';
+      block['chaptersEndpoint'] =
+          answers['chaptersEndpoint'] ?? '/chapters/{id}';
     }
     return block;
   }
 
-  static Map<String, Object?> _buildScraperBlock(
-    Map<String, String?> answers) {
+  static Map<String, Object?> _buildScraperBlock(Map<String, String?> answers) {
     final listSel = answers['listSelector'] ?? '.item';
     final detailTitleSel = answers['detailTitleSelector'] ?? 'h1';
     final readerMode = answers['readerMode'] ?? 'directUrl';
@@ -200,7 +200,9 @@ class ConfigGenerator {
           'selector': ':scope',
           'attribute': 'href',
         },
-        'title': {'selector': answers['chapterTitleSel'] ?? 'a[href*="chapter"]'},
+        'title': {
+          'selector': answers['chapterTitleSel'] ?? 'a[href*="chapter"]'
+        },
       },
     };
 

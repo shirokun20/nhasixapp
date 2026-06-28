@@ -82,7 +82,8 @@ class TagDataManager {
             await loadAndCacheTagsFromUrl(url, source);
             loaded = hasTags(source);
           } catch (e) {
-            _logger.w('TagDataManager: Failed to load tags from config for $source',
+            _logger.w(
+                'TagDataManager: Failed to load tags from config for $source',
                 error: e);
           }
         }
@@ -334,7 +335,8 @@ class TagDataManager {
               Tag(
                 id: id,
                 name: name,
-                type: type.name, // Keeping entity.type as String for compatibility
+                type: type
+                    .name, // Keeping entity.type as String for compatibility
                 count: count,
                 url: _generateTagUrl(slug, type),
                 slug: slug,

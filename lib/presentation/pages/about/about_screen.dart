@@ -547,7 +547,8 @@ class _AboutContentState extends State<_AboutContent>
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => _launchURL('https://github.com/sponsors/shirokun20'),
+              onPressed: () =>
+                  _launchURL('https://github.com/sponsors/shirokun20'),
               icon: const Icon(Icons.favorite),
               label: const Text('GitHub Sponsors'),
               style: FilledButton.styleFrom(

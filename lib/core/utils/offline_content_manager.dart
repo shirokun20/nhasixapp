@@ -1862,7 +1862,8 @@ class OfflineContentManager {
             contentId,
           );
 
-          actualContentId = DownloadStorageUtils.getOriginalContentIdFromMetadata(
+          actualContentId =
+              DownloadStorageUtils.getOriginalContentIdFromMetadata(
             metadata,
             fallbackContentId: contentId,
           );
@@ -2264,7 +2265,8 @@ class OfflineContentManager {
         await _userDataRepository.deleteDownloadStatus(download.contentId);
       }
 
-      final scopeLabel = sourceId == null ? 'all sources' : sourceId.toLowerCase();
+      final scopeLabel =
+          sourceId == null ? 'all sources' : sourceId.toLowerCase();
       _logger.i(
         'Cleared $completedCount completed $scopeLabel records before resync',
       );

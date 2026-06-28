@@ -263,4 +263,20 @@ class KuronNative {
       headers: headers,
     );
   }
+
+  /// Get app DNS provider state with richer details.
+  Future<Map<String, dynamic>> getDnsProviderState() {
+    return KuronNativePlatform.instance.getDnsProviderState();
+  }
+
+  /// Get device-level Android Private DNS diagnostics.
+  /// Returns map with 'isActive', 'serverName', optional 'reason'.
+  Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() {
+    return KuronNativePlatform.instance.getPrivateDnsDiagnostics();
+  }
+
+  /// Open Android DNS-related system settings with fallback.
+  Future<bool> openDnsSettings() {
+    return KuronNativePlatform.instance.openDnsSettings();
+  }
 }

@@ -296,7 +296,7 @@ extension SearchFilterExtension on SearchFilter {
     if (!radioGroupSelections.containsKey('sort')) {
       params.add('sort=${sortBy.apiValue}');
     }
-    
+
     radioGroupSelections.forEach((key, value) {
       if (value.isNotEmpty) {
         params.add('$key=$value');

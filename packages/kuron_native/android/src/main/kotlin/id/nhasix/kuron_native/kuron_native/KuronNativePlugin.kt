@@ -10,8 +10,10 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.os.Build
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Environment
+import android.provider.Settings
 import android.os.Handler
 import android.os.Looper
 import java.io.File
@@ -184,6 +186,15 @@ class KuronNativePlugin :
             }
             "downloadBinary" -> {
                 handleDownloadBinary(call, result)
+            }
+            "getDnsProviderState" -> {
+                handleGetDnsProviderState(result)
+            }
+            "getPrivateDnsDiagnostics" -> {
+                handleGetPrivateDnsDiagnostics(result)
+            }
+            "openDnsSettings" -> {
+                handleOpenDnsSettings(result)
             }
             else -> {
                 result.notImplemented()
@@ -1283,6 +1294,56 @@ class KuronNativePlugin :
             result.success(provider)
         } catch (e: Exception) {
             result.error("GET_DOH_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleGetDnsProviderState(result: Result) {
+        try {
+            result.success(dnsResolver.getDnsProviderState())
+        } catch (e: Exception) {
+            result.error("DNS_PROVIDER_STATE_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleGetPrivateDnsDiagnostics(result: Result) {
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                result.success(mapOf("isActive" to false, "serverName" to null, "reason" to "API_29_REQUIRED"))
+                return
+            }
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val activeNetwork = cm.activeNetwork
+            if (activeNetwork == null) {
+                result.success(mapOf("isActive" to false, "serverName" to null, "reason" to "NO_ACTIVE_NETWORK"))
+                return
+            }
+            val lp = cm.getLinkProperties(activeNetwork)
+            if (lp == null) {
+                result.success(mapOf("isActive" to false, "serverName" to null, "reason" to "NO_LINK_PROPERTIES"))
+                return
+            }
+            result.success(mapOf(
+                "isActive" to lp.isPrivateDnsActive,
+                "serverName" to lp.privateDnsServerName
+            ))
+        } catch (e: Exception) {
+            result.error("PRIVATE_DNS_DIAG_FAILED", e.message, null)
+        }
+    }
+
+    private fun handleOpenDnsSettings(result: Result) {
+        try {
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Intent("android.settings.PRIVATE_DNS_SETTINGS")
+            } else Intent(Settings.ACTION_WIRELESS_SETTINGS)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            result.success(true)
+        } catch (_: Exception) {
+            try {
+                context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                result.success(true)
+            } catch (_: Exception) { result.success(false) }
         }
     }
 

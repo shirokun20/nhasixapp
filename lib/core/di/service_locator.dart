@@ -31,7 +31,6 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/network/dns_settings_service.dart';
-import 'package:nhasixapp/core/network/dns_resolver.dart'; // NEW
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -204,12 +203,6 @@ void _setupCore() {
   // DNS Settings Service
   getIt.registerLazySingleton<DnsSettingsService>(() => DnsSettingsService(
         prefs: getIt<SharedPreferences>(),
-        logger: getIt<Logger>(),
-      ));
-
-  // DNS Resolver (NEW)
-  getIt.registerLazySingleton<DnsResolver>(() => DnsResolver(
-        settingsService: getIt<DnsSettingsService>(),
         logger: getIt<Logger>(),
       ));
 

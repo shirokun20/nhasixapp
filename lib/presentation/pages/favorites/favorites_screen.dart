@@ -1158,14 +1158,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () =>
-                                dialogContext.pop(false),
+                            onPressed: () => dialogContext.pop(false),
                             child: Text(
                                 AppLocalizations.of(dialogContext)!.cancel),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                dialogContext.pop(true),
+                            onPressed: () => dialogContext.pop(true),
                             child: Text(
                               AppLocalizations.of(dialogContext)!.delete,
                               style: TextStyleConst.withColor(

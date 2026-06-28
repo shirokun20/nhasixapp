@@ -133,7 +133,9 @@ class DetailTagQueryResolver {
       // FALLBACK for old corrupted tags (like "Beauty Mark\n4K") that have no ID saved
       if (value.isEmpty && tagName.isNotEmpty) {
         final cleanName = tagName.split('\n').first.trim().toLowerCase();
-        value = cleanName.replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+        value = cleanName
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+            .replaceAll(RegExp(r'^-+|-+$'), '');
       }
     } else {
       value = (resolvedTagId != null && resolvedTagId.isNotEmpty)
@@ -225,8 +227,7 @@ class DetailTagQueryResolver {
 
     final genrePrefix =
         (navigation['genreQueryPrefix'] as String? ?? 'genre:').trim();
-    final tagPrefix =
-        (navigation['tagQueryPrefix'] as String? ?? '').trim();
+    final tagPrefix = (navigation['tagQueryPrefix'] as String? ?? '').trim();
     final genreTagType =
         (navigation['genreTagType'] as String? ?? 'genre').trim().toLowerCase();
 

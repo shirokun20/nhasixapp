@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors, KuronColors;
+import 'package:nhasixapp/core/constants/colors_const.dart'
+    show AppColors, KuronColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -465,7 +466,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                               .colorScheme
                               .surfaceContainer
                               .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+                          borderRadius:
+                              BorderRadius.circular(DesignTokens.radius2xl),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.outline,
                             width: 1,
@@ -510,7 +512,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           child: Column(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusSm),
                                 child: LinearProgressIndicator(
                                   value: state.progress,
                                   backgroundColor: Theme.of(context)
@@ -899,8 +902,8 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
               height: 8,
               decoration: BoxDecoration(
                 color: AppColors.brandCoral.withValues(
-                      alpha: _dotAnimations[index].value,
-                    ),
+                  alpha: _dotAnimations[index].value,
+                ),
                 shape: BoxShape.circle,
               ),
             );

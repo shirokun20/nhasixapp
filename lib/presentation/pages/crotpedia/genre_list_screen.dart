@@ -81,7 +81,8 @@ class CrotpediaGenreListScreen extends StatelessWidget {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .secondaryContainer,
-                                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusLg),
                               ),
                               child: Text(
                                 '${state.genres.length}',

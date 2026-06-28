@@ -174,6 +174,22 @@ class MockKuronNativePlatform
     required String url,
     Map<String, String>? headers,
   }) async => Uint8List.fromList([1, 2, 3, 4, 5]);
+
+  @override
+  Future<Map<String, dynamic>> getDnsProviderState() async => {
+    'currentProvider': -1,
+    'providerName': 'Disabled',
+    'isEnabled': false,
+  };
+
+  @override
+  Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() async => {
+    'isActive': false,
+    'serverName': null,
+  };
+
+  @override
+  Future<bool> openDnsSettings() async => true;
 }
 
 void main() {
@@ -190,5 +206,19 @@ void main() {
     KuronNativePlatform.instance = fakePlatform;
 
     expect(await kuronNativePlugin.getPlatformVersion(), '42');
+  });
+
+  test('setDohProvider and getDohProvider round-trip', () async {
+    KuronNative kuronNativePlugin = KuronNative();
+    MockKuronNativePlatform fakePlatform = MockKuronNativePlatform();
+    KuronNativePlatform.instance = fakePlatform;
+
+    final result = await kuronNativePlugin.setDohProvider(
+      DohProvider.cloudflare,
+    );
+    expect(result, isTrue);
+
+    final provider = await kuronNativePlugin.getDohProvider();
+    expect(provider, equals(DohProvider.disabled)); // mock returns -1
   });
 }

@@ -40,7 +40,8 @@ class ThemeState {
         color: AppColors.darkCard,
         elevation: DesignTokens.elevationNone,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(DesignTokens.radiusXl)),
+          borderRadius:
+              BorderRadius.all(Radius.circular(DesignTokens.radiusXl)),
           side: BorderSide(
             color: AppColors.darkBorder,
             width: 1,

@@ -28,7 +28,8 @@ class DiscoverCommand extends Command<void> {
   String get name => 'discover';
 
   @override
-  String get description => 'Discover source structure from a URL (no config generation).';
+  String get description =>
+      'Discover source structure from a URL (no config generation).';
 
   @override
   Future<void> run() async {
@@ -45,6 +46,7 @@ class DiscoverCommand extends Command<void> {
     // DEFERRED: HTTP discovery (Section 4) and browser discovery (Section 5)
     // deferred per Ponytail ultra / YAGNI - interactive wizard works, manual
     // input proven viable. Can add later if bulk config creation bottleneck emerges.
-    logger.w('Discovery features deferred - use generate --interactive for now');
+    logger
+        .w('Discovery features deferred - use generate --interactive for now');
   }
 }

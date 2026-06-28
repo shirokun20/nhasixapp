@@ -28,11 +28,31 @@ void main() {
         title: 'Test Content',
         sourceId: 'mangafire',
         url: '',
-        coverUrl: '', artists: const [], characters: const [], parodies: const [], groups: const [], language: '', pageCount: 0, imageUrls: const [], uploadDate: DateTime(2020),
+        coverUrl: '',
+        artists: const [],
+        characters: const [],
+        parodies: const [],
+        groups: const [],
+        language: '',
+        pageCount: 0,
+        imageUrls: const [],
+        uploadDate: DateTime(2020),
         tags: [
-          const Tag(id: 1, count: 0, name: 'en', type: '__mangafire_chapter_language'),
-          const Tag(id: 1, count: 0, name: 'fr', type: '__mangafire_chapter_language'),
-          const Tag(id: 1, count: 0, name: '', type: '__mangafire_chapter_language'), // Should be ignored
+          const Tag(
+              id: 1,
+              count: 0,
+              name: 'en',
+              type: '__mangafire_chapter_language'),
+          const Tag(
+              id: 1,
+              count: 0,
+              name: 'fr',
+              type: '__mangafire_chapter_language'),
+          const Tag(
+              id: 1,
+              count: 0,
+              name: '',
+              type: '__mangafire_chapter_language'), // Should be ignored
         ],
       );
 
@@ -46,9 +66,21 @@ void main() {
         title: 'Test Content',
         sourceId: 'mangafire',
         url: '',
-        coverUrl: '', artists: const [], characters: const [], parodies: const [], groups: const [], language: '', pageCount: 0, imageUrls: const [], uploadDate: DateTime(2020),
+        coverUrl: '',
+        artists: const [],
+        characters: const [],
+        parodies: const [],
+        groups: const [],
+        language: '',
+        pageCount: 0,
+        imageUrls: const [],
+        uploadDate: DateTime(2020),
         tags: [
-          const Tag(id: 1, count: 0, name: 'Volume', type: '__mangafire_chapter_group'),
+          const Tag(
+              id: 1,
+              count: 0,
+              name: 'Volume',
+              type: '__mangafire_chapter_group'),
         ],
       );
 
@@ -62,10 +94,26 @@ void main() {
         title: 'Test',
         sourceId: 'mangafire',
         url: '',
-        coverUrl: '', artists: const [], characters: const [], parodies: const [], groups: const [], language: 'it', pageCount: 0, imageUrls: const [], uploadDate: DateTime(2020),
+        coverUrl: '',
+        artists: const [],
+        characters: const [],
+        parodies: const [],
+        groups: const [],
+        language: 'it',
+        pageCount: 0,
+        imageUrls: const [],
+        uploadDate: DateTime(2020),
         tags: [
-          const Tag(id: 1, count: 0, name: 'en', type: '__mangafire_chapter_language'),
-          const Tag(id: 1, count: 0, name: 'fr', type: '__mangafire_chapter_language'),
+          const Tag(
+              id: 1,
+              count: 0,
+              name: 'en',
+              type: '__mangafire_chapter_language'),
+          const Tag(
+              id: 1,
+              count: 0,
+              name: 'fr',
+              type: '__mangafire_chapter_language'),
         ],
       );
 
@@ -73,7 +121,8 @@ void main() {
       expect(lang, 'en');
     });
 
-    test('loadLaneIfNeeded calls loadChapterLane and updates loading state', () async {
+    test('loadLaneIfNeeded calls loadChapterLane and updates loading state',
+        () async {
       when(() => mockDetailCubit.loadChapterLane(
             language: any(named: 'language'),
             scanGroup: any(named: 'scanGroup'),
@@ -84,7 +133,15 @@ void main() {
         title: 'Test Content',
         sourceId: 'mangafire',
         url: '',
-        coverUrl: '', artists: const [], characters: const [], parodies: const [], groups: const [], language: '', pageCount: 0, imageUrls: const [], uploadDate: DateTime(2020),
+        coverUrl: '',
+        artists: const [],
+        characters: const [],
+        parodies: const [],
+        groups: const [],
+        language: '',
+        pageCount: 0,
+        imageUrls: const [],
+        uploadDate: DateTime(2020),
         chapters: const [],
         tags: const [],
       );
@@ -95,7 +152,7 @@ void main() {
         languageKey: 'en',
         scanGroup: 'Chapter',
       );
-      
+
       expect(coordinator.isLoadingLane, isTrue);
       await future;
       expect(coordinator.isLoadingLane, isFalse);

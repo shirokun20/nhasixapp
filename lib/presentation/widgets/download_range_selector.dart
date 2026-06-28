@@ -251,15 +251,18 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide:
                             BorderSide(color: colorScheme.primary, width: 2),
                       ),
@@ -287,15 +290,18 @@ class _DownloadRangeSelectorState extends State<DownloadRangeSelector> {
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusMd),
                         borderSide:
                             BorderSide(color: colorScheme.primary, width: 2),
                       ),

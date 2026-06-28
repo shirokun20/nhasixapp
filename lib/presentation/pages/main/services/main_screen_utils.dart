@@ -44,8 +44,10 @@ class MainScreenUtils {
     ) {
       if (items.isEmpty) return;
 
-      final include = items.where((item) => !item.isExcluded).map((e) => e.value);
-      final exclude = items.where((item) => item.isExcluded).map((e) => e.value);
+      final include =
+          items.where((item) => !item.isExcluded).map((e) => e.value);
+      final exclude =
+          items.where((item) => item.isExcluded).map((e) => e.value);
 
       if (include.isNotEmpty) {
         parts.add('$includeLabel: ${include.join(', ')}');
@@ -166,7 +168,9 @@ class MainScreenUtils {
       }
       cleaned =
           cleaned.replaceAllMapped(RegExp(r'[?&]([^=]+)=(?=[&]|$)'), (match) {
-        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?') ? '?' : '';
+        return cleaned.indexOf(match.group(0)!) == cleaned.indexOf('?')
+            ? '?'
+            : '';
       });
       return cleaned;
     }

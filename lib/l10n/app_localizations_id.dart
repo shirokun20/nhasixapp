@@ -4400,6 +4400,50 @@ class AppLocalizationsId extends AppLocalizations {
       'Ini akan mengatur ulang pengaturan DNS ke bawaan sistem. Lanjutkan?';
 
   @override
+  String get appDns => 'DNS Aplikasi';
+
+  @override
+  String get devicePrivateDns => 'DNS Pribadi';
+
+  @override
+  String get dnsModeOn => 'HIDUP';
+
+  @override
+  String get dnsModeOff => 'MATI';
+
+  @override
+  String get dnsSystemDns => 'DNS Sistem';
+
+  @override
+  String dnsPrivateDnsStrict(Object hostname) {
+    return 'Ketat ($hostname)';
+  }
+
+  @override
+  String get dnsPrivateDnsOpportunistic => 'Opportunistik';
+
+  @override
+  String get dnsPrivateDnsRequirements => 'Memerlukan Android 10+';
+
+  @override
+  String get dnsPrivateDnsOff => 'Mati';
+
+  @override
+  String get dnsPrivateDnsGuidance =>
+      'Aktifkan DNS Pribadi di pengaturan Android untuk mengenkripsi semua kueri DNS di perangkat Anda.';
+
+  @override
+  String get dnsPrivateDnsRequiresAndroid10 =>
+      'Status DNS Pribadi perangkat memerlukan Android 10+.';
+
+  @override
+  String get dnsPrivateDnsCannotAutoSet =>
+      'Kuron tidak dapat mengatur DNS Pribadi perangkat secara otomatis pada instalasi standar.';
+
+  @override
+  String get openDnsSettings => 'Buka Pengaturan DNS';
+
+  @override
   String get collections => 'Koleksi';
 
   @override

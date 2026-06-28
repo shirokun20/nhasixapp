@@ -659,7 +659,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     decoration: BoxDecoration(
                       color:
                           colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                       border: Border.all(
                         color: colorScheme.secondary.withValues(alpha: 0.35),
                       ),
@@ -744,7 +745,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () => widget.onChapterTap(chapter),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -758,7 +760,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                                     color: isCompleted
                                         ? colorScheme.tertiaryContainer
                                         : colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                    borderRadius: BorderRadius.circular(
+                                        DesignTokens.radiusMd),
                                   ),
                                   child: Center(
                                     child: isCompleted
@@ -924,7 +927,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                                      borderRadius: BorderRadius.circular(
+                                          DesignTokens.radiusLg),
                                     ),
                                   ),
                                 ),
@@ -952,7 +956,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                   ),
                 ),
@@ -989,7 +994,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
             ? colorScheme.primary.withValues(alpha: 0.5)
             : colorScheme.outlineVariant,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
       onSelected: (_) => _selectLanguage(languageKey),
     );
   }
@@ -1223,11 +1229,13 @@ class DetailRelatedSection extends StatelessWidget {
                         Container(
                           height: 200,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusMd),
                             color: colorScheme.surfaceContainer,
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusMd),
                             child: Stack(
                               fit: StackFit.expand,
                               children: [

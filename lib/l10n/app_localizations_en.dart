@@ -4378,6 +4378,50 @@ class AppLocalizationsEn extends AppLocalizations {
       'This will reset DNS settings to system defaults. Continue?';
 
   @override
+  String get appDns => 'App DNS';
+
+  @override
+  String get devicePrivateDns => 'Private DNS';
+
+  @override
+  String get dnsModeOn => 'ON';
+
+  @override
+  String get dnsModeOff => 'OFF';
+
+  @override
+  String get dnsSystemDns => 'System DNS';
+
+  @override
+  String dnsPrivateDnsStrict(Object hostname) {
+    return 'Strict ($hostname)';
+  }
+
+  @override
+  String get dnsPrivateDnsOpportunistic => 'Opportunistic';
+
+  @override
+  String get dnsPrivateDnsRequirements => 'Requires Android 10+';
+
+  @override
+  String get dnsPrivateDnsOff => 'Off';
+
+  @override
+  String get dnsPrivateDnsGuidance =>
+      'Enable Private DNS in Android settings to encrypt all DNS queries on your device.';
+
+  @override
+  String get dnsPrivateDnsRequiresAndroid10 =>
+      'Device Private DNS status requires Android 10+.';
+
+  @override
+  String get dnsPrivateDnsCannotAutoSet =>
+      'Kuron cannot set device-wide Private DNS automatically on standard installs.';
+
+  @override
+  String get openDnsSettings => 'Open DNS Settings';
+
+  @override
   String get collections => 'Collections';
 
   @override

@@ -54,6 +54,21 @@ class DnsResolver(
 
     fun getDohProvider(): Int = prefs.getInt(PREF_DOH_PROVIDER, DEFAULT_DOH_PROVIDER)
 
+    fun getDnsProviderState(): Map<String, Any> {
+        val provider = getDohProvider()
+        return mapOf(
+            "currentProvider" to provider,
+            "providerName" to when (provider) {
+                PREF_DOH_CLOUDFLARE -> "Cloudflare"
+                PREF_DOH_GOOGLE -> "Google"
+                PREF_DOH_ADGUARD -> "AdGuard"
+                PREF_DOH_QUAD9 -> "Quad9"
+                else -> "Disabled"
+            },
+            "isEnabled" to (provider != DEFAULT_DOH_PROVIDER)
+        )
+    }
+
     fun clearCache() {
         cachedClient?.dispatcher?.executorService?.shutdown()
         cachedClient = null

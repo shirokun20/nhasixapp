@@ -230,4 +230,23 @@ abstract class KuronNativePlatform extends PlatformInterface {
   }) {
     throw UnimplementedError('downloadBinary() has not been implemented.');
   }
+
+  /// Get app DNS provider state with richer details.
+  /// Returns map with 'currentProvider', 'providerName', 'isEnabled'.
+  Future<Map<String, dynamic>> getDnsProviderState() {
+    throw UnimplementedError('getDnsProviderState() has not been implemented.');
+  }
+
+  /// Get device-level Android Private DNS diagnostics.
+  /// Returns map with 'isActive', 'serverName', optional 'reason'.
+  Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() {
+    throw UnimplementedError(
+      'getPrivateDnsDiagnostics() has not been implemented.',
+    );
+  }
+
+  /// Open Android DNS-related system settings with fallback.
+  Future<bool> openDnsSettings() {
+    throw UnimplementedError('openDnsSettings() has not been implemented.');
+  }
 }
