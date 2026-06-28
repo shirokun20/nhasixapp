@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🐛 Fixed
 
+- **Duplicate tags and string lists cleanup**: Fixed an issue where generic scraper string fields (like `Artists`) were cached with trailing counts and newlines (e.g. `Shiro Marimo\n1`), causing duplicate UI chips and deduplication failure. Added a regex rule to `hentairead-config.json` to cleanly extract the artist name, and patched `ContentModel._decodeStringList` to strip trailing counts directly from the local SQLite cache so old data is fixed without requiring a pull-to-refresh.
+- **Tag resolution slug fallback**: Fixed a bug where clicking older corrupted tags failed to navigate because the missing `tagId` triggered a `navigation cancelled to avoid invalid query` error. `DetailTagQueryResolver` now falls back to generating a slug from the raw `tagName` when `resolvedTagId` is empty.
 - **Offline metadata resync for hashed folders**: Full offline resync now rebuilds completed download rows from native `metadata.json` using the real `content_id`/source fields instead of the elegant/hash folder name. This fixes missing offline status detection on cards and detail actions for chapter-based sources like Crotpedia and KomikTap after DB recreation or local filesystem resync.
 
 ### 🏗️ ManhwaRead Source Config
