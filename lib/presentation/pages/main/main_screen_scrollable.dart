@@ -442,6 +442,9 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ),
           ],
           child: BlocBuilder<HomeBloc, HomeState>(
+            buildWhen: (previous, current) =>
+                (previous is HomeLoading || current is HomeLoading) ||
+                (previous.runtimeType != current.runtimeType),
             builder: (context, homeState) {
               // Show full screen loading during home initialization or source switching
               final isSwitchingSource =
