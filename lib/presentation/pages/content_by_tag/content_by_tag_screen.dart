@@ -106,11 +106,13 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       final rawConfig = sourceId == null
           ? null
           : getIt<RemoteConfigService>().getRawConfig(sourceId);
-      final hasTagRoute =
+      final urlPatterns =
           ((rawConfig?['scraper'] as Map<String, dynamic>?)?['urlPatterns']
-                      as Map<String, dynamic>?)
-                  ?.containsKey('tag') ??
-              false;
+                  as Map<String, dynamic>?) ??
+              const <String, dynamic>{};
+      final hasTagRoute = urlPatterns.containsKey('tagSearch') ||
+          urlPatterns.containsKey('genreSearch') ||
+          urlPatterns.containsKey('tag');
 
       final normalizedTag = widget.tagQuery.trim().toLowerCase();
       final includeTag = hasTagRoute &&

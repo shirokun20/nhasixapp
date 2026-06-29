@@ -80,24 +80,29 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 ## Core Commands
 
+This project uses **FVM** (Flutter Version Management). Always prefix with `fvm`:
+
 ```bash
 # Build
-flutter clean && flutter pub get
-flutter run --debug
-flutter build apk --release
+fvm flutter clean && fvm flutter pub get
+fvm flutter run --debug
+fvm flutter build apk --release
 ./build_optimized.sh debug|release
 
 # Test & Lint
-flutter test
-flutter analyze
-dart format .
+fvm flutter test
+fvm flutter analyze
+fvm dart format .
 
 # Codegen
-flutter pub run build_runner build --delete-conflicting-outputs
+fvm flutter pub run build_runner build --delete-conflicting-outputs
+
+# Analysis (single file)
+fvm dart analyze <path>
 
 # Scripts (run after project changes)
-dart scripts/project_status.dart        # Update dashboards
-dart scripts/create_feature.dart [name] # Scaffold feature
+fvm dart scripts/project_status.dart        # Update dashboards
+fvm dart scripts/create_feature.dart [name] # Scaffold feature
 ./scripts/smart_search.sh <mode> <pat>  # Code search
 ```
 
@@ -125,6 +130,7 @@ dart scripts/create_feature.dart [name] # Scaffold feature
 
 Use `/command-name` to invoke specialized skills:
 
+|---------|---------|
 | Command | Purpose |
 |---------|---------|
 | `/project` | Manage project lifecycle (init, start, finish, progress, issue) |
@@ -133,11 +139,74 @@ Use `/command-name` to invoke specialized skills:
 | `/api` | Step-by-step API endpoint integration guide |
 | `/di` | Dependency Injection setup with GetIt |
 | `/test` | Generate unit tests for a Dart class |
-| `/codegen` | Run build_runner for Freezed/JsonSerializable |
+| `/codegen` | Run `fvm flutter pub run build_runner build --delete-conflicting-outputs` |
 | `/arch` | Clean Architecture implementation guide |
 | `/state` | BLoC/Cubit state management patterns |
 | `/scraper` | Debug and fix HTML scrapers (Crotpedia/Nhentai) |
 | `/native` | Native Android (Kotlin) integration via Platform Channels |
 | `/git` | Git workflow and Conventional Commits guide |
-| `/search` | Modern search tools guide (rg, ugrep, semgrep) |
+| `/search` | rg/ugrep/semgrep/gitleaks/typos — modern search & audit toolkit |
 | `/simplify` | Review changed code for reuse, quality, and efficiency |
+| `/security-review` | Run `semgrep` + `gitleaks` + `typos` on staged changes |
+| `/review` | Full code review with `ecc:code-reviewer` agent |
+
+## 🔍 Search & Audit Tools (Modern — replaces grep)
+
+All installed via Homebrew. **NEVER use basic `grep`** — use these instead:
+
+| Tool | Best For | Command |
+|---|---|---|
+| **`rg`** (ripgrep) | Fast text + regex + PCRE2 | `rg "pattern" lib/ -t dart` |
+| **`ugrep`** | Fast search, fuzzy/approx | `ugrep "pattern" -R lib/ -g "*.dart"` |
+| **`semgrep`** | AST-aware Dart patterns, security | `semgrep --lang dart -e 'Logger().i(...)' lib/` |
+| **`gitleaks`** | Secret scanning (API keys, tokens) | `gitleaks detect --source . --no-git` |
+| **`typos-cli`** | Spell check source code | `typos lib/` |
+
+### rg Advanced Patterns (PCRE2)
+
+| Pattern | Purpose |
+|---------|---------|
+| `rg -U "Future.*\n\s+Future" lib/ -t dart` | Multiline — match across lines |
+| `rg -P '(\w+)(?=\s*\()' file -o \| sort \| uniq -c \| sort -rn` | Function call frequency |
+| `rg -P '"(?:[^"\\]|\\.)*"' file` | Match string literals |
+| `rg -P '(?<!await\s)(?!Future|Stream)\w+Async\b' lib/ -t dart` | Find un-`await`ed `*Async` calls |
+| `rg -P 'catch\s*\([^)]+\)\s*\{[^}]*\}' lib/ -t dart` | Find empty catch blocks |
+
+### semgrep Real Patterns
+
+| Pattern | Finds |
+|---------|-------|
+| `semgrep --lang dart -e 'print(...)' lib/` | `print()` violations |
+| `semgrep --lang dart -e 'Logger().i(...)' lib/` | Bare `Logger()` instantiation |
+| `semgrep --lang dart -e 'try {...} catch (\$E) {...}' lib/` | Bare catch (no type) |
+| `semgrep --lang dart -e 'Future.delayed(...)' lib/` | All delayed/async calls |
+
+### gitleaks Secrets
+
+Run after staging but **before commit**:
+```bash
+gitleaks detect --source . --no-git
+```
+
+Untuk false positive management, buat `.gitleaks.toml`:
+```toml
+[allowlist]
+paths = [
+  "test/fixtures/",
+  "*.arb",
+]
+```
+
+### typos-cli
+
+```bash
+typos lib/                    # Find typos
+typos --diff lib/             # Show fixes without applying
+typos lib/ --write-changes    # Auto-fix
+```
+**Note**: Indonesian/localization files produce false positives (`lokal` → `local`, `Analisis` → `Analysis`). Add exception:
+```bash
+typos lib/ --exclude "*.arb"
+```
+
+> **`ugrep`**: `-Q` = query/prompt mode (not TUI). Correct: `-R` for recursive, `-g "*.dart"` for glob.

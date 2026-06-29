@@ -65,6 +65,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
 import 'package:html/dom.dart' as dom;
@@ -234,17 +235,29 @@ class GenericScraperAdapter implements GenericAdapter {
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
 
-    final pagedUrl = _resolveListRequestUrlFromCursorCache(
+    var pagedUrl = _resolveListRequestUrlFromCursorCache(
+      page: filter.page,
+      cacheKey: paginationCacheKey,
+    );
+
+    pagedUrl = await _tryPrimeCursorPagination(
+          requestUrl: pagedUrl,
           page: filter.page,
-          cacheKey: paginationCacheKey,
-        ) ??
-        _ensurePageQueryForStandardSearch(
-          resolvedUrl: url,
           patternKey: patternKey,
-          filter: filter,
+          listConfig: listConfig,
           rawConfig: rawConfig,
-          urlPatternsCfg: urlPatternsCfg,
-        );
+          paginationCacheKey: paginationCacheKey,
+          initialUrl: url,
+        ) ??
+        pagedUrl;
+
+    pagedUrl ??= _ensurePageQueryForStandardSearch(
+      resolvedUrl: url,
+      patternKey: patternKey,
+      filter: filter,
+      rawConfig: rawConfig,
+      urlPatternsCfg: urlPatternsCfg,
+    );
 
     _logger.d('$_sourceId scraper [$patternKey]: $pagedUrl');
     return _fetchListPage(
@@ -498,11 +511,23 @@ class GenericScraperAdapter implements GenericAdapter {
     final finalUrl =
         queryParts.isEmpty ? baseUrl : '$baseUrl?${queryParts.join('&')}';
 
-    final requestUrl = _resolveListRequestUrlFromCursorCache(
+    var requestUrl = _resolveListRequestUrlFromCursorCache(
+      page: page,
+      cacheKey: paginationCacheKey,
+    );
+
+    requestUrl = await _tryPrimeCursorPagination(
+          requestUrl: requestUrl,
           page: page,
-          cacheKey: paginationCacheKey,
+          patternKey: patternKey,
+          listConfig: listConfig,
+          rawConfig: rawConfig,
+          paginationCacheKey: paginationCacheKey,
+          initialUrl: finalUrl,
         ) ??
-        finalUrl;
+        requestUrl;
+
+    requestUrl ??= finalUrl;
 
     _logger.d('$_sourceId scraper [raw/$patternKey]: $requestUrl');
     return _fetchListPage(
@@ -1520,6 +1545,42 @@ class GenericScraperAdapter implements GenericAdapter {
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       if (readerConfig == null) return null;
 
+      var workingUrl = url;
+      var workingHtmlContent = htmlContent;
+      var workingDoc = _parser.parse(workingHtmlContent);
+
+      final readerPageLinkDef = _toDefMap(readerConfig['readerPageLink']);
+      if (readerPageLinkDef != null) {
+        final readerPageSelector = _fieldDefToSelector(readerPageLinkDef);
+        final extractedReaderPageUrl = readerPageSelector == null
+            ? null
+            : _parser.extractString(workingDoc, readerPageSelector)?.trim();
+        final resolvedReaderPageUrl = extractedReaderPageUrl == null ||
+                extractedReaderPageUrl.isEmpty
+            ? null
+            : _urlBuilder.resolve(extractedReaderPageUrl, const {});
+
+        if (resolvedReaderPageUrl != null &&
+            resolvedReaderPageUrl.isNotEmpty &&
+            resolvedReaderPageUrl != workingUrl) {
+          final readerPageResponse = await _executeRequest<Response<String>>(
+            () => _dio.get<String>(
+              resolvedReaderPageUrl,
+              options: Options(
+                responseType: ResponseType.plain,
+                headers: _resolveRequestHeaders(
+                  rawConfig,
+                  fallbackReferer: resolvedReaderPageUrl,
+                ),
+              ),
+            ),
+          );
+          workingUrl = resolvedReaderPageUrl;
+          workingHtmlContent = readerPageResponse.data ?? '';
+          workingDoc = _parser.parse(workingHtmlContent);
+        }
+      }
+
       List<String> imageUrls = [];
       String? nextId;
       String? prevId;
@@ -1528,7 +1589,7 @@ class GenericScraperAdapter implements GenericAdapter {
       final regexStr = readerConfig['tsReaderRegex'] as String?;
       if (regexStr != null && regexStr.isNotEmpty) {
         final regex = RegExp(regexStr, dotAll: true);
-        final match = regex.firstMatch(htmlContent);
+        final match = regex.firstMatch(workingHtmlContent);
         if (match != null) {
           final jsonStr =
               match.groupCount > 0 ? match.group(1) : match.group(0);
@@ -1563,15 +1624,13 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
-      final doc = _parser.parse(htmlContent);
-
       if (imageUrls.isEmpty &&
           (readerConfig['mode'] as String?) == 'ajaxHtmlImages') {
         imageUrls = await _fetchAjaxHtmlImages(
           rawConfig: rawConfig,
           readerConfig: readerConfig,
-          readerDocument: doc,
-          readerPageUrl: url,
+          readerDocument: workingDoc,
+          readerPageUrl: workingUrl,
         );
       }
 
@@ -1668,7 +1727,7 @@ class GenericScraperAdapter implements GenericAdapter {
             regexStr != null &&
             pageSelStr != null) {
           // Collect explicit thumb URLs as final fallback only.
-          final thumbElements = _parser.selectAll(doc, thumbSel);
+          final thumbElements = _parser.selectAll(workingDoc, thumbSel);
           final explicitThumbs = <String>[];
           for (final el in thumbElements) {
             final raw =
@@ -1679,13 +1738,17 @@ class GenericScraperAdapter implements GenericAdapter {
             }
           }
 
-          final countStr =
-              _parser.extractString(doc, FieldSelector(selector: pageSelStr));
+          final countStr = _parser.extractString(
+            workingDoc,
+            FieldSelector(selector: pageSelStr),
+          );
           final pagesMatch = RegExp(r'(\d+)').firstMatch(countStr ?? '');
           final pageCount = int.tryParse(pagesMatch?.group(1) ?? '0') ?? 0;
 
           final thumbSrc = _parser.extractString(
-              doc, FieldSelector(selector: thumbSel, attribute: thumbAttr));
+            workingDoc,
+            FieldSelector(selector: thumbSel, attribute: thumbAttr),
+          );
 
           if (thumbSrc != null && pageCount > 0) {
             final regex = RegExp(regexStr);
@@ -1702,22 +1765,22 @@ class GenericScraperAdapter implements GenericAdapter {
 
               // Prefer metadata-based URL building when hidden fields exist.
               final loadDir = _parser.extractString(
-                    doc,
+                    workingDoc,
                     const FieldSelector(
                         selector: '#load_dir', attribute: 'value'),
                   ) ??
                   _parser.extractString(
-                    doc,
+                    workingDoc,
                     const FieldSelector(
                         selector: '#image_dir', attribute: 'value'),
                   );
               final loadId = _parser.extractString(
-                    doc,
+                    workingDoc,
                     const FieldSelector(
                         selector: '#load_id', attribute: 'value'),
                   ) ??
                   _parser.extractString(
-                    doc,
+                    workingDoc,
                     const FieldSelector(
                         selector: '#gallery_id', attribute: 'value'),
                   );
@@ -1746,13 +1809,13 @@ class GenericScraperAdapter implements GenericAdapter {
 
       if (imageUrls.isEmpty && readerConfig['mode'] == 'chapterDataScript') {
         imageUrls = _extractChapterDataScriptImageUrls(
-          htmlContent,
+          workingHtmlContent,
           readerConfig: readerConfig,
         );
       }
 
       if (imageUrls.isEmpty) {
-        imageUrls = _extractScriptSlidesImageUrls(htmlContent);
+        imageUrls = _extractScriptSlidesImageUrls(workingHtmlContent);
       }
 
       if (imageUrls.isEmpty) {
@@ -1761,14 +1824,16 @@ class GenericScraperAdapter implements GenericAdapter {
           final defMap = _toDefMap(imagesDef);
           if (defMap != null) {
             final sel = _fieldDefToSelector(defMap);
-            if (sel != null) imageUrls = _parser.extractList(doc, sel);
+            if (sel != null) {
+              imageUrls = _parser.extractList(workingDoc, sel);
+            }
           }
         }
       }
 
       if (imageUrls.isEmpty &&
           (readerConfig['cdnHost'] as String?)?.isNotEmpty == true) {
-        imageUrls = _extractPreviewCdnImageUrls(htmlContent);
+        imageUrls = _extractPreviewCdnImageUrls(workingHtmlContent);
       }
 
       imageUrls = _normalizeChapterImageUrls(imageUrls);
@@ -1777,23 +1842,23 @@ class GenericScraperAdapter implements GenericAdapter {
       final cdnHost = readerConfig['cdnHost'] as String?;
       if (cdnHost != null && cdnHost.isNotEmpty) {
         final realMangaId = _parser.extractString(
-                doc,
+                workingDoc,
                 const FieldSelector(
                     selector: '#wp-manga-manga-id', attribute: 'value')) ??
             _parser.extractString(
-                doc,
+                workingDoc,
                 const FieldSelector(
                     selector: '[data-bookmark]', attribute: 'data-bookmark')) ??
             _parser.extractString(
-                doc,
+                workingDoc,
                 const FieldSelector(
                     selector: '[data-post]', attribute: 'data-post'));
         final realChapterId = _parser.extractString(
-                doc,
+                workingDoc,
                 const FieldSelector(
                     selector: '#wp-manga-chapter-id', attribute: 'value')) ??
             _parser.extractString(
-                doc,
+                workingDoc,
                 const FieldSelector(
                     selector: '[data-chapter]', attribute: 'data-chapter'));
 
@@ -1822,21 +1887,23 @@ class GenericScraperAdapter implements GenericAdapter {
         if (imageUrls.isNotEmpty) {
           int maxPage = imageUrls.length;
 
-          final pageOptions = _parser.selectAll(doc,
+          final pageOptions = _parser.selectAll(workingDoc,
               'select#single-pager option, select.selectpicker.page-selection option, .wp-manga-nav select.selectpicker option');
           if (pageOptions.isNotEmpty) {
             maxPage = pageOptions.length;
           } else {
             final scriptMatch = RegExp(r'\"pages\"?\s*:\s*(\d+)')
-                    .firstMatch(htmlContent) ??
-                RegExp('total_pages[\\s"\\\'=]+(\\d+)').firstMatch(htmlContent);
+                    .firstMatch(workingHtmlContent) ??
+                RegExp('total_pages[\\s"\\\'=]+(\\d+)')
+                    .firstMatch(workingHtmlContent);
             if (scriptMatch != null) {
               maxPage = int.tryParse(scriptMatch.group(1) ?? '') ?? maxPage;
             }
           }
 
           // Bulletproof fallback for HentaiRead: scan entire HTML for hr_X.jpg
-          final hrMatches = RegExp(r'hr_(\d+)\.jpg').allMatches(htmlContent);
+          final hrMatches =
+              RegExp(r'hr_(\d+)\.jpg').allMatches(workingHtmlContent);
           for (final m in hrMatches) {
             final num = int.tryParse(m.group(1) ?? '0') ?? 0;
             if (num > maxPage) maxPage = num;
@@ -1868,8 +1935,8 @@ class GenericScraperAdapter implements GenericAdapter {
 
       // 4. DOM fallback for navigation via reader.nav.{next,prev}.
       final navCfg = readerConfig['nav'] as Map<String, dynamic>?;
-      nextId ??= _extractNavChapterId(doc, navCfg?['next']);
-      prevId ??= _extractNavChapterId(doc, navCfg?['prev']);
+      nextId ??= _extractNavChapterId(workingDoc, navCfg?['next']);
+      prevId ??= _extractNavChapterId(workingDoc, navCfg?['prev']);
 
       return ChapterData(
         images: imageUrls,
@@ -1956,12 +2023,12 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     final rawQuery = filter.query == '{query}' ? '' : filter.query;
-    final tagValue = filter.includeTags.isNotEmpty
-        ? filter.includeTags.first.name
-            .toLowerCase()
-            .replaceAll(RegExp(r'\s+'), '-')
-            .replaceAll(RegExp(r'^-|-$'), '')
-        : rawQuery
+    final rawTagValue =
+        filter.includeTags.isNotEmpty ? filter.includeTags.first.name : rawQuery;
+    final tagTransform = (patternMap?['tagTransform'] as String? ?? '').trim();
+    final tagValue = tagTransform == 'urlEncode'
+        ? Uri.encodeComponent(rawTagValue)
+        : rawTagValue
             .toLowerCase()
             .replaceAll(RegExp(r'\s+'), '-')
             .replaceAll(RegExp(r'^-|-$'), '');
@@ -1982,8 +2049,7 @@ class GenericScraperAdapter implements GenericAdapter {
         } else if (value == '{page}') {
           value = filter.page.toString();
         } else if (value == '{tag}' && filter.includeTags.isNotEmpty) {
-          value =
-              filter.includeTags.first.name.toLowerCase().replaceAll(' ', '-');
+          value = tagValue;
         }
         params[entry.key] = value;
       }
@@ -3062,6 +3128,63 @@ class GenericScraperAdapter implements GenericAdapter {
 
   String _paginationCacheEntryKey(String cacheKey, int page) {
     return '$cacheKey|page=$page';
+  }
+
+  /// Tries to prime cursor pagination for [page] > 1 and returns the cached
+  /// URL. Returns null if cursor pagination doesn't apply or the cache wasn't
+  /// populated.
+  // ponytail: maxPrimePages — add threshold if sources need deep pagination
+  static const _maxPrimePages = 10;
+
+  Future<String?> _tryPrimeCursorPagination({
+    required String? requestUrl,
+    required int page,
+    required String patternKey,
+    required Map<String, dynamic> listConfig,
+    required Map<String, dynamic> rawConfig,
+    required String paginationCacheKey,
+    required String initialUrl,
+  }) async {
+    if (requestUrl != null || page <= 1 || patternKey.endsWith('Page')) {
+      return null;
+    }
+    // Check if config has cursor pagination selectors
+    final pagination =
+        (listConfig['pagination'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final hasCursor = (pagination['next'] as String?)?.trim().isNotEmpty ==
+            true ||
+        (pagination['alt'] as String?)?.trim().isNotEmpty == true;
+    if (!hasCursor) return null;
+    // ponytail: serial N-1 requests — parallelise if source latency is high
+    var currentUrl = initialUrl;
+    final limit = math.min(page, _maxPrimePages);
+    for (var currentPage = 1; currentPage < limit; currentPage++) {
+      final cached = _resolveListRequestUrlFromCursorCache(
+        page: currentPage,
+        cacheKey: paginationCacheKey,
+      );
+      if (cached != null && cached.isNotEmpty) {
+        currentUrl = cached;
+      }
+
+      final result = await _fetchListPage(
+        currentUrl,
+        rawConfig,
+        listConfig,
+        currentPage: currentPage,
+        paginationCacheKey: paginationCacheKey,
+        defaultLanguage: rawConfig['defaultLanguage'] as String?,
+      );
+
+      final nextUrl = result.nextPageUrl;
+      if (nextUrl == null || nextUrl.isEmpty) return null;
+      currentUrl = nextUrl;
+    }
+
+    return _resolveListRequestUrlFromCursorCache(
+      page: page,
+      cacheKey: paginationCacheKey,
+    );
   }
 
   String? _resolveListRequestUrlFromCursorCache({
