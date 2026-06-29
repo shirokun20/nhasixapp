@@ -2,6 +2,10 @@ import 'dart:convert';
 
 class HentaiNexusDecryptor {
   static const List<int> _primeNumbers = <int>[2, 3, 5, 7, 11, 13, 17, 19];
+  static final RegExp _imageUrlPattern = RegExp(
+    r'https?://images\.hentainexus\.com/[^"\s<>()]+?\.(?:jpg|jpeg|png|webp|avif)(?:\.thumb\.jpg)?',
+    caseSensitive: false,
+  );
 
   static List<int> _firstPrimes(int count) {
     final primes = <int>[];
@@ -97,41 +101,122 @@ class HentaiNexusDecryptor {
 
   static List<String> extractImageUrls(String decryptedJson) {
     final decoded = jsonDecode(decryptedJson);
-    if (decoded is! List) {
+    final urls = _extractImageUrlsFromDecoded(decoded);
+    if (urls.isNotEmpty) {
+      return urls;
+    }
+
+    return _extractImageUrlsFromText(decryptedJson);
+  }
+
+  static List<String> extractImageUrlsFromHtml(String html) {
+    return _extractImageUrlsFromText(html);
+  }
+
+  static List<String> _extractImageUrlsFromDecoded(dynamic decoded) {
+    if (decoded is List) {
+      final urls = <String>[];
+      for (final item in decoded) {
+        urls.addAll(_extractImageUrlsFromDecoded(item));
+      }
+      return _dedupe(urls);
+    }
+
+    if (decoded is! Map) {
       return const [];
     }
 
     final urls = <String>[];
-    for (final item in decoded) {
-      if (item is! Map<String, dynamic>) continue;
-      final type = item['type'] as String?;
+    final normalized = decoded.cast<Object?, Object?>();
+    final type = normalized['type']?.toString();
 
-      if (type == 'image') {
-        final image = item['image'] as String?;
-        if (image != null && image.isNotEmpty) {
-          urls.add(image);
-        }
-        continue;
+    if (type == 'image') {
+      final image = normalized['image']?.toString();
+      if (image != null && image.isNotEmpty) {
+        urls.add(_normalizeImageUrl(image));
       }
-
-      // Backward-compat support for older local payload assumptions.
-      if (type == 'url') {
-        final url = item['url'] as String?;
-        if (url != null && url.isNotEmpty) {
-          urls.add(url);
-        }
-      } else if (type == 'spread') {
-        final left = item['url'] as String?;
-        final right = item['nextLink'] as String?;
-        if (left != null && left.isNotEmpty) {
-          urls.add(left);
-        }
-        if (right != null && right.isNotEmpty) {
-          urls.add(right);
-        }
+    } else if (type == 'url') {
+      final url = normalized['url']?.toString();
+      if (url != null && url.isNotEmpty) {
+        urls.add(_normalizeImageUrl(url));
+      }
+    } else if (type == 'spread') {
+      final left = normalized['url']?.toString();
+      final right = normalized['nextLink']?.toString();
+      if (left != null && left.isNotEmpty) {
+        urls.add(_normalizeImageUrl(left));
+      }
+      if (right != null && right.isNotEmpty) {
+        urls.add(_normalizeImageUrl(right));
       }
     }
 
-    return urls;
+    for (final value in normalized.values) {
+      if (value is String) {
+        urls.addAll(_extractImageUrlsFromText(value));
+      } else if (value is List || value is Map) {
+        urls.addAll(_extractImageUrlsFromDecoded(value));
+      }
+    }
+
+    return _dedupe(urls);
+  }
+
+  static List<String> _extractImageUrlsFromText(String text) {
+    final urls = <String>[];
+    for (final match in _imageUrlPattern.allMatches(text)) {
+      final raw = match.group(0);
+      if (raw == null || raw.isEmpty) continue;
+      urls.add(_normalizeImageUrl(raw));
+    }
+    return _dedupe(urls);
+  }
+
+  static String _normalizeImageUrl(String url) {
+    return url.replaceFirst(RegExp(r'\.thumb\.jpg$', caseSensitive: false), '');
+  }
+
+  static List<String> _dedupe(List<String> urls) {
+    final bestByPage = <String, String>{};
+    final orderedKeys = <String>[];
+
+    for (final rawUrl in urls) {
+      if (rawUrl.isEmpty) continue;
+
+      final url = _normalizeImageUrl(rawUrl);
+      final pageKey = _pageKey(url);
+      final current = bestByPage[pageKey];
+
+      if (current == null) {
+        bestByPage[pageKey] = url;
+        orderedKeys.add(pageKey);
+        continue;
+      }
+
+      if (_formatPriority(url) < _formatPriority(current)) {
+        bestByPage[pageKey] = url;
+      }
+    }
+
+    return orderedKeys.map((key) => bestByPage[key]!).toList(growable: false);
+  }
+
+  static String _pageKey(String url) {
+    final uri = Uri.tryParse(url);
+    final path = uri?.path ?? url;
+    final lastSegment = path.split('/').where((segment) => segment.isNotEmpty).last;
+    return lastSegment.replaceFirst(
+      RegExp(r'\.(?:avif|webp|png|jpe?g)$', caseSensitive: false),
+      '',
+    );
+  }
+
+  static int _formatPriority(String url) {
+    final lowered = url.toLowerCase();
+    if (lowered.endsWith('.webp')) return 0;
+    if (lowered.endsWith('.png')) return 1;
+    if (lowered.endsWith('.jpg') || lowered.endsWith('.jpeg')) return 2;
+    if (lowered.endsWith('.avif')) return 3;
+    return 4;
   }
 }

@@ -9,6 +9,8 @@ import 'hentainexus_decryptor.dart';
 class HentaiNexusDecryptAdapter implements GenericAdapter {
   final Dio _dio;
   final GenericScraperAdapter _delegate;
+  final Logger _logger;
+  final String _sourceId;
   DateTime? _lastRequestAt;
 
   HentaiNexusDecryptAdapter({
@@ -18,6 +20,8 @@ class HentaiNexusDecryptAdapter implements GenericAdapter {
     required Logger logger,
     required String sourceId,
   })  : _dio = dio,
+        _logger = logger,
+        _sourceId = sourceId,
         _delegate = GenericScraperAdapter(
           dio: dio,
           urlBuilder: urlBuilder,
@@ -75,18 +79,46 @@ class HentaiNexusDecryptAdapter implements GenericAdapter {
         options: Options(responseType: ResponseType.plain),
       );
       final html = response.data ?? '';
-
-      final encrypted = RegExp(encryptedPattern).firstMatch(html)?.group(1);
-      if (encrypted == null || encrypted.isEmpty) {
+      if (html.isEmpty) {
+        _logger.w('[$_sourceId] reader HTML empty for $readerUrl');
         return base;
       }
 
-      final decrypted = HentaiNexusDecryptor.decrypt(
-        encrypted: encrypted,
-        hostname: hostname,
-      );
-      final imageUrls = HentaiNexusDecryptor.extractImageUrls(decrypted);
+      final encrypted = RegExp(encryptedPattern).firstMatch(html)?.group(1);
+      List<String> imageUrls = const <String>[];
+
+      if (encrypted == null || encrypted.isEmpty) {
+        _logger.w(
+          '[$_sourceId] initReader payload missing for $contentId, trying HTML image fallback',
+        );
+      } else {
+        try {
+          final decrypted = HentaiNexusDecryptor.decrypt(
+            encrypted: encrypted,
+            hostname: hostname,
+          );
+          imageUrls = HentaiNexusDecryptor.extractImageUrls(decrypted);
+          if (imageUrls.isNotEmpty) {
+            _logger.i(
+              '[$_sourceId] extracted ${imageUrls.length} reader images from decrypted payload for $contentId',
+            );
+          }
+        } catch (e) {
+          _logger.w('[$_sourceId] decrypt failed for $contentId: $e');
+        }
+      }
+
       if (imageUrls.isEmpty) {
+        imageUrls = HentaiNexusDecryptor.extractImageUrlsFromHtml(html);
+        if (imageUrls.isNotEmpty) {
+          _logger.i(
+            '[$_sourceId] extracted ${imageUrls.length} reader images from HTML fallback for $contentId',
+          );
+        }
+      }
+
+      if (imageUrls.isEmpty) {
+        _logger.w('[$_sourceId] no reader images resolved for $contentId');
         return base;
       }
 
@@ -96,7 +128,8 @@ class HentaiNexusDecryptAdapter implements GenericAdapter {
       );
 
       return AdapterDetailResult(content: updated, imageUrls: imageUrls);
-    } catch (_) {
+    } catch (e) {
+      _logger.w('[$_sourceId] reader extraction failed for $contentId: $e');
       return base;
     }
   }
@@ -121,8 +154,13 @@ class HentaiNexusDecryptAdapter implements GenericAdapter {
   Future<ChapterData?> fetchChapterImages(
     String chapterId,
     Map<String, dynamic> rawConfig,
-  ) {
-    return _delegate.fetchChapterImages(chapterId, rawConfig);
+  ) async {
+    final detail = await fetchDetail(chapterId, rawConfig);
+    if (detail.imageUrls.isEmpty) {
+      return null;
+    }
+
+    return ChapterData(images: detail.imageUrls);
   }
 
   Future<void> _throttle(Map<String, dynamic> rawConfig) async {

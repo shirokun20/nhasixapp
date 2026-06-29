@@ -312,7 +312,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       // 3.6. Fallback for single-content readers (no chapter list):
       // If detail payload has no image URLs, fetch them from chapter endpoint
       // using the same contentId (e.g. HentaiFox /gallery/{id}/).
-      if (content.imageUrls.isEmpty && isConnected) {
+      if (content.imageUrls.isEmpty &&
+          (isConnected || shouldUseNoChapterPreloaded)) {
         try {
           _logger.i(
               '🖼️ Content has no imageUrls, fetching chapter images fallback: $contentId');

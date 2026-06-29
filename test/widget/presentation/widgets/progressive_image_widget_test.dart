@@ -61,6 +61,7 @@ void main() {
         expect(
           ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
             'https://cdn.manga18.club/manga/title/cover/cover_thumb_2.webp',
+            isThumbnail: true,
           ),
           isTrue,
         );
@@ -70,6 +71,7 @@ void main() {
         expect(
           ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
             'https://example.com/image.avif?token=123',
+            isThumbnail: true,
           ),
           isTrue,
         );
@@ -79,6 +81,18 @@ void main() {
         expect(
           ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
             'https://example.com/image.jpg',
+            isThumbnail: true,
+          ),
+          isFalse,
+        );
+      });
+
+      test('returns false for reader-like page image surface', () {
+        expect(
+          ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
+            'https://images.hentainexus.com/v2/foo/001.webp',
+            pageNumber: 1,
+            isThumbnail: false,
           ),
           isFalse,
         );
@@ -88,6 +102,7 @@ void main() {
         expect(
           ProgressiveImageWidget.shouldUseStaticNetworkDecodeFallbackForTesting(
             'not a valid url',
+            isThumbnail: true,
           ),
           isFalse,
         );

@@ -500,6 +500,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return (screenHeight * 0.9).clamp(1.0, double.infinity).toDouble();
   }
 
+  double _resolveContinuousItemHeight(int pageNumber, double screenHeight) {
+    final cachedHeight = _cachedImageHeights[pageNumber];
+    if (cachedHeight != null && cachedHeight > 0) {
+      return cachedHeight;
+    }
+
+    for (final candidatePage in <int>[
+      pageNumber - 1,
+      pageNumber + 1,
+      pageNumber - 2,
+      pageNumber + 2,
+    ]) {
+      final candidateHeight = _cachedImageHeights[candidatePage];
+      if (candidateHeight != null && candidateHeight > 0) {
+        return candidateHeight;
+      }
+    }
+
+    if (_cachedImageHeights.isNotEmpty) {
+      return _cachedImageHeights.values.last;
+    }
+
+    return (screenHeight * 0.9).clamp(1.0, double.infinity).toDouble();
+  }
+
   /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam
   void _debounceSaveHistory(ReaderState state, int page) {
     _saveDebounceTimer?.cancel();
@@ -1491,14 +1516,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final sourceRawConfig = _getSourceRawConfig(sourceId);
       // 🐛 FIX: Use cached height (or viewport fallback) to prevent scroll
       // jumping when items are rebuilt during scroll-up.
-      final cachedHeight = _cachedImageHeights[pageNumber];
-      final fallbackHeight = MediaQuery.of(context).size.height;
+      final resolvedHeight = _resolveContinuousItemHeight(
+        pageNumber,
+        MediaQuery.of(context).size.height,
+      );
 
       return RepaintBoundary(
         child: SizedBox(
           key: ValueKey(
               'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-          height: cachedHeight ?? fallbackHeight,
+          height: resolvedHeight,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: ExtendedImageReaderWidget(

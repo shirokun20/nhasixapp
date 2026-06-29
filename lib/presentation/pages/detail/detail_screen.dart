@@ -50,6 +50,52 @@ class DetailScreen extends StatefulWidget {
     this.chapterId,
   });
 
+  @visibleForTesting
+  static String resolveDetailHeaderImageUrlForTesting(Content content) {
+    final firstImage =
+        content.imageUrls.isNotEmpty ? content.imageUrls.first : '';
+    if (firstImage.isEmpty) {
+      return content.coverUrl;
+    }
+
+    if (content.sourceId == 'hentainexus') {
+      if (content.coverUrl.isNotEmpty) {
+        return content.coverUrl;
+      }
+
+      final hentainexusThumb =
+          _deriveHentainexusDetailThumbUrlForTesting(firstImage);
+      if (hentainexusThumb != null) {
+        return hentainexusThumb;
+      }
+    }
+
+    final firstImagePath = firstImage.toLowerCase().split('?').first;
+    if (firstImagePath.endsWith('.avif') && content.coverUrl.isNotEmpty) {
+      return content.coverUrl;
+    }
+
+    return firstImage;
+  }
+
+  static String? _deriveHentainexusDetailThumbUrlForTesting(String imageUrl) {
+    final uri = Uri.tryParse(imageUrl);
+    if (uri == null || uri.path.isEmpty) {
+      return null;
+    }
+
+    final path = uri.path;
+    final normalizedPath = path.replaceFirst(
+      RegExp(r'\.(?:avif|webp|png|jpe?g)$', caseSensitive: false),
+      '.png.thumb.jpg',
+    );
+    if (normalizedPath == path) {
+      return null;
+    }
+
+    return uri.replace(path: normalizedPath).toString();
+  }
+
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
@@ -65,20 +111,7 @@ class _DetailScreenState extends State<DetailScreen> {
   late final DetailMangaFireCoordinator _mangaFireCoordinator;
 
   String _resolveDetailHeaderImageUrl(Content content) {
-    final firstImage =
-        content.imageUrls.isNotEmpty ? content.imageUrls.first : '';
-    if (firstImage.isEmpty) {
-      return content.coverUrl;
-    }
-
-    final firstImagePath = firstImage.toLowerCase().split('?').first;
-    // AVIF chapter pages can be decoder-hostile on some OEM devices.
-    // For detail header, prefer dedicated cover when available.
-    if (firstImagePath.endsWith('.avif') && content.coverUrl.isNotEmpty) {
-      return content.coverUrl;
-    }
-
-    return firstImage;
+    return DetailScreen.resolveDetailHeaderImageUrlForTesting(content);
   }
 
   Future<void> _refreshChapterHistoryAfterReaderReturn() async {
@@ -613,17 +646,22 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildDetailContent(DetailLoaded state, bool isOfflineMode) {
     final content = state.content;
     final shouldBlurPrimaryCover = _shouldBlurCover(content);
+    final headerImageUrl = _resolveDetailHeaderImageUrl(content);
+    final firstImage =
+        content.imageUrls.isNotEmpty ? content.imageUrls.first : '';
+    final headerUsesFirstPage =
+        firstImage.isNotEmpty && headerImageUrl == firstImage;
     return DetailContentView(
       scrollController: _scrollController,
       isOfflineMode: isOfflineMode,
-      headerImageUrl: _resolveDetailHeaderImageUrl(content),
+      headerImageUrl: headerImageUrl,
       contentId: content.id,
       sourceId: content.sourceId,
-      pageNumber: content.imageUrls.isNotEmpty ? 1 : null,
+      pageNumber: headerUsesFirstPage ? 1 : null,
       imageHeaders: getIt<ContentSourceRegistry>()
           .getSource(content.sourceId)
           ?.getImageDownloadHeaders(
-            imageUrl: _resolveDetailHeaderImageUrl(content),
+            imageUrl: headerImageUrl,
           ),
       blurOverlay: shouldBlurPrimaryCover
           ? const DetailBlacklistedCoverOverlay(compact: false)

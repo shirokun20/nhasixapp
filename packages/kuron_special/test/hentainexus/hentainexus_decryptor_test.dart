@@ -50,5 +50,60 @@ void main() {
         'https://cdn.example/3.webp',
       ]);
     });
+
+    test('extractImageUrls supports object-shaped payloads', () {
+      const payload = '''
+{
+  "pages": [
+    {"src": "https://images.hentainexus.com/v2/demo/001.png.thumb.jpg"},
+    {"image": "https://images.hentainexus.com/v2/demo/002.png"}
+  ]
+}
+''';
+
+      final urls = HentaiNexusDecryptor.extractImageUrls(payload);
+
+      expect(urls, <String>[
+        'https://images.hentainexus.com/v2/demo/001.png',
+        'https://images.hentainexus.com/v2/demo/002.png',
+      ]);
+    });
+
+    test('extractImageUrls prefers webp over avif for the same page', () {
+      const payload = '''
+[
+  {
+    "image_avif": "https://images.hentainexus.com/v2/demo/001.avif",
+    "image_webp": "https://images.hentainexus.com/v2/demo/001.webp"
+  },
+  {
+    "image_avif": "https://images.hentainexus.com/v2/demo/002.avif",
+    "image_webp": "https://images.hentainexus.com/v2/demo/002.webp"
+  }
+]
+''';
+
+      final urls = HentaiNexusDecryptor.extractImageUrls(payload);
+
+      expect(urls, <String>[
+        'https://images.hentainexus.com/v2/demo/001.webp',
+        'https://images.hentainexus.com/v2/demo/002.webp',
+      ]);
+    });
+
+    test('extractImageUrlsFromHtml normalizes thumb urls and dedupes', () {
+      const html = '''
+<img src="https://images.hentainexus.com/v2/demo/001.png.thumb.jpg">
+<img data-src="https://images.hentainexus.com/v2/demo/001.png.thumb.jpg">
+<img src="https://images.hentainexus.com/v2/demo/002.webp">
+''';
+
+      final urls = HentaiNexusDecryptor.extractImageUrlsFromHtml(html);
+
+      expect(urls, <String>[
+        'https://images.hentainexus.com/v2/demo/001.png',
+        'https://images.hentainexus.com/v2/demo/002.webp',
+      ]);
+    });
   });
 }

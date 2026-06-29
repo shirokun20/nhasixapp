@@ -402,6 +402,45 @@ void main() {
     });
   });
 
+  group('shouldNotifyHeavyImageDetected', () {
+    test('returns false for static native fallback in continuous scroll', () {
+      expect(
+        ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          confirmedAnimatedWebP: false,
+          hasCallback: true,
+          alreadyNotified: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true only for confirmed animated image in continuous scroll',
+        () {
+      expect(
+        ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          confirmedAnimatedWebP: true,
+          hasCallback: true,
+          alreadyNotified: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false when heavy image was already notified', () {
+      expect(
+        ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
+          readingMode: ReadingMode.continuousScroll,
+          confirmedAnimatedWebP: true,
+          hasCallback: true,
+          alreadyNotified: true,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('shouldKeepAlive', () {
     test('returns false for normal image in continuous scroll', () {
       expect(

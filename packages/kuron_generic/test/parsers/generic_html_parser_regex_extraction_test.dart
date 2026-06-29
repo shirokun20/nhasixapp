@@ -337,9 +337,9 @@ void main() {
 
         const titleSel = FieldSelector(selector: 'h1.title', type: 'css');
         const coverSel = FieldSelector(
-          selector: 'figure.image img',
+          selector: 'meta[property="og:image"]',
           type: 'css',
-          attribute: 'src',
+          attribute: 'content',
         );
         const artistSel = FieldSelector(
           selector: 'table.view-page-details a[href*="q=artist:%22"]',
@@ -365,6 +365,8 @@ void main() {
         final coverUrl = parser.extractString(doc, coverSel);
         expect(coverUrl, isNotNull);
         expect(coverUrl, contains('images.hentainexus.com'));
+        expect(coverUrl, contains('/000.'));
+        expect(coverUrl, contains('.thumb.'));
 
         final artistRaw = parser.extractString(doc, artistSel) ?? '';
         final publisherRaw = parser.extractString(doc, publisherSel) ?? '';

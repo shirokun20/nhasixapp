@@ -92,9 +92,14 @@ class ProgressiveImageWidget extends StatefulWidget {
 
   @visibleForTesting
   static bool shouldUseStaticNetworkDecodeFallbackForTesting(
-      String networkUrl) {
-    return _ProgressiveImageWidgetState._shouldUseStaticNetworkDecodeFallback(
+    String networkUrl, {
+    int? pageNumber,
+    bool isThumbnail = false,
+  }) {
+    return _ProgressiveImageWidgetState.shouldUseStaticNetworkDecodeFallback(
       networkUrl,
+      pageNumber: pageNumber,
+      isThumbnail: isThumbnail,
     );
   }
 
@@ -375,7 +380,15 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         lowered.endsWith('.avif');
   }
 
-  static bool _shouldUseStaticNetworkDecodeFallback(String networkUrl) {
+  static bool shouldUseStaticNetworkDecodeFallback(
+    String networkUrl, {
+    int? pageNumber,
+    required bool isThumbnail,
+  }) {
+    if (!isThumbnail && pageNumber != null) {
+      return false;
+    }
+
     final uri = Uri.tryParse(networkUrl);
     if (uri == null) {
       return false;
@@ -616,7 +629,11 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           _logger.w('Network image load failed for $url: $error');
         }
 
-        if (_shouldUseStaticNetworkDecodeFallback(url)) {
+        if (shouldUseStaticNetworkDecodeFallback(
+          url,
+          pageNumber: widget.pageNumber,
+          isThumbnail: widget.isThumbnail,
+        )) {
           return _buildStaticNetworkDecodeFallback();
         }
 

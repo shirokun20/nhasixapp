@@ -126,6 +126,20 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   }
 
   @visibleForTesting
+  static bool shouldNotifyHeavyImageDetectedForTesting({
+    required ReadingMode readingMode,
+    required bool confirmedAnimatedWebP,
+    required bool hasCallback,
+    required bool alreadyNotified,
+  }) {
+    if (!hasCallback) return false;
+    if (readingMode != ReadingMode.continuousScroll) return false;
+    if (!confirmedAnimatedWebP) return false;
+    if (alreadyNotified) return false;
+    return true;
+  }
+
+  @visibleForTesting
   static bool shouldAutoPlayAnimatedViewForTesting({
     required int pageNumber,
     int? visiblePageNumber,
@@ -715,9 +729,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// Fire [widget.onHeavyImageDetected] at most once per content ID.
   /// Relevant for continuous-scroll mode regardless of page index.
   void _maybeNotifyHeavyImageDetected() {
-    if (widget.onHeavyImageDetected == null) return;
-    if (widget.readingMode != ReadingMode.continuousScroll) return;
-    if (_notifiedHeavyContentIds.contains(widget.contentId)) return;
+    if (!ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
+      readingMode: widget.readingMode,
+      confirmedAnimatedWebP: _isConfirmedAnimatedWebP,
+      hasCallback: widget.onHeavyImageDetected != null,
+      alreadyNotified: _notifiedHeavyContentIds.contains(widget.contentId),
+    )) {
+      return;
+    }
     _notifiedHeavyContentIds.add(widget.contentId);
     // postFrameCallback so we never call this during a build/layout phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {

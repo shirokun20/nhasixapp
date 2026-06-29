@@ -499,6 +499,10 @@ class ContentRepositoryImpl implements ContentRepository {
       return true;
     }
 
+    if (source == 'hentainexus') {
+      return true;
+    }
+
     if (source == 'hitomi') {
       return true;
     }
