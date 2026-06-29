@@ -26,9 +26,10 @@
 | Package | Description |
 |---|---|
 | `kuron_core` | Shared core utilities |
-| `kuron_nhentai` | Nhentai source implementation |
-| `kuron_crotpedia` | Crotpedia source implementation |
-| `kuron_komiktap` | KomikTap source implementation |
+| `kuron_config_generator` | Configuration generator |
+| `kuron_generic` | Generic utilities |
+| `kuron_native` | Native Android (Kotlin) integrations |
+| `kuron_special` | Special utilities |
 | `kuron_native` | Native Android (Kotlin) integrations |
 
 ### Key Features
@@ -36,7 +37,7 @@
 - App Disguise mode (Calculator, Notes, Weather)
 - Offline-first with background downloading
 - Smart Search with advanced filtering
-- Material 3, Dark/Light modes, responsive UI
+- Material 3, Dark/Light/AMOLED modes, responsive UI
 - Community comments on detail pages
 
 ---
@@ -58,7 +59,7 @@ lib/
 │   ├── blocs/         # State management (cubits)
 │   ├── pages/         # Screen-level widgets
 │   └── widgets/       # Reusable components
-└── packages/          # Internal packages (kuron_core, kuron_nhentai, etc.)
+└── packages/          # Internal packages (kuron_core, kuron_generic, kuron_native, kuron_special, etc.)
 ```
 
 ### Layer Rules
@@ -161,47 +162,9 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 | **Filtering** | RTK strips boilerplate/noise so AI focuses on relevant data. |
 | **Statistics** | Use `rtk gain` to see token savings. |
 
-> Global config at `~/.gemini/GEMINI.md` and `AGENTS.md`.
+> Global config at `~/.gemini/GEMINI.md`, `AGENTS.md`, `CLAUDE.md`.
 
 ---
-
-## Tool-Specific Context
-
-### OpenCode
-- **Config**: `.opencode/` (agents, skills)
-- **Agents**: `planner`, `architect`, `test-engineer`, `test-writer`, `code-reviewer`, `feature-dev`, `flutter-architect`, `ui-designer`
-- **Skills**: `clean-arch`, `bloc-pattern`, `create-bloc`, `create-feature`, `di-setup`, `gen-test`, `manager-assistant`, `project-management`, `project-workflow`, `run-codegen`
-
-### Codex
-- **Config**: `AGENTS.md`, `.codex/README.md`, `.codex/skills/`
-- **Startup Context**: `MEMORY.md` -> active `openspec/changes/` (non-archived) -> `proposal.md` + `tasks.md`
-- **Primary Skill Source**: `.codex/skills/*/SKILL.md`
-- **Upstream Skill Mirrors**: `.opencode/skills/*/SKILL.md`
-- **Secondary Skill Source**: `.agent/skills/*/SKILL.md`
-- **Rule Mirrors**: `.github/copilot-instructions.md`, `.agent/rules/asix-rules.md`
-- **Behavior**: Emulate local `@agent` roles directly when no explicit sub-agent delegation requested
-
-### GitHub Copilot
-- **Config**: `.github/copilot-instructions.md`
-- **Behavior**: Follows Clean Architecture, snake_case files, uses logger
-
-### Antigravity
-- **Config**: `.agent/rules/asix-rules.md`, `.agent/skills/`
-- **Skills**: `api-integration`, `bloc-cubit`, `clean-arch`, `doc-workflow`, `flutter-dev`, `git-workflow`, `manager-assistant`, `native-integration`, `scraper-debug`, `search-tools`
-
----
-
-## Session Log
-
-> Use this format to record session progress.
-
-### Template
-```markdown
-#### [DATE] — [AI Tool] — [Session Topic]
-- **Done**: [What was accomplished]
-- **Issues**: [Blockers or bugs found]
-- **Next**: [Next session tasks]
-```
 
 ### Recent Sessions
 
@@ -220,20 +183,20 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 | 2026-06-28 | Codex | ShiroDoujin chapter title cleanup | Done | Removed chapter date parsing from local `shirodoujin-config.json` and made chapter title extraction ignore inline trailing dates like `Januari 22, 2026`, so detail chapters keep only URL + clean title. Verified with targeted `packages/kuron_generic` scraper/config tests. |
 | 2026-06-28 | Claude Code | ManhwaRead full config + reader + tag routing | Done | Full `manhwaread-config.json` rewrite: `urlPatterns`, `selectors`, pagination, `chapterDataScript` reader, prefix routing. Added `"self"` pseudo-selector in engine. Injected author/artist/publisher as typed Tags. Tag count strip regexes. 5 unit tests for `mode:name`. |
 | 2026-06-27 | Claude Code | SpyFakku remote tag autocomplete + multi-select search filters | Done | Added client-side tag autocomplete for SpyFakku without API endpoint. Extracted 4,423 tags from hentalk.pw boot data into `configs/tags/tags_spyfakku.json`. Added `tagSource` block to `spyfakku-config.json` with remote URL. Added `TagDataManager.loadAndCacheTagsFromUrl()` for per-source remote tag loading. `TagRepositoryImpl.getAutocomplete()` falls back to `TagDataManager.searchTags()` for tag-data-enabled sources. `QueryStringSearchUI` now encodes multi-select filter selections (tag/artist/parody) into query string for `GenericRestAdapter`. `_parseAndExtractFilters` strips tag tokens from restored queries with multi-word quoted value support. |
-| 2026-06-27 | Codex | Offline metadata `content_id` resync fix | Done | Fixed offline DB rebuild for hashed download folders (komiktap, crotpedia, native-worker downloads). `DownloadStorageUtils` / `OfflineContentManager` now read native `metadata.json` keys like `content_id` and `source`, so full offline resync rebuilds DB rows with real chapter ID instead of hash folder name (e.g. `10vlmmznl1`, `11k38msg3d`). Added regression tests for metadata sync and card download-status matching. |
+| 2026-06-27 | Codex | Offline metadata `content_id` resync fix | Done | Fixed offline DB rebuild for hashed download folders (`komiktap`, `crotpedia`, and similar native-worker downloads). `DownloadStorageUtils` / `OfflineContentManager` now read native `metadata.json` keys like `content_id` and `source`, so full offline resync rebuilds DB rows with real chapter ID instead of hash folder name (e.g. `10vlmmznl1`, `11k38msg3d`). Added regression tests for metadata sync and card download-status matching. |
 | 2026-06-27 | Codex | Tag page + offline card revamp | Done | `content_by_tag` now reuses home-style featured/grid cards instead of older generic card renderer. Offline library group cards remade with clearer offline/read status pills, stronger cover-first hierarchy, extra bottom grid padding so last row does not sit too close to floating sort button. |
 | 2026-06-26 | Antigravity | Core upgrades & ZIP import polish | Done | Upgraded `flutter_local_notifications` (v22.0.1) and fixed breaking API changes. Purged UI packages (`shimmer`, `flutter_spinkit`, `pull_to_refresh`) for native/local `KuronShimmer`. Polished offline ZIP import by moving extraction notification into `onStarted` to fix ghost notifications on picker cancel, added file progression `[x/y]` to bulk ZIP extraction notifications. |
 | 2026-06-26 | Antigravity | BLoC pattern modernization | Done | Modernized BLoC patterns: extracted presentation logic (chapter-language grouping, filter-summary formatting) into reusable helpers. Moved display-formatted summary logic out of BLoC/Cubit state classes into dedicated presenters/mappers. Extracted high-risk orchestration logic from oversized widgets into focused coordinators. Replaced ad-hoc `debugPrint` and `Logger` usage with centralized project logging strategy. Archived `openspec/changes/bloc-pattern-modernization`. |
 | 2026-06-25 | Codex | Release v0.9.21+31 | Done | Bumped version/build to `0.9.21+31`, added release notes for home card read/offline borders and cover badges, updated README download links, tagged snapshot as `v0.9.21+31`. Verified with `dart format` and `flutter analyze`. |
 | 2026-06-25 | Codex | LifecycleWatcher nhentai config guard | Done | Guarded `LifecycleWatcher.didChangeAppLifecycleState()` so it skips `DownloadBloc` access until `RemoteConfigService` loads bundled `nhentai` config. Removes startup/resume crash `Bad state: nhentai config not loaded` without changing bootstrap order. Verified with `fvm flutter analyze lib/presentation/widgets/lifecycle_watcher.dart`. |
 | 2026-06-24 | Kiro | Config Generator Phase 1 (Option A) | Done | Implemented `add-kuron-config-generator` Phase 1 per Ponytail ultra principles: built complete interactive wizard CLI for generating Kuron source configs without manual JSON writing. Completed 15/56 tasks (27%): §1 Runtime Coordination (confirmed `kuron_core` APIs ready), §2 CLI Scaffold (3 commands with args/logging/tests), §3 Guided Wizard (question flow + stdin/stdout runner + config generator + tests). Deferred 41 tasks (73%): HTTP discovery, browser automation, GitHub mining, validation integration - all YAGNI per design doc. Deliverables: working `packages/kuron_config_generator/` with CLI entry point, WizardBuilder (identity/features/API/scraper/headers questions), WizardRunner (interactive stdin/stdout), ConfigGenerator (answers→JSON), README with usage, all tests passing. Tool generates valid Source Config v2 files. Usage: `cd packages/kuron_config_generator && fvm dart run bin/kuron_config_generator.dart generate --interactive`. Validation via existing `kuron_config_validate` CLI. Decision rationale: 15 configs already written manually prove manual input works; discovery features add heavy dependencies (browser, GitHub API); ship working wizard now, iterate if manual proves too slow. |
-| 2026-06-24 | Codex | ZIP import multiple + local path flattening | Done | Added native multi-ZIP picker support and wired Dart fallback to single-pick when multi-select unavailable. ZIP extraction now flattens image paths to filename leaf so nested archive folders no longer create `[folder]/[image]` under `images/`. Backup sync now honors active source filter: `local` gets source-folder-only resync with stale local DB rows cleared first, `all` keeps scanning all source roots. Verified with targeted `fvm flutter test ...` and `fvm flutter analyze` on touched Dart files. |
-| 2026-06-23 | Codex | MangaFire integration + lazy chapter lanes archive | Done | Finalized MangaFire integration and follow-up lazy chapter lane behavior. MangaFire detail now keeps non-default language/volume lanes deferred until selected, shows loading for active lane, reuses embedded related content, hides empty related UI, avoids leaking internal lane metadata tags into public tag list. Recorded changes in `CHANGELOG.md` / `MEMORY.md`, archived `openspec/changes/mangafire-integration` + `lazy-load-chapters` with known caveat that some OpenSpec verification/task checkboxes left incomplete despite shipped implementation. |
+| 2026-06-24 | Codex | ZIP import multiple + local path flattening | Done | Added native multi-ZIP picker support and wired Dart fallback to single-pick when multi-select unavailable. ZIP extraction now flattens image paths to filename leaf so nested archive folders no longer create `[folder]/[image]` under `images/`. Backup sync now honors active source filter: `local` gets source-folder-only resync with stale local DB rows cleared first, `all` keeps scanning all source roots. Verified with targeted `fvm flutter test test/unit/core/utils/offline_content_manager_metadata_sync_test.dart test/unit/domain/usecases/import_zip_usecase_test.dart` and `fvm flutter analyze` on touched Dart files. |
+| 2026-06-23 | Codex | MangaFire integration + lazy chapter lanes archive | Done | Finalized MangaFire integration and follow-up lazy chapter lane behavior. MangaFire detail now keeps non-default language/volume lanes deferred until selected, shows loading for active lane, reuses embedded related content, hides empty related UI, avoids leaking internal lane metadata tags into public tag list. Recorded changes in `CHANGELOG.md` / `MEMORY.md`, archived `openspec/changes/mangafire-integration` + `openspec/changes/lazy-load-chapters` with known caveat that some OpenSpec verification/task checkboxes left incomplete despite shipped implementation. |
 | 2026-06-23 | Antigravity | MangaFire generic tag routing intercept | Done | Fixed `MangaFireAdapter` search so generic tag queries from `rawParam` config mappings (like `raw:author:{value}=` or `raw:magazine:{value}=`) are intercepted and converted into explicit `author:` / `magazine:` prefixes before routing. Restores MangaFire detail-page tag navigation (author, magazine) which fell back to generic keyword search. |
 | 2026-06-22 | Codex | E-Hentai download strategy chooser | Done | Added minimal E-Hentai-specific strategy resolver gated by live E-Hentai config shape (`source=ehentai`, `download`, `chapters`, `imageUrls.mode=ehentai_page_fetch`). Follow-up fix: main gallery download button now opens action sheet for `Download whole gallery` and `Choose gallery range`, part-row buttons no longer offer range and go straight to part-only download. Verified focused resolver tests and analyze. |
 | 2026-06-22 | Codex | Offline content body duplicate chapter fix | Done | Fixed duplicate chapter counts/rows in `OfflineContentBody` and offline detail by normalizing `ContentGroup` to unique items and reusing deduped list in body/detail consumers. Chapter badges, long-press info, detail fallback now derive from same unique chapter set, so stale duplicate DB IDs no longer show as extra chapters. Verified with focused offline cubit test and analyze. |
 | 2026-06-21 | Codex | Offline duplicate chapter detail fix | Done | Fixed duplicate offline detail rows when DB contains multiple completed downloads with same source/title/local path but different IDs. `ContentGroup` now dedupes items by source + normalized title + cover directory, `OfflineSearchCubit` computes grouped size/progress from unique item list, `OfflineSeriesDetailScreen` applies same dedupe in direct storage fallback. Verified focused offline search cubit test and targeted analyze. |
-| 2026-06-21 | Codex | archive tabbed-multilang + search-runtime-autowiring | Done | Added changelog notes for chapter language lane and search runtime wiring work, archived `openspec/changes/tabbed-multilang-chapters` and `search-runtime-autowiring` to `openspec/changes/archive/`. |
+| 2026-06-21 | Codex | archive tabbed-multilang + search-runtime-autowiring | Done | Added changelog notes for chapter language lane and search runtime wiring work, archived `openspec/changes/tabbed-multilang-chapters` and `openspec/changes/search-runtime-autowiring` to `openspec/changes/archive/2026-06-21-*`. |
 | 2026-06-21 | Codex | Detail chapter preview UI polish | Done | Polished chapter preview section on detail page (`DetailChapterSection`) to match improved bottom sheet direction: lighter container, quieter header, compact language chips with stronger selected state, slimmer preview rows, scanlation/date/read-progress subtitle, lighter read/download actions. Verified focused analyze and detail chapter widget test. |
 | 2026-06-21 | Codex | Chapter bottom-sheet UI polish | Done | Modernized `ChapterListBottomSheet` after MangaDex paging follow-up: language chips in fixed rail with stronger selected styling, header shows selected language and loaded count, rows show scanlation group/date subtitle when available, read/completed border states clearer, MangaDex load-more uses stronger footer action (`Load 100 more ...`). Verified focused analyze and detail chapter widget test. |
 | 2026-06-21 | Codex | MangaDex chapter lane bottom-sheet paging | Done | Follow-up to `tabbed-multilang-chapters`: `View all chapters` opens bottom sheet scoped to selected chapter language lane. MangaDex detail chapter config sets `autoPaginate=false`, generic REST adapter honors it so detail load stops at first chapter page instead of fetching all offsets. `ChapterListBottomSheet` adds MangaDex-only `Load more` that fetches next page for active `translatedLanguage[]` lane and de-dupes chapters. Verified JSON, targeted analyze, detail widget test, `packages/kuron_generic` MangaDex integration test. |
@@ -244,7 +207,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 | 2026-06-16 | Codex | Offline library/detail + reader interaction + custom storage permission polish | Done | Fixed offline library grouped metadata and actions: group/item size now uses per-item DB `file_size`, long-press sheet on `OfflineContentBody` is info-only with chapter count and path list, destructive/read/PDF actions moved to `OfflineSeriesDetailScreen`. Fixed offline detail delete flow to use singleton offline search cubit, refresh local item state, refresh reader progress after returning from reader. Reader now force-flushes offline progress to `reader_positions` on dispose, supports tap zones over native/animated images, has draggable mini chrome toggle for show/hide header/footer. `AnimatedDiceWidget` icon color now follows `IconTheme`/theme. `DownloadsScreen` no longer requires full storage permission when `StorageSettings.custom_storage_root` configured; checks custom root and only requests notification permission, with Settings snackbar when no download directory set. Verified with targeted `fvm flutter analyze` on touched files. |
 | 2026-06-11 | Antigravity | Offline library pagination & N+1 fix planning | In Progress | User approved architectural finding that offline library grouping pagination was broken because it fetched 20 raw items from Isar DB then grouped them. Wrote `implementation_plan.md` to fetch all raw items, group in memory, paginate resulting groups. Also planned to fix N+1 `ReaderRepository` query by extracting progress checking into separate function running only on visible paginated groups. Implementation deferred. |
 | 2026-06-10 | Antigravity | Offline Sort & Filter UI Polish + BottomSheet Path | Done | Improved `OfflineContentBody` sorting/filter UI with Glowing Gradient FAB, modern AnimatedContainer filter chips, pill TabBar ripples. Fixed FAB auto-hide by adding `_scrollController` to `GridView`. Fixed filter state anomaly by reading `offline_selected_source_filter` from `SharedPreferences` during `OfflineSearchLoading` state to prevent UI flickering back to "All" tab. Added file path display in offline long-press bottom sheet with "Copy Path" and "Open in Explorer" (`open_file` package) utilities. |
-| 2026-06-02 | Codex | revamp-kuron-config-runtime verification closeout | Done | Closed remaining feasible tasks for `revamp-kuron-config-runtime`: `RemoteConfigService.applySourceConfigFromJson()` now caches/removes `ValidationReport` alongside imported/uninstalled configs, new app tests cover import compatibility state caching plus download parity warnings (`test/unit/core/config/remote_config_service_test.dart`, `test/unit/domain/usecases/download_content_usecase_test.dart`). Verification passed for import/reader/download app paths. Android payload parsing compile verification passed in `packages/kuron_native/example/android` with `./gradlew app:compileDebugKotlin` (`BUILD SUCCESSFUL`). Provider-repo validation ran against `/Users/asix/Documents/ide_baru/kuron-config-providers/config` with report saved to `/tmp/kuron_provider_validation_report.txt`: `hitomi` and `hentainexus` = `needsEngineSupport`, `crotpedia` = `partiallyCompatible`, all other checked provider configs = `compatible`. |
+| 2026-06-02 | Codex | revamp-kuron-config-runtime verification closeout | Done | Closed remaining feasible tasks for `revamp-kuron-config-runtime`: `RemoteConfigService.applySourceConfigFromJson()` now caches/removes `ValidationReport` alongside imported/uninstalled configs, new app tests cover import compatibility state caching plus download parity warnings (`test/unit/core/config/remote_config_service_test.dart`, `test/unit/domain/usecases/download_content_usecase_test.dart`). Verification passed for import/reader/download app paths (`remote_config_service_test`, `download_content_usecase_test`, `reader_screen_policy_test`, `download_bloc_test`). Android payload parsing compile verification passed in `packages/kuron_native/example/android` with `./gradlew app:compileDebugKotlin` (`BUILD SUCCESSFUL`). Provider-repo validation ran against `/Users/asix/Documents/ide_baru/kuron-config-providers/config` with report saved to `/tmp/kuron_provider_validation_report.txt`: `hitomi` and `hentainexus` = `needsEngineSupport`, `crotpedia` = `partiallyCompatible`, all other checked provider configs = `compatible`. |
 | 2026-06-01 | Codex | Rate-limit hardening + config baseline sync | Done | Hardened rate-limit flow end-to-end: `RequestRateManager` now source-config aware (`enabled`, `cooldownDurationMs`), 429 cooldown now uses manager timing (removed hardcoded 5-minute cooldown in remote datasource), nhentai cooldown wait now explicit and loop-based, generic runtime pipeline (`GenericSourceFactory` -> `GenericHttpSource` -> REST/Scraper adapters) now applies config-driven `RateLimiter` (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, `minDelayMs`). Fixed `flutter_secure_storage` test override compatibility by switching to `AppleOptions`. Added baseline `network.rateLimit` blocks for multiple source configs under `informations/configs` (not tracked in git because directory ignored). Verified with targeted analyze/tests in app, `kuron_generic`, and `kuron_special`. |
 | 2026-06-24 | Kiro | Config Generator Phase 2 — HTTP Discovery | Done | Extended `add-kuron-config-generator` with URL-assisted discovery: `http_probe.dart` (HTTP GET + content-type detection for HTML/JSON), `cms_detector.dart` (Madara/WordPress/custom CMS detection from HTML signatures + selector suggestion), `api_detector.dart` (JSON array/map/data[]/detail inference + pagination hints), integrated into `generate --url` command. Test: probe manhwaread.com via Playwright, generated real working config validated as `compatible`. 27 tests passing, analyzer clean. README updated with URL-assisted workflow. |
 ---
@@ -254,32 +217,6 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 - `*.freezed.dart` — Generated by Freezed
 - `pubspec.lock` — Auto-generated
 
-> Edit source file and run: `flutter pub run build_runner build --delete-conflicting-outputs`
-
----
-
-## Key Commands
-
-```bash
-# Build & Run
-flutter clean && flutter pub get
-flutter run --debug
-./build_optimized.sh debug|release
-
-# Test & Analyze
-flutter test
-flutter analyze
-dart run build_runner build --delete-conflicting-outputs
-
-# Search (Modern)
-rg "pattern" lib/ -t dart                  # Fast text search
-ugrep -rn "pattern" lib/                   # Interactive search
-semgrep --lang dart -e '$X.find()' lib/    # AST-aware search
-
-# Project Management
-dart scripts/project_status.dart           # Update dashboards
-./scripts/smart_search.sh audit            # Architecture audit
-./scripts/smart_search.sh debugprint       # Find print violations
-```
+> Edit source file and run: `fvm flutter pub run build_runner build --delete-conflicting-outputs`
 
 ---
