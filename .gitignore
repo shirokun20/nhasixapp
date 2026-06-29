@@ -72,3 +72,4 @@ projects/*
 .github/skills/
 .agents/
 skills-lock.json
+/memory/*
