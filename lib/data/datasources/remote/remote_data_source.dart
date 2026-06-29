@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
+import 'package:nhasixapp/domain/services/app_initializer.dart';
 import 'dart:math';
 
 import '../../models/content_model.dart';
@@ -19,7 +20,7 @@ import '../../../../core/config/remote_config_service.dart';
 
 /// Remote data source for nhentai.net
 /// Supports both API and HTML scraping with automatic fallback
-class RemoteDataSource {
+class RemoteDataSource implements AppInitializer {
   RemoteDataSource({
     required this.httpClient,
     required this.scraper,
@@ -61,6 +62,7 @@ class RemoteDataSource {
   }
 
   /// Initialize the remote data source
+  @override
   Future<bool> initialize() async {
     try {
       _logger.i('Initializing RemoteDataSource...');
@@ -449,6 +451,7 @@ class RemoteDataSource {
   }
 
   /// Check if Cloudflare bypass is needed
+  @override
   Future<bool> checkCloudflareStatus() async {
     _logger.i('Checking Cloudflare status... from $baseUrl');
     try {
@@ -465,6 +468,7 @@ class RemoteDataSource {
   }
 
   /// Attempt to bypass Cloudflare protection
+  @override
   Future<bool> bypassCloudflare() async {
     try {
       _logger.i('Attempting Cloudflare bypass...');

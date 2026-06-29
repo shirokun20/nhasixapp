@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
+import 'package:nhasixapp/domain/services/app_initializer.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/domain/entities/download_status.dart';
@@ -30,7 +30,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
 
   SplashBloc({
     required RemoteConfigService remoteConfigService,
-    required RemoteDataSource remoteDataSource,
+    required AppInitializer remoteDataSource,
     required UserDataRepository userDataRepository,
     required Logger logger,
     required Connectivity connectivity,
@@ -54,7 +54,7 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
   }
 
   final RemoteConfigService _remoteConfigService;
-  final RemoteDataSource _remoteDataSource;
+  final AppInitializer _remoteDataSource;
   final UserDataRepository _userDataRepository;
   final Logger _logger;
   final Connectivity _connectivity;
