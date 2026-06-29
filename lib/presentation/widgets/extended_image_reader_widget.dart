@@ -11,7 +11,7 @@ import 'package:kuron_native/kuron_native.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
-import '../../data/models/reader_settings_model.dart';
+import '../../../domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 

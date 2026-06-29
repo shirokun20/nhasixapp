@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
-import 'package:nhasixapp/data/models/reader_settings_model.dart';
+import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/domain/entities/reader_position.dart';
 import 'package:nhasixapp/domain/repositories/reader_repository.dart';
 import 'package:nhasixapp/domain/repositories/reader_settings_repository.dart';
@@ -25,8 +25,8 @@ class _MockGetChapterImagesUseCase extends Mock
 
 class _MockAddToHistoryUseCase extends Mock implements AddToHistoryUseCase {}
 
-class _MockReaderSettingsRepository extends Mock
-    implements ReaderSettingsRepository {}
+class _MockReaderSettingsEntityRepository extends Mock
+    implements ReaderSettingsEntityRepository {}
 
 class _MockReaderRepository extends Mock implements ReaderRepository {}
 
@@ -92,7 +92,8 @@ void main() {
     final getContentDetailUseCase = _MockGetContentDetailUseCase();
     final getChapterImagesUseCase = _MockGetChapterImagesUseCase();
     final addToHistoryUseCase = _MockAddToHistoryUseCase();
-    final readerSettingsRepository = _MockReaderSettingsRepository();
+    final readerSettingsEntityRepository =
+        _MockReaderSettingsEntityRepository();
     final readerRepository = _MockReaderRepository();
     final offlineContentManager = _MockOfflineContentManager();
     final networkCubit = _MockNetworkCubit();
@@ -104,8 +105,8 @@ void main() {
     when(() => networkCubit.isConnected).thenReturn(true);
     when(() => offlineContentManager.isContentAvailableOffline(any()))
         .thenAnswer((_) async => false);
-    when(() => readerSettingsRepository.getReaderSettings())
-        .thenAnswer((_) async => const ReaderSettings());
+    when(() => readerSettingsEntityRepository.getReaderSettingsEntity())
+        .thenAnswer((_) async => const ReaderSettingsEntity());
     when(() => readerRepository.getReaderPosition(any()))
         .thenAnswer((_) async => null);
     when(() => readerRepository.saveReaderPosition(any()))
@@ -121,7 +122,7 @@ void main() {
       getContentDetailUseCase: getContentDetailUseCase,
       getChapterImagesUseCase: getChapterImagesUseCase,
       addToHistoryUseCase: addToHistoryUseCase,
-      readerSettingsRepository: readerSettingsRepository,
+      readerSettingsEntityRepository: readerSettingsEntityRepository,
       readerRepository: readerRepository,
       offlineContentManager: offlineContentManager,
       networkCubit: networkCubit,
@@ -159,7 +160,8 @@ void main() {
     final getContentDetailUseCase = _MockGetContentDetailUseCase();
     final getChapterImagesUseCase = _MockGetChapterImagesUseCase();
     final addToHistoryUseCase = _MockAddToHistoryUseCase();
-    final readerSettingsRepository = _MockReaderSettingsRepository();
+    final readerSettingsEntityRepository =
+        _MockReaderSettingsEntityRepository();
     final readerRepository = _MockReaderRepository();
     final offlineContentManager = _MockOfflineContentManager();
     final networkCubit = _MockNetworkCubit();
@@ -171,8 +173,8 @@ void main() {
     when(() => networkCubit.isConnected).thenReturn(false);
     when(() => offlineContentManager.isContentAvailableOffline(any()))
         .thenAnswer((_) async => false);
-    when(() => readerSettingsRepository.getReaderSettings())
-        .thenAnswer((_) async => const ReaderSettings());
+    when(() => readerSettingsEntityRepository.getReaderSettingsEntity())
+        .thenAnswer((_) async => const ReaderSettingsEntity());
     when(() => readerRepository.getReaderPosition(any()))
         .thenAnswer((_) async => null);
     when(() => readerRepository.saveReaderPosition(any()))
@@ -188,7 +190,7 @@ void main() {
       getContentDetailUseCase: getContentDetailUseCase,
       getChapterImagesUseCase: getChapterImagesUseCase,
       addToHistoryUseCase: addToHistoryUseCase,
-      readerSettingsRepository: readerSettingsRepository,
+      readerSettingsEntityRepository: readerSettingsEntityRepository,
       readerRepository: readerRepository,
       offlineContentManager: offlineContentManager,
       networkCubit: networkCubit,

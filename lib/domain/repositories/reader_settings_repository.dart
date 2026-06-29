@@ -1,18 +1,18 @@
-import '../../data/models/reader_settings_model.dart';
+import '../entities/reader_settings_entity.dart';
 
 /// Repository interface for reader settings persistence
-abstract class ReaderSettingsRepository {
+abstract class ReaderSettingsEntityRepository {
   /// Get complete reader settings
   ///
   /// Returns current reader settings with defaults if not set
   /// Handles errors gracefully by returning default settings
-  Future<ReaderSettings> getReaderSettings();
+  Future<ReaderSettingsEntity> getReaderSettingsEntity();
 
   /// Save complete reader settings
   ///
   /// [settings] - Complete settings object to save
   /// Handles errors gracefully without throwing exceptions
-  Future<void> saveReaderSettings(ReaderSettings settings);
+  Future<void> saveReaderSettingsEntity(ReaderSettingsEntity settings);
 
   /// Save reading mode preference
   ///

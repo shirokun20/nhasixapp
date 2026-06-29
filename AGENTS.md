@@ -20,7 +20,7 @@
 ### Claude Code
 - **Primary instruction file**: `CLAUDE.md` (auto-loaded by Claude Code).
 - **Slash commands**: `.claude/commands/*.md` — invoked via `/command-name`.
-- Available commands: `/project`, `/feature`, `/bloc`, `/api`, `/di`, `/test`, `/codegen`, `/arch`, `/state`, `/scraper`, `/native`, `/git`, `/search`, `/simplify`.
+- Available commands: `/project`, `/feature`, `/bloc`, `/api`, `/di`, `/test`, `/codegen`, `/arch`, `/state`, `/scraper`, `/native`, `/git`, `/search`, `/simplify`, `/security-review`, `/review`.
 
 ### Codex
 - **Primary instruction file**: `AGENTS.md`.
@@ -38,12 +38,16 @@
 - Startup sequence: `MEMORY.md` -> active `openspec/changes/` (non-archived) -> `proposal.md` + `tasks.md`.
 
 ## ⚡ Core Commands
-- **Build/Run**: `flutter clean && flutter pub get` | `flutter run --debug` | `flutter build apk --release`
+
+This project uses **FVM** (Flutter Version Management). Always prefix with `fvm`:
+
+- **Build/Run**: `fvm flutter clean && fvm flutter pub get` | `fvm flutter run --debug` | `fvm flutter build apk --release`
 - **Build Optimized**: `./build_optimized.sh debug` | `release`
-- **Test/Lint**: `flutter test` | `flutter analyze` | `dart run build_runner build`
-- **Codegen**: `flutter pub run build_runner build --delete-conflicting-outputs`
-- **Format**: `dart format .`
-- **Release**: `./build_release.sh` (Custom) | `flutter build ipa` (iOS)
+- **Test/Lint**: `fvm flutter test` | `fvm flutter analyze` | `fvm dart run build_runner build`
+- **Codegen**: `fvm flutter pub run build_runner build --delete-conflicting-outputs`
+- **Format**: `fvm dart format .`
+- **Analysis (single file)**: `fvm dart analyze <path>`
+- **Release**: `./build_release.sh` (Custom) | `fvm flutter build ipa` (iOS)
 - **Packages Pub Get**: `./scripts/pub_get_all.sh` | Run `fvm flutter pub get` on all packages
 
 ## 📜 Development Scripts
@@ -59,15 +63,17 @@ Located in `scripts/` folder. **ALWAYS run after project changes:**
 
 **Note**: `project_status.dart` auto-updates all README dashboards with progress bars and statistics.
 
-## 🔍 Search Tools (Modern — replaces grep)
+## 🔍 Search & Audit Tools (Modern — replaces grep)
 
 All installed via Homebrew. **NEVER use basic `grep`** — use these instead:
 
 | Tool | Best For | Command |
 |---|---|---|
-| **`rg`** (ripgrep) | Fast text search, regex | `rg "pattern" lib/ -t dart` |
-| **`ugrep`** | Interactive TUI, fuzzy search | `ugrep -Q "pattern" lib/` |
-| **`semgrep`** | AST-aware Dart patterns, security | `semgrep --lang dart -e '$PATTERN' lib/` |
+| **`rg`** (ripgrep) | Fast text + regex + PCRE2 | `rg "pattern" lib/ -t dart` |
+| **`ugrep`** | Fast search, fuzzy/approx | `ugrep "pattern" -R lib/ -g "*.dart"` |
+| **`semgrep`** | AST-aware Dart patterns, security | `semgrep --lang dart -e 'Logger().i(...)' lib/` |
+| **`gitleaks`** | Secret scanning (API keys, tokens) | `gitleaks detect --source . --no-git` |
+| **`typos-cli`** | Spell check source code | `typos lib/` |
 
 ### Smart Search Script
 ```bash
@@ -94,6 +100,19 @@ rg "import '" lib/ -t dart --stats
 # AST: find direct API calls in UI (violation)
 semgrep --lang dart -e 'http.get($URL)' lib/presentation/
 ```
+
+### gitleaks Secrets
+```bash
+gitleaks detect --source . --no-git
+```
+
+### typos-cli
+```bash
+typos lib/                    # Find typos
+typos --diff lib/             # Show fixes without applying
+typos lib/ --write-changes    # Auto-fix
+```
+**Note**: Indonesian/localization false positives (`lokal` → `local`). Add `--exclude "*.arb"`.
 
 ## 🧠 Development Workflow (CRITICAL)
 
@@ -206,7 +225,10 @@ Use these specialized tools to maintain velocity and quality.
 | **Scraper Debug** | Fix HTML scrapers | `/scraper` | `scraper-debug` |
 | **Native Integration** | Platform Channels + Kotlin | `/native` | `native-integration` |
 | **Git Workflow** | Branching + Conventional Commits | `/git` | `git-workflow` |
-| **Search Tools** | rg, ugrep, semgrep guide | `/search` | `search-tools` |
+| **Search Tools** | rg, ugrep, semgrep, gitleaks, typos guide | `/search` | `search-tools` |
+| **Security Review** | semgrep + gitleaks + typos on staged changes | `/security-review` | |
+| **Code Review** | Full code review with ecc:code-reviewer agent | `/review` | |
+| **Simplify** | Review changed code for reuse, quality, efficiency | `/simplify` | |
 | **RTK** | Token-optimized CLI proxy | | `rtk` |
 
 ### Skill Source of Truth (priority order)

@@ -1083,10 +1083,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetSettings => 'Reset Settings';
 
   @override
-  String get resetReaderSettings => 'Reset Reader Settings';
+  String get resetReaderSettingsEntity => 'Reset Reader Settings';
 
   @override
-  String get resetReaderSettingsConfirmation =>
+  String get resetReaderSettingsEntityConfirmation =>
       'This will reset all reader settings to their default values:\n\n';
 
   @override
@@ -1096,7 +1096,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get areYouSure => 'Are you sure you want to proceed?';
 
   @override
-  String get readerSettingsResetSuccess =>
+  String get ReaderSettingsEntityResetSuccess =>
       'Reader settings have been reset to defaults.';
 
   @override
@@ -1378,7 +1378,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jump => 'Jump';
 
   @override
-  String get readerSettings => 'Reader Settings';
+  String get ReaderSettingsEntity => 'Reader Settings';
 
   @override
   String get readingMode => 'Reading Mode';
@@ -4550,7 +4550,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chapters => 'Chapters';
 
   @override
-  String get readerSettingsReset =>
+  String get ReaderSettingsEntityReset =>
       'Reader settings have been reset to defaults.';
 
   @override

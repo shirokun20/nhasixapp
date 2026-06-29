@@ -1,205 +1,73 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
-import 'package:equatable/equatable.dart';
 
-/// Reading modes for the reader
-enum ReadingMode {
-  singlePage, // Horizontal PageView
-  verticalPage, // Vertical PageView
-  continuousScroll, // Vertical ListView
-}
+import '../../domain/entities/reader_settings_entity.dart';
 
-/// Tap direction for page navigation gestures
-enum TapDirection {
-  normal, // Left = previous, Right = next
-  inverted, // Left = next, Right = previous (for RTL manga)
-}
-
-/// Reader settings data model for persistence
-class ReaderSettings extends Equatable {
-  const ReaderSettings({
-    this.readingMode = ReadingMode.singlePage,
-    this.keepScreenOn = false,
-    this.showUI = true,
-    this.enableZoom = true,
-    this.tapDirection = TapDirection.normal,
+/// JSON-serializable model for reader settings persistence
+class ReaderSettingsEntityModel extends ReaderSettingsEntity {
+  const ReaderSettingsEntityModel({
+    super.readingMode = ReadingMode.singlePage,
+    super.keepScreenOn = false,
+    super.showUI = true,
+    super.enableZoom = true,
+    super.tapDirection = TapDirection.normal,
   });
 
-  final ReadingMode readingMode;
-  final bool keepScreenOn;
-  final bool showUI;
-  final bool enableZoom;
-  final TapDirection tapDirection;
-
-  @override
-  List<Object?> get props => [
-        readingMode,
-        keepScreenOn,
-        showUI,
-        enableZoom,
-        tapDirection,
-      ];
-
-  /// Create a copy with updated values
-  ReaderSettings copyWith({
-    ReadingMode? readingMode,
-    bool? keepScreenOn,
-    bool? showUI,
-    bool? enableZoom,
-    TapDirection? tapDirection,
-  }) {
-    return ReaderSettings(
-      readingMode: readingMode ?? this.readingMode,
-      keepScreenOn: keepScreenOn ?? this.keepScreenOn,
-      showUI: showUI ?? this.showUI,
-      enableZoom: enableZoom ?? this.enableZoom,
-      tapDirection: tapDirection ?? this.tapDirection,
+  /// From domain entity
+  factory ReaderSettingsEntityModel.fromEntity(ReaderSettingsEntity entity) {
+    return ReaderSettingsEntityModel(
+      readingMode: entity.readingMode,
+      keepScreenOn: entity.keepScreenOn,
+      showUI: entity.showUI,
+      enableZoom: entity.enableZoom,
+      tapDirection: entity.tapDirection,
     );
-  }
-
-  /// Convert to JSON map for persistence
-  Map<String, dynamic> toJson() {
-    return {
-      'readingMode': readingMode.name,
-      'keepScreenOn': keepScreenOn,
-      'showUI': showUI,
-      'enableZoom': enableZoom,
-      'tapDirection': tapDirection.name,
-    };
-  }
-
-  /// Create from JSON map with validation and fallbacks
-  factory ReaderSettings.fromJson(Map<String, dynamic> json) {
-    return ReaderSettings(
-      readingMode: _parseReadingMode(json['readingMode']),
-      keepScreenOn: _parseBool(json['keepScreenOn'], false),
-      showUI: _parseBool(json['showUI'], true),
-      enableZoom: _parseBool(json['enableZoom'], true),
-      tapDirection: _parseTapDirection(json['tapDirection']),
-    );
-  }
-
-  /// Parse and validate TapDirection with fallback to default
-  static TapDirection _parseTapDirection(dynamic value) {
-    if (value == null) return TapDirection.normal;
-    try {
-      if (value is String) {
-        return TapDirection.values.firstWhere(
-          (d) => d.name == value,
-          orElse: () => TapDirection.normal,
-        );
-      }
-    } catch (_) {}
-    return TapDirection.normal;
-  }
-
-  /// Parse and validate ReadingMode with fallback to default
-  static ReadingMode _parseReadingMode(dynamic value) {
-    if (value == null) return ReadingMode.singlePage;
-
-    try {
-      if (value is String) {
-        return ReadingMode.values.firstWhere(
-          (mode) => mode.name == value,
-          orElse: () => ReadingMode.singlePage,
-        );
-      }
-    } catch (e) {
-      // Log error in debug mode but don't throw
-      assert(() {
-        developer.log('Invalid ReadingMode value: $value',
-            name: 'ReaderSettings');
-        return true;
-      }());
-    }
-
-    return ReadingMode.singlePage;
-  }
-
-  /// Parse and validate boolean with fallback to default
-  static bool _parseBool(dynamic value, bool defaultValue) {
-    if (value == null) return defaultValue;
-
-    try {
-      if (value is bool) return value;
-      if (value is String) {
-        return value.toLowerCase() == 'true';
-      }
-      if (value is int) {
-        return value != 0;
-      }
-    } catch (e) {
-      // Log error in debug mode but don't throw
-      assert(() {
-        developer.log('Invalid bool value: $value', name: 'ReaderSettings');
-        return true;
-      }());
-    }
-
-    return defaultValue;
   }
 
   /// Create from JSON string with error handling
-  factory ReaderSettings.fromJsonString(String jsonString) {
+  factory ReaderSettingsEntityModel.fromJsonString(String jsonString) {
     try {
-      final Map<String, dynamic> json = jsonDecode(jsonString);
-      return ReaderSettings.fromJson(json);
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      return ReaderSettingsEntityModel(
+        readingMode: _parseReadingMode(json['readingMode']),
+        keepScreenOn: _parseBool(json['keepScreenOn'], false),
+        showUI: _parseBool(json['showUI'], true),
+        enableZoom: _parseBool(json['enableZoom'], true),
+        tapDirection: _parseTapDirection(json['tapDirection']),
+      );
     } catch (e) {
-      // Return default settings if JSON parsing fails
-      // Only assert in debug mode, don't fail in production
-      assert(() {
-        developer.log('Failed to parse ReaderSettings JSON: $e',
-            name: 'ReaderSettings');
-        return true;
-      }());
-      return const ReaderSettings();
+      return const ReaderSettingsEntityModel();
     }
   }
 
   /// Convert to JSON string
-  String toJsonString() {
-    try {
-      return jsonEncode(toJson());
-    } catch (e) {
-      // Return empty JSON object if encoding fails
-      // Only assert in debug mode, don't fail in production
-      assert(() {
-        developer.log('Failed to encode ReaderSettings to JSON: $e',
-            name: 'ReaderSettings');
-        return true;
-      }());
-      return '{}';
-    }
+  String toJsonString() => jsonEncode({
+        'readingMode': readingMode.name,
+        'keepScreenOn': keepScreenOn,
+        'showUI': showUI,
+        'enableZoom': enableZoom,
+        'tapDirection': tapDirection.name,
+      });
+
+  static TapDirection _parseTapDirection(dynamic value) {
+    if (value == null || value is! String) return TapDirection.normal;
+    return TapDirection.values.firstWhere(
+      (d) => d.name == value,
+      orElse: () => TapDirection.normal,
+    );
   }
 
-  /// Check if settings are at default values
-  bool get isDefault {
-    return readingMode == ReadingMode.singlePage &&
-        keepScreenOn == false &&
-        showUI == true &&
-        enableZoom == true &&
-        tapDirection == TapDirection.normal;
+  static ReadingMode _parseReadingMode(dynamic value) {
+    if (value == null || value is! String) return ReadingMode.singlePage;
+    return ReadingMode.values.firstWhere(
+      (mode) => mode.name == value,
+      orElse: () => ReadingMode.singlePage,
+    );
   }
 
-  /// Get default settings instance
-  static const ReaderSettings defaultSettings = ReaderSettings();
-
-  /// Validate settings and return corrected version if needed
-  ReaderSettings validate() {
-    // All enum values are already validated in fromJson
-    // Boolean values are already validated in _parseBool
-    // Return self as all values are guaranteed to be valid
-    return this;
-  }
-
-  @override
-  String toString() {
-    return 'ReaderSettings('
-        'readingMode: $readingMode, '
-        'keepScreenOn: $keepScreenOn, '
-        'showUI: $showUI, '
-        'enableZoom: $enableZoom, '
-        'tapDirection: $tapDirection'
-        ')';
+  static bool _parseBool(dynamic value, bool defaultValue) {
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true';
+    if (value is int) return value != 0;
+    return defaultValue;
   }
 }

@@ -740,8 +740,8 @@ void _setupRepositories() {
       ));
 
   // Reader Settings Repository
-  getIt.registerLazySingleton<ReaderSettingsRepository>(
-      () => ReaderSettingsRepositoryImpl(
+  getIt.registerLazySingleton<ReaderSettingsEntityRepository>(
+      () => ReaderSettingsEntityRepositoryImpl(
             getIt<SharedPreferences>(),
           ));
 
@@ -1005,7 +1005,7 @@ void _setupCubits() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
-        readerSettingsRepository: getIt<ReaderSettingsRepository>(),
+        readerSettingsEntityRepository: getIt<ReaderSettingsEntityRepository>(),
         readerRepository: getIt<ReaderRepository>(),
         offlineContentManager: getIt<OfflineContentManager>(),
         networkCubit: getIt<NetworkCubit>(),

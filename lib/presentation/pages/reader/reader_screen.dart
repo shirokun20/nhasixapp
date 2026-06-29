@@ -16,7 +16,7 @@ import '../../../core/models/image_metadata.dart';
 import '../../../core/routing/reader_route_extra.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
-import '../../../data/models/reader_settings_model.dart';
+import '../../../domain/entities/reader_settings_entity.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
@@ -2086,7 +2086,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
               // Settings button
               IconButton(
-                onPressed: () => _showReaderSettings(state),
+                onPressed: () => _showReaderSettingsEntity(state),
                 icon: Icon(Icons.settings, color: subColor),
                 iconSize: 20,
                 visualDensity: VisualDensity.compact,
@@ -2324,7 +2324,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
   */
 
-  void _showReaderSettings(ReaderState state) {
+  void _showReaderSettingsEntity(ReaderState state) {
     final kuron = Theme.of(context).extension<KuronColors>();
     final glassBg = kuron?.readerBg.withValues(alpha: 0.92) ??
         Theme.of(context).colorScheme.surfaceContainer;
@@ -2367,8 +2367,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
 
                   Text(
-                    AppLocalizations.of(context)?.readerSettings ??
-                        AppLocalizations.of(context)!.readerSettings,
+                    AppLocalizations.of(context)?.ReaderSettingsEntity ??
+                        AppLocalizations.of(context)!.ReaderSettingsEntity,
                     style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -2615,13 +2615,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          AppLocalizations.of(context)!.resetReaderSettings,
+          AppLocalizations.of(context)!.resetReaderSettingsEntity,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          '${AppLocalizations.of(context)!.resetReaderSettingsConfirmation}'
+          '${AppLocalizations.of(context)!.resetReaderSettingsEntityConfirmation}'
           '• ${AppLocalizations.of(context)!.readingModeLabel}\n'
           '• ${AppLocalizations.of(context)!.keepScreenOnLabel}\n'
           '• ${AppLocalizations.of(context)!.showUILabel}\n\n'
@@ -2643,7 +2643,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           TextButton(
             onPressed: () {
               context.pop();
-              _resetReaderSettings();
+              _resetReaderSettingsEntity();
             },
             child: Text(
               AppLocalizations.of(context)!.reset,
@@ -3027,21 +3027,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  Future<void> _resetReaderSettings() async {
+  Future<void> _resetReaderSettingsEntity() async {
     try {
       // Close the settings modal first
       context.pop();
 
       // Reset the settings
-      await _readerCubit.resetReaderSettings();
+      await _readerCubit.resetReaderSettingsEntity();
 
       // Show success notification
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.readerSettingsResetSuccess ??
-                  AppLocalizations.of(context)!.readerSettingsReset,
+              AppLocalizations.of(context)?.ReaderSettingsEntityResetSuccess ??
+                  AppLocalizations.of(context)!.ReaderSettingsEntityReset,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -3080,7 +3080,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,
               textColor: Theme.of(context).colorScheme.onError,
-              onPressed: () => _resetReaderSettings(),
+              onPressed: () => _resetReaderSettingsEntity(),
             ),
           ),
         );

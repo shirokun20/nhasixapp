@@ -81,12 +81,12 @@ abstract class SettingsRepository {
   /// Get reader settings
   ///
   /// Returns current reader configuration
-  Future<ReaderSettings> getReaderSettings();
+  Future<ReaderSettingsEntity> getReaderSettingsEntity();
 
   /// Update reader settings
   ///
   /// [settings] - New reader settings
-  Future<void> updateReaderSettings(ReaderSettings settings);
+  Future<void> updateReaderSettingsEntity(ReaderSettingsEntity settings);
 
   /// Get reading direction options
   ///
@@ -321,8 +321,8 @@ class CustomTheme {
 }
 
 /// Reader settings configuration
-class ReaderSettings {
-  const ReaderSettings({
+class ReaderSettingsEntity {
+  const ReaderSettingsEntity({
     required this.readingDirection,
     required this.pageTransition,
     required this.fitMode,

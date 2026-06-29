@@ -188,7 +188,7 @@ class SettingsLoaded extends SettingsState {
   }
 
   /// Get reader settings summary
-  String get readerSettingsSummary {
+  String get readerSettingsEntitySummary {
     final features = <String>[];
 
     if (preferences.useVolumeKeys) {

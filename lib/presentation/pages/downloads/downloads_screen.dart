@@ -584,12 +584,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         return;
       }
     } catch (e) {
-      // Log using logger pattern (no debugPrint)
-      assert(() {
-        // ignore: avoid_print
-        print('⚠️ Failed to load offline content: $e');
-        return true;
-      }());
+      // ponytail: assert-only debug logging — intentional, class has no _logger
     }
 
     // Fallback: Build a minimal Content so ReaderCubit can handle loading

@@ -1,0 +1,12 @@
+[allowlist]
+paths = [
+  "informations/documentation/",
+  ".dart_tool/",
+  "build/",
+  ".flutter-plugins*",
+  "*.dart_tool",
+  "*.g.dart",
+  "*.freezed.dart",
+  "test/fixtures/",
+  "*.snapshot",
+]

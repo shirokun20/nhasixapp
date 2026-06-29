@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_native/kuron_native.dart';
-import 'package:nhasixapp/data/models/reader_settings_model.dart';
+import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/extended_image_reader_widget.dart';
 

@@ -3,18 +3,20 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/entities/reader_settings_entity.dart';
 import '../../domain/repositories/reader_settings_repository.dart';
-import '../models/reader_settings_model.dart';
+import '../models/reader_settings_model.dart' as model;
 
-/// Implementation of ReaderSettingsRepository using SharedPreferences
+/// Implementation of ReaderSettingsEntityRepository using SharedPreferences
 /// with comprehensive error handling and edge case management
-class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
-  const ReaderSettingsRepositoryImpl(this._prefs);
+class ReaderSettingsEntityRepositoryImpl
+    implements ReaderSettingsEntityRepository {
+  const ReaderSettingsEntityRepositoryImpl(this._prefs);
 
   final SharedPreferences _prefs;
 
   // Storage keys
-  static const String _keyReaderSettings = 'reader_settings';
+  static const String _keyReaderSettingsEntity = 'reader_settings';
   static const String _keyReadingMode = 'reading_mode';
   static const String _keyKeepScreenOn = 'keep_screen_on';
   static const String _keyShowUI = 'show_ui';
@@ -31,8 +33,8 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   /// Log error with consistent formatting and context
   void _logError(String operation, dynamic error, [StackTrace? stackTrace]) {
     developer.log(
-      'ReaderSettingsRepository.$operation failed: $error',
-      name: 'ReaderSettingsRepository',
+      'ReaderSettingsEntityRepository.$operation failed: $error',
+      name: 'ReaderSettingsEntityRepository',
       error: error,
       stackTrace: stackTrace,
       level: 1000, // Error level
@@ -42,8 +44,8 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   /// Log warning with consistent formatting
   void _logWarning(String operation, String message) {
     developer.log(
-      'ReaderSettingsRepository.$operation warning: $message',
-      name: 'ReaderSettingsRepository',
+      'ReaderSettingsEntityRepository.$operation warning: $message',
+      name: 'ReaderSettingsEntityRepository',
       level: 900, // Warning level
     );
   }
@@ -51,8 +53,8 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   /// Log info for debugging
   void _logInfo(String operation, String message) {
     developer.log(
-      'ReaderSettingsRepository.$operation: $message',
-      name: 'ReaderSettingsRepository',
+      'ReaderSettingsEntityRepository.$operation: $message',
+      name: 'ReaderSettingsEntityRepository',
       level: 800, // Info level
     );
   }
@@ -61,8 +63,8 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   Future<T> _withLock<T>(String lockKey, Future<T> Function() operation) async {
     // Check if operation is already in progress
     if (_operationLocks.containsKey(lockKey)) {
-      _logInfo(
-          'getReaderSettings', 'Waiting for concurrent operation to complete');
+      _logInfo('getReaderSettingsEntity',
+          'Waiting for concurrent operation to complete');
       await _operationLocks[lockKey]!.future;
     }
 
@@ -104,10 +106,10 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
       }
 
       // Try to parse the main settings JSON if it exists
-      final settingsJson = _prefs.getString(_keyReaderSettings);
+      final settingsJson = _prefs.getString(_keyReaderSettingsEntity);
       if (settingsJson != null && settingsJson.isNotEmpty) {
         try {
-          ReaderSettings.fromJsonString(settingsJson);
+          model.ReaderSettingsEntityModel.fromJsonString(settingsJson);
           return false; // Data is valid
         } catch (e) {
           _logError('isDataCorrupt',
@@ -162,14 +164,15 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
   }
 
   @override
-  Future<ReaderSettings> getReaderSettings() async {
+  Future<ReaderSettingsEntity> getReaderSettingsEntity() async {
     // 🚀 OPTIMIZATION: Simplified fast path for reader loading
     try {
       // Try to get complete settings first (new format)
-      final settingsJson = _prefs.getString(_keyReaderSettings);
+      final settingsJson = _prefs.getString(_keyReaderSettingsEntity);
       if (settingsJson != null && settingsJson.isNotEmpty) {
-        final settings = ReaderSettings.fromJsonString(settingsJson);
-        return settings.validate();
+        final settings =
+            model.ReaderSettingsEntityModel.fromJsonString(settingsJson);
+        return settings;
       }
 
       // Fallback to individual keys for backward compatibility (old format)
@@ -186,52 +189,47 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
         );
       }
 
-      return ReaderSettings(
+      return ReaderSettingsEntity(
         readingMode: readingMode,
         keepScreenOn: keepScreenOn ?? false,
         showUI: showUI ?? true,
       );
     } catch (e) {
       // 🚀 OPTIMIZATION: Fast fallback to defaults on any error
-      _logWarning('getReaderSettings', 'Using defaults due to error: $e');
-      return const ReaderSettings();
+      _logWarning('getReaderSettingsEntity', 'Using defaults due to error: $e');
+      return const ReaderSettingsEntity();
     }
   }
 
   @override
-  Future<void> saveReaderSettings(ReaderSettings settings) async {
-    await _withLock('saveReaderSettings', () async {
+  Future<void> saveReaderSettingsEntity(ReaderSettingsEntity settings) async {
+    await _withLock('saveReaderSettingsEntity', () async {
       await _retryOperation(
-        'saveReaderSettings',
+        'saveReaderSettingsEntity',
         () async {
-          _logInfo('saveReaderSettings', 'Saving reader settings: $settings');
+          _logInfo(
+              'saveReaderSettingsEntity', 'Saving reader settings: $settings');
 
           // Check if SharedPreferences is available
           if (!await _isSharedPreferencesAvailable()) {
             throw Exception('SharedPreferences is not available');
           }
 
-          // Validate settings before saving
-          final validatedSettings = settings.validate();
-          if (validatedSettings != settings) {
-            _logWarning('saveReaderSettings',
-                'Settings were corrected during validation');
-          }
-
           try {
             // Save as complete JSON object (new format)
-            final settingsJson = validatedSettings.toJsonString();
+            final settingsJson =
+                model.ReaderSettingsEntityModel.fromEntity(settings)
+                    .toJsonString();
             if (settingsJson.isEmpty || settingsJson == '{}') {
               throw Exception('Failed to serialize settings to JSON');
             }
 
             // Use atomic operations where possible
             final futures = <Future<bool>>[
-              _prefs.setString(_keyReaderSettings, settingsJson),
-              _prefs.setString(
-                  _keyReadingMode, validatedSettings.readingMode.name),
-              _prefs.setBool(_keyKeepScreenOn, validatedSettings.keepScreenOn),
-              _prefs.setBool(_keyShowUI, validatedSettings.showUI),
+              _prefs.setString(_keyReaderSettingsEntity, settingsJson),
+              _prefs.setString(_keyReadingMode, settings.readingMode.name),
+              _prefs.setBool(_keyKeepScreenOn, settings.keepScreenOn),
+              _prefs.setBool(_keyShowUI, settings.showUI),
             ];
 
             // Clear corrupt flag if it was set
@@ -246,17 +244,17 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
               throw Exception('Some save operations failed');
             }
 
-            _logInfo(
-                'saveReaderSettings', 'Successfully saved reader settings');
+            _logInfo('saveReaderSettingsEntity',
+                'Successfully saved reader settings');
           } catch (e, stackTrace) {
-            _logError('saveReaderSettings', e, stackTrace);
+            _logError('saveReaderSettingsEntity', e, stackTrace);
 
             // Check for specific error types
             if (e is FileSystemException) {
-              _logError('saveReaderSettings',
+              _logError('saveReaderSettingsEntity',
                   'File system error - possibly low storage space');
             } else if (e is TimeoutException) {
-              _logError('saveReaderSettings', 'Operation timed out');
+              _logError('saveReaderSettingsEntity', 'Operation timed out');
             }
 
             rethrow; // Re-throw to trigger retry mechanism
@@ -277,9 +275,9 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
 
           try {
             // Get current settings and update only reading mode
-            final currentSettings = await getReaderSettings();
+            final currentSettings = await getReaderSettingsEntity();
             final updatedSettings = currentSettings.copyWith(readingMode: mode);
-            await saveReaderSettings(updatedSettings);
+            await saveReaderSettingsEntity(updatedSettings);
 
             _logInfo('saveReadingMode', 'Successfully saved reading mode');
           } catch (e, stackTrace) {
@@ -302,10 +300,10 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
 
           try {
             // Get current settings and update only keep screen on
-            final currentSettings = await getReaderSettings();
+            final currentSettings = await getReaderSettingsEntity();
             final updatedSettings =
                 currentSettings.copyWith(keepScreenOn: keepScreenOn);
-            await saveReaderSettings(updatedSettings);
+            await saveReaderSettingsEntity(updatedSettings);
 
             _logInfo('saveKeepScreenOn',
                 'Successfully saved keep screen on setting');
@@ -329,9 +327,9 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
 
           try {
             // Get current settings and update only show UI
-            final currentSettings = await getReaderSettings();
+            final currentSettings = await getReaderSettingsEntity();
             final updatedSettings = currentSettings.copyWith(showUI: showUI);
-            await saveReaderSettings(updatedSettings);
+            await saveReaderSettingsEntity(updatedSettings);
 
             _logInfo('saveShowUI', 'Successfully saved show UI setting');
           } catch (e, stackTrace) {
@@ -352,10 +350,10 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
         () async {
           _logInfo('saveTapDirection', 'Saving tap direction: $tapDirection');
           try {
-            final currentSettings = await getReaderSettings();
+            final currentSettings = await getReaderSettingsEntity();
             final updatedSettings =
                 currentSettings.copyWith(tapDirection: tapDirection);
-            await saveReaderSettings(updatedSettings);
+            await saveReaderSettingsEntity(updatedSettings);
             _logInfo(
                 'saveTapDirection', 'Successfully saved tap direction setting');
           } catch (e, stackTrace) {
@@ -384,7 +382,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
           try {
             // Remove all reader settings keys including corrupt flag
             final futures = [
-              _prefs.remove(_keyReaderSettings),
+              _prefs.remove(_keyReaderSettingsEntity),
               _prefs.remove(_keyReadingMode),
               _prefs.remove(_keyKeepScreenOn),
               _prefs.remove(_keyShowUI),
@@ -418,7 +416,7 @@ class ReaderSettingsRepositoryImpl implements ReaderSettingsRepository {
     try {
       final isAvailable = await _isSharedPreferencesAvailable();
       final isCorrupt = await _isDataCorrupt();
-      final hasSettings = _prefs.containsKey(_keyReaderSettings);
+      final hasSettings = _prefs.containsKey(_keyReaderSettingsEntity);
       final hasLegacyKeys = _prefs.containsKey(_keyReadingMode) ||
           _prefs.containsKey(_keyKeepScreenOn) ||
           _prefs.containsKey(_keyShowUI);

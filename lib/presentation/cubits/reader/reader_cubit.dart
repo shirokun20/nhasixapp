@@ -18,7 +18,7 @@ import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
-import '../../../data/models/reader_settings_model.dart';
+import '../../../domain/entities/reader_settings_entity.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../core/utils/chapter_id_classifier.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
@@ -55,7 +55,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.getContentDetailUseCase,
     required this.getChapterImagesUseCase,
     required this.addToHistoryUseCase,
-    required this.readerSettingsRepository,
+    required this.readerSettingsEntityRepository,
     required this.readerRepository,
     required this.offlineContentManager,
     required this.networkCubit,
@@ -71,7 +71,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final GetContentDetailUseCase getContentDetailUseCase;
   final GetChapterImagesUseCase getChapterImagesUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
-  final ReaderSettingsRepository readerSettingsRepository;
+  final ReaderSettingsEntityRepository readerSettingsEntityRepository;
   final ReaderRepository readerRepository;
   final OfflineContentManager offlineContentManager;
   final NetworkCubit networkCubit;
@@ -156,14 +156,14 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // 2. Load settings and restore position in parallel (Fast local DB ops)
       final localResults = await Future.wait([
-        _loadReaderSettingsOptimized(),
+        _loadReaderSettingsEntityOptimized(),
         if (forceStartFromBeginning)
           Future<int>.value(1)
         else
           _restoreReaderPosition(contentId),
       ]);
 
-      final savedSettings = localResults[0] as ReaderSettings;
+      final savedSettings = localResults[0] as ReaderSettingsEntity;
       final restoredPage = localResults[1] as int;
 
       // Use initialPage if user explicitly requested a specific page (initialPage > 1)
@@ -411,17 +411,17 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// 🚀 OPTIMIZATION: Simplified reader settings loading
-  Future<ReaderSettings> _loadReaderSettingsOptimized() async {
+  Future<ReaderSettingsEntity> _loadReaderSettingsEntityOptimized() async {
     try {
-      return await readerSettingsRepository.getReaderSettings();
+      return await readerSettingsEntityRepository.getReaderSettingsEntity();
     } catch (e) {
       _logger.w('Failed to load reader settings, using defaults: $e');
-      return const ReaderSettings(); // Use defaults
+      return const ReaderSettingsEntity(); // Use defaults
     }
   }
 
   /// 🚀 OPTIMIZATION: Handle post-load setup asynchronously
-  Future<void> _handlePostLoadSetup(ReaderSettings savedSettings) async {
+  Future<void> _handlePostLoadSetup(ReaderSettingsEntity savedSettings) async {
     try {
       // Apply keep screen on setting
       if (savedSettings.keepScreenOn) {
@@ -1066,7 +1066,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWith(showUI: newShowUI));
 
       // Save to preferences with error handling
-      readerSettingsRepository
+      readerSettingsEntityRepository
           .saveShowUI(newShowUI)
           .catchError((e, stackTrace) {
         _logger.e('Failed to save show UI setting: $e',
@@ -1153,7 +1153,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     // Save to preferences with error handling
     try {
-      await readerSettingsRepository.saveReadingMode(mode);
+      await readerSettingsEntityRepository.saveReadingMode(mode);
       _logger.i('Successfully saved reading mode: ${mode.name}');
     } catch (e, stackTrace) {
       _logger.e('Failed to save reading mode: $e',
@@ -1169,9 +1169,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWith(enableZoom: newEnableZoom));
     }
     try {
-      final current = await readerSettingsRepository.getReaderSettings();
-      await readerSettingsRepository
-          .saveReaderSettings(current.copyWith(enableZoom: newEnableZoom));
+      final current =
+          await readerSettingsEntityRepository.getReaderSettingsEntity();
+      await readerSettingsEntityRepository.saveReaderSettingsEntity(
+          current.copyWith(enableZoom: newEnableZoom));
       _logger.i('Successfully saved enable zoom: $newEnableZoom');
     } catch (e, stackTrace) {
       _logger.e('Failed to save enable zoom: $e',
@@ -1185,7 +1186,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWith(tapDirection: direction));
     }
     try {
-      await readerSettingsRepository.saveTapDirection(direction);
+      await readerSettingsEntityRepository.saveTapDirection(direction);
       _logger.i('Successfully saved tap direction: ${direction.name}');
     } catch (e, stackTrace) {
       _logger.e('Failed to save tap direction: $e',
@@ -1210,7 +1211,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Save to preferences with error handling
       try {
-        await readerSettingsRepository.saveKeepScreenOn(newKeepScreenOn);
+        await readerSettingsEntityRepository.saveKeepScreenOn(newKeepScreenOn);
         _logger.i('Successfully saved keep screen on: $newKeepScreenOn');
       } catch (e, stackTrace) {
         _logger.e('Failed to save keep screen on setting: $e',
@@ -2270,9 +2271,9 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Reset all reader settings to defaults
-  Future<void> resetReaderSettings() async {
+  Future<void> resetReaderSettingsEntity() async {
     try {
-      await readerSettingsRepository.resetToDefaults();
+      await readerSettingsEntityRepository.resetToDefaults();
       _logger.i('Successfully reset reader settings to defaults');
 
       // Apply default settings to current state

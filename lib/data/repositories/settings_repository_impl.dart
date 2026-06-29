@@ -28,7 +28,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   // Keys for SharedPreferences
   static const String _userPreferencesKey = 'user_preferences';
   static const String _themeSettingsKey = 'theme_settings';
-  static const String _readerSettingsKey = 'reader_settings';
+  static const String _readerSettingsEntityKey = 'reader_settings';
   static const String _downloadSettingsKey = 'download_settings';
   static const String _privacySettingsKey = 'privacy_settings';
   static const String _contentFilterSettingsKey = 'content_filter_settings';
@@ -350,14 +350,14 @@ class SettingsRepositoryImpl implements SettingsRepository {
   // ==================== READER SETTINGS ====================
 
   @override
-  Future<ReaderSettings> getReaderSettings() async {
+  Future<ReaderSettingsEntity> getReaderSettingsEntity() async {
     try {
       _logger.d('Getting reader settings');
 
-      final jsonString = sharedPreferences.getString(_readerSettingsKey);
+      final jsonString = sharedPreferences.getString(_readerSettingsEntityKey);
       if (jsonString != null) {
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
-        return ReaderSettings(
+        return ReaderSettingsEntity(
           readingDirection: ReadingDirection.values.firstWhere(
             (e) => e.name == json['readingDirection'],
             orElse: () => ReadingDirection.leftToRight,
@@ -384,7 +384,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       }
 
       // Return default reader settings
-      const defaultSettings = ReaderSettings(
+      const defaultSettings = ReaderSettingsEntity(
         readingDirection: ReadingDirection.leftToRight,
         pageTransition: PageTransition.slide,
         fitMode: FitMode.fitWidth,
@@ -399,12 +399,12 @@ class SettingsRepositoryImpl implements SettingsRepository {
         preloadPages: 3,
       );
 
-      await updateReaderSettings(defaultSettings);
+      await updateReaderSettingsEntity(defaultSettings);
       return defaultSettings;
     } catch (e, stackTrace) {
       _logger.e('Failed to get reader settings',
           error: e, stackTrace: stackTrace);
-      return const ReaderSettings(
+      return const ReaderSettingsEntity(
         readingDirection: ReadingDirection.leftToRight,
         pageTransition: PageTransition.slide,
         fitMode: FitMode.fitWidth,
@@ -422,7 +422,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   }
 
   @override
-  Future<void> updateReaderSettings(ReaderSettings settings) async {
+  Future<void> updateReaderSettingsEntity(ReaderSettingsEntity settings) async {
     try {
       _logger.d('Updating reader settings');
 
@@ -442,7 +442,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
         'preloadPages': settings.preloadPages,
       };
 
-      await sharedPreferences.setString(_readerSettingsKey, jsonEncode(json));
+      await sharedPreferences.setString(
+          _readerSettingsEntityKey, jsonEncode(json));
       _logger.d('Reader settings updated');
     } catch (e, stackTrace) {
       _logger.e('Failed to update reader settings',
@@ -1171,8 +1172,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
       data['userPreferences'] = (await getUserPreferences()).toJson();
       data['themeSettings'] =
           jsonDecode(sharedPreferences.getString(_themeSettingsKey) ?? '{}');
-      data['readerSettings'] =
-          jsonDecode(sharedPreferences.getString(_readerSettingsKey) ?? '{}');
+      data['ReaderSettingsEntity'] = jsonDecode(
+          sharedPreferences.getString(_readerSettingsEntityKey) ?? '{}');
       data['downloadSettings'] =
           jsonDecode(sharedPreferences.getString(_downloadSettingsKey) ?? '{}');
       data['privacySettings'] =
@@ -1220,7 +1221,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       // Import other settings
       final settingsMap = {
         'themeSettings': _themeSettingsKey,
-        'readerSettings': _readerSettingsKey,
+        'ReaderSettingsEntity': _readerSettingsEntityKey,
         'downloadSettings': _downloadSettingsKey,
         'privacySettings': _privacySettingsKey,
         'networkSettings': _networkSettingsKey,

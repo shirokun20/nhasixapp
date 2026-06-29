@@ -2044,17 +2044,17 @@ abstract class AppLocalizations {
   /// **'Reset Settings'**
   String get resetSettings;
 
-  /// No description provided for @resetReaderSettings.
+  /// No description provided for @resetReaderSettingsEntity.
   ///
   /// In en, this message translates to:
   /// **'Reset Reader Settings'**
-  String get resetReaderSettings;
+  String get resetReaderSettingsEntity;
 
-  /// No description provided for @resetReaderSettingsConfirmation.
+  /// No description provided for @resetReaderSettingsEntityConfirmation.
   ///
   /// In en, this message translates to:
   /// **'This will reset all reader settings to their default values:\n\n'**
-  String get resetReaderSettingsConfirmation;
+  String get resetReaderSettingsEntityConfirmation;
 
   /// No description provided for @readingModeLabel.
   ///
@@ -2068,11 +2068,11 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to proceed?'**
   String get areYouSure;
 
-  /// No description provided for @readerSettingsResetSuccess.
+  /// No description provided for @ReaderSettingsEntityResetSuccess.
   ///
   /// In en, this message translates to:
   /// **'Reader settings have been reset to defaults.'**
-  String get readerSettingsResetSuccess;
+  String get ReaderSettingsEntityResetSuccess;
 
   /// No description provided for @readingHistory.
   ///
@@ -2602,11 +2602,11 @@ abstract class AppLocalizations {
   /// **'Jump'**
   String get jump;
 
-  /// No description provided for @readerSettings.
+  /// No description provided for @ReaderSettingsEntity.
   ///
   /// In en, this message translates to:
   /// **'Reader Settings'**
-  String get readerSettings;
+  String get ReaderSettingsEntity;
 
   /// No description provided for @readingMode.
   ///
@@ -7776,11 +7776,11 @@ abstract class AppLocalizations {
   /// **'Chapters'**
   String get chapters;
 
-  /// No description provided for @readerSettingsReset.
+  /// No description provided for @ReaderSettingsEntityReset.
   ///
   /// In en, this message translates to:
   /// **'Reader settings have been reset to defaults.'**
-  String get readerSettingsReset;
+  String get ReaderSettingsEntityReset;
 
   /// No description provided for @tagInputTip.
   ///
