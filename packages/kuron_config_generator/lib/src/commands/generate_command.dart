@@ -133,6 +133,38 @@ class GenerateCommand extends Command<void> {
       logger.w('Unknown CMS — selectors will be generic guesses.');
     }
 
+    // Detect language from HTML lang attribute
+    String? langFromHtml;
+    final langMatch = RegExp(r'<html[^>]+lang="([^"]+)"').firstMatch(probe.body);
+    if (langMatch != null) {
+      final raw = langMatch.group(1)!.toLowerCase();
+      if (raw == 'id' || raw == 'id-id' || raw == 'in') {
+        langFromHtml = 'indonesian';
+      } else if (raw.startsWith('en')) {
+        langFromHtml = 'english';
+      } else if (raw == 'vi' || raw == 'vi-vn') {
+        langFromHtml = 'vietnamese';
+      } else if (raw == 'ja' || raw == 'ja-jp') {
+        langFromHtml = 'japanese';
+      }
+    }
+
+    // Extract favicon and theme-color from probe HTML
+    String? faviconPath;
+    final faviconMatch = RegExp(
+      r'<link[^>]*rel="(?:shortcut )?icon"[^>]*href="([^"]+)"',
+    ).firstMatch(probe.body);
+    if (faviconMatch != null) {
+      var f = faviconMatch.group(1)!;
+      if (f.startsWith('//')) f = 'https:$f';
+      faviconPath = f;
+    }
+    String? themeColor;
+    final colorMatch =
+        RegExp(r'<meta[^>]*name="theme-color"[^>]*content="([^"]+)"')
+            .firstMatch(probe.body);
+    if (colorMatch != null) themeColor = colorMatch.group(1)!;
+
     // Build wizard answers from probe
     final answers = <String, String?>{
       'sourceId': Uri.tryParse(url)?.host.replaceAll(RegExp(r'^www\.'), '') ??
@@ -146,6 +178,9 @@ class GenerateCommand extends Command<void> {
       'supportsChapters': 'y',
       'supportsComments': 'n',
       'needsHeaders': probe.isBlocked ? 'y' : 'n',
+      if (langFromHtml != null) 'defaultLanguage': langFromHtml,
+      if (faviconPath != null) 'faviconPath': faviconPath,
+      if (themeColor != null) 'themeColor': themeColor,
     };
 
     // Fill selectors from CMS detection where available

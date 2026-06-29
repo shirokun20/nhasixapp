@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **CMS template analysis**: Analyzed 20 source configs, live-verified 11 sites via Playwright. Identified 3 reusable templates (Madara, ZManga, Blogger) — see `output/cms-template-analysis.md`.
+- **Config generator MangaThemesia support**: Added `cms_detector.dart` hints for mangareader theme, `listupd`/`bsx` class patterns. Full `mangathemesia` branch in `config_generator.dart` with correct containers, pagination, detail/chapter/reader selectors, genre URLs.
+- **Config generator smart probes**: `generate --url` now extracts `defaultLanguage` from `<html lang>`, `iconPath` from `<link rel="icon">`, `brandColor` from `<meta name="theme-color">`.
 - **Native DNS roll-out**: Promoted native Android DoH as canonical managed DNS path. Removed Dart-side DnsResolver from DI. Added device Private DNS diagnostics (ConnectivityManager API 29+), system DNS settings launch with layered fallback intent routing, and settings UI showing device-level Private DNS status with guidance text.
 - **Source health monitor proposal**: New OpenSpec change `source-health-monitor` — per-source HTTP health check (HEAD/GET to baseUrl, 10s timeout, staggered concurrency), green/red/grey dot indicators in settings, aggregate "N/N reachable" summary, manual "Check All" button. Advisory only, no auto-disable.
 - **SpyFakku remote tag autocomplete**: Added `tagSource` block to `spyfakku-config.json` with 4,423 tags extracted from hentalk.pw boot data. Tags loaded via `TagDataManager.loadAndCacheTagsFromUrl()` on first autocomplete query. No dedicated API endpoint needed.

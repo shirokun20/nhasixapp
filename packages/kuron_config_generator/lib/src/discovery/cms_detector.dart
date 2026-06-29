@@ -109,19 +109,25 @@ class CmsSignature {
     ),
 
     // MangaThemesia — WP manga theme (second most popular after Madara)
+    // Also covers mangareader child theme, listupd/bsx layout, etc.
     CmsSignature(
       id: 'mangathemesia',
       themeType: 'mangathemesia',
       hints: [
         'mangathemesia',
         'wp-content/themes/mangathemesia',
+        'wp-content/themes/mangareader',
         'theme-manga',
         'MangaTheme',
         'soralabel',
+        'listupd',
+        'class="bsx"',
+        'seriestugenre',
+        'class="hpage"',
       ],
       selectors: {
-        'list.item': '.bs, .box, .listupd .bs',
-        'list.title': 'a[href*="/manga/"]',
+        'list.item': '.listupd .bsx, .listupd .bs, .box',
+        'list.title': 'a[href*="/manga/"], .tt',
         'list.cover': 'img',
         'detail.title': 'h1',
         'detail.cover': 'img[class*="cover"], img[class*="thumbnail"]',
@@ -141,9 +147,8 @@ class CmsSignature {
         'chapter': '/manga/{id}',
       },
       searchDefaults: {
-        'searchUrl': '/?s={query}&post_type=manga',
+        'searchUrl': '/?s={query}',
         'queryParam': 's',
-        'postType': 'manga',
       },
     ),
 

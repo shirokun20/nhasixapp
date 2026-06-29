@@ -1,382 +1,642 @@
-import 'package:kuron_core/kuron_core.dart';
-
-/// Converts wizard answers into a Source Config v2 JSON structure.
+/// Canonical config generator — produces configs matching existing
+/// `informations/configs/` format exactly. Not inventing new structures.
 class ConfigGenerator {
   static Map<String, Object?> generateConfig(Map<String, String?> answers) {
     final mode = answers['mode'] ?? 'scraper';
     final cmsTheme = answers['cmsThemeType'] ?? '';
-    final supportsChapters = answers['supportsChapters'] == 'y';
-    final baseUrl = answers['homeUrl'] ?? '';
+    final baseUrl = _str(answers['homeUrl']);
+    final cl = baseUrl.isNotEmpty ? baseUrl : 'https://unknown.com';
 
     final config = <String, Object?>{
-      'source': answers['sourceId'],
-      'displayName': answers['displayName'],
+      'source': answers['sourceId'] ?? 'unknown',
+      'displayName': answers['displayName'] ?? 'Unknown',
       'schemaVersion': '2.0',
       'version': answers['version'] ?? '1.0.0',
-      'homeUrl': baseUrl,
-      'features': _buildFeatures(answers),
+      'baseUrl': cl,
+      'enabled': true,
+      'defaultLanguage': _detectLang(baseUrl, answers),
+      'ui': _buildUi(answers, cl),
+      'network': _buildNetwork(answers, cl),
+      'configUrl': "https://raw.githubusercontent.com/shirokun20/kuron-config-providers/main/configs/${answers['sourceId']}-config.json",
       'requiredPrimitives': _buildPrimitives(mode, answers),
     };
 
     if (mode == 'rest_json') {
-      config['api'] = _buildApiBlock(answers, supportsChapters);
+      config['api'] = _buildApiBlock(answers);
     } else {
-      config['scraper'] = _buildScraperBlock(answers);
+      config['scraper'] = _buildScraper(answers);
     }
 
     if (answers['supportsSearch'] == 'y') {
-      config['searchConfig'] = _buildSearchConfig(answers, mode);
+      config['searchForm'] = _buildSearchForm(answers, mode, cmsTheme);
     }
 
-    final network = _buildNetworkConfig(answers);
-    if (network.isNotEmpty) {
-      config['network'] = network;
-    }
-
-    if (cmsTheme.startsWith('madara')) {
-      config['contentIdPattern'] = '/manhwa/([^/]+)';
-      config['navigation'] = <String, String>{
-        'genreQueryPrefix': 'genre:',
-        'genreTagType': 'genre',
-      };
-    } else if (cmsTheme == 'zmanga') {
-      config['contentIdPattern'] = '/series/([^/]+)';
-      config['navigation'] = <String, String>{
-        'genreQueryPrefix': 'genre:',
-        'genreTagType': 'genre',
-      };
-    } else if (cmsTheme == 'blogger') {
-      config['contentIdPattern'] = '/(\\d{4}/\\d{2}/[^/]+)';
-    }
-
-    config['notes'] = _buildNotes(answers);
+    config['contentIdPattern'] = _contentIdPattern(cmsTheme, mode);
+    config['navigation'] = _navigation(cmsTheme);
+    config['features'] = _buildFeatures(answers);
+    config['notes'] = _buildNotes(answers, cmsTheme);
 
     return config;
   }
 
-  static Map<String, Object?> _buildFeatures(Map<String, String?> answers) {
+  // ── Helpers ──────────────────────────────────────────────────────────
+
+  static String _str(String? s) => s ?? '';
+
+  // ── UI ────────────────────────────────────────────────────────────────
+
+  static Map<String, Object?> _buildUi(Map<String, String?> a, String cl) {
+    final src = a['sourceId'] ?? 'unknown';
     return {
-      'home': {'supported': true},
-      'search': {'supported': answers['supportsSearch'] == 'y'},
-      'detail': {'supported': true},
-      'reader': {'supported': true},
-      'download': {'supported': true},
-      'chapters': {'supported': answers['supportsChapters'] == 'y'},
-      'comments': {'supported': answers['supportsComments'] == 'y'},
+      'displayName': a['displayName'] ?? src,
+      'iconPath': a['faviconPath'] ?? '$cl/favicon.ico',
+      'brandColor': a['themeColor'] ?? '#b9009a',
+      'openInBrowserUrl': cl,
     };
   }
 
-  static List<String> _buildPrimitives(
-      String mode, Map<String, String?> answers) {
-    final primitives = <String>[
-      EnginePrimitive.paginationPage,
-      EnginePrimitive.authNone,
-    ];
+  // ── Network ──────────────────────────────────────────────────────────
 
-    final readerMode = answers['readerMode'] ?? 'directUrl';
-    if (readerMode == 'chapterDataScript') {
-      primitives.add('imageMode.chapterDataScript');
-    } else {
-      primitives.add(EnginePrimitive.imageModeDirectUrl);
-    }
-
-    if (answers['needsHeaders'] == 'y') {
-      primitives.add(EnginePrimitive.headersStatic);
-    }
-
-    return primitives;
-  }
-
-  static Map<String, Object?> _buildApiBlock(
-    Map<String, String?> answers,
-    bool supportsChapters,
-  ) {
-    final block = <String, Object?>{
-      'type': 'rest_json',
-      'url': answers['apiBase'],
-      'listEndpoint': answers['listEndpoint'] ?? '/list',
-      'detailEndpoint': answers['detailEndpoint'] ?? '/detail/{id}',
-    };
-    if (supportsChapters) {
-      block['chaptersEndpoint'] =
-          answers['chaptersEndpoint'] ?? '/chapters/{id}';
-    }
-    return block;
-  }
-
-  static Map<String, Object?> _buildScraperBlock(Map<String, String?> answers) {
-    final listSel = answers['listSelector'] ?? '.item';
-    final detailTitleSel = answers['detailTitleSelector'] ?? 'h1';
-    final readerMode = answers['readerMode'] ?? 'directUrl';
-    final cmsTheme = answers['cmsThemeType'] ?? '';
-
-    // urlPatterns
-    final urlPatterns = <String, dynamic>{};
-
-    if (cmsTheme == 'zmanga') {
-      urlPatterns['home'] = {
-        'url': '/',
-        'list': {
-          'container': listSel,
-          'fields': {
-            'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
-            'title': {'selector': '.title a'},
-            'coverUrl': {'selector': 'img.lazyload', 'attribute': 'data-src'},
-          },
-          'pagination': {
-            'next': '.next, a[rel="next"]',
-            'links': 'a.page-numbers',
-          },
-        },
-      };
-      urlPatterns['homePage'] = {'url': '/page/{page}/', 'inherits': 'home'};
-      urlPatterns['search'] = {'url': '/?s={query}', 'inherits': 'home'};
-      urlPatterns['searchPage'] = {
-        'url': '/page/{page}/?s={query}',
-        'inherits': 'home',
-      };
-      urlPatterns['detail'] = '/series/{id}';
-      urlPatterns['chapter'] = '/series/{id}';
-    } else if (cmsTheme == 'blogger') {
-      urlPatterns['home'] = {
-        'url': '/',
-        'list': {
-          'container': listSel,
-          'fields': {
-            'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
-            'title': {'selector': 'a'},
-            'coverUrl': {'selector': 'img', 'attribute': 'src'},
-          },
-        },
-      };
-      // ponytail: Blogger uses ?start= pagination, not /page/. Quirk handled.
-      urlPatterns['homePage'] = {
-        'url': '/search?max-results=20',
-        'inherits': 'home',
-      };
-      urlPatterns['search'] = {
-        'url': '/search?q={query}&max-results=20',
-        'inherits': 'home',
-      };
-      urlPatterns['labelSearch'] = {
-        'url': '/search/label/{tag}?max-results=20',
-        'inherits': 'home',
-      };
-      urlPatterns['detail'] = '/{id}';
-      urlPatterns['chapter'] = '/{id}';
-    } else if (cmsTheme.startsWith('madara')) {
-      urlPatterns['home'] = {
-        'url': '/',
-        'list': {
-          'container': listSel,
-          'fields': {
-            'id': {
-              'selector': 'a[href*="/manhwa/"]',
-              'attribute': 'href',
-              'transform': 'slug',
-            },
-            'title': {
-              'selector': answers['listTitleSelector'] ?? 'a[href*="/manhwa/"]',
-            },
-            'coverUrl': {
-              'selector': 'img',
-              'attribute': 'src',
-            },
-          },
-          'pagination': {
-            'next': 'a.next, a[rel="next"]',
-            'links': 'a.page-numbers',
-          },
-        },
-      };
-      urlPatterns['homePage'] = {'url': '/page/{page}/', 'inherits': 'home'};
-      urlPatterns['search'] = {
-        'url': '/?s={query}&post_type=wp-manga',
-        'inherits': 'home',
-      };
-      urlPatterns['searchPage'] = {
-        'url': '/page/{page}/?s={query}&post_type=wp-manga',
-        'inherits': 'search',
-      };
-      urlPatterns['genreSearch'] = {
-        'url': '/genre/{tag}/',
-        'inherits': 'home',
-      };
-      urlPatterns['genreSearchPage'] = {
-        'url': '/genre/{tag}/page/{page}/',
-        'inherits': 'home',
-      };
-      if (cmsTheme == 'madara-tailwind') {
-        urlPatterns['tagSearch'] = {'url': '/tag/{tag}/', 'inherits': 'home'};
-        urlPatterns['tagSearchPage'] = {
-          'url': '/tag/{tag}/page/{page}/',
-          'inherits': 'home',
-        };
-      }
-      urlPatterns['detail'] = '/manhwa/{id}';
-      urlPatterns['chapter'] = '/manhwa/{id}';
-    } else {
-      urlPatterns['home'] = {
-        'url': '/',
-        'list': {
-          'container': listSel,
-          'fields': {
-            'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
-            'title': {'selector': 'a'},
-            'coverUrl': {'selector': 'img', 'attribute': 'src'},
-          },
-        },
-      };
-      urlPatterns['homePage'] = {'url': '/page/{page}/', 'inherits': 'home'};
-      urlPatterns['detail'] = '/{id}';
-      urlPatterns['chapter'] = '/{id}';
-
-      final searchUrl = answers['searchUrl'] ?? '';
-      if (searchUrl.isNotEmpty) {
-        urlPatterns['search'] = {
-          'url': searchUrl,
-          'inherits': 'home',
-        };
-      }
-    }
-
-    // Detail fields — vary by CMS
-    Map<String, dynamic> detailFields;
-    if (cmsTheme == 'blogger') {
-      detailFields = {
-        'title': {'selector': 'h1, .post-title'},
-        'coverUrl': {'selector': 'img', 'attribute': 'src'},
-        'description': {'selector': '.post-body, .entry-content'},
-        'genres': {'selector': '.label-name, a[rel="tag"]', 'multi': true},
-      };
-    } else {
-      detailFields = {
-        'title': {'selector': detailTitleSel},
-        'coverUrl': {'selector': 'img', 'attribute': 'src'},
-        'description': {'selector': 'p'},
-        'author': {'selector': 'a[href*="/author/"]'},
-        'artist': {'selector': 'a[href*="/artist/"]'},
-        'genres': {'selector': 'a[href*="/genre/"]', 'multi': true},
-        'tags': {'selector': 'a[href*="/tag/"]', 'multi': true},
-        'status': {'selector': '[class*="status"]'},
-      };
-    }
-
-    final chaptersCfg = <String, dynamic>{
-      'container': answers['chapterContainer'] ?? 'a[href*="chapter"]',
-      'fields': {
-        'id': {
-          'selector': ':scope',
-          'attribute': 'href',
-        },
-        'title': {
-          'selector': answers['chapterTitleSel'] ?? 'a[href*="chapter"]'
-        },
+  static Map<String, Object?> _buildNetwork(Map<String, String?> a, String cl) {
+    final bypass = a['needsCloudflare'] == 'y' || a['needsBypass'] == 'y';
+    return {
+      'requiresBypass': bypass,
+      if (bypass)
+        'cloudflare': <String, Object?>{'bypassEnabled': true},
+      'headers': <String, String>{
+        'Referer': '$cl/',
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
+      },
+      'rateLimit': <String, Object?>{
+        'enabled': true,
+        'requestsPerSecond': 2,
+        'maxConcurrentRequests': 2,
       },
     };
+  }
 
-    // Reader
-    Map<String, dynamic> readerCfg;
-    if (readerMode == 'chapterDataScript') {
-      readerCfg = {'mode': 'chapterDataScript'};
-      final cdnBase = answers['cdnBase'];
-      if (cdnBase != null && cdnBase.isNotEmpty) {
-        readerCfg['cdnBase'] = cdnBase;
-      }
-    } else {
-      readerCfg = {
-        'container': '.reading-content, .chapter-content',
-        'images': {'selector': answers['readerImageSel'] ?? 'img'},
-      };
+  // ── Primitives ────────────────────────────────────────────────────────
+
+  static List<String> _buildPrimitives(String mode, Map<String, String?> a) {
+    final list = <String>[
+      'imageMode.directUrl',
+      'pagination.page',
+      'auth.none',
+    ];
+    if (a['needsHeaders'] == 'y' || a['needsCloudflare'] == 'y') {
+      list.add('headers.static');
     }
+    if (a['readerMode'] == 'chapterDataScript') {
+      list[0] = 'imageMode.chapterDataScript';
+    }
+    return list;
+  }
+
+  // ── Features ─────────────────────────────────────────────────────────
+
+  static Map<String, Object?> _buildFeatures(Map<String, String?> a) {
+    return {
+      'home': true,
+      'search': a['supportsSearch'] == 'y',
+      'detail': true,
+      'reader': true,
+      'download': true,
+      'chapters': a['supportsChapters'] != 'n',
+      'comments': a['supportsComments'] == 'y',
+      'favorite': true,
+      'offlineMode': true,
+    };
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────
+
+  static Map<String, Object?> _buildApiBlock(Map<String, String?> a) {
+    return {
+      'enabled': true,
+      'url': a['apiBase'] ?? 'https://api.unknown.com',
+      'endpoints': <String, Object?>{
+        'allGalleries': {
+          'path': a['listEndpoint'] ?? '/list',
+          'params': {'page': '{page}'},
+        },
+        'search': {
+          'path': '/search',
+          'params': {'query': '{query}', 'page': '{page}'},
+        },
+        'detail': {'path': a['detailEndpoint'] ?? '/{id}'},
+        if (a['supportsChapters'] == 'y')
+          'chapters': {'path': '/{id}/chapters'},
+      },
+      'list': <String, Object?>{
+        'items': r'$.data[*]',
+        'pagination': {
+          'currentPage': {'path': r'$.meta.page'},
+          'totalPages': {'path': r'$.meta.lastPage'},
+        },
+        'fields': <String, Object?>{
+          'id': {'selector': r'$.slug'},
+          'title': {'selector': r'$.title'},
+          'coverUrl': {'selector': r'$.coverImage'},
+        },
+      },
+      'detail': <String, Object?>{
+        'fields': <String, Object?>{
+          'id': {'selector': r'$.data.slug'},
+          'title': {'selector': r'$.data.title'},
+          'description': {'selector': r'$.data.synopsis'},
+          'coverUrl': {'selector': r'$.data.coverImage'},
+        },
+        if (a['supportsChapters'] == 'y')
+          'chapters': <String, Object?>{
+            'endpoint': '/{id}/chapters',
+            'items': r'$.data[*]',
+            'fields': {
+              'id': {'selector': r'$.id'},
+              'title': {'selector': r'$.title'},
+            },
+          },
+      },
+      'images': <String, Object?>{
+        'mode': 'direct',
+        'items': r'$.data.images[*]',
+        'urlPath': r'$',
+      },
+    };
+  }
+
+  // ── Scraper ──────────────────────────────────────────────────────────
+
+  static Map<String, Object?> _buildScraper(Map<String, String?> a) {
+    final ct = a['cmsThemeType'] ?? '';
+    final bUrl = _str(a['homeUrl']);
 
     return {
       'enabled': true,
-      'urlPatterns': urlPatterns,
-      'selectors': {
-        'list': {
-          'item': listSel,
-          'fields': {
-            'id': {
-              'selector': 'a',
-              'attribute': 'href',
-              'transform': 'slug',
-            },
-            'title': {'selector': 'a'},
-            'coverUrl': {'selector': 'img', 'attribute': 'src'},
-          },
+      'urlPatterns': _scraperUrls(ct, a, bUrl),
+      'selectors': _scraperSelectors(ct, a),
+    };
+  }
+
+
+
+  static Map<String, Object?> _scraperUrls(String ct, Map<String, String?> a, String bUrl) {
+    final hasSearch = a['supportsSearch'] == 'y';
+
+    // ── Home ──
+    Map<String, Object?> home;
+    Map<String, Object?> homeFields;
+    Map<String, Object?> pagination;
+
+    if (ct == 'zmanga') {
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': "a[href*='/series/']",
+          'attribute': 'href', 'transform': 'slug',
         },
-        'detail': {'fields': detailFields, 'chapters': chaptersCfg},
-        'reader': readerCfg,
+        'title': {'selector': '.flexbox4-side .title a'},
+        'coverUrl': {
+          'selector': '.flexbox4-thumb img.lazyload',
+          'attribute': 'data-src',
+        },
+      };
+      pagination = <String, Object?>{
+        'next': '.next, a[rel="next"]',
+        'links': 'a.page-numbers',
+      };
+    } else if (ct == 'blogger') {
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': 'a.clamp',
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': 'a.clamp'},
+        'coverUrl': {
+          'selector': ".b-img img[src*='blogger.googleusercontent.com']",
+          'attribute': 'src',
+        },
+      };
+      pagination = <String, Object?>{
+        'next': '.blog-pager-older-link',
+      };
+    } else if (ct == 'mangathemesia') {
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': "a[href*='/manga/']",
+          'attribute': 'href', 'transform': 'slug',
+        },
+        'title': {'selector': '.tt, a[title]'},
+        'coverUrl': {
+          'selector': '.limit img, .bsx img',
+          'attribute': 'src',
+        },
+      };
+      pagination = <String, Object?>{
+        'next': '.next, a.next.page-numbers',
+        'links': '.hpage a.r, a.page-numbers',
+      };
+    } else {
+      // Default / Madara
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': 'a[href^="/"]',
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': 'a'},
+        'coverUrl': {'selector': 'img', 'attribute': 'src'},
+      };
+      pagination = <String, Object?>{
+        'next': 'a[rel="next"], a.next.page-numbers',
+        'links': 'a.page-numbers',
+      };
+    }
+
+    home = <String, Object?>{
+      'url': a['homeUrlPath'] ?? '/',
+      'list': <String, Object?>{
+        'container': a['listSelector'] ?? '.item',
+        'fields': homeFields,
+        'pagination': pagination,
+      },
+    };
+
+    final urls = <String, Object?>{'home': home};
+
+    // ── Home page ──
+    if (ct == 'blogger') {
+      urls['homePage'] = <String, Object?>{
+        'url': '/search/label/Series?max-results=12&start={page}',
+        'inherits': 'home',
+      };
+    } else {
+      urls['homePage'] = <String, Object?>{
+        'url': '/page/{page}/',
+        'inherits': 'home',
+      };
+    }
+
+    // ── Latest ──
+    urls['latest'] = <String, Object?>{'url': '/', 'inherits': 'home'};
+
+    // ── Search ──
+    if (hasSearch) {
+      final searchUrl = _str(a['searchUrl']);
+      urls['search'] = <String, Object?>{
+        'url': searchUrl.isNotEmpty ? searchUrl : '/?s={query}',
+        'inherits': 'home',
+      };
+      if (ct == 'zmanga') {
+        urls['searchPage'] = <String, Object?>{
+          'url': '/page/{page}/?s={query}',
+          'inherits': 'home',
+        };
+      } else if (ct == 'blogger') {
+        urls['searchPage'] = <String, Object?>{
+          'url': '/search?q={query}&max-results=12&start={page}',
+          'inherits': 'home',
+        };
+      } else {
+        urls['searchPage'] = <String, Object?>{
+          'url': '/page/{page}/?s={query}',
+          'inherits': 'home',
+        };
+      }
+    }
+
+    // ── Genre / Tag / Author ──
+    if (ct == 'zmanga') {
+      urls['genreSearch'] = <String, Object?>{
+        'url': '/genre/{tag}/',
+        'inherits': 'home',
+      };
+      urls['genreSearchPage'] = <String, Object?>{
+        'url': '/genre/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+    } else if (ct == 'blogger') {
+      urls['tagSearch'] = <String, Object?>{
+        'url': '/search/label/{tag}?max-results=12',
+        'inherits': 'home',
+      };
+      urls['authorSearch'] = <String, Object?>{
+        'url': '/search/label/{tag}?max-results=12',
+        'inherits': 'home',
+      };
+    } else if (ct == 'blogger') {
+      urls['genreSearch'] = <String, Object?>{
+        'url': '/genre/{tag}/',
+        'inherits': 'home',
+      };
+      urls['genreSearchPage'] = <String, Object?>{
+        'url': '/genre/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+    } else if (ct == 'mangathemesia') {
+      urls['genreSearch'] = <String, Object?>{
+        'url': '/genres/{tag}/',
+        'inherits': 'home',
+      };
+      urls['genreSearchPage'] = <String, Object?>{
+        'url': '/genres/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+      urls['tagSearch'] = <String, Object?>{
+        'url': '/tag/{tag}/',
+        'inherits': 'home',
+      };
+      urls['tagSearchPage'] = <String, Object?>{
+        'url': '/tag/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+      urls['authorSearch'] = <String, Object?>{
+        'url': '/author/{tag}/',
+        'inherits': 'home',
+      };
+      urls['authorSearchPage'] = <String, Object?>{
+        'url': '/author/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+      urls['artistSearch'] = <String, Object?>{
+        'url': '/artist/{tag}/',
+        'inherits': 'home',
+      };
+      urls['artistSearchPage'] = <String, Object?>{
+        'url': '/artist/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
+    }
+
+    // ── Detail & Chapter ──
+    if (ct == 'zmanga') {
+      urls['detail'] = '/series/{id}';
+      urls['chapter'] = '/{id}';
+    } else if (ct == 'blogger') {
+      urls['detail'] = '/{id}';
+      urls['chapter'] = '/{id}';
+    } else if (ct == 'mangathemesia') {
+      urls['detail'] = '/manga/{id}/';
+      urls['chapter'] = '/{id}/';
+    } else {
+      urls['detail'] = '/manhwa/{id}/';
+      urls['chapter'] = '/manhwa/{id}/{ch}/';
+    }
+
+    return urls;
+  }
+
+
+  
+  static Map<String, Object?> _scraperSelectors(String ct, Map<String, String?> a) {
+    final selFields = _detailFields(ct, a);
+    return <String, Object?>{
+      'list': <String, Object?>{
+        'item': a['listSelector'] ?? '.item',
+        'fields': _listFields(ct),
+      },
+      'detail': <String, Object?>{
+        'fields': selFields,
+        'chapters': _chaptersCfg(ct),
+      },
+      'reader': _readerCfg(a),
+    };
+  }
+
+static Map<String, Object?> _listFields(String ct) {
+    if (ct == 'zmanga') {
+      return {
+        'id': {
+          'selector': "a[href*='/series/']",
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': '.flexbox4-side .title a'},
+        'coverUrl': {
+          'selector': '.flexbox4-thumb img.lazyload',
+          'attribute': 'data-src',
+        },
+      };
+    } else if (ct == 'blogger') {
+      return {
+        'id': {'selector': 'a.clamp', 'attribute': 'href', 'transform': 'slug'},
+        'title': {'selector': 'a.clamp'},
+        'coverUrl': {
+          'selector': ".b-img img[src*='blogger.googleusercontent.com']",
+          'attribute': 'src',
+        },
+      };
+    } else if (ct == 'mangathemesia') {
+      return {
+        'id': {
+          'selector': "a[href*='/manga/']",
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': '.tt, a[title]'},
+        'coverUrl': {
+          'selector': '.limit img, .bsx img',
+          'attribute': 'src',
+        },
+      };
+    }
+    // Madara / default
+    return {
+      'id': {'selector': 'a', 'attribute': 'href', 'transform': 'slug'},
+      'title': {'selector': 'a'},
+      'coverUrl': {'selector': 'img', 'attribute': 'src'},
+    };
+  }
+  static Map<String, Object?> _detailFields(String ct, Map<String, String?> a) {
+    if (ct == 'zmanga') {
+      return {
+        'title': {'selector': '.series-title h2, .series-titlex h2'},
+        'coverUrl': {
+          'selector': ".series-thumb img.lazyload, img[src*='link.shirolink.my.id']",
+          'attribute': 'data-src',
+        },
+        'description': {'selector': '.series-infoz, .series-infolist'},
+        'author': {'selector': "a[href*='/author/']"},
+        'artist': {'selector': "a[href*='/artist/']"},
+        'genres': {'selector': "a[href*='/genre/']", 'multi': true},
+        'tags': {'selector': "a[href*='/tag/']", 'multi': true},
+        'status': {'selector': '.status'},
+      };
+    } else if (ct == 'blogger') {
+      return {
+        'title': {'selector': 'h1, .post-title'},
+        'coverUrl': {'selector': "img[src*='blogger.googleusercontent.com']", 'attribute': 'src'},
+        'description': {'selector': '.post-body, .entry-content'},
+        'genres': {'selector': '.label-name, a[rel="tag"]', 'multi': true},
+      };
+    } else if (ct == 'mangathemesia') {
+      return {
+        'title': {'selector': 'h1, .entry-title'},
+        'coverUrl': {
+          'selector': '.thumb img, img[class*="cover"]',
+          'attribute': 'src',
+        },
+        'description': {'selector': '.entry-content p, .description p'},
+        'genres': {
+          'selector': '.seriestugenre a',
+          'multi': true,
+        },
+        'tags': {
+          'selector': ".seriestugenre a, a[href*='/tag/']",
+          'multi': true,
+        },
+        'status': {'selector': 'span[class*="status"]'},
+      };
+    }
+    // Madara / default
+    return {
+      'title': {'selector': 'h1'},
+      'coverUrl': {'selector': 'img', 'attribute': 'src'},
+      'description': {'selector': 'p'},
+      'author': {'selector': "a[href*='/author/']"},
+      'artist': {'selector': "a[href*='/artist/']"},
+      'genres': {'selector': "a[href*='/genre/']", 'multi': true},
+      'tags': {'selector': "a[href*='/tag/']", 'multi': true},
+      'status': {'selector': '[class*="status"]'},
+    };
+  }
+
+  static Map<String, Object?> _chaptersCfg(String ct) {
+    if (ct == 'mangathemesia') {
+      return {
+        'container': '#chapterlist ul li',
+        'fields': {
+          'id': {
+            'selector': '.eph-num a',
+            'attribute': 'href',
+            'transform': 'slug',
+          },
+          'title': {'selector': '.chapternum'},
+          'date': {'selector': '.chapterdate'},
+        },
+      };
+    }
+    return {
+      'container': 'a[href*="chapter"]',
+      'fields': {
+        'id': {'selector': ':scope', 'attribute': 'href'},
+        'title': {'selector': 'a[href*="chapter"]'},
       },
     };
   }
 
-  static Map<String, Object?> _buildSearchConfig(
-    Map<String, String?> answers,
-    String mode,
-  ) {
+  static Map<String, Object?> _readerCfg(Map<String, String?> a) {
+    final mode = a['readerMode'] ?? 'directUrl';
+    final ct = a['cmsThemeType'] ?? '';
+    if (mode == 'chapterDataScript') {
+      final m = <String, Object?>{'mode': 'chapterDataScript'};
+      final cdn = a['cdnBase'];
+      if (cdn != null && cdn.isNotEmpty) m['cdnBase'] = cdn;
+      return m;
+    }
+    if (mode == 'ajaxHtmlImages') {
+      return {'mode': 'ajaxHtmlImages'};
+    }
+    if (ct == 'mangathemesia') {
+      return {
+        'container': '#readerarea',
+        'images': {'selector': 'img', 'attribute': 'src'},
+        'nav': {
+          'next': '.nextprev a.next, .nav-links a.next, .ch-next-btn',
+          'prev': '.nextprev a.prev, .nav-links a.prev, .ch-prev-btn',
+        },
+      };
+    }
+    return {
+      'container': '.reading-content, .chapter-content',
+      'images': {'selector': a['readerImageSel'] ?? 'img'},
+    };
+  }
+
+  // ── Search Form ───────────────────────────────────────────────────────
+
+  static Map<String, Object?> _buildSearchForm(
+      Map<String, String?> a, String mode, String cmsTheme) {
     if (mode == 'rest_json') {
       return {
-        'type': 'rest_json',
-        'listEndpoint': '/search',
-        'pageParam': 'page',
+        'urlPattern': 'search',
+        'params': <String, Object?>{
+          'query': {
+            'queryParam': 'query', 'type': 'text',
+            'placeholder': 'Search...',
+          },
+          'page': {'queryParam': 'page', 'type': 'page'},
+        },
       };
     }
 
-    final searchUrl = answers['searchUrl'] ?? '/?s={query}';
-    final queryParam = answers['searchQueryParam'] ?? 's';
-
+    final queryParam = a['searchQueryParam'] ?? (cmsTheme == 'zmanga' ? 's' : 's');
     return {
-      'searchMode': 'query-string',
-      'endpoint': searchUrl,
-      'queryParam': queryParam,
-      'params': {
+      'urlPattern': 'search',
+      'params': <String, Object?>{
         'query': {
-          'queryParam': queryParam,
-          'type': 'text',
+          'queryParam': queryParam, 'type': 'text',
           'placeholder': 'Search...',
         },
       },
     };
   }
 
-  static Map<String, Object?> _buildNetworkConfig(
-      Map<String, String?> answers) {
-    if (answers['needsHeaders'] != 'y' && answers['needsCloudflare'] != 'y') {
-      return {};
-    }
+  // ── Content ID Pattern ──────────────────────────────────────────────
 
-    return {
-      'requiresBypass': answers['needsCloudflare'] == 'y',
-      'headers': {
-        'Referer': answers['homeUrl'] ?? '',
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
-      },
-      'rateLimit': {
-        'enabled': true,
-        'requestsPerSecond': 1,
-        'maxConcurrentRequests': 2,
-      },
-      if (answers['needsCloudflare'] == 'y')
-        'cloudflare': {'bypassRequired': true},
-    };
+  static String _contentIdPattern(String ct, String mode) {
+    if (mode == 'rest_json') return '/([^/]+)';
+    if (ct.startsWith('madara')) return '/manhwa/([^/]+)';
+    if (ct == 'zmanga') return '/series/([^/]+)';
+    if (ct == 'mangathemesia') return '/manga/([^/]+)';
+    if (ct == 'blogger') return r'/(\d{4}/\d{2}/[^/]+)';
+    return '/([^/]+)';
   }
 
-  static String _buildNotes(Map<String, String?> answers) {
-    final parts = <String>[];
-    final cmsTheme = answers['cmsThemeType'] ?? '';
-    if (cmsTheme.startsWith('madara')) {
-      parts.add('WordPress Madara theme ($cmsTheme).');
+  // ── Navigation ──────────────────────────────────────────────────────
+
+  static Map<String, Object?>? _navigation(String ct) {
+    if (ct.startsWith('madara') || ct == 'zmanga' || ct == 'mangathemesia') {
+      return {
+        'genreQueryPrefix': 'genre:',
+        'genreTagType': 'genre',
+      };
     }
-    final readerMode = answers['readerMode'] ?? 'directUrl';
-    if (readerMode == 'chapterDataScript') {
+    if (ct == 'blogger') {
+      return {
+        'tagQueryMapping': {
+          'tag': {'mode': 'rawParam', 'valueSource': 'tagId', 'param': 'tag'},
+        },
+      };
+    }
+    return null;
+  }
+
+  // ── Language detection ──────────────────────────────────────────────
+
+  static String _detectLang(String baseUrl, Map<String, String?> a) {
+    final lang = a['defaultLanguage'];
+    if (lang != null && lang.isNotEmpty) return lang;
+    if (baseUrl.contains('.id') || baseUrl.contains('komik') ||
+        baseUrl.contains('doujin') || baseUrl.contains('manga')) {
+      return 'indonesian';
+    }
+    return 'english';
+  }
+
+  // ── Notes ───────────────────────────────────────────────────────────
+
+  static String _buildNotes(Map<String, String?> a, String ct) {
+    final parts = <String>[];
+    if (ct.startsWith('madara')) parts.add('WordPress Madara theme.');
+    if (ct == 'zmanga') parts.add('ZManga theme.');
+    if (ct == 'mangathemesia') parts.add('MangaThemesia theme.');
+    if (ct == 'blogger') parts.add('Blogger platform.');
+    if (a['readerMode'] == 'chapterDataScript') {
       parts.add('Reader via chapterDataScript.');
     }
-    if (!parts.isNotEmpty) {
-      parts.add('Auto-generated config. Review selectors before use.');
-    }
+    if (parts.isEmpty) parts.add('Auto-generated config.');
     return parts.join(' ');
   }
 }
