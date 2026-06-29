@@ -2068,11 +2068,11 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to proceed?'**
   String get areYouSure;
 
-  /// No description provided for @readerSettingsResetSuccessMsg.
+  /// No description provided for @readerSettingsResetSuccess.
   ///
   /// In en, this message translates to:
   /// **'Reader settings have been reset to defaults.'**
-  String get readerSettingsResetSuccessMsg;
+  String get readerSettingsResetSuccess;
 
   /// No description provided for @readingHistory.
   ///
@@ -2602,11 +2602,11 @@ abstract class AppLocalizations {
   /// **'Jump'**
   String get jump;
 
-  /// No description provided for @readerSettingsLabel.
+  /// No description provided for @readerSettings.
   ///
   /// In en, this message translates to:
   /// **'Reader Settings'**
-  String get readerSettingsLabel;
+  String get readerSettings;
 
   /// No description provided for @readingMode.
   ///
@@ -7776,11 +7776,11 @@ abstract class AppLocalizations {
   /// **'Chapters'**
   String get chapters;
 
-  /// No description provided for @readerSettingsResetMsg.
+  /// No description provided for @readerSettingsReset.
   ///
   /// In en, this message translates to:
   /// **'Reader settings have been reset to defaults.'**
-  String get readerSettingsResetMsg;
+  String get readerSettingsReset;
 
   /// No description provided for @tagInputTip.
   ///

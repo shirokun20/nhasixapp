@@ -554,7 +554,7 @@
   "resetReaderSettingsConfirmation": "Ini akan mengatur ulang semua pengaturan pembaca ke nilai default:\n\n",
   "readingModeLabel": "Mode Membaca: Halaman Horizontal",
   "areYouSure": "Apakah Anda yakin ingin melanjutkan?",
-  "readerSettingsResetSuccessMsg": "Pengaturan pembaca telah direset ke default.",
+  "readerSettingsResetSuccess": "Pengaturan pembaca telah direset ke default.",
   "readingHistory": "Riwayat Baca",
   "clearAllHistory": "Bersihkan Semua Riwayat",
   "manualCleanup": "Pembersihan Manual",
@@ -681,7 +681,7 @@
     }
   },
   "jump": "Loncat",
-  "readerSettingsLabel": "Pengaturan Pembaca",
+  "readerSettings": "Pengaturan Pembaca",
   "readingMode": "Mode Baca",
   "horizontalPages": "Halaman Horizontal",
   "verticalPages": "Halaman Vertikal",
@@ -2730,12 +2730,12 @@
   "chapterComplete": "Bab Selesai!",
   "finishedReading": "Selesai Membaca",
 
-  "readerSettingsLabel": "Pengaturan Pembaca",
+  "readerSettings": "Pengaturan Pembaca",
   "chapterLabel": "Bab",
   "noChapterSelected": "Tidak ada bab yang dipilih",
   "preventScreenOff": "Mencegah layar mati saat membaca",
   "chapters": "Bab-bab",
-  "readerSettingsResetMsg": "Pengaturan pembaca telah diatur ulang ke bawaan.",
+  "readerSettingsReset": "Pengaturan pembaca telah diatur ulang ke bawaan.",
   "failedToResetSettings": "Gagal mengatur ulang pengaturan: {error}",
 
   "tagInputTip": "Tips: tekan Enter atau tombol + untuk menambah tag. Bisa ketik banyak tag pakai koma atau baris baru.",

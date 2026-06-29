@@ -1048,7 +1048,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get areYouSure => '确定要继续吗？';
 
   @override
-  String get readerSettingsResetSuccessMsg => '阅读器设置已恢复默认。';
+  String get readerSettingsResetSuccess => '阅读器设置已恢复默认。';
 
   @override
   String get readingHistory => '阅读历史';
@@ -1324,7 +1324,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get jump => '跳转';
 
   @override
-  String get readerSettingsLabel => '阅读器设置';
+  String get readerSettings => '阅读器设置';
 
   @override
   String get readingMode => '阅读模式';
@@ -4425,7 +4425,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chapters => '章节列表';
 
   @override
-  String get readerSettingsResetMsg => '阅读器设置已重置为默认值。';
+  String get readerSettingsReset => '阅读器设置已重置为默认值。';
 
   @override
   String get tagInputTip => '提示：按 Enter 或 + 按钮添加标签。可以用逗号或换行输入多个标签。';

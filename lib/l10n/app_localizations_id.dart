@@ -1102,7 +1102,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get areYouSure => 'Apakah Anda yakin ingin melanjutkan?';
 
   @override
-  String get readerSettingsResetSuccessMsg =>
+  String get readerSettingsResetSuccess =>
       'Pengaturan pembaca telah direset ke default.';
 
   @override
@@ -1383,7 +1383,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get jump => 'Loncat';
 
   @override
-  String get readerSettingsLabel => 'Pengaturan Pembaca';
+  String get readerSettings => 'Pengaturan Pembaca';
 
   @override
   String get readingMode => 'Mode Baca';
@@ -4571,7 +4571,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get chapters => 'Bab-bab';
 
   @override
-  String get readerSettingsResetMsg =>
+  String get readerSettingsReset =>
       'Pengaturan pembaca telah diatur ulang ke bawaan.';
 
   @override

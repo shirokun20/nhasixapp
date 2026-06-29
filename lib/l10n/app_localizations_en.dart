@@ -1096,7 +1096,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get areYouSure => 'Are you sure you want to proceed?';
 
   @override
-  String get readerSettingsResetSuccessMsg =>
+  String get readerSettingsResetSuccess =>
       'Reader settings have been reset to defaults.';
 
   @override
@@ -1378,7 +1378,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jump => 'Jump';
 
   @override
-  String get readerSettingsLabel => 'Reader Settings';
+  String get readerSettings => 'Reader Settings';
 
   @override
   String get readingMode => 'Reading Mode';
@@ -4550,7 +4550,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chapters => 'Chapters';
 
   @override
-  String get readerSettingsResetMsg =>
+  String get readerSettingsReset =>
       'Reader settings have been reset to defaults.';
 
   @override

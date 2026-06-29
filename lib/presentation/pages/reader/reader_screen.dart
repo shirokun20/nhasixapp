@@ -2367,8 +2367,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
 
                   Text(
-                    AppLocalizations.of(context)?.readerSettingsLabel ??
-                        AppLocalizations.of(context)!.readerSettingsLabel,
+                    AppLocalizations.of(context)?.readerSettings ??
+                        AppLocalizations.of(context)!.readerSettings,
                     style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -3040,8 +3040,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.readerSettingsResetSuccessMsg ??
-                  AppLocalizations.of(context)!.readerSettingsResetSuccessMsg,
+              AppLocalizations.of(context)?.readerSettingsResetSuccess ??
+                  AppLocalizations.of(context)!.readerSettingsResetSuccess,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
