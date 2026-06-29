@@ -9,7 +9,7 @@ import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
-import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
+import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/usecases/tags/get_tags_by_type_usecase.dart';
@@ -155,11 +155,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   Future<void> _restoreSavedFilter() async {
     try {
-      final savedFilterJson =
-          await getIt<LocalDataSource>().getLastSearchFilter(widget.sourceId);
-      if (savedFilterJson == null) return;
-
-      final savedFilter = SearchFilter.fromJson(savedFilterJson);
+      final savedFilter =
+          await getIt<UserDataRepository>().getLastSearchFilter(widget.sourceId);
+      if (savedFilter == null) return;
 
       // Parse query string and extract date/numeric filters
       String cleanedQuery = '';
@@ -375,8 +373,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     final filter = _buildSearchFilter();
 
     try {
-      await getIt<LocalDataSource>()
-          .saveSearchFilter(widget.sourceId, filter.toJson());
+      await getIt<UserDataRepository>()
+          .saveSearchFilter(widget.sourceId, filter);
 
       if (mounted) {
         context.read<SearchBloc>().add(SearchUpdateFilterEvent(filter));
@@ -416,8 +414,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
     if (returnedFilter != null && mounted) {
       try {
-        await getIt<LocalDataSource>()
-            .saveSearchFilter(widget.sourceId, returnedFilter.toJson());
+        await getIt<UserDataRepository>()
+            .saveSearchFilter(widget.sourceId, returnedFilter);
         if (!mounted) return;
         context.read<SearchBloc>().add(SearchUpdateFilterEvent(returnedFilter));
         context.read<SearchBloc>().add(const SearchSubmittedEvent());

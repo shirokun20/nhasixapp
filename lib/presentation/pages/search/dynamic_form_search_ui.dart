@@ -13,7 +13,7 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart';
-import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
+import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/pages/search/search_form_contract_adapter.dart';
@@ -342,11 +342,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _restoreSaved() async {
     try {
-      final savedJson =
-          await getIt<LocalDataSource>().getLastSearchFilter(widget.sourceId);
-      if (savedJson == null) return;
-
-      final saved = SearchFilter.fromJson(savedJson);
+      final saved =
+          await getIt<UserDataRepository>().getLastSearchFilter(widget.sourceId);
+      if (saved == null) return;
       final query = saved.query;
       if (query == null || !query.startsWith('raw:')) return;
 
@@ -458,8 +456,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     );
 
     try {
-      await getIt<LocalDataSource>()
-          .saveSearchFilter(widget.sourceId, filter.toJson());
+      await getIt<UserDataRepository>()
+          .saveSearchFilter(widget.sourceId, filter);
       _logger.d(
         'DynamicFormSearchUI: saved search filter for ${widget.sourceId} '
         'query=$rawQuery sort=${filter.sortBy.name}',

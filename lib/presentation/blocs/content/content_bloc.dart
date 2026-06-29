@@ -7,7 +7,6 @@ import 'package:get_it/get_it.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
-import '../../../data/datasources/local/local_data_source.dart';
 
 part 'content_event.dart';
 part 'content_state.dart';
@@ -550,11 +549,9 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         previousContents: previousState?.contents,
       ));
 
-      // Get LocalDataSource from GetIt
-      final localDataSource = GetIt.instance<LocalDataSource>();
-
-      // Clear saved search filter from local storage
-      await localDataSource.removeLastSearchFilter(event.sourceId);
+      // Clear saved search filter via UserDataRepository
+      final userDataRepository = GetIt.instance<UserDataRepository>();
+      await userDataRepository.clearSearchFilter(event.sourceId);
       _logger.i(
           'ContentBloc: Cleared search filter from local storage for source: ${event.sourceId}');
 

@@ -7,7 +7,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/tag_data_manager.dart' hide TagType;
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
+import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
@@ -97,11 +97,10 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
 
   Future<void> _restoreSavedFilter() async {
     try {
-      final savedFilterJson =
-          await getIt<LocalDataSource>().getLastSearchFilter(widget.sourceId);
-      if (savedFilterJson == null) return;
+      final savedFilter =
+          await getIt<UserDataRepository>().getLastSearchFilter(widget.sourceId);
+      if (savedFilter == null) return;
 
-      final savedFilter = SearchFilter.fromJson(savedFilterJson);
       final query = savedFilter.query;
 
       // Only parse if it's a raw: format from FormBasedSearchUI
@@ -310,8 +309,8 @@ class _FormBasedSearchUIState extends State<FormBasedSearchUI> {
 
     try {
       // Save filter to local storage for MainScreen to pick up
-      await getIt<LocalDataSource>()
-          .saveSearchFilter(widget.sourceId, filter.toJson());
+      await getIt<UserDataRepository>()
+          .saveSearchFilter(widget.sourceId, filter);
 
       if (mounted) {
         // Return true to indicate search was applied

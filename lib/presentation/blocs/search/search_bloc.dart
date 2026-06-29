@@ -7,8 +7,8 @@ import 'package:collection/collection.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/content/search_content_usecase.dart';
 
-import '../../../data/datasources/local/local_data_source.dart';
-import '../../../data/datasources/local/tag_data_source.dart';
+import '../../../domain/repositories/user_data_repository.dart';
+import '../../../domain/repositories/tag_repository.dart';
 
 part 'search_event.dart';
 part 'search_state.dart';
@@ -18,12 +18,12 @@ part 'search_state.dart';
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
     required SearchContentUseCase searchContentUseCase,
-    required LocalDataSource localDataSource,
-    required TagDataSource tagDataSource,
+    required UserDataRepository userDataRepository,
+    required TagRepository tagRepository,
     required Logger logger,
   })  : _searchContentUseCase = searchContentUseCase,
-        _localDataSource = localDataSource,
-        _tagDataSource = tagDataSource,
+        _userDataRepository = userDataRepository,
+        _tagRepository = tagRepository,
         _logger = logger,
         super(const SearchInitial()) {
     // Register event handlers
@@ -54,8 +54,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   final SearchContentUseCase _searchContentUseCase;
-  final LocalDataSource _localDataSource;
-  final TagDataSource _tagDataSource;
+  final UserDataRepository _userDataRepository;
+  final TagRepository _tagRepository;
   final Logger _logger;
 
   // Internal state tracking
@@ -90,7 +90,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           .i('SearchBloc: Initializing search for source: $_currentSourceId');
 
       // Load search history
-      _searchHistory = await _localDataSource.getSearchHistory();
+      _searchHistory = await _userDataRepository.getSearchHistory();
 
       // Load popular searches based on actual nhentai popular tags
       _popularSearches = [
@@ -117,10 +117,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       // Load last search filter state if exists for this source
       if (_currentSourceId != null) {
         final lastFilterData =
-            await _localDataSource.getLastSearchFilter(_currentSourceId!);
+            await _userDataRepository.getLastSearchFilter(_currentSourceId!);
         if (lastFilterData != null) {
           try {
-            _currentFilter = SearchFilter.fromJson(lastFilterData);
+            _currentFilter = lastFilterData;
             _logger.i(
                 'SearchBloc: Loaded last search filter state for $_currentSourceId');
 
@@ -359,8 +359,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       // BUT EXCLUDE tag clicks from detail screen to prevent unwanted saving
       if (_currentFilter.source != SearchSource.detailScreen &&
           _currentSourceId != null) {
-        await _localDataSource.saveSearchFilter(
-            _currentSourceId!, _currentFilter.toJson());
+        await _userDataRepository.saveSearchFilter(
+            _currentSourceId!, _currentFilter);
         _logger.d(
             'SearchBloc: Saved search filter to local storage (source: ${_currentFilter.source.displayName}, sourceId: $_currentSourceId)');
       } else {
@@ -423,7 +423,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     // Clear search filter state from local datasource
     try {
       if (_currentSourceId != null) {
-        await _localDataSource.removeLastSearchFilter(_currentSourceId!);
+        await _userDataRepository.clearSearchFilter(_currentSourceId!);
       }
     } catch (e) {
       _logger.e('SearchBloc: Error clearing search filter state: $e');
@@ -628,7 +628,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      await _localDataSource.addSearchHistory(event.query);
+      await _userDataRepository.addSearchHistory(event.query);
 
       // Update local history
       _searchHistory.remove(event.query); // Remove if exists
@@ -661,7 +661,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      _searchHistory = await _localDataSource.getSearchHistory();
+      _searchHistory = await _userDataRepository.getSearchHistory();
 
       emit(SearchHistory(
         history: _searchHistory,
@@ -687,7 +687,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     try {
-      await _localDataSource.clearSearchHistory();
+      await _userDataRepository.clearSearchHistory();
       _searchHistory.clear();
 
       // Force emit new state with empty history
@@ -710,7 +710,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     try {
       // Remove from database directly (simplified)
-      await _localDataSource.deleteSearchHistory(event.query);
+      await _userDataRepository.deleteSearchHistory(event.query);
 
       // Update local history
       _searchHistory.remove(event.query);
@@ -893,12 +893,24 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       _logger.d('SearchBloc: Generating tag suggestions for: "$query"');
 
-      // Use TagDataSource to search tags from assets/json/tags.json
-      final suggestions =
-          await _tagDataSource.searchTags(query, limit: _maxSuggestions);
+      // Use TagRepository to fetch autocomplete suggestions
+      final result = await _tagRepository.getAutocomplete(
+        query: query,
+        sourceId: _currentSourceId!,
+        limit: _maxSuggestions,
+      );
 
-      _logger.d('SearchBloc: Found ${suggestions.length} tag suggestions');
-      return suggestions;
+      _logger.d(
+          'SearchBloc: Found ${result.suggestions.length} tag suggestions');
+      return result.suggestions
+          .map((e) => Tag(
+                id: 0,
+                name: e.name,
+                type: e.type,
+                slug: e.slug,
+                count: e.count,
+              ))
+          .toList();
     } catch (e) {
       _logger.e('SearchBloc: Error generating tag suggestions', error: e);
       return [];
@@ -974,9 +986,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         return null;
       }
       final filterData =
-          await _localDataSource.getLastSearchFilter(_currentSourceId!);
+          await _userDataRepository.getLastSearchFilter(_currentSourceId!);
       if (filterData != null) {
-        return SearchFilter.fromJson(filterData);
+        return filterData;
       }
       return null;
     } catch (e) {

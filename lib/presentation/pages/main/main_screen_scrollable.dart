@@ -14,7 +14,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
-import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
+import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
@@ -38,7 +38,6 @@ import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
-import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 import 'package:kuron_core/kuron_core.dart' hide SearchFilter, SortOption;
@@ -217,14 +216,11 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       }
 
       // Check if there's a saved search filter from local storage for this source
-      final savedFilterData =
-          await getIt<LocalDataSource>().getLastSearchFilter(sourceId);
+      final savedFilter =
+          await getIt<UserDataRepository>().getLastSearchFilter(sourceId);
 
-      if (savedFilterData != null) {
+      if (savedFilter != null) {
         try {
-          // Convert saved data back to SearchFilter
-          final savedFilter = SearchFilter.fromJson(savedFilterData);
-
           // Validate if the filter is meaningful and not just empty/cleared data
           if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
             // Load search results if there's a saved filter, but use current sort option
@@ -234,14 +230,14 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
           } else {
             // Invalid or empty filter, clear it and load normal content
-            await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
+            await getIt<UserDataRepository>().clearSearchFilter(sourceId);
             _loadDefaultContent();
           }
         } catch (filterError) {
           // Error parsing filter data, clear it and load normal content
           Logger().w(
               'MainScreen: Error parsing saved filter, clearing it: $filterError');
-          await getIt<LocalDataSource>().removeLastSearchFilter(sourceId);
+          await getIt<UserDataRepository>().clearSearchFilter(sourceId);
           _loadDefaultContent();
         }
       } else {
@@ -279,11 +275,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       if (sourceId == null) return;
 
-      final savedFilterData =
-          await getIt<LocalDataSource>().getLastSearchFilter(sourceId);
+      final savedFilter =
+          await getIt<UserDataRepository>().getLastSearchFilter(sourceId);
 
-      if (savedFilterData != null) {
-        final savedFilter = SearchFilter.fromJson(savedFilterData);
+      if (savedFilter != null) {
 
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
           final sanitizedQuery = savedFilter.query == '{query}'

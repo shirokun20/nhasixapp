@@ -906,8 +906,8 @@ void _setupBlocs() {
   // Register SearchBloc
   getIt.registerFactory<SearchBloc>(() => SearchBloc(
         searchContentUseCase: getIt<SearchContentUseCase>(),
-        localDataSource: getIt<LocalDataSource>(),
-        tagDataSource: getIt<TagDataSource>(),
+        userDataRepository: getIt<UserDataRepository>(),
+        tagRepository: getIt<TagRepository>(),
         logger: getIt<Logger>(),
       ));
 
