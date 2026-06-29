@@ -576,13 +576,13 @@
   "faq": "常见问题",
   "faqSubtitle": "常见问题解答",
   "resetSettings": "重置设置",
-  "resetReaderSettingsEntity": "重置阅读器设置",
-  "resetReaderSettingsEntityConfirmation": "这将重置阅读器的所有设置到默认值：\n\n",
+  "resetReaderSettings": "重置阅读器设置",
+  "resetReaderSettingsConfirmation": "这将重置阅读器的所有设置到默认值：\n\n",
   "readingModeLabel": "阅读模式：水平翻页",
   "keepScreenOnLabel": "保持屏幕常亮：关",
   "showUILabel": "显示界面：开",
   "areYouSure": "确定要继续吗？",
-  "ReaderSettingsEntityResetSuccess": "阅读器设置已恢复默认。",
+  "readerSettingsResetSuccessMsg": "阅读器设置已恢复默认。",
   "failedToResetSettings": "重置设置失败：{error}",
   "@failedToResetSettings": {
     "placeholders": {
@@ -757,7 +757,7 @@
     }
   },
   "jump": "跳转",
-  "ReaderSettingsEntity": "阅读器设置",
+  "readerSettingsLabel": "阅读器设置",
   "readingMode": "阅读模式",
   "horizontalPages": "水平翻页",
   "verticalPages": "垂直翻页",
@@ -3326,12 +3326,12 @@
   "chapterComplete": "章节完成！",
   "finishedReading": "阅读完成",
 
-  "ReaderSettingsEntity": "阅读器设置",
+  "readerSettingsLabel": "阅读器设置",
   "chapterLabel": "章节",
   "noChapterSelected": "未选择章节",
   "preventScreenOff": "阅读时防止屏幕关闭",
   "chapters": "章节列表",
-  "ReaderSettingsEntityReset": "阅读器设置已重置为默认值。",
+  "readerSettingsResetMsg": "阅读器设置已重置为默认值。",
   "failedToResetSettings": "重置设置失败：{error}",
 
   "tagInputTip": "提示：按 Enter 或 + 按钮添加标签。可以用逗号或换行输入多个标签。",

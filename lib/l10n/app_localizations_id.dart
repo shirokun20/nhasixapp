@@ -1089,10 +1089,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get resetSettings => 'Reset Pengaturan';
 
   @override
-  String get resetReaderSettingsEntity => 'Reset Pengaturan Reader';
+  String get resetReaderSettings => 'Reset Pengaturan Reader';
 
   @override
-  String get resetReaderSettingsEntityConfirmation =>
+  String get resetReaderSettingsConfirmation =>
       'Ini akan mengatur ulang semua pengaturan pembaca ke nilai default:\n\n';
 
   @override
@@ -1102,7 +1102,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get areYouSure => 'Apakah Anda yakin ingin melanjutkan?';
 
   @override
-  String get ReaderSettingsEntityResetSuccess =>
+  String get readerSettingsResetSuccessMsg =>
       'Pengaturan pembaca telah direset ke default.';
 
   @override
@@ -1383,7 +1383,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get jump => 'Loncat';
 
   @override
-  String get ReaderSettingsEntity => 'Pengaturan Pembaca';
+  String get readerSettingsLabel => 'Pengaturan Pembaca';
 
   @override
   String get readingMode => 'Mode Baca';
@@ -4571,7 +4571,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get chapters => 'Bab-bab';
 
   @override
-  String get ReaderSettingsEntityReset =>
+  String get readerSettingsResetMsg =>
       'Pengaturan pembaca telah diatur ulang ke bawaan.';
 
   @override

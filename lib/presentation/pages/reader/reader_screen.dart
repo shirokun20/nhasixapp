@@ -2367,8 +2367,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
 
                   Text(
-                    AppLocalizations.of(context)?.ReaderSettingsEntity ??
-                        AppLocalizations.of(context)!.ReaderSettingsEntity,
+                    AppLocalizations.of(context)?.readerSettingsLabel ??
+                        AppLocalizations.of(context)!.readerSettingsLabel,
                     style: TextStyleConst.headingMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -2615,13 +2615,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         title: Text(
-          AppLocalizations.of(context)!.resetReaderSettingsEntity,
+          AppLocalizations.of(context)!.resetReaderSettings,
           style: TextStyleConst.headingMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         content: Text(
-          '${AppLocalizations.of(context)!.resetReaderSettingsEntityConfirmation}'
+          '${AppLocalizations.of(context)!.resetReaderSettingsConfirmation}'
           '• ${AppLocalizations.of(context)!.readingModeLabel}\n'
           '• ${AppLocalizations.of(context)!.keepScreenOnLabel}\n'
           '• ${AppLocalizations.of(context)!.showUILabel}\n\n'
@@ -2643,7 +2643,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           TextButton(
             onPressed: () {
               context.pop();
-              _resetReaderSettingsEntity();
+              _resetReaderSettings();
             },
             child: Text(
               AppLocalizations.of(context)!.reset,
@@ -3027,21 +3027,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  Future<void> _resetReaderSettingsEntity() async {
+  Future<void> _resetReaderSettings() async {
     try {
       // Close the settings modal first
       context.pop();
 
       // Reset the settings
-      await _readerCubit.resetReaderSettingsEntity();
+      await _readerCubit.resetReaderSettings();
 
       // Show success notification
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)?.ReaderSettingsEntityResetSuccess ??
-                  AppLocalizations.of(context)!.ReaderSettingsEntityReset,
+              AppLocalizations.of(context)?.readerSettingsResetSuccessMsg ??
+                  AppLocalizations.of(context)!.readerSettingsResetSuccessMsg,
               style: TextStyleConst.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -3080,7 +3080,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,
               textColor: Theme.of(context).colorScheme.onError,
-              onPressed: () => _resetReaderSettingsEntity(),
+              onPressed: () => _resetReaderSettings(),
             ),
           ),
         );

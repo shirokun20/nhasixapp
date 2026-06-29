@@ -2271,7 +2271,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   /// Reset all reader settings to defaults
-  Future<void> resetReaderSettingsEntity() async {
+  Future<void> resetReaderSettings() async {
     try {
       await readerSettingsEntityRepository.resetToDefaults();
       _logger.i('Successfully reset reader settings to defaults');
