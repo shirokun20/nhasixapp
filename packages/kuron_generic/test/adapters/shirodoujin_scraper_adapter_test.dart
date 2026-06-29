@@ -90,7 +90,8 @@ void main() {
       );
     });
 
-    test('search fixture uses flexbox2 layout instead of home layout', () async {
+    test('search fixture uses flexbox2 layout instead of home layout',
+        () async {
       dioAdapter.onGet(
         '$_baseUrl/?s=the',
         (server) => server.reply(
@@ -141,7 +142,8 @@ void main() {
       );
     });
 
-    test('detail fixture extracts title cleanly even when chapter date is inline',
+    test(
+        'detail fixture extracts title cleanly even when chapter date is inline',
         () async {
       dioAdapter.onGet(
         '$_baseUrl/series/my-body-is-atop-her-tongue-bahasa-indonesia',

@@ -342,8 +342,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
   Future<void> _restoreSaved() async {
     try {
-      final saved =
-          await getIt<UserDataRepository>().getLastSearchFilter(widget.sourceId);
+      final saved = await getIt<UserDataRepository>()
+          .getLastSearchFilter(widget.sourceId);
       if (saved == null) return;
       final query = saved.query;
       if (query == null || !query.startsWith('raw:')) return;

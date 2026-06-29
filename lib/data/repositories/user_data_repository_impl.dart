@@ -805,5 +805,4 @@ class UserDataRepositoryImpl implements UserDataRepository {
       _logger.e('Failed to clear sync queue', error: e, stackTrace: stackTrace);
     }
   }
-
 }

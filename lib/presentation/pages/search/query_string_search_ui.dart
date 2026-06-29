@@ -155,8 +155,8 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
 
   Future<void> _restoreSavedFilter() async {
     try {
-      final savedFilter =
-          await getIt<UserDataRepository>().getLastSearchFilter(widget.sourceId);
+      final savedFilter = await getIt<UserDataRepository>()
+          .getLastSearchFilter(widget.sourceId);
       if (savedFilter == null) return;
 
       // Parse query string and extract date/numeric filters

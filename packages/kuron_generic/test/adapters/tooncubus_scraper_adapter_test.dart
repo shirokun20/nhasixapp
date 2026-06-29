@@ -188,7 +188,8 @@ void main() {
     expect(result.content.chapters!.first.title, 'Baca Chapter 01');
   });
 
-  test('reader fallback follows explicit Baca Online link before scraping images',
+  test(
+      'reader fallback follows explicit Baca Online link before scraping images',
       () async {
     final dio = Dio(BaseOptions(baseUrl: _baseUrl));
     final dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
@@ -235,7 +236,8 @@ void main() {
     expect(result.images.length, greaterThan(20));
   });
 
-  test('tag query uses Blogger label route instead of keyword search', () async {
+  test('tag query uses Blogger label route instead of keyword search',
+      () async {
     final dio = Dio(BaseOptions(baseUrl: _baseUrl));
     final dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
     final adapter = _buildAdapter(dio);

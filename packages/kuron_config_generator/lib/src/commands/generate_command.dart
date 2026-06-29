@@ -162,8 +162,7 @@ class GenerateCommand extends Command<void> {
     }
 
     // Detect chapterData script for reader mode
-    final hasChapterData =
-        RegExp(r'chapterData\s*=\s*\{').hasMatch(probe.body);
+    final hasChapterData = RegExp(r'chapterData\s*=\s*\{').hasMatch(probe.body);
     String? cdnBase;
     if (hasChapterData) {
       final baseMatch =

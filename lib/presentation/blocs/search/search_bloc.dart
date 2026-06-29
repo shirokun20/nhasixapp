@@ -900,8 +900,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         limit: _maxSuggestions,
       );
 
-      _logger.d(
-          'SearchBloc: Found ${result.suggestions.length} tag suggestions');
+      _logger
+          .d('SearchBloc: Found ${result.suggestions.length} tag suggestions');
       return result.suggestions
           .map((e) => Tag(
                 id: 0,

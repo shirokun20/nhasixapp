@@ -1555,10 +1555,10 @@ class GenericScraperAdapter implements GenericAdapter {
         final extractedReaderPageUrl = readerPageSelector == null
             ? null
             : _parser.extractString(workingDoc, readerPageSelector)?.trim();
-        final resolvedReaderPageUrl = extractedReaderPageUrl == null ||
-                extractedReaderPageUrl.isEmpty
-            ? null
-            : _urlBuilder.resolve(extractedReaderPageUrl, const {});
+        final resolvedReaderPageUrl =
+            extractedReaderPageUrl == null || extractedReaderPageUrl.isEmpty
+                ? null
+                : _urlBuilder.resolve(extractedReaderPageUrl, const {});
 
         if (resolvedReaderPageUrl != null &&
             resolvedReaderPageUrl.isNotEmpty &&
@@ -2023,8 +2023,9 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     final rawQuery = filter.query == '{query}' ? '' : filter.query;
-    final rawTagValue =
-        filter.includeTags.isNotEmpty ? filter.includeTags.first.name : rawQuery;
+    final rawTagValue = filter.includeTags.isNotEmpty
+        ? filter.includeTags.first.name
+        : rawQuery;
     final tagTransform = (patternMap?['tagTransform'] as String? ?? '').trim();
     final tagValue = tagTransform == 'urlEncode'
         ? Uri.encodeComponent(rawTagValue)
@@ -3151,9 +3152,9 @@ class GenericScraperAdapter implements GenericAdapter {
     // Check if config has cursor pagination selectors
     final pagination =
         (listConfig['pagination'] as Map?)?.cast<String, dynamic>() ?? const {};
-    final hasCursor = (pagination['next'] as String?)?.trim().isNotEmpty ==
-            true ||
-        (pagination['alt'] as String?)?.trim().isNotEmpty == true;
+    final hasCursor =
+        (pagination['next'] as String?)?.trim().isNotEmpty == true ||
+            (pagination['alt'] as String?)?.trim().isNotEmpty == true;
     if (!hasCursor) return null;
     // ponytail: serial N-1 requests — parallelise if source latency is high
     var currentUrl = initialUrl;

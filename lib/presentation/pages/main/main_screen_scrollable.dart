@@ -279,7 +279,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           await getIt<UserDataRepository>().getLastSearchFilter(sourceId);
 
       if (savedFilter != null) {
-
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
           final sanitizedQuery = savedFilter.query == '{query}'
               ? ''

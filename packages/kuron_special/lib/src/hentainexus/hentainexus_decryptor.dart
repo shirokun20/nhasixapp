@@ -204,7 +204,8 @@ class HentaiNexusDecryptor {
   static String _pageKey(String url) {
     final uri = Uri.tryParse(url);
     final path = uri?.path ?? url;
-    final lastSegment = path.split('/').where((segment) => segment.isNotEmpty).last;
+    final lastSegment =
+        path.split('/').where((segment) => segment.isNotEmpty).last;
     return lastSegment.replaceFirst(
       RegExp(r'\.(?:avif|webp|png|jpe?g)$', caseSensitive: false),
       '',
