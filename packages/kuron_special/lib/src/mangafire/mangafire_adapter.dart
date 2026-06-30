@@ -52,6 +52,40 @@ String resolveMangaFireLanguage(
   return 'en';
 }
 
+String? resolveMangaFireSort(
+  SearchFilter filter,
+  Map<String, dynamic> rawConfig, {
+  required String configKey,
+}) {
+  final sortParam = (((rawConfig['searchForm'] as Map?)?['params']
+          as Map?)?['sort'] as Map?)?['queryParam'] as String? ??
+      'sort';
+
+  final rawSort = extractMangaFireRawQueryValue(
+    filter.query,
+    queryParam: sortParam,
+  );
+  if (rawSort != null && rawSort.isNotEmpty) {
+    return rawSort;
+  }
+
+  // Fallback to sort from config url patterns
+  final patterns =
+      ((rawConfig['scraper'] as Map?)?['urlPatterns'] as Map?)?[configKey];
+  if (patterns != null) {
+    final url =
+        patterns is Map ? patterns['url'] as String? : patterns as String?;
+    if (url != null && url.isNotEmpty) {
+      final sortMatch = RegExp(r'[?&]sort=([^&]+)').firstMatch(url);
+      if (sortMatch != null) {
+        return sortMatch.group(1);
+      }
+    }
+  }
+
+  return null;
+}
+
 String? extractMangaFireRawQueryValue(
   String input, {
   required String queryParam,
@@ -119,15 +153,25 @@ String buildMangaFireFilterUrl({
   required int page,
   String? sort,
   String vrf = '',
+  Map<String, dynamic>? rawConfig,
 }) {
   final base = Uri.parse(baseUrl).resolve('/filter').toString();
+
+  // Read param names from config's searchForm.params
+  final params = (rawConfig?['searchForm'] as Map?)?['params'] as Map? ?? {};
+  String qp(String key, String fallback) {
+    final raw = (params[key] as Map?)?['queryParam'] as String? ?? fallback;
+    return Uri.encodeQueryComponent(raw);
+  }
+
   final pairs = <String>[
-    'keyword=${Uri.encodeQueryComponent(keyword)}',
-    'language%5B%5D=${Uri.encodeQueryComponent(language)}',
+    '${qp('query', 'keyword')}=${Uri.encodeQueryComponent(keyword)}',
+    '${qp('language', 'language[]')}=${Uri.encodeQueryComponent(language)}',
     if (sort != null && sort.isNotEmpty)
-      'sort=${Uri.encodeQueryComponent(sort)}',
-    'vrf=${Uri.encodeQueryComponent(vrf)}',
-    'page=$page',
+      '${qp('sort', 'sort')}=${Uri.encodeQueryComponent(sort)}',
+    // ponytail: skip empty vrf; it's valid but adds noise
+    if (vrf.isNotEmpty) 'vrf=${Uri.encodeQueryComponent(vrf)}',
+    '${qp('page', 'page')}=$page',
   ];
   return '$base?${pairs.join('&')}';
 }
@@ -334,6 +378,7 @@ class MangaFireAdapter implements GenericAdapter {
         filter: filter,
         language: language,
         query: query,
+        rawConfig: rawConfig,
       );
     }
 
@@ -369,7 +414,7 @@ class MangaFireAdapter implements GenericAdapter {
       return _fetchList(url, sourceLanguage: language);
     }
 
-    final sort = _sortValue(filter.sort);
+    final sort = resolveMangaFireSort(filter, rawConfig, configKey: 'home');
     final url = buildMangaFireFilterUrl(
       baseUrl: _baseUrl,
       keyword: '',
@@ -377,9 +422,11 @@ class MangaFireAdapter implements GenericAdapter {
       sort: sort,
       vrf: '',
       page: filter.page,
+      rawConfig: rawConfig,
     );
     return _fetchList(url, sourceLanguage: language);
   }
+
 
   @override
   Future<AdapterDetailResult> fetchDetail(
@@ -688,6 +735,7 @@ class MangaFireAdapter implements GenericAdapter {
     required SearchFilter filter,
     required String language,
     required String query,
+    required Map<String, dynamic> rawConfig,
   }) async {
     final cacheKey = '${query.toLowerCase()}::$language';
     final cachedToken = _vrfCache.get(
@@ -730,12 +778,15 @@ class MangaFireAdapter implements GenericAdapter {
       return refreshed;
     }
 
+    final sort = resolveMangaFireSort(filter, rawConfig, configKey: 'search');
     final url = buildMangaFireFilterUrl(
       baseUrl: _baseUrl,
       keyword: query,
       language: language,
+      sort: sort,
       vrf: vrf,
       page: filter.page,
+      rawConfig: rawConfig,
     );
 
     final htmlContent = await _getHtmlWithRetry(
@@ -747,8 +798,10 @@ class MangaFireAdapter implements GenericAdapter {
         baseUrl: _baseUrl,
         keyword: query,
         language: language,
+        sort: sort,
         vrf: token,
         page: filter.page,
+        rawConfig: rawConfig,
       ),
     );
     if (htmlContent == null || htmlContent.isEmpty) {
@@ -1211,20 +1264,6 @@ class MangaFireAdapter implements GenericAdapter {
         'Accept':
             'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     };
-  }
-
-  String _sortValue(SortOption sort) {
-    switch (sort) {
-      case SortOption.popular:
-      case SortOption.popularToday:
-      case SortOption.popularWeek:
-      case SortOption.popularMonth:
-        return 'most_viewed';
-      case SortOption.rating:
-        return 'most_score';
-      case SortOption.newest:
-        return 'recently_updated';
-    }
   }
 
   String _absoluteUrl(String url) {

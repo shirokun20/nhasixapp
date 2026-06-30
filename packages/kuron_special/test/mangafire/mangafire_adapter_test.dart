@@ -37,7 +37,7 @@ void main() {
 
       expect(
         url,
-        'https://mangafire.to/filter?keyword=&language%5B%5D=en&sort=recently_updated&vrf=&page=1',
+        'https://mangafire.to/filter?keyword=&language%5B%5D=en&sort=recently_updated&page=1',
       );
     });
 

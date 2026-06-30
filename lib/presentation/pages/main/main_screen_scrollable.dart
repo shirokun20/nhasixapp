@@ -280,12 +280,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
 
       if (savedFilter != null) {
         if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
-          final sanitizedQuery = savedFilter.query == '{query}'
-              ? ''
-              : MainScreenUtils.removeRawSearchQueryParam(
-                  savedFilter.query,
-                  'sort',
-                );
+          final sanitizedQuery = savedFilter.query == '{query}' ? '' : savedFilter.query;
           _currentSearchFilter = savedFilter.copyWith(
             query: sanitizedQuery,
             sortBy: _currentSortOption,
