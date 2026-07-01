@@ -55,7 +55,9 @@ class SearchFormFieldOption extends Equatable {
     final value = map['apiValue']?.toString() ?? map['value']?.toString() ?? '';
     return SearchFormFieldOption(
       value: value,
-      label: map['displayLabel']?.toString() ?? map['label']?.toString(),
+      label: map['displayLabel']?.toString() ??
+          map['label']?.toString() ??
+          map['name']?.toString(),
     );
   }
 
