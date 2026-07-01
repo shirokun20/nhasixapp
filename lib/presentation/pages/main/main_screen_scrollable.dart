@@ -223,9 +223,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         try {
           // Validate if the filter is meaningful and not just empty/cleared data
           if (savedFilter.hasFilters && _isValidSearchFilter(savedFilter)) {
-            // Load search results if there's a saved filter, but use current sort option
-            _currentSearchFilter =
-                savedFilter.copyWith(sortBy: _currentSortOption);
+            // Load search results if there's a saved filter, preserving its sort
+            _currentSearchFilter = savedFilter.copyWith(
+              sortBy: savedFilter.sortBy,
+            );
             _isShowingSearchResults = true;
             _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));
           } else {
@@ -283,7 +284,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
           final sanitizedQuery = savedFilter.query == '{query}' ? '' : savedFilter.query;
           _currentSearchFilter = savedFilter.copyWith(
             query: sanitizedQuery,
-            sortBy: _currentSortOption,
+            sortBy: savedFilter.sortBy,
           );
           _isShowingSearchResults = true;
           _contentBloc.add(ContentSearchEvent(_currentSearchFilter!));

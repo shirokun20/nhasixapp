@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -153,6 +155,21 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
     }
   }
 
+  /// Sync sort with main screen's current preference so both show same value.
+  Future<void> _syncSortWithMainScreen() async {
+    try {
+      final sortPref = await getIt<UserDataRepository>().getSortingPreference();
+      if (sortPref.apiValue.isNotEmpty &&
+          _sortOptions.any((o) =>
+              o.apiValue == sortPref.apiValue || o.value == sortPref.name)) {
+        _selectedSort = sortPref.apiValue;
+        if (mounted) setState(() {});
+      }
+    } catch (_) {
+      // ignore — fallback to defaultSort from config
+    }
+  }
+
   Future<void> _restoreSavedFilter() async {
     try {
       final savedFilter = await getIt<UserDataRepository>()
@@ -208,6 +225,9 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       }
 
       if (mounted) setState(() {});
+
+      // After restoring saved filter, sync sort with main screen's latest choice
+      await _syncSortWithMainScreen();
     } catch (e) {
       _logger.w('Failed to restore saved filter: $e');
     }
@@ -550,6 +570,11 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchBox(colorScheme),
+          // Sort options — always visible when configured
+          if (_sortOptions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildSortSelector(colorScheme),
+          ],
           if (_supportsAdvancedFilters) ...[
             const SizedBox(height: 16),
             _buildAdvancedToggle(colorScheme),
@@ -1161,6 +1186,53 @@ class _QueryStringSearchUIState extends State<QueryStringSearchUI> {
       ),
     );
   } */
+
+  // ── Sort Selector ───────────────────────────────────────────────────────────
+
+  Widget _buildSortSelector(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context)!.sortBy.toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: _sortOptions.map((option) {
+            final isSelected = _selectedSort == option.apiValue;
+            return ChoiceChip(
+              label: Text(option.label),
+              selected: isSelected,
+              showCheckmark: true,
+              selectedColor: cs.primaryContainer,
+              backgroundColor: cs.surfaceContainerHighest,
+              checkmarkColor: cs.onPrimaryContainer,
+              labelStyle: TextStyle(
+                color: isSelected ? cs.onPrimaryContainer : cs.onSurface,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? cs.primary.withValues(alpha: 0.45)
+                    : cs.outline.withValues(alpha: 0.25),
+              ),
+              onSelected: (_) {
+                setState(() => _selectedSort = option.apiValue);
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
 
   // ── Search Button ───────────────────────────────────────────────────────────
 

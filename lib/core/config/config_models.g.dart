@@ -240,7 +240,7 @@ Map<String, dynamic> _$UiConfigToJson(UiConfig instance) => <String, dynamic>{
     };
 
 AuthConfig _$AuthConfigFromJson(Map<String, dynamic> json) => AuthConfig(
-      enabled: json['enabled'] as bool,
+      enabled: json['enabled'] as bool? ?? false,
       loginEndpoint: json['loginEndpoint'] as String?,
       registerEndpoint: json['registerEndpoint'] as String?,
       sessionCookies: (json['sessionCookies'] as List<dynamic>?)
@@ -675,8 +675,7 @@ SearchFormFieldConfig _$SearchFormFieldConfigFromJson(
       queryParam: json['queryParam'] as String?,
       placeholder: json['placeholder'] as String?,
       options: (json['options'] as List<dynamic>?)
-          ?.map(
-              (e) => SearchFormOptionConfig.fromJson(e as Map<String, dynamic>))
+          ?.map(SearchFormOptionConfig.fromJson)
           .toList(),
       urlPattern: json['urlPattern'] as String?,
     );
@@ -693,7 +692,9 @@ Map<String, dynamic> _$SearchFormFieldConfigToJson(
 
 _SearchConfig _$SearchConfigFromJson(Map<String, dynamic> json) =>
     _SearchConfig(
-      searchMode: $enumDecode(_$SearchModeEnumMap, json['searchMode']),
+      searchMode:
+          $enumDecodeNullable(_$SearchModeEnumMap, json['searchMode']) ??
+              SearchMode.queryString,
       endpoint: json['endpoint'] as String,
       sortingConfig: json['sortingConfig'] == null
           ? null

@@ -302,8 +302,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       final tagManager = getIt<TagDataManager>();
       final List<_DynamicOption> options;
       if (tagSourceUrl != null && tagSourceUrl.isNotEmpty) {
-        final tags = await tagManager.loadTagsFromUrl(tagSourceUrl);
-        options = tags
+        final allTags = await tagManager.loadTagsFromUrl(tagSourceUrl);
+        var filtered = allTags;
+        if (tagType != null && tagType.isNotEmpty) {
+          filtered = allTags.where((t) => t.type == tagType).toList();
+        }
+        options = filtered
             .map(
               (tag) => _DynamicOption(
                 value: (tag.slug ?? '').isNotEmpty ? tag.slug! : tag.name,
@@ -384,7 +388,17 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             _pendingMultiRestore[entry.key] = values;
             continue;
           }
-          _setRestoredFieldValue(entry.key, field, values);
+
+          // Only restore value to fields whose valuePrefix matches the raw value.
+          // This prevents cross-contamination when multiple fields share the same
+          // queryParam (e.g. spyfakku: includeTag/excludeTag/artist/parody all → q).
+          final rawField = _rawFieldConfig(entry.key);
+          final prefix = (rawField?['valuePrefix'] as String? ?? '').trim();
+          if (prefix.isNotEmpty && values.any((v) => v.startsWith(prefix))) {
+            _setRestoredFieldValue(entry.key, field, values);
+          } else if (prefix.isEmpty) {
+            _setRestoredFieldValue(entry.key, field, values);
+          }
         }
       }
 
@@ -2003,10 +2017,21 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       case 'text':
       case 'tag':
         if (_isTagChipsField(name, field)) {
+          final rawField = _rawFieldConfig(name);
           final parsed = <String>[];
           for (final value in values) {
-            parsed
-                .addAll(_splitFieldInput(_rawFieldConfig(name), value, 'tag'));
+            // Strip prefix/suffix so _formatFieldValue re-adds them.
+            final core = _extractFieldCoreFromToken(value, rawField);
+            if (core != null) {
+              parsed.add(core);
+            }
+          }
+          if (parsed.isEmpty) {
+            // Fallback — split as raw tag input
+            for (final value in values) {
+              parsed
+                  .addAll(_splitFieldInput(rawField, value, 'tag'));
+            }
           }
           _tagChipValues[name] = parsed.toSet().toList();
           _textControllers[name]?.clear();

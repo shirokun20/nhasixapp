@@ -421,7 +421,7 @@ extension SearchConfigPatterns on SearchConfig {
 @JsonSerializable()
 class _SearchConfig implements SearchConfig {
   const _SearchConfig(
-      {required this.searchMode,
+      {this.searchMode = SearchMode.queryString,
       required this.endpoint,
       this.sortingConfig,
       this.queryParam,
@@ -437,6 +437,7 @@ class _SearchConfig implements SearchConfig {
       _$SearchConfigFromJson(json);
 
   @override
+  @JsonKey()
   final SearchMode searchMode;
   @override
   final String endpoint;

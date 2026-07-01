@@ -97,7 +97,7 @@ enum SortWidgetType {
 @freezed
 sealed class SearchConfig with _$SearchConfig {
   const factory SearchConfig({
-    required SearchMode searchMode,
+    @Default(SearchMode.queryString) SearchMode searchMode,
     required String endpoint,
     SortingConfig? sortingConfig,
     String? queryParam,
@@ -428,15 +428,23 @@ class AuthConfig {
   final int? sessionDurationSeconds;
 
   AuthConfig({
-    required this.enabled,
+    this.enabled = false,
     this.loginEndpoint,
     this.registerEndpoint,
     this.sessionCookies,
     this.sessionDurationSeconds,
   });
 
-  factory AuthConfig.fromJson(Map<String, dynamic> json) =>
-      _$AuthConfigFromJson(json);
+  factory AuthConfig.fromJson(Map<String, dynamic> json) => AuthConfig(
+        enabled: json['enabled'] as bool? ?? false,
+        loginEndpoint: json['loginEndpoint'] as String?,
+        registerEndpoint: json['registerEndpoint'] as String?,
+        sessionCookies: (json['sessionCookies'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList(),
+        sessionDurationSeconds:
+            (json['sessionDurationSeconds'] as num?)?.toInt(),
+      );
   Map<String, dynamic> toJson() => _$AuthConfigToJson(this);
 }
 
@@ -936,8 +944,13 @@ class SearchFormOptionConfig {
 
   const SearchFormOptionConfig({required this.value, this.name, this.label});
 
-  factory SearchFormOptionConfig.fromJson(Map<String, dynamic> json) =>
-      _$SearchFormOptionConfigFromJson(json);
+  /// Accepts both `{"value": "...", "name": "..."}` and plain `"..."` strings.
+  factory SearchFormOptionConfig.fromJson(dynamic json) {
+    if (json is String) {
+      return SearchFormOptionConfig(value: json, label: json, name: json);
+    }
+    return _$SearchFormOptionConfigFromJson(json as Map<String, dynamic>);
+  }
   Map<String, dynamic> toJson() => _$SearchFormOptionConfigToJson(this);
 }
 
@@ -969,7 +982,21 @@ class SearchFormFieldConfig {
     this.urlPattern,
   });
 
-  factory SearchFormFieldConfig.fromJson(Map<String, dynamic> json) =>
-      _$SearchFormFieldConfigFromJson(json);
+  factory SearchFormFieldConfig.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json['options'];
+    List<SearchFormOptionConfig>? parsedOptions;
+    if (rawOptions is List) {
+      parsedOptions = rawOptions
+          .map((e) => SearchFormOptionConfig.fromJson(e))
+          .toList(growable: false);
+    }
+    return SearchFormFieldConfig(
+      type: json['type'] as String,
+      queryParam: json['queryParam'] as String?,
+      placeholder: json['placeholder'] as String?,
+      options: parsedOptions,
+      urlPattern: json['urlPattern'] as String?,
+    );
+  }
   Map<String, dynamic> toJson() => _$SearchFormFieldConfigToJson(this);
 }
