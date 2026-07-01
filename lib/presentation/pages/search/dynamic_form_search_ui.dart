@@ -503,8 +503,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   }
 
   bool _isAdvancedField(String name, SearchFormFieldConfig field) {
-    // Primary: text search query and sort. Everything else is advanced.
-    if (field.type == 'text' || field.type == 'sort') return false;
+    // Primary: text search query (name=query or search) and sort. Everything else is advanced.
+    if (field.type == 'sort') return false;
     final lowerName = name.toLowerCase();
     if (lowerName == 'query' || lowerName == 'search') return false;
     return true;
@@ -2114,6 +2114,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             addParamValue(qp, formatted, joinMode: joinMode);
           }
         case 'select':
+        case 'sort':
         case 'radio':
           final val = _selectValues[name];
           if (val != null && val.isNotEmpty) {
