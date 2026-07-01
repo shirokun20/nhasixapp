@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **DynamicFormSearchUI Advanced Filters panel**: Added expandable "Advanced Filters" toggle with animated expand/collapse (AnimatedSize + AnimatedSwitcher), active-filter badge count, and smooth chevron rotation — matching the polished UX of `QueryStringSearchUI`. Primary fields (text search, sort) remain always visible; all other fields hide behind the toggle panel.
+- **Config `options` upgrade to label-value objects**: `SearchFormFieldConfig.options` now supports both plain strings (`["update"]`) and labeled objects (`[{"name": "Update", "value": "update"}]`). Added `SearchFormOptionConfig` model class with `value`, `name`, and `label` fields. Raw JSON path in `_optionsForField` and `_optionsForStaticField` now reads `"name"` key first, falling back to `"label"`. Typed path updated in `search_form_contract_adapter.dart`.
 - **CMS template analysis**: Analyzed 20 source configs, live-verified 11 sites via Playwright. Identified 3 reusable templates (Madara, ZManga, Blogger) — see `output/cms-template-analysis.md`.
 - **Config generator MangaThemesia support**: Added `cms_detector.dart` hints for mangareader theme, `listupd`/`bsx` class patterns. Full `mangathemesia` branch in `config_generator.dart` with correct containers, pagination, detail/chapter/reader selectors, genre URLs.
 - **Config generator smart probes**: `generate --url` now extracts `defaultLanguage` from `<html lang>`, `iconPath` from `<link rel="icon">`, `brandColor` from `<meta name="theme-color">`.
@@ -21,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🐛 Fixed
 
+- **OfflineSearchCubit test**: Fixed `loadMoreContent` test that passed hardcoded `offset: 1` while the cubit tracks its own internal `_dbOffset`. Mock now uses `any(named: 'offset')` with `orderBy`/`descending` params to match the cubit's real call signature.
 - **Dynamic form sort retention**: Fixed an issue where selecting a sort option from a Dynamic Form (like in MangaFire or Generic Scraper sources) would be lost and fall back to the default sort when returning to the main screen. The `MainScreenScrollable` no longer strips the `sort` parameter from the raw query string, ensuring the adapter correctly receives and processes the user's explicit sort selection.
 - **Duplicate tags and string lists cleanup**: Fixed an issue where generic scraper string fields (like `Artists`) were cached with trailing counts and newlines (e.g. `Shiro Marimo\n1`), causing duplicate UI chips and deduplication failure. Added a regex rule to `hentairead-config.json` to cleanly extract the artist name, and patched `ContentModel._decodeStringList` to strip trailing counts directly from the local SQLite cache so old data is fixed without requiring a pull-to-refresh.
 - **Tag resolution slug fallback**: Fixed a bug where clicking older corrupted tags failed to navigate because the missing `tagId` triggered a `navigation cancelled to avoid invalid query` error. `DetailTagQueryResolver` now falls back to generating a slug from the raw `tagName` when `resolvedTagId` is empty.

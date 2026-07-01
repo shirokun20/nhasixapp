@@ -65,7 +65,13 @@ void main() {
           <String>['query', '_sort', 'genre', 'includedTag', '_page']);
       expect(form.params['query']?.type, 'text');
       expect(form.params['_sort']?.type, 'sort');
-      expect(form.params['_sort']?.options, <String>['date', 'popular']);
+      final sortOptions = form.params['_sort']?.options;
+      expect(sortOptions, isNotNull);
+      expect(sortOptions!.length, 2);
+      expect(sortOptions[0].value, 'date');
+      expect(sortOptions[0].label, 'Newest');
+      expect(sortOptions[1].value, 'popular');
+      expect(sortOptions[1].label, 'Popular');
       expect(form.params['genre']?.type, 'checkbox');
       expect(form.params['_page']?.type, 'page');
 

@@ -36,8 +36,11 @@ class SearchFormContractAdapter {
       queryParam: field.queryParam,
       placeholder: field.placeholder,
       options: field.options
-          .map((option) => option.value)
-          .where((value) => value.isNotEmpty)
+          .map((option) => SearchFormOptionConfig(
+                value: option.value,
+                label: option.label,
+              ))
+          .where((option) => option.value.isNotEmpty)
           .toList(growable: false),
     );
   }

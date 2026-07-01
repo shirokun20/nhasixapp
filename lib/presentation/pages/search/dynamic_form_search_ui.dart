@@ -72,6 +72,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   final Set<String> _loadingCheckboxFields = <String>{};
   final Map<String, String> _checkboxLoadErrorByField = {};
 
+  bool _showAdvancedFilters = false;
+
   @override
   void initState() {
     super.initState();
@@ -500,14 +502,62 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     });
   }
 
+  bool _isAdvancedField(String name, SearchFormFieldConfig field) {
+    // Primary: text search query and sort. Everything else is advanced.
+    if (field.type == 'text' || field.type == 'sort') return false;
+    final lowerName = name.toLowerCase();
+    if (lowerName == 'query' || lowerName == 'search') return false;
+    return true;
+  }
+
+  int _countActiveAdvancedFilters() {
+    var count = 0;
+    for (final entry in widget.config.params.entries) {
+      final name = entry.key;
+      final field = entry.value;
+      if (!_isAdvancedField(name, field)) continue;
+      if (field.type == 'page') continue;
+      if (_shouldHideBecauseCombinedPicker(name, field)) continue;
+
+      if (field.type == 'select' || field.type == 'radio') {
+        if (_selectValues[name] != null) count++;
+      } else if (_isPickerField(name, field)) {
+        if ((_multiSelectValues[name] ?? const <_DynamicOption>[]).isNotEmpty) {
+          count++;
+        }
+      } else if (_isTagChipsField(name, field)) {
+        if ((_tagChipValues[name] ?? const <String>[]).isNotEmpty ||
+            (_textControllers[name]?.text.trim().isNotEmpty ?? false)) {
+          count++;
+        }
+      } else if (field.type == 'text' || field.type == 'tag') {
+        if (_textControllers[name]?.text.trim().isNotEmpty ?? false) count++;
+      } else if (field.type == 'checkbox') {
+        if ((_multiSelectValues[name] ?? const <_DynamicOption>[]).isNotEmpty) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visibleFields = widget.config.params.entries
+    final allFields = widget.config.params.entries
         .where((e) =>
             e.value.type != 'page' &&
-            e.value.type != 'sort' &&
             !_shouldHideBecauseCombinedPicker(e.key, e.value))
         .toList();
+
+    final primaryFields = allFields
+        .where((e) => !_isAdvancedField(e.key, e.value))
+        .toList();
+
+    final advancedFields = allFields
+        .where((e) => _isAdvancedField(e.key, e.value))
+        .toList();
+
+    final hasAdvanced = advancedFields.isNotEmpty;
 
     return Column(
       children: [
@@ -519,8 +569,46 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final entry in visibleFields)
+                  for (final entry in primaryFields)
                     _buildField(entry.key, entry.value),
+
+                  if (hasAdvanced) ...[
+                    const SizedBox(height: 8),
+                    _buildAdvancedToggle(),
+                    const SizedBox(height: 8),
+                  ],
+
+                  if (hasAdvanced)
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                        child: _showAdvancedFilters
+                            ? Column(
+                                key: const ValueKey('advanced_open'),
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  for (final entry in advancedFields)
+                                    _buildField(entry.key, entry.value),
+                                ],
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('advanced_closed'),
+                              ),
+                      ),
+                    ),
+
                   _buildQueryPreviewCard(),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -542,6 +630,103 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAdvancedToggle() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final activeCount = _countActiveAdvancedFilters();
+
+    return InkWell(
+      onTap: () =>
+          setState(() => _showAdvancedFilters = !_showAdvancedFilters),
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: _showAdvancedFilters
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _showAdvancedFilters
+                ? Colors.transparent
+                : colorScheme.outline.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            AnimatedScale(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutBack,
+              scale: _showAdvancedFilters ? 1.08 : 1.0,
+              child: Icon(
+                Icons.tune_rounded,
+                color: _showAdvancedFilters
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              AppLocalizations.of(context)!.advancedFilters,
+              style: TextStyle(
+                color: _showAdvancedFilters
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+            if (activeCount > 0) ...[
+              const SizedBox(width: 8),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder:
+                    (Widget child, Animation<double> animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Container(
+                  key: ValueKey(activeCount),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _showAdvancedFilters
+                        ? colorScheme.onPrimary
+                        : colorScheme.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$activeCount',
+                    style: TextStyle(
+                      color: _showAdvancedFilters
+                          ? colorScheme.primary
+                          : colorScheme.onPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              turns: _showAdvancedFilters ? 0.5 : 0,
+              child: Icon(
+                Icons.expand_more,
+                color: _showAdvancedFilters
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2343,7 +2528,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               if (value.isEmpty) return null;
               return _DynamicOption(
                 value: value,
-                label: option['label']?.toString() ?? value,
+                label: option['name']?.toString() ??
+                    option['label']?.toString() ??
+                    value,
               );
             }
             final value = option?.toString() ?? '';
@@ -2354,8 +2541,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           .toList(growable: false);
     }
 
-    return (field.options ?? const <String>[])
-        .map((value) => _DynamicOption(value: value, label: _capitalize(value)))
+    return (field.options ?? const <SearchFormOptionConfig>[])
+        .map((opt) => _DynamicOption(
+              value: opt.value,
+              label: opt.name ?? opt.label ?? _capitalize(opt.value),
+            ))
         .toList(growable: false);
   }
 
@@ -2369,7 +2559,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               if (value.isEmpty) return null;
               return _DynamicOption(
                 value: value,
-                label: option['label']?.toString() ?? value,
+                label: option['name']?.toString() ??
+                    option['label']?.toString() ??
+                    value,
               );
             }
             final value = option?.toString() ?? '';

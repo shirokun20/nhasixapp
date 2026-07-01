@@ -920,6 +920,27 @@ class SearchFormConfig {
   Map<String, dynamic> toJson() => _$SearchFormConfigToJson(this);
 }
 
+/// A single option entry for [SearchFormFieldConfig.options].
+///
+/// Supports both plain-string and object-form in JSON:
+/// ```json
+/// "options": ["update"]
+/// "options": [{"name": "Update", "value": "update"}]
+/// ```
+@JsonSerializable()
+class SearchFormOptionConfig {
+  final String value;
+  @JsonKey(name: 'name')
+  final String? name;
+  final String? label;
+
+  const SearchFormOptionConfig({required this.value, this.name, this.label});
+
+  factory SearchFormOptionConfig.fromJson(Map<String, dynamic> json) =>
+      _$SearchFormOptionConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$SearchFormOptionConfigToJson(this);
+}
+
 /// Single field definition inside [SearchFormConfig.params].
 @JsonSerializable(explicitToJson: true)
 class SearchFormFieldConfig {
@@ -934,7 +955,7 @@ class SearchFormFieldConfig {
   final String? placeholder;
 
   /// Allowed option values (for `select` fields).
-  final List<String>? options;
+  final List<SearchFormOptionConfig>? options;
 
   /// Which URL pattern to use when this field drives navigation
   /// (for `tag`/genre fields, e.g. `"genreSearch"`).

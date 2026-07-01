@@ -162,8 +162,10 @@ void main() {
         when(() => mockUserDataRepository.getAllDownloads(
               state: DownloadState.completed,
               limit: 20,
-              offset: 1, // Offset is 1 because we have 1 item already
+              offset: any(named: 'offset'),
               sourceId: any(named: 'sourceId'),
+              orderBy: any(named: 'orderBy'),
+              descending: any(named: 'descending'),
             )).thenAnswer((_) async => tDownloadList);
 
         when(() => mockUserDataRepository.getDownloadsCount(

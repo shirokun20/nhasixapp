@@ -129,6 +129,7 @@ lib/
 - `revamp-kuron-config-runtime`
 - `source-health-monitor` — Proposed. Per-source HTTP health check in settings (HEAD to baseUrl, timeout 10s, green/red/grey dot indicators, "Check All" button, aggregate "N/N reachable" summary). Advisory only — no auto-disable.
 - `add-vihentai-source` — Proposed. ViHentai (vi-hentai.moe) source integration. Config done, needs Livewire auth + packed JS decode plugins in kuron_special. See `output/pdf/vihentai-integration-analysis.pdf`.
+- `search-form-ui-parity` — Done. Advanced Filters toggle panel in `DynamicFormSearchUI` matching `QueryStringSearchUI` style, `select` fields rendered as chip groups, config `options` upgraded to support `{name, value}` objects alongside plain strings, `SearchFormOptionConfig` model class added, offline search cubit test fixed.
 
 ### Exploration / Analysis (in `openspec/changes/`)
 - *(none)*
@@ -172,6 +173,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-01 | Claude Code | Search Form UI Parity | Done | Implemented Advanced Filters toggle panel in `DynamicFormSearchUI` matching `QueryStringSearchUI` style (AnimatedSize + AnimatedSwitcher, badge count, chevron rotation). Primary fields (text, sort) always visible; secondary fields hidden behind toggle. Upgraded config `options` from `List<String>` to `List<SearchFormOptionConfig>` supporting both plain strings and `{name, value}` objects. Updated raw JSON path in `_optionsForField`/`_optionsForStaticField` to read `"name"` key (→ `"label"` → value fallback). Fixed `OfflineSearchCubit` test mock. All 464 tests pass, analyze clean. |
 | 2026-06-30 | Antigravity | Dynamic Form Sort Fix | Done | Fixed a bug where dynamic form sort inputs were stripped when returning to the Main Screen, causing sources like MangaFire and all generic scraper sources to fall back to the default Main Screen sort. Removed `MainScreenUtils.removeRawSearchQueryParam` from `MainScreenScrollable._reloadSearchFilter` to preserve the `raw:` query sort parameter intact for the adapter. |
 | 2026-06-29 | Codex | ViHentai Source Integration Analysis | Proposal | Config valid, openspec proposal created, PDF analysis generated. Needs 3 custom plugins for Livewire/packed JS/chapters. |
 | 2026-06-29 | Claude Code | CMS template analysis + config generator MangaThemesia + dojing.net test | Done | CMS analysis of 20 configs, live-verified 11 sites. 3 reusable templates (Madara/ZManga/Blogger) → `output/cms-template-analysis.md`. Fixed `cms_detector.dart` + `config_generator.dart` for MangaThemesia theme detection. Added smart probes (lang/favicon/color). Tested against `dojing.net`, output `output/gen-dojing-config.json`. |
