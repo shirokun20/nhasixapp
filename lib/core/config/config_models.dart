@@ -245,7 +245,7 @@ class ApiConfig {
   final Map<String, dynamic>? endpoints;
 
   /// Images config can have nested structure (mode, items, proxyPatterns, etc.)
-  /// so it must be Map<String, dynamic>, not Map<String, String>.
+  /// so it must be `Map<String, dynamic>`, not `Map<String, String>`.
   final Map<String, dynamic>? images;
 
   final Map<String, dynamic>? extensionMapping;

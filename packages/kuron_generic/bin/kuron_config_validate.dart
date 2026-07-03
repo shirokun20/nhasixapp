@@ -3,15 +3,15 @@
 /// kuron_config_validate — CLI entry point for source config validation.
 ///
 /// Usage:
-///   dart run kuron_generic:kuron_config_validate [options] <config.json>...
-///   dart run kuron_generic:kuron_config_validate [options] --dir <configs/>
+///   `dart run kuron_generic:kuron_config_validate [options] <config.json>...`
+///   `dart run kuron_generic:kuron_config_validate [options] --dir <configs/>`
 ///
 /// Options:
-///   --format json|markdown|text   Output format (default: text)
-///   --output <path>               Write report to file instead of stdout
-///   --dir <directory>             Validate all *.json files in directory
-///   --engine <version>            Override engine version (default: 2.0.0)
-///   --fail-on <status,...>        Exit non-zero when any source matches status
+///   `--format json|markdown|text`   Output format (default: text)
+///   `--output <path>`               Write report to file instead of stdout
+///   `--dir <directory>`             Validate all *.json files in directory
+///   `--engine <version>`            Override engine version (default: 2.0.0)
+///   `--fail-on <status,...>`        Exit non-zero when any source matches status
 ///                                 (default: configError,needsEngineSupport)
 ///   --help                        Show this help
 ///

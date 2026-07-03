@@ -1242,7 +1242,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   /// Extract both covers and languages in a single HTTP request
-  /// Returns Map<String, String> where key is ID and value contains 'cover' and 'language'
+  /// Returns `Map<String, String>` where key is ID and value contains 'cover' and 'language'
   Future<Map<String, Map<String, dynamic>>> _extractListCoversAndLanguages({
     required SearchFilter filter,
     required Map<String, dynamic> rawConfig,
@@ -1338,7 +1338,7 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   /// Extract language tags from home page HTML
-  /// Returns Map<String, String> where key is content ID and value is language
+  /// Returns `Map<String, String>` where key is content ID and value is language
   /// Example: "english", "chinese", "japanese", etc.
   /// Extract language tag from a single row element
   /// Looks for <div class="gt" title="language:xxx"> tags
