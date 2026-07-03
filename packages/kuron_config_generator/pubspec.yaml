@@ -17,6 +17,7 @@ dependencies:
     path: ../kuron_core
   kuron_generic:
     path: ../kuron_generic
+  html: ^0.15.6
 
 dev_dependencies:
   test: ^1.24.0

@@ -9,6 +9,7 @@ import '../generator/config_generator.dart';
 import '../discovery/http_probe.dart';
 import '../discovery/cms_detector.dart';
 import '../discovery/api_detector.dart';
+import 'package:html/parser.dart' show parse;
 
 /// Generate a Kuron source config through interactive questions or URL-assisted discovery.
 class GenerateCommand extends Command<void> {
@@ -133,6 +134,13 @@ class GenerateCommand extends Command<void> {
       logger.w('Unknown CMS — selectors will be generic guesses.');
     }
 
+    // Detect Search Form dynamically
+    final document = parse(probe.body);
+    final searchForm = detectSearchForm(document);
+    if (searchForm != null) {
+      logger.i('🔍 Detected Search Form: endpoint="${searchForm['searchEndpoint']}", param="${searchForm['queryParam']}"');
+    }
+
     // Detect language from HTML lang attribute
     String? langFromHtml;
     final langMatch = RegExp(r'<html[^>]+lang="([^"]+)"').firstMatch(probe.body);
@@ -181,6 +189,8 @@ class GenerateCommand extends Command<void> {
       if (langFromHtml != null) 'defaultLanguage': langFromHtml,
       if (faviconPath != null) 'faviconPath': faviconPath,
       if (themeColor != null) 'themeColor': themeColor,
+      if (searchForm != null) 'searchEndpoint': searchForm['searchEndpoint'],
+      if (searchForm != null) 'searchQueryParam': searchForm['queryParam'],
     };
 
     // Fill selectors from CMS detection where available
@@ -220,8 +230,8 @@ class GenerateCommand extends Command<void> {
       answers['readerImageSel'] = cms.selectors['reader.image'] ?? 'img';
 
       if (cms.searchDefaults != null) {
-        answers['searchUrl'] = cms.searchDefaults!['searchUrl'] as String?;
-        answers['searchQueryParam'] =
+        answers['searchUrl'] ??= cms.searchDefaults!['searchUrl'] as String?;
+        answers['searchQueryParam'] ??=
             cms.searchDefaults!['queryParam'] as String?;
       }
 

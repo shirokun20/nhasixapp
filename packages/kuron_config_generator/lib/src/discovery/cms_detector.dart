@@ -1,3 +1,5 @@
+import 'package:html/dom.dart';
+
 /// CMS signatures and matched selector candidates.
 class CmsSignature {
   CmsSignature({
@@ -617,4 +619,95 @@ Map<String, String>? _fallbackFor(String cmsId, String themeType) {
     };
   }
   return null;
+}
+
+/// Detects the search form in the given HTML document.
+Map<String, String>? detectSearchForm(Document document) {
+  final forms = document.querySelectorAll('form');
+  Element? bestForm;
+
+  for (final form in forms) {
+    if (form.attributes['role'] == 'search' ||
+        form.classes.contains('search-form') ||
+        form.classes.contains('searchform')) {
+      bestForm = form;
+      break;
+    }
+  }
+
+  if (bestForm == null) {
+    for (final form in forms) {
+      final action = form.attributes['action']?.toLowerCase() ?? '';
+      if (action.contains('search') || action.contains('?s=')) {
+        bestForm = form;
+        break;
+      }
+    }
+  }
+
+  if (bestForm == null && forms.isNotEmpty) {
+    for (final form in forms) {
+      final inputs = form.querySelectorAll('input');
+      for (final input in inputs) {
+        final name = input.attributes['name'];
+        if (name == 's' || name == 'q' || name == 'query' || name == 'keyword') {
+          bestForm = form;
+          break;
+        }
+      }
+      if (bestForm != null) break;
+    }
+  }
+
+  if (bestForm == null) return null;
+
+  var action = bestForm.attributes['action'] ?? '/';
+  if (action.isEmpty) action = '/';
+  
+  if (action.startsWith('http')) {
+    try {
+      final uri = Uri.parse(action);
+      action = uri.path;
+      if (action.isEmpty) action = '/';
+    } catch (_) {}
+  }
+
+  String? queryParam;
+  final inputs = bestForm.querySelectorAll('input');
+  
+  for (final input in inputs) {
+    if (input.attributes['type'] == 'search') {
+      queryParam = input.attributes['name'];
+      break;
+    }
+  }
+  
+  if (queryParam == null || queryParam.isEmpty) {
+    for (final input in inputs) {
+      final name = input.attributes['name'];
+      if (name == 's' || name == 'q' || name == 'query' || name == 'keyword') {
+        queryParam = name;
+        break;
+      }
+    }
+  }
+  
+  if (queryParam == null || queryParam.isEmpty) {
+    for (final input in inputs) {
+      final type = input.attributes['type'] ?? 'text';
+      final typeLower = type.toLowerCase();
+      // Skip hidden or submit inputs
+      if (typeLower != 'hidden' && typeLower != 'submit' && typeLower != 'button') {
+        queryParam = input.attributes['name'];
+        break;
+      }
+    }
+  }
+
+  if (queryParam == null || queryParam.isEmpty) return null;
+
+  return {
+    'searchEndpoint': action,
+    'queryParam': queryParam,
+  };
 }

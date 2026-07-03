@@ -283,27 +283,43 @@ class ConfigGenerator {
 
     // ── Search ──
     if (hasSearch) {
-      final searchUrl = _str(a['searchUrl']);
+      final searchEndpoint = _str(a['searchEndpoint']);
+      final searchParam = _str(a['searchQueryParam']);
+      final queryParamPart = searchParam.isNotEmpty ? '$searchParam={query}' : 's={query}';
+      final searchUrlOverride = _str(a['searchUrl']);
+
+      String finalSearchUrl;
+      String finalSearchPageUrl;
+
+      if (searchEndpoint.isNotEmpty) {
+        final sep = searchEndpoint.contains('?') ? '&' : '?';
+        finalSearchUrl = '$searchEndpoint$sep$queryParamPart';
+        if (ct == 'zmanga') {
+          finalSearchPageUrl = '/page/{page}/$sep$queryParamPart';
+        } else if (ct == 'blogger') {
+          finalSearchPageUrl = '$searchEndpoint$sep$queryParamPart&max-results=12&start={page}';
+        } else {
+          finalSearchPageUrl = '/page/{page}/$sep$queryParamPart';
+        }
+      } else {
+        finalSearchUrl = searchUrlOverride.isNotEmpty ? searchUrlOverride : '/?$queryParamPart';
+        if (ct == 'zmanga') {
+          finalSearchPageUrl = '/page/{page}/?$queryParamPart';
+        } else if (ct == 'blogger') {
+          finalSearchPageUrl = '/search?$queryParamPart&max-results=12&start={page}';
+        } else {
+          finalSearchPageUrl = '/page/{page}/?$queryParamPart';
+        }
+      }
+
       urls['search'] = <String, Object?>{
-        'url': searchUrl.isNotEmpty ? searchUrl : '/?s={query}',
+        'url': finalSearchUrl,
         'inherits': 'home',
       };
-      if (ct == 'zmanga') {
-        urls['searchPage'] = <String, Object?>{
-          'url': '/page/{page}/?s={query}',
-          'inherits': 'home',
-        };
-      } else if (ct == 'blogger') {
-        urls['searchPage'] = <String, Object?>{
-          'url': '/search?q={query}&max-results=12&start={page}',
-          'inherits': 'home',
-        };
-      } else {
-        urls['searchPage'] = <String, Object?>{
-          'url': '/page/{page}/?s={query}',
-          'inherits': 'home',
-        };
-      }
+      urls['searchPage'] = <String, Object?>{
+        'url': finalSearchPageUrl,
+        'inherits': 'home',
+      };
     }
 
     // ── Genre / Tag / Author ──
