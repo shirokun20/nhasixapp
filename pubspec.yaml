@@ -10,6 +10,14 @@ environment:
 platforms:
   android:
 
+workspace:
+  - packages/kuron_core
+  - packages/kuron_generic
+  - packages/kuron_special
+  - packages/kuron_config_generator
+  - packages/kuron_native
+  - packages/kuron_native/example
+
 dependencies:
   flutter:
     sdk: flutter
@@ -103,6 +111,11 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   build_runner: ^2.4.13
+  melos: ^8.0.0
+
+dependency_overrides:
+  cli_util: ^0.5.0
+  petitparser: ^7.0.0
   
   # Code Generation
   freezed: ^3.0.0
@@ -135,3 +148,36 @@ flutter_launcher_icons:
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icons/Frame.png"
+
+melos:
+  sdkPath: .fvm/flutter_sdk
+  scripts:
+    bootstrap:
+      run: melos exec -- fvm flutter pub get
+      description: Run pub get in all packages
+    analyze:
+      run: melos exec -- fvm flutter analyze --no-fatal-infos
+      description: Run flutter analyze in all packages
+    test:
+      run: melos exec -- fvm flutter test
+      description: Run tests in all packages
+      packageFilters:
+        dirExists: test
+    format:
+      run: melos exec -- fvm dart format .
+      description: Format all Dart files
+    codegen:
+      run: fvm flutter pub run build_runner build --delete-conflicting-outputs
+      description: Run build_runner codegen on root app
+    codegen:pkg:
+      run: melos exec -- fvm flutter pub run build_runner build --delete-conflicting-outputs
+      description: Run build_runner codegen on targeted package(s)
+      packageFilters:
+        dependsOn:
+          - build_runner
+    clean:
+      run: melos exec -- fvm flutter clean
+      description: Run flutter clean in all packages
+    outdated:
+      run: melos exec -- fvm flutter pub outdated
+      description: Check outdated dependencies in all packages
