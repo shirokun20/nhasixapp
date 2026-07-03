@@ -4,13 +4,13 @@ version: 0.1.0
 publish_to: none
 
 environment:
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: ^3.5.4
 
 dependencies:
   args: ^2.4.0
   http: ^1.1.0
-  logger: ^2.0.0
-  path: ^1.8.0
+  logger: ^2.6.2
+  path: ^1.9.0
 
   # Kuron packages (path dependencies)
   kuron_core:
