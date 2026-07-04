@@ -522,7 +522,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return _cachedImageHeights.values.last;
     }
 
-    return (screenHeight * 0.9).clamp(1.0, double.infinity).toDouble();
+    return (screenHeight * 0.5).clamp(1.0, double.infinity).toDouble();
   }
 
   /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam

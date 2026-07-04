@@ -407,13 +407,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               confirmedAnimatedWebP: true,
             );
             if (!mounted) return;
+            final webpInfo =
+                _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
             final nativeSize =
-                (avifInfo.width != null && avifInfo.height != null)
+                (webpInfo.width != null && webpInfo.height != null)
                     ? Size(
-                        avifInfo.width!.toDouble(),
-                        avifInfo.height!.toDouble(),
+                        webpInfo.width!.toDouble(),
+                        webpInfo.height!.toDouble(),
                       )
-                    : null;
+                    : (avifInfo.width != null && avifInfo.height != null)
+                        ? Size(
+                            avifInfo.width!.toDouble(),
+                            avifInfo.height!.toDouble(),
+                          )
+                        : null;
             setState(() {
               _isHeavyImage = true;
               _isConfirmedAnimatedWebP = true;
@@ -565,13 +572,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               cachedFilePath: convertedPath,
               confirmedAnimatedWebP: true,
             );
+            final webpInfo =
+                _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
             final nativeSize =
-                (avifInfo.width != null && avifInfo.height != null)
+                (webpInfo.width != null && webpInfo.height != null)
                     ? Size(
-                        avifInfo.width!.toDouble(),
-                        avifInfo.height!.toDouble(),
+                        webpInfo.width!.toDouble(),
+                        webpInfo.height!.toDouble(),
                       )
-                    : null;
+                    : (avifInfo.width != null && avifInfo.height != null)
+                        ? Size(
+                            avifInfo.width!.toDouble(),
+                            avifInfo.height!.toDouble(),
+                          )
+                        : null;
 
             if (!mounted) {
               _isHeavyImage = true;
@@ -654,6 +668,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
       );
       _maybeNotifyHeavyImageDetected();
+      if (width != null && height != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            widget.onImageLoaded?.call(
+              widget.pageNumber,
+              Size(width.toDouble(), height.toDouble()),
+            );
+          }
+        });
+      }
     } catch (e) {
       _logger.w('[NativeWebP] Local pre-check error: $e');
     } finally {
@@ -1717,9 +1741,38 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         // Static WebP files (thumbnails, cover images, etc.) must stay on the
         // Flutter codec path — returning non-null here marks the image as heavy
         // which prevents normal keep-alive recycling and forces native rendering.
-        return _looksLikeAnimatedWebPHeader(bytes)
-            ? (format: 'webp', width: null, height: null)
-            : empty;
+        if (!_looksLikeAnimatedWebPHeader(bytes)) return empty;
+
+        int? width;
+        int? height;
+        int offset = 12;
+        while (offset + 8 <= bytes.length) {
+          final chunkType =
+              String.fromCharCodes(bytes.sublist(offset, offset + 4));
+          final chunkSize = bytes[offset + 4] |
+              (bytes[offset + 5] << 8) |
+              (bytes[offset + 6] << 16) |
+              (bytes[offset + 7] << 24);
+
+          if (chunkType == 'VP8X' &&
+              chunkSize >= 10 &&
+              offset + 18 <= bytes.length) {
+            width = 1 +
+                (bytes[offset + 12] |
+                    (bytes[offset + 13] << 8) |
+                    (bytes[offset + 14] << 16));
+            height = 1 +
+                (bytes[offset + 15] |
+                    (bytes[offset + 16] << 8) |
+                    (bytes[offset + 17] << 16));
+            break;
+          }
+
+          offset += 8 + chunkSize;
+          if (chunkSize % 2 != 0) offset++;
+        }
+
+        return (format: 'webp', width: width, height: height);
       }
       if (ext == 'avif') {
         // Route to native AnimatedWebPView only for avis-brand AVIF within the
