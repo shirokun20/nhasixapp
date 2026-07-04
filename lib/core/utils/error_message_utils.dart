@@ -56,6 +56,7 @@ class ErrorMessageUtils {
   static String _handleLocalizedDioError(
       DioException error, AppLocalizations l10n) {
     switch (error.type) {
+      case DioExceptionType.transformTimeout:
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
@@ -100,6 +101,7 @@ class ErrorMessageUtils {
 
   static String _handleDioError(DioException error) {
     switch (error.type) {
+      case DioExceptionType.transformTimeout:
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:

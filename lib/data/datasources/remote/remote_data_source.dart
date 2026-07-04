@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
-import 'package:native_dio_adapter/native_dio_adapter.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart'
+    hide NetworkException;
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'package:nhasixapp/domain/services/app_initializer.dart';
 import 'dart:math';

@@ -11,7 +11,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  ffmpeg_kit_flutter_new: ^4.1.0
+  ffmpeg_kit_flutter_new: ^4.3.2
   plugin_platform_interface: ^2.0.2
   permission_handler: ^12.0.1
   path_provider: ^2.1.2

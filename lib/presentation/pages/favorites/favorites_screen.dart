@@ -267,6 +267,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   bool _isRetriableOnlineFavoritesError(dynamic error) {
     if (error is DioException) {
       switch (error.type) {
+        case DioExceptionType.transformTimeout:
+          return true;
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:
         case DioExceptionType.receiveTimeout:
