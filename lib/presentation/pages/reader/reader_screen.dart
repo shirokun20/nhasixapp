@@ -1493,7 +1493,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Padding(
           key: ValueKey(
               'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-          padding: const EdgeInsets.only(bottom: 8.0),
+          padding: EdgeInsets.only(bottom: DesignTokens.spaceXs),
           child: ExtendedImageReaderWidget(
             imageUrl: imageUrl,
             contentId: widget.contentId,
@@ -1516,8 +1516,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               if (imageSize.width > 0) {
                 final renderedHeight =
                     imageSize.height * (screenWidth / imageSize.width);
-                // Add margin (8.0) to match the padding
-                final totalHeight = renderedHeight + 8.0;
+                // Add margin to match the padding
+                final totalHeight = renderedHeight + DesignTokens.spaceSm;
                 if (_cachedImageHeights[page] != totalHeight) {
                   _cachedImageHeights[page] = totalHeight;
                   // Rebuild to apply the accurate height
