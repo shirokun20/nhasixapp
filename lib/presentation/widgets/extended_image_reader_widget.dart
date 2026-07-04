@@ -2284,6 +2284,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       int? loadedBytesOverride,
       int? totalBytesOverride}) {
     final l10n = AppLocalizations.of(context)!;
+    // Responsive sizing based on reading mode
+    final bool isContinuousScroll =
+        widget.readingMode == ReadingMode.continuousScroll;
+
+    final double cardWidth = isContinuousScroll ? 280 : 240;
+    // final double previewHeight = isContinuousScroll ? 150 : 170;
 
     double? progressValue;
     int? progressPercent;
@@ -2314,6 +2320,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         progressValue = _syntheticProgressValue;
       }
     } catch (_) {
+      // Keep indicator indeterminate when progress fields are unavailable.
       if (loadedBytes <= 0 && _syntheticProgressValue > 0) {
         progressValue = _syntheticProgressValue;
       }
@@ -2345,7 +2352,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      margin: EdgeInsets.all(DesignTokens.spaceXl),
+      margin: isContinuousScroll
+          ? const EdgeInsets.symmetric(vertical: 20)
+          : EdgeInsets.zero,
       child: Center(
         child: Card(
           elevation: 6,
@@ -2355,25 +2364,49 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
           ),
           child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: DesignTokens.space2xl),
+            width: cardWidth,
+            padding: const EdgeInsets.all(14),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(
-                  value: showIndeterminateFromRealBytes ? null : indicatorValue,
-                ),
-                SizedBox(height: DesignTokens.spaceLg),
-                Text(
-                  headlineText,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                SizedBox(height: DesignTokens.spaceSm),
-                if (hasKnownTotal || hasRealByteCount)
-                  Text(
-                    detailText,
-                    style: Theme.of(context).textTheme.bodySmall,
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    headlineText,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  child: LinearProgressIndicator(
+                    value:
+                        showIndeterminateFromRealBytes ? null : indicatorValue,
+                    minHeight: 7,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  detailText,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
