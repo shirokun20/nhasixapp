@@ -1,0 +1,51 @@
+Resolving dependencies in `/Users/asix/Documents/learn_flutter/nhasixapp`...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (104.0.0 available)
+  analyzer 12.1.0 (14.0.0 available)
+  dart_style 3.1.8 (3.1.9 available)
+  dbus 0.7.13 (0.7.14 available)
+  equatable 2.0.8 (2.1.0 available)
+  flutter_secure_storage_darwin 0.3.2 (0.4.0 available)
+  intl 0.20.2 (0.20.3 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.18.0 (1.18.3 available)
+  open_file 3.5.11 (4.0.0 available)
+  open_file_linux 0.0.5 (1.1.0 available)
+  open_file_web 0.0.4 (1.1.0 available)
+  open_file_windows 0.0.3 (1.1.0 available)
+  package_config 2.2.0 (3.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  test 1.31.0 (1.31.2 available)
+  test_api 0.7.11 (0.7.13 available)
+  test_core 0.6.17 (0.6.19 available)
+  vector_math 2.2.0 (2.4.0 available)
+Got dependencies in `/Users/asix/Documents/learn_flutter/nhasixapp`!
+19 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /Users/asix/Documents/learn_flutter/nhasixapp/packages/kuron_config_generator/test/validation/fix_suggestion_test.dart
+00:00 +0: FixSuggestion fromJson round-trip preserves all fields
+00:00 +1: FixSuggestion fromJson handles nullable fields
+00:00 +2: FixSuggestionMapper known codes schemaVersionMissing
+00:00 +3: FixSuggestionMapper known codes contentIdPatternMissing
+00:00 +4: FixSuggestionMapper known codes homeUrlUnreachable
+00:00 +5: FixSuggestionMapper known codes reader.configError
+00:00 +6: FixSuggestionMapper known codes search.configError
+00:00 +7: FixSuggestionMapper known codes download.configError
+00:00 +7 -1: FixSuggestionMapper known codes download.configError [E]
+  Expected: contains 'reader selector'
+    Actual: 'Check `reader` selector — downloads reuse the reader image pipeline. If the site uses `chapterDataScript`, add `imageMode.chapterDataScript` to `requiredPrimitives`.'
+     Which: does not contain 'reader selector'
+  
+  package:matcher                                expect
+  test/validation/fix_suggestion_test.dart 95:9  main.<fn>.<fn>.<fn>
+  
+00:00 +7 -1: FixSuggestionMapper unknown code — generic fallback (R3.8) includes feature name when present
+00:00 +8 -1: FixSuggestionMapper unknown code — generic fallback (R3.8) uses "Review the config" when no feature
+00:00 +9 -1: FixSuggestionMapper unknown code — generic fallback (R3.8) fallback suggestion has generic diagnosticCode
+00:00 +10 -1: FixSuggestionMapper kFixSuggestions contains exactly 6 entries
+00:00 +11 -1: FixSuggestionMapper map handles multiple diagnostics in one call
+00:00 +12 -1: FixSuggestionMapper map handles empty diagnostic list
+00:00 +13 -1: Some tests failed.
+
+Failing tests:
+  /Users/asix/Documents/learn_flutter/nhasixapp/packages/kuron_config_generator/test/validation/fix_suggestion_test.dart: FixSuggestionMapper known codes download.configError

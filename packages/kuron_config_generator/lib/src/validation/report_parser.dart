@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:kuron_core/kuron_core.dart';
+
+
 /// Represents a parsed validation report from the validator CLI.
 class ParsedReport {
   final String sourceId;
@@ -51,12 +54,21 @@ class ReportDiagnostic {
 
   factory ReportDiagnostic.fromJson(Map<String, Object?> json) {
     final featureRaw = json['feature'] as String?;
+    // R2.2: set to null if feature name doesn't match a known FeatureKind
+    String? feature;
+    if (featureRaw != null && featureRaw.isNotEmpty) {
+      try {
+        FeatureKind.values.byName(featureRaw);
+        feature = featureRaw;
+      } on ArgumentError {
+        feature = null;
+      }
+    }
     return ReportDiagnostic(
       severity: json['severity'] as String? ?? 'error',
       code: json['code'] as String? ?? 'unknown',
       message: json['message'] as String? ?? '',
-      feature:
-          (featureRaw != null && featureRaw.isNotEmpty) ? featureRaw : null,
+      feature: feature,
     );
   }
 }
