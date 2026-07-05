@@ -3,18 +3,24 @@ import 'dart:io';
 class ValidatorRunner {
   /// Run the validator CLI via `dart run kuron_generic:kuron_config_validate`.
   /// Returns stdout content on success, null if validator unavailable or crashes.
-  static Future<String?> run(String configPath) async {
+  ///
+  /// [processRunner] is injected for testing — defaults to [Process.run].
+  static Future<String?> run(
+    String configPath, {
+    Future<ProcessResult> Function(String executable, List<String> arguments)?
+        processRunner,
+  }) async {
     try {
-      final result = await Process.run(
-        'dart',
-        [
-          'run',
-          'kuron_generic:kuron_config_validate',
-          '--format',
-          'json',
-          configPath,
-        ],
-      );
+      final args = [
+        'run',
+        'kuron_generic:kuron_config_validate',
+        '--format',
+        'json',
+        configPath,
+      ];
+      final result = processRunner != null
+          ? await processRunner('dart', args)
+          : await Process.run('dart', args);
       if (result.exitCode != 0 && (result.stderr as String).isNotEmpty) {
         stderr.writeln(
           'Warning: Validator exited with code ${result.exitCode}: '
