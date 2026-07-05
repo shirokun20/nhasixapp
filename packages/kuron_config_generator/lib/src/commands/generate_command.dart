@@ -9,6 +9,7 @@ import '../generator/config_generator.dart';
 import '../discovery/http_probe.dart';
 import '../discovery/cms_detector.dart';
 import '../discovery/api_detector.dart';
+import '../validation/validation_orchestrator.dart';
 import 'package:html/parser.dart' show parse;
 
 /// Generate a Kuron source config through interactive questions or URL-assisted discovery.
@@ -36,6 +37,22 @@ class GenerateCommand extends Command<void> {
         'capture-fixtures',
         negatable: false,
         help: 'Save HTTP/browser fixtures for validation.',
+      )
+      ..addFlag(
+        'validate',
+        negatable: false,
+        help: 'Run validation on the generated config.',
+      )
+      ..addOption(
+        'validate-format',
+        help: 'Output format for validation report.',
+        allowed: ['text', 'json', 'markdown'],
+        defaultsTo: 'text',
+      )
+      ..addFlag(
+        'fix-suggestions',
+        negatable: false,
+        help: 'Show fix suggestions even when config is compatible.',
       );
   }
 
@@ -90,6 +107,8 @@ class GenerateCommand extends Command<void> {
     );
 
     logger.i('✓ Config generated: ${configFile.path}');
+
+    await _maybeRunValidation(configFile.path);
   }
 
   Future<void> _runUrlAssistedGeneration(
@@ -138,12 +157,14 @@ class GenerateCommand extends Command<void> {
     final document = parse(probe.body);
     final searchForm = detectSearchForm(document);
     if (searchForm != null) {
-      logger.i('🔍 Detected Search Form: endpoint="${searchForm['searchEndpoint']}", param="${searchForm['queryParam']}"');
+      logger.i(
+          '🔍 Detected Search Form: endpoint="${searchForm['searchEndpoint']}", param="${searchForm['queryParam']}"');
     }
 
     // Detect language from HTML lang attribute
     String? langFromHtml;
-    final langMatch = RegExp(r'<html[^>]+lang="([^"]+)"').firstMatch(probe.body);
+    final langMatch =
+        RegExp(r'<html[^>]+lang="([^"]+)"').firstMatch(probe.body);
     if (langMatch != null) {
       final raw = langMatch.group(1)!.toLowerCase();
       if (raw == 'id' || raw == 'id-id' || raw == 'in') {
@@ -273,6 +294,8 @@ class GenerateCommand extends Command<void> {
       logger.i('💡 Review suggested selectors in the config — '
           'adjust paths, CSS classes, and image selectors as needed.');
     }
+
+    await _maybeRunValidation(configFile.path);
   }
 
   Future<void> _handleApiResponse(
@@ -325,5 +348,25 @@ class GenerateCommand extends Command<void> {
     );
     logger.i('✓ Config generated: ${configFile.path}');
     logger.i('💡 This is a draft — review endpoints, paths, and pagination.');
+
+    await _maybeRunValidation(configFile.path);
+  }
+
+  /// If --validate flag is set, run the validation loop on [configPath].
+  Future<void> _maybeRunValidation(String configPath) async {
+    final validate = argResults?['validate'] as bool? ?? false;
+    if (!validate) return; // R1.4: preserve existing behavior
+
+    final format = argResults?['validate-format'] as String? ?? 'text';
+
+    // R5.5: validate format value is already enforced by argParser allowed list
+    final showAll = argResults?['fix-suggestions'] as bool? ?? false;
+
+    final orchestrator = ValidationOrchestrator();
+    await orchestrator.runValidationLoop(
+      configPath: configPath,
+      reportFormat: format,
+      showAllSuggestions: showAll,
+    );
   }
 }

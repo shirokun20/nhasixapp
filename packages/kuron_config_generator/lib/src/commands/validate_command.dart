@@ -1,5 +1,10 @@
+// ignore_for_file: avoid_print
+
+import 'dart:io';
+
 import 'package:args/command_runner.dart';
-import 'package:logger/logger.dart';
+
+import '../validation/validation_orchestrator.dart';
 
 /// Validate a generated config using the runtime validator.
 class ValidateCommand extends Command<void> {
@@ -29,18 +34,56 @@ class ValidateCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final logger = Logger(level: Level.info);
     final workdir = argResults?['workdir'] as String;
-    final format = argResults?['format'] as String;
 
-    logger.i('Validate command stub');
-    logger.i('Workdir: $workdir');
-    logger.i('Format: $format');
+    // Find config JSON file in workdir
+    final dir = Directory(workdir);
+    if (!await dir.exists()) {
+      stderr.writeln('Error: Work directory not found: $workdir');
+      exit(1);
+    }
 
-    // DEFERRED: Validation workflow (Section 8) - deferred per Ponytail ultra / YAGNI.
-    // Existing kuron_config_validate CLI can validate generated configs.
-    // Integration into generator CLI can come later if needed.
-    logger.w(
-        'Validation workflow deferred - use fvm dart run kuron_generic:kuron_config_validate <config.json>');
+    final configFiles = dir
+        .listSync()
+        .where((e) =>
+            e is File &&
+            e.path.endsWith('-config.json') &&
+            !e.path.endsWith('.original.json'))
+        .toList();
+
+    if (configFiles.isEmpty) {
+      stderr.writeln('Error: No config file found in $workdir');
+      exit(1);
+    }
+
+    final configPath = (configFiles.first as File).path;
+    final orchestrator = ValidationOrchestrator();
+    final parsed = await orchestrator.runValidator(configPath);
+
+    if (parsed == null) {
+      stderr.writeln('Error: Validation failed or could not parse report.');
+      exit(1);
+    }
+
+    // Display summary
+    print('[${parsed.overallStatus}] ${parsed.sourceId}');
+    if (parsed.featureStatuses.isNotEmpty) {
+      for (final e in parsed.featureStatuses.entries) {
+        print('  ${e.key}: ${e.value}');
+      }
+    }
+
+    if (parsed.diagnostics.isNotEmpty) {
+      print('\nDiagnostics:');
+      for (final d in parsed.diagnostics) {
+        print('  [${d.severity}] ${d.code}: ${d.message}');
+      }
+    }
+
+    if (parsed.overallStatus == 'compatible') {
+      print('\n✓ Config is valid!');
+    } else {
+      exit(1);
+    }
   }
 }
