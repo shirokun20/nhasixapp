@@ -2,8 +2,10 @@
 
 import 'dart:io';
 
-import 'report_parser.dart';
+import 'backup_manager.dart';
 import 'fix_suggestion.dart';
+import 'report_parser.dart';
+import 'report_printer.dart';
 import 'validator_runner.dart';
 
 /// Orchestrates the validation lifecycle: run validator, parse report,
@@ -37,7 +39,7 @@ class ValidationOrchestrator {
     bool showAllSuggestions = false,
   }) async {
     // R8.1–R8.4: Backup on first entry only
-    await _createBackup(configPath);
+    await BackupManager.createBackup(configPath);
 
     for (var i = 0; i < 20; i++) {
       // R4.6: Check config file still exists
@@ -59,26 +61,16 @@ class ValidationOrchestrator {
 
       final suggestions = FixSuggestionMapper.map(parsed.diagnostics);
 
-      // Display summary
-      print('[${parsed.overallStatus}] ${parsed.sourceId}');
-      if (parsed.featureStatuses.isNotEmpty) {
-        for (final e in parsed.featureStatuses.entries) {
-          print('  ${e.key}: ${e.value}');
-        }
-      }
-
-      // Display suggestions
-      if (suggestions.isNotEmpty) {
-        print('\nFix suggestions:');
-        for (var j = 0; j < suggestions.length; j++) {
-          final s = suggestions[j];
-          print('  ${j + 1}. [${s.diagnosticCode}] ${s.suggestionText}');
-        }
-      }
+      // R4.1: Display report using the formatter
+      ReportPrinter.printReport(
+        parsed,
+        suggestions,
+        format: reportFormat,
+        showAllSuggestions: showAllSuggestions,
+      );
 
       // R4.4: Compatible → exit loop
       if (parsed.overallStatus == 'compatible') {
-        print('\n✓ Config is valid!');
         break;
       }
 
@@ -110,18 +102,5 @@ class ValidationOrchestrator {
       }
     }
   }
-
-  /// Create a backup of [configPath] at `{configPath}.original.json`.
-  /// Never overwrites existing backup (R8.3).
-  Future<void> _createBackup(String configPath) async {
-    final backupPath = '$configPath.original.json';
-    final backupFile = File(backupPath);
-    if (await backupFile.exists()) return; // R8.3
-
-    try {
-      await File(configPath).copy(backupPath);
-    } catch (e) {
-      stderr.writeln('Warning: Could not create backup: $e'); // R8.4
-    }
-  }
 }
+

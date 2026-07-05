@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 
+import '../validation/fix_suggestion.dart';
+import '../validation/report_printer.dart';
 import '../validation/validation_orchestrator.dart';
 
 /// Validate a generated config using the runtime validator.
@@ -35,6 +37,7 @@ class ValidateCommand extends Command<void> {
   @override
   Future<void> run() async {
     final workdir = argResults?['workdir'] as String;
+    final format = argResults?['format'] as String? ?? 'markdown';
 
     // Find config JSON file in workdir
     final dir = Directory(workdir);
@@ -65,24 +68,10 @@ class ValidateCommand extends Command<void> {
       exit(1);
     }
 
-    // Display summary
-    print('[${parsed.overallStatus}] ${parsed.sourceId}');
-    if (parsed.featureStatuses.isNotEmpty) {
-      for (final e in parsed.featureStatuses.entries) {
-        print('  ${e.key}: ${e.value}');
-      }
-    }
+    final suggestions = FixSuggestionMapper.map(parsed.diagnostics);
+    ReportPrinter.printReport(parsed, suggestions, format: format);
 
-    if (parsed.diagnostics.isNotEmpty) {
-      print('\nDiagnostics:');
-      for (final d in parsed.diagnostics) {
-        print('  [${d.severity}] ${d.code}: ${d.message}');
-      }
-    }
-
-    if (parsed.overallStatus == 'compatible') {
-      print('\n✓ Config is valid!');
-    } else {
+    if (parsed.overallStatus != 'compatible') {
       exit(1);
     }
   }
