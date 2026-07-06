@@ -93,7 +93,6 @@ lib/
 - `2026-03-31-fix-import-zip-metadata`
 - `2026-03-xx-crotpedia-ui-modernization`
 - `2026-03-xx-fix-app-drawer-transparency`
-- `2026-04-xx-komiktap-navigation-lists`
 - `2026-03-xx-multi-provider-integration`
 - `2026-03-xx-smart-caching-and-fixes`
 - `2026-03-xx-unity-ads-fix`
@@ -101,6 +100,7 @@ lib/
 - `2026-04-12-local-collection-categories`
 - `2026-04-19-blur-recent-apps-privacy`
 - `2026-04-20-ehentai-download-reader-stability`
+- `2026-04-xx-komiktap-navigation-lists`
 - `2026-04-xx-qol-enhancements`
 - `2026-05-19-fix-url-special-chars`
 - `2026-05-24-avif-to-webp-conversion`
@@ -113,23 +113,33 @@ lib/
 - `2026-06-16-tachiyomi-extensions-integration`
 - `2026-06-21-search-runtime-autowiring`
 - `2026-06-21-tabbed-multilang-chapters`
+- `2026-06-23-ehentai-download-strategy`
 - `2026-06-23-lazy-load-chapters`
 - `2026-06-23-mangafire-integration`
+- `2026-06-25-refine-card-surface-a11y`
 - `2026-06-26-bloc-pattern-modernization`
 - `2026-06-26-purge-ui-packages`
+- `2026-06-26-upgrade-core-packages`
 - `2026-06-27-update-manhwaread-config`
-- `2026-06-28-native-dns-rollout`
 - `2026-06-28-home-scroll-reader-optimization`
+- `2026-06-28-native-dns-rollout`
+- `2026-07-03-migrate-legacy-search-configs`
+- `2026-07-03-search-form-ui-parity`
+- `2026-07-03-smart-config-generator`
+- `2026-07-05-add-kuron-config-generator`
+- `2026-07-05-config-generator-validation-loop`
+- `2026-07-05-revamp-kuron-config-runtime`
+- `2026-07-05-upgrade-android-deps-july-2026`
+- `2026-07-06-deprecate-legacy-search-ui`
+- `2026-07-06-migrate-legacy-search-configs`
+- `2026-07-06-smart-query-parser`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
-- `add-kuron-config-generator`
+- `add-vihentai-source` — Proposed. ViHentai (vi-hentai.moe) source integration. Config done, needs Livewire auth + packed JS decode plugins in kuron_special. See `output/pdf/vihentai-integration-analysis.pdf`.
 - `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
-- `revamp-kuron-config-runtime`
 - `source-health-monitor` — Proposed. Per-source HTTP health check in settings (HEAD to baseUrl, timeout 10s, green/red/grey dot indicators, "Check All" button, aggregate "N/N reachable" summary). Advisory only — no auto-disable.
-- `add-vihentai-source` — Proposed. ViHentai (vi-hentai.moe) source integration. Config done, needs Livewire auth + packed JS decode plugins in kuron_special. See `output/pdf/vihentai-integration-analysis.pdf`.
-- `search-form-ui-parity` — Done. Advanced Filters toggle panel in `DynamicFormSearchUI` matching `QueryStringSearchUI` style, `select` fields rendered as chip groups, config `options` upgraded to support `{name, value}` objects alongside plain strings, `SearchFormOptionConfig` model class added, offline search cubit test fixed.
 
 ### Exploration / Analysis (in `openspec/changes/`)
 - *(none)*
@@ -173,6 +183,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-06 | Claude Code | Deprecate legacy search UI + smart query parser placeholder | Done | Deleted `query_string_search_ui.dart` (+44KB) and `form_based_search_ui.dart` (+21KB). Rewrote `search_screen.dart` (195→128 lines) — stripped `SearchConfig` routing, `_buildScraperQueryFallback`, `_shouldUseLegacySearchUi`, `_buildLegacySearchUi`. Hardwired to `DynamicFormSearchUI`. 8/8 tasks, 464/464 tests. Also proposed `smart-query-parser` for `tag:yuri -tag:futanari language:english` syntax — archived with only placeholder hints added to 3 config files (nhentai, ehentai, hitomi). |
 | 2026-07-04 | OpenCode | AVIF offline height fix iteration | In Progress | AVIF images in continuous scroll show extra empty space + scroll jump only in offline mode (online fine). Multiple `_buildImageViewer` fixes tried: removed SizedBox height (blank items), restored with 0.2 viewport fallback + setState (still broken on AVIF), GlobalKey measurement (still broken). Suspect root cause: offline AVIF triggers `_preCheckDiskCacheForHeavy` which fires `onImageLoaded` EARLY with wrong dimensions from WebP VP8X chunk parsing, while online waits for `ExtendedImage.network` → `LoadState.completed` → correct decoded dimensions. Dual `onImageLoaded` path causes height miscalculation. Reverted to original code; created `docs/fix_avif_offline_height.md` for external AI analysis. |
 | 2026-07-03 | OpenCode | melos v8 migration + cleanup | Done | Migrated melos v6→v8 with pub workspaces. Deleted `melos.yaml`. Added `workspace:` key, `resolution: workspace` to packages, `melos:` scripts. Resolution: `json_path ^0.7.0→^0.9.0`, removed `flutter_launcher_icons` (cli_util conflict), no `dependency_overrides`. Stripped `analysis_options.yaml` to bare `flutter_lints` + excludes. Added `mocktail`/`bloc_test` to root dev_deps. Fixed 10 `unintended_html_in_doc_comment`. `flutter analyze`: zero issues. |
 | 2026-07-01 | Claude Code | Search Form UI Parity | Done | Advanced Filters toggle panel, config `options` upgrade, sort sync, migrated 6 configs to `searchForm`, bugfix: `_collectEncodedQueryParts` missing `sort` type, main screen sort preserve, `QueryStringSearchUI` sort chip selector, `SearchFormOptionConfig` dual String/Map fromJson, `AuthConfig.enabled` null safety, `SearchFormFieldOption.fromMap` reads `name` key, field restore cross-contamination fix (prefix matching + `joinMode:space`), chip value double-prefix fix (`_extractFieldCoreFromToken`). Manhwaread radioGroups/checkboxGroups migrated to searchForm.params. manhwaread sort 12 options, status 5 options, genre 32 static numeric IDs, extra fields (keyword_mode, artist, author, year_range, chapter_range). manhwaread s_mode hidden (follow-up). 464/464 tests. |

@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **SpyFakku remote tag autocomplete**: Added `tagSource` block to `spyfakku-config.json` with 4,423 tags extracted from hentalk.pw boot data. Tags loaded via `TagDataManager.loadAndCacheTagsFromUrl()` on first autocomplete query. No dedicated API endpoint needed.
 - **Multi-select filter support for query-string search UI**: `QueryStringSearchUI` now encodes multi-select filter selections (tag/artist/parody) into the query string (e.g. `-tag:"Lolicon" parody:"Azur Lane"`) so the generic REST adapter sends them via the `q=` parameter.
 - **TagDataManager new method**: `loadAndCacheTagsFromUrl(url, source)` loads tags from a remote URL and caches them per-source for subsequent `hasTags()` / `searchTags()` lookups.
+- **Deprecated legacy search UI removed**: Deleted `query_string_search_ui.dart` and `form_based_search_ui.dart`. `SearchScreen` hardwired to `DynamicFormSearchUI` unconditionally. Net -65KB, -3 imports, -3 routing methods (195->128 lines).
+- **Smart query syntax placeholder**: Added `(tag:yuri -tag:futanari language:english)` hint to search input placeholders in nhentai, ehentai, and hitomi configs.
 
 ### 🐛 Fixed
 
