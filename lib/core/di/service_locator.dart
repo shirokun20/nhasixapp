@@ -31,6 +31,7 @@ import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/core/network/dns_settings_service.dart';
+import 'package:nhasixapp/core/network/source_health_monitor.dart';
 
 // Data Sources
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
@@ -176,6 +177,13 @@ void _setupCore() {
     // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
   );
   getIt.registerSingleton<Dio>(dio);
+
+  // Source Health Monitor - per-source reachability checks
+  getIt.registerLazySingleton<SourceHealthMonitor>(() => SourceHealthMonitor(
+        registry: getIt<ContentSourceRegistry>(),
+        dio: getIt<Dio>(),
+        logger: getIt<Logger>(),
+      ));
 
   // Cache Manager
   getIt.registerLazySingleton<CacheManager>(() => DefaultCacheManager());

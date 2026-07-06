@@ -20,6 +20,7 @@ import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/network/source_health_monitor.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../../domain/entities/search_filter.dart' as search_filter;
@@ -47,6 +48,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   late final TagBlacklistService _tagBlacklistService;
   Map<String, dynamic>? _deviceDnsState;
+  final SourceHealthMonitor _healthMonitor = getIt<SourceHealthMonitor>();
+  Map<String, SourceHealthStatus> _sourceHealthStatuses = {};
+  StreamSubscription<Map<String, SourceHealthStatus>>? _healthSub;
 
   void _ensureDownloadBlocInitialized() {
     final downloadBloc = context.read<DownloadBloc>();
@@ -69,6 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ]),
     );
     _loadDnsDiagnostics();
+    _runHealthCheck();
   }
 
   Future<void> _loadDnsDiagnostics() async {
@@ -84,13 +89,27 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _loadDnsDiagnostics();
+    if (state == AppLifecycleState.resumed) {
+      _loadDnsDiagnostics();
+      _runHealthCheck();
+    }
   }
 
   @override
   void dispose() {
+    _healthSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _runHealthCheck() {
+    _healthSub?.cancel();
+    _healthSub = _healthMonitor.healthStream.listen(
+      (statuses) {
+        if (mounted) setState(() => _sourceHealthStatuses = statuses);
+      },
+    );
+    unawaited(_healthMonitor.checkAll());
   }
 
   @override
@@ -2223,6 +2242,32 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  /// Build colored dot for source reachability status.
+  Widget _healthDot(
+    ContentSource source,
+    SourceHealthStatus health,
+    ThemeData theme,
+  ) {
+    Color color;
+    switch (health) {
+      case SourceHealthStatus.reachable:
+        color = const Color(0xFF4CAF50); // green
+      case SourceHealthStatus.unreachable:
+        color = const Color(0xFFF44336); // red
+      case SourceHealthStatus.unknown:
+        color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38);
+    }
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: Icon(
+        Icons.circle,
+        size: 12,
+        color: color,
+      ),
+    );
+  }
+
   /// Build the "Available Sources" section for manual Link/ZIP installation.
   Widget _buildAvailableSourcesSection(ThemeData theme, AppLocalizations l10n) {
     return Column(
@@ -2282,6 +2327,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
         BlocBuilder<SourceCubit, SourceState>(
           builder: (context, state) {
+            final reachableCount = state.availableSources
+                .where((s) => _sourceHealthStatuses[s.id] == SourceHealthStatus.reachable)
+                .length;
             return _buildSettingsCard([
               ListTile(
                 contentPadding:
@@ -2301,6 +2349,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
               ),
+              // Summary line
+              if (state.availableSources.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '$reachableCount/${state.availableSources.length} sources reachable',
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: reachableCount == state.availableSources.length
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.error,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _runHealthCheck(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Check All'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               if (state.availableSources.isEmpty)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -2315,6 +2393,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ...state.availableSources.map((source) {
                   final isActive = state.activeSource?.id == source.id;
                   final canUninstall = source.id != 'nhentai';
+                  final health = _sourceHealthStatuses[source.id] ??
+                      SourceHealthStatus.unknown;
                   final remoteConfig = getIt<RemoteConfigService>();
                   final sourceInfo = resolveSourceConfigDisplayInfo(
                     remoteConfigService: remoteConfig,
@@ -2328,16 +2408,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   return ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                    leading: CircleAvatar(
-                      radius: 14,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.extension_outlined,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                    leading: _healthDot(source, health, theme),
                     title: Text(
                       source.displayName,
                       style: TextStyleConst.bodyMedium.copyWith(
