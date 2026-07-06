@@ -76,7 +76,7 @@ abstract class KuronNativePlatform extends PlatformInterface {
     required String contentUri,
     required String destinationPath,
     Function(int processed, int total, int imageCount, String currentFile)?
-    onProgress,
+        onProgress,
   }) {
     throw UnimplementedError('extractZipFile() has not been implemented.');
   }

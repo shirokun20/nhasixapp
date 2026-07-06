@@ -44,8 +44,7 @@ void main() {
     });
 
     test('formats configError report with diagnostics', () {
-      final output =
-          ReportPrinter.formatText(errorReport, suggestions);
+      final output = ReportPrinter.formatText(errorReport, suggestions);
       expect(output, contains('[configError] testsite'));
       expect(output, contains('reader: configError'));
       expect(output, contains('[error] reader.configError'));
@@ -80,8 +79,7 @@ void main() {
 
   group('ReportPrinter.formatJson (R5.2)', () {
     test('formats valid JSON', () {
-      final output =
-          ReportPrinter.formatJson(errorReport, suggestions);
+      final output = ReportPrinter.formatJson(errorReport, suggestions);
       expect(output, startsWith('{'));
       final parsed = jsonDecode(output) as Map<String, dynamic>;
       expect(parsed['sourceId'], 'testsite');
@@ -89,8 +87,8 @@ void main() {
       expect(parsed['diagnostics'], hasLength(1));
       expect(parsed['fixSuggestions'], hasLength(1));
       expect(parsed['diagnostics'][0]['code'], 'reader.configError');
-      expect(
-          parsed['fixSuggestions'][0]['configField'], 'scraper.selectors.reader');
+      expect(parsed['fixSuggestions'][0]['configField'],
+          'scraper.selectors.reader');
     });
 
     test('JSON includes featureStatuses', () {
@@ -102,8 +100,7 @@ void main() {
 
   group('ReportPrinter.formatMarkdown (R5.3)', () {
     test('formats markdown with headers and tables', () {
-      final output =
-          ReportPrinter.formatMarkdown(errorReport, suggestions);
+      final output = ReportPrinter.formatMarkdown(errorReport, suggestions);
       expect(output, contains('# Validation Report: testsite'));
       expect(output, contains('**Overall Status:** `configError`'));
       expect(output, contains('## Feature Statuses'));

@@ -563,13 +563,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
             !_shouldHideBecauseCombinedPicker(e.key, e.value))
         .toList();
 
-    final primaryFields = allFields
-        .where((e) => !_isAdvancedField(e.key, e.value))
-        .toList();
+    final primaryFields =
+        allFields.where((e) => !_isAdvancedField(e.key, e.value)).toList();
 
-    final advancedFields = allFields
-        .where((e) => _isAdvancedField(e.key, e.value))
-        .toList();
+    final advancedFields =
+        allFields.where((e) => _isAdvancedField(e.key, e.value)).toList();
 
     final hasAdvanced = advancedFields.isNotEmpty;
 
@@ -585,13 +583,11 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 children: [
                   for (final entry in primaryFields)
                     _buildField(entry.key, entry.value),
-
                   if (hasAdvanced) ...[
                     const SizedBox(height: 8),
                     _buildAdvancedToggle(),
                     const SizedBox(height: 8),
                   ],
-
                   if (hasAdvanced)
                     AnimatedSize(
                       duration: const Duration(milliseconds: 280),
@@ -610,8 +606,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                         child: _showAdvancedFilters
                             ? Column(
                                 key: const ValueKey('advanced_open'),
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   for (final entry in advancedFields)
                                     _buildField(entry.key, entry.value),
@@ -622,7 +617,6 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               ),
                       ),
                     ),
-
                   _buildQueryPreviewCard(),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -652,8 +646,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final activeCount = _countActiveAdvancedFilters();
 
     return InkWell(
-      onTap: () =>
-          setState(() => _showAdvancedFilters = !_showAdvancedFilters),
+      onTap: () => setState(() => _showAdvancedFilters = !_showAdvancedFilters),
       borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -699,8 +692,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               const SizedBox(width: 8),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
-                transitionBuilder:
-                    (Widget child, Animation<double> animation) {
+                transitionBuilder: (Widget child, Animation<double> animation) {
                   return ScaleTransition(scale: animation, child: child);
                 },
                 child: Container(
@@ -2029,8 +2021,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           if (parsed.isEmpty) {
             // Fallback — split as raw tag input
             for (final value in values) {
-              parsed
-                  .addAll(_splitFieldInput(rawField, value, 'tag'));
+              parsed.addAll(_splitFieldInput(rawField, value, 'tag'));
             }
           }
           _tagChipValues[name] = parsed.toSet().toList();

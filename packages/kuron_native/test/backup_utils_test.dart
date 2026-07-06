@@ -40,12 +40,13 @@ class MockKuronNativePlatform
     required String contentUri,
     required String destinationPath,
     Function(int processed, int total, int imageCount, String currentFile)?
-    onProgress,
-  }) async => {
-    'success': true,
-    'imageCount': 0,
-    'destinationPath': destinationPath,
-  };
+        onProgress,
+  }) async =>
+      {
+        'success': true,
+        'imageCount': 0,
+        'destinationPath': destinationPath,
+      };
 
   @override
   Future<String?> getPlatformVersion() => Future.value('1.0.0');
@@ -65,14 +66,16 @@ class MockKuronNativePlatform
     String? mimeType,
     String? cookie,
     String? userAgent,
-  }) => Future.value('download_id');
+  }) =>
+      Future.value('download_id');
 
   @override
   Future<Map<String, dynamic>?> convertImagesToPdf({
     required List<String> imagePaths,
     required String outputPath,
     Function(int progress, String message)? onProgress,
-  }) => Future.value({'success': true, 'pdfPath': outputPath});
+  }) =>
+      Future.value({'success': true, 'pdfPath': outputPath});
 
   @override
   Future<void> openWebView({
@@ -95,7 +98,8 @@ class MockKuronNativePlatform
     required String inputPath,
     int quality = 45,
     String? outputPath,
-  }) async => outputPath ?? '/tmp/mock.webp';
+  }) async =>
+      outputPath ?? '/tmp/mock.webp';
 
   @override
   Future<Map<String, dynamic>?> showLoginWebView({
@@ -114,14 +118,16 @@ class MockKuronNativePlatform
     bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
-  }) => Future.value({'success': true, 'cookies': []});
+  }) =>
+      Future.value({'success': true, 'cookies': []});
 
   @override
   Future<Map<String, dynamic>?> showCaptchaWebView({
     required String provider,
     required String siteKey,
     String? baseUrl,
-  }) => Future.value({'success': true, 'token': 'mock-token'});
+  }) =>
+      Future.value({'success': true, 'token': 'mock-token'});
 
   @override
   Future<void> clearCookies() async {}
@@ -149,26 +155,28 @@ class MockKuronNativePlatform
     String method = 'GET',
     Map<String, String>? headers,
     String? body,
-  }) async => {'statusCode': 200, 'body': '{"mock": true}', 'headers': {}};
+  }) async =>
+      {'statusCode': 200, 'body': '{"mock": true}', 'headers': {}};
 
   @override
   Future<Uint8List> downloadBinary({
     required String url,
     Map<String, String>? headers,
-  }) async => Uint8List.fromList([1, 2, 3, 4, 5]);
+  }) async =>
+      Uint8List.fromList([1, 2, 3, 4, 5]);
 
   @override
   Future<Map<String, dynamic>> getDnsProviderState() async => {
-    'currentProvider': -1,
-    'providerName': 'Disabled',
-    'isEnabled': false,
-  };
+        'currentProvider': -1,
+        'providerName': 'Disabled',
+        'isEnabled': false,
+      };
 
   @override
   Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() async => {
-    'isActive': false,
-    'serverName': null,
-  };
+        'isActive': false,
+        'serverName': null,
+      };
 
   @override
   Future<bool> openDnsSettings() async => true;

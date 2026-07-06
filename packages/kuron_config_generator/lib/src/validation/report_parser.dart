@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:kuron_core/kuron_core.dart';
 
-
 /// Represents a parsed validation report from the validator CLI.
 class ParsedReport {
   final String sourceId;

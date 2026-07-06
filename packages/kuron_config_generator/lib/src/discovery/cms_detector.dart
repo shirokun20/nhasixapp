@@ -650,7 +650,10 @@ Map<String, String>? detectSearchForm(Document document) {
       final inputs = form.querySelectorAll('input');
       for (final input in inputs) {
         final name = input.attributes['name'];
-        if (name == 's' || name == 'q' || name == 'query' || name == 'keyword') {
+        if (name == 's' ||
+            name == 'q' ||
+            name == 'query' ||
+            name == 'keyword') {
           bestForm = form;
           break;
         }
@@ -663,7 +666,7 @@ Map<String, String>? detectSearchForm(Document document) {
 
   var action = bestForm.attributes['action'] ?? '/';
   if (action.isEmpty) action = '/';
-  
+
   if (action.startsWith('http')) {
     try {
       final uri = Uri.parse(action);
@@ -674,14 +677,14 @@ Map<String, String>? detectSearchForm(Document document) {
 
   String? queryParam;
   final inputs = bestForm.querySelectorAll('input');
-  
+
   for (final input in inputs) {
     if (input.attributes['type'] == 'search') {
       queryParam = input.attributes['name'];
       break;
     }
   }
-  
+
   if (queryParam == null || queryParam.isEmpty) {
     for (final input in inputs) {
       final name = input.attributes['name'];
@@ -691,13 +694,15 @@ Map<String, String>? detectSearchForm(Document document) {
       }
     }
   }
-  
+
   if (queryParam == null || queryParam.isEmpty) {
     for (final input in inputs) {
       final type = input.attributes['type'] ?? 'text';
       final typeLower = type.toLowerCase();
       // Skip hidden or submit inputs
-      if (typeLower != 'hidden' && typeLower != 'submit' && typeLower != 'button') {
+      if (typeLower != 'hidden' &&
+          typeLower != 'submit' &&
+          typeLower != 'button') {
         queryParam = input.attributes['name'];
         break;
       }

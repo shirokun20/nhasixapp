@@ -70,7 +70,7 @@ class KuronNative {
     required String contentUri,
     required String destinationPath,
     Function(int processed, int total, int imageCount, String currentFile)?
-    onProgress,
+        onProgress,
   }) {
     return KuronNativePlatform.instance.extractZipFile(
       contentUri: contentUri,

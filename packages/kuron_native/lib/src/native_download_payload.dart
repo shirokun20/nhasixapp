@@ -44,13 +44,13 @@ class NativeDownloadPage {
   final String? mimeHint;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'pageNumber': pageNumber,
-    'url': url,
-    if (headers.isNotEmpty) 'headers': headers,
-    if (referer != null) 'referer': referer,
-    if (filenameHint != null) 'filenameHint': filenameHint,
-    if (mimeHint != null) 'mimeHint': mimeHint,
-  };
+        'pageNumber': pageNumber,
+        'url': url,
+        if (headers.isNotEmpty) 'headers': headers,
+        if (referer != null) 'referer': referer,
+        if (filenameHint != null) 'filenameHint': filenameHint,
+        if (mimeHint != null) 'mimeHint': mimeHint,
+      };
 
   factory NativeDownloadPage.fromJson(Map<String, Object?> map) {
     return NativeDownloadPage(
@@ -127,26 +127,28 @@ class NativeDownloadPayload {
   ///
   /// Includes both `imageUrls` (v1 compat) and `perPagePayload` (v2).
   Map<String, Object?> toChannelMap() => <String, Object?>{
-    'contentId': contentId,
-    'sourceId': sourceId,
-    'destinationPath': destinationPath,
-    // v1 legacy field — kept for backward compat with old native worker.
-    'imageUrls': imageUrls,
-    // v2 per-page payload (JSON-encoded for WorkData compatibility).
-    'perPagePayload': jsonEncode(
-      pages.map((NativeDownloadPage p) => p.toJson()).toList(growable: false),
-    ),
-    if (globalHeaders.isNotEmpty) 'headers': jsonEncode(globalHeaders),
-    if (cookies.isNotEmpty) 'cookies': jsonEncode(cookies),
-    'title': title,
-    'coverUrl': coverUrl,
-    'language': language,
-    'startPage': startPage,
-    'endPage': endPage,
-    'totalPages': totalPages ?? pages.length,
-    'enableNotifications': enableNotifications,
-    'backupFolderName': backupFolderName,
-    'maxParallelImages': maxParallelImages,
-    'imageTimeoutMs': imageTimeoutMs,
-  };
+        'contentId': contentId,
+        'sourceId': sourceId,
+        'destinationPath': destinationPath,
+        // v1 legacy field — kept for backward compat with old native worker.
+        'imageUrls': imageUrls,
+        // v2 per-page payload (JSON-encoded for WorkData compatibility).
+        'perPagePayload': jsonEncode(
+          pages
+              .map((NativeDownloadPage p) => p.toJson())
+              .toList(growable: false),
+        ),
+        if (globalHeaders.isNotEmpty) 'headers': jsonEncode(globalHeaders),
+        if (cookies.isNotEmpty) 'cookies': jsonEncode(cookies),
+        'title': title,
+        'coverUrl': coverUrl,
+        'language': language,
+        'startPage': startPage,
+        'endPage': endPage,
+        'totalPages': totalPages ?? pages.length,
+        'enableNotifications': enableNotifications,
+        'backupFolderName': backupFolderName,
+        'maxParallelImages': maxParallelImages,
+        'imageTimeoutMs': imageTimeoutMs,
+      };
 }

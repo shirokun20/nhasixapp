@@ -216,7 +216,7 @@
             "query": {
                 "queryParam": "query",
                 "type": "text",
-                "placeholder": "Search galleries...",
+                "placeholder": "Search galleries... (tag:yuri -tag:futanari language:english)",
                 "label": "Search"
             },
             "sort": {

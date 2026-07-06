@@ -60,8 +60,8 @@ class StorageSettings {
   static Future<String?> getCustomRootPath() async {
     // Return cache if available
     if (_cachedCustomRoot != null) {
-      Logger().d(
-          '📁 STORAGE_SETTINGS: returning cached path: $_cachedCustomRoot');
+      Logger()
+          .d('📁 STORAGE_SETTINGS: returning cached path: $_cachedCustomRoot');
       return _cachedCustomRoot;
     }
 
@@ -74,8 +74,8 @@ class StorageSettings {
     // Cache for subsequent calls
     if (path != null) {
       _cachedCustomRoot = path;
-      Logger().d(
-          '📁 STORAGE_SETTINGS: Cached path in memory: $_cachedCustomRoot');
+      Logger()
+          .d('📁 STORAGE_SETTINGS: Cached path in memory: $_cachedCustomRoot');
     }
 
     return path;

@@ -86,8 +86,7 @@ void main() {
           "overallStatus": "compatible"
         }''';
 
-        expect(() => ReportParser.parse(json),
-            throwsA(isA<FormatException>()));
+        expect(() => ReportParser.parse(json), throwsA(isA<FormatException>()));
       });
 
       test('missing overallStatus throws FormatException', () {
@@ -95,8 +94,7 @@ void main() {
           "sourceId": "test"
         }''';
 
-        expect(() => ReportParser.parse(json),
-            throwsA(isA<FormatException>()));
+        expect(() => ReportParser.parse(json), throwsA(isA<FormatException>()));
       });
 
       test('both missing throws FormatException', () {
@@ -104,8 +102,7 @@ void main() {
           "diagnostics": []
         }''';
 
-        expect(() => ReportParser.parse(json),
-            throwsA(isA<FormatException>()));
+        expect(() => ReportParser.parse(json), throwsA(isA<FormatException>()));
       });
 
       test('sourceId is non-string throws FormatException', () {
@@ -114,8 +111,7 @@ void main() {
           "overallStatus": "compatible"
         }''';
 
-        expect(() => ReportParser.parse(json),
-            throwsA(isA<FormatException>()));
+        expect(() => ReportParser.parse(json), throwsA(isA<FormatException>()));
       });
     });
 
@@ -279,8 +275,12 @@ void main() {
 
   String randomStatus() {
     const s = [
-      'compatible', 'partiallyCompatible', 'configError',
-      'needsEngineSupport', 'needsAuthSupport', 'blockedBySiteProtection',
+      'compatible',
+      'partiallyCompatible',
+      'configError',
+      'needsEngineSupport',
+      'needsAuthSupport',
+      'blockedBySiteProtection',
     ];
     return s[rng.nextInt(s.length)];
   }
@@ -326,8 +326,7 @@ void main() {
         final sourceId = randomString(1, 20);
         final overallStatus = randomStatus();
         final diagCount = rng.nextInt(10);
-        final diagnostics =
-            List.generate(diagCount, (_) => randomDiagnostic());
+        final diagnostics = List.generate(diagCount, (_) => randomDiagnostic());
         final haveFeatureStatuses = rng.nextBool();
         final featureStatuses = haveFeatureStatuses
             ? {
@@ -383,7 +382,8 @@ void main() {
                 reason: 'iteration $i, diag $j: valid feature');
           } else {
             expect(d.feature, isNull,
-                reason: 'iteration $i, diag $j: null feature (was $rawFeature)');
+                reason:
+                    'iteration $i, diag $j: null feature (was $rawFeature)');
           }
         }
       }
@@ -396,8 +396,7 @@ void main() {
         final sourceId = randomString(1, 20);
         final overallStatus = randomStatus();
         final diagCount = rng.nextInt(5);
-        final diagnostics =
-            List.generate(diagCount, (_) => randomDiagnostic());
+        final diagnostics = List.generate(diagCount, (_) => randomDiagnostic());
 
         final jsonMap = <String, Object?>{
           'sourceId': sourceId,

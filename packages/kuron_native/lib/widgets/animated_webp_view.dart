@@ -69,8 +69,7 @@ class AnimatedWebPView extends StatefulWidget {
     BuildContext context,
     int receivedBytes,
     int? totalBytes,
-  )?
-  loadingBuilder;
+  )? loadingBuilder;
 
   /// Widget shown while the thumbnail is loading or on non-Android platforms.
   final Widget fallback;
@@ -132,10 +131,10 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   int? _thumbnailTotalBytes;
 
   bool get _shouldAutoPlay => AnimatedWebPView.shouldAutoPlayForTesting(
-    autoPlay: widget.autoPlay,
-    pageNumber: widget.pageNumber,
-    visiblePageNumber: widget.visiblePageNotifier?.value,
-  );
+        autoPlay: widget.autoPlay,
+        pageNumber: widget.pageNumber,
+        visiblePageNumber: widget.visiblePageNotifier?.value,
+      );
 
   bool get _hasPreparedPlaybackSource =>
       _webpCachePath != null ||

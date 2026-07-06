@@ -148,12 +148,13 @@ class MockKuronNativePlatform
     required String contentUri,
     required String destinationPath,
     Function(int processed, int total, int imageCount, String currentFile)?
-    onProgress,
-  }) async => {
-    'success': true,
-    'imageCount': 0,
-    'destinationPath': destinationPath,
-  };
+        onProgress,
+  }) async =>
+      {
+        'success': true,
+        'imageCount': 0,
+        'destinationPath': destinationPath,
+      };
 
   @override
   Future<bool> setDohProvider(int provider) async => true;
@@ -167,26 +168,28 @@ class MockKuronNativePlatform
     String method = 'GET',
     Map<String, String>? headers,
     String? body,
-  }) async => {'statusCode': 200, 'body': '{"mock": true}', 'headers': {}};
+  }) async =>
+      {'statusCode': 200, 'body': '{"mock": true}', 'headers': {}};
 
   @override
   Future<Uint8List> downloadBinary({
     required String url,
     Map<String, String>? headers,
-  }) async => Uint8List.fromList([1, 2, 3, 4, 5]);
+  }) async =>
+      Uint8List.fromList([1, 2, 3, 4, 5]);
 
   @override
   Future<Map<String, dynamic>> getDnsProviderState() async => {
-    'currentProvider': -1,
-    'providerName': 'Disabled',
-    'isEnabled': false,
-  };
+        'currentProvider': -1,
+        'providerName': 'Disabled',
+        'isEnabled': false,
+      };
 
   @override
   Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() async => {
-    'isActive': false,
-    'serverName': null,
-  };
+        'isActive': false,
+        'serverName': null,
+      };
 
   @override
   Future<bool> openDnsSettings() async => true;

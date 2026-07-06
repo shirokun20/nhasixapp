@@ -17,7 +17,8 @@ class ConfigGenerator {
       'defaultLanguage': _detectLang(baseUrl, answers),
       'ui': _buildUi(answers, cl),
       'network': _buildNetwork(answers, cl),
-      'configUrl': "https://raw.githubusercontent.com/shirokun20/kuron-config-providers/main/configs/${answers['sourceId']}-config.json",
+      'configUrl':
+          "https://raw.githubusercontent.com/shirokun20/kuron-config-providers/main/configs/${answers['sourceId']}-config.json",
       'requiredPrimitives': _buildPrimitives(mode, answers),
     };
 
@@ -61,13 +62,11 @@ class ConfigGenerator {
     final bypass = a['needsCloudflare'] == 'y' || a['needsBypass'] == 'y';
     return {
       'requiresBypass': bypass,
-      if (bypass)
-        'cloudflare': <String, Object?>{'bypassEnabled': true},
+      if (bypass) 'cloudflare': <String, Object?>{'bypassEnabled': true},
       'headers': <String, String>{
         'Referer': '$cl/',
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 '
-          '(KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36',
       },
       'rateLimit': <String, Object?>{
         'enabled': true,
@@ -179,9 +178,8 @@ class ConfigGenerator {
     };
   }
 
-
-
-  static Map<String, Object?> _scraperUrls(String ct, Map<String, String?> a, String bUrl) {
+  static Map<String, Object?> _scraperUrls(
+      String ct, Map<String, String?> a, String bUrl) {
     final hasSearch = a['supportsSearch'] == 'y';
 
     // ── Home ──
@@ -193,7 +191,8 @@ class ConfigGenerator {
       homeFields = <String, Object?>{
         'id': {
           'selector': "a[href*='/series/']",
-          'attribute': 'href', 'transform': 'slug',
+          'attribute': 'href',
+          'transform': 'slug',
         },
         'title': {'selector': '.flexbox4-side .title a'},
         'coverUrl': {
@@ -225,7 +224,8 @@ class ConfigGenerator {
       homeFields = <String, Object?>{
         'id': {
           'selector': "a[href*='/manga/']",
-          'attribute': 'href', 'transform': 'slug',
+          'attribute': 'href',
+          'transform': 'slug',
         },
         'title': {'selector': '.tt, a[title]'},
         'coverUrl': {
@@ -285,7 +285,8 @@ class ConfigGenerator {
     if (hasSearch) {
       final searchEndpoint = _str(a['searchEndpoint']);
       final searchParam = _str(a['searchQueryParam']);
-      final queryParamPart = searchParam.isNotEmpty ? '$searchParam={query}' : 's={query}';
+      final queryParamPart =
+          searchParam.isNotEmpty ? '$searchParam={query}' : 's={query}';
       final searchUrlOverride = _str(a['searchUrl']);
 
       String finalSearchUrl;
@@ -297,16 +298,20 @@ class ConfigGenerator {
         if (ct == 'zmanga') {
           finalSearchPageUrl = '/page/{page}/$sep$queryParamPart';
         } else if (ct == 'blogger') {
-          finalSearchPageUrl = '$searchEndpoint$sep$queryParamPart&max-results=12&start={page}';
+          finalSearchPageUrl =
+              '$searchEndpoint$sep$queryParamPart&max-results=12&start={page}';
         } else {
           finalSearchPageUrl = '/page/{page}/$sep$queryParamPart';
         }
       } else {
-        finalSearchUrl = searchUrlOverride.isNotEmpty ? searchUrlOverride : '/?$queryParamPart';
+        finalSearchUrl = searchUrlOverride.isNotEmpty
+            ? searchUrlOverride
+            : '/?$queryParamPart';
         if (ct == 'zmanga') {
           finalSearchPageUrl = '/page/{page}/?$queryParamPart';
         } else if (ct == 'blogger') {
-          finalSearchPageUrl = '/search?$queryParamPart&max-results=12&start={page}';
+          finalSearchPageUrl =
+              '/search?$queryParamPart&max-results=12&start={page}';
         } else {
           finalSearchPageUrl = '/page/{page}/?$queryParamPart';
         }
@@ -403,9 +408,8 @@ class ConfigGenerator {
     return urls;
   }
 
-
-  
-  static Map<String, Object?> _scraperSelectors(String ct, Map<String, String?> a) {
+  static Map<String, Object?> _scraperSelectors(
+      String ct, Map<String, String?> a) {
     final selFields = _detailFields(ct, a);
     return <String, Object?>{
       'list': <String, Object?>{
@@ -420,7 +424,7 @@ class ConfigGenerator {
     };
   }
 
-static Map<String, Object?> _listFields(String ct) {
+  static Map<String, Object?> _listFields(String ct) {
     if (ct == 'zmanga') {
       return {
         'id': {
@@ -464,12 +468,14 @@ static Map<String, Object?> _listFields(String ct) {
       'coverUrl': {'selector': 'img', 'attribute': 'src'},
     };
   }
+
   static Map<String, Object?> _detailFields(String ct, Map<String, String?> a) {
     if (ct == 'zmanga') {
       return {
         'title': {'selector': '.series-title h2, .series-titlex h2'},
         'coverUrl': {
-          'selector': ".series-thumb img.lazyload, img[src*='link.shirolink.my.id']",
+          'selector':
+              ".series-thumb img.lazyload, img[src*='link.shirolink.my.id']",
           'attribute': 'data-src',
         },
         'description': {'selector': '.series-infoz, .series-infolist'},
@@ -482,7 +488,10 @@ static Map<String, Object?> _listFields(String ct) {
     } else if (ct == 'blogger') {
       return {
         'title': {'selector': 'h1, .post-title'},
-        'coverUrl': {'selector': "img[src*='blogger.googleusercontent.com']", 'attribute': 'src'},
+        'coverUrl': {
+          'selector': "img[src*='blogger.googleusercontent.com']",
+          'attribute': 'src'
+        },
         'description': {'selector': '.post-body, .entry-content'},
         'genres': {'selector': '.label-name, a[rel="tag"]', 'multi': true},
       };
@@ -579,7 +588,8 @@ static Map<String, Object?> _listFields(String ct) {
         'urlPattern': 'search',
         'params': <String, Object?>{
           'query': {
-            'queryParam': 'query', 'type': 'text',
+            'queryParam': 'query',
+            'type': 'text',
             'placeholder': 'Search...',
           },
           'page': {'queryParam': 'page', 'type': 'page'},
@@ -587,12 +597,14 @@ static Map<String, Object?> _listFields(String ct) {
       };
     }
 
-    final queryParam = a['searchQueryParam'] ?? (cmsTheme == 'zmanga' ? 's' : 's');
+    final queryParam =
+        a['searchQueryParam'] ?? (cmsTheme == 'zmanga' ? 's' : 's');
     return {
       'urlPattern': 'search',
       'params': <String, Object?>{
         'query': {
-          'queryParam': queryParam, 'type': 'text',
+          'queryParam': queryParam,
+          'type': 'text',
           'placeholder': 'Search...',
         },
       },
@@ -634,8 +646,10 @@ static Map<String, Object?> _listFields(String ct) {
   static String _detectLang(String baseUrl, Map<String, String?> a) {
     final lang = a['defaultLanguage'];
     if (lang != null && lang.isNotEmpty) return lang;
-    if (baseUrl.contains('.id') || baseUrl.contains('komik') ||
-        baseUrl.contains('doujin') || baseUrl.contains('manga')) {
+    if (baseUrl.contains('.id') ||
+        baseUrl.contains('komik') ||
+        baseUrl.contains('doujin') ||
+        baseUrl.contains('manga')) {
       return 'indonesian';
     }
     return 'english';

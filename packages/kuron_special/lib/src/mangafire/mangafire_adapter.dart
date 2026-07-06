@@ -427,7 +427,6 @@ class MangaFireAdapter implements GenericAdapter {
     return _fetchList(url, sourceLanguage: language);
   }
 
-
   @override
   Future<AdapterDetailResult> fetchDetail(
     String contentId,

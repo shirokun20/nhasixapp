@@ -14,11 +14,11 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
   /// Progress callback for ZIP extraction
   Function(int processed, int total, int imageCount, String currentFile)?
-  _onZipExtractionProgress;
+      _onZipExtractionProgress;
 
   /// Progress callbacks for native animated-WebP thumbnail preparation.
   final Map<String, Function(int receivedBytes, int? totalBytes)>
-  _onWebPThumbnailProgress =
+      _onWebPThumbnailProgress =
       <String, Function(int receivedBytes, int? totalBytes)>{};
   static int _nextWebPThumbnailRequestId = 0;
 
@@ -67,9 +67,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
 
         final receivedBytes = (args['receivedBytes'] as num?)?.toInt() ?? 0;
         final totalRaw = args['totalBytes'];
-        final totalBytes = totalRaw is num && totalRaw > 0
-            ? totalRaw.toInt()
-            : null;
+        final totalBytes =
+            totalRaw is num && totalRaw > 0 ? totalRaw.toInt() : null;
 
         callback(receivedBytes, totalBytes);
       } catch (e) {
@@ -153,7 +152,7 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     required String contentUri,
     required String destinationPath,
     Function(int processed, int total, int imageCount, String currentFile)?
-    onProgress,
+        onProgress,
   }) async {
     _onZipExtractionProgress = onProgress;
     try {
@@ -179,18 +178,18 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     String? cookie,
     String? userAgent,
   }) async {
-    final downloadId = await methodChannel
-        .invokeMethod<String>('startDownload', {
-          'url': url,
-          'fileName': fileName,
-          'destinationDir': destinationDir,
-          'savePath': savePath,
-          'title': title,
-          'description': description,
-          'mimeType': mimeType,
-          'cookie': cookie,
-          'userAgent': userAgent,
-        });
+    final downloadId =
+        await methodChannel.invokeMethod<String>('startDownload', {
+      'url': url,
+      'fileName': fileName,
+      'destinationDir': destinationDir,
+      'savePath': savePath,
+      'title': title,
+      'description': description,
+      'mimeType': mimeType,
+      'cookie': cookie,
+      'userAgent': userAgent,
+    });
     return downloadId;
   }
 
@@ -269,9 +268,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final requestId =
         'webp_thumb_${DateTime.now().microsecondsSinceEpoch}_${_nextWebPThumbnailRequestId++}';
-    final filePathPayload = filePath != null
-        ? <String, Object>{'filePath': filePath}
-        : null;
+    final filePathPayload =
+        filePath != null ? <String, Object>{'filePath': filePath} : null;
 
     if (onProgress != null) {
       _onWebPThumbnailProgress[requestId] = onProgress;
@@ -309,22 +307,22 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel
         .invokeMapMethod<String, dynamic>('showLoginWebView', {
-          'url': url,
-          'successUrlFilters': successUrlFilters,
-          'initialCookie': initialCookie,
-          'userAgent': userAgent,
-          'autoCloseOnCookie': autoCloseOnCookie,
-          'ssoRedirectUrl': ssoRedirectUrl,
-          'domImageSelectors': domImageSelectors,
-          'domImageAttributes': domImageAttributes,
-          'domLinkSelectors': domLinkSelectors,
-          'captureRequestPatterns': captureRequestPatterns,
-          'allowRequestPatterns': allowRequestPatterns,
-          'pageFinishedScript': pageFinishedScript,
-          'blockNetworkImages': blockNetworkImages,
-          'enableAdBlock': enableAdBlock,
-          'clearCookies': clearCookies,
-        });
+      'url': url,
+      'successUrlFilters': successUrlFilters,
+      'initialCookie': initialCookie,
+      'userAgent': userAgent,
+      'autoCloseOnCookie': autoCloseOnCookie,
+      'ssoRedirectUrl': ssoRedirectUrl,
+      'domImageSelectors': domImageSelectors,
+      'domImageAttributes': domImageAttributes,
+      'domLinkSelectors': domLinkSelectors,
+      'captureRequestPatterns': captureRequestPatterns,
+      'allowRequestPatterns': allowRequestPatterns,
+      'pageFinishedScript': pageFinishedScript,
+      'blockNetworkImages': blockNetworkImages,
+      'enableAdBlock': enableAdBlock,
+      'clearCookies': clearCookies,
+    });
     return result;
   }
 

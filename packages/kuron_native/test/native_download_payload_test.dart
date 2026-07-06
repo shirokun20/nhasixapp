@@ -117,8 +117,8 @@ void main() {
     test('toChannelMap per-page headers are embedded in perPagePayload', () {
       final payload = buildPayload(pageHeaders: {'X-Gallery-Token': 'tok123'});
       final map = payload.toChannelMap();
-      final pages = (jsonDecode(map['perPagePayload'] as String) as List)
-          .cast<Map>();
+      final pages =
+          (jsonDecode(map['perPagePayload'] as String) as List).cast<Map>();
       for (final page in pages) {
         expect((page['headers'] as Map)['X-Gallery-Token'], 'tok123');
       }

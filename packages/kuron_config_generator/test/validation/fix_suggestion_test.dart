@@ -43,7 +43,8 @@ void main() {
     group('known codes', () {
       test('schemaVersionMissing', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'schemaVersionMissing', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'schemaVersionMissing', message: 'x'),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText,
@@ -53,17 +54,18 @@ void main() {
 
       test('contentIdPatternMissing', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'contentIdPatternMissing', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'contentIdPatternMissing', message: 'x'),
         ]);
         expect(result, hasLength(1));
-        expect(result[0].suggestionText,
-            contains('contentIdPattern'));
+        expect(result[0].suggestionText, contains('contentIdPattern'));
         expect(result[0].configField, 'contentIdPattern');
       });
 
       test('homeUrlUnreachable', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'homeUrlUnreachable', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'homeUrlUnreachable', message: 'x'),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText, contains('baseUrl'));
@@ -72,7 +74,8 @@ void main() {
 
       test('reader.configError', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'reader.configError', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'reader.configError', message: 'x'),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText, contains('scraper.selectors.reader'));
@@ -81,7 +84,8 @@ void main() {
 
       test('search.configError', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'search.configError', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'search.configError', message: 'x'),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText, contains('searchForm'));
@@ -90,7 +94,8 @@ void main() {
 
       test('download.configError', () {
         final result = FixSuggestionMapper.map([
-          ReportDiagnostic(severity: 'error', code: 'download.configError', message: 'x'),
+          ReportDiagnostic(
+              severity: 'error', code: 'download.configError', message: 'x'),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText, contains('reader image pipeline'));
@@ -157,9 +162,12 @@ void main() {
 
     test('map handles multiple diagnostics in one call', () {
       final result = FixSuggestionMapper.map([
-        ReportDiagnostic(severity: 'error', code: 'schemaVersionMissing', message: 'x'),
-        ReportDiagnostic(severity: 'error', code: 'search.configError', message: 'x'),
-        ReportDiagnostic(severity: 'error', code: 'unknown.code', message: 'Kaboom'),
+        ReportDiagnostic(
+            severity: 'error', code: 'schemaVersionMissing', message: 'x'),
+        ReportDiagnostic(
+            severity: 'error', code: 'search.configError', message: 'x'),
+        ReportDiagnostic(
+            severity: 'error', code: 'unknown.code', message: 'Kaboom'),
       ]);
       expect(result, hasLength(3));
       expect(result[0].diagnosticCode, 'schemaVersionMissing');
@@ -215,8 +223,7 @@ void main() {
       }
     });
 
-    test(
-        'P2: unknown code returns generic fallback containing review phrase',
+    test('P2: unknown code returns generic fallback containing review phrase',
         () {
       for (int i = 0; i < 200; i++) {
         final code = randomCode(forceUnknown: true);
@@ -241,10 +248,7 @@ void main() {
             List.generate(rng.nextInt(6) + 3, (_) => rng.nextInt(26) + 97));
         final result = FixSuggestionMapper.map([
           ReportDiagnostic(
-              severity: 'error',
-              code: code,
-              message: 'Error',
-              feature: feat),
+              severity: 'error', code: code, message: 'Error', feature: feat),
         ]);
         expect(result, hasLength(1));
         expect(result[0].suggestionText, contains('Review the feature'));
