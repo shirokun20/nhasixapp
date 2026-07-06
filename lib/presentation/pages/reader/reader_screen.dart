@@ -62,8 +62,8 @@ class ReaderScreen extends StatefulWidget {
     // ganti ke switch case if more sources need to be added in the future
     switch (normalized) {
       case 'manga18.club':
-        return true;
       case 'komiktap':
+      case 'ehentai':
         return true;
       default:
         return false;
@@ -448,6 +448,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (isAtBottom) {
       // User reached bottom -> save to DB with debounce to avoid spam
       _debounceSaveHistory(state, totalPages);
+    }
+
+    // Evict distant pages from memory in continuous-scroll for heavy sources
+    // to prevent 10MB+ WebP images from saturating GPU memory.
+    if (_isHeavyPrefetchSource(state.content?.sourceId)) {
+      _evictDistantPages(estimatedPage, state.content!.imageUrls,
+          isOffline: state.isOfflineMode ?? false);
     }
 
     // ✨ Auto-hide/show UI based on scroll direction with debounce
@@ -850,7 +857,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   bool _isHeavyPrefetchSource(String? sourceId) {
-    return sourceId == 'hentainexus';
+    switch (sourceId?.toLowerCase()) {
+      case 'hentainexus':
+      case 'ehentai':
+        return true;
+      default:
+        return false;
+    }
   }
 
   bool _isContinuousScrollDisabledForCurrentContent() {
