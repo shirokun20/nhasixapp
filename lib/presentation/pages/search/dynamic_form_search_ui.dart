@@ -2040,7 +2040,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
       case 'select':
       case 'sort':
       case 'radio':
-        _selectValues[name] = values.first;
+        final options = _optionsForField(name, field, _rawFieldConfig(name));
+        final match = values.firstWhere(
+          (val) => options.any((opt) => opt.value == val),
+          orElse: () => values.first,
+        );
+        _selectValues[name] = match;
       case 'checkbox':
         final options = _optionsForField(name, field, _rawFieldConfig(name));
         _multiSelectValues[name] = values
