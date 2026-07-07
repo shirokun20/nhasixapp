@@ -58,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🐛 Fixed
 
+- **Numeric gallery ID search redirect**: When user types a numeric gallery ID (e.g. `544433`) in DynamicFormSearchUI, the form now redirects directly to `/content/{id}` instead of saving a search filter. Search APIs (nhentai, hentaifox, hentainexus, e-hentai, etc.) do full-text search and return empty results for numeric IDs. Detail endpoint fetches the gallery correctly.
 - **ARB key naming violation**: Renamed `ReaderSettingsEntityResetSuccess`/`ReaderSettingsEntityReset`/`ReaderSettingsEntity` to valid camelCase keys (`readerSettingsLabel`, `readerSettingsResetSuccessMsg`, `readerSettingsResetMsg`), fixing build failure.
 - **Crotpedia test config**: Added `home` pattern to `_crotpediaRawConfig` test fixture so empty query fallback resolves correctly instead of returning empty results.
 - **print() violation in downloads_screen.dart**: Removed debug `print()` inside assert block — semgrep now reports 0 print violations.
