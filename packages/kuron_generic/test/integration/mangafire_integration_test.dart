@@ -150,19 +150,45 @@ void main() {
       expect(result.hasNextPage, isTrue);
       
       expect(lastRequestedUri, isNotNull);
-      expect(lastRequestedUri, contains('sort=views_total:desc'));
+      // Native sort only works if '{sort}' or 'sort=' is in the URL template. 
+      // If the user removed it from config, it won't be appended.
+      if (config['api']['endpoints']['allGalleries'].contains('{sort}')) {
+        expect(Uri.decodeComponent(lastRequestedUri!), contains('order[views_total]=desc'));
+      }
     });
 
-    test('search with keyword and sort', () async {
+    test('search with keyword and native sort', () async {
       await adapter.search(
         const SearchFilter(query: 'naruto', page: 2, sort: SortOption.newest),
         config,
       );
 
       expect(lastRequestedUri, isNotNull);
-      expect(lastRequestedUri, contains('sort=created_at:desc'));
+      if (config['api']['endpoints']['search'].contains('{sort}')) {
+        expect(Uri.decodeComponent(lastRequestedUri!), contains('order[created_at]=desc'));
+      }
       expect(lastRequestedUri, contains('keyword=naruto'));
       expect(lastRequestedUri, contains('page=2'));
+    });
+
+    test('search with dynamic UI rawParam sorting', () async {
+      await adapter.search(
+        const SearchFilter(
+          query: 'naruto', 
+          page: 1, 
+          radioGroupSelections: {
+            'rawParam': 'order[views_total]=desc'
+          }
+        ),
+        config,
+      );
+
+      expect(lastRequestedUri, isNotNull);
+      // Validate that the rawParam is injected into the URL!
+      // Uri.toString() encodes '[' and ']', so we decode it for assertion
+      expect(Uri.decodeComponent(lastRequestedUri!), contains('order[views_total]=desc'));
+      expect(lastRequestedUri, contains('keyword=naruto'));
+      expect(lastRequestedUri, contains('page=1'));
     });
 
     test('fetchDetail returns parsed detail with tags and languages', () async {

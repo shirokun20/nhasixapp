@@ -2795,6 +2795,12 @@ class GenericRestAdapter implements GenericAdapter {
 
     final pairs = <String>[];
     for (final entry in p.entries) {
+      if (entry.key == 'rawParam') {
+        for (final value in entry.value) {
+          pairs.add(value);
+        }
+        continue;
+      }
       if (entry.value.isEmpty) {
         pairs.add('${entry.key}=');
         continue;
