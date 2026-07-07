@@ -193,10 +193,32 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     final dynamic sourceConfig = _dataSources[sourceId];
     if (sourceConfig is! Map<String, dynamic>) return;
 
+    final localOptions = sourceConfig['options'];
+    if (localOptions is List) {
+      final valuePath = sourceConfig['valuePath'] as String? ?? 'id';
+      final labelPath = sourceConfig['labelPath'] as String? ?? 'id';
+      final groupPath = sourceConfig['groupPath'] as String?;
+
+      final options = <_DynamicOption>[];
+      for (final item in localOptions) {
+        final value = _extractByPath(item, valuePath)?.toString() ?? '';
+        final label = _extractByPath(item, labelPath)?.toString() ?? value;
+        if (value.isEmpty || label.isEmpty) continue;
+        final group = groupPath == null
+            ? null
+            : _extractByPath(item, groupPath)?.toString();
+        options.add(_DynamicOption(value: value, label: label, group: group));
+      }
+      _optionCacheBySource[sourceId] = options;
+      _pickerLoadErrorBySource.remove(sourceId);
+      if (mounted) setState(() {});
+      return;
+    }
+
     final endpoint = sourceConfig['endpoint'] as String?;
     if (endpoint == null || endpoint.isEmpty) {
       _optionCacheBySource[sourceId] = const [];
-      _pickerLoadErrorBySource[sourceId] = 'Missing endpoint';
+      _pickerLoadErrorBySource[sourceId] = 'Missing endpoint or options';
       return;
     }
 
@@ -384,16 +406,25 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
 
         for (final entry in fields) {
           final field = entry.value;
+          final rawField = _rawFieldConfig(entry.key);
+          final prefix = (rawField?['valuePrefix'] as String? ?? '').trim();
+
           if (_isPickerField(entry.key, field)) {
-            _pendingMultiRestore[entry.key] = values;
+            final validValues = <String>[];
+            for (final v in values) {
+              if (prefix.isEmpty || v.startsWith(prefix)) {
+                validValues.add(v.substring(prefix.length));
+              }
+            }
+            if (validValues.isNotEmpty) {
+              _pendingMultiRestore[entry.key] = validValues;
+            }
             continue;
           }
 
           // Only restore value to fields whose valuePrefix matches the raw value.
           // This prevents cross-contamination when multiple fields share the same
           // queryParam (e.g. spyfakku: includeTag/excludeTag/artist/parody all → q).
-          final rawField = _rawFieldConfig(entry.key);
-          final prefix = (rawField?['valuePrefix'] as String? ?? '').trim();
           if (prefix.isNotEmpty && values.any((v) => v.startsWith(prefix))) {
             _setRestoredFieldValue(entry.key, field, values);
           } else if (prefix.isEmpty) {

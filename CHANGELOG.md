@@ -42,6 +42,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **HentaiNexus detail cover + reader stability**: Detail cover scraping now uses `meta[property="og:image"]` instead of guessing from page URLs, so header covers no longer depend on unstable reader-image extensions like `.jpg.thumb.jpg` or `.png.thumb.webp`. The HentaiNexus decrypt/runtime path also now deduplicates page URLs by page key with stable format priority, avoids stale detail cache reuse, and stops static WebP/AVIF pages from being misclassified as heavy animated content that forced the reader out of continuous scroll.
 - **ToonCubus reader and label routing**: ToonCubus now treats the detail `Baca Online` block as a real chapter lane, follows the explicit `tooncubus-read.my.id` reader URL before scraping images, uses Blogger cursor pagination from the live pager (`updated-max=...&start=...`) instead of repeating page 1, and routes detail-tag clicks to `/search/label/...` label pages instead of falling back to keyword search.
 
+### ✨ Added
+
+- **MangaFire multi-select filters**: Upgraded MangaFire's search form to use dynamic `dataSources` hitting `/api/filter-options`. The hardcoded select dropdowns for `type` and `status` have been replaced with full multi-select tag pickers (similar to MangaDex). Added pickers for `Genres`, `Themes`, `Demographics`, `Formats`, and `Content Ratings`, allowing complex multi-field filtering directly in the search UI.
+- **DynamicFormSearchUI picker restore fix**: Fixed a bug where picker fields using `valuePrefix` (e.g. MangaFire's `genres_in[]=`) would fail to restore their selected state from a saved filter, causing them to either lose selection or duplicate dummy chips across fields that share the same `queryParam` (e.g. `rawParam`).
+
 ### 🏗️ ManhwaRead Source Config
 
 - **Full config rewrite**: `informations/configs/manhwaread-config.json` rewritten from v2 compact to full format with `urlPatterns`, `selectors`, pagination, and `chapterDataScript` reader mode.
