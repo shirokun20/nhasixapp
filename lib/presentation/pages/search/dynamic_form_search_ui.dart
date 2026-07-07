@@ -463,6 +463,15 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Future<void> _onSearch() async {
     if (!_formKey.currentState!.validate()) return;
 
+    
+    // ponytail: numeric-only query --> redirect langsung ke halaman detail
+    final queryValue = _textControllers['query']?.text.trim() ?? '';
+    if (queryValue.isNotEmpty && RegExp(r'^\d+$').hasMatch(queryValue)) {
+      if (!mounted) return;
+      context.push('/content/${Uri.encodeComponent(queryValue)}');
+      return;
+    }
+
     final selectedTagItems = <FilterItem>[];
     final parts = _collectEncodedQueryParts(selectedTagItems: selectedTagItems);
     final rawQuery = parts.isNotEmpty ? 'raw:${parts.join('&')}' : '';
