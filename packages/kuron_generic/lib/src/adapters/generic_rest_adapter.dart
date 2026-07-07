@@ -59,8 +59,80 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig, {
     String? language,
     String? scanGroup,
-  }) async =>
-      const <Chapter>[];
+  }) async {
+    final api = rawConfig['api'] as Map<String, dynamic>?;
+    final detailCfg = api?['detail'] as Map<String, dynamic>? ?? {};
+    final chaptersCfg = detailCfg['chapters'] as Map<String, dynamic>? ??
+        api?['chapters'] as Map<String, dynamic>?;
+
+    if (chaptersCfg == null) {
+      _logger.d(
+          '$_sourceId: fetchChapters called but no api.chapters config found');
+      return const <Chapter>[];
+    }
+
+    final endpoint = _getEndpointPath(chaptersCfg['endpoint']);
+    if (endpoint.isEmpty) return const <Chapter>[];
+
+    final itemsSelector = _str(chaptersCfg, 'items');
+    if (itemsSelector == null) return const <Chapter>[];
+
+    final cFields = (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
+    final defaultLang = language ?? _str(rawConfig, 'defaultLanguage') ?? '';
+
+    final chapterUrl = _urlBuilder.resolve(
+      endpoint,
+      {'id': contentId, 'language': defaultLang},
+    );
+
+    final volumesCfg = detailCfg['volumes'] as Map<String, dynamic>? ??
+        api?['volumes'] as Map<String, dynamic>?;
+
+    try {
+      var chapters = await _fetchChapters(
+        chapterUrl,
+        itemsSelector: itemsSelector,
+        cFields: cFields,
+        rawConfig: rawConfig,
+        autoPaginate: chaptersCfg['autoPaginate'] != false,
+      );
+      chapters = _composeChapterIdsWithContentId(
+        chapters,
+        chaptersCfg: chaptersCfg,
+        contentId: contentId,
+      );
+
+      if (volumesCfg != null) {
+        final volEndpoint = _getEndpointPath(volumesCfg['endpoint']);
+        final volItemsSelector = _str(volumesCfg, 'items');
+        if (volEndpoint.isNotEmpty && volItemsSelector != null) {
+          final volUrl = _urlBuilder.resolve(
+            volEndpoint,
+            {'id': contentId, 'language': defaultLang},
+          );
+          final vFields = (volumesCfg['fields'] as Map<String, dynamic>?) ?? {};
+          var volumes = await _fetchChapters(
+            volUrl,
+            itemsSelector: volItemsSelector,
+            cFields: vFields,
+            rawConfig: rawConfig,
+            autoPaginate: volumesCfg['autoPaginate'] != false,
+          );
+          volumes = _composeChapterIdsWithContentId(
+            volumes,
+            chaptersCfg: volumesCfg,
+            contentId: contentId,
+          );
+          chapters = [...chapters, ...volumes];
+        }
+      }
+
+      return chapters;
+    } catch (e) {
+      _logger.w('$_sourceId fetchChapters failed: $e');
+      return const <Chapter>[];
+    }
+  }
 
   @override
   Future<AdapterSearchResult> search(
@@ -482,28 +554,34 @@ class GenericRestAdapter implements GenericAdapter {
         //   used by sources that require both series/content ID and chapter ID.
         var imageUrl = '$baseApiUrl$fullPath';
         final chapterIdFull = chapterId.trim();
-        String contentIdToken = chapterIdFull;
-        String chapterToken = chapterIdFull;
 
-        if (chapterIdFull.contains('/')) {
-          final parts = chapterIdFull.split('/');
-          if (parts.length >= 2) {
-            contentIdToken = parts.first;
-            chapterToken = parts.skip(1).join('/');
-          }
-        }
-
-        imageUrl = imageUrl
-            .replaceAll('{id}', contentIdToken)
-            .replaceAll('{chapter}', chapterToken)
-            .replaceAll('{chapterId}', chapterToken)
-            .replaceAll('{chapterIdFull}', chapterIdFull);
-
-        if (chapterIdFull.contains('/')) {
-          _logger.d(
-              '$_sourceId composite chapter format: content=$contentIdToken, chapter=$chapterToken');
+        if (chapterIdFull.startsWith('http')) {
+          imageUrl = chapterIdFull;
+          _logger.d('$_sourceId absolute chapter format: $chapterIdFull');
         } else {
-          _logger.d('$_sourceId single chapter format: $chapterIdFull');
+          String contentIdToken = chapterIdFull;
+          String chapterToken = chapterIdFull;
+
+          if (chapterIdFull.contains('/')) {
+            final parts = chapterIdFull.split('/');
+            if (parts.length >= 2) {
+              contentIdToken = parts.first;
+              chapterToken = parts.skip(1).join('/');
+            }
+          }
+
+          imageUrl = imageUrl
+              .replaceAll('{id}', contentIdToken)
+              .replaceAll('{chapter}', chapterToken)
+              .replaceAll('{chapterId}', chapterToken)
+              .replaceAll('{chapterIdFull}', chapterIdFull);
+
+          if (chapterIdFull.contains('/')) {
+            _logger.d(
+                '$_sourceId composite chapter format: content=$contentIdToken, chapter=$chapterToken');
+          } else {
+            _logger.d('$_sourceId single chapter format: $chapterIdFull');
+          }
         }
 
         imageUrl = _applyLanguagePlaceholder(imageUrl, rawConfig);
@@ -1143,7 +1221,7 @@ class GenericRestAdapter implements GenericAdapter {
           }
           if (path.isEmpty) continue;
           final multi = def['multi'] as bool? ?? false;
-          final sel = FieldSelector(selector: path);
+          final sel = FieldSelector.fromMap(def);
           if (multi) {
             result[fieldName] = _parser.extractList(data, sel);
           } else {

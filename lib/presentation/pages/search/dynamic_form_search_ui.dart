@@ -463,7 +463,6 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Future<void> _onSearch() async {
     if (!_formKey.currentState!.validate()) return;
 
-    
     // ponytail: numeric-only query --> redirect langsung ke halaman detail
     final queryValue = _textControllers['query']?.text.trim() ?? '';
     if (queryValue.isNotEmpty && RegExp(r'^\d+$').hasMatch(queryValue)) {

@@ -2328,7 +2328,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         BlocBuilder<SourceCubit, SourceState>(
           builder: (context, state) {
             final reachableCount = state.availableSources
-                .where((s) => _sourceHealthStatuses[s.id] == SourceHealthStatus.reachable)
+                .where((s) =>
+                    _sourceHealthStatuses[s.id] == SourceHealthStatus.reachable)
                 .length;
             return _buildSettingsCard([
               ListTile(
@@ -2359,9 +2360,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         child: Text(
                           '$reachableCount/${state.availableSources.length} sources reachable',
                           style: TextStyleConst.bodySmall.copyWith(
-                            color: reachableCount == state.availableSources.length
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.error,
+                            color:
+                                reachableCount == state.availableSources.length
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.error,
                           ),
                         ),
                       ),

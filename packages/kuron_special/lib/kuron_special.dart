@@ -12,6 +12,5 @@ export 'src/hitomi/hitomi_adapter.dart';
 export 'src/hitomi/hitomi_source_factory.dart';
 export 'src/doujindesu/doujindesu_source_factory.dart';
 export 'src/komiktap/komiktap_source_factory.dart';
-export 'src/mangafire/mangafire_source_factory.dart';
 export 'src/generic_bypass/generic_bypass_source_factory.dart';
 export 'src/hentairead/hentairead_source_factory.dart';

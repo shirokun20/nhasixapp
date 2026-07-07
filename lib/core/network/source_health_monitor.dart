@@ -28,7 +28,8 @@ class SourceHealthMonitor {
       StreamController<Map<String, SourceHealthStatus>>.broadcast();
 
   /// Stream of health status maps keyed by source ID.
-  Stream<Map<String, SourceHealthStatus>> get healthStream => _controller.stream;
+  Stream<Map<String, SourceHealthStatus>> get healthStream =>
+      _controller.stream;
 
   Map<String, SourceHealthStatus> _statuses = {};
 
@@ -62,7 +63,8 @@ class SourceHealthMonitor {
     await Future.wait(futures);
 
     if (errorCount > 0) {
-      _logger.i('Health check: $errorCount/${sources.length} source(s) unreachable');
+      _logger.i(
+          'Health check: $errorCount/${sources.length} source(s) unreachable');
     }
 
     _controller.add(Map.from(_statuses));

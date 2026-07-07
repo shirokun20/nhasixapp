@@ -81,6 +81,12 @@ class FieldSelector {
   /// Optional regex to apply to extracted text.
   final String? regex;
 
+  /// Optional prefix to prepend to extracted string.
+  final String? prefix;
+
+  /// Optional suffix to append to extracted string.
+  final String? suffix;
+
   /// Fallback value if selector yields nothing.
   final String? fallback;
 
@@ -89,14 +95,20 @@ class FieldSelector {
     this.type = 'jsonpath',
     this.attribute,
     this.regex,
+    this.prefix,
+    this.suffix,
     this.fallback,
   });
 
-  factory FieldSelector.fromMap(Map<String, dynamic> map) => FieldSelector(
-        selector: map['selector'] as String,
-        type: (map['type'] as String?) ?? 'jsonpath',
-        attribute: map['attribute'] as String?,
-        regex: map['regex'] as String?,
-        fallback: map['fallback'] as String?,
-      );
+  factory FieldSelector.fromMap(Map<String, dynamic> map) {
+    return FieldSelector(
+      selector: map['selector']?.toString() ?? '',
+      type: map['type']?.toString() ?? 'jsonpath',
+      attribute: map['attribute']?.toString(),
+      regex: map['regex']?.toString(),
+      prefix: map['prefix']?.toString(),
+      suffix: map['suffix']?.toString(),
+      fallback: map['fallback']?.toString(),
+    );
+  }
 }

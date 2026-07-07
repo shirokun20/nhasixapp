@@ -1543,7 +1543,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         widget.readingMode == ReadingMode.continuousScroll;
     // Heavy sources: always pass visiblePageNotifier so off-screen
     // heavy 10MB+ WebP thumbnails pause, freeing GPU decode pressure.
-    final useVisiblePagePause = _isHeavyReaderSource() || !playInlineInContinuousScroll;
+    final useVisiblePagePause =
+        _isHeavyReaderSource() || !playInlineInContinuousScroll;
 
     Widget nativeView = RepaintBoundary(
       child: AnimatedWebPView(

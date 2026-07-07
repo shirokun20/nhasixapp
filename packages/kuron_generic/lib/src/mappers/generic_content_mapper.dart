@@ -196,11 +196,18 @@ class GenericContentMapper {
     final id = _str(fields, 'id');
     final url = _str(fields, 'url');
     final language = _str(fields, 'language').trim();
+    final scanGroup = _str(fields, 'scanGroup').trim();
+    final scanlator = _str(fields, 'scanlator').trim();
+    final finalScanGroup = scanGroup.isNotEmpty
+        ? scanGroup
+        : (scanlator.isNotEmpty ? scanlator : null);
+
     return Chapter(
       id: id.isNotEmpty ? id : url,
       title: _buildChapterTitle(fields),
       url: url,
       uploadDate: _dateNullable(fields, 'date'),
+      scanGroup: finalScanGroup,
       language: language.isNotEmpty ? language : null,
     );
   }

@@ -638,10 +638,6 @@ void _setupDataSources() {
           dio: getIt<Dio>(),
           logger: getIt<Logger>(),
         ),
-        MangaFireSourceFactory(
-          dio: getIt<Dio>(),
-          logger: getIt<Logger>(),
-        ),
         // CF-protected generic sources
         HentaiReadSourceFactory(
           dio: getIt<Dio>(),

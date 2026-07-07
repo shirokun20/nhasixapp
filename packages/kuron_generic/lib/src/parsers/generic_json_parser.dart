@@ -39,7 +39,14 @@ class GenericJsonParser {
       if (str == null || str.isEmpty) return selector.fallback;
 
       if (selector.regex != null) {
-        return _applyRegex(str, selector.regex!);
+        str = _applyRegex(str, selector.regex!);
+        if (str == null || str.isEmpty) return selector.fallback;
+      }
+      if (selector.prefix != null) {
+        str = '${selector.prefix}$str';
+      }
+      if (selector.suffix != null) {
+        str = '$str${selector.suffix}';
       }
       return str;
     } catch (e) {
@@ -52,7 +59,16 @@ class GenericJsonParser {
   /// Extract a raw dynamic value from [data] using [selector].
   dynamic extractRaw(dynamic data, FieldSelector selector) {
     try {
-      return _evaluate(data, selector);
+      dynamic value = _evaluate(data, selector);
+      if (value is String) {
+        if (selector.prefix != null) {
+          value = '${selector.prefix}$value';
+        }
+        if (selector.suffix != null) {
+          value = '$value${selector.suffix}';
+        }
+      }
+      return value;
     } catch (e) {
       _logger.w(
           'GenericJsonParser: failed to extract raw "${selector.selector}"',

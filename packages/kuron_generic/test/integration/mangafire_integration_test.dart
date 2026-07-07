@@ -1,0 +1,180 @@
+library;
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:kuron_core/kuron_core.dart';
+import 'package:kuron_generic/src/adapters/generic_rest_adapter.dart';
+import 'package:kuron_generic/src/parsers/generic_json_parser.dart';
+import 'package:kuron_generic/src/url_builder/generic_url_builder.dart';
+import 'package:logger/logger.dart';
+import 'package:test/test.dart';
+
+const _baseUrl = 'https://mangafire.to';
+const _mangaId = 'manga123';
+const _chapterId = 'chap123';
+
+const _listResponse = {
+  'items': [
+    {
+      'hid': _mangaId,
+      'title': 'Test Manga',
+      'poster': {'large': 'https://img.mangafire.to/manga1.jpg'},
+      'status': 'ongoing',
+      'type': 'manga',
+      'latestChapter': 50
+    }
+  ],
+  'meta': {'currentPage': 1, 'hasNext': true}
+};
+
+const _detailResponse = {
+  'data': {
+    'hid': _mangaId,
+    'title': 'Test Manga Detail',
+    'synopsisHtml': 'This is a test synopsis.',
+    'poster': {'large': 'https://img.mangafire.to/manga1.jpg'},
+    'status': 'ongoing',
+    'type': 'manga',
+    'genres': [
+      {'title': 'Action'},
+      {'title': 'Adventure'}
+    ],
+    'authors': [
+      {'title': 'Test Author'}
+    ],
+    'languages': ['en', 'id'],
+    'createdAt': '2023-01-01T00:00:00Z'
+  }
+};
+
+const _chaptersResponse = {
+  'items': [
+    {
+      'id': _chapterId,
+      'number': '1.0',
+      'name': 'The Beginning',
+      'createdAt': '2023-01-01T00:00:00Z'
+    }
+  ]
+};
+
+const _imagesResponse = {
+  'data': {
+    'pages': [
+      {'url': 'https://img.mangafire.to/page1.jpg'},
+      {'url': 'https://img.mangafire.to/page2.jpg'}
+    ]
+  }
+};
+
+class MockInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final uri = options.uri.toString();
+    if (uri.contains('/api/titles/$_mangaId/chapters')) {
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: _chaptersResponse,
+      ));
+    } else if (uri.contains('/api/titles/$_mangaId')) {
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: _detailResponse,
+      ));
+    } else if (uri.contains('/api/titles')) {
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: _listResponse,
+      ));
+    } else if (uri.contains('/api/chapters/$_chapterId')) {
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: _imagesResponse,
+      ));
+    } else {
+      handler.reject(DioException(
+        requestOptions: options,
+        error: 'Unhandled mocked route: $uri',
+      ));
+    }
+  }
+}
+
+void main() {
+  group('MangaFire REST Adapter Integration', () {
+    late Dio dio;
+    late GenericRestAdapter adapter;
+    late Map<String, dynamic> config;
+
+    setUp(() async {
+      var path = 'informations/configs/mangafire-config.json';
+      if (!File(path).existsSync()) {
+        path = '../../informations/configs/mangafire-config.json';
+      }
+
+      final file = File(path);
+      config = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+
+      dio = Dio();
+      dio.interceptors.add(MockInterceptor());
+
+      final logger = Logger(printer: PrettyPrinter(methodCount: 0));
+
+      adapter = GenericRestAdapter(
+        sourceId: 'mangafire',
+        dio: dio,
+        logger: logger,
+        urlBuilder: GenericUrlBuilder(baseUrl: _baseUrl),
+        parser: GenericJsonParser(logger: logger),
+      );
+    });
+
+    test('search returns parsed items and hasNextPage', () async {
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:sort=trending', page: 1),
+        config,
+      );
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.id, _mangaId);
+      expect(result.items.first.title, 'Test Manga');
+      expect(result.hasNextPage, isTrue);
+    });
+
+    test('fetchDetail returns parsed detail with tags and languages', () async {
+      final result = await adapter.fetchDetail(_mangaId, config);
+
+      expect(result.content.id, _mangaId);
+      expect(result.content.title, 'Test Manga Detail');
+      expect(result.content.hasTag('Action'), isTrue);
+      expect(result.content.hasTag('Adventure'), isTrue);
+      expect(result.content.hasArtist('Test Author'), isTrue);
+    });
+
+    test('fetchChapters returns parsed chapters for language', () async {
+      final chapters =
+          await adapter.fetchChapters(_mangaId, config, language: 'en');
+
+      expect(chapters, hasLength(1));
+      expect(
+          chapters.first.id, 'https://mangafire.to/api/chapters/$_chapterId');
+      expect(chapters.first.title, 'Ch.1.0');
+    });
+
+    test('fetchChapterImages returns direct image urls', () async {
+      final images = await adapter.fetchChapterImages(
+        'https://mangafire.to/api/chapters/$_chapterId',
+        config,
+      );
+      expect(images, isNotNull);
+      expect(images!.images, hasLength(2));
+      expect(images.images.first, 'https://img.mangafire.to/page1.jpg');
+    });
+  });
+}
