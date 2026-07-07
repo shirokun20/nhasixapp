@@ -2171,40 +2171,37 @@ class GenericRestAdapter implements GenericAdapter {
     final relationConfig = detail?['tagRelations'] as Map<String, dynamic>?;
     if (relationConfig == null) return;
 
-    final sourcePath = relationConfig['sourcePath'] as String?;
+    final globalSourcePath = relationConfig['sourcePath'] as String?;
     final mappings = relationConfig['mappings'] as List<dynamic>?;
-    if (sourcePath == null || sourcePath.isEmpty || mappings == null) {
-      return;
-    }
-
-    final relations =
-        _parser.extractItems(data, FieldSelector(selector: sourcePath));
-    if (relations.isEmpty) return;
+    if (mappings == null) return;
 
     for (final rawMapping in mappings.whereType<Map<String, dynamic>>()) {
-      final relationType =
-          (rawMapping['relationshipType'] as String? ?? '').toLowerCase();
-      final tagType = (rawMapping['tagType'] as String? ?? relationType)
-          .trim()
-          .toLowerCase();
-      final namePath =
-          (rawMapping['namePath'] as String? ?? 'attributes.name').trim();
+      final mappingSourcePath = rawMapping['sourcePath'] as String? ?? globalSourcePath;
+      if (mappingSourcePath == null || mappingSourcePath.isEmpty) continue;
+
+      final relations = _parser.extractItems(data, FieldSelector(selector: mappingSourcePath));
+      if (relations.isEmpty) continue;
+
+      final relationType = (rawMapping['relationshipType'] as String? ?? '').toLowerCase();
+      final tagType = (rawMapping['tagType'] as String? ?? relationType).trim().toLowerCase();
+      final namePath = (rawMapping['namePath'] as String? ?? 'attributes.name').trim();
       final idPath = (rawMapping['idPath'] as String? ?? 'id').trim();
       final appendToArtists = rawMapping['appendToArtists'] == true;
 
-      if (relationType.isEmpty || tagType.isEmpty) continue;
+      if (tagType.isEmpty) continue;
 
       for (final rel in relations.whereType<Map<String, dynamic>>()) {
-        final relType = (rel['type'] as String? ?? '').trim().toLowerCase();
-        if (relType != relationType) continue;
+        if (relationType.isNotEmpty) {
+          final relType = (rel['type'] as String? ?? '').trim().toLowerCase();
+          if (relType != relationType) continue;
+        }
 
-        final relName =
-            _extractSimplePathValue(rel, namePath)?.toString().trim() ?? '';
+        final relName = _extractSimplePathValue(rel, namePath)?.toString().trim() ?? '';
         if (relName.isEmpty) continue;
 
-        final relId =
-            _extractSimplePathValue(rel, idPath)?.toString().trim() ?? '';
+        final relId = _extractSimplePathValue(rel, idPath)?.toString().trim() ?? '';
         final slug = relId.isEmpty ? null : relId;
+        final numericId = int.tryParse(relId) ?? 0;
 
         if (appendToArtists && !artistsRaw.contains(relName)) {
           artistsRaw.add(relName);
@@ -2215,7 +2212,7 @@ class GenericRestAdapter implements GenericAdapter {
             t.name.toLowerCase() == relName.toLowerCase());
         if (!exists) {
           tags.add(Tag(
-            id: 0,
+            id: numericId,
             name: relName,
             type: tagType,
             count: 0,
@@ -2614,11 +2611,20 @@ class GenericRestAdapter implements GenericAdapter {
   ) {
     final searchConfig =
         (rawConfig['searchConfig'] as Map<String, dynamic>?) ?? const {};
+    final searchForm =
+        (rawConfig['searchForm'] as Map<String, dynamic>?) ?? const {};
 
     final sortingConfig =
         (searchConfig['sortingConfig'] as Map<String, dynamic>?) ?? const {};
-    final options =
+    
+    var options =
         (sortingConfig['options'] as List<dynamic>?) ?? const <dynamic>[];
+
+    if (options.isEmpty) {
+      final params = searchForm['params'] as Map<String, dynamic>? ?? const {};
+      final sortParam = params['sort'] as Map<String, dynamic>? ?? const {};
+      options = (sortParam['options'] as List<dynamic>?) ?? const <dynamic>[];
+    }
 
     final candidates = <String>{
       filter.sort.name,
@@ -2631,9 +2637,10 @@ class GenericRestAdapter implements GenericAdapter {
 
       final value = option['value']?.toString().trim() ?? '';
       final apiValue = option['apiValue']?.toString().trim() ?? '';
+      final name = option['name']?.toString().trim() ?? '';
 
-      if (candidates.contains(value) || candidates.contains(apiValue)) {
-        return apiValue;
+      if (candidates.contains(value) || candidates.contains(apiValue) || candidates.contains(name) || candidates.contains(name.toLowerCase())) {
+        return value;
       }
     }
 
