@@ -69,10 +69,13 @@ const _imagesResponse = {
   }
 };
 
+String? lastRequestedUri;
+
 class MockInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final uri = options.uri.toString();
+    lastRequestedUri = uri;
     if (uri.contains('/api/titles/$_mangaId/chapters')) {
       handler.resolve(Response(
         requestOptions: options,
@@ -137,7 +140,7 @@ void main() {
 
     test('search returns parsed items and hasNextPage', () async {
       final result = await adapter.search(
-        const SearchFilter(query: 'raw:sort=trending', page: 1),
+        const SearchFilter(query: '', page: 1, sort: SortOption.popular),
         config,
       );
 
@@ -145,6 +148,21 @@ void main() {
       expect(result.items.first.id, _mangaId);
       expect(result.items.first.title, 'Test Manga');
       expect(result.hasNextPage, isTrue);
+      
+      expect(lastRequestedUri, isNotNull);
+      expect(lastRequestedUri, contains('sort=views_total:desc'));
+    });
+
+    test('search with keyword and sort', () async {
+      await adapter.search(
+        const SearchFilter(query: 'naruto', page: 2, sort: SortOption.newest),
+        config,
+      );
+
+      expect(lastRequestedUri, isNotNull);
+      expect(lastRequestedUri, contains('sort=created_at:desc'));
+      expect(lastRequestedUri, contains('keyword=naruto'));
+      expect(lastRequestedUri, contains('page=2'));
     });
 
     test('fetchDetail returns parsed detail with tags and languages', () async {
