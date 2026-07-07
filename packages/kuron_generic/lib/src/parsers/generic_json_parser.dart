@@ -60,12 +60,16 @@ class GenericJsonParser {
   dynamic extractRaw(dynamic data, FieldSelector selector) {
     try {
       dynamic value = _evaluate(data, selector);
-      if (value is String) {
-        if (selector.prefix != null) {
-          value = '${selector.prefix}$value';
-        }
-        if (selector.suffix != null) {
-          value = '$value${selector.suffix}';
+      if (selector.prefix != null || selector.suffix != null) {
+        if (value != null) {
+          String strValue = value.toString();
+          if (selector.prefix != null) {
+            strValue = '${selector.prefix}$strValue';
+          }
+          if (selector.suffix != null) {
+            strValue = '$strValue${selector.suffix}';
+          }
+          value = strValue;
         }
       }
       return value;
