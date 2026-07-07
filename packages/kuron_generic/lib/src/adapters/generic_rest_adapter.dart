@@ -1160,6 +1160,43 @@ class GenericRestAdapter implements GenericAdapter {
         }
       }
 
+      // Volumes
+      final volumesCfg = apiDetail['volumes'] as Map<String, dynamic>?;
+      if (volumesCfg != null) {
+        final volEndpoint = volumesCfg['endpoint'] as String?;
+        final volItemsSelector = volumesCfg['items'] as String?;
+        if (volEndpoint != null && volItemsSelector != null) {
+          final baseApiUrl = _getBaseUrl(rawConfig);
+          final fullPath =
+              volEndpoint.startsWith('/') ? volEndpoint : '/$volEndpoint';
+          var volUrl = '$baseApiUrl${fullPath.replaceAll('{id}', idForDetail)}';
+          volUrl = _applyLanguagePlaceholder(volUrl, rawConfig);
+
+          try {
+            final vFields =
+                (volumesCfg['fields'] as Map<String, dynamic>?) ?? {};
+            final fallbackFields =
+                (volumesCfg['fallbackFields'] as Map<String, dynamic>?);
+            var volumes = await _fetchChapters(
+              volUrl,
+              itemsSelector: volItemsSelector,
+              cFields: vFields,
+              rawConfig: rawConfig,
+              fallbackFields: fallbackFields,
+              autoPaginate: volumesCfg['autoPaginate'] != false,
+            );
+            volumes = _composeChapterIdsWithContentId(
+              volumes,
+              chaptersCfg: volumesCfg,
+              contentId: idForDetail,
+            );
+            chapters = [...(chapters ?? []), ...volumes];
+          } catch (e) {
+            _logger.w('$_sourceId detail volumes fetch failed: $e');
+          }
+        }
+      }
+
       final content = GenericContentMapper.toDetail(
         idForDetail,
         fields,
@@ -2176,15 +2213,21 @@ class GenericRestAdapter implements GenericAdapter {
     if (mappings == null) return;
 
     for (final rawMapping in mappings.whereType<Map<String, dynamic>>()) {
-      final mappingSourcePath = rawMapping['sourcePath'] as String? ?? globalSourcePath;
+      final mappingSourcePath =
+          rawMapping['sourcePath'] as String? ?? globalSourcePath;
       if (mappingSourcePath == null || mappingSourcePath.isEmpty) continue;
 
-      final relations = _parser.extractItems(data, FieldSelector(selector: mappingSourcePath));
+      final relations = _parser.extractItems(
+          data, FieldSelector(selector: mappingSourcePath));
       if (relations.isEmpty) continue;
 
-      final relationType = (rawMapping['relationshipType'] as String? ?? '').toLowerCase();
-      final tagType = (rawMapping['tagType'] as String? ?? relationType).trim().toLowerCase();
-      final namePath = (rawMapping['namePath'] as String? ?? 'attributes.name').trim();
+      final relationType =
+          (rawMapping['relationshipType'] as String? ?? '').toLowerCase();
+      final tagType = (rawMapping['tagType'] as String? ?? relationType)
+          .trim()
+          .toLowerCase();
+      final namePath =
+          (rawMapping['namePath'] as String? ?? 'attributes.name').trim();
       final idPath = (rawMapping['idPath'] as String? ?? 'id').trim();
       final appendToArtists = rawMapping['appendToArtists'] == true;
 
@@ -2196,10 +2239,12 @@ class GenericRestAdapter implements GenericAdapter {
           if (relType != relationType) continue;
         }
 
-        final relName = _extractSimplePathValue(rel, namePath)?.toString().trim() ?? '';
+        final relName =
+            _extractSimplePathValue(rel, namePath)?.toString().trim() ?? '';
         if (relName.isEmpty) continue;
 
-        final relId = _extractSimplePathValue(rel, idPath)?.toString().trim() ?? '';
+        final relId =
+            _extractSimplePathValue(rel, idPath)?.toString().trim() ?? '';
         final slug = relId.isEmpty ? null : relId;
         final numericId = int.tryParse(relId) ?? 0;
 
@@ -2616,7 +2661,7 @@ class GenericRestAdapter implements GenericAdapter {
 
     final sortingConfig =
         (searchConfig['sortingConfig'] as Map<String, dynamic>?) ?? const {};
-    
+
     var options =
         (sortingConfig['options'] as List<dynamic>?) ?? const <dynamic>[];
 
@@ -2639,7 +2684,10 @@ class GenericRestAdapter implements GenericAdapter {
       final apiValue = option['apiValue']?.toString().trim() ?? '';
       final name = option['name']?.toString().trim() ?? '';
 
-      if (candidates.contains(value) || candidates.contains(apiValue) || candidates.contains(name) || candidates.contains(name.toLowerCase())) {
+      if (candidates.contains(value) ||
+          candidates.contains(apiValue) ||
+          candidates.contains(name) ||
+          candidates.contains(name.toLowerCase())) {
         return value;
       }
     }
