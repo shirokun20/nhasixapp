@@ -154,6 +154,23 @@ class GenericContentMapper {
       }
     }
 
+    // Store availableTranslatedLanguages as typed tags so the detail UI can
+    // show language chips even when chapters are filtered to one language.
+    final availLangs = _strList(fields, 'availableTranslatedLanguages');
+    for (final lang in availLangs) {
+      final alreadyPresent = resolvedTags.any(
+        (t) =>
+            t.type == 'available_language' &&
+            t.name.toLowerCase() == lang.toLowerCase(),
+      );
+      if (!alreadyPresent) {
+        resolvedTags = [
+          ...resolvedTags,
+          Tag(id: 0, name: lang, type: 'available_language', count: 0),
+        ];
+      }
+    }
+
     return Content(
       id: id,
       sourceId: sourceId,

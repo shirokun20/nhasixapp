@@ -186,8 +186,14 @@ class DetailCubit extends BaseCubit<DetailState> {
       ));
 
       if (shouldLoadChaptersAsync) {
+        // Load initial chapters filtered by the source's default language
+        // (e.g. English for MangaDex) so users see the right language first.
         unawaited(
-          _loadInitialChapters(content.id, sourceId: content.sourceId),
+          _loadInitialChapters(
+            content.id,
+            sourceId: content.sourceId,
+            language: null, // detail fetch handles language via adapter
+          ),
         );
       }
 
@@ -334,6 +340,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   Future<void> _loadInitialChapters(
     String contentId, {
     required String sourceId,
+    String? language,
   }) async {
     final currentState = state;
     if (currentState is! DetailLoaded) {
@@ -343,6 +350,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     final incoming = await _contentRepository.getContentChapters(
       ContentId(contentId),
       sourceId: sourceId,
+      language: language,
     );
 
     if (isClosed) {

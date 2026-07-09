@@ -487,7 +487,17 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> loadNextChapter() async {
     await _saveToHistory();
 
-    final nextChapterId = _resolveNextChapterId();
+    var nextChapterId = _resolveNextChapterId();
+    // If boundary hit, try fetching the next page.
+    if (nextChapterId == null) {
+      final poolSize = _allChapters?.length ?? 0;
+      if (poolSize > 0) {
+        final nextPage = poolSize ~/ _configuredPageLimit + 1;
+        await _fetchAndMergePage(nextPage);
+        nextChapterId = _resolveNextChapterId();
+      }
+    }
+
     if (nextChapterId == null) {
       _logger.d('No next chapter available');
       return;
@@ -510,7 +520,16 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> loadPreviousChapter() async {
     await _saveToHistory();
 
-    final previousChapterId = _resolvePreviousChapterId();
+    var previousChapterId = _resolvePreviousChapterId();
+    // If boundary hit, try fetching the previous page.
+    if (previousChapterId == null) {
+      final poolSize = _allChapters?.length ?? 0;
+      if (poolSize > 0) {
+        await _fetchAndMergePage(1);
+        previousChapterId = _resolvePreviousChapterId();
+      }
+    }
+
     if (previousChapterId == null) {
       _logger.d('No previous chapter available');
       return;
@@ -598,6 +617,84 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   bool get hasPreviousChapter => _resolvePreviousChapterId() != null;
 
+  /// Fetch the next page of chapters and merge into [_allChapters].
+  Future<void> loadMoreChapters() async {
+    if (_allChapters == null || _allChapters!.isEmpty) return;
+    final nextPage = _allChapters!.length ~/ _configuredPageLimit + 1;
+    await _fetchAndMergePage(nextPage);
+  }
+
+  /// Read the page size (limit) from the source config.
+  int get _configuredPageLimit {
+    final sourceId = _parentContent?.sourceId ?? state.content?.sourceId;
+    if (sourceId == null) return 100;
+    final rawCfg = remoteConfigService.getRawConfig(sourceId);
+    final chapterCfg = rawCfg?['api']?['detail']?['chapters'] as Map? ??
+        rawCfg?['api']?['chapters'] as Map?;
+    final endpoint = chapterCfg?['endpoint']?.toString() ?? '';
+    final match = RegExp(r'limit=(\d+)').firstMatch(endpoint);
+    return match != null ? int.parse(match.group(1)!) : 100;
+  }
+
+  /// Fetch a page of chapters from the source and merge into [_allChapters].
+  /// Returns the merged list length or 0 if nothing was added.
+  Future<int> _fetchAndMergePage(int page) async {
+    final sourceId = _parentContent?.sourceId ?? state.content?.sourceId;
+    final currentChapter = state.currentChapter;
+    if (sourceId == null || currentChapter == null) return 0;
+
+    final source = contentSourceRegistry.getSource(sourceId);
+    if (source == null) return 0;
+
+    final limit = _configuredPageLimit;
+
+    try {
+      final incoming = await source.getChapters(
+        _parentContent?.id ?? state.content?.id ?? '',
+        language: currentChapter.language,
+        scanGroup: currentChapter.scanGroup,
+        page: page,
+        limit: limit,
+      );
+      if (incoming.isEmpty) return 0;
+
+      final existing = _allChapters ?? [];
+      final seenIds = existing.map((c) => c.id).toSet();
+      final merged = <Chapter>[...existing];
+      for (final chapter in incoming) {
+        if (seenIds.add(chapter.id)) merged.add(chapter);
+      }
+
+      // Sort ascending by chapter number
+      merged.sort((a, b) {
+        final aNum = _extractChapterValue(a.title) ?? double.infinity;
+        final bNum = _extractChapterValue(b.title) ?? double.infinity;
+        final cmp = aNum.compareTo(bNum);
+        return cmp != 0 ? cmp : a.id.compareTo(b.id);
+      });
+
+      _allChapters = merged;
+      return incoming.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Ensure the current chapter is present in [_allChapters].
+  /// If missing, fetches surrounding pages until found or pages exhausted.
+  Future<void> _ensureChapterInPool(String chapterId) async {
+    if (_allChapters == null) return;
+    final exists = _allChapters!.any((c) => c.id == chapterId);
+    if (exists || _allChapters!.isEmpty) return;
+
+    // Try a reasonable range of pages forward
+    for (int page = 1; page <= 5; page++) {
+      final added = await _fetchAndMergePage(page);
+      if (_allChapters!.any((c) => c.id == chapterId)) return;
+      if (added == 0) break; // no more pages
+    }
+  }
+
   String? _resolveNextChapterId() {
     final preferredLanguage = _currentChapterLanguageKey();
     if (preferredLanguage != null) {
@@ -640,11 +737,25 @@ class ReaderCubit extends Cubit<ReaderState> {
       return null;
     }
 
-    final chapterPool = preferredLanguage == null
+    // Filter by current scanGroup (chapters vs volumes) so prev/next navigation
+    // stays within the same type.
+    final currentScanGroup = state.currentChapter?.scanGroup;
+    var chapterPool = currentScanGroup == null
         ? _allChapters!
-        : _allChapters!.where((chapter) {
-            return _normalizeLanguageKey(chapter.language) == preferredLanguage;
-          }).toList();
+        : _allChapters!
+            .where((chapter) => chapter.scanGroup == currentScanGroup)
+            .toList();
+
+    if (chapterPool.isEmpty) {
+      return null;
+    }
+
+    if (preferredLanguage != null) {
+      chapterPool = chapterPool
+          .where((chapter) =>
+              _normalizeLanguageKey(chapter.language) == preferredLanguage)
+          .toList();
+    }
 
     if (chapterPool.isEmpty) {
       return null;
@@ -780,8 +891,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       emit(ReaderLoading(state));
 
-      // IMPORTANT: We now rely on _allChapters list passed from DetailScreen
-      // This list contains chapters in the correct order with their IDs
+      // Expand pool if chapter not in current _allChapters
+      await _ensureChapterInPool(chapterId);
+
       final chapter = _allChapters!.firstWhere(
         (ch) => ch.id == chapterId,
         orElse: () =>

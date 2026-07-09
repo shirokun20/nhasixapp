@@ -10,8 +10,9 @@ import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:kuron_core/kuron_core.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/language_service.dart';
 
 /// Grid card widget for 2-column layout with ripple effect
 class MainGridCard extends StatelessWidget {
@@ -230,24 +231,7 @@ class MainGridCard extends StatelessWidget {
                                   const SizedBox(width: 8),
                                 ],
                                 if (content.language.isNotEmpty) ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary,
-                                      borderRadius: BorderRadius.circular(
-                                          DesignTokens.radiusSm),
-                                    ),
-                                    child: Text(
-                                      content.language.toUpperCase(),
-                                      style: TextStyleConst.overline.copyWith(
-                                        color: theme.colorScheme.onPrimary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                                  _LanguageFlag(language: content.language, theme: theme),
                                 ],
                               ],
                             ),
@@ -464,6 +448,35 @@ class MainGridCard extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Language flag widget — emoji + display name
+class _LanguageFlag extends StatelessWidget {
+  const _LanguageFlag({required this.language, required this.theme});
+  final String language;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = language.toLowerCase().trim();
+    final svc = getIt<LanguageService>();
+    final emoji = svc.flagEmoji(lang);
+    final label = svc.displayName(lang);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      ),
+      child: Text(
+        emoji != null ? '$emoji $label' : label,
+        style: TextStyleConst.overline.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

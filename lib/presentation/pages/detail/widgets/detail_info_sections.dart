@@ -398,11 +398,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
   String? _selectedLanguageKey;
 
   void _selectLanguage(String key) {
-    if (widget.onLanguageSelected != null) {
-      widget.onLanguageSelected!(key);
-      return;
-    }
     setState(() => _selectedLanguageKey = key);
+    widget.onLanguageSelected?.call(key);
   }
 
   @override

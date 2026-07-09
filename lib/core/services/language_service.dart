@@ -6,23 +6,16 @@ import 'package:logger/logger.dart';
 /// Holds display metadata for a single language entry.
 class LanguageInfo {
   final String displayName;
-
-  /// ISO 639-1 two-letter code (e.g. "id", "en").
   final String code;
 
-  /// Filename (without extension) of the flag SVG inside
-  /// `assets/images/flags/`. Null if no flag asset exists.
-  final String? flagFile;
+  /// Unicode flag emoji (e.g. "🇮🇩", "🇬🇧").
+  final String? flagEmoji;
 
   const LanguageInfo({
     required this.displayName,
     required this.code,
-    this.flagFile,
+    this.flagEmoji,
   });
-
-  /// Absolute asset path to the flag SVG, or null.
-  String? get flagAssetPath =>
-      flagFile != null ? 'assets/images/flags/$flagFile.svg' : null;
 
   /// Two-letter uppercase badge (e.g. "ID", "EN").
   String get badge => code.toUpperCase();
@@ -54,7 +47,7 @@ class LanguageService {
         _entries[entry.key] = LanguageInfo(
           displayName: data['displayName'] as String,
           code: data['code'] as String,
-          flagFile: data['flagFile'] as String?,
+          flagEmoji: data['flagEmoji'] as String?,
         );
       }
       _logger.d('LanguageService: loaded ${_entries.length} language entries');
@@ -75,9 +68,9 @@ class LanguageService {
     return resolve(langKey)?.displayName ?? langKey;
   }
 
-  /// Flag asset path for [langKey], or null if no flag exists.
-  String? flagAssetPath(String langKey) {
-    return resolve(langKey)?.flagAssetPath;
+  /// Flag emoji for [langKey] (e.g. "🇮🇩"), or null.
+  String? flagEmoji(String langKey) {
+    return resolve(langKey)?.flagEmoji;
   }
 
   /// Two-letter uppercase badge for [langKey].

@@ -929,7 +929,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final allTags = <Tag>[];
 
     void addTag(Tag tag) {
-      if (tag.type.startsWith('__mangafire_')) {
+      if (tag.type.startsWith('__mangafire_') ||
+          tag.type == 'available_language') {
         return;
       }
       final key = '${tag.type}:${tag.name.toLowerCase()}';
@@ -1085,17 +1086,29 @@ class _DetailScreenState extends State<DetailScreen> {
                   .isFeatureEnabled(content.sourceId, (f) => f.download),
               availableLanguageKeys: content.sourceId == 'mangafire'
                   ? _mangaFireCoordinator.extractAvailableLanguageKeys(content)
-                  : null,
+                  : (() {
+                      final keys = content.tags
+                          .where((t) => t.type == 'available_language')
+                          .map((t) => t.name)
+                          .toList();
+                      return keys.isNotEmpty ? keys : null;
+                    })(),
               selectedLanguageKey: mangafireLanguageKey,
               isLoadingSelectedLanguage: content.sourceId == 'mangafire'
                   ? _mangaFireCoordinator.isLoadingLane
                   : detailState.isChaptersLoading,
-              onLanguageSelected: content.sourceId == 'mangafire'
-                  ? (languageKey) => unawaited(
-                        _mangaFireCoordinator.onLanguageSelected(
-                            content, languageKey),
-                      )
-                  : null,
+              onLanguageSelected: (languageKey) {
+                if (content.sourceId == 'mangafire') {
+                  unawaited(_mangaFireCoordinator.onLanguageSelected(
+                      content, languageKey));
+                } else {
+                  unawaited(_detailCubit.loadChapterLane(
+                    language: ChapterLanguagePresenter.normalize(languageKey),
+                    scanGroup: content.chapters?.firstOrNull?.scanGroup ??
+                        'Chapter',
+                  ));
+                }
+              },
               formatDate: _formatDate,
               formatLanguageLabel: _formatChapterLanguageLabel,
               onChapterTap: _detailCubit.openChapter,

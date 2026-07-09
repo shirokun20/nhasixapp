@@ -11,7 +11,7 @@ import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/tag_color_palette.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 import 'progressive_image_widget.dart';
 import 'highlighted_text_widget.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -809,8 +809,8 @@ class ContentCard extends StatelessWidget {
         final normalizedLanguage = content.language.toLowerCase().trim();
         final hasLanguage =
             normalizedLanguage.isNotEmpty && normalizedLanguage != 'unknown';
-        final flagAssetPath = hasLanguage
-            ? languageService.flagAssetPath(normalizedLanguage)
+        final flagEmoji = hasLanguage
+            ? languageService.flagEmoji(normalizedLanguage)
             : null;
         final languageBadge = hasLanguage
             ? (normalizedLanguage.length >= 2
@@ -824,67 +824,8 @@ class ContentCard extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 20,
-              height: 14,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(2),
-                border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outlineVariant
-                      .withValues(alpha: 0.35),
-                  width: 0.4,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: flagAssetPath != null
-                    ? SvgPicture.asset(
-                        flagAssetPath,
-                        width: 20,
-                        height: 14,
-                        fit: BoxFit.cover,
-                        placeholderBuilder: (context) {
-                          return Container(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                            child: Center(
-                              child: Text(
-                                languageBadge,
-                                style: TextStyleConst.labelSmall.copyWith(
-                                  fontSize: 8,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: Center(
-                          child: Text(
-                            languageBadge,
-                            style: TextStyleConst.labelSmall.copyWith(
-                              fontSize: 8,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 4),
             Text(
-              languageLabel,
+              '${flagEmoji ?? languageBadge} $languageLabel',
               style: TextStyleConst.caption.copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,

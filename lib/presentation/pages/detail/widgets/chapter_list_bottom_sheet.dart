@@ -640,6 +640,15 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     );
   }
 
+  int _resolvePageLimit() {
+    final cfg = getIt<RemoteConfigService>().getRawConfig(widget.content.sourceId);
+    final chapterCfg = (cfg?['api']?['detail']?['chapters'] as Map?)
+        ?? (cfg?['api']?['chapters'] as Map?);
+    final endpoint = chapterCfg?['endpoint']?.toString() ?? '';
+    final match = RegExp(r'limit=(\d+)').firstMatch(endpoint);
+    return match != null ? int.parse(match.group(1)!) : 100;
+  }
+
   Future<void> _loadMoreChapters(String languageKey) async {
     if (_isLoadingMore) return;
     setState(() {
@@ -648,20 +657,19 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     });
 
     try {
-      const limit = 20;
-      final loadedCount = _chapters
-          .where((chapter) =>
-              ChapterLanguagePresenter.normalize(chapter.language) ==
-              languageKey &&
-              chapter.scanGroup != 'Volume')
+      final limit = _resolvePageLimit();
+      final loadedForLang = _chapters
+          .where((c) =>
+              ChapterLanguagePresenter.normalize(c.language) ==
+              ChapterLanguagePresenter.normalize(languageKey))
           .length;
-      // MangaDex uses offset, MangaFire uses page. Both are derived from count.
-      final page = (loadedCount / limit).ceil() + 1;
+      final isPageSource = widget.content.sourceId == 'mangafire';
       final next = await _contentRepository.getContentChapters(
         ContentId(widget.content.id),
         sourceId: widget.content.sourceId,
         language: languageKey,
-        page: page,
+        page: isPageSource ? (loadedForLang ~/ limit + 1) : null,
+        offset: isPageSource ? null : loadedForLang,
         limit: limit,
         scanGroup: widget.initialScanGroup ?? 'Chapter',
       );

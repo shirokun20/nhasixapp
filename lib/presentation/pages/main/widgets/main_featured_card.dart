@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart'
     show AppColors, KuronColors;
-import 'package:flutter_svg/flutter_svg.dart';
+
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -374,117 +374,23 @@ class MainFeaturedCard extends StatelessWidget {
                                     // Language flag
                                     Row(
                                       children: [
-                                        if (content.language.isNotEmpty)
-                                          Builder(builder: (context) {
-                                            final languageService =
+                                        Builder(builder: (context) {
+                                            final langSvc =
                                                 getIt<LanguageService>();
-                                            final normalizedLanguage = content
-                                                .language
-                                                .toLowerCase()
-                                                .trim();
-                                            final hasLanguage =
-                                                normalizedLanguage.isNotEmpty &&
-                                                    normalizedLanguage !=
-                                                        'unknown';
-                                            final flagAssetPath = hasLanguage
-                                                ? languageService.flagAssetPath(
-                                                    normalizedLanguage)
+                                            final normLang = content
+                                                .language.toLowerCase().trim();
+                                            final hasLang =
+                                                normLang.isNotEmpty &&
+                                                    normLang != 'unknown';
+                                            final emoji = hasLang
+                                                ? langSvc.flagEmoji(normLang)
                                                 : null;
-                                            final languageBadge = hasLanguage
-                                                ? (normalizedLanguage.length >=
-                                                        2
-                                                    ? normalizedLanguage
-                                                        .substring(0, 2)
-                                                        .toUpperCase()
-                                                    : normalizedLanguage
-                                                        .toUpperCase())
-                                                : '--';
-
-                                            return Container(
-                                              width: 28,
-                                              height: 18,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(3),
-                                                border: Border.all(
-                                                  color: theme
-                                                      .colorScheme.outline
-                                                      .withValues(alpha: 0.5),
-                                                  width: 0.5,
-                                                ),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(3),
-                                                child: flagAssetPath != null
-                                                    ? SvgPicture.asset(
-                                                        flagAssetPath,
-                                                        width: 28,
-                                                        height: 18,
-                                                        fit: BoxFit.cover,
-                                                        placeholderBuilder:
-                                                            (context) {
-                                                          return Container(
-                                                            color: theme
-                                                                .colorScheme
-                                                                .surfaceContainerHighest,
-                                                            child: Center(
-                                                              child: Text(
-                                                                languageBadge,
-                                                                style: TextStyleConst
-                                                                    .labelSmall
-                                                                    .copyWith(
-                                                                  fontSize: 8,
-                                                                  color: theme
-                                                                      .colorScheme
-                                                                      .onSurfaceVariant,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      )
-                                                    : Container(
-                                                        color: theme.colorScheme
-                                                            .surfaceContainerHighest,
-                                                        child: Center(
-                                                          child: Text(
-                                                            languageBadge,
-                                                            style:
-                                                                TextStyleConst
-                                                                    .labelSmall
-                                                                    .copyWith(
-                                                              fontSize: 8,
-                                                              color: theme
-                                                                  .colorScheme
-                                                                  .onSurfaceVariant,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                              ),
-                                            );
-                                          }),
-                                        const SizedBox(width: 8),
-                                        if (content.language.isNotEmpty)
-                                          Builder(builder: (context) {
-                                            final languageService =
-                                                getIt<LanguageService>();
-                                            final normalizedLanguage = content
-                                                .language
-                                                .toLowerCase()
-                                                .trim();
-                                            final hasLanguage =
-                                                normalizedLanguage.isNotEmpty &&
-                                                    normalizedLanguage !=
-                                                        'unknown';
-                                            final languageLabel = hasLanguage
-                                                ? languageService.displayName(
-                                                    normalizedLanguage)
+                                            final label = hasLang
+                                                ? langSvc.displayName(normLang)
                                                 : content.language;
 
                                             return Text(
-                                              languageLabel,
+                                              '${emoji ?? normLang.substring(0, 2).toUpperCase()} $label',
                                               style: TextStyleConst.labelSmall
                                                   .copyWith(
                                                 color: theme.colorScheme

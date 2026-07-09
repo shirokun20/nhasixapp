@@ -2855,6 +2855,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         .outlineVariant
                         .withValues(alpha: 0.5),
                   ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                    child: Text(
+                      'Showing first ${effectiveChapters.length} chapters. '
+                      'Go back to detail page and use "View All" to see more.',
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withValues(alpha: 0.7),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: ListView.builder(
                       controller: scrollController,

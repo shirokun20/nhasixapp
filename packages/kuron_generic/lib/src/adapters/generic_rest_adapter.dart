@@ -91,6 +91,21 @@ class GenericRestAdapter implements GenericAdapter {
     if (page != null) chapterUrl = _upsertQueryParam(chapterUrl, 'page', page.toString());
     if (limit != null) chapterUrl = _upsertQueryParam(chapterUrl, 'limit', limit.toString());
 
+    // Inject language filter for APIs that use translatedLanguage[] instead
+    // of a {language} placeholder (e.g. MangaDex).
+    // Only inject when language is explicitly passed (not default fallback).
+    if (language != null && !endpoint.contains('{language}')) {
+      chapterUrl = _replaceMultiValueParam(
+        chapterUrl,
+        paramName: 'translatedLanguage[]',
+        values: [language],
+      );
+    }
+
+    final chapterQueryRules = (api?['queryRules']
+        as Map<String, dynamic>?)?['chapters'] as Map<String, dynamic>?;
+    chapterUrl = _applyQueryRules(chapterUrl, chapterQueryRules);
+
     final volumesCfg = detailCfg['volumes'] as Map<String, dynamic>? ??
         api?['volumes'] as Map<String, dynamic>?;
 
@@ -1118,6 +1133,30 @@ class GenericRestAdapter implements GenericAdapter {
           final chapterQueryRules = (api['queryRules']
               as Map<String, dynamic>?)?['chapters'] as Map<String, dynamic>?;
           chapterUrl = _applyQueryRules(chapterUrl, chapterQueryRules);
+
+          // Inject translatedLanguage[] from availableTranslatedLanguages so
+          // only one language is fetched initially. The chips in the UI read
+          // from availableTranslatedLanguages (from manga detail), not chapters.
+          if (!chapterUrl.contains('{language}')) {
+            final availLangs = fields['availableTranslatedLanguages'];
+            String? lang;
+            if (availLangs is List) {
+              lang = availLangs.cast<String>().firstWhere(
+                    (l) => l == 'en',
+                    orElse: () => availLangs.isNotEmpty
+                        ? availLangs.first.toString()
+                        : '',
+                  );
+            }
+            lang = (lang != null && lang.isNotEmpty && lang != 'unknown')
+                ? lang
+                : (rawConfig['defaultLanguage'] as String? ?? 'en');
+            chapterUrl = _replaceMultiValueParam(
+              chapterUrl,
+              paramName: 'translatedLanguage[]',
+              values: [lang],
+            );
+          }
 
           try {
             if (itemsSelector != null) {
