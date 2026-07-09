@@ -2812,6 +2812,12 @@ abstract class AppLocalizations {
   /// **'{count} chapters'**
   String chapterCount(int count);
 
+  /// No description provided for @loadMoreChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more {label}'**
+  String loadMoreChapters(String label);
+
   /// No description provided for @readChapter.
   ///
   /// In en, this message translates to:

@@ -580,10 +580,13 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                       CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.expand_more),
-                          label: Text(_isLoadingMore
-                              ? l10n.loading
-                              : _loadMoreError ??
-                                  'Load 100 more ${selectedLane?.label ?? 'chapters'}'),
+                          label: Text(
+                            _isLoadingMore
+                                ? l10n.loading
+                                : _loadMoreError ??
+                                    l10n.loadMoreChapters(selectedLane?.label ??
+                                        l10n.chaptersTitle),
+                          ),
                         ),
                       ),
                     ),
@@ -641,9 +644,10 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   }
 
   int _resolvePageLimit() {
-    final cfg = getIt<RemoteConfigService>().getRawConfig(widget.content.sourceId);
-    final chapterCfg = (cfg?['api']?['detail']?['chapters'] as Map?)
-        ?? (cfg?['api']?['chapters'] as Map?);
+    final cfg =
+        getIt<RemoteConfigService>().getRawConfig(widget.content.sourceId);
+    final chapterCfg = (cfg?['api']?['detail']?['chapters'] as Map?) ??
+        (cfg?['api']?['chapters'] as Map?);
     final endpoint = chapterCfg?['endpoint']?.toString() ?? '';
     final match = RegExp(r'limit=(\d+)').firstMatch(endpoint);
     return match != null ? int.parse(match.group(1)!) : 100;

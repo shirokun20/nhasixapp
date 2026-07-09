@@ -1432,6 +1432,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String loadMoreChapters(String label) {
+    return '加载更多$label';
+  }
+
+  @override
   String get readChapter => '阅读';
 
   @override

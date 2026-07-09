@@ -1497,6 +1497,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String loadMoreChapters(String label) {
+    return 'Muat lebih banyak $label';
+  }
+
+  @override
   String get readChapter => 'Baca';
 
   @override

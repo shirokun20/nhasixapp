@@ -796,6 +796,7 @@
       }
     }
   },
+  "loadMoreChapters": "加载更多{label}",
   "readChapter": "阅读",
   "downloadChapter": "下载章节",
   "enterPageNumber": "输入页码 (1 - {totalPages})",

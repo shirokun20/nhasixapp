@@ -1493,6 +1493,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String loadMoreChapters(String label) {
+    return 'Load more $label';
+  }
+
+  @override
   String get readChapter => 'Read';
 
   @override

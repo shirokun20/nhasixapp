@@ -723,6 +723,7 @@
       }
     }
   },
+  "loadMoreChapters": "Muat lebih banyak {label}",
   "readChapter": "Baca",
   "downloadChapter": "Unduh Chapter",
   "enterPageNumber": "Masukkan nomor halaman (1 - {totalPages})",

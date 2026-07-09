@@ -704,6 +704,14 @@
       }
     }
   },
+  "loadMoreChapters": "Load more {label}",
+  "@loadMoreChapters": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "readChapter": "Read",
   "downloadChapter": "Download Chapter",
   "enterPageNumber": "Enter page number (1 - {totalPages})",
