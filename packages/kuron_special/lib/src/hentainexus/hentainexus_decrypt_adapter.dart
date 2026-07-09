@@ -36,6 +36,9 @@ class HentaiNexusDecryptAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig, {
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   }) async =>
       const <Chapter>[];
 

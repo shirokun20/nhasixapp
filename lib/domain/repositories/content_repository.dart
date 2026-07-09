@@ -96,6 +96,9 @@ abstract class ContentRepository {
     String? sourceId,
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   });
 
   /// Get comments for a specific gallery

@@ -1108,6 +1108,9 @@ class _DetailScreenState extends State<DetailScreen> {
                     content: safeDisplayContent,
                     detailCubit: _detailCubit,
                     initialLanguageKey: selectedLanguageKey,
+                    initialScanGroup: content.sourceId == 'mangafire'
+                        ? _mangaFireCoordinator.selectedType
+                        : null,
                   ),
                 );
               },

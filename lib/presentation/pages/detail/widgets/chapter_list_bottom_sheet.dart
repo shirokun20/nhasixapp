@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -15,6 +12,8 @@ import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
+import 'package:nhasixapp/domain/repositories/content_repository.dart';
+import 'package:nhasixapp/domain/value_objects/value_objects.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
   const ChapterListBottomSheet({
@@ -22,11 +21,13 @@ class ChapterListBottomSheet extends StatefulWidget {
     required this.content,
     required this.detailCubit,
     this.initialLanguageKey,
+    this.initialScanGroup,
   });
 
   final Content content;
   final DetailCubit detailCubit;
   final String? initialLanguageKey;
+  final String? initialScanGroup;
 
   @override
   State<ChapterListBottomSheet> createState() => _ChapterListBottomSheetState();
@@ -34,6 +35,7 @@ class ChapterListBottomSheet extends StatefulWidget {
 
 class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   late final List<Chapter> _chapters;
+  final _contentRepository = getIt<ContentRepository>();
   String? _selectedLanguageKey;
   bool _isLoadingMore = false;
   String? _loadMoreError;
@@ -42,7 +44,13 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _chapters = [...?widget.content.chapters];
+    if (widget.initialScanGroup == 'Volume') {
+      _chapters = [...?widget.content.chapters];
+    } else {
+      _chapters = [...?widget.content.chapters]
+          .where((c) => c.scanGroup != 'Volume')
+          .toList();
+    }
     _selectedLanguageKey = widget.initialLanguageKey;
   }
 
@@ -561,7 +569,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                         child: FilledButton.tonalIcon(
                           onPressed: _isLoadingMore
                               ? null
-                              : () => _loadMoreMangaDexChapters(
+                              : () => _loadMoreChapters(
                                     loadMoreLanguageKey!,
                                   ),
                           icon: _isLoadingMore
@@ -590,6 +598,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
 
   bool _canLoadMore(String? key) {
     if (key == null || _fullyLoadedLanguages.contains(key)) return false;
+    // Volumes API returns all at once — no pagination to load.
+    if (widget.initialScanGroup == 'Volume') return false;
     return widget.content.sourceId == 'mangadex' ||
         widget.content.sourceId == 'mangafire';
   }
@@ -630,7 +640,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     );
   }
 
-  Future<void> _loadMoreMangaDexChapters(String languageKey) async {
+  Future<void> _loadMoreChapters(String languageKey) async {
     if (_isLoadingMore) return;
     setState(() {
       _isLoadingMore = true;
@@ -638,51 +648,31 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     });
 
     try {
-      if (widget.content.sourceId == 'mangafire') {
-        await _loadMoreMangaFireChapters(languageKey);
-        return;
-      }
-
-      // MangaDex branch (existing logic)
-      final rawConfig = getIt<RemoteConfigService>().getRawConfig('mangadex');
-      final baseUrl =
-          rawConfig?['baseUrl'] as String? ?? 'https://api.mangadex.org';
-      final api = rawConfig?['api'] as Map<String, dynamic>?;
-      final detail = api?['detail'] as Map<String, dynamic>?;
-      final chaptersCfg = detail?['chapters'] as Map<String, dynamic>?;
-      final endpoint = chaptersCfg?['endpoint'] as String? ??
-          '/chapter?manga={id}&limit=100&order[chapter]=desc';
-      final limitMatch = RegExp(r'limit=(\d+)').firstMatch(endpoint)?.group(1);
-      final limit = int.tryParse(limitMatch ?? '') ?? 100;
-      final offset = _chapters
+      const limit = 20;
+      final loadedCount = _chapters
           .where((chapter) =>
               ChapterLanguagePresenter.normalize(chapter.language) ==
-              languageKey)
+              languageKey &&
+              chapter.scanGroup != 'Volume')
           .length;
-      final url = _mangaDexChapterUrl(
-        baseUrl: baseUrl,
-        endpoint: endpoint,
-        languageKey: languageKey,
-        offset: offset,
+      // MangaDex uses offset, MangaFire uses page. Both are derived from count.
+      final page = (loadedCount / limit).ceil() + 1;
+      final next = await _contentRepository.getContentChapters(
+        ContentId(widget.content.id),
+        sourceId: widget.content.sourceId,
+        language: languageKey,
+        page: page,
+        limit: limit,
+        scanGroup: widget.initialScanGroup ?? 'Chapter',
       );
-
-      final response = await Dio().get<dynamic>(url);
-      final data = response.data is String
-          ? jsonDecode(response.data as String) as Map<String, dynamic>
-          : response.data as Map<String, dynamic>;
-      final items = (data['data'] as List? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(_mangaDexChapterFromJson)
-          .whereType<Chapter>()
-          .toList();
       final existingIds = _chapters.map((chapter) => chapter.id).toSet();
-      final nextChapters = items
+      final nextChapters = next
           .where((chapter) => existingIds.add(chapter.id))
           .toList(growable: false);
 
       setState(() {
         _chapters.addAll(nextChapters);
-        if (items.length < limit) {
+        if (next.length < limit) {
           _fullyLoadedLanguages.add(languageKey);
         }
       });
@@ -693,123 +683,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
         setState(() => _isLoadingMore = false);
       }
     }
-  }
-
-  Future<void> _loadMoreMangaFireChapters(String languageKey) async {
-    final rawConfig = getIt<RemoteConfigService>().getRawConfig('mangafire');
-    final baseUrl = rawConfig?['baseUrl'] as String? ?? 'https://mangafire.to';
-    final api = rawConfig?['api'] as Map<String, dynamic>?;
-    final detail = api?['detail'] as Map<String, dynamic>?;
-    final chaptersCfg = detail?['chapters'] as Map<String, dynamic>?;
-    final endpoint = chaptersCfg?['endpoint'] as String? ??
-        '/api/titles/{id}/chapters?language={language}&sort=number&order=asc&limit=100';
-    final limitMatch = RegExp(r'limit=(\d+)').firstMatch(endpoint)?.group(1);
-    final limit = int.tryParse(limitMatch ?? '') ?? 100;
-    final page = (_chapters
-                .where((chapter) =>
-                    ChapterLanguagePresenter.normalize(chapter.language) ==
-                    languageKey)
-                .length /
-            limit)
-            .ceil() +
-        1;
-    // Build URL: strip page/limit from template, substitute placeholders,
-    // then append page/limit. Avoid Uri.replace(queryParameters: {…}) because
-    // it re-interprets unresolved placeholders ({language}) as literal values.
-    var url = endpoint
-        .replaceAll(RegExp(r'&page=\d+|&limit=\d+'), '')
-        .replaceAll('{id}', Uri.encodeQueryComponent(widget.content.id))
-        .replaceAll('{language}', languageKey);
-    url = '$baseUrl${url.startsWith('/') ? '' : '/'}$url&page=$page&limit=$limit';
-
-    final response = await Dio().get<dynamic>(url);
-    final rawData = response.data is String
-        ? jsonDecode(response.data as String)
-        : response.data;
-    final meta = rawData['meta'] as Map<String, dynamic>? ?? {};
-    final items = (rawData['items'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .map(_mangaFireChapterFromJson)
-        .whereType<Chapter>()
-        .toList();
-    final existingIds = _chapters.map((chapter) => chapter.id).toSet();
-    final nextChapters = items
-        .where((chapter) => existingIds.add(chapter.id))
-        .toList(growable: false);
-
-    setState(() {
-      _chapters.addAll(nextChapters);
-      final lastPage = (meta['lastPage'] as num?)?.toInt();
-      if (lastPage == null || page >= lastPage) {
-        _fullyLoadedLanguages.add(languageKey);
-      }
-    });
-  }
-
-  Chapter? _mangaFireChapterFromJson(Map<String, dynamic> item) {
-    final id = item['id']?.toString() ?? '';
-    if (id.isEmpty) return null;
-    return Chapter(
-      id: 'https://mangafire.to/api/chapters/$id',
-      title: (() {
-        final name = item['name']?.toString() ?? '';
-        return 'Ch. ${item['number']}${name.isNotEmpty ? ' - $name' : ''}';
-      })(),
-      url: id,
-      uploadDate: (item['createdAt'] as num?) != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              (item['createdAt'] as num).toInt() * 1000)
-          : null,
-      scanGroup: (item['type'] as String?) == 'official' ? 'Official' : null,
-      language: item['language']?.toString(),
-    );
-  }
-
-  String _mangaDexChapterUrl({
-    required String baseUrl,
-    required String endpoint,
-    required String languageKey,
-    required int offset,
-  }) {
-    final uri = Uri.parse(
-      '$baseUrl${endpoint.startsWith('/') ? endpoint : '/$endpoint'}'
-          .replaceAll('{id}', Uri.encodeQueryComponent(widget.content.id)),
-    );
-    final params = Map<String, List<String>>.from(uri.queryParametersAll)
-      ..remove('translatedLanguage[]')
-      ..remove('offset');
-    params['translatedLanguage[]'] = [languageKey];
-    params['offset'] = ['$offset'];
-    return uri.replace(queryParameters: params).toString();
-  }
-
-  Chapter? _mangaDexChapterFromJson(Map<String, dynamic> item) {
-    final attributes = item['attributes'] as Map<String, dynamic>?;
-    if (attributes == null) return null;
-    final id = item['id']?.toString() ?? '';
-    if (id.isEmpty) return null;
-    final chapter = attributes['chapter']?.toString() ?? '';
-    final volume = attributes['volume']?.toString() ?? '';
-    final title = [
-      if (volume.isNotEmpty) 'Vol.$volume',
-      if (chapter.isNotEmpty) 'Ch.$chapter',
-    ].join(' ');
-    final groups = (item['relationships'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .where((rel) => rel['type'] == 'scanlation_group')
-        .map((rel) => (rel['attributes'] as Map?)?['name']?.toString())
-        .whereType<String>()
-        .toList();
-    return Chapter(
-      id: id,
-      title: title.isEmpty ? 'Chapter' : title,
-      url: id,
-      uploadDate: DateTime.tryParse(
-        attributes['readableAt']?.toString() ?? '',
-      ),
-      scanGroup: groups.isEmpty ? null : groups.join(', '),
-      language: attributes['translatedLanguage']?.toString(),
-    );
   }
 
   List<_GroupedChapterEntry> _buildGroupedEntries(

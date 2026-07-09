@@ -293,6 +293,8 @@ class DetailCubit extends BaseCubit<DetailState> {
   Future<void> loadChapterLane({
     required String language,
     required String scanGroup,
+    int? page,
+    int? limit,
   }) async {
     final currentState = state;
     if (currentState is! DetailLoaded) {
@@ -306,6 +308,8 @@ class DetailCubit extends BaseCubit<DetailState> {
       sourceId: currentState.content.sourceId,
       language: language,
       scanGroup: scanGroup,
+      page: page,
+      limit: limit,
     );
     if (isClosed) {
       return;

@@ -363,12 +363,18 @@ class GenericHttpSource implements ContentSource {
     String contentId, {
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   }) async {
     return _adapter.fetchChapters(
       contentId,
       _rawConfig,
       language: language,
       scanGroup: scanGroup,
+      page: page,
+      offset: offset,
+      limit: limit,
     );
   }
 

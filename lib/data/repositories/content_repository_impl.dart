@@ -422,6 +422,9 @@ class ContentRepositoryImpl implements ContentRepository {
     String? sourceId,
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   }) async {
     final source = sourceId != null
         ? contentSourceRegistry.getSource(sourceId)
@@ -434,6 +437,9 @@ class ContentRepositoryImpl implements ContentRepository {
       contentId.value,
       language: language,
       scanGroup: scanGroup,
+      page: page,
+      offset: offset,
+      limit: limit,
     );
   }
 

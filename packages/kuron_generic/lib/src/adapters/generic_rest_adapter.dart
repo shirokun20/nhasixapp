@@ -59,6 +59,9 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig, {
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   }) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
     final detailCfg = api?['detail'] as Map<String, dynamic>? ?? {};
@@ -80,29 +83,35 @@ class GenericRestAdapter implements GenericAdapter {
     final cFields = (chaptersCfg['fields'] as Map<String, dynamic>?) ?? {};
     final defaultLang = language ?? _str(rawConfig, 'defaultLanguage') ?? '';
 
-    final chapterUrl = _urlBuilder.resolve(
+    var chapterUrl = _urlBuilder.resolve(
       endpoint,
       {'id': contentId, 'language': defaultLang},
     );
+    if (offset != null) chapterUrl = _upsertQueryParam(chapterUrl, 'offset', offset.toString());
+    if (page != null) chapterUrl = _upsertQueryParam(chapterUrl, 'page', page.toString());
+    if (limit != null) chapterUrl = _upsertQueryParam(chapterUrl, 'limit', limit.toString());
 
     final volumesCfg = detailCfg['volumes'] as Map<String, dynamic>? ??
         api?['volumes'] as Map<String, dynamic>?;
 
     try {
-      var chapters = await _fetchChapters(
-        chapterUrl,
-        itemsSelector: itemsSelector,
-        cFields: cFields,
-        rawConfig: rawConfig,
-        autoPaginate: chaptersCfg['autoPaginate'] != false,
-      );
-      chapters = _composeChapterIdsWithContentId(
-        chapters,
-        chaptersCfg: chaptersCfg,
-        contentId: contentId,
-      );
+      var chapters = <Chapter>[];
+      if (scanGroup != 'Volume') {
+        chapters = await _fetchChapters(
+          chapterUrl,
+          itemsSelector: itemsSelector,
+          cFields: cFields,
+          rawConfig: rawConfig,
+          autoPaginate: chaptersCfg['autoPaginate'] != false,
+        );
+        chapters = _composeChapterIdsWithContentId(
+          chapters,
+          chaptersCfg: chaptersCfg,
+          contentId: contentId,
+        );
+      }
 
-      if (volumesCfg != null) {
+      if (scanGroup != 'Chapter' && volumesCfg != null) {
         final volEndpoint = _getEndpointPath(volumesCfg['endpoint']);
         final volItemsSelector = _str(volumesCfg, 'items');
         if (volEndpoint.isNotEmpty && volItemsSelector != null) {

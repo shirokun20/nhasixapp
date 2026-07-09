@@ -72,6 +72,9 @@ abstract class ContentSource {
     String contentId, {
     String? language,
     String? scanGroup,
+    int? page,
+    int? offset,
+    int? limit,
   }) async =>
       const [];
 

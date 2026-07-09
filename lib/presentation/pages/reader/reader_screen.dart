@@ -2691,9 +2691,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     final allChapters = _readerCubit.allChapters!;
 
-    // ponytail: filter out volumes when in chapter mode
+    // ponytail: filter to match current reading mode (chapters or volumes)
+    final isVolumeMode = state.currentChapter?.scanGroup == 'Volume';
     final chaptersOnly = allChapters
-        .where((c) => c.scanGroup == null || c.scanGroup != 'Volume')
+        .where((c) => isVolumeMode
+            ? c.scanGroup == 'Volume'
+            : c.scanGroup == null || c.scanGroup != 'Volume')
         .toList();
 
     final activeLanguage = _normalizeLanguageForFilter(
