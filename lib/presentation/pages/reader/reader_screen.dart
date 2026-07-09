@@ -2690,6 +2690,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     final allChapters = _readerCubit.allChapters!;
+
+    // ponytail: filter out volumes when in chapter mode
+    final chaptersOnly = allChapters
+        .where((c) => c.scanGroup == null || c.scanGroup != 'Volume')
+        .toList();
+
     final activeLanguage = _normalizeLanguageForFilter(
       state.currentChapter?.language ??
           _preloadedActiveChapterLanguage ??
@@ -2697,14 +2703,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
 
     final chapters = activeLanguage == null
-        ? allChapters
-        : allChapters.where((chapter) {
+        ? chaptersOnly
+        : chaptersOnly.where((chapter) {
             final chapterLanguage =
                 _normalizeLanguageForFilter(chapter.language);
             return chapterLanguage == activeLanguage;
           }).toList();
 
-    final effectiveChapters = chapters.isNotEmpty ? chapters : allChapters;
+    final effectiveChapters = chapters.isNotEmpty ? chapters : chaptersOnly;
 
     int currentIndex = -1;
     for (int i = 0; i < effectiveChapters.length; i++) {

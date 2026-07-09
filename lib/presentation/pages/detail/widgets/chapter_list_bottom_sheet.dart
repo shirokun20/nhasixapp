@@ -589,9 +589,9 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   }
 
   bool _canLoadMore(String? key) {
-    return widget.content.sourceId == 'mangadex' &&
-        key != null &&
-        !_fullyLoadedLanguages.contains(key);
+    if (key == null || _fullyLoadedLanguages.contains(key)) return false;
+    return widget.content.sourceId == 'mangadex' ||
+        widget.content.sourceId == 'mangafire';
   }
 
   Widget _buildLanguageChip(
@@ -638,6 +638,12 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     });
 
     try {
+      if (widget.content.sourceId == 'mangafire') {
+        await _loadMoreMangaFireChapters(languageKey);
+        return;
+      }
+
+      // MangaDex branch (existing logic)
       final rawConfig = getIt<RemoteConfigService>().getRawConfig('mangadex');
       final baseUrl =
           rawConfig?['baseUrl'] as String? ?? 'https://api.mangadex.org';
@@ -687,6 +693,76 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
         setState(() => _isLoadingMore = false);
       }
     }
+  }
+
+  Future<void> _loadMoreMangaFireChapters(String languageKey) async {
+    final rawConfig = getIt<RemoteConfigService>().getRawConfig('mangafire');
+    final baseUrl = rawConfig?['baseUrl'] as String? ?? 'https://mangafire.to';
+    final api = rawConfig?['api'] as Map<String, dynamic>?;
+    final detail = api?['detail'] as Map<String, dynamic>?;
+    final chaptersCfg = detail?['chapters'] as Map<String, dynamic>?;
+    final endpoint = chaptersCfg?['endpoint'] as String? ??
+        '/api/titles/{id}/chapters?language={language}&sort=number&order=asc&limit=100';
+    final limitMatch = RegExp(r'limit=(\d+)').firstMatch(endpoint)?.group(1);
+    final limit = int.tryParse(limitMatch ?? '') ?? 100;
+    final page = (_chapters
+                .where((chapter) =>
+                    ChapterLanguagePresenter.normalize(chapter.language) ==
+                    languageKey)
+                .length /
+            limit)
+            .ceil() +
+        1;
+    // Build URL: strip page/limit from template, substitute placeholders,
+    // then append page/limit. Avoid Uri.replace(queryParameters: {…}) because
+    // it re-interprets unresolved placeholders ({language}) as literal values.
+    var url = endpoint
+        .replaceAll(RegExp(r'&page=\d+|&limit=\d+'), '')
+        .replaceAll('{id}', Uri.encodeQueryComponent(widget.content.id))
+        .replaceAll('{language}', languageKey);
+    url = '$baseUrl${url.startsWith('/') ? '' : '/'}$url&page=$page&limit=$limit';
+
+    final response = await Dio().get<dynamic>(url);
+    final rawData = response.data is String
+        ? jsonDecode(response.data as String)
+        : response.data;
+    final meta = rawData['meta'] as Map<String, dynamic>? ?? {};
+    final items = (rawData['items'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(_mangaFireChapterFromJson)
+        .whereType<Chapter>()
+        .toList();
+    final existingIds = _chapters.map((chapter) => chapter.id).toSet();
+    final nextChapters = items
+        .where((chapter) => existingIds.add(chapter.id))
+        .toList(growable: false);
+
+    setState(() {
+      _chapters.addAll(nextChapters);
+      final lastPage = (meta['lastPage'] as num?)?.toInt();
+      if (lastPage == null || page >= lastPage) {
+        _fullyLoadedLanguages.add(languageKey);
+      }
+    });
+  }
+
+  Chapter? _mangaFireChapterFromJson(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? '';
+    if (id.isEmpty) return null;
+    return Chapter(
+      id: 'https://mangafire.to/api/chapters/$id',
+      title: (() {
+        final name = item['name']?.toString() ?? '';
+        return 'Ch. ${item['number']}${name.isNotEmpty ? ' - $name' : ''}';
+      })(),
+      url: id,
+      uploadDate: (item['createdAt'] as num?) != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              (item['createdAt'] as num).toInt() * 1000)
+          : null,
+      scanGroup: (item['type'] as String?) == 'official' ? 'Official' : null,
+      language: item['language']?.toString(),
+    );
   }
 
   String _mangaDexChapterUrl({

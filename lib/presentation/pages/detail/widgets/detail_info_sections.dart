@@ -941,8 +941,8 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
               },
             ),
           if (visibleChapterCount > 5 ||
-              (widget.content.sourceId == 'mangadex' &&
-                  viewAllLanguageKey != null))
+              widget.content.sourceId == 'mangadex' ||
+              widget.content.sourceId == 'mangafire')
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: SizedBox(
