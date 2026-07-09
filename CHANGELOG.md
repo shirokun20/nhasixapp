@@ -26,6 +26,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Multi-select filter support for query-string search UI**: `QueryStringSearchUI` now encodes multi-select filter selections (tag/artist/parody) into the query string (e.g. `-tag:"Lolicon" parody:"Azur Lane"`) so the generic REST adapter sends them via the `q=` parameter.
 - **TagDataManager new method**: `loadAndCacheTagsFromUrl(url, source)` loads tags from a remote URL and caches them per-source for subsequent `hasTags()` / `searchTags()` lookups.
 - **Ehentai heavy image continuous scroll support**: E-Hentai 10MB+ WebP images no longer auto-kick to singlePage mode. Added `ehentai` to `shouldSkipHeavyImageAutoSwitchForSource`, `_isHeavyPrefetchSource`, `_isHeavyReaderSource`. `AnimatedWebPView` now receives `visiblePageNotifier` in continuous scroll for heavy sources so off-screen thumbnails auto-pause. Added `_evictDistantPages()` call on scroll for heavy sources (±4 window). Works online + offline.
+- **MangaFire chapter pagination**: Added page-based pagination fallback in `_nextOffsetPageUrl()` for `meta.page`/`meta.lastPage` response. Config endpoint from `?page=1` to `?language={language}&sort=number&order=asc&limit=20`.
+- **MangaDex chapter language filtering**: `fetchChapters()` standalone injects `translatedLanguage[]` when `language` param passed. Detail initial load filters by first `availableTranslatedLanguages` language. Language chips from `available_language` tags.
+- **Volume/chapter separation in adapter**: `scanGroup` respected in `fetchChapters()` — skips volumes when `scanGroup='Chapter'` and vice versa.
+- **Chapter load more (MangaDex + MangaFire)**: Bottom sheet `_loadMoreChapters()` uses `page` (MangaFire) / `offset` (MangaDex) via `ContentRepository`. All hardcoded Dio/Dart calls removed.
+- **Reader lazy pool expansion**: `ReaderCubit._fetchAndMergePage()` fetches extra pages when prev/next hits boundary. `_ensureChapterInPool()` expands pool when chapter missing. Prev/next stays in same `scanGroup`.
+- **Language emoji flags**: Replaced SVG files with Unicode emoji flags across all card widgets. 60 language entries in `assets/configs/languages.json`. Removed `flagFile`/`flagAssetPath`/`flutter_svg` dependency.
+- **General language selection handler**: `onLanguageSelected` works for all sources (not just MangaFire) via `DetailCubit.loadChapterLane()`.
+- **`_selectLanguage` setState fix**: Chips update immediately instead of waiting for async fetch.
+- **ARB `loadMoreChapters` key**: Added to `app_en.arb`, `app_id.arb`, `app_zh.arb` with `{label}` placeholder.
 - **Deprecated legacy search UI removed**: Deleted `query_string_search_ui.dart` and `form_based_search_ui.dart`. `SearchScreen` hardwired to `DynamicFormSearchUI` unconditionally. Net -65KB, -3 imports, -3 routing methods (195->128 lines).
 - **Smart query syntax placeholder**: Added `(tag:yuri -tag:futanari language:english)` hint to search input placeholders in nhentai, ehentai, and hitomi configs.
 
