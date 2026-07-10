@@ -3049,6 +3049,13 @@ class GenericScraperAdapter implements GenericAdapter {
         .replaceAll('\r', '')
         .trim();
 
+    // ponytail: fix broken hostname in HTML (missing dot). Known cases:
+    // "images2/imgbox.com" -> "images2.imgbox.com"
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'//([^./]+)/((?:imgbox|imgbb|pixhost|ibucket|imagebam)\.com/)'),
+      (m) => '//${m[1]}.${m[2]}',
+    );
+
     if (cleaned.startsWith('//')) {
       cleaned = 'https:$cleaned';
     }
