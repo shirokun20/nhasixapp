@@ -234,7 +234,7 @@ jobs:
           echo "Detected version: $VERSION"
 
       # Extract release notes from CHANGELOG.md for the current version
-      # Priority: CHANGELOG.md entry > auto-generated formatted notes
+      # Priority: CHANGELOG.md version entry > [Unreleased] fallback > auto-generated from commits
       # Format matches CHANGELOG.md style with emojis, sections, and bullet points
       - name: Extract Changelog
         id: changelog
@@ -271,6 +271,23 @@ jobs:
               found { output = output $0 "\n" }
               END { printf "%s", output }
             ' CHANGELOG.md)
+          fi
+
+          # Fallback to [Unreleased] section if no version-specific entry
+          if [ -z "$NOTES" ]; then
+            echo "Trying [Unreleased] section..."
+            NOTES=$(awk '
+              BEGIN { found=0; output="" }
+              /^## \[Unreleased\]/ { found=1; next }
+              found && /^---$/ { exit }
+              found && /^## \[/ { exit }
+              found { output = output $0 "\n" }
+              END { printf "%s", output }
+            ' CHANGELOG.md)
+            if [ -n "$NOTES" ]; then
+              echo "✅ Using [Unreleased] section ($(echo "$NOTES" | wc -l) lines)"
+              NOTES="## [$FULL_VERSION] - $(date +%Y-%m-%d)\n\n$NOTES"
+            fi
           fi
 
           if [ -n "$NOTES" ]; then
