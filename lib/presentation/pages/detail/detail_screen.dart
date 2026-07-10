@@ -26,6 +26,7 @@ import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:kuron_core/kuron_core.dart';
+import '../../../core/services/chapter_cache.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/permission_request_sheet.dart';
@@ -613,6 +614,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       parentContent: state.content, // Parent series
                       chapterData: state.chapterData, // Navigation data
                       currentChapter: state.currentChapter, // Current chapter
+                      allChapters: ChapterCache.chapters(
+                        sourceId: state.content.sourceId,
+                        language: state.currentChapter?.language,
+                        scanGroup: state.currentChapter?.scanGroup,
+                      ), // Expanded from bottom sheet
                     );
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
@@ -1449,6 +1455,7 @@ class _DetailScreenState extends State<DetailScreen> {
     Content? parentContent, // Parent series for chapter mode
     ChapterData? chapterData, // Navigation data
     Chapter? currentChapter, // Current chapter
+    List<Chapter>? allChapters, // Expanded from bottom sheet
   }) async {
     // Get metadata from current state if available
     final currentState = _detailCubit.state;
@@ -1461,6 +1468,11 @@ class _DetailScreenState extends State<DetailScreen> {
       chapterData: chapterData,
       parentContent: parentContent,
       currentChapter: currentChapter,
+      allChapters: allChapters ?? ChapterCache.chapters(
+        sourceId: content.sourceId,
+        language: currentChapter?.language,
+        scanGroup: currentChapter?.scanGroup,
+      ),
     );
 
     Logger().w('Content to pass: ${launchPayload.content}');

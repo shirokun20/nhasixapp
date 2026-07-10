@@ -19,8 +19,10 @@ class ReaderLaunchPayloadBuilder {
     ChapterData? chapterData,
     Content? parentContent,
     Chapter? currentChapter,
+    List<Chapter>? allChapters, // Expanded list from bottom-sheet load more
   }) {
-    final availableChapters = parentContent?.chapters ?? content.chapters;
+    final availableChapters =
+        allChapters ?? parentContent?.chapters ?? content.chapters;
     final effectiveParentContent = parentContent ??
         (availableChapters?.isNotEmpty == true ? content : null);
     final resolvedCurrentChapter = currentChapter ??

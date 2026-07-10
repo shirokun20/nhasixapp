@@ -10,6 +10,7 @@ import '../../../core/utils/offline_content_manager.dart';
 import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
+import '../../../core/services/chapter_cache.dart';
 import '../../../../core/utils/error_message_utils.dart';
 import '../../../domain/entities/history.dart';
 
@@ -69,8 +70,16 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ContentSourceRegistry _contentSourceRegistry;
   final OfflineContentManager _offlineContentManager;
 
+  /// Persist expanded chapter list from bottom sheet into shared cache.
+  void setAllChapters(List<Chapter> chapters,
+      {String? sourceId, String? language, String? scanGroup}) {
+    ChapterCache.set(chapters,
+        sourceId: sourceId, language: language, scanGroup: scanGroup);
+  }
+
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId, {String? sourceId}) async {
+    ChapterCache.clear();
     try {
       logInfo('Loading content detail for ID: $contentId');
       emit(const DetailLoading());
@@ -561,6 +570,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
+
       ));
 
       final source =
@@ -621,6 +631,7 @@ class DetailCubit extends BaseCubit<DetailState> {
           lastUpdated: currentState.lastUpdated,
           imageMetadata: currentState.imageMetadata,
           chapterHistory: currentState.chapterHistory,
+  
           needsLogin: needsLogin,
         ));
 
@@ -647,6 +658,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
+
         chapterData: chapterData,
         currentChapter: chapter, // Add this field to DetailReaderReady state
       ));
@@ -661,6 +673,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
+
         error: e,
       ));
     }
@@ -676,6 +689,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
+
       ));
     } else if (currentState is DetailActionFailure) {
       emit(DetailLoaded(
@@ -684,6 +698,7 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
+
       ));
     }
   }

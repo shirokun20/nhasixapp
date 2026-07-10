@@ -492,6 +492,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (nextChapterId == null) {
       final poolSize = _allChapters?.length ?? 0;
       if (poolSize > 0) {
+        // Pool expanded by bottom sheet — no more pages to fetch.
+        if (poolSize > _configuredPageLimit) {
+          _logger.d('No next chapter (pool already expanded)');
+          return;
+        }
         final nextPage = poolSize ~/ _configuredPageLimit + 1;
         await _fetchAndMergePage(nextPage);
         nextChapterId = _resolveNextChapterId();
@@ -525,6 +530,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (previousChapterId == null) {
       final poolSize = _allChapters?.length ?? 0;
       if (poolSize > 0) {
+        // Pool expanded by bottom sheet — no more pages to fetch.
+        if (poolSize > _configuredPageLimit) {
+          _logger.d('No previous chapter (pool already expanded)');
+          return;
+        }
         await _fetchAndMergePage(1);
         previousChapterId = _resolvePreviousChapterId();
       }
@@ -686,6 +696,9 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (_allChapters == null) return;
     final exists = _allChapters!.any((c) => c.id == chapterId);
     if (exists || _allChapters!.isEmpty) return;
+
+    // Pool already expanded by bottom-sheet load more — chapter genuinely missing.
+    if (_allChapters!.length > _configuredPageLimit) return;
 
     // Try a reasonable range of pages forward
     for (int page = 1; page <= 5; page++) {

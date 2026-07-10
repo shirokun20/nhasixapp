@@ -6,6 +6,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/services/chapter_cache.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
@@ -44,14 +45,27 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialScanGroup == 'Volume') {
+    _selectedLanguageKey = widget.initialLanguageKey;
+    final cached = ChapterCache.chapters(
+      sourceId: widget.content.sourceId,
+      language: _selectedLanguageKey,
+      scanGroup: widget.initialScanGroup,
+    );
+    if (cached != null && cached.isNotEmpty) {
+      _chapters = widget.initialScanGroup == 'Volume'
+          ? [...cached]
+          : [...cached.where((c) => c.scanGroup != 'Volume')];
+    } else if (widget.initialScanGroup == 'Volume') {
       _chapters = [...?widget.content.chapters];
     } else {
       _chapters = [...?widget.content.chapters]
           .where((c) => c.scanGroup != 'Volume')
           .toList();
     }
-    _selectedLanguageKey = widget.initialLanguageKey;
+    ChapterCache.set(_chapters,
+        sourceId: widget.content.sourceId,
+        language: _selectedLanguageKey,
+        scanGroup: widget.initialScanGroup);
   }
 
   @override
@@ -688,6 +702,10 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
           _fullyLoadedLanguages.add(languageKey);
         }
       });
+      ChapterCache.set(_chapters,
+          sourceId: widget.content.sourceId,
+          language: languageKey,
+          scanGroup: widget.initialScanGroup);
     } catch (_) {
       setState(() => _loadMoreError = 'Retry load more');
     } finally {
