@@ -71,7 +71,7 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-06-25
+> Tracked via `openspec/` — Last updated: 2026-07-10
 
 ### Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -133,16 +133,15 @@ lib/
 - `2026-07-06-deprecate-legacy-search-ui`
 - `2026-07-06-migrate-legacy-search-configs`
 - `2026-07-06-smart-query-parser`
+- `2026-07-06-source-health-monitor`
+- `2026-07-10-add-vihentai-source`
+- `2026-07-10-revamp-mangafire-to-json-api`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
-- `add-vihentai-source` — Proposed. ViHentai (vi-hentai.moe) source integration. Config done, needs Livewire auth + packed JS decode plugins in kuron_special. See `output/pdf/vihentai-integration-analysis.pdf`.
+- `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
 - `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
-- `source-health-monitor` — Proposed. Per-source HTTP health check in settings (HEAD to baseUrl, timeout 10s, green/red/grey dot indicators, "Check All" button, aggregate "N/N reachable" summary). Advisory only — no auto-disable.
-
-### Exploration / Analysis (in `openspec/changes/`)
-- *(none)*
 
 ### Open Issues (in `openspec/changes/`)
 - *(none)*
@@ -183,6 +182,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-10 | OpenCode | ViHentai packed JS image URL regex fix | Done | Fixed `_imageUrlRegex` in `vihentai_packed_js.dart` — JS-escaped forward slashes (`\/`) in decoded URLs prevented regex from matching, falling back to `<img>` extraction which grabbed `/imgs/fav2.png`. Fix: normalize `\/` → `/` before regex matching. Also aligned `_packedArgsRegex` group 1 to `(.+)` per Tachiyomi reference. 18/18 tests pass. |
 | 2026-07-10 | Claude Code | MangaDex search language filters (originalLanguage, availableTranslatedLanguage) | Done | Added `originalLanguage[]` and `availableTranslatedLanguage[]` multi-picker fields to `mangadex-config.json` search form. 62 language options via static `dataSources.languages` block. Excluded `excludedOriginalLanguage` from scope for now. Proposed `mangadex-search-language-to-detail` change (pass search language filters → detail page auto-selection) — drafted proposal/design/specs/tasks but not implemented. |
 | 2026-07-09 | Claude Code | MangaFire/MangaDex chapter pagination, volume separation, language filtering | Done | Complete overhaul: `scanGroup` now respected in adapter (skip volumes when `scanGroup='Chapter'`). `translatedLanguage[]` injected for MangaDex. Page-based (MangaFire) / offset-based (MangaDex) load more via `ContentRepository`. Reader cubit lazy pool expansion. Language emoji flags replacing SVG. `_selectLanguage` fix. General `onLanguageSelected` handler. 60 language entries in `languages.json`. ARB `loadMoreChapters` key. |
 | 2026-07-07 | Antigravity | MangaFire volumes and chapters scanGroup fix | Done | Fixed missing Volumes tab on MangaFire detail page. Switched `fallback` to `value` in `mangafire-config.json` for `scanGroup` inside both `chapters` and `volumes` config blocks because generic parser skips fields without selectors. This correctly populates the `scanGroup` on `Chapter` models so `DetailMangaFireCoordinator` displays the tabs. Also added `date` extraction and removed hardcoded `en` language to fetch all translations. |
