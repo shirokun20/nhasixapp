@@ -371,33 +371,7 @@ class ContentReadCache {
     try {
       final userDataRepository = getIt<UserDataRepository>();
 
-      final history = await userDataRepository.getHistoryEntry(contentId);
-      if (history != null && _isValidProgress(history, sourceId)) {
-        final progress = _normalizeProgress(history);
-        _cache[cacheKey] = progress;
-        _cacheTime[cacheKey] = DateTime.now();
-        return progress;
-      }
-
-      final chapterHistory =
-          await userDataRepository.getAllChapterHistory(contentId);
-      final chapterProgress = chapterHistory
-          .where((item) => _isValidProgress(item, sourceId))
-          .map(_normalizeProgress)
-          .fold<double?>(null, (previous, value) {
-        if (previous == null || value > previous) return value;
-        return previous;
-      });
-      if (chapterProgress != null) {
-        _cache[cacheKey] = chapterProgress;
-        _cacheTime[cacheKey] = DateTime.now();
-        return chapterProgress;
-      }
-
-      final cardBaseTitle =
-          TitleParserUtils.getBaseTitle(content.getDisplayTitle())
-              .toLowerCase();
-
+      // Batch: load recent history once, match by ID — avoids N+1 per item
       List<History> recentHistory;
       if (_recentHistoryFuture != null &&
           _recentHistoryCacheTime != null &&
@@ -410,7 +384,27 @@ class ContentReadCache {
         recentHistory = await _recentHistoryFuture!;
       }
 
+      // Match by contentId first (fast path)
       History? matchedHistory;
+      for (final item in recentHistory) {
+        if (item.contentId == contentId && _isValidProgress(item, sourceId)) {
+          matchedHistory = item;
+          break;
+        }
+      }
+
+      if (matchedHistory != null) {
+        final progress = _normalizeProgress(matchedHistory);
+        _cache[cacheKey] = progress;
+        _cacheTime[cacheKey] = DateTime.now();
+        return progress;
+      }
+
+      // Fallback: match by title (for items without contentId in history)
+      final cardBaseTitle =
+          TitleParserUtils.getBaseTitle(content.getDisplayTitle())
+              .toLowerCase();
+
       for (final item in recentHistory) {
         if (sourceId.isNotEmpty &&
             item.sourceId.trim().toLowerCase() != sourceId.toLowerCase()) {
@@ -431,6 +425,22 @@ class ContentReadCache {
         _cache[cacheKey] = progress;
         _cacheTime[cacheKey] = DateTime.now();
         return progress;
+      }
+
+      // Per-item chapter history fallback (rare — only when no batch match)
+      final chapterHistory =
+          await userDataRepository.getAllChapterHistory(contentId);
+      final chapterProgress = chapterHistory
+          .where((item) => _isValidProgress(item, sourceId))
+          .map(_normalizeProgress)
+          .fold<double?>(null, (previous, value) {
+        if (previous == null || value > previous) return value;
+        return previous;
+      });
+      if (chapterProgress != null) {
+        _cache[cacheKey] = chapterProgress;
+        _cacheTime[cacheKey] = DateTime.now();
+        return chapterProgress;
       }
     } catch (e) {
       Logger().w('Failed to resolve read progress for $contentId: $e');
