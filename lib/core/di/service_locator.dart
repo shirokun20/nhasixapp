@@ -558,6 +558,31 @@ void _setupDataSources() {
     },
   );
 
+  // Register shared cookie jar so ViHentaiSourceFactory can inject it.
+  getIt.registerLazySingleton<PersistCookieJar>(
+    instanceName: 'vihentai_jar',
+    () {
+      final cookieStorage = GenericCookieStorage('cf_vihentai');
+      return PersistCookieJar(storage: cookieStorage);
+    },
+  );
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_vihentai',
+    () {
+      final rawConfig = turnstileConfig('vihentai');
+      final baseUrl =
+          (rawConfig['baseUrl'] as String?) ?? 'https://vi-hentai.moe';
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: getIt<PersistCookieJar>(instanceName: 'vihentai_jar'),
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
   // Generic Source Factory — catch-all factory for config-driven providers
   getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(
         dio: getIt<Dio>(),
@@ -665,6 +690,13 @@ void _setupDataSources() {
           sessionAdapter:
               getIt<WebViewSessionAdapter>(instanceName: 'cf_spyfakku'),
           logger: getIt<Logger>(),
+        ),
+        ViHentaiSourceFactory(
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_vihentai'),
+          logger: getIt<Logger>(),
+          cookieJar: getIt<PersistCookieJar>(instanceName: 'vihentai_jar'),
         ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
