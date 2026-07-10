@@ -1177,6 +1177,7 @@ class GenericScraperAdapter implements GenericAdapter {
                 .extractList(doc, sel)
                 .map((u) => u.trim())
                 .where((u) => u.isNotEmpty)
+                .map((u) => _sanitizeImageUrl(u))
                 .map((u) => _urlBuilder.resolve(u, const {}))
                 .where((u) => seen.add(u))
                 .toList();
