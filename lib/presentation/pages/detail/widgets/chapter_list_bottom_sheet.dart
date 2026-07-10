@@ -6,7 +6,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/core/services/chapter_cache.dart';
+
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
@@ -23,12 +23,14 @@ class ChapterListBottomSheet extends StatefulWidget {
     required this.detailCubit,
     this.initialLanguageKey,
     this.initialScanGroup,
+    this.allChapters,
   });
 
   final Content content;
   final DetailCubit detailCubit;
   final String? initialLanguageKey;
   final String? initialScanGroup;
+  final List<Chapter>? allChapters;
 
   @override
   State<ChapterListBottomSheet> createState() => _ChapterListBottomSheetState();
@@ -46,15 +48,13 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   void initState() {
     super.initState();
     _selectedLanguageKey = widget.initialLanguageKey;
-    final cached = ChapterCache.chapters(
-      sourceId: widget.content.sourceId,
-      language: _selectedLanguageKey,
-      scanGroup: widget.initialScanGroup,
-    );
-    if (cached != null && cached.isNotEmpty) {
+    if (widget.allChapters != null) {
       _chapters = widget.initialScanGroup == 'Volume'
-          ? [...cached]
-          : [...cached.where((c) => c.scanGroup != 'Volume')];
+          ? [...widget.allChapters!]
+          : [
+              ...widget.allChapters!
+                  .where((c) => c.scanGroup != 'Volume')
+            ];
     } else if (widget.initialScanGroup == 'Volume') {
       _chapters = [...?widget.content.chapters];
     } else {
@@ -62,10 +62,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
           .where((c) => c.scanGroup != 'Volume')
           .toList();
     }
-    ChapterCache.set(_chapters,
-        sourceId: widget.content.sourceId,
-        language: _selectedLanguageKey,
-        scanGroup: widget.initialScanGroup);
   }
 
   @override
@@ -702,7 +698,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
           _fullyLoadedLanguages.add(languageKey);
         }
       });
-      ChapterCache.set(_chapters,
+      widget.detailCubit.setAllChapters(_chapters,
           sourceId: widget.content.sourceId,
           language: languageKey,
           scanGroup: widget.initialScanGroup);

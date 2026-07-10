@@ -213,6 +213,7 @@ class DetailOpeningChapter extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
+
   });
 }
 
@@ -227,6 +228,7 @@ class DetailReaderReady extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
+
     this.chapterData,
     this.currentChapter,
   });
@@ -259,6 +261,7 @@ class DetailActionFailure extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
+
     this.needsLogin = false,
     this.error,
   });

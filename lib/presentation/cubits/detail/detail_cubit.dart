@@ -10,7 +10,7 @@ import '../../../core/utils/offline_content_manager.dart';
 import '../../../services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
-import '../../../core/services/chapter_cache.dart';
+
 import '../../../../core/utils/error_message_utils.dart';
 import '../../../domain/entities/history.dart';
 
@@ -70,16 +70,28 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ContentSourceRegistry _contentSourceRegistry;
   final OfflineContentManager _offlineContentManager;
 
-  /// Persist expanded chapter list from bottom sheet into shared cache.
+  /// Per-language expanded chapter lists kept outside state so they survive
+  /// cubit rebuilds and language switches without cross-pollution.
+  final Map<String, List<Chapter>> _allChaptersByLang = {};
+
+  /// Save expanded chapter list from bottom sheet, keyed by language.
   void setAllChapters(List<Chapter> chapters,
       {String? sourceId, String? language, String? scanGroup}) {
-    ChapterCache.set(chapters,
-        sourceId: sourceId, language: language, scanGroup: scanGroup);
+    final lang = language ?? 'default';
+    _allChaptersByLang[lang] = chapters;
+  }
+
+  /// Get chapters for a given language. Returns null for unknown language.
+  List<Chapter>? chaptersByLang(String? language) {
+    if (language != null && _allChaptersByLang.containsKey(language)) {
+      return _allChaptersByLang[language];
+    }
+    return null;
   }
 
   /// Load content detail by ID
   Future<void> loadContentDetail(String contentId, {String? sourceId}) async {
-    ChapterCache.clear();
+    _allChaptersByLang.clear();
     try {
       logInfo('Loading content detail for ID: $contentId');
       emit(const DetailLoading());

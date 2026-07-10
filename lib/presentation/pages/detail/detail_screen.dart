@@ -26,8 +26,7 @@ import 'package:nhasixapp/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:kuron_core/kuron_core.dart';
-import '../../../core/services/chapter_cache.dart';
-import '../../../../core/utils/error_message_utils.dart';
+import '../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
@@ -614,11 +613,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       parentContent: state.content, // Parent series
                       chapterData: state.chapterData, // Navigation data
                       currentChapter: state.currentChapter, // Current chapter
-                      allChapters: ChapterCache.chapters(
-                        sourceId: state.content.sourceId,
-                        language: state.currentChapter?.language,
-                        scanGroup: state.currentChapter?.scanGroup,
-                      ), // Expanded from bottom sheet
+                      allChapters: _detailCubit.chaptersByLang(state.currentChapter?.language),
                     );
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
@@ -720,35 +715,37 @@ class _DetailScreenState extends State<DetailScreen> {
             tooltip: l10n.youAreOfflineTapToGoOnline,
           ),
         ),
-      BlocBuilder<DetailCubit, DetailState>(
-        builder: (context, detailState) {
-          if (detailState is! DetailLoaded) {
-            return const SizedBox.shrink();
-          }
-
+      BlocSelector<DetailCubit, DetailState, bool>(
+        selector: (s) => s is DetailLoaded && s.isFavorited,
+        builder: (context, isFavorited) {
           final remoteConfig = getIt<RemoteConfigService>();
           final favoriteEnabled = remoteConfig.isFeatureEnabled(
-            detailState.content.sourceId,
+            content.sourceId,
             (f) => f.favorite,
           );
+          final cubit = context.read<DetailCubit>();
 
           return GestureDetector(
             onLongPress: favoriteEnabled
-                ? () => _onFavoriteLongPressed(detailState)
+                ? () {
+                    final ds = cubit.state;
+                    if (ds is DetailLoaded) _onFavoriteLongPressed(ds);
+                  }
                 : null,
             child: IconButton(
               icon: Icon(
-                detailState.isFavorited
-                    ? Icons.favorite
-                    : Icons.favorite_border,
-                color: detailState.isFavorited
+                isFavorited ? Icons.favorite : Icons.favorite_border,
+                color: isFavorited
                     ? colorScheme.error
                     : (favoriteEnabled
                         ? colorScheme.onSurface
                         : colorScheme.onSurface.withValues(alpha: 0.3)),
               ),
               onPressed: favoriteEnabled
-                  ? () => _onFavoritePressed(detailState)
+                  ? () {
+                      final ds = cubit.state;
+                      if (ds is DetailLoaded) _onFavoritePressed(ds);
+                    }
                   : null,
             ),
           );
@@ -758,12 +755,9 @@ class _DetailScreenState extends State<DetailScreen> {
         icon: Icon(Icons.share, color: colorScheme.onSurface),
         onPressed: () => _shareContent(content),
       ),
-      BlocBuilder<DetailCubit, DetailState>(
-        builder: (context, detailState) {
-          if (detailState is! DetailLoaded) {
-            return const SizedBox.shrink();
-          }
-
+      BlocSelector<DetailCubit, DetailState, bool>(
+        selector: (s) => s is DetailLoaded && s.isFavorited,
+        builder: (context, isFavorited) {
           return PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
             color: colorScheme.surfaceContainer,
@@ -771,7 +765,7 @@ class _DetailScreenState extends State<DetailScreen> {
             itemBuilder: (context) {
               final items = <PopupMenuEntry<String>>[];
 
-              if (detailState.isFavorited) {
+              if (isFavorited) {
                 items.add(
                   PopupMenuItem(
                     value: 'manage_collections',
@@ -1119,6 +1113,8 @@ class _DetailScreenState extends State<DetailScreen> {
               formatLanguageLabel: _formatChapterLanguageLabel,
               onChapterTap: _detailCubit.openChapter,
               onViewAll: (selectedLanguageKey) {
+                final chapters =
+                    _detailCubit.chaptersByLang(selectedLanguageKey);
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
@@ -1127,6 +1123,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     content: safeDisplayContent,
                     detailCubit: _detailCubit,
                     initialLanguageKey: selectedLanguageKey,
+                    allChapters: chapters,
                     initialScanGroup: content.sourceId == 'mangafire'
                         ? _mangaFireCoordinator.selectedType
                         : null,
@@ -1468,11 +1465,7 @@ class _DetailScreenState extends State<DetailScreen> {
       chapterData: chapterData,
       parentContent: parentContent,
       currentChapter: currentChapter,
-      allChapters: allChapters ?? ChapterCache.chapters(
-        sourceId: content.sourceId,
-        language: currentChapter?.language,
-        scanGroup: currentChapter?.scanGroup,
-      ),
+      allChapters: allChapters ?? _detailCubit.chaptersByLang(currentChapter?.language),
     );
 
     Logger().w('Content to pass: ${launchPayload.content}');
