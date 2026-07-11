@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,9 +16,12 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/routing/reader_route_extra.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import 'package:extended_image/extended_image.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
+
 import 'package:kuron_core/kuron_core.dart';
+
 import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
@@ -740,11 +744,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final pageJump = (currentPage - _lastReportedPage).abs();
     if (pageJump > 3) return;
 
-    // HentaiNexus: DISABLE prefetch completely (GPU saturation issue)
-    if (_isHeavyPrefetchSource(sourceId)) {
-      return;
-    }
-
     final prefetchHeaders = sourceId == null
         ? null
         : getIt<ContentSourceRegistry>()
@@ -753,6 +752,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
               imageUrl:
                   imageUrls[(currentPage - 1).clamp(0, imageUrls.length - 1)],
             );
+
+    // ponytail: pre-decode adjacent pages into ImageCache at display width.
+    // Online → ExtendedNetworkImageProvider (HTTP → ExtendedImage disk cache).
+    // Offline → ExtendedFileImageProvider from LocalImagePreloader's file.
+    // Both wrapped in ExtendedResizeImage — same wrapper ExtendedImage
+    // (network/file) uses internally via cacheWidth param.
+    final decodeWidth =
+        (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round();
+    for (final int targetPage in <int>{currentPage + 1, currentPage - 1}) {
+      if (targetPage >= 1 && targetPage <= imageUrls.length) {
+        final url = imageUrls[targetPage - 1];
+        if (!url.startsWith('http')) continue;
+        LocalImagePreloader.getLocalImagePath(
+          widget.contentId, targetPage,
+        ).then((localPath) {
+          if (!mounted) return;
+          final ImageProvider provider;
+          if (localPath != null && File(localPath).existsSync()) {
+            provider = ExtendedFileImageProvider(File(localPath));
+          } else {
+            provider = ExtendedNetworkImageProvider(url, headers: prefetchHeaders);
+          }
+          precacheImage(
+            ExtendedResizeImage.resizeIfNeeded(
+              cacheWidth: decodeWidth,
+              cacheHeight: null,
+              provider: provider,
+            ),
+            context,
+          );
+        });
+      }
+    }
+
+    // HentaiNexus: DISABLE state prefetch (GPU saturation)
+    if (_isHeavyPrefetchSource(sourceId)) {
+      return;
+    }
 
     // Backward prefetch: 1 page behind
     for (int i = 1; i <= _prefetchBackCount; i++) {
@@ -831,24 +868,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return;
         }
 
-        // Prefetch in background (non-blocking) - only if validation passes
-        LocalImagePreloader.downloadAndCacheImage(
-          imageUrl,
-          widget.contentId,
-          targetPage,
-          headers: prefetchHeaders,
-        ).then((_) {
-          if (mounted) {
-            // Log success with validation status
-            final status = isValid ? '✅' : '❓';
-            _logger.d(
-                '📥 $status Prefetched page $targetPage (metadata validated: $isValid)');
-          }
-        }).catchError((error) {
-          // Remove from prefetched set if failed, so it can be retried
-          _prefetchedPages.remove(targetPage);
-          _logger.d('❌ Failed to prefetch page $targetPage: $error');
-        });
+        if (mounted) {
+          final status = isValid ? '✅' : '❓';
+          _logger.d(
+              '📥 $status Prefetched page $targetPage (metadata validated: $isValid)');
+        }
       }
     }
   }
@@ -1373,6 +1397,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       key: const ValueKey('horizontal_page_view'),
       controller: _pageController,
       scrollDirection: Axis.horizontal,
+      // ponytail: Clip.none avoids GPU overdraw on clipped edges.
+      // pageSnapping=true feels more natural for manga pager mode.
+      clipBehavior: Clip.none,
       onPageChanged: (index) {
         // Convert 0-indexed to 1-indexed page number
         // For navigation page (index == pageCount), report pageCount + 1
@@ -1389,15 +1416,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final imageUrls = state.content?.imageUrls ?? [];
         // Don't prefetch for navigation page
         if (index < pageCount) {
-          _prefetchImages(
-            reportPage,
-            imageUrls,
-            state.imageMetadata,
-            sourceId: state.content?.sourceId,
-          );
-          // LRU eviction: release images far from current position
-          _evictDistantPages(reportPage, imageUrls,
-              isOffline: state.isOfflineMode ?? false);
+          // ponytail: non-CS PageView pre-builds adjacent pages automatically.
+          // No need for prefetch/evict — images already render from ExtendedImage
+          // cache. Prefetch triggers redundant resolve() per tap = lag.
+          if (state.readingMode != ReadingMode.singlePage &&
+              state.readingMode != ReadingMode.verticalPage) {
+            _prefetchImages(
+              reportPage,
+              imageUrls,
+              state.imageMetadata,
+              sourceId: state.content?.sourceId,
+            );
+            _evictDistantPages(reportPage, imageUrls,
+                isOffline: state.isOfflineMode ?? false);
+          }
         }
 
         // Update ReaderCubit state
@@ -1430,6 +1462,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       key: const ValueKey('vertical_page_view'),
       controller: _verticalPageController,
       scrollDirection: Axis.vertical,
+      clipBehavior: Clip.none,
       onPageChanged: (index) {
         // Convert 0-indexed to 1-indexed page number
         // For navigation page (index == pageCount), report pageCount + 1

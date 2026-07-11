@@ -36,6 +36,7 @@ class AnimatedWebPView extends StatefulWidget {
     this.targetWidth,
     this.autoPlay = false,
     this.pageNumber,
+    this.staticOnly = false,
     this.visiblePageNotifier,
     this.loadingBuilder,
     required this.fallback,
@@ -56,6 +57,11 @@ class AnimatedWebPView extends StatefulWidget {
   /// In reader usage, [visiblePageNotifier] takes precedence so only the
   /// current visible page keeps animating after scroll changes.
   final bool autoPlay;
+
+  /// When true, skip animated decode and render static frame only.
+  /// Used for offline static images — native BitmapFactory/ImageDecoder
+  /// is faster than Flutter's ExtendedImage.file pipeline.
+  final bool staticOnly;
 
   /// 1-based page number of this image in the reader.
   final int? pageNumber;
@@ -423,6 +429,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
                   'filePath': widget.filePath!,
                 'headers': widget.headers,
                 if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
+                'staticOnly': widget.staticOnly,
               },
               creationParamsCodec: const StandardMessageCodec(),
               gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},

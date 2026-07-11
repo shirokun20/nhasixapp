@@ -99,6 +99,7 @@ class AnimatedWebPView(
         val params = args as? Map<*, *>
         val url = params?.get("url") as? String
         val filePath = params?.get("filePath") as? String
+        val staticOnly = params?.get("staticOnly") == true
         targetWidth = (params?.get("targetWidth") as? Number)?.toInt()
 
         @Suppress("UNCHECKED_CAST")
@@ -122,6 +123,11 @@ class AnimatedWebPView(
         } else {
             // 2️⃣ Disk / network path
             when {
+                // ponytail: staticOnly → native BitmapFactory, no animated decode
+                staticOnly && !filePath.isNullOrEmpty() -> {
+                    Log.i(TAG, "Static native render: $filePath")
+                    renderStaticBitmapFromFile(File(filePath))
+                }
                 !filePath.isNullOrEmpty() -> {
                     Log.i(TAG, "Loading from disk cache: $filePath")
                     var renderedStaticFromKnownFailure = false

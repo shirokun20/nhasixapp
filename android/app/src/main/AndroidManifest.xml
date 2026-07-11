@@ -100,6 +100,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- 🚀 120fps: Enable Impeller (Vulkan GPU backend). Replaces Skia.
+             ~30-50% faster rendering. Flutter 3.24+ has stable PlatformView
+             support with Impeller. Vulkan required (Android 7+, all new devices). -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="true" />
             
         <!-- Required for WorkManager Foreground Service on Android 14+ -->
         <service

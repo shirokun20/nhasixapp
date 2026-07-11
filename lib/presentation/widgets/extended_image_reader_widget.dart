@@ -1087,12 +1087,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         );
       }
 
-      // Use ExtendedImage.file for local files
+      // ponytail: ExtendedImage.file with cacheWidth — pre-decode via
+      // precacheImage already populated ImageCache at display resolution.
+      // ExtendedImage.file reads from disk + decodes at cacheWidth → fast.
+
+      // Legacy: ExtendedImage.file for local files
+      // Without cacheWidth, offline images decode at full resolution (4000px+).
       return ExtendedImage.file(
         File(effectiveLocalPath),
         key:
             ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
         fit: _getAdaptiveBoxFit(),
+        cacheWidth: _targetDecodeWidth(context),
         mode: widget.enableZoom &&
                 widget.readingMode != ReadingMode.continuousScroll
             ? ExtendedImageMode.gesture
@@ -1135,12 +1141,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         loadStateChanged: (ExtendedImageState state) {
           switch (state.extendedImageLoadState) {
             case LoadState.loading:
-              if (_hasRealByteProgress(state)) {
-                _stopSyntheticProgress();
-              } else {
-                _startSyntheticProgress();
+              // ponytail: skip loading indicator for local files — decode is
+              // near-instant (<50ms). The synthetic progress timer + setState
+              // overhead per frame adds measurable jank in fast tap offline.
+              if (!_isLocalFilePath(normalizedLocalPath)) {
+                if (_hasRealByteProgress(state)) {
+                  _stopSyntheticProgress();
+                } else {
+                  _startSyntheticProgress();
+                }
+                return _buildLoadingIndicator(context, state: state);
               }
-              return _buildLoadingIndicator(context, state: state);
+              return null; // no loading indicator for local files
             case LoadState.failed:
               _stopSyntheticProgress(reset: true);
               if (_tryNativeAnimatedFallback(normalizedLocalPath)) {
@@ -1225,6 +1237,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             ? _buildHentainexusImageHeaders(effectiveImageUrl)
             : widget.httpHeaders;
 
+        // ponytail: ExtendedImage.network handles caching + cacheWidth.
+        // Pre-decode via precacheImage already populated ImageCache → instant.
         return _buildNetworkImage(
           context,
           effectiveImageUrl,
@@ -1330,19 +1344,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
       headers: headers,
       fit: _getAdaptiveBoxFit(),
-      // 🔥 THERMAL / FRAME-RATE:
-      // - Animated WebP (≥2MB .webp): FilterQuality.none — fastest per-frame
-      //   GPU composite; quality is acceptable at reduced cacheWidth.
-      // - Other heavy sources: FilterQuality.low — balanced.
-      // - Normal images: FilterQuality.medium — standard quality.
-      filterQuality: isLikelyAnimatedUrl
-          ? FilterQuality.none
-          : (_isHeavyReaderSource() || _isHeavyImage)
-              ? FilterQuality.medium
-              // ponytail: bilinear (low) matches browser default. With
-              // cacheWidth at display size, nearest (none) would be
-              // acceptable — saved bicubic overhead.
-              : FilterQuality.low,
+      // ponytail: ALL static images use FilterQuality.low (bilinear) —
+      // cacheWidth at display size makes nearest-neighbor (none) acceptable.
+      // Animated WebP uses FilterQuality.none (fastest per-frame).
+      filterQuality:
+          isLikelyAnimatedUrl ? FilterQuality.none : FilterQuality.low,
       mode: widget.enableZoom &&
               widget.readingMode != ReadingMode.continuousScroll
           ? ExtendedImageMode.gesture
@@ -1934,11 +1940,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // Note: Android's MediaCodec does NOT hardware-decode animated WebP;
     // libwebp (CPU) is always used. cacheWidth reduces the decode resolution
     // so each frame is cheaper to decode AND cheaper to composite via GPU.
-    // ponytail: ALL continuous-scroll images decode at display resolution,
-    // not native. 25× less GPU texture upload, 25× faster decode. Browsers
-    // do this by default. Only skip for single/vertical page modes where
-    // the user may pinch-zoom to inspect detail at full resolution.
-    if (widget.readingMode != ReadingMode.continuousScroll) return null;
+    // ponytail: decode at display resolution for ALL modes — 25× less GPU
+    // texture upload. Non-CS pages change via swipe which is a full rebuild;
+    // decoding full-res 4000px images every swipe causes visible jank.
+    // Pinch-zoom: ExtendedImage reloads from disk/memory cache when needed.
+    if (!(_isHeavyReaderSource() || _isHeavyImage)) {
+      // Non-heavy, non-animated: decode at exact display width — no waste.
+      final mediaQuery = MediaQuery.of(context);
+      return (mediaQuery.size.width * mediaQuery.devicePixelRatio).round();
+    }
 
     final mediaQuery = MediaQuery.of(context);
     // Animated WebP: 40% — each frame of a 45-frame 1416×1608 animation at
