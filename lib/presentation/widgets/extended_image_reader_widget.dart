@@ -71,8 +71,6 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   /// Forwarded to [AnimatedWebPView] to auto-pause off-screen animations.
   final ValueNotifier<int>? visiblePageNotifier;
 
-
-
   @override
   State<ExtendedImageReaderWidget> createState() =>
       _ExtendedImageReaderWidgetState();
@@ -1546,10 +1544,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final resolvedFilePath = filePathOverride ?? _cachedFilePath;
     final playInlineInContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
-    // Heavy sources: always pass visiblePageNotifier so off-screen
-    // heavy 10MB+ WebP thumbnails pause, freeing GPU decode pressure.
-    final useVisiblePagePause =
-        _isHeavyReaderSource() || !playInlineInContinuousScroll;
 
     Widget nativeView = RepaintBoundary(
       child: AnimatedWebPView(
@@ -1558,13 +1552,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         filePath: resolvedFilePath,
         headers: headers ?? const {},
         targetWidth: _nativeDecodeWidth(context),
-        // Continuous-scroll page estimation uses average item height, which is
-        // too coarse for mixed-height webtoon pages and can leave the on-screen
-        // native animated image stuck on its static thumbnail.
         autoPlay: playInlineInContinuousScroll || _shouldAutoPlayAnimatedView,
         pageNumber: widget.pageNumber,
-        visiblePageNotifier:
-            useVisiblePagePause ? widget.visiblePageNotifier : null,
+        visiblePageNotifier: widget.visiblePageNotifier,
         loadingBuilder: (context, receivedBytes, totalBytes) =>
             _buildLoadingIndicator(
           context,

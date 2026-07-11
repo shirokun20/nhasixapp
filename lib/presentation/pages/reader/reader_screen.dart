@@ -447,10 +447,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    // Pause animated WebP during scroll via separate notifier.
-    // _visiblePageNotifier stays untouched — page indicator never flickers.
-    _scrollingNotifier.value = true;
-    _animatedPauseNotifier.value = 0; // sentinel: no page visible for animation
+    // Pause animated WebP during scroll — sentinel 0 hanya sekali saat
+    // transisi scroll mulai. Jangan per-tick — unmount/mount loop = lag.
+    if (!_scrollingNotifier.value) {
+      _scrollingNotifier.value = true;
+      _animatedPauseNotifier.value = 0;
+    }
     _scrollIndicatorTimer?.cancel();
     _scrollIndicatorTimer = Timer(const Duration(milliseconds: 200), () {
       _scrollingNotifier.value = false;
@@ -1376,8 +1378,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // For navigation page (index == pageCount), report pageCount + 1
         final reportPage = index + 1;
 
-        // Update visible page notifier so off-screen animations pause
+        // Update visible notifier (page indicator) + animated pause notifier
         _visiblePageNotifier.value = reportPage;
+        _animatedPauseNotifier.value = reportPage;
 
         _logger.d(
             '📖 PageView changed to index=$index (reporting page $reportPage)');
@@ -1432,8 +1435,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         // For navigation page (index == pageCount), report pageCount + 1
         final reportPage = index + 1;
 
-        // Update visible page notifier so off-screen animations pause
+        // Update visible notifier (page indicator) + animated pause notifier
         _visiblePageNotifier.value = reportPage;
+        _animatedPauseNotifier.value = reportPage;
 
         _logger.d(
             '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');

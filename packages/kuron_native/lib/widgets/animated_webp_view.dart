@@ -37,7 +37,6 @@ class AnimatedWebPView extends StatefulWidget {
     this.autoPlay = false,
     this.pageNumber,
     this.visiblePageNotifier,
-    this.scrollingNotifier,
     this.loadingBuilder,
     required this.fallback,
   });
@@ -64,12 +63,6 @@ class AnimatedWebPView extends StatefulWidget {
   /// Notifier that emits the currently visible page number.
   /// When provided, animation auto-pauses when this page is not visible.
   final ValueNotifier<int>? visiblePageNotifier;
-
-  /// Notifier that emits whether the reader is being scrolled.
-  /// When true, animation auto-pauses regardless of visibility — frees GPU
-  /// bandwidth for loading images. Resume when scrolling stops (500ms debounce
-  /// applied by the reader).
-  final ValueNotifier<bool>? scrollingNotifier;
 
   /// Optional builder for showing byte-level native preload progress.
   final Widget Function(
@@ -129,8 +122,8 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   /// When true, the [AndroidView] is mounted and animation plays.
   bool _isPlaying = false;
 
-  /// ponytail: guards against _onVisiblePageChanged cascade (called from 3
-  /// sources: scrollingNotifier, visiblePageNotifier, didUpdateWidget).
+  /// ponytail: guards against _onVisiblePageChanged cascade (called from 2
+  /// sources: visiblePageNotifier, didUpdateWidget).
   /// null = uninitialized — first call always proceeds.
   bool? _lastShouldAutoPlay;
 
@@ -147,12 +140,6 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
         pageNumber: widget.pageNumber,
         visiblePageNumber: widget.visiblePageNotifier?.value,
       );
-
-  /// When the user is actively scrolling, pause ALL animations regardless
-  /// of visibility — frees GPU bandwidth for loading images. Resume when
-  /// scrolling stops.
-  bool get _isScrollingPaused =>
-      widget.scrollingNotifier?.value ?? false;
 
   bool get _hasPreparedPlaybackSource =>
       _webpCachePath != null ||
@@ -194,11 +181,6 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.visiblePageNotifier?.addListener(_onVisiblePageChanged);
-    widget.scrollingNotifier?.addListener(_onScrollingChanged);
-    if (widget.scrollingNotifier?.value == true) {
-      // ponytail: still load thumbnail during scroll so it's ready when
-      // scroll stops. Only skip AndroidView creation (handled by build).
-    }
     if (_shouldSkipThumbnailForLargeLocalFile) {
       _thumbnailDownloadedBytes = _resolveExistingFileBytes() ?? 0;
       _thumbnailTotalBytes = null;
@@ -211,28 +193,14 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   @override
   void dispose() {
     widget.visiblePageNotifier?.removeListener(_onVisiblePageChanged);
-    widget.scrollingNotifier?.removeListener(_onScrollingChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  /// Called when scrolling state changes. Pauses during scroll.
-  void _onScrollingChanged() {
-    if (_isScrollingPaused) {
-      if (_isPlaying && mounted) {
-        setState(() => _isPlaying = false);
-      }
-      return;
-    }
-    // Debounce: after scroll stops, only resume if not already playing.
-    if (_isPlaying) return;
-    _onVisiblePageChanged();
-  }
-
   /// Auto-pause when this page is no longer the visible page.
   void _onVisiblePageChanged() {
-    // ponytail: guard against cascade — scrollingNotifier + visiblePageNotifier
-    // both fire on scroll stop, triggering redundant play/pause toggles.
+    // ponytail: guard against cascade — visiblePageNotifier + didUpdateWidget
+    // both fire, triggering redundant play/pause toggles.
     final nowAutoPlay = _shouldAutoPlay;
     if (nowAutoPlay == _lastShouldAutoPlay) return;
     _lastShouldAutoPlay = nowAutoPlay;
@@ -300,10 +268,6 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     if (oldWidget.visiblePageNotifier != widget.visiblePageNotifier) {
       oldWidget.visiblePageNotifier?.removeListener(_onVisiblePageChanged);
       widget.visiblePageNotifier?.addListener(_onVisiblePageChanged);
-    }
-    if (oldWidget.scrollingNotifier != widget.scrollingNotifier) {
-      oldWidget.scrollingNotifier?.removeListener(_onScrollingChanged);
-      widget.scrollingNotifier?.addListener(_onScrollingChanged);
     }
     if (oldWidget.url != widget.url) {
       setState(() {
@@ -423,55 +387,49 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   Widget build(BuildContext context) {
     if (!Platform.isAndroid) return widget.fallback;
 
-    final Widget inner;
-    if (_isPlaying) {
-      inner = SizedBox.expand(
-        key: const ValueKey('playing'),
-        child: AndroidView(
-          viewType: 'kuron_animated_webp_view',
-          layoutDirection: TextDirection.ltr,
-          creationParams: <String, Object>{
-            'url': widget.url,
-            if (_webpCachePath != null)
-              'filePath': _webpCachePath!
-            else if (widget.filePath != null)
-              'filePath': widget.filePath!,
-            'headers': widget.headers,
-            if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
-          },
-          creationParamsCodec: const StandardMessageCodec(),
-          gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
-        ),
-      );
-    } else if (_thumbnailPath != null) {
-      inner = SizedBox.expand(
-        key: const ValueKey('thumbnail'),
-        child: Image.file(File(_thumbnailPath!), fit: BoxFit.contain),
-      );
-    } else {
-      inner = SizedBox.expand(
-        key: const ValueKey('loading'),
-        child: widget.loadingBuilder?.call(
+    // Background layer: thumbnail (or loading indicator) covering the slot
+    // before the native texture arrives / during scroll pause.
+    final Widget background = _thumbnailPath != null
+        ? Image.file(File(_thumbnailPath!), fit: BoxFit.contain)
+        : widget.loadingBuilder?.call(
               context,
               _thumbnailDownloadedBytes,
               _thumbnailTotalBytes,
             ) ??
-            widget.fallback,
-      );
+            widget.fallback;
+
+    if (!_isPlaying) {
+      // Paused during scroll: just show thumbnail — no AndroidView overhead.
+      return SizedBox.expand(child: background);
     }
 
-    // AnimatedSwitcher crossfade masks the thumbnail↔AndroidView swap blink.
-    // When _isPlaying toggles, Flutter transitions between the two children
-    // so there is never a frame with nothing rendered.
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 100),
-      switchInCurve: Curves.easeIn,
-      switchOutCurve: Curves.easeOut,
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: child,
+    // Playing: Stack thumbnail + AndroidView. Thumbnail prevents blink
+    // (fills frames before PlatformView texture lands). Non-play pages never
+    // get an AndroidView, so multiple stacked PlatformViews don't lag the GPU.
+    return SizedBox.expand(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          background,
+          Positioned.fill(
+            child: AndroidView(
+              viewType: 'kuron_animated_webp_view',
+              layoutDirection: TextDirection.ltr,
+              creationParams: <String, Object>{
+                'url': widget.url,
+                if (_webpCachePath != null)
+                  'filePath': _webpCachePath!
+                else if (widget.filePath != null)
+                  'filePath': widget.filePath!,
+                'headers': widget.headers,
+                if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
+              },
+              creationParamsCodec: const StandardMessageCodec(),
+              gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            ),
+          ),
+        ],
       ),
-      child: inner,
     );
   }
 }
