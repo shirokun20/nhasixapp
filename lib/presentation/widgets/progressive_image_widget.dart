@@ -551,6 +551,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
+      cacheWidth: widget.memCacheWidth,  // ponytail: downsample for grid thumbs
       errorBuilder: (context, error, stackTrace) =>
           widget.errorWidget ?? _buildErrorWidget(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
