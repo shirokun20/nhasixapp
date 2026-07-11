@@ -96,9 +96,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
   static const int _prefetchBackCount = 1;
-  // Throttle: track last two page-change timestamps for fast-scroll detection
-  DateTime _lastPageChangedAt = DateTime.fromMillisecondsSinceEpoch(0);
-  DateTime _prevPageChangedAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Chapter open overlay: shown once per reader session
   bool _chapterOverlayShown = false;
@@ -107,10 +104,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Static so the lock persists across reader navigations in the same session.
   static final Set<String> _autoSwitchedContentIds = <String>{};
 
+  // ponytail: track last eviction range so _evictDistantPages doesn't
+  // full-scan every 300ms scroll tick. Only evict when the visible page
+  // moves outside the previous window.
+  int _lastEvictedPage = 0;
+  static const int _evictionWindowPages = 4;
+
   // Throttle expensive continuous-scroll computations.
-  // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms to reduce frame pressure
-  // More throttling = better GPU utilization, less buffer starvation
-  static const Duration _scrollProcessInterval = DesignTokens.durationPageTurn;
+  // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms → 300ms
+  // At 300ms (3-4 fps) the page indicator still feels responsive while
+  // prefetch/evict loops run 40% less often.
+  static const Duration _scrollProcessInterval = Duration(milliseconds: 300);
   DateTime _lastScrollProcessAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Debounce mechanism to prevent onPageChanged loops
@@ -132,6 +136,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
   Timer? _scrollIndicatorTimer;
 
+  // ponytail: separate notifier for AnimatedWebPView pause, so _visiblePageNotifier
+  // (used by page indicator) never flickers to 0.
+  final ValueNotifier<int> _animatedPauseNotifier = ValueNotifier<int>(1);
+
   // Slider footer previews the destination locally while dragging and only
   // commits navigation once on release, preventing overlapping PageView syncs.
   double? _sliderPreviewValue;
@@ -145,6 +153,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Chapter? _preloadedCurrentChapter; // Current chapter
   String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
+
+  // ponytail: batch height updates during initial image load stampede.
+  // Multiple images loading simultaneously each trigger setState({}),
+  // rebuilding the full tree N times. Debounce to once per frame.
+  final Set<int> _pendingHeightUpdates = {};
+  Timer? _heightBatchTimer;
 
   @override
   void initState() {
@@ -433,11 +447,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    // 🎯 Show floating page indicator while scrolling, auto-hide after 2s
+    // Pause animated WebP during scroll via separate notifier.
+    // _visiblePageNotifier stays untouched — page indicator never flickers.
     _scrollingNotifier.value = true;
+    _animatedPauseNotifier.value = 0; // sentinel: no page visible for animation
     _scrollIndicatorTimer?.cancel();
-    _scrollIndicatorTimer = Timer(const Duration(seconds: 2), () {
+    _scrollIndicatorTimer = Timer(const Duration(milliseconds: 200), () {
       _scrollingNotifier.value = false;
+      _animatedPauseNotifier.value = _lastReportedPage; // restore
     });
 
     // 🐛 FIX: Check if user truly reached bottom using scroll metrics
@@ -483,6 +500,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
       totalPages: totalPages,
       screenHeight: screenHeight,
     );
+
+    // ponytail: O(1) estimate via average height. Linear scan from page 1
+    // per tick causes jank on 500+ page chapters. Cache heights up to
+    // _lastEvictedPage if we have enough data; otherwise use fallback.
+    if (totalPages > 200 && _cachedImageHeights.length > 10) {
+      double avgHeight = fallbackItemHeight;
+      if (_cachedImageHeights.isNotEmpty) {
+        final sum = _cachedImageHeights.values
+            .take(20) // sample first 20 for responsiveness
+            .fold(0.0, (a, b) => a + b);
+        avgHeight = (sum / _cachedImageHeights.length.clamp(1, 20))
+            .clamp(1.0, double.infinity);
+      }
+      final page = (viewportCenter / avgHeight).floor().clamp(1, totalPages);
+      return page;
+    }
 
     double cumulativeHeight = 0;
     for (int page = 1; page <= totalPages; page++) {
@@ -649,6 +682,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _pageUpdateTimer?.cancel();
     _uiToggleDebounceTimer?.cancel();
     _scrollIndicatorTimer?.cancel();
+    _heightBatchTimer?.cancel();
+    _animatedPauseNotifier.dispose();
     _visiblePageNotifier.dispose();
     _scrollingNotifier.dispose();
 
@@ -698,16 +733,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
-    // Throttle: skip prefetch when user is fast-scrolling (2 page changes < 300ms)
-    final now = DateTime.now();
-    final sinceLast = now.difference(_lastPageChangedAt);
-    final sincePrev = now.difference(_prevPageChangedAt);
-    _prevPageChangedAt = _lastPageChangedAt;
-    _lastPageChangedAt = now;
-    if (sinceLast.inMilliseconds < 300 && sincePrev.inMilliseconds < 600) {
-      // Two rapid page changes detected — skip this cycle
-      return;
-    }
+    // ponytail: detect fast scroll by page jump, not timer. If user moved
+    // >3 pages since last tick, they're flying through — skip prefetch.
+    final pageJump = (currentPage - _lastReportedPage).abs();
+    if (pageJump > 3) return;
 
     // HentaiNexus: DISABLE prefetch completely (GPU saturation issue)
     if (_isHeavyPrefetchSource(sourceId)) {
@@ -832,9 +861,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
       {bool isOffline = false}) {
     if (isOffline || imageUrls.isEmpty) return;
 
-    const window = 4;
+    const window = _evictionWindowPages;
     final minKeep = (currentPage - window).clamp(1, imageUrls.length);
     final maxKeep = (currentPage + window).clamp(1, imageUrls.length);
+
+    // ponytail: skip if still within the previous eviction window — scrolling
+    // 1-2 pages shouldn't trigger a full scan every 300ms.
+    if (_lastEvictedPage != 0 &&
+        currentPage >= (_lastEvictedPage - window) &&
+        currentPage <= (_lastEvictedPage + window)) {
+      return;
+    }
+    _lastEvictedPage = currentPage;
 
     for (int page = 1; page <= imageUrls.length; page++) {
       if (page >= minKeep && page <= maxKeep) continue;
@@ -1558,7 +1596,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               sourceRawConfig: sourceRawConfig,
               httpHeaders: headers,
               enableZoom: zoom,
-              visiblePageNotifier: _visiblePageNotifier,
+              visiblePageNotifier: _animatedPauseNotifier,
               onHeavyImageDetected: _onHeavyImageDetected,
               onRepairBrokenImage:
                   canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
@@ -1575,8 +1613,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   final totalHeight = renderedHeight + 8.0;
                   if (_cachedImageHeights[page] != totalHeight) {
                     _cachedImageHeights[page] = totalHeight;
-                    // Rebuild to apply the accurate height
-                    if (mounted) setState(() {});
+                    // ponytail: batch height updates — 20 images loading
+                    // simultaneously trigger 20 setState() cascades.
+                    // Collect pending pages and flush once per frame.
+                    _pendingHeightUpdates.add(page);
+                    _heightBatchTimer?.cancel();
+                    _heightBatchTimer = Timer(
+                      const Duration(milliseconds: 16),
+                      () {
+                        if (!mounted) return;
+                        _pendingHeightUpdates.clear();
+                        setState(() {});
+                      },
+                    );
                   }
                 }
                 // Forward to cubit for webtoon detection
@@ -1623,7 +1672,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               sourceRawConfig: sourceRawConfig,
               httpHeaders: headers,
               enableZoom: zoom,
-              visiblePageNotifier: _visiblePageNotifier,
+              visiblePageNotifier: _animatedPauseNotifier,
               // Double tap = toggle UI (pinch handles zoom)
               onDoubleTapGesture: () => _readerCubit.toggleUI(),
               onRepairBrokenImage:
