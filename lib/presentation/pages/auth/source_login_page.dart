@@ -400,6 +400,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       final result = await KuronNative.instance.showLoginWebView(
         url: urls.url,
         autoCloseOnCookie: urls.autoCloseCookie,
+        successUrlFilters: urls.successFilters,
         clearCookies: true,
       );
 
@@ -473,9 +474,11 @@ class _SourceLoginPageState extends State<SourceLoginPage>
 
     final url = webview['url']?.toString().trim();
     final cookieName = webview['autoCloseCookie']?.toString().trim();
+    final rawFilters = webview['successFilters'];
+    final filters = rawFilters is List ? rawFilters.cast<String>() : null;
     if (url == null || url.isEmpty) return null;
 
-    return _LoginUrls(url: url, autoCloseCookie: cookieName);
+    return _LoginUrls(url: url, autoCloseCookie: cookieName, successFilters: filters);
   }
 
   String _mapError(AppLocalizations l10n, String raw) {
@@ -496,9 +499,11 @@ class _SourceLoginPageState extends State<SourceLoginPage>
 class _LoginUrls {
   final String url;
   final String? autoCloseCookie;
+  final List<String>? successFilters;
 
   _LoginUrls({
     required this.url,
     this.autoCloseCookie,
+    this.successFilters,
   });
 }
