@@ -13,6 +13,7 @@ import 'package:logger/logger.dart';
 
 import '../mappers/generic_content_mapper.dart';
 import '../models/source_config_runtime.dart';
+import '../parsers/generic_html_parser.dart';
 import '../parsers/generic_json_parser.dart';
 import '../url_builder/generic_url_builder.dart';
 import 'generic_adapter.dart';
@@ -542,9 +543,118 @@ class GenericRestAdapter implements GenericAdapter {
             );
           }
         }
-      } catch (e, st) {
+      } catch (e) {
         _logger.e('$_sourceId fetchChapterImages (atHome) failed',
-            error: e, stackTrace: st);
+            error: e);
+      }
+    } else if (mode == 'htmlContent') {
+      // HTML-in-JSON mode: chapter response JSON contains HTML with data-src images.
+      // Config:
+      //   "mode": "htmlContent",
+      //   "contentPath": "$.chapter_detail.chapter_content",
+      //   "serverPath": "$.chapter_detail.server",
+      //   "attribute": "data-src"
+      _logger.d('$_sourceId REST htmlContent images mode');
+
+      try {
+        final itemsSelector = _extractJsonSelector(imagesCfg['items']);
+        if (itemsSelector.isEmpty) {
+          _logger.w('$_sourceId htmlContent: missing "items" selector (CSS selector for img tags)');
+          return null;
+        }
+
+        // Fetch chapter content to get images
+        final dynamic chapterEndpointRaw = rawConfig['api']?['endpoints']
+                ?['images'] ??
+            rawConfig['api']?['endpoints']?['pages'];
+        final chapterEndpoint = _getEndpointPath(chapterEndpointRaw);
+        if (chapterEndpoint.isEmpty) {
+          _logger.w('$_sourceId images endpoint not configured');
+          return null;
+        }
+
+        final baseApiUrl = _getBaseUrl(rawConfig);
+        final fullPath = chapterEndpoint.startsWith('/')
+            ? chapterEndpoint
+            : '/$chapterEndpoint';
+
+        var imageUrl = '$baseApiUrl$fullPath';
+        final chapterIdFull = chapterId.trim();
+
+        if (chapterIdFull.contains('/')) {
+          final parts = chapterIdFull.split('/');
+          imageUrl = imageUrl
+              .replaceAll('{id}', parts.first)
+              .replaceAll('{chapter}', parts.skip(1).join('/'))
+              .replaceAll('{chapterId}', parts.skip(1).join('/'))
+              .replaceAll('{chapterIdFull}', chapterIdFull);
+        } else {
+          imageUrl = imageUrl
+              .replaceAll('{id}', chapterIdFull)
+              .replaceAll('{chapter}', chapterIdFull)
+              .replaceAll('{chapterId}', chapterIdFull)
+              .replaceAll('{chapterIdFull}', chapterIdFull);
+        }
+
+        imageUrl = _applyLanguagePlaceholder(imageUrl, rawConfig);
+
+        _logger.d('$_sourceId htmlContent request: $imageUrl');
+
+        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+        final response =
+            await _executeRequest<dynamic>(() => _dio.get<dynamic>(imageUrl));
+        final data = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+
+        // Extract HTML content from JSON
+        final contentPath = (imagesCfg['contentPath'] as String?) ?? r'$.chapter_detail.chapter_content';
+        final serverPath = imagesCfg['serverPath'] as String?;
+        final imgAttribute = (imagesCfg['attribute'] as String?) ?? 'data-src';
+
+        final contentHtml = _parser.extractString(data, FieldSelector(selector: contentPath));
+        if (contentHtml == null || contentHtml.isEmpty) {
+          _logger.w('$_sourceId htmlContent: no HTML content found at $contentPath');
+          return null;
+        }
+
+        // Extract server prefix
+        String? serverPrefix;
+        if (serverPath != null) {
+          serverPrefix = _parser.extractString(data, FieldSelector(selector: serverPath));
+        }
+
+        // Parse HTML with GenericHtmlParser to extract image URLs
+        final htmlParser = GenericHtmlParser(logger: _logger);
+        final doc = htmlParser.parse(contentHtml);
+        final selector = FieldSelector(
+          selector: itemsSelector,
+          attribute: imgAttribute,
+        );
+        var images = htmlParser.extractList(doc, selector);
+
+        // Prefix with server if configured
+        if (serverPrefix != null && serverPrefix.isNotEmpty) {
+          images = images.map((img) {
+            if (img.startsWith('/') || !img.startsWith('http')) {
+              final separator = serverPrefix!.endsWith('/') ? '' : '/';
+              final cleanImg = img.startsWith('/') ? img.substring(1) : img;
+              return '$serverPrefix$separator$cleanImg';
+            }
+            return img;
+          }).toList();
+        }
+
+        if (images.isNotEmpty) {
+          _logger.d('$_sourceId extracted ${images.length} images via htmlContent');
+          return ChapterData(images: images);
+        }
+
+        _logger.w('$_sourceId htmlContent: no images extracted');
+        return null;
+      } catch (e) {
+        _logger.w('$_sourceId fetchChapterImages (htmlContent) failed: $e');
+        return null;
       }
     } else if (mode == 'direct') {
       // Direct image URLs mode (e.g., DoujinDesu v2)
@@ -700,9 +810,9 @@ class GenericRestAdapter implements GenericAdapter {
         return response.data is String
             ? jsonDecode(response.data as String)
             : response.data;
-      } on DioException catch (e, st) {
+      } on DioException catch (e) {
         lastError = e;
-        lastStackTrace = st;
+        lastStackTrace = StackTrace.current;
 
         if (attempt >= maxAttempts || !_shouldRetryAtHomeDioError(e)) {
           rethrow;
@@ -713,9 +823,9 @@ class GenericRestAdapter implements GenericAdapter {
           '($attempt/$maxAttempts): ${e.message}',
         );
         await Future<void>.delayed(Duration(milliseconds: attempt * 250));
-      } catch (e, st) {
+      } catch (e) {
         lastError = e;
-        lastStackTrace = st;
+        lastStackTrace = StackTrace.current;
         if (attempt >= maxAttempts) {
           rethrow;
         }
@@ -1009,9 +1119,9 @@ class GenericRestAdapter implements GenericAdapter {
         totalPages: totalPages,
         totalItems: totalItems,
       );
-    } catch (e, st) {
+    } catch (e) {
       _logger.e('$_sourceId REST new schema search failed',
-          error: e, stackTrace: st);
+          error: e);
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
   }
@@ -1289,9 +1399,39 @@ class GenericRestAdapter implements GenericAdapter {
       switch (type) {
         case 'tagObjects':
           if (path.isNotEmpty) {
-            final objs =
+            final rawObjs =
                 _parser.extractItems(data, FieldSelector(selector: path));
-            result['tagObjects'] = objs;
+            // Support field remapping via `fields` config (e.g., API returns
+            // `tag_name` but mapper expects `name`).
+            final fieldMap = (def['fields'] as Map<String, dynamic>?)
+                ?.cast<String, Map<String, dynamic>>();
+            if (fieldMap != null && fieldMap.isNotEmpty) {
+              final objs = rawObjs.map((obj) {
+                final mapped = <String, dynamic>{};
+                for (final entry in fieldMap.entries) {
+                  final srcSel = entry.value['selector'] as String? ?? '';
+                  if (srcSel.isNotEmpty) {
+                    // Use extractRaw to preserve original types (int for IDs).
+                    final raw = _parser.extractRaw(
+                      obj,
+                      FieldSelector(selector: srcSel),
+                    );
+                    if (raw != null) {
+                      // Flatten single-element lists.
+                      if (raw is List && raw.length == 1) {
+                        mapped[entry.key] = raw.first;
+                      } else {
+                        mapped[entry.key] = raw;
+                      }
+                    }
+                  }
+                }
+                return mapped;
+              }).toList();
+              result['tagObjects'] = objs;
+            } else {
+              result['tagObjects'] = rawObjs;
+            }
           }
           break;
 
