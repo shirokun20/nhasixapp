@@ -27,6 +27,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
+  bool _justLoggedIn = false;
 
   @override
   void initState() {
@@ -73,6 +74,12 @@ class _SourceLoginPageState extends State<SourceLoginPage>
                 ..showSnackBar(
                   SnackBar(content: Text(_mapError(l10n, state.errorMessage!))),
                 );
+            }
+            if (state.authenticated && _justLoggedIn) {
+              _justLoggedIn = false;
+              Future.delayed(const Duration(milliseconds: 600), () {
+                if (context.mounted) Navigator.of(context).pop();
+              });
             }
           },
           builder: (context, state) {
@@ -405,6 +412,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
             cookies.any((c) => c.startsWith('${urls.autoCloseCookie}='));
 
         if (hasSession) {
+          _justLoggedIn = true;
           await _saveWebViewSession(cookies, urls.autoCloseCookie);
           if (context.mounted) {
             context.read<SourceAuthCubit>().initialize(widget.sourceId);
