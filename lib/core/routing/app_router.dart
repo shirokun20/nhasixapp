@@ -19,7 +19,6 @@ import 'package:nhasixapp/presentation/pages/offline/offline_series_detail_scree
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
-import 'package:nhasixapp/presentation/pages/crotpedia/crotpedia_login_page.dart';
 import 'package:nhasixapp/presentation/pages/auth/captcha_solver_page.dart';
 import 'package:nhasixapp/presentation/pages/auth/source_login_page.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
@@ -403,7 +402,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
           context,
           state,
-          const CrotpediaLoginPage(),
+          SourceLoginPage(sourceId: 'crotpedia'),
           type: RouteTransitionType.fadeSlide,
         ),
       ),

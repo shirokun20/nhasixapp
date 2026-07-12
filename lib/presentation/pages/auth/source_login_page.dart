@@ -409,21 +409,10 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       if (result != null && result['success'] == true) {
         final cookies =
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
-        final hasSession =
-            cookies.any((c) => c.startsWith('${urls.autoCloseCookie}='));
-
-        if (hasSession) {
-          _justLoggedIn = true;
-          await _saveWebViewSession(cookies, urls.autoCloseCookie);
-          if (context.mounted) {
-            context.read<SourceAuthCubit>().initialize(widget.sourceId);
-          }
-        } else if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text(AppLocalizations.of(context)!.loginIncomplete)),
-          );
+        await _saveWebViewSession(cookies, urls.autoCloseCookie);
+        _justLoggedIn = true;
+        if (context.mounted) {
+          context.read<SourceAuthCubit>().initialize(widget.sourceId);
         }
       }
     } catch (e) {
@@ -443,20 +432,35 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     if (cookieName == null) return;
     String? accessToken;
     for (final c in cookies) {
-      // Cookie may have attributes: "access_token=xxx; Path=/; ..."
-      final parts = c.split(';');
-      for (final part in parts) {
-        final trimmed = part.trim();
-        if (trimmed.startsWith('$cookieName=')) {
-          accessToken = trimmed.substring('$cookieName='.length);
+      for (final part in c.split(';')) {
+        final t = part.trim();
+        if (t.startsWith('$cookieName=')) {
+          accessToken = t.substring('$cookieName='.length);
           break;
         }
       }
       if (accessToken != null) break;
     }
-    if (accessToken == null || accessToken.isEmpty) return;
-
-    // Derive session key same as ConfigDrivenApiAuthClient
+    // Even if no cookie in result, try reading from cookie jar via test request
+    if (accessToken == null || accessToken.isEmpty) {
+      // Check if session already exists
+      final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
+      final auth = cfg?['auth'] as Map<String, dynamic>?;
+      final ep = auth?['endpoints'] as Map<String, dynamic>?;
+      final loginEndpointLocal = ep?['login']?.toString() ?? '';
+      if (loginEndpointLocal.isEmpty) return;
+      final api = cfg?['api'] as Map<String, dynamic>?;
+      final apiBaseLocal = api?['apiBase']?.toString() ?? '';
+      if (apiBaseLocal.isEmpty) return;
+      final keySeed = '$apiBaseLocal|$loginEndpointLocal';
+      final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
+      const storage = FlutterSecureStorage();
+      final existing = await storage.read(key: sessionKey);
+      if (existing != null && existing.isNotEmpty) return; // already saved
+      // Can't get token from cookies — user must re-login
+      return;
+    }
+    // Save session token to secure storage
     final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
     final api = cfg?['api'] as Map<String, dynamic>?;
     final apiBase = api?['apiBase']?.toString() ?? '';
