@@ -443,18 +443,26 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     if (cookieName == null) return;
     String? accessToken;
     for (final c in cookies) {
-      if (c.startsWith('$cookieName=')) {
-        accessToken = c.substring('$cookieName='.length);
-        break;
+      // Cookie may have attributes: "access_token=xxx; Path=/; ..."
+      final parts = c.split(';');
+      for (final part in parts) {
+        final trimmed = part.trim();
+        if (trimmed.startsWith('$cookieName=')) {
+          accessToken = trimmed.substring('$cookieName='.length);
+          break;
+        }
       }
+      if (accessToken != null) break;
     }
     if (accessToken == null || accessToken.isEmpty) return;
 
     // Derive session key same as ConfigDrivenApiAuthClient
-    final config = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
-    final apiBase = ((config?['api'] as Map?)??{})['apiBase']?.toString() ?? '';
-    final endpoints = (config?['auth'] as Map?)??['endpoints'] as Map? ?? {};
-    final loginEndpoint = endpoints['login']?.toString() ?? '';
+    final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
+    final api = cfg?['api'] as Map<String, dynamic>?;
+    final apiBase = api?['apiBase']?.toString() ?? '';
+    final auth = cfg?['auth'] as Map<String, dynamic>?;
+    final ep = auth?['endpoints'] as Map<String, dynamic>?;
+    final loginEndpoint = ep?['login']?.toString() ?? '';
     final keySeed = '$apiBase|$loginEndpoint';
     final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
     const storage = FlutterSecureStorage();
