@@ -1,23 +1,28 @@
 part of 'reader_cubit.dart';
 
-/// Base state for reader screen
+/// Reader status enum — replaces subclass pattern (ReaderLoading/Loaded/Error)
+enum ReaderStatus { initial, loading, loaded, error }
+
+/// State for reader screen
 class ReaderState extends Equatable {
   const ReaderState({
+    this.status = ReaderStatus.initial,
     this.content,
     this.currentPage,
     this.readingMode,
     this.showUI,
     this.keepScreenOn,
     this.enableZoom,
-    this.readingTimer,
+    this.readingTimer = Duration.zero,
     this.message,
-    this.isOfflineMode,
+    this.isOfflineMode = false,
     this.imageMetadata,
     this.chapterData,
     this.currentChapter,
-    this.tapDirection,
+    this.tapDirection = TapDirection.normal,
   });
 
+  final ReaderStatus status;
   final Content? content;
   final int? currentPage;
   final ReadingMode? readingMode;
@@ -32,62 +37,7 @@ class ReaderState extends Equatable {
   final Chapter? currentChapter;
   final TapDirection? tapDirection;
 
-  @override
-  List<Object?> get props => [
-        content,
-        currentPage,
-        readingMode,
-        showUI,
-        keepScreenOn,
-        enableZoom,
-        readingTimer,
-        message,
-        isOfflineMode,
-        imageMetadata,
-        chapterData,
-        currentChapter,
-        tapDirection,
-      ];
-
-  static const _undefined = Object();
-
-  ReaderState copyWith({
-    Content? content,
-    Object? currentPage = _undefined,
-    ReadingMode? readingMode,
-    Object? showUI = _undefined,
-    Object? keepScreenOn = _undefined,
-    Object? enableZoom = _undefined,
-    Duration? readingTimer,
-    Object? message = _undefined,
-    Object? isOfflineMode = _undefined,
-    List<ImageMetadata>? imageMetadata,
-    ChapterData? chapterData,
-    Chapter? currentChapter,
-    TapDirection? tapDirection,
-  }) {
-    return ReaderState(
-      content: content ?? this.content,
-      currentPage:
-          currentPage == _undefined ? this.currentPage : currentPage as int?,
-      readingMode: readingMode ?? this.readingMode,
-      showUI: showUI == _undefined ? this.showUI : showUI as bool?,
-      keepScreenOn: keepScreenOn == _undefined
-          ? this.keepScreenOn
-          : keepScreenOn as bool?,
-      enableZoom:
-          enableZoom == _undefined ? this.enableZoom : enableZoom as bool?,
-      readingTimer: readingTimer ?? this.readingTimer,
-      message: message == _undefined ? this.message : message as String?,
-      isOfflineMode: isOfflineMode == _undefined
-          ? this.isOfflineMode
-          : isOfflineMode as bool?,
-      imageMetadata: imageMetadata ?? this.imageMetadata,
-      chapterData: chapterData ?? this.chapterData,
-      currentChapter: currentChapter ?? this.currentChapter,
-      tapDirection: tapDirection ?? this.tapDirection,
-    );
-  }
+  bool get isLoaded => status == ReaderStatus.loaded && content != null;
 
   /// Get reading progress as percentage (0.0 to 1.0)
   double get progress {
@@ -96,14 +46,12 @@ class ReaderState extends Equatable {
   }
 
   /// Get reading progress as percentage (0 to 100)
-  int get progressPercentage {
-    return (progress * 100).round();
-  }
+  int get progressPercentage => (progress * 100).round();
 
   /// Check if this is the first page
   bool get isFirstPage => (currentPage ?? 1) <= 1;
 
-  /// Check if this is the last page (of actual content, not including navigation page)
+  /// Check if this is the last page
   bool get isLastPage => (currentPage ?? 1) >= (content?.pageCount ?? 1);
 
   /// Get current image URL
@@ -116,69 +64,154 @@ class ReaderState extends Equatable {
     }
     return content!.imageUrls[currentPage! - 1];
   }
-}
 
-/// Initial state
-class ReaderInitial extends ReaderState {
-  const ReaderInitial();
-}
+  // === Focused copy methods (no sentinel, no generic copyWith) ===
 
-/// Loading state
-class ReaderLoading extends ReaderState {
-  ReaderLoading(ReaderState prevState)
-      : super(
-          content: prevState.content,
-          currentPage: prevState.currentPage,
-          readingMode: prevState.readingMode,
-          showUI: prevState.showUI,
-          keepScreenOn: prevState.keepScreenOn,
-          enableZoom: prevState.enableZoom,
-          readingTimer: prevState.readingTimer,
-          message: prevState.message,
-          isOfflineMode: prevState.isOfflineMode,
-          imageMetadata: prevState.imageMetadata,
-          chapterData: prevState.chapterData,
-          currentChapter: prevState.currentChapter,
-          tapDirection: prevState.tapDirection,
-        );
-}
+  ReaderState copyWithPage(int page) => ReaderState(
+    status: status,
+    content: content,
+    currentPage: page,
+    readingMode: readingMode,
+    showUI: showUI,
+    keepScreenOn: keepScreenOn,
+    enableZoom: enableZoom,
+    readingTimer: readingTimer,
+    message: message,
+    isOfflineMode: isOfflineMode,
+    imageMetadata: imageMetadata,
+    chapterData: chapterData,
+    currentChapter: currentChapter,
+    tapDirection: tapDirection,
+  );
 
-/// Loaded state with content and basic reading functionality
-class ReaderLoaded extends ReaderState {
-  ReaderLoaded(ReaderState prevState)
-      : super(
-          content: prevState.content,
-          currentPage: prevState.currentPage ?? 1,
-          readingMode: prevState.readingMode ?? ReadingMode.singlePage,
-          showUI: prevState.showUI ?? true,
-          keepScreenOn: prevState.keepScreenOn ?? false,
-          enableZoom: prevState.enableZoom ?? true,
-          readingTimer: prevState.readingTimer ?? Duration.zero,
-          message: prevState.message,
-          isOfflineMode: prevState.isOfflineMode ?? false,
-          imageMetadata: prevState.imageMetadata,
-          chapterData: prevState.chapterData,
-          currentChapter: prevState.currentChapter,
-          tapDirection: prevState.tapDirection ?? TapDirection.normal,
-        );
-}
+  ReaderState copyWithUI({
+    bool? showUI,
+    bool? keepScreenOn,
+    bool? enableZoom,
+  }) =>
+      ReaderState(
+        status: status,
+        content: content,
+        currentPage: currentPage,
+        readingMode: readingMode,
+        showUI: showUI ?? this.showUI,
+        keepScreenOn: keepScreenOn ?? this.keepScreenOn,
+        enableZoom: enableZoom ?? this.enableZoom,
+        readingTimer: readingTimer,
+        message: message,
+        isOfflineMode: isOfflineMode,
+        imageMetadata: imageMetadata,
+        chapterData: chapterData,
+        currentChapter: currentChapter,
+        tapDirection: tapDirection,
+      );
 
-/// Error state
-class ReaderError extends ReaderState {
-  ReaderError(ReaderState prevState)
-      : super(
-          content: prevState.content,
-          currentPage: prevState.currentPage,
-          readingMode: prevState.readingMode,
-          showUI: prevState.showUI,
-          keepScreenOn: prevState.keepScreenOn,
-          enableZoom: prevState.enableZoom,
-          readingTimer: prevState.readingTimer,
-          message: prevState.message,
-          isOfflineMode: prevState.isOfflineMode,
-          imageMetadata: prevState.imageMetadata,
-          chapterData: prevState.chapterData,
-          currentChapter: prevState.currentChapter,
-          tapDirection: prevState.tapDirection,
-        );
+  ReaderState copyWithContent({
+    Content? content,
+    List<ImageMetadata>? imageMetadata,
+    ChapterData? chapterData,
+    Chapter? currentChapter,
+  }) =>
+      ReaderState(
+        status: status,
+        content: content ?? this.content,
+        currentPage: currentPage,
+        readingMode: readingMode,
+        showUI: showUI,
+        keepScreenOn: keepScreenOn,
+        enableZoom: enableZoom,
+        readingTimer: readingTimer,
+        message: message,
+        isOfflineMode: isOfflineMode,
+        imageMetadata: imageMetadata ?? this.imageMetadata,
+        chapterData: chapterData ?? this.chapterData,
+        currentChapter: currentChapter ?? this.currentChapter,
+        tapDirection: tapDirection,
+      );
+
+  ReaderState copyWithMessage(String? message) => ReaderState(
+    status: status,
+    content: content,
+    currentPage: currentPage,
+    readingMode: readingMode,
+    showUI: showUI,
+    keepScreenOn: keepScreenOn,
+    enableZoom: enableZoom,
+    readingTimer: readingTimer,
+    message: message,
+    isOfflineMode: isOfflineMode,
+    imageMetadata: imageMetadata,
+    chapterData: chapterData,
+    currentChapter: currentChapter,
+    tapDirection: tapDirection,
+  );
+
+  ReaderState copyWithMode({
+    ReadingMode? readingMode,
+    TapDirection? tapDirection,
+  }) =>
+      ReaderState(
+        status: status,
+        content: content,
+        currentPage: currentPage,
+        readingMode: readingMode ?? this.readingMode,
+        showUI: showUI,
+        keepScreenOn: keepScreenOn,
+        enableZoom: enableZoom,
+        readingTimer: readingTimer,
+        message: message,
+        isOfflineMode: isOfflineMode,
+        imageMetadata: imageMetadata,
+        chapterData: chapterData,
+        currentChapter: currentChapter,
+        tapDirection: tapDirection ?? this.tapDirection,
+      );
+
+  ReaderState copyWithTimer(Duration readingTimer) => ReaderState(
+    status: status,
+    content: content,
+    currentPage: currentPage,
+    readingMode: readingMode,
+    showUI: showUI,
+    keepScreenOn: keepScreenOn,
+    enableZoom: enableZoom,
+    readingTimer: readingTimer,
+    message: message,
+    isOfflineMode: isOfflineMode,
+    imageMetadata: imageMetadata,
+    chapterData: chapterData,
+    currentChapter: currentChapter,
+    tapDirection: tapDirection,
+  );
+
+  ReaderState copyWithOffline(bool isOfflineMode) => ReaderState(
+    status: status,
+    content: content,
+    currentPage: currentPage,
+    readingMode: readingMode,
+    showUI: showUI,
+    keepScreenOn: keepScreenOn,
+    enableZoom: enableZoom,
+    readingTimer: readingTimer,
+    message: message,
+    isOfflineMode: isOfflineMode,
+    imageMetadata: imageMetadata,
+    chapterData: chapterData,
+    currentChapter: currentChapter,
+    tapDirection: tapDirection,
+  );
+
+  @override
+  List<Object?> get props => [
+    status,
+    content?.id,
+    currentPage,
+    readingMode,
+    showUI,
+    keepScreenOn,
+    enableZoom,
+    isOfflineMode,
+    currentChapter,
+    tapDirection,
+  ];
 }

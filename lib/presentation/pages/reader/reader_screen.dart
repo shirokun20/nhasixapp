@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/scheduler.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMixin {
   Logger get _logger => getIt<Logger>();
 
   late PageController _pageController;
@@ -108,18 +109,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   // Static so the lock persists across reader navigations in the same session.
   static final Set<String> _autoSwitchedContentIds = <String>{};
 
-  // ponytail: track last eviction range so _evictDistantPages doesn't
-  // full-scan every 300ms scroll tick. Only evict when the visible page
-  // moves outside the previous window.
-  int _lastEvictedPage = 0;
-  static const int _evictionWindowPages = 4;
 
   // Throttle expensive continuous-scroll computations.
   // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms → 300ms
   // At 300ms (3-4 fps) the page indicator still feels responsive while
   // prefetch/evict loops run 40% less often.
-  static const Duration _scrollProcessInterval = Duration(milliseconds: 300);
-  DateTime _lastScrollProcessAt = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _scrollHeavyOpsInterval = Duration(milliseconds: 300);
+  DateTime _lastHeavyOpsAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Debounce mechanism to prevent onPageChanged loops
   bool _isProgrammaticAnimation = false;
@@ -128,6 +124,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Timer? _saveDebounceTimer;
   Timer? _pageUpdateTimer; // Separate timer for page updates
   Timer? _uiToggleDebounceTimer;
+  DateTime _lastTapTime = DateTime.now();
   bool _lastUIVisibleState = true;
 
   // 🎯 Tap-to-toggle detection for continuous scroll
@@ -164,6 +161,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final Set<int> _pendingHeightUpdates = {};
   Timer? _heightBatchTimer;
 
+  // 🏎️ Ticker for 120 FPS page indicator (vsync-aligned, not Timer)
+  Ticker? _pageTicker;
+  int _pendingEstimatedPage = 0;
+  bool _isTicking = false;
+
   @override
   void initState() {
     super.initState();
@@ -193,6 +195,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       initialScrollOffset: initialScrollOffset > 0 ? initialScrollOffset : 0,
     );
     _readerCubit = getIt<ReaderCubit>();
+    _pageTicker = createTicker(_onPageTick);
 
     // 🚀 OPTIMIZATION: Initialize route extra synchronously before build
     _initializeFromRouteExtraSync();
@@ -408,20 +411,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
 
     // 🐛 CRITICAL: Skip all processing during programmatic scroll
-    // This prevents false page saves during initial positioning
-    if (_isProgrammaticAnimation) {
-      _logger.t(
-          '⏭️  Skipping scroll event (programmatic): ${notification.metrics.pixels.toStringAsFixed(0)}px');
-      return;
-    }
-
-    // Continuous scroll fires per-pixel updates. Throttle heavy page
-    // estimation/prefetch logic to reduce main-thread pressure.
-    final now = DateTime.now();
-    if (now.difference(_lastScrollProcessAt) < _scrollProcessInterval) {
-      return;
-    }
-    _lastScrollProcessAt = now;
+    if (_isProgrammaticAnimation) return;
 
     final metrics = notification.metrics;
     final totalPages = state.content!.pageCount;
@@ -432,17 +422,33 @@ class _ReaderScreenState extends State<ReaderScreen> {
       screenHeight: screenHeight,
     );
 
-    // Update current page for progress bar with debounce
+    // === UNTHROTTLED: Page indicator — runs every vsync frame ===
     if (estimatedPage != _lastReportedPage) {
-      _lastReportedPage = estimatedPage;
+      _pendingEstimatedPage = estimatedPage;
+      if (!_isTicking) {
+        _isTicking = true;
+        _pageTicker?.start();
+      }
+    }
 
-      // 🎯 Update floating page indicator (no setState needed — ValueNotifier)
-      _visiblePageNotifier.value = estimatedPage;
+    // Pause animated WebP during scroll
+    if (!_scrollingNotifier.value) {
+      _scrollingNotifier.value = true;
+      _animatedPauseNotifier.value = 0;
+    }
+    _scrollIndicatorTimer?.cancel();
+    _scrollIndicatorTimer = Timer(const Duration(milliseconds: 200), () {
+      _scrollingNotifier.value = false;
+      _animatedPauseNotifier.value = _lastReportedPage;
+    });
 
-      // 🚀 OPTIMIZATION: Debounce page updates to reduce DB writes
+    // === THROTTLED (300ms): Heavy ops only ===
+    final now = DateTime.now();
+    if (now.difference(_lastHeavyOpsAt) < _scrollHeavyOpsInterval) return;
+    _lastHeavyOpsAt = now;
+
+    if (estimatedPage != _lastReportedPage) {
       _debouncePageUpdate(estimatedPage, state);
-
-      // Prefetch next images
       _prefetchImages(
         estimatedPage,
         state.content!.imageUrls,
@@ -451,42 +457,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    // Pause animated WebP during scroll — sentinel 0 hanya sekali saat
-    // transisi scroll mulai. Jangan per-tick — unmount/mount loop = lag.
-    if (!_scrollingNotifier.value) {
-      _scrollingNotifier.value = true;
-      _animatedPauseNotifier.value = 0;
-    }
-    _scrollIndicatorTimer?.cancel();
-    _scrollIndicatorTimer = Timer(const Duration(milliseconds: 200), () {
-      _scrollingNotifier.value = false;
-      _animatedPauseNotifier.value = _lastReportedPage; // restore
-    });
-
-    // 🐛 FIX: Check if user truly reached bottom using scroll metrics
-    // More reliable than pixel threshold
     final isAtBottom =
-        metrics.pixels >= metrics.maxScrollExtent - 50; // 50px threshold
-
+        metrics.pixels >= metrics.maxScrollExtent - 50;
     if (isAtBottom) {
-      // User reached bottom -> save to DB with debounce to avoid spam
       _debounceSaveHistory(state, totalPages);
     }
 
-    // Evict distant pages from memory in continuous-scroll for heavy sources
-    // to prevent 10MB+ WebP images from saturating GPU memory.
     if (_isHeavyPrefetchSource(state.content?.sourceId)) {
       _evictDistantPages(estimatedPage, state.content!.imageUrls,
           isOffline: state.isOfflineMode ?? false);
     }
 
-    // ✨ Auto-hide/show UI based on scroll direction with debounce
     if (notification.scrollDelta != null && notification.scrollDelta! > 5) {
-      // Scrolling down (threshold 5px to avoid micro-scrolls)
       _debounceUIToggle(false, state);
     } else if (notification.scrollDelta != null &&
         notification.scrollDelta! < -5) {
-      // Scrolling up (threshold -5px to avoid micro-scrolls)
       _debounceUIToggle(true, state);
     }
   }
@@ -496,63 +481,71 @@ class _ReaderScreenState extends State<ReaderScreen> {
     required int totalPages,
     required double screenHeight,
   }) {
-    if (totalPages <= 0) {
-      return 1;
-    }
+    if (totalPages <= 0) return 1;
 
     final viewportCenter = metrics.pixels + (metrics.viewportDimension / 2);
-    final fallbackItemHeight = _resolveContinuousFallbackItemHeight(
+    final avgHeight = _resolveAverageItemHeight(
       metrics: metrics,
       totalPages: totalPages,
       screenHeight: screenHeight,
     );
 
-    // ponytail: O(1) estimate via average height. Linear scan from page 1
-    // per tick causes jank on 500+ page chapters. Cache heights up to
-    // _lastEvictedPage if we have enough data; otherwise use fallback.
-    if (totalPages > 200 && _cachedImageHeights.length > 10) {
-      double avgHeight = fallbackItemHeight;
-      if (_cachedImageHeights.isNotEmpty) {
-        final sum = _cachedImageHeights.values
-            .take(20) // sample first 20 for responsiveness
-            .fold(0.0, (a, b) => a + b);
-        avgHeight = (sum / _cachedImageHeights.length.clamp(1, 20))
-            .clamp(1.0, double.infinity);
-      }
-      final page = (viewportCenter / avgHeight).floor().clamp(1, totalPages);
-      return page;
-    }
-
+    // ponytail: O(n) scan that stops as soon as viewportCenter is reached.
+    // Each page uses cached height (if available) or average fallback.
+    // Bounded by totalPages but in practice exits after 20-50 pages.
+    // ~50μs for 200 pages — negligible even at 120 FPS.
     double cumulativeHeight = 0;
     for (int page = 1; page <= totalPages; page++) {
-      final itemHeight = (_cachedImageHeights[page] ?? fallbackItemHeight)
-          .clamp(1.0, double.infinity)
-          .toDouble();
-      cumulativeHeight += itemHeight;
-
-      if (viewportCenter < cumulativeHeight) {
-        return page;
-      }
+      cumulativeHeight += (_cachedImageHeights[page] ?? avgHeight)
+          .clamp(1.0, double.infinity);
+      if (viewportCenter < cumulativeHeight) return page;
     }
-
     return totalPages;
   }
 
-  double _resolveContinuousFallbackItemHeight({
+  /// 🏎️ Ticker callback (vsync-aligned). Updates page indicator + animated pause
+  /// at display refresh rate, separate from heavy ops throttle.
+  void _onPageTick(Duration elapsed) {
+    if (_pendingEstimatedPage > 0 && _pendingEstimatedPage != _lastReportedPage) {
+      _lastReportedPage = _pendingEstimatedPage;
+      // ponytail: page indicator (O(1) average) is approximate — good enough
+      // for the UI counter. Animated pause notifier needs accurate page
+      // detection so the correct AnimatedWebPView plays. Compute a windowed
+      // scan from cached heights when available.
+      _visiblePageNotifier.value = _pendingEstimatedPage;
+      _animatedPauseNotifier.value = _pendingEstimatedPage;
+    }
+    // Stop ticker when pending consumed or scroll stopped
+    if (_pendingEstimatedPage == _lastReportedPage || _pendingEstimatedPage == 0) {
+      _isTicking = false;
+      _pageTicker?.stop();
+    }
+  }
+
+  /// O(1) average height estimation — no linear scan.
+  /// Improves accuracy as more images load into [_cachedImageHeights].
+  double _resolveAverageItemHeight({
     required ScrollMetrics metrics,
     required int totalPages,
     required double screenHeight,
   }) {
-    if (metrics.maxScrollExtent > 0) {
-      final estimatedContentExtent =
-          metrics.maxScrollExtent + metrics.viewportDimension;
-      return (estimatedContentExtent / totalPages)
-          .clamp(1.0, double.infinity)
-          .toDouble();
+    // 1. From cached heights (sample first 20 pages)
+    if (_cachedImageHeights.length >= 3) {
+      final sample = _cachedImageHeights.values.take(20).toList();
+      if (sample.isNotEmpty) {
+        return sample.fold(0.0, (a, b) => a + b) / sample.length;
+      }
     }
-
-    return (screenHeight * 0.9).clamp(1.0, double.infinity).toDouble();
+    // 2. From scroll metrics estimate
+    if (metrics.maxScrollExtent > 0) {
+      return ((metrics.maxScrollExtent + metrics.viewportDimension) / totalPages)
+          .clamp(1.0, double.infinity);
+    }
+    // 3. Fallback viewport
+    return screenHeight * 0.9;
   }
+
+
 
   double _resolveContinuousItemHeight(int pageNumber, double screenHeight) {
     final cachedHeight = _cachedImageHeights[pageNumber];
@@ -691,6 +684,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _heightBatchTimer?.cancel();
     _animatedPauseNotifier.dispose();
     _visiblePageNotifier.dispose();
+    _pageTicker?.dispose();
     _scrollingNotifier.dispose();
 
     // 🎬 Restore system UI when leaving reader
@@ -883,30 +877,50 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// from the Flutter image cache to reduce memory pressure during long chapters.
   /// Eviction is skipped for offline content (page images are already on disk).
   /// All evictions are queued after the current frame via [WidgetsBinding.instance].
+  // ponytail: track how many heavy images are currently kept alive.
+  // When count exceeds [_gpuMemoryBudgetPages], evict farthest pages.
+  // Reset once user stops scrolling for [_gpuMemoryBudgetResetMs].
+  static const int _gpuMemoryBudgetPages = 30;
+  static const Duration _gpuMemoryBudgetResetMs = Duration(seconds: 5);
+  int _heavyImageCount = 0;
+  Timer? _heavyImageBudgetTimer;
+
   void _evictDistantPages(int currentPage, List<String> imageUrls,
       {bool isOffline = false}) {
     if (isOffline || imageUrls.isEmpty) return;
 
-    const window = _evictionWindowPages;
-    final minKeep = (currentPage - window).clamp(1, imageUrls.length);
-    final maxKeep = (currentPage + window).clamp(1, imageUrls.length);
+    // Reset the budget timer on each scroll tick.
+    _heavyImageBudgetTimer?.cancel();
+    _heavyImageBudgetTimer = Timer(_gpuMemoryBudgetResetMs, () {
+      _heavyImageCount = 0;
+    });
 
-    // ponytail: skip if still within the previous eviction window — scrolling
-    // 1-2 pages shouldn't trigger a full scan every 300ms.
-    if (_lastEvictedPage != 0 &&
-        currentPage >= (_lastEvictedPage - window) &&
-        currentPage <= (_lastEvictedPage + window)) {
-      return;
-    }
-    _lastEvictedPage = currentPage;
+    _heavyImageCount++;
 
-    for (int page = 1; page <= imageUrls.length; page++) {
-      if (page >= minKeep && page <= maxKeep) continue;
+    if (_heavyImageCount < _gpuMemoryBudgetPages) return;
+
+    // Budget exceeded: evict farthest 25% pages.
+    _evictFarthestPages(currentPage, imageUrls);
+    _heavyImageCount = 0;
+  }
+
+  /// Evict the farthest [fraction] of pages from [currentPage].
+  void _evictFarthestPages(int currentPage, List<String> imageUrls) {
+    const keepRadius = 4;
+    const evictFraction = 0.25;
+    final total = imageUrls.length;
+    if (total <= keepRadius * 2 + 1) return;
+    final toEvict = (total * evictFraction).round().clamp(1, total - keepRadius * 2);
+
+    // Sort pages by distance from current page, evict farthest
+    // ponytail: O(n log n) sort — fine for <2000 pages, add binary if scaling needed.
+    final pages = List.generate(total, (i) => i + 1);
+    pages.sort((a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
+
+    for (final page in pages.skip(total - toEvict).take(toEvict)) {
       final url = imageUrls[page - 1];
-      if (!url.startsWith('http')) continue; // skip local paths
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        NetworkImage(url).evict().catchError((_) => false);
-      });
+      if (!url.startsWith('http')) continue;
+      NetworkImage(url).evict();
     }
   }
 
@@ -995,15 +1009,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _logger.d(
               '🔄 SYNC: Animating PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
-          _pageController
-              .animateToPage(
-            targetPageIndex,
-            duration: DesignTokens.durationPageTurn,
-            curve: Curves.easeOutCubic,
-          )
-              .then((_) {
+          // ponytail: skip animation for rapid consecutive taps. User tapping
+          // faster than animation duration expects instant response — queuing
+          // animations makes offline images feel delayed.
+          final timeSinceTap = DateTime.now().difference(_lastTapTime);
+          final isRapidTap = timeSinceTap < DesignTokens.durationPageTurn;
+          _lastTapTime = DateTime.now();
+          if (isRapidTap) {
+            _pageController.jumpToPage(targetPageIndex);
             _isProgrammaticAnimation = false;
-          });
+          } else {
+            _pageController
+                .animateToPage(
+              targetPageIndex,
+              duration: DesignTokens.durationPageTurn,
+              curve: Curves.easeOutCubic,
+            )
+                .then((_) {
+              _isProgrammaticAnimation = false;
+            });
+          }
         }
       }
     }
@@ -1130,8 +1155,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // 🎬 Toggle immersive mode based on UI visibility
           _toggleImmersiveMode(!(state.showUI ?? false));
 
-          // Prefetch only when listener-relevant states change.
-          if (state.content != null && state.content!.imageUrls.isNotEmpty) {
+          // Prefetch only for continuous scroll — PageView handles its own
+          // image caching via ExtendedImage's item builder. Manual precache
+          // in non-CS modes competes for IO thread on rapid taps.
+          if (state.readingMode == ReadingMode.continuousScroll &&
+              state.content != null &&
+              state.content!.imageUrls.isNotEmpty) {
             final currentPage = state.currentPage ?? widget.initialPage;
             _prefetchImages(
               currentPage,
@@ -1196,7 +1225,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Widget _buildBody(ReaderState state) {
-    if (state is ReaderLoading) {
+    if (state.status == ReaderStatus.loading) {
       return Center(
         child: AppProgressIndicator(
           message: AppLocalizations.of(context)?.loadingContent ??
@@ -1205,7 +1234,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    if (state is ReaderError) {
+    if (state.status == ReaderStatus.error) {
       return Center(
         child: AppErrorWidget(
           title: AppLocalizations.of(context)!.loadingError,

@@ -8,8 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+
+### 🔧 Changed
+
+- **State management cleanup**: Replaced `ReaderInitial`/`ReaderLoading`/`ReaderLoaded`/`ReaderError` subclass pattern with `ReaderStatus` enum + single `ReaderState`. Removed `_undefined` sentinel `copyWith` — replaced with 7 focused copy methods (`copyWithPage`, `copyWithUI`, `copyWithContent`, `copyWithMessage`, `copyWithMode`, `copyWithTimer`, `copyWithOffline`). Reduced `Equatable.props` — `content?.id` instead of full object, removed `readingTimer`/`message`/`isOfflineMode` from equality comparison.
+- **BlocListener prefetch scoped to CS only**: Removed redundant `_prefetchImages` call for singlePage/verticalPage modes — ExtendedImage handles its own caching via PageView item builder.
+- **Rapid non-CS page sync**: Detects consecutive taps faster than 200ms and skips `animateToPage` — uses `jumpToPage` directly.
+- **Removed stale eviction fields**: `_lastEvictedPage`/`_evictionWindowPages` replaced by budget-based eviction.
+- **Removed `_resolveContinuousFallbackItemHeight`**: Replaced by `_resolveAverageItemHeight` + cached-heights scan.
+
 ### ✨ Added
 
+- **Dual-rate scroll processing**: Page indicator (via vsync-aligned `Ticker`) updates at 120 FPS, while heavy ops (prefetch/evict/history) remain throttled at 300ms. Zero extra cost when idle.
+- **GPU memory budget eviction**: Tracks heavy image count via `_heavyImageCount` — evicts farthest 25% pages only when budget exceeded (30 images within 5s window). No evict on low-memory chapters.
+- **Rapid tap detection**: Non-CS page transitions skip `animateToPage` (200ms) when user taps faster than animation duration — jump directly for instant response.
 - **WebP VP8X chunk parsing for native image dimensions**: `_inferNativeAnimatedCapableExtensionFromFileSync` now parses WebP VP8X chunk (width/height) and prefers WebP dimensions over AVIF `ispe` header for native AnimatedWebPView sizing. Fallback to AVIF dimensions when VP8X unavailable. Reduces scroll placeholder fallback from 90%→50% viewport height. AVIF pre-check now fires `onImageLoaded` via `addPostFrameCallback` for faster height cache population.
 - **Responsive image sizing with cached height resolution in ReaderScreen**: `_resolveContinuousItemHeight()` uses neighbor-page cached heights (page±1, ±2 then last) before falling back to screen percentage. `ExtendedImageReaderWidget` wrapped in `SizedBox` with resolved height to prevent scroll jump during rebuild. Loading indicator redesigned for continuous scroll: card width 280px, linear progress bar, compact headline/detail layout.
 - **DynamicFormSearchUI Advanced Filters panel**: Added expandable "Advanced Filters" toggle with animated expand/collapse (AnimatedSize + AnimatedSwitcher), active-filter badge count, and smooth chevron rotation — matching the polished UX of `QueryStringSearchUI`. Primary fields (text search, sort) remain always visible; all other fields hide behind the toggle panel.
@@ -763,3 +775,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 |:--------|:-----|:-----|:------------|
 | 0.6.0 | 2025-12-12 | Feature | Offline export & database-first |
 | 0.5.0 | 2025-11-26 | Release | Initial public release |
+

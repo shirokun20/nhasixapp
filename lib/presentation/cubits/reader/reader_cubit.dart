@@ -66,7 +66,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.remoteConfigService,
     required Logger logger,
   })  : _logger = logger,
-        super(const ReaderInitial());
+        super(const ReaderState());
 
   final GetContentDetailUseCase getContentDetailUseCase;
   final GetChapterImagesUseCase getChapterImagesUseCase;
@@ -96,6 +96,28 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   // Public getters for chapter navigation
   Content? get parentContent => _parentContent;
+
+  /// Create state with [newStatus], preserving all other current state fields.
+  ReaderState _withStatus(ReaderStatus newStatus) {
+    final s = state;
+    return ReaderState(
+      status: newStatus,
+      content: s.content,
+      currentPage: s.currentPage,
+      readingMode: s.readingMode,
+      showUI: s.showUI,
+      keepScreenOn: s.keepScreenOn,
+      enableZoom: s.enableZoom,
+      readingTimer: s.readingTimer ?? Duration.zero,
+      message: s.message,
+      isOfflineMode: s.isOfflineMode ?? false,
+      imageMetadata: s.imageMetadata,
+      chapterData: s.chapterData,
+      currentChapter: s.currentChapter,
+      tapDirection: s.tapDirection ?? TapDirection.normal,
+    );
+  }
+
   List<Chapter>? get allChapters => _allChapters;
 
   /// Load content for reading with offline support - OPTIMIZED VERSION
@@ -112,7 +134,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }) async {
     try {
       _stopAutoHideTimer();
-      emit(ReaderLoading(state));
+      emit(_withStatus(ReaderStatus.loading));
 
       // Store chapter navigation context first
       _parentContent = parentContent;
@@ -364,7 +386,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       // 4. Emit Loaded State Immediately
-      emit(state.copyWith(
+      emit(ReaderState(
+        status: ReaderStatus.loaded,
         content: content!,
         currentPage: startPage,
         readingMode: savedSettings.readingMode,
@@ -379,7 +402,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       ));
 
       _logImageUrlMapping(content);
-      emit(ReaderLoaded(state));
+      emit(_withStatus(ReaderStatus.loaded));
 
       // 5. Post-load setup (Async)
       await _handlePostLoadSetup(savedSettings);
@@ -387,9 +410,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e('Reader Cubit Error: $e', error: e, stackTrace: stackTrace);
       _stopAutoHideTimer();
       if (!isClosed) {
-        emit(ReaderError(state.copyWith(
-          message: 'failedLoadContentError',
-        )));
+        emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadContentError'));
       }
     }
   }
@@ -458,7 +479,7 @@ class ReaderCubit extends Cubit<ReaderState> {
             'Next page: $currentPage -> $newPage (total: $pageCount, max with nav: $maxPage)');
 
         _lastTrackedPage = newPage;
-        emit(state.copyWith(currentPage: newPage));
+        emit(state.copyWithPage(newPage));
         _saveReaderPosition();
         _saveToHistory();
       } else {
@@ -477,7 +498,7 @@ class ReaderCubit extends Cubit<ReaderState> {
           'Previous page: $currentPage -> $newPage (total: ${state.content!.pageCount})');
 
       _lastTrackedPage = newPage;
-      emit(state.copyWith(currentPage: newPage));
+      emit(state.copyWithPage(newPage));
       _saveReaderPosition();
       _saveToHistory();
     }
@@ -607,11 +628,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _lastTrackedPage = targetPage;
 
-      emit(ReaderLoaded(state.copyWith(
-        content: newContent,
-        currentPage: targetPage,
-        chapterData: chunkData,
-      )));
+      emit(_withStatus(ReaderStatus.loaded)
+          .copyWithContent(content: newContent, chapterData: chunkData)
+          .copyWithPage(targetPage));
 
       _logger.i(
           'Appended EHentai chunk: +${chunkData.images.length} images (total ${merged.length})');
@@ -896,13 +915,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       if (_allChapters == null || _allChapters!.isEmpty) {
         _logger.e('⛔ Cannot navigate: No chapter list available');
-        emit(ReaderError(state.copyWith(
-          message: 'chapterNavNotAvailable',
-        )));
+        emit(_withStatus(ReaderStatus.error).copyWithMessage('chapterNavNotAvailable'));
         return;
       }
 
-      emit(ReaderLoading(state));
+      emit(_withStatus(ReaderStatus.loading));
 
       // Expand pool if chapter not in current _allChapters
       await _ensureChapterInPool(chapterId);
@@ -948,10 +965,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         if (!hasConnection) {
           _logger
               .e('❌ No internet connection and chapter not available offline');
-          emit(ReaderError(state.copyWith(
-            message:
-                'Cannot load chapter: No internet connection and chapter not downloaded',
-          )));
+          emit(_withStatus(ReaderStatus.error).copyWithMessage('Cannot load chapter: No internet connection and chapter not downloaded'));
           return;
         }
 
@@ -963,18 +977,14 @@ class ReaderCubit extends Cubit<ReaderState> {
           ));
 
           if (chapterData.images.isEmpty) {
-            emit(ReaderError(state.copyWith(
-              message: 'failedLoadChapterImages',
-            )));
+            emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapterImages'));
             return;
           }
 
           chapterImages = chapterData.images;
         } catch (e) {
           _logger.e('Failed to load chapter from online API: $e');
-          emit(ReaderError(state.copyWith(
-            message: 'failedLoadChapter',
-          )));
+          emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapter'));
           return;
         }
       }
@@ -994,23 +1004,17 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _lastTrackedPage = 1;
 
-      emit(ReaderLoaded(state.copyWith(
-        content: newContent,
-        currentPage: 1,
-        chapterData: chapterData,
-        currentChapter: chapter,
-        readingTimer: Duration.zero,
-        isOfflineMode:
-            loadedFromOffline, // Mark as offline if loaded from local storage
-      )));
+      emit(_withStatus(ReaderStatus.loaded)
+          .copyWithContent(content: newContent, chapterData: chapterData, currentChapter: chapter)
+          .copyWithPage(1)
+          .copyWithTimer(Duration.zero)
+          .copyWithOffline(loadedFromOffline));
 
       // Save to history
       await _saveToHistory();
     } catch (e) {
       _logger.e('Failed to load chapter: $e');
-      emit(ReaderError(state.copyWith(
-        message: 'failedLoadChapter',
-      )));
+      emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapter'));
     }
   }
 
@@ -1035,7 +1039,7 @@ class ReaderCubit extends Cubit<ReaderState> {
           'Navigating to page: $validPage (requested: $page, total: $totalPages)');
 
       _lastTrackedPage = validPage;
-      emit(state.copyWith(currentPage: validPage));
+      emit(state.copyWithPage(validPage));
       _saveReaderPosition();
       _saveToHistory();
     } else {
@@ -1063,7 +1067,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _lastTrackedPage = validPage;
 
       // Only emit state change, don't trigger sync navigation
-      emit(state.copyWith(currentPage: validPage));
+      emit(state.copyWithPage(validPage));
       _saveReaderPosition();
       _saveToHistory();
     }
@@ -1188,7 +1192,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   void toggleUI() {
     if (!isClosed) {
       final newShowUI = !(state.showUI ?? true);
-      emit(state.copyWith(showUI: newShowUI));
+      emit(state.copyWithUI(showUI: newShowUI));
 
       // Save to preferences with error handling
       readerSettingsEntityRepository
@@ -1211,7 +1215,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Show UI temporarily
   void showUI() {
     if (!isClosed) {
-      emit(state.copyWith(showUI: true));
+      emit(state.copyWithUI(showUI: true));
     }
     _startAutoHideTimer();
   }
@@ -1219,7 +1223,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Hide UI
   void hideUI() {
     if (!isClosed) {
-      emit(state.copyWith(showUI: false));
+      emit(state.copyWithUI(showUI: false));
     }
     _stopAutoHideTimer();
   }
@@ -1245,7 +1249,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
         // Switch to continuous scroll (best for vertical images)
         if (!isClosed) {
-          emit(state.copyWith(readingMode: ReadingMode.continuousScroll));
+          emit(state.copyWithMode(readingMode: ReadingMode.continuousScroll));
         }
 
         // Note: We don't save this to preferences to preserve user's choice
@@ -1264,7 +1268,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     bool resetWebtoonDetection = true,
   }) async {
     if (!isClosed) {
-      emit(state.copyWith(readingMode: mode));
+      emit(state.copyWithMode(readingMode: mode));
     }
 
     if (resetWebtoonDetection) {
@@ -1291,7 +1295,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> toggleEnableZoom() async {
     final newEnableZoom = !(state.enableZoom ?? true);
     if (!isClosed) {
-      emit(state.copyWith(enableZoom: newEnableZoom));
+      emit(state.copyWithUI(enableZoom: newEnableZoom));
     }
     try {
       final current =
@@ -1308,7 +1312,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Set tap direction (normal or inverted) and persist it
   Future<void> setTapDirection(TapDirection direction) async {
     if (!isClosed) {
-      emit(state.copyWith(tapDirection: direction));
+      emit(state.copyWithMode(tapDirection: direction));
     }
     try {
       await readerSettingsEntityRepository.saveTapDirection(direction);
@@ -1331,7 +1335,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       if (!isClosed) {
-        emit(state.copyWith(keepScreenOn: newKeepScreenOn));
+        emit(state.copyWithUI(keepScreenOn: newKeepScreenOn));
       }
 
       // Save to preferences with error handling
@@ -1530,7 +1534,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         pageNumber,
       );
 
-      emit(ReaderLoaded(state.copyWith(content: updatedContent)));
+      emit(_withStatus(ReaderStatus.loaded).copyWithContent(content: updatedContent));
 
       _logger.i(
         'Reader repair succeeded for ${currentContent.id} '
@@ -2403,11 +2407,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Apply default settings to current state
       if (!isClosed) {
-        emit(state.copyWith(
-          readingMode: ReadingMode.singlePage,
-          keepScreenOn: false,
-          showUI: true,
-        ));
+        emit(state.copyWithUI(showUI: true, keepScreenOn: false).copyWithMode(readingMode: ReadingMode.singlePage));
       }
 
       // Disable wakelock
@@ -2423,11 +2423,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Still apply default settings to current state even if persistence failed
       if (!isClosed) {
-        emit(state.copyWith(
-          readingMode: ReadingMode.singlePage,
-          keepScreenOn: false,
-          showUI: true,
-        ));
+        emit(state.copyWithUI(showUI: true, keepScreenOn: false).copyWithMode(readingMode: ReadingMode.singlePage));
       }
 
       // Try to disable wakelock anyway
@@ -2609,9 +2605,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Check if cubit is still active before emitting state
       if (!isClosed) {
         final currentTimer = state.readingTimer ?? Duration.zero;
-        emit(state.copyWith(
-          readingTimer: currentTimer + const Duration(seconds: 1),
-        ));
+        emit(state.copyWithTimer(currentTimer + const Duration(seconds: 1)));
       } else {
         // Cancel timer if cubit is closed
         timer.cancel();
