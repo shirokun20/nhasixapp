@@ -66,7 +66,7 @@ class KuronNativePlugin :
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
     private val PICK_FILE_REQUEST_CODE = 1003
     private val CAPTCHA_WEBVIEW_REQUEST_CODE = 1004
-    
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun handleHeadlessGetClearance(call: MethodCall, result: Result) {
         val url = call.argument<String>("url") ?: run {
@@ -87,42 +87,25 @@ class KuronNativePlugin :
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     databaseEnabled = true
+                    blockNetworkImage = true
                 }
                 webView.webViewClient = object : android.webkit.WebViewClient() {
                     override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
-                        // Poll for JS result — Turnstile solves async
-                        Thread {
-                            val deadline = System.currentTimeMillis() + timeoutMs
-                            while (System.currentTimeMillis() < deadline) {
-                                val pollLatch = CountDownLatch(1)
-                                var pollResult: String? = null
-                                Handler(Looper.getMainLooper()).post {
-                                    view?.evaluateJavascript(script) { value ->
-                                        pollResult = value
-                                            ?.removeSurrounding("\"")
-                                            ?.takeUnless { it == "null" || it.isEmpty() }
-                                        pollLatch.countDown()
-                                    }
-                                }
-                                pollLatch.await(500, TimeUnit.MILLISECONDS)
-                                if (pollResult != null) {
-                                    jsResult = pollResult
-                                    break
-                                }
-                            }
-                            Handler(Looper.getMainLooper()).post {
-                                webView.stopLoading()
-                                webView.destroy()
-                            }
+                        view?.evaluateJavascript(script) { value ->
+                            jsResult = value
+                                ?.removeSurrounding("\"")
+                                ?.takeUnless { it == "null" || it.isEmpty() }
+                            webView.stopLoading()
+                            webView.destroy()
                             latch.countDown()
-                        }.start()
+                        }
                     }
                 }
                 webView.loadUrl(url)
             }
 
             try {
-                if (latch.await(timeoutMs + 5000, TimeUnit.MILLISECONDS)) {
+                if (latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
                     result.success(jsResult)
                 } else {
                     result.success(null)
@@ -132,7 +115,6 @@ class KuronNativePlugin :
             }
         }.start()
     }
-
 
     companion object {
         const val TAG = "KuronNativePlugin"
@@ -582,7 +564,7 @@ class KuronNativePlugin :
                     
                     // Report Progress (Always report, even if failed)
                     val progress = ((index + 1).toFloat() / total * 100).toInt()
-                    Handler(Looper.getMainLooper()).post {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
                         try {
                             channel.invokeMethod("onProgress", mapOf(
                                 "progress" to progress,
@@ -601,7 +583,7 @@ class KuronNativePlugin :
                 document.close()
                 
                 // Switch back to main thread for result
-                Handler(Looper.getMainLooper()).post {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
                     val fileSize = file.length()
                     val resultMap = mapOf(
                         "success" to true,
@@ -614,7 +596,7 @@ class KuronNativePlugin :
 
             } catch (e: Exception) {
                 try { document.close() } catch (ignored: Exception) {}
-                Handler(Looper.getMainLooper()).post {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
                      result.error("PDF_CONVERSION_FAILED", e.message, null)
                 }
             }
@@ -1136,7 +1118,7 @@ class KuronNativePlugin :
         try {
             val cookieManager = android.webkit.CookieManager.getInstance()
             cookieManager.removeAllCookies { success ->
-                Handler(Looper.getMainLooper()).post {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
                     result.success(success)
                 }
             }

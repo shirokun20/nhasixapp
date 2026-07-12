@@ -36,6 +36,10 @@
     "auth": {
         "enabled": true,
         "mode": "tokenApi",
+        "webviewLogin": {
+            "url": "https://nhentai.net/login",
+            "autoCloseCookie": "access_token"
+        },
         "authorizationScheme": "User",
         "powAction": "login",
         "commentPowAction": "comment",
