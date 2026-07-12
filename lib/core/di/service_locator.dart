@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
@@ -19,6 +20,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart'
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_special/kuron_special.dart';
+
 import 'package:kuron_native/kuron_native.dart';
 
 // Core Network
@@ -697,6 +699,11 @@ void _setupDataSources() {
               getIt<WebViewSessionAdapter>(instanceName: 'cf_vihentai'),
           logger: getIt<Logger>(),
           cookieJar: getIt<PersistCookieJar>(instanceName: 'vihentai_jar'),
+        ),
+        SchaleSourceFactory(
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+          secureStorage: const FlutterSecureStorage(),
         ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),

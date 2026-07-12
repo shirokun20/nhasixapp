@@ -205,6 +205,18 @@ class KuronNative {
     );
   }
 
+  Future<String?> headlessGetClearance({
+    required String url,
+    required String script,
+    int timeoutMs = 10000,
+  }) {
+    return KuronNativePlatform.instance.headlessGetClearance(
+      url: url,
+      script: script,
+      timeoutMs: timeoutMs,
+    );
+  }
+
   /// Open a local AVIF image in an external gallery/photo app.
   Future<void> openAvif({required String filePath}) {
     return KuronNativePlatform.instance.openAvif(filePath: filePath);

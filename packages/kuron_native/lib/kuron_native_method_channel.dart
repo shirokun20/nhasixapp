@@ -334,9 +334,22 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>(
       'showCaptchaWebView',
+
       {'provider': provider, 'siteKey': siteKey, 'baseUrl': baseUrl},
     );
     return result;
+  }
+
+  @override
+  Future<String?> headlessGetClearance({
+    required String url,
+    required String script,
+    int timeoutMs = 10000,
+  }) async {
+    return await methodChannel.invokeMethod<String>(
+      'headlessGetClearance',
+      {'url': url, 'script': script, 'timeoutMs': timeoutMs},
+    );
   }
 
   @override

@@ -88,9 +88,15 @@ class GenericRestAdapter implements GenericAdapter {
       endpoint,
       {'id': contentId, 'language': defaultLang},
     );
-    if (offset != null) chapterUrl = _upsertQueryParam(chapterUrl, 'offset', offset.toString());
-    if (page != null) chapterUrl = _upsertQueryParam(chapterUrl, 'page', page.toString());
-    if (limit != null) chapterUrl = _upsertQueryParam(chapterUrl, 'limit', limit.toString());
+    if (offset != null) {
+      chapterUrl = _upsertQueryParam(chapterUrl, 'offset', offset.toString());
+    }
+    if (page != null) {
+      chapterUrl = _upsertQueryParam(chapterUrl, 'page', page.toString());
+    }
+    if (limit != null) {
+      chapterUrl = _upsertQueryParam(chapterUrl, 'limit', limit.toString());
+    }
 
     // Inject language filter for APIs that use translatedLanguage[] instead
     // of a {language} placeholder (e.g. MangaDex).
@@ -544,8 +550,7 @@ class GenericRestAdapter implements GenericAdapter {
           }
         }
       } catch (e) {
-        _logger.e('$_sourceId fetchChapterImages (atHome) failed',
-            error: e);
+        _logger.e('$_sourceId fetchChapterImages (atHome) failed', error: e);
       }
     } else if (mode == 'htmlContent') {
       // HTML-in-JSON mode: chapter response JSON contains HTML with data-src images.
@@ -559,7 +564,8 @@ class GenericRestAdapter implements GenericAdapter {
       try {
         final itemsSelector = _extractJsonSelector(imagesCfg['items']);
         if (itemsSelector.isEmpty) {
-          _logger.w('$_sourceId htmlContent: missing "items" selector (CSS selector for img tags)');
+          _logger.w(
+              '$_sourceId htmlContent: missing "items" selector (CSS selector for img tags)');
           return null;
         }
 
@@ -608,20 +614,24 @@ class GenericRestAdapter implements GenericAdapter {
             : response.data;
 
         // Extract HTML content from JSON
-        final contentPath = (imagesCfg['contentPath'] as String?) ?? r'$.chapter_detail.chapter_content';
+        final contentPath = (imagesCfg['contentPath'] as String?) ??
+            r'$.chapter_detail.chapter_content';
         final serverPath = imagesCfg['serverPath'] as String?;
         final imgAttribute = (imagesCfg['attribute'] as String?) ?? 'data-src';
 
-        final contentHtml = _parser.extractString(data, FieldSelector(selector: contentPath));
+        final contentHtml =
+            _parser.extractString(data, FieldSelector(selector: contentPath));
         if (contentHtml == null || contentHtml.isEmpty) {
-          _logger.w('$_sourceId htmlContent: no HTML content found at $contentPath');
+          _logger.w(
+              '$_sourceId htmlContent: no HTML content found at $contentPath');
           return null;
         }
 
         // Extract server prefix
         String? serverPrefix;
         if (serverPath != null) {
-          serverPrefix = _parser.extractString(data, FieldSelector(selector: serverPath));
+          serverPrefix =
+              _parser.extractString(data, FieldSelector(selector: serverPath));
         }
 
         // Parse HTML with GenericHtmlParser to extract image URLs
@@ -646,7 +656,8 @@ class GenericRestAdapter implements GenericAdapter {
         }
 
         if (images.isNotEmpty) {
-          _logger.d('$_sourceId extracted ${images.length} images via htmlContent');
+          _logger.d(
+              '$_sourceId extracted ${images.length} images via htmlContent');
           return ChapterData(images: images);
         }
 
@@ -654,6 +665,83 @@ class GenericRestAdapter implements GenericAdapter {
         return null;
       } catch (e) {
         _logger.w('$_sourceId fetchChapterImages (htmlContent) failed: $e');
+        return null;
+      }
+    } else if (mode == 'schaleData') {
+      // Schale Network: two-step image fetch
+      try {
+        final parts = chapterId.split('/');
+        if (parts.length < 2) {
+          _logger.w('$_sourceId schaleData: chapterId not id/key: $chapterId');
+          return null;
+        }
+        final bookId = parts[0];
+        final bookKey = parts[1];
+        final baseApiUrl = _getBaseUrl(rawConfig);
+        final quality = imagesCfg['quality']?.toString() ?? '1280';
+        final dataSel = imagesCfg['dataSelector']?.toString() ?? r'$.data.1280';
+
+        // Step 1: POST detail to get quality-level IDs (id/key for the quality)
+        final detailUrl = '$baseApiUrl/books/detail/$bookId/$bookKey';
+        await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+        final detailResp = await _executeRequest<dynamic>(
+          () => _dio.post<dynamic>(detailUrl),
+        );
+        final detailData = detailResp.data is String
+            ? jsonDecode(detailResp.data as String)
+            : detailResp.data;
+
+        // Navigate to quality data: dataSel = "data.1280"
+        final pathParts = dataSel.replaceAll(r'$.', '').split('.');
+        Object? qNode = detailData;
+        for (final k in pathParts) {
+          if (k.isEmpty || qNode is! Map) {
+            qNode = null;
+            break;
+          }
+          qNode = qNode[k];
+        }
+        if (qNode is! Map) {
+          _logger.w('$_sourceId schaleData: quality data not found');
+          return null;
+        }
+        final qualId = qNode['id']?.toString();
+        final qualKey = qNode['key']?.toString();
+        if (qualId == null ||
+            qualKey == null ||
+            qualId.isEmpty ||
+            qualKey.isEmpty) {
+          _logger.w('$_sourceId schaleData: quality ID/Key missing');
+          return null;
+        }
+
+        // Step 2: GET page data (CDN base + entries)
+        final pageUrl =
+            '$baseApiUrl/books/data/$bookId/$bookKey/$qualId/$qualKey/$quality';
+        final pageResp = await _executeRequest<dynamic>(
+          () => _dio.get<dynamic>(pageUrl),
+        );
+        final pageData = pageResp.data is String
+            ? jsonDecode(pageResp.data as String)
+            : pageResp.data;
+        if (pageData is! Map) return null;
+
+        final base = pageData['base']?.toString() ?? '';
+        final entries = pageData['entries'];
+        if (base.isEmpty || entries is! List) return null;
+
+        final images = <String>[];
+        for (final e in entries) {
+          if (e is! Map) continue;
+          final p = e['path']?.toString() ?? '';
+          if (p.isNotEmpty) images.add('$base/$p?w=$quality');
+        }
+        if (images.isEmpty) return null;
+        _logger.d('$_sourceId schaleData: built ${images.length} CDN URLs');
+        return ChapterData(images: images);
+      } catch (e) {
+        _logger.e('$_sourceId fetchChapterImages (schaleData) failed',
+            error: e);
         return null;
       }
     } else if (mode == 'direct') {
@@ -1120,8 +1208,7 @@ class GenericRestAdapter implements GenericAdapter {
         totalItems: totalItems,
       );
     } catch (e) {
-      _logger.e('$_sourceId REST new schema search failed',
-          error: e);
+      _logger.e('$_sourceId REST new schema search failed', error: e);
       return const AdapterSearchResult(items: [], hasNextPage: false);
     }
   }
@@ -1452,6 +1539,28 @@ class GenericRestAdapter implements GenericAdapter {
           } else {
             result[fieldName] = _parser.extractRaw(data, sel);
           }
+
+          // Support field composition: compose `id` from `$.id` + `$.key`.
+          // Config: `"id": { "selector": "$.id", "composeWith": { "field": "key", "joiner": "/" } }`
+          final composeWith = def['composeWith'] as Map<String, dynamic>?;
+          if (composeWith != null) {
+            final sourceField = composeWith['field'] as String? ?? '';
+            final joiner = composeWith['joiner'] as String? ?? '/';
+            if (sourceField.isNotEmpty) {
+              final sourceDef = fieldsConfig[sourceField];
+              if (sourceDef is Map<String, dynamic>) {
+                final sourceSel = FieldSelector.fromMap(sourceDef);
+                final sourceValue = _parser.extractString(data, sourceSel);
+                if (sourceValue != null && sourceValue.isNotEmpty) {
+                  final baseValue = (result[fieldName]?.toString() ?? '');
+                  if (baseValue.isNotEmpty) {
+                    result[fieldName] = '$baseValue$joiner$sourceValue';
+                  }
+                }
+              }
+            }
+          }
+
           break;
       }
     }
@@ -3190,7 +3299,142 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> builder,
   ) {
     final template = builder['template'] as String?;
-    if (template == null) return const [];
+    if (template == null) {
+      // Support per-entry paths with base URL prefix or direct entry extraction.
+      // Config: `"entryPaths": "$.thumbnails.entries[*].path", "baseSelector": "$.thumbnails.base"`
+      // Config: `"entriesKey": "thumbnails.entries", "pathKey": "path", "baseKey": "thumbnails.base"`
+      final entryPaths = builder['entryPaths'] as String?;
+      if (entryPaths != null && entryPaths.isNotEmpty) {
+        final paths = _parser.extractList(
+          data,
+          FieldSelector(selector: entryPaths),
+        );
+        if (paths.isNotEmpty) {
+          final baseSel = builder['baseSelector'] as String?;
+          final base = baseSel != null
+              ? _parser.extractString(data, FieldSelector(selector: baseSel))
+              : null;
+          if (base != null) {
+            return paths.map((p) => '$base${p.toString()}').toList();
+          }
+          // Fallback: return paths as-is if no base
+          return paths.map((p) => p.toString()).toList();
+        }
+        // Fallback: manual traversal if JSONPath fails
+        try {
+          if (data is Map && entryPaths.contains('[*]')) {
+            final dotIdx = entryPaths.indexOf('[*]');
+            final prefix = dotIdx > 0 ? entryPaths.substring(0, dotIdx) : '';
+            final suffix = entryPaths.substring(dotIdx + 3);
+            // Navigate JSON tree manually: prefix is "$.thumbnails.entries"
+            Object? node = data;
+            for (final key in prefix.split('.')) {
+              final clean = key.replaceAll(r'$', '').trim();
+              if (clean.isEmpty || node is! Map) continue;
+              node = node[clean];
+            }
+            if (node is List && node.isNotEmpty) {
+              final urls = <String>[];
+              final baseSel = builder['baseSelector'] as String?;
+              final base = baseSel != null
+                  ? _parser.extractString(
+                      data, FieldSelector(selector: baseSel))
+                  : null;
+              final pathKey = suffix.startsWith('.')
+                  ? suffix.substring(1).trim()
+                  : suffix.trim();
+              if (pathKey.isNotEmpty) {
+                for (final entry in node) {
+                  if (entry is Map) {
+                    final val = entry[pathKey];
+                    if (val != null) {
+                      urls.add(base != null ? '$base$val' : val.toString());
+                    }
+                  }
+                }
+              }
+              if (urls.isNotEmpty) return urls;
+            }
+          }
+        } catch (e) {
+          _logger.w('Manual entry path traversal failed: $e');
+        }
+      }
+
+      // Ultimate fallback: try data['thumbnails']['entries'] directly
+      if (data is Map) {
+        try {
+          final tn = data['thumbnails'];
+          if (tn is Map) {
+            final entries = tn['entries'];
+            if (entries is List && entries.isNotEmpty) {
+              final tb = tn['base'] as String?;
+              if (tb != null) {
+                final ul = <String>[];
+                for (final e in entries) {
+                  if (e is Map) {
+                    final p = e['path'];
+                    if (p != null) ul.add('$tb$p');
+                  }
+                }
+                if (ul.isNotEmpty) {
+                  _logger.d('ultimate fallback extracted \${ul.length} URLs');
+                  return ul;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          _logger.w('Ultimate fallback failed: \$e');
+        }
+      }
+      return const [];
+    }
+
+    // Entry-based reader image URL builder for sources like Schale Network.
+    // Config:
+    //   "template": "/books/data/{bookId}/{bookKey}/{pageId}/{pageKey}/1280",
+    //   "entriesSelector": "$.thumbnails.entries[*]",
+    //   "entryIdKey": "id", "entryKeyKey": "key",
+    //   "bookIdSelector": "$.id", "bookKeySelector": "$.key",
+    //   "crt": "{token}"
+    final entriesSelector = builder['entriesSelector'] as String?;
+    if (entriesSelector != null && entriesSelector.isNotEmpty) {
+      final entries =
+          _parser.extractItems(data, FieldSelector(selector: entriesSelector));
+      if (entries.isNotEmpty) {
+        final urls = <String>[];
+        final entryIdKey = builder['entryIdKey'] as String? ?? 'id';
+        final entryKeyKey = builder['entryKeyKey'] as String? ?? 'key';
+        final idSel = builder['bookIdSelector'] as String?;
+        final keySel = builder['bookKeySelector'] as String?;
+        final bookId = idSel != null
+            ? _parser.extractString(data, FieldSelector(selector: idSel))
+            : null;
+        final bookKey = keySel != null
+            ? _parser.extractString(data, FieldSelector(selector: keySel))
+            : null;
+        final crt = builder['crt'] as String? ?? '';
+        if (bookId != null && bookKey != null) {
+          for (final entry in entries) {
+            final pageId = entry[entryIdKey]?.toString() ?? '';
+            final pageKey = entry[entryKeyKey]?.toString() ?? '';
+            if (pageId.isEmpty || pageKey.isEmpty) continue;
+            var url = template
+                .replaceAll('{bookId}', bookId)
+                .replaceAll('{bookKey}', bookKey)
+                .replaceAll('{pageId}', pageId)
+                .replaceAll('{pageKey}', pageKey)
+                .replaceAll('{crt}', crt);
+            urls.add(url);
+          }
+          if (urls.isNotEmpty) {
+            _logger.d('entry-based builder extracted \${urls.length} URLs');
+            return urls;
+          }
+        }
+      }
+    }
 
     final mediaIdSel = builder['mediaIdSelector'] as String?;
     final mediaId = mediaIdSel != null

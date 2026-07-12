@@ -121,6 +121,9 @@ class MockKuronNativePlatform
   }) =>
       Future.value({'success': true, 'cookies': []});
 
+
+  @override
+  Future<String?> headlessGetClearance({required String url, required String script, int timeoutMs = 10000}) async => null;
   @override
   Future<Map<String, dynamic>?> showCaptchaWebView({
     required String provider,

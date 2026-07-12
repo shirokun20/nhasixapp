@@ -15,3 +15,4 @@ export 'src/komiktap/komiktap_source_factory.dart';
 export 'src/generic_bypass/generic_bypass_source_factory.dart';
 export 'src/hentairead/hentairead_source_factory.dart';
 export 'src/vihentai/vihentai_source_factory.dart';
+export 'src/schale/schale_source_factory.dart';

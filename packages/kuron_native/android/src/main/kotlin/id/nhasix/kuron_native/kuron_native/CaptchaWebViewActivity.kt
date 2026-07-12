@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
@@ -20,6 +22,8 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class CaptchaWebViewActivity : AppCompatActivity() {
 
@@ -56,6 +60,7 @@ class CaptchaWebViewActivity : AppCompatActivity() {
 
     private var challengeErrorCode: String? = null
     private var challengeErrorMessage: String? = null
+    private var turnstileSolved = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -135,6 +140,34 @@ class CaptchaWebViewActivity : AppCompatActivity() {
                 super.onPageStarted(view, url, favicon)
                 challengeErrorCode = null
                 challengeErrorMessage = null
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (!turnstileSolved) return
+                // Poll localStorage.clearance after navigation to base URL
+                Thread {
+                    val deadline = System.currentTimeMillis() + 30_000
+                    while (System.currentTimeMillis() < deadline) {
+                        val pollLatch = CountDownLatch(1)
+                        var pollResult: String? = null
+                        Handler(Looper.getMainLooper()).post {
+                            view?.evaluateJavascript("localStorage.getItem('clearance')") { value ->
+                                pollResult = value
+                                    ?.removeSurrounding("\"")
+                                    ?.takeUnless { it == "null" || it.isEmpty() }
+                                pollLatch.countDown()
+                            }
+                        }
+                        pollLatch.await(500, TimeUnit.MILLISECONDS)
+                        if (pollResult != null) {
+                            finishWithResult(success = true, token = pollResult)
+                            return@Thread
+                        }
+                    }
+                    // Timeout — return no token
+                    finishWithResult(success = false, errorCode = "clearance_timeout")
+                }.start()
             }
 
             override fun onReceivedError(
@@ -247,9 +280,11 @@ class CaptchaWebViewActivity : AppCompatActivity() {
     </div>
     <script>
       function onSolved(token) {
-        if (window.AndroidCaptcha && token) {
-          window.AndroidCaptcha.postToken(token);
-        }
+        if (!token) return;
+        // Signal solved, then navigate to base URL
+        // Page's built-in clearance pipeline runs with same CF session
+        window.AndroidCaptcha.turnstileSolved();
+        window.location.href = '$resolvedBaseUrl/';
       }
       function onError(code) {
         if (window.AndroidCaptcha) {
@@ -338,6 +373,11 @@ class CaptchaWebViewActivity : AppCompatActivity() {
                     finishWithResult(success = true, token = normalized)
                 }
             }
+        }
+
+        @JavascriptInterface
+        fun turnstileSolved() {
+            runOnUiThread { turnstileSolved = true }
         }
 
         @JavascriptInterface

@@ -205,6 +205,17 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('setDohProvider() has not been implemented.');
   }
 
+  /// Create headless WebView (no UI, no Activity) to execute JS and return result.
+  /// Replicates Tachiyomi's getClearance() approach.
+  Future<String?> headlessGetClearance({
+    required String url,
+    required String script,
+    int timeoutMs = 10000,
+  }) {
+    throw UnimplementedError(
+        'headlessGetClearance() has not been implemented.');
+  }
+
   /// Get current DNS over HTTPS provider.
   /// Returns: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
   Future<int> getDohProvider() {
