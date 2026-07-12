@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kuron_native/kuron_native.dart';
@@ -38,14 +41,35 @@ class SchaleClearanceService {
       siteKey: _turnstileSiteKey,
       baseUrl: 'https://niyaniya.moe/',
     );
-    final crt = captchaResult?['token'] as String?;
-    if (crt != null && crt.isNotEmpty) {
-      _logger.i('schale: acquired clearance token');
-      await setToken(crt);
-      return crt;
+    final turnstileToken = captchaResult?['token'] as String?;
+    if (turnstileToken == null || turnstileToken.isEmpty) {
+      _logger.w('schale: captcha failed');
+      return null;
     }
 
-    _logger.w('schale: captcha clearance failed');
+    // Exchange turnstile token for crt UUID via dart:io HttpClient
+    _logger.i('schale: exchanging turnstile token');
+    try {
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+      final request = await client.postUrl(
+          Uri.parse('https://auth.schale.network/clearance'));
+      request.headers.set('authorization', 'Bearer $turnstileToken');
+      request.headers.set('referer', 'https://niyaniya.moe/');
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode == 201) {
+        final map = jsonDecode(body) as Map?;
+        final crt = map?['crt'] as String?;
+        if (crt != null && crt.isNotEmpty) {
+          _logger.i('schale: acquired clearance token');
+          await setToken(crt);
+          return crt;
+        }
+      }
+      _logger.w('schale: clearance exchange status=${response.statusCode} body=$body');
+    } catch (e) {
+      _logger.e('schale: clearance exchange error: $e');
+    }
     return null;
   }
 
@@ -64,10 +88,12 @@ class SchaleClearanceService {
 
 class _SchaleInterceptor extends Interceptor {
   final SchaleClearanceService _service;
-  _SchaleInterceptor({required SchaleClearanceService service}) : _service = service;
+  _SchaleInterceptor({required SchaleClearanceService service})
+      : _service = service;
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     final url = options.uri.toString();
     if (!(options.method == 'POST' && url.contains('/books/detail/')) &&
         !url.contains('/books/data/')) {
@@ -83,8 +109,9 @@ class _SchaleInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 403 &&
         (err.requestOptions.uri.toString().contains('/books/detail/') ||
-         err.requestOptions.uri.toString().contains('/books/data/'))) {
-      await _service._secureStorage.delete(key: SchaleClearanceService._storageKey);
+            err.requestOptions.uri.toString().contains('/books/data/'))) {
+      await _service._secureStorage
+          .delete(key: SchaleClearanceService._storageKey);
       _service._cachedToken = null;
     }
     handler.next(err);
