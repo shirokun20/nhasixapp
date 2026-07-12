@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:kuron_special/kuron_special.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source_auth/source_auth_cubit.dart';
-import 'package:nhasixapp/presentation/widgets/animated_dice_widget.dart';
 
 class SourceLoginPage extends StatefulWidget {
   final String sourceId;
@@ -49,6 +51,56 @@ class _SourceLoginPageState extends State<SourceLoginPage>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.sourceId == 'crotpedia') {
+      return BlocProvider(
+        create: (_) => CrotpediaAuthCubit(
+          adapter: getIt<WebViewSessionAdapter>(),
+          logger: getIt<Logger>(),
+        )..checkLoginStatus(),
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.sourceAuthLoginTitle(widget.sourceId)),
+          ),
+          body: BlocConsumer<CrotpediaAuthCubit, CrotpediaAuthState>(
+            listener: (context, state) {
+              if (state is CrotpediaAuthError) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(state.message)));
+              }
+              if (state is CrotpediaAuthSuccess && _justLoggedIn) {
+                _justLoggedIn = false;
+                Future.delayed(const Duration(milliseconds: 600), () {
+                  if (context.mounted) Navigator.of(context).pop();
+                });
+              }
+            },
+            builder: (context, state) {
+              if (state is CrotpediaAuthLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is CrotpediaAuthSuccess) {
+                return _buildAuthenticatedSimple(
+                  context,
+                  username: state.username,
+                  onLogout: () async {
+                    await context.read<CrotpediaAuthCubit>().logout();
+                    if (context.mounted) Navigator.of(context).pop();
+                  },
+                );
+              }
+              return _buildLoginButton(
+                context,
+                onLogin: () => _launchCrotpediaLogin(context),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // ── Default: SourceAuthCubit (nhentai etc) ──
     return BlocProvider(
       create: (_) => getIt<SourceAuthCubit>()..initialize(widget.sourceId),
       child: Scaffold(
@@ -84,24 +136,100 @@ class _SourceLoginPageState extends State<SourceLoginPage>
           },
           builder: (context, state) {
             final l10n = AppLocalizations.of(context)!;
-
-            if (state.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
+            if (state.loading) return const Center(child: CircularProgressIndicator());
             if (state.authenticated) {
-              return _buildAuthenticated(context, state, l10n);
+              return _buildAuthenticatedFull(context, state, l10n);
             }
-
-            return _buildUnauthenticated(context, l10n);
+            return _buildLoginButton(
+              context,
+              onLogin: () => _launchTokenLogin(context),
+            );
           },
         ),
       ),
     );
   }
 
-  Widget _buildAuthenticated(
-      BuildContext context, SourceAuthState state, AppLocalizations l10n) {
+  // ── Shared UI ──
+
+  Widget _buildLoginButton(BuildContext context, {required VoidCallback onLogin}) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 88, height: 88,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.surfaceContainerLow,
+                    Theme.of(context).colorScheme.surfaceContainer,
+                  ],
+                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
+              ),
+              child: Icon(Icons.lock_person, size: 40, color: Theme.of(context).colorScheme.primary),
+            ),
+            const SizedBox(height: 28),
+            Text(l10n.sourceAuthLoginTitle(widget.sourceId),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            Text(l10n.sourceAuthLoginDescription,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+            const SizedBox(height: 36),
+            FilledButton.icon(
+              onPressed: onLogin,
+              icon: const Icon(Icons.login),
+              label: Text(l10n.sourceAuthSecureLogin),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthenticatedSimple(
+    BuildContext context, {
+    required String username,
+    required VoidCallback onLogout,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final initial = username.substring(0, 1).toUpperCase();
+    final avatarColor = HSLColor.fromAHSL(1.0, 200.0, 0.5, 0.4).toColor();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+      child: Column(
+        children: [
+          AnimatedBuilder(
+            animation: _pulseAnim,
+            builder: (context, child) => Transform.scale(scale: _pulseAnim.value, child: child),
+            child: _buildAvatarCard(context, avatarColor, initial, username, null),
+          ),
+          const SizedBox(height: 16),
+          _buildConnectedBadge(context, l10n),
+          const SizedBox(height: 32),
+          _buildGimmick(context, l10n),
+          const SizedBox(height: 28),
+          _buildLogoutButton(context, onLogout, l10n),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthenticatedFull(
+    BuildContext context, SourceAuthState state, AppLocalizations l10n) {
     final initial = (state.accountName ?? 'U').substring(0, 1).toUpperCase();
     final hues = [170, 200, 220];
     final avatarColor = HSLColor.fromAHSL(
@@ -112,140 +240,86 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
       child: Column(
         children: [
-          // ── Avatar + Name Card ──
           AnimatedBuilder(
             animation: _pulseAnim,
-            builder: (context, child) => Transform.scale(
-              scale: _pulseAnim.value,
-              child: child,
-            ),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
-                gradient: LinearGradient(
-                  colors: [
-                    avatarColor.withValues(alpha: 0.2),
-                    avatarColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(
-                  color: avatarColor.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: avatarColor,
-                    child: Text(
-                      initial,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    state.accountName ?? l10n.sourceAuthUser,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  if (state.profileEmail != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      state.profileEmail!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-                    ),
-                  ],
-                  if (state.profileSlug != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      '${l10n.sourceAuthSlug}: ${state.profileSlug}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            builder: (context, child) => Transform.scale(scale: _pulseAnim.value, child: child),
+            child: _buildAvatarCard(context, avatarColor, initial,
+                state.accountName ?? l10n.sourceAuthUser, state.profileEmail),
           ),
-
+          if (state.profileSlug != null) ...[
+            const SizedBox(height: 8),
+            Text('${l10n.sourceAuthSlug}: ${state.profileSlug}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
+          ],
           const SizedBox(height: 16),
-
-          // ── Connected badge ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.check_circle,
-                      color: Theme.of(context).colorScheme.primary, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n.sourceAuthConnectedAccount,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
+          _buildConnectedBadge(context, l10n),
           const SizedBox(height: 32),
-
-          // ── Gimmick: source quote ──
           _buildGimmick(context, l10n),
-
           const SizedBox(height: 28),
+          _buildLogoutButton(context, () {
+            context.read<SourceAuthCubit>().logout();
+            if (context.mounted) Navigator.of(context).pop();
+          }, l10n),
+        ],
+      ),
+    );
+  }
 
-          // ── Logout button ──
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                await context.read<SourceAuthCubit>().logout();
-                if (context.mounted) Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.logout, size: 18),
-              label: Text(l10n.sourceAuthLogout),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-                side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                ),
-              ),
+  Widget _buildAvatarCard(BuildContext context, Color avatarColor, String initial, String name, String? email) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+        gradient: LinearGradient(
+          colors: [avatarColor.withValues(alpha: 0.2), avatarColor.withValues(alpha: 0.05)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: avatarColor.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: avatarColor,
+            child: Text(initial, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary)),
+          ),
+          const SizedBox(height: 14),
+          Text(name, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          if (email != null) ...[
+            const SizedBox(height: 4),
+            Text(email, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConnectedBadge(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(l10n.sourceAuthConnectedAccount,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
           ),
         ],
       ),
@@ -253,43 +327,6 @@ class _SourceLoginPageState extends State<SourceLoginPage>
   }
 
   Widget _buildGimmick(BuildContext context, AppLocalizations l10n) {
-    // Choose gimmick by source
-    if (widget.sourceId == 'nhentai') {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.tertiary, size: 20),
-            const SizedBox(height: 10),
-            Text(
-              'Abandon all hope,\nye who enter here',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '汝等こゝに入るもの一切の望みを棄てよ',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), fontSize: 11),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Default: animated dice gimmick (matching Crotpedia)
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -300,102 +337,70 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       ),
       child: Column(
         children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: Center(
-              child: AnimatedDiceWidget(isSpinning: false),
-            ),
-          ),
+          Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary, size: 24),
           const SizedBox(height: 10),
-          Text(
-            l10n.sourceAuthConnectedDescription,
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
-          ),
+          Text(l10n.sourceAuthConnectedDescription,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
         ],
       ),
     );
   }
 
-  Widget _buildUnauthenticated(BuildContext context, AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Source icon
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.surfaceContainerLow,
-                    Theme.of(context).colorScheme.surfaceContainer,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
-              ),
-              child: Icon(
-                widget.sourceId == 'nhentai'
-                    ? Icons.library_books_rounded
-                    : Icons.lock_person,
-                size: 40,
-                color: widget.sourceId == 'nhentai'
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              l10n.sourceAuthLoginTitle(widget.sourceId),
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.sourceAuthLoginDescription,
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-            ),
-            const SizedBox(height: 36),
-            FilledButton.icon(
-              onPressed: () => _launchWebViewLogin(context),
-              icon: const Icon(Icons.login),
-              label: Text(l10n.sourceAuthSecureLogin),
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                ),
-              ),
-            ),
-          ],
+  Widget _buildLogoutButton(BuildContext context, VoidCallback onLogout, AppLocalizations l10n) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onLogout,
+        icon: const Icon(Icons.logout, size: 18),
+        label: Text(l10n.sourceAuthLogout),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.error,
+          side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
         ),
       ),
     );
   }
 
-  // ── WebView Login ──
+  // ── Login methods ──
 
-  Future<void> _launchWebViewLogin(BuildContext context) async {
+  Future<void> _launchCrotpediaLogin(BuildContext context) async {
+    try {
+      final result = await KuronNative.instance.showLoginWebView(
+        url: 'https://crotpedia.net/login/',
+        autoCloseOnCookie: 'wordpress_logged_in',
+      );
+      if (!context.mounted) return;
+      if (result != null && result['success'] == true) {
+        final cookies = (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
+        final hasSession = cookies.any((c) => c.contains('wordpress_logged_in'));
+        if (hasSession) {
+          final sessionCookie = cookies.firstWhere((c) => c.contains('wordpress_logged_in'));
+          final value = sessionCookie.contains('=')
+              ? sessionCookie.substring(sessionCookie.indexOf('=') + 1)
+              : '';
+          final rawParts = value.split('%7C');
+          final username = rawParts.isNotEmpty ? Uri.decodeComponent(rawParts[0]) : 'User';
+          await context.read<CrotpediaAuthCubit>().externalLogin(username, cookies);
+        } else if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.loginIncomplete)));
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedError(e.toString()))));
+      }
+    }
+  }
+
+  Future<void> _launchTokenLogin(BuildContext context) async {
     final urls = _getLoginUrls(widget.sourceId);
     if (urls == null) return;
-
     try {
       final result = await KuronNative.instance.showLoginWebView(
         url: urls.url,
@@ -403,12 +408,9 @@ class _SourceLoginPageState extends State<SourceLoginPage>
         successUrlFilters: urls.successFilters,
         clearCookies: true,
       );
-
       if (!context.mounted) return;
-
       if (result != null && result['success'] == true) {
-        final cookies =
-            (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
+        final cookies = (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
         await _saveWebViewSession(cookies, urls.autoCloseCookie);
         _justLoggedIn = true;
         if (context.mounted) {
@@ -418,17 +420,12 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!
-                .loginFailedError(e.toString())),
-          ),
-        );
+          SnackBar(content: Text(AppLocalizations.of(context)!.loginFailedError(e.toString()))));
       }
     }
   }
 
-  Future<void> _saveWebViewSession(
-      List<String> cookies, String? cookieName) async {
+  Future<void> _saveWebViewSession(List<String> cookies, String? cookieName) async {
     if (cookieName == null) return;
     String? accessToken;
     for (final c in cookies) {
@@ -441,55 +438,32 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       }
       if (accessToken != null) break;
     }
-    // Even if no cookie in result, try reading from cookie jar via test request
-    if (accessToken == null || accessToken.isEmpty) {
-      // Check if session already exists
-      final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
-      final auth = cfg?['auth'] as Map<String, dynamic>?;
-      final ep = auth?['endpoints'] as Map<String, dynamic>?;
-      final loginEndpointLocal = ep?['login']?.toString() ?? '';
-      if (loginEndpointLocal.isEmpty) return;
-      final api = cfg?['api'] as Map<String, dynamic>?;
-      final apiBaseLocal = api?['apiBase']?.toString() ?? '';
-      if (apiBaseLocal.isEmpty) return;
-      final keySeed = '$apiBaseLocal|$loginEndpointLocal';
-      final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
-      const storage = FlutterSecureStorage();
-      final existing = await storage.read(key: sessionKey);
-      if (existing != null && existing.isNotEmpty) return; // already saved
-      // Can't get token from cookies — user must re-login
-      return;
-    }
-    // Save session token to secure storage
+    if (accessToken == null || accessToken.isEmpty) return;
     final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
-    final api = cfg?['api'] as Map<String, dynamic>?;
+    if (cfg == null) return;
+    final api = cfg['api'] as Map<String, dynamic>?;
     final apiBase = api?['apiBase']?.toString() ?? '';
-    final auth = cfg?['auth'] as Map<String, dynamic>?;
+    final auth = cfg['auth'] as Map<String, dynamic>?;
     final ep = auth?['endpoints'] as Map<String, dynamic>?;
     final loginEndpoint = ep?['login']?.toString() ?? '';
+    if (apiBase.isEmpty || loginEndpoint.isEmpty) return;
     final keySeed = '$apiBase|$loginEndpoint';
     final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
     const storage = FlutterSecureStorage();
-    await storage.write(
-      key: sessionKey,
-      value: jsonEncode({'accessToken': accessToken}),
-    );
+    await storage.write(key: sessionKey, value: jsonEncode({'accessToken': accessToken}));
   }
 
   _LoginUrls? _getLoginUrls(String sourceId) {
     final config = getIt<RemoteConfigService>().getRawConfig(sourceId);
     if (config == null) return null;
-
     final auth = config['auth'] as Map<String, dynamic>?;
     final webview = auth?['webviewLogin'] as Map<String, dynamic>?;
     if (webview == null) return null;
-
     final url = webview['url']?.toString().trim();
     final cookieName = webview['autoCloseCookie']?.toString().trim();
     final rawFilters = webview['successFilters'];
     final filters = rawFilters is List ? rawFilters.cast<String>() : null;
     if (url == null || url.isEmpty) return null;
-
     return _LoginUrls(url: url, autoCloseCookie: cookieName, successFilters: filters);
   }
 
@@ -497,12 +471,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     final text = raw.toLowerCase();
     if (text.contains('timeout')) return l10n.errorConnectionTimeout;
     if (text.contains('connection')) return l10n.errorNetwork;
-    if (text.contains('session expired') ||
-        text.contains('unauthorized') ||
-        text.contains('401') ||
-        text.contains('403')) {
-      return l10n.errorServer;
-    }
+    if (text.contains('session expired') || text.contains('unauthorized') || text.contains('401') || text.contains('403')) return l10n.errorServer;
     if (text.contains('500')) return l10n.errorServer;
     return l10n.errorUnknown;
   }
@@ -512,10 +481,5 @@ class _LoginUrls {
   final String url;
   final String? autoCloseCookie;
   final List<String>? successFilters;
-
-  _LoginUrls({
-    required this.url,
-    this.autoCloseCookie,
-    this.successFilters,
-  });
+  _LoginUrls({required this.url, this.autoCloseCookie, this.successFilters});
 }

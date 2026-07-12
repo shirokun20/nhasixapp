@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
-import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
+import 'package:kuron_special/kuron_special.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/services/source_auth_service.dart';
 import '../../core/routing/app_route.dart';
@@ -236,12 +236,14 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     // Crotpedia specific actions
                     if (context.watch<SourceCubit>().state.activeSource?.id ==
                         SourceType.crotpedia.id) ...[
-                      BlocBuilder<CrotpediaAuthCubit, CrotpediaAuthState>(
-                        builder: (context, authState) {
-                          final isLoggedIn = authState is CrotpediaAuthSuccess;
-                          final label = isLoggedIn
+                      Builder(
+                        builder: (context) {
+                          final adapter = getIt<WebViewSessionAdapter>();
+                          final isLoggedIn = adapter.isLoggedIn;
+                          final name = adapter.username;
+                          final label = isLoggedIn && name != null
                               ? AppLocalizations.of(context)!
-                                  .accountWithName(authState.username)
+                                  .accountWithName(name)
                               : AppLocalizations.of(context)!.loginAccount;
 
                           return Column(

@@ -16,30 +16,25 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
     required Logger logger,
   })  : _adapter = adapter,
         _logger = logger,
-        super(CrotpediaAuthInitial()) {
-    checkLoginStatus();
-  }
+        super(CrotpediaAuthInitial());
 
   Future<void> checkLoginStatus() async {
+    if (isClosed) return;
     try {
+      // Only check local state — no HTTP request (avoids CF block on Dio)
       if (_adapter.isLoggedIn) {
         emit(CrotpediaAuthSuccess(_adapter.username ?? 'User'));
       } else {
-        // Attempt auto-login
-        final success = await _adapter.tryAutoLogin();
-        if (success) {
-          emit(CrotpediaAuthSuccess(_adapter.username ?? 'User'));
-        } else {
-          emit(CrotpediaAuthInitial());
-        }
+        emit(CrotpediaAuthInitial());
       }
     } catch (e) {
       _logger.e('Failed to check login status', error: e);
-      emit(CrotpediaAuthInitial());
+      if (!isClosed) emit(CrotpediaAuthInitial());
     }
   }
 
   Future<void> login(String email, String password, bool rememberMe) async {
+    if (isClosed) return;
     emit(CrotpediaAuthLoading());
     try {
       final result = await _adapter.login(
@@ -48,6 +43,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
         rememberMe: rememberMe,
       );
 
+      if (isClosed) return;
       if (result.success) {
         emit(CrotpediaAuthSuccess(result.username ?? email.split('@').first));
       } else {
@@ -55,34 +51,34 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
       }
     } catch (e) {
       _logger.e('Login error', error: e);
-      emit(const CrotpediaAuthError(
-          'An unexpected error occurred during login'));
+      if (!isClosed) {
+        emit(const CrotpediaAuthError('An unexpected error occurred during login'));
+      }
     }
   }
 
   Future<void> externalLogin(String username, List<String> rawCookies) async {
+    if (isClosed) return;
     emit(CrotpediaAuthLoading());
     try {
       await _adapter.setExternalLogin(
           username: username, rawCookies: rawCookies);
-      emit(CrotpediaAuthSuccess(username));
-    } catch (e) {
-      _logger.e('External login error', error: e);
-      emit(const CrotpediaAuthError('Failed to capture session'));
+      if (!isClosed) emit(CrotpediaAuthSuccess(username));
+    } catch (e, s) {
+      _logger.e('External login error: $e\n$s');
+      if (!isClosed) emit(const CrotpediaAuthError('Failed to capture session'));
     }
   }
 
   Future<void> logout() async {
+    // Always clear adapter even if cubit is closed
     try {
-      // Clear Native WebView cookies (replacing CookieManager)
-      await KuronNative.instance.clearCookies();
-
       await _adapter.logout();
-      emit(CrotpediaAuthInitial());
+      await KuronNative.instance.clearCookies();
     } catch (e) {
       _logger.e('Logout error', error: e);
-      // Even if logout fails, we probably want to show initial state to user
-      emit(CrotpediaAuthInitial());
     }
+    if (isClosed) return;
+    emit(CrotpediaAuthInitial());
   }
 }
