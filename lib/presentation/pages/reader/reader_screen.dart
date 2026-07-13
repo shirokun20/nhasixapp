@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/colors_const.dart' show KuronColors;
 import '../../../core/constants/design_tokens.dart';
@@ -1896,6 +1897,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       successUrlFilters: const <String>[],
       initialCookie: manualContext.initialCookie,
       userAgent: null,
+      backgroundColor: NativeThemeHelper.backgroundColorHex,
+      textColor: NativeThemeHelper.textColorHex,
       domImageSelectors: sourceRules.imageSelectors,
       domImageAttributes: sourceRules.imageAttributes,
       domLinkSelectors: sourceRules.linkSelectors,

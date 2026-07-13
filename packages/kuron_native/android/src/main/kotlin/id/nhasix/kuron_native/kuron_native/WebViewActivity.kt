@@ -38,6 +38,8 @@ class WebViewActivity : AppCompatActivity() {
         const val EXTRA_ALLOW_REQUEST_PATTERNS = "extra_allow_request_patterns"
         const val EXTRA_PAGE_FINISHED_SCRIPT = "extra_page_finished_script"
         const val EXTRA_BLOCK_NETWORK_IMAGES = "extra_block_network_images"
+        const val EXTRA_BACKGROUND_COLOR = "extra_background_color"
+        const val EXTRA_TEXT_COLOR = "extra_text_color"
 
         const val RESULT_COOKIES = "result_cookies" // ArrayList<String>
         const val RESULT_USER_AGENT = "result_user_agent"
@@ -63,7 +65,9 @@ class WebViewActivity : AppCompatActivity() {
             pageFinishedScript: String? = null,
             blockNetworkImages: Boolean = false,
             enableAdBlock: Boolean = false,
-            clearCookies: Boolean = false
+            clearCookies: Boolean = false,
+            backgroundColor: String? = null,
+            textColor: String? = null
         ): Intent {
             return Intent(context, WebViewActivity::class.java).apply {
                 putExtra(EXTRA_URL, url)
@@ -81,6 +85,8 @@ class WebViewActivity : AppCompatActivity() {
                 putExtra(EXTRA_BLOCK_NETWORK_IMAGES, blockNetworkImages)
                 putExtra(EXTRA_ENABLE_AD_BLOCK, enableAdBlock)
                 if (clearCookies) putExtra(EXTRA_CLEAR_COOKIES, true)
+                if (backgroundColor != null) putExtra(EXTRA_BACKGROUND_COLOR, backgroundColor)
+                if (textColor != null) putExtra(EXTRA_TEXT_COLOR, textColor)
             }
         }
     }
@@ -136,7 +142,6 @@ class WebViewActivity : AppCompatActivity() {
                     resources.displayMetrics
                 ).toInt()
             )
-            setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF")) // or fetch colorPrimary
             elevation = 4f
             translationZ = 4f
         }
@@ -157,6 +162,40 @@ class WebViewActivity : AppCompatActivity() {
         rootLayout.addView(webView)
         
         setContentView(rootLayout)
+
+        val bgColorHex = intent.getStringExtra(EXTRA_BACKGROUND_COLOR)
+        val txtColorHex = intent.getStringExtra(EXTRA_TEXT_COLOR)
+
+        if (bgColorHex != null) {
+            try {
+                val parsedBgColor = android.graphics.Color.parseColor(bgColorHex)
+                rootLayout.setBackgroundColor(parsedBgColor)
+                toolbar.setBackgroundColor(parsedBgColor)
+                webView.setBackgroundColor(parsedBgColor)
+                
+                // Adjust status bar text color based on luminance
+                val luminance = (0.299 * android.graphics.Color.red(parsedBgColor) + 0.587 * android.graphics.Color.green(parsedBgColor) + 0.114 * android.graphics.Color.blue(parsedBgColor)) / 255
+                val isLight = luminance > 0.5
+                WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isLight
+            } catch (e: Exception) {
+                // Ignore parsing errors, keep default theme
+            }
+        } else {
+            toolbar.setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF"))
+        }
+
+        if (txtColorHex != null) {
+            try {
+                val parsedTxtColor = android.graphics.Color.parseColor(txtColorHex)
+                toolbar.setTitleTextColor(parsedTxtColor)
+                
+                // Color back button and overflow icons
+                toolbar.navigationIcon?.mutate()?.setTint(parsedTxtColor)
+                toolbar.overflowIcon?.mutate()?.setTint(parsedTxtColor)
+            } catch (e: Exception) {
+                // Ignore parsing errors
+            }
+        }
 
         val url = intent.getStringExtra(EXTRA_URL) ?: run {
             finish()

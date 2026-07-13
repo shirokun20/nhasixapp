@@ -7,6 +7,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 // import '../../core/utils/webtoon_detector.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
@@ -787,7 +788,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return;
       }
 
-      await KuronNative.instance.openWebView(url: source);
+      await KuronNative.instance.openWebView(
+        url: source,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
+      );
     } catch (e) {
       _logger.w('[AVIF] Failed to open external fallback: $e');
     }

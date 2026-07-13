@@ -266,11 +266,44 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   Future<void> _openReader(Content content) async {
     debugPrint(
         '🔍 OFFLINE_READER: opening content id=${content.id} title=${content.title} imageUrls=${content.imageUrls.length} pageCount=${content.pageCount} sourceId=${content.sourceId}');
-    await AppRouter.goToReader(
-      context,
-      content.id,
-      content: content,
-    );
+        
+    final offlineManager = getIt<OfflineContentManager>();
+    String? pdfPath;
+    try {
+      final firstImagePath = await offlineManager.getOfflineFirstImagePath(content.id);
+      if (firstImagePath != null) {
+        final contentDir = File(firstImagePath).parent.parent.path;
+        final pdfDir = Directory(p.join(contentDir, 'pdf'));
+        if (await pdfDir.exists()) {
+          final files = await pdfDir.list().toList();
+          final pdfFile = files.cast<File?>().firstWhere(
+            (f) => f != null && f.path.toLowerCase().endsWith('.pdf'), 
+            orElse: () => null
+          );
+          pdfPath = pdfFile?.path;
+        }
+      }
+    } catch (e) {
+      getIt<Logger>().e('Error checking for PDF to open: $e');
+    }
+
+    if (!mounted) return;
+
+    if (pdfPath != null) {
+      AppRouter.goToReaderPdf(
+        context,
+        filePath: pdfPath,
+        contentId: content.id,
+        title: content.title,
+      );
+    } else {
+      await AppRouter.goToReader(
+        context,
+        content.id,
+        content: content,
+      );
+    }
+    
     if (!mounted) return;
     await _loadProgress();
   }

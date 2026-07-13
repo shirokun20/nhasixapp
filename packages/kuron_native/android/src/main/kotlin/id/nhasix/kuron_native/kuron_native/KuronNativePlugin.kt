@@ -740,6 +740,8 @@ class KuronNativePlugin :
         val filePath = call.argument<String>("filePath")
         val title = call.argument<String>("title") ?: ""
         val startPage = call.argument<Int>("startPage") ?: 0
+        val backgroundColor = call.argument<String>("backgroundColor")
+        val textColor = call.argument<String>("textColor")
 
         if (filePath == null) {
             result.error("INVALID_ARGUMENT", "File path is null", null)
@@ -748,7 +750,7 @@ class KuronNativePlugin :
 
         try {
             // Launch Activity from context
-            val intent = id.nhasix.kuron_native.kuron_native.pdf.PdfReaderActivity.createIntent(context, filePath, title, startPage)
+            val intent = id.nhasix.kuron_native.kuron_native.pdf.PdfReaderActivity.createIntent(context, filePath, title, startPage, backgroundColor, textColor)
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
             result.success(null)
@@ -886,6 +888,8 @@ class KuronNativePlugin :
         val pageFinishedScript = call.argument<String>("pageFinishedScript")
         val blockNetworkImages = call.argument<Boolean>("blockNetworkImages") ?: false
         val enableAdBlock = call.argument<Boolean>("enableAdBlock") ?: false
+        val backgroundColor = call.argument<String>("backgroundColor")
+        val textColor = call.argument<String>("textColor")
 
         if (url == null) {
             result.error("INVALID_ARGS", "Url is required", null)
@@ -922,7 +926,9 @@ class KuronNativePlugin :
                 pageFinishedScript,
                 blockNetworkImages,
                 enableAdBlock,
-                call.argument<Boolean>("clearCookies") ?: false
+                call.argument<Boolean>("clearCookies") ?: false,
+                backgroundColor,
+                textColor
             )
             activity.startActivityForResult(intent, WEBVIEW_REQUEST_CODE)
         } catch (e: Exception) {
@@ -935,6 +941,8 @@ class KuronNativePlugin :
         val provider = call.argument<String>("provider")?.trim()
         val siteKey = call.argument<String>("siteKey")?.trim()
         val baseUrl = call.argument<String>("baseUrl")
+        val backgroundColor = call.argument<String>("backgroundColor")
+        val textColor = call.argument<String>("textColor")
 
         if (provider.isNullOrEmpty() || siteKey.isNullOrEmpty()) {
             result.error("INVALID_ARGS", "provider and siteKey are required", null)
@@ -960,6 +968,8 @@ class KuronNativePlugin :
                 provider = provider,
                 siteKey = siteKey,
                 baseUrl = baseUrl,
+                backgroundColor = backgroundColor,
+                textColor = textColor
             )
             activity.startActivityForResult(intent, CAPTCHA_WEBVIEW_REQUEST_CODE)
         } catch (e: Exception) {

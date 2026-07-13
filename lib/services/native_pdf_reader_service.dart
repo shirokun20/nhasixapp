@@ -1,5 +1,6 @@
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 
 /// Service for opening PDFs using native Android PDF reader
 /// Now wraps KuronNative plugin for compatibility
@@ -25,6 +26,8 @@ class NativePdfReaderService {
         filePath: filePath,
         title: title ?? '',
         startPage: startPage,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
       );
 
       _logger.i('✅ PDF opened successfully');

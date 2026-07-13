@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
@@ -1447,6 +1448,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       Logger().i('Opening URL via KuronNative: $url');
       await KuronNative.instance.openWebView(
         url: url,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
         enableJavaScript: true,
       );
     } catch (e) {

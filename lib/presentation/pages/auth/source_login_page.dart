@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import 'package:kuron_special/kuron_special.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -372,6 +373,8 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       final result = await KuronNative.instance.showLoginWebView(
         url: 'https://crotpedia.net/login/',
         autoCloseOnCookie: 'wordpress_logged_in',
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
       );
       if (!context.mounted) return;
       if (result != null && result['success'] == true) {
@@ -407,6 +410,8 @@ class _SourceLoginPageState extends State<SourceLoginPage>
         autoCloseOnCookie: urls.autoCloseCookie,
         successUrlFilters: urls.successFilters,
         clearCookies: true,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
       );
       if (!context.mounted) return;
       if (result != null && result['success'] == true) {

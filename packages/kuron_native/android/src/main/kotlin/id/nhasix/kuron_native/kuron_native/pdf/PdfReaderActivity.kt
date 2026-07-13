@@ -3,6 +3,7 @@ package id.nhasix.kuron_native.kuron_native.pdf
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
@@ -33,20 +34,27 @@ class PdfReaderActivity : AppCompatActivity() {
         const val EXTRA_PDF_TITLE = "pdf_title"
         const val EXTRA_START_PAGE = "start_page"
 
-        fun createIntent(activity: Activity, pdfPath: String, title: String = "", startPage: Int = 0): Intent {
+        const val EXTRA_BACKGROUND_COLOR = "background_color"
+        const val EXTRA_TEXT_COLOR = "text_color"
+
+        fun createIntent(activity: Activity, pdfPath: String, title: String = "", startPage: Int = 0, backgroundColor: String? = null, textColor: String? = null): Intent {
             return Intent(activity, PdfReaderActivity::class.java).apply {
                 putExtra(EXTRA_PDF_PATH, pdfPath)
                 putExtra(EXTRA_PDF_TITLE, title)
                 putExtra(EXTRA_START_PAGE, startPage)
+                putExtra(EXTRA_BACKGROUND_COLOR, backgroundColor)
+                putExtra(EXTRA_TEXT_COLOR, textColor)
             }
         }
 
         // Overload for Context (needed for Plugin usage)
-        fun createIntent(context: android.content.Context, pdfPath: String, title: String = "", startPage: Int = 0): Intent {
+        fun createIntent(context: android.content.Context, pdfPath: String, title: String = "", startPage: Int = 0, backgroundColor: String? = null, textColor: String? = null): Intent {
             return Intent(context, PdfReaderActivity::class.java).apply {
                 putExtra(EXTRA_PDF_PATH, pdfPath)
                 putExtra(EXTRA_PDF_TITLE, title)
                 putExtra(EXTRA_START_PAGE, startPage)
+                putExtra(EXTRA_BACKGROUND_COLOR, backgroundColor)
+                putExtra(EXTRA_TEXT_COLOR, textColor)
             }
         }
     }
@@ -102,11 +110,50 @@ class PdfReaderActivity : AppCompatActivity() {
             finish()
         }
 
+        applyThemeColors()
+
         btnToggleMode.setOnClickListener {
             toggleReadingMode()
         }
         
         openPdf(pdfPath, startPage)
+    }
+
+    private fun applyThemeColors() {
+        val bgColorHex = intent?.getStringExtra(EXTRA_BACKGROUND_COLOR)
+        val txtColorHex = intent?.getStringExtra(EXTRA_TEXT_COLOR)
+
+        if (bgColorHex != null) {
+            try {
+                val parsedBgColor = Color.parseColor(bgColorHex)
+                findViewById<View>(android.R.id.content).setBackgroundColor(parsedBgColor)
+                appBarLayout.setBackgroundColor(parsedBgColor)
+                toolbar.setBackgroundColor(parsedBgColor)
+                recyclerView.setBackgroundColor(parsedBgColor)
+                
+                // Adjust status bar text color based on luminance
+                val luminance = (0.299 * Color.red(parsedBgColor) + 0.587 * Color.green(parsedBgColor) + 0.114 * Color.blue(parsedBgColor)) / 255
+                val isLight = luminance > 0.5
+                WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isLight
+            } catch (e: Exception) {
+                // Ignore parsing errors, keep default theme
+            }
+        }
+
+        if (txtColorHex != null) {
+            try {
+                val parsedTxtColor = Color.parseColor(txtColorHex)
+                toolbar.setTitleTextColor(parsedTxtColor)
+                pageIndicator.setTextColor(parsedTxtColor)
+                btnToggleMode.setColorFilter(parsedTxtColor)
+                
+                // Color back button and overflow icons
+                toolbar.navigationIcon?.mutate()?.setTint(parsedTxtColor)
+                toolbar.overflowIcon?.mutate()?.setTint(parsedTxtColor)
+            } catch (e: Exception) {
+                // Ignore parsing errors
+            }
+        }
     }
 
     private fun openPdf(path: String, startPage: Int) {

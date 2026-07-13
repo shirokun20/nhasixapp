@@ -109,6 +109,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<void> openWebView({
     required String url,
     bool enableJavaScript = true,
+    String? backgroundColor,
+    String? textColor,
   }) {
     throw UnimplementedError('openWebView() has not been implemented.');
   }
@@ -134,6 +136,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
     required String filePath,
     String? title,
     int? startPage,
+    String? backgroundColor,
+    String? textColor,
   }) {
     throw UnimplementedError('openPdf() has not been implemented.');
   }
@@ -180,6 +184,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
     bool blockNetworkImages = false,
     bool enableAdBlock = false, // NEW
     bool clearCookies = false,
+    String? backgroundColor,
+    String? textColor,
   }) {
     throw UnimplementedError('showLoginWebView() has not been implemented.');
   }
@@ -195,6 +201,8 @@ abstract class KuronNativePlatform extends PlatformInterface {
     required String provider,
     required String siteKey,
     String? baseUrl,
+    String? backgroundColor,
+    String? textColor,
   }) {
     throw UnimplementedError('showCaptchaWebView() has not been implemented.');
   }

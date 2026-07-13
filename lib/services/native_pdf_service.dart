@@ -1,5 +1,6 @@
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 
 class NativePdfService {
   final Logger _logger = Logger();
@@ -57,6 +58,9 @@ class NativePdfService {
       await KuronNative.instance.openPdf(
         filePath: path,
         title: title,
+        startPage: startPage,
+        backgroundColor: NativeThemeHelper.readerBackgroundColorHex,
+        textColor: NativeThemeHelper.readerTextColorHex,
       );
     } catch (e) {
       _logger.e('Failed to open PDF via KuronNative: $e');

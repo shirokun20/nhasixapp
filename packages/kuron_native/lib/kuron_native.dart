@@ -118,10 +118,14 @@ class KuronNative {
   Future<void> openWebView({
     required String url,
     bool enableJavaScript = true,
+    String? backgroundColor,
+    String? textColor,
   }) {
     return KuronNativePlatform.instance.openWebView(
       url: url,
       enableJavaScript: enableJavaScript,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 
@@ -161,6 +165,8 @@ class KuronNative {
     bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
+    String? backgroundColor,
+    String? textColor,
   }) {
     return KuronNativePlatform.instance.showLoginWebView(
       url: url,
@@ -178,6 +184,8 @@ class KuronNative {
       blockNetworkImages: blockNetworkImages,
       enableAdBlock: enableAdBlock,
       clearCookies: clearCookies,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 
@@ -185,11 +193,15 @@ class KuronNative {
     required String provider,
     required String siteKey,
     String? baseUrl,
+    String? backgroundColor,
+    String? textColor,
   }) {
     return KuronNativePlatform.instance.showCaptchaWebView(
       provider: provider,
       siteKey: siteKey,
       baseUrl: baseUrl,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 
@@ -197,11 +209,15 @@ class KuronNative {
     required String filePath,
     String? title,
     int? startPage,
+    String? backgroundColor,
+    String? textColor,
   }) {
     return KuronNativePlatform.instance.openPdf(
       filePath: filePath,
       title: title,
       startPage: startPage,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 

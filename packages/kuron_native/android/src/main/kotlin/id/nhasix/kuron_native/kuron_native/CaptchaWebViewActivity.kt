@@ -27,6 +27,8 @@ class CaptchaWebViewActivity : AppCompatActivity() {
         const val EXTRA_PROVIDER = "extra_provider"
         const val EXTRA_SITE_KEY = "extra_site_key"
         const val EXTRA_BASE_URL = "extra_base_url"
+        const val EXTRA_BACKGROUND_COLOR = "extra_background_color"
+        const val EXTRA_TEXT_COLOR = "extra_text_color"
 
         const val RESULT_SUCCESS = "result_success"
         const val RESULT_TOKEN = "result_token"
@@ -39,12 +41,16 @@ class CaptchaWebViewActivity : AppCompatActivity() {
             context: Context,
             provider: String,
             siteKey: String,
-            baseUrl: String?
+            baseUrl: String?,
+            backgroundColor: String? = null,
+            textColor: String? = null
         ): Intent {
             return Intent(context, CaptchaWebViewActivity::class.java).apply {
                 putExtra(EXTRA_PROVIDER, provider)
                 putExtra(EXTRA_SITE_KEY, siteKey)
                 putExtra(EXTRA_BASE_URL, baseUrl)
+                if (backgroundColor != null) putExtra(EXTRA_BACKGROUND_COLOR, backgroundColor)
+                if (textColor != null) putExtra(EXTRA_TEXT_COLOR, textColor)
             }
         }
     }
@@ -100,7 +106,6 @@ class CaptchaWebViewActivity : AppCompatActivity() {
                     resources.displayMetrics,
                 ).toInt(),
             )
-            setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF"))
             title = "Solve CAPTCHA"
         }
         root.addView(toolbar)
@@ -117,6 +122,39 @@ class CaptchaWebViewActivity : AppCompatActivity() {
         setContentView(root)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val bgColorHex = intent.getStringExtra(EXTRA_BACKGROUND_COLOR)
+        val txtColorHex = intent.getStringExtra(EXTRA_TEXT_COLOR)
+
+        if (bgColorHex != null) {
+            try {
+                val parsedBgColor = android.graphics.Color.parseColor(bgColorHex)
+                root.setBackgroundColor(parsedBgColor)
+                toolbar.setBackgroundColor(parsedBgColor)
+                webView.setBackgroundColor(parsedBgColor)
+                
+                val luminance = (0.299 * android.graphics.Color.red(parsedBgColor) + 0.587 * android.graphics.Color.green(parsedBgColor) + 0.114 * android.graphics.Color.blue(parsedBgColor)) / 255
+                val isLight = luminance > 0.5
+                WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isLight
+            } catch (e: Exception) {
+                // Ignore parsing errors
+            }
+        } else {
+            toolbar.setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF"))
+        }
+
+        if (txtColorHex != null) {
+            try {
+                val parsedTxtColor = android.graphics.Color.parseColor(txtColorHex)
+                toolbar.setTitleTextColor(parsedTxtColor)
+                
+                // Color back button and overflow icons
+                toolbar.navigationIcon?.mutate()?.setTint(parsedTxtColor)
+                toolbar.overflowIcon?.mutate()?.setTint(parsedTxtColor)
+            } catch (e: Exception) {
+                // Ignore parsing errors
+            }
+        }
 
         with(webView.settings) {
             javaScriptEnabled = true

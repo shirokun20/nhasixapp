@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -50,6 +51,8 @@ class _CaptchaSolverPageState extends State<CaptchaSolverPage> {
         provider: widget.provider,
         siteKey: widget.siteKey,
         baseUrl: _resolvedBaseUrl,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
       );
 
       if (!mounted) return;

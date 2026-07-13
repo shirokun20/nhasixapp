@@ -81,6 +81,8 @@ class MockKuronNativePlatform
   Future<void> openWebView({
     required String url,
     bool enableJavaScript = true,
+    String? backgroundColor,
+    String? textColor,
   }) async {}
 
   @override
@@ -88,6 +90,8 @@ class MockKuronNativePlatform
     required String filePath,
     String? title,
     int? startPage,
+    String? backgroundColor,
+    String? textColor,
   }) async {}
 
   @override
@@ -118,6 +122,8 @@ class MockKuronNativePlatform
     bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
+    String? backgroundColor,
+    String? textColor,
   }) =>
       Future.value({'success': true, 'cookies': []});
 
@@ -129,6 +135,8 @@ class MockKuronNativePlatform
     required String provider,
     required String siteKey,
     String? baseUrl,
+    String? backgroundColor,
+    String? textColor,
   }) =>
       Future.value({'success': true, 'token': 'mock-token'});
 

@@ -31,6 +31,8 @@ class _FakeKuronNative extends KuronNative {
     bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
+    String? backgroundColor,
+    String? textColor,
   }) async {
     lastAutoCloseOnCookie = autoCloseOnCookie;
     lastCaptureRequestPatterns = captureRequestPatterns;

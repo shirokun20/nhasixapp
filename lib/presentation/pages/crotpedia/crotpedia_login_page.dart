@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -102,6 +103,8 @@ class CrotpediaLoginPage extends StatelessWidget {
       final result = await KuronNative.instance.showLoginWebView(
         url: 'https://crotpedia.net/login/',
         successUrlFilters: ['/wp-admin', '/dashboard'],
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
       );
 
       if (!context.mounted) return;

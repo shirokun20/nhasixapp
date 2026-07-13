@@ -215,10 +215,14 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   Future<void> openWebView({
     required String url,
     bool enableJavaScript = true,
+    String? backgroundColor,
+    String? textColor,
   }) async {
     await methodChannel.invokeMethod('openWebView', {
       'url': url,
       'enableJavaScript': enableJavaScript,
+      'backgroundColor': backgroundColor,
+      'textColor': textColor,
     });
   }
 
@@ -227,11 +231,15 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     required String filePath,
     String? title,
     int? startPage,
+    String? backgroundColor,
+    String? textColor,
   }) async {
     await methodChannel.invokeMethod('openPdf', {
       'filePath': filePath,
       'title': title,
       'startPage': startPage,
+      'backgroundColor': backgroundColor,
+      'textColor': textColor,
     });
   }
 
@@ -304,6 +312,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     bool blockNetworkImages = false,
     bool enableAdBlock = false,
     bool clearCookies = false,
+    String? backgroundColor,
+    String? textColor,
   }) async {
     final result = await methodChannel
         .invokeMapMethod<String, dynamic>('showLoginWebView', {
@@ -322,6 +332,8 @@ class MethodChannelKuronNative extends KuronNativePlatform {
       'blockNetworkImages': blockNetworkImages,
       'enableAdBlock': enableAdBlock,
       'clearCookies': clearCookies,
+      'backgroundColor': backgroundColor,
+      'textColor': textColor,
     });
     return result;
   }
@@ -331,11 +343,19 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     required String provider,
     required String siteKey,
     String? baseUrl,
+    String? backgroundColor,
+    String? textColor,
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>(
       'showCaptchaWebView',
 
-      {'provider': provider, 'siteKey': siteKey, 'baseUrl': baseUrl},
+      {
+        'provider': provider,
+        'siteKey': siteKey,
+        'baseUrl': baseUrl,
+        'backgroundColor': backgroundColor,
+        'textColor': textColor,
+      },
     );
     return result;
   }
