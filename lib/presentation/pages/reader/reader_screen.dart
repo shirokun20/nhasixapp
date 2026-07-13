@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/scheduler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/routing/reader_route_extra.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../blocs/download/download_bloc.dart';
 import 'package:extended_image/extended_image.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
@@ -1199,6 +1201,7 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
             return previous.runtimeType != current.runtimeType ||
                 prevContentId != currContentId ||
                 prevImageCount != currImageCount ||
+                previous.content != current.content ||
                 previous.currentPage != current.currentPage ||
                 previous.showUI != current.showUI ||
                 previous.readingMode != current.readingMode ||
@@ -1308,10 +1311,6 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
   }
 
   bool _shouldShowNavigationItem(ReaderState state) {
-    if (state.isOfflineMode ?? false) {
-      _logger.d('❌ Navigation page disabled: Offline mode');
-      return false;
-    }
     final hasContent =
         state.content != null && (state.content!.imageUrls.isNotEmpty);
     return hasContent;
@@ -1395,6 +1394,197 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     }
   }
 
+  /// Card on first/last page — subtle glow, gradient accent, interactive GitHub row
+  Widget _buildEndscreenCard(bool isFirst) {
+    final l10n = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            cs.surfaceContainerHigh.withValues(alpha: 0.85),
+            cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: cs.primary.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: isFirst ? _buildSupporterContent(l10n, cs) : _buildThanksContent(l10n, cs),
+    );
+  }
+
+  Widget _buildSupporterContent(AppLocalizations? l10n, ColorScheme cs) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Star icon
+        Icon(Icons.auto_awesome, size: 28, color: cs.primary),
+        const SizedBox(height: 10),
+        Text(
+          l10n?.readerScreenSupporter ?? 'Support Developer',
+          style: TextStyleConst.titleSmall.copyWith(
+            fontWeight: FontWeight.w700,
+            color: cs.onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n?.readerScreenSupporterDesc ?? '',
+          style: TextStyleConst.bodySmall.copyWith(
+            color: cs.onSurfaceVariant,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 14),
+        // GitHub pill
+        GestureDetector(
+          onTap: () => launchUrl(
+            Uri.parse('https://github.com/shirokun20/nhasixapp'),
+            mode: LaunchMode.externalApplication,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star, size: 16, color: cs.onPrimary),
+                const SizedBox(width: 6),
+                Text(
+                  'Star on GitHub',
+                  style: TextStyleConst.labelMedium.copyWith(
+                    color: cs.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThanksContent(AppLocalizations? l10n, ColorScheme cs) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Book + sparkle
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_stories, size: 22, color: cs.primary),
+            const SizedBox(width: 4),
+            Icon(Icons.auto_awesome, size: 16, color: cs.tertiary),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          l10n?.readerScreenThanks ?? 'Thank You for Reading!',
+          style: TextStyleConst.titleSmall.copyWith(
+            fontWeight: FontWeight.w700,
+            color: cs.onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n?.readerScreenThanksDesc ?? '',
+          style: TextStyleConst.bodySmall.copyWith(
+            color: cs.onSurfaceVariant,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 14),
+        // GitHub pill
+        GestureDetector(
+          onTap: () => launchUrl(
+            Uri.parse('https://github.com/shirokun20/nhasixapp'),
+            mode: LaunchMode.externalApplication,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.favorite, size: 16, color: cs.onPrimary),
+                const SizedBox(width: 6),
+                Text(
+                  'Support',
+                  style: TextStyleConst.labelMedium.copyWith(
+                    color: cs.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _wrapEndscreen(Widget child, int pageNumber, int totalPages) {
+    if (totalPages <= 0) return child;
+    final isFirst = pageNumber == 1;
+    final isLast = pageNumber == totalPages;
+    if (!isFirst && !isLast) return child;
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        children: [
+          if (isFirst) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildEndscreenCard(true),
+            ),
+            const SizedBox(height: 8),
+          ],
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+
   Widget _buildChapterNavigationPage(ReaderState state) {
     final bool hasPrevChapter = _readerCubit.hasPreviousChapter;
     final bool hasNextChapter = _readerCubit.hasNextChapter;
@@ -1406,6 +1596,7 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     return EndOfChapterOverlay(
       state: state,
       isChapterMode: isChapterMode,
+      isOfflineMode: state.isOfflineMode ?? false,
       onBackToDetail: () => context.pop(),
       onPreviousChapter:
           hasPrevChapter ? () => _readerCubit.loadPreviousChapter() : null,
@@ -1474,7 +1665,11 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
         final imageUrl = state.content?.imageUrls[index] ?? '';
         final pageNumber = index + 1;
 
-        return _buildImageViewer(imageUrl, pageNumber);
+        return _wrapEndscreen(
+          _buildImageViewer(imageUrl, pageNumber),
+          pageNumber,
+          pageCount,
+        );
       },
     );
   }
@@ -1530,10 +1725,15 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
           return _buildChapterNavigationPage(state);
         }
         final imageUrl = state.content?.imageUrls[index] ?? '';
-        return _buildImageViewer(
-          imageUrl,
-          index + 1,
-          sourceId: state.content?.sourceId,
+        final pageNumber = index + 1;
+        return _wrapEndscreen(
+          _buildImageViewer(
+            imageUrl,
+            pageNumber,
+            sourceId: state.content?.sourceId,
+          ),
+          pageNumber,
+          pageCount,
         );
       },
     );
@@ -1602,12 +1802,16 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
 
             final pageNumber = index + 1;
             final imageUrl = state.content?.imageUrls[index] ?? '';
-            return _buildImageViewer(
-              imageUrl,
+            return _wrapEndscreen(
+              _buildImageViewer(
+                imageUrl,
+                pageNumber,
+                isContinuous: true,
+                enableZoom: enableZoom,
+                sourceId: state.content?.sourceId,
+              ),
               pageNumber,
-              isContinuous: true,
-              enableZoom: enableZoom,
-              sourceId: state.content?.sourceId,
+              pageCount,
             );
           },
         ),
@@ -1615,11 +1819,50 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     );
   }
 
+  Widget _buildFailedPageCard(int pageNumber,
+      {bool canRetry = false, String? sourceId}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded,
+                size: 48,
+                color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 12),
+            Text('Page $pageNumber failed to download',
+                style: TextStyleConst.titleSmall),
+            const SizedBox(height: 4),
+            Text('Tap to retry',
+                style: TextStyleConst.bodySmall),
+            if (canRetry)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Retry'),
+                  onPressed: () => _repairBrokenImage(pageNumber),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildImageViewer(String imageUrl, int pageNumber,
       {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
-    // Debug logging removed to reduce log spam during normal scrolling
-    // Uncomment below for debugging image viewer builds:
-    // _logger.d('🖼️ Building image viewer for page $pageNumber with URL: $imageUrl');
+    // Failed page placeholder → show retry card, don't try to decode
+    if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
+      final originalUrl = OfflineContentManager
+          .extractOriginalUrlFromPlaceholder(imageUrl);
+      return _buildFailedPageCard(
+        pageNumber,
+        canRetry: originalUrl != null && originalUrl.trim().isNotEmpty,
+        sourceId: sourceId,
+      );
+    }
 
     // 🚀 OPTIMIZATION: For continuous scroll mode, avoid BlocBuilder to prevent re-renders
     // Pass enableZoom as parameter instead of reading from state
@@ -1879,9 +2122,16 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
 
     if (mounted) {
       _showRepairSnackBar(pageNumber, result);
+      _refreshDownloadBloc();
     }
 
     return result.success;
+  }
+
+  void _refreshDownloadBloc() {
+    try {
+      context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+    } catch (_) {}
   }
 
   void _showRepairSnackBar(int pageNumber, ReaderImageRepairResult result) {

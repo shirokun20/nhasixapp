@@ -43,6 +43,9 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
 
     _privacyOverlayService.updateForLifecycleState(state);
 
+    // 2.2: Update DownloadBloc foreground flag (affects maxParallelImages)
+    DownloadBloc.updateForeground(state == AppLifecycleState.resumed);
+
     // Skip download state access until remote configs are ready.
     if (getIt<RemoteConfigService>().getRawConfig('nhentai') == null) {
       return;

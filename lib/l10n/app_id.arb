@@ -2273,6 +2273,7 @@
   "renameCollection": "Ubah nama koleksi",
   "pressBackToExit": "Tekan kembali untuk keluar",
   "backToDetail": "Kembali ke Detail",
+  "backToPreviousPage": "Kembali ke halaman sebelumnya",
   "failedToOpenPdf": "Gagal membuka PDF: {error}",
   "@failedToOpenPdf": {
     "placeholders": {
@@ -3030,5 +3031,9 @@
   "readFirstChapter": "Baca Chapter Pertama",
   "convertAllToPdf": "Konversi Semua ke PDF",
   "deleteSeriesConfirmation": "Apakah Anda yakin ingin menghapus {count} chapter dari \"{title}\"?",
-  "deleteSeriesWithCount": "Hapus Series ({count})"
+  "deleteSeriesWithCount": "Hapus Series ({count})",
+  "readerScreenSupporter": "Dukung Developer",
+  "readerScreenSupporterDesc": "Jika kamu suka aplikasi ini, pertimbangkan untuk mendukung pengembangannya.",
+  "readerScreenThanks": "Terima Kasih Sudah Membaca!",
+  "readerScreenThanksDesc": "Semoga kamu menikmati chapter ini. Sampai jumpa di chapter berikutnya!"
 }

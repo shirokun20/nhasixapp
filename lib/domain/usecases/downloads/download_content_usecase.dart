@@ -108,10 +108,8 @@ class DownloadContentUseCase
           params.cookies,
           params.headers,
           effectiveSavePath,
-          // STRICTLY DISABLE NATIVE NOTIFICATIONS
-          // Hardcoded to false to ensure native notifications are NEVER shown,
-          // regardless of what might be passed in params.
           false,
+          params.maxParallelImages,
         );
       }
 
@@ -153,7 +151,8 @@ class DownloadContentUseCase
     Map<String, String>? cookies,
     Map<String, String>? headers,
     String? savePath,
-    bool enableNotifications, // Replaced by strict false in call()
+    bool enableNotifications,
+    int maxParallelImages, // 2.2: foreground-aware
   ) async {
     var currentStatus = initialStatus;
 
@@ -246,6 +245,7 @@ class DownloadContentUseCase
         totalPages: totalAvailablePages,
         enableNotifications: enableNotifications,
         backupFolderName: AppStorage.backupFolderName, // ✅ Pass from config
+        maxParallelImages: maxParallelImages,
       );
 
       // We do NOT wait for completion here anymore.
@@ -364,6 +364,9 @@ class DownloadContentUseCase
 
 /// Parameters for DownloadContentUseCase
 class DownloadContentParams extends UseCaseParams {
+  // 2.2: foreground-aware maxParallelImages
+  final int maxParallelImages;
+
   const DownloadContentParams({
     required this.content,
     this.priority = 0,
@@ -373,12 +376,13 @@ class DownloadContentParams extends UseCaseParams {
     this.convertToPdf = false,
     this.imageQuality = 'high',
     this.timeoutDuration,
-    this.startPage, // NEW: Start page for range download
-    this.endPage, // NEW: End page for range download
-    this.cookies, // NEW: Cookies for authentication
-    this.headers, // NEW: Source-specific HTTP headers (Referer, User-Agent, etc.)
-    this.savePath, // NEW: Custom save path
-    this.enableNotifications = true, // NEW
+    this.startPage,
+    this.endPage,
+    this.cookies,
+    this.headers,
+    this.savePath,
+    this.enableNotifications = true,
+    this.maxParallelImages = 3,
   });
 
   final Content content;
@@ -417,10 +421,11 @@ class DownloadContentParams extends UseCaseParams {
         timeoutDuration,
         startPage,
         endPage,
-        cookies, // NEW
-        headers, // NEW
-        savePath, // NEW
-        enableNotifications, // NEW
+        cookies,
+        headers,
+        savePath,
+        enableNotifications,
+        maxParallelImages,
       ];
 
   DownloadContentParams copyWith({
@@ -434,10 +439,11 @@ class DownloadContentParams extends UseCaseParams {
     Duration? timeoutDuration,
     int? startPage,
     int? endPage,
-    Map<String, String>? cookies, // NEW
-    Map<String, String>? headers, // NEW
-    String? savePath, // NEW
-    bool? enableNotifications, // NEW
+    Map<String, String>? cookies,
+    Map<String, String>? headers,
+    String? savePath,
+    bool? enableNotifications,
+    int? maxParallelImages,
   }) {
     return DownloadContentParams(
       content: content ?? this.content,
@@ -450,11 +456,13 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       startPage: startPage ?? this.startPage,
       endPage: endPage ?? this.endPage,
-      cookies: cookies ?? this.cookies, // NEW
-      headers: headers ?? this.headers, // NEW
-      savePath: savePath ?? this.savePath, // NEW
+      cookies: cookies ?? this.cookies,
+      headers: headers ?? this.headers,
+      savePath: savePath ?? this.savePath,
       enableNotifications:
-          enableNotifications ?? this.enableNotifications, // NEW
+          enableNotifications ?? this.enableNotifications,
+      maxParallelImages:
+          maxParallelImages ?? this.maxParallelImages,
     );
   }
 
@@ -499,12 +507,12 @@ class DownloadContentParams extends UseCaseParams {
     String imageQuality = 'high',
     Duration? timeoutDuration,
     int? startPage,
-    // NEW
     int? endPage,
     Map<String, String>? cookies,
     Map<String, String>? headers,
     String? savePath,
-    bool enableNotifications = true, // NEW
+    bool enableNotifications = true,
+    int maxParallelImages = 3,
   }) {
     return DownloadContentParams(
       content: content,
@@ -515,10 +523,11 @@ class DownloadContentParams extends UseCaseParams {
       timeoutDuration: timeoutDuration,
       startPage: startPage,
       endPage: endPage,
-      cookies: cookies, // NEW
-      headers: headers, // NEW
-      savePath: savePath, // NEW
-      enableNotifications: enableNotifications, // NEW
+      cookies: cookies,
+      headers: headers,
+      savePath: savePath,
+      enableNotifications: enableNotifications,
+      maxParallelImages: maxParallelImages,
     );
   }
 

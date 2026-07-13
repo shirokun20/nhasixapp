@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../cubits/reader/reader_cubit.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -11,6 +12,7 @@ class EndOfChapterOverlay extends StatelessWidget {
   final VoidCallback? onPreviousChapter;
   final VoidCallback? onNextChapter;
   final bool isChapterMode;
+  final bool isOfflineMode;
 
   const EndOfChapterOverlay({
     super.key,
@@ -19,6 +21,7 @@ class EndOfChapterOverlay extends StatelessWidget {
     this.onPreviousChapter,
     this.onNextChapter,
     required this.isChapterMode,
+    this.isOfflineMode = false,
   });
 
   @override
@@ -109,37 +112,121 @@ class EndOfChapterOverlay extends StatelessWidget {
                     ),
                   ),
 
-                const SizedBox(height: 12),
-
-                // Back to Detail
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: onBackToDetail,
-                    icon: const Icon(Icons.arrow_back),
-                    label: Text(AppLocalizations.of(context)!.backToDetail),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // Single Content Mode: Only back button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onBackToDetail,
-                    icon: const Icon(Icons.arrow_back),
-                    label: Text(AppLocalizations.of(context)!.backToDetail),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
               ],
+
+              // Back to Detail / Back to Previous Page — always show
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onBackToDetail,
+                  icon: const Icon(Icons.arrow_back),
+                  label: Text(isOfflineMode
+                      ? AppLocalizations.of(context)!.backToPreviousPage
+                      : AppLocalizations.of(context)!.backToDetail),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              _buildSupportSection(context),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSupportSection(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            cs.surfaceContainerHigh.withValues(alpha: 0.85),
+            cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: cs.primary.withValues(alpha: 0.2),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite, size: 24, color: cs.primary),
+          const SizedBox(height: 8),
+          Text(
+            l10n?.readerScreenSupporter ?? 'Support Developer',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n?.readerScreenSupporterDesc ?? '',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse('https://github.com/shirokun20/nhasixapp'),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star, size: 16, color: cs.onPrimary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Star on GitHub',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

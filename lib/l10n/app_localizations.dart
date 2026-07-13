@@ -6678,6 +6678,12 @@ abstract class AppLocalizations {
   /// **'Back to Detail'**
   String get backToDetail;
 
+  /// No description provided for @backToPreviousPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to previous page'**
+  String get backToPreviousPage;
+
   /// No description provided for @failedToOpenPdf.
   ///
   /// In en, this message translates to:
@@ -8837,6 +8843,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Series ({count})'**
   String deleteSeriesWithCount(int count);
+
+  /// No description provided for @readerScreenSupporter.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Developer'**
+  String get readerScreenSupporter;
+
+  /// No description provided for @readerScreenSupporterDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'If you like this app, consider supporting its development.'**
+  String get readerScreenSupporterDesc;
+
+  /// No description provided for @readerScreenThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank You for Reading!'**
+  String get readerScreenThanks;
+
+  /// No description provided for @readerScreenThanksDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Hope you enjoyed this chapter. See you in the next one!'**
+  String get readerScreenThanksDesc;
 }
 
 class _AppLocalizationsDelegate

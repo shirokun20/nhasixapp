@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding, TimingsCallback, FrameTiming;
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -127,6 +128,31 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final AppLocalizations? _appLocalizations;
   final DownloadManager
       _downloadManager; // Use instance variable instead of singleton directly
+
+  // Batch DB save infrastructure
+  final Map<String, int> _dbSaveSkipCount = {};
+  final Set<String> _pendingDbSave = {};
+  Timer? _dbFlushTimer;
+  static const int _kDbSaveInterval = 10;
+
+  // 2.2: foreground-aware maxParallelImages
+  // LifecycleWatcher sets this; DownloadBloc reads it before starting downloads
+  static bool _isForeground = true;
+  static int get defaultMaxParallelImages => _isForeground ? 1 : 3;
+  /// Called by LifecycleWatcher on lifecycle changes
+  static void updateForeground(bool foreground) {
+    _isForeground = foreground;
+  }
+
+  // FrameTiming measurement (1.9)
+  // ponytail: debug-only; remove when jank verification complete
+  static const bool _kFrameTimingEnabled = true;
+  TimingsCallback? _frameTimingCallback;
+  int _frameTimingBuildSamples = 0;
+  int _frameTimingRasterSamples = 0;
+  double _frameTimingBuildTotal = 0;
+  double _frameTimingRasterTotal = 0;
+  static const int _kFrameTimingLogInterval = 60; // every 60 frames
 
   /// Helper to generate fallback URL based on source
   String _generateFallbackUrl(String? sourceId, String contentId) {
@@ -343,7 +369,62 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       },
     );
 
+    // Start periodic DB flush timer — every 5 seconds flush pending saves
+    _dbFlushTimer?.cancel();
+    _dbFlushTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _flushPendingDbSaves(),
+    );
+
+    // 1.9: Register FrameTiming callback
+    if (_kFrameTimingEnabled) {
+      _frameTimingCallback = (List<FrameTiming> timings) {
+        for (final timing in timings) {
+          _frameTimingBuildTotal += timing.buildDuration.inMicroseconds;
+          _frameTimingRasterTotal += timing.rasterDuration.inMicroseconds;
+          _frameTimingBuildSamples++;
+          _frameTimingRasterSamples++;
+        }
+        if (_frameTimingBuildSamples >= _kFrameTimingLogInterval) {
+          final avgBuild =
+              _frameTimingBuildTotal / _frameTimingBuildSamples;
+          final avgRaster =
+              _frameTimingRasterTotal / _frameTimingRasterSamples;
+          _logger.i(
+              'FrameTiming: ${avgBuild.toStringAsFixed(1)}µs build | ${avgRaster.toStringAsFixed(1)}µs raster '
+              '(threshold: 16000µs = 16ms)');
+          _frameTimingBuildTotal = 0;
+          _frameTimingRasterTotal = 0;
+          _frameTimingBuildSamples = 0;
+          _frameTimingRasterSamples = 0;
+        }
+      };
+      SchedulerBinding.instance.addTimingsCallback(_frameTimingCallback!);
+      _logger.i('DownloadBloc: FrameTiming callback registered');
+    }
+
     _logger.i('DownloadBloc: Progress stream subscription initialized');
+  }
+
+  /// Flush pending DB saves — called by timer or on close
+  Future<void> _flushPendingDbSaves() async {
+    if (_pendingDbSave.isEmpty) return;
+    final ids = List<String>.from(_pendingDbSave);
+    _pendingDbSave.clear();
+    for (final id in ids) {
+      try {
+        final currentState = state;
+        if (currentState is DownloadLoaded) {
+          final dl = currentState.downloads.firstWhere(
+            (d) => d.contentId == id,
+            orElse: () => throw Exception('pending save $id not found'),
+          );
+          await _userDataRepository.saveDownloadStatus(dl);
+        }
+      } catch (e) {
+        _logger.w('DownloadBloc: flush save failed for $id: $e');
+      }
+    }
   }
 
   /// Load all download rows from DB in batches to avoid hard caps.
@@ -1260,11 +1341,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         timeoutDuration: currentState.settings.timeoutDuration,
         startPage: updatedDownload.startPage,
         endPage: updatedDownload.endPage,
-        cookies: cookies, // NEW: Pass cookies
-        headers: networkHeaders, // NEW: Pass source-specific HTTP headers
-        savePath: savePath, // NEW: Pass savePath
+        cookies: cookies,
+        headers: networkHeaders,
+        savePath: savePath,
         enableNotifications:
-            currentState.settings.enableNotifications, // NEW: Pass settings
+            currentState.settings.enableNotifications,
+        maxParallelImages: DownloadBloc.defaultMaxParallelImages,
       );
 
       // Call use case (Fire and Forget)
@@ -2010,101 +2092,80 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         speed: event.downloadSpeed,
       );
 
+      final contentId = event.contentId;
+
       // ✅ FIXED: Check if download should be completed (progress = 100%)
-      // This helps handle completion status immediately
       if (event.downloadedPages >= event.totalPages &&
           event.downloadSpeed == 0.0 &&
           event.estimatedTimeRemaining == Duration.zero) {
         _logger.i(
-            'DownloadBloc: Download appears completed, refreshing status for ${event.contentId}');
-
-        // REVAMP: If PDF conversion was part of the original request, we would trigger it here.
-        // For now, we ensure the UI updates and the status is finalized.
-
+            'DownloadBloc: Download appears completed, refreshing status for $contentId');
         add(const DownloadRefreshEvent());
         return;
       }
 
-      // Update downloads list
-      final updatedDownloads = List<DownloadStatus>.from(downloads);
-      updatedDownloads[downloadIndex] = updatedDownload;
+      // 1.1: Skip List.from() — mutate in place
+      downloads[downloadIndex] = updatedDownload;
 
       // Emit appropriate state based on current state type
       if (currentState is DownloadLoaded) {
         emit(currentState.copyWith(
-          downloads: updatedDownloads,
+          downloads: downloads, // same list ref, mutated in place
           lastUpdated: DateTime.now(),
         ));
       } else if (currentState is DownloadProcessing) {
         emit(DownloadLoaded(
-          downloads: updatedDownloads,
+          downloads: downloads,
           settings: settings,
           lastUpdated: DateTime.now(),
         ));
       }
 
-      // Save progress to database (but don't await to keep it fast)
-      // Only save intermediate progress to DB (avoid overwriting completion status at 100%)
-      if (updatedDownload.downloadedPages < updatedDownload.totalPages) {
+      final isProgressComplete =
+          updatedDownload.downloadedPages >= updatedDownload.totalPages;
+
+      // 1.2-1.3: Batch DB save — only every 10th event per contentId
+      // 1.6: Force save on terminal state (progress complete)
+      if (isProgressComplete) {
+        // ponytail: force-save on terminal (progress >= totalPages)
         await _userDataRepository
             .saveDownloadStatus(updatedDownload)
-            .catchError((e) {
-          _logger.w('DownloadBloc: Failed to save progress to database: $e');
-        });
+            .catchError(
+                (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
+        _pendingDbSave.remove(contentId);
       } else {
-        // If progress is 100%, we should consider it complete
-        // But we wait for the explicit completion event or the next check
-        _logger.d(
-            'DownloadBloc: 100% progress reached for ${event.contentId}, waiting for completion event or triggering it now');
-
-        // Trigger completion event if we strictly reached 100%
-        if (updatedDownload.progressPercentage >= 100) {
-          add(DownloadCompletedEvent(event.contentId));
-          return;
+        final skipCount = (_dbSaveSkipCount[contentId] ?? 0) + 1;
+        _dbSaveSkipCount[contentId] = skipCount;
+        if (skipCount >= _kDbSaveInterval) {
+          _dbSaveSkipCount[contentId] = 0;
+          await _userDataRepository
+              .saveDownloadStatus(updatedDownload)
+              .catchError(
+                  (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
+          _pendingDbSave.remove(contentId);
+        } else {
+          _pendingDbSave.add(contentId);
         }
       }
 
-      // Update notification progress through DownloadBloc
+      // Notify every progress event — notification platform channel is cheap
       if (currentState.settings.enableNotifications) {
         final progressPercentage = updatedDownload.progressPercentage.round();
-
-        // ✅ FIXED: Completion notification should trigger regardless of isInProgress
-        // because when progress = 100%, download may already be marked as completed
-        if (progressPercentage >= 100) {
-          // Show completion notification
-          // Show completion notification (Flutter-side)
-          await _notificationService
-              .showDownloadCompleted(
-            contentId: event.contentId,
-            title: updatedDownload.title ?? updatedDownload.contentId,
-            downloadPath: updatedDownload.downloadPath ?? '',
-          )
-              .catchError((e) {
-            _logger
-                .w('DownloadBloc: Failed to show completion notification: $e');
-          });
-          _logger.i(
-              'DownloadBloc: Triggered completion notification for ${event.contentId}');
-        } else if (updatedDownload.isInProgress) {
-          // Update progress notification only if still in progress (< 100%)
-          // (Flutter-side notification)
-          await _notificationService
-              .updateDownloadProgress(
-            contentId: event.contentId,
-            progress: progressPercentage,
-            title: updatedDownload.title ??
-                updatedDownload.contentId, // Use title or fallback
-            isPaused: false,
-          )
-              .catchError((e) {
-            _logger
-                .w('DownloadBloc: Failed to update notification progress: $e');
-          });
-        }
+        await _notificationService
+            .updateDownloadProgress(
+          contentId: contentId,
+          progress: progressPercentage,
+          title: updatedDownload.title ?? updatedDownload.contentId,
+          isPaused: false,
+        )
+            .catchError((e) {
+          _logger.w(
+              'DownloadBloc: Failed to update notification progress: $e');
+        });
       }
 
       _logger.d(
-          'DownloadBloc: Updated progress for ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');
+          'DownloadBloc: Updated progress for $contentId: ${event.downloadedPages}/${event.totalPages}');
     } catch (e, stackTrace) {
       _logger.e('DownloadBloc: Error updating progress',
           error: e, stackTrace: stackTrace);
@@ -2846,9 +2907,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
+      // Cancel download notification so PDF notification doesn't compete
+      await _notificationService.cancelDownloadNotification(event.contentId);
+
       // Start PDF conversion in background using PdfConversionQueueManager
-      // This queues the conversion instead of starting it immediately
-      // Queue manager will process conversions sequentially to avoid resource contention
       await _pdfConversionQueueManager.queueConversion(
         contentId: event.contentId,
         title: contentTitle,
@@ -3422,6 +3484,19 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     // Cancel progress stream subscription
     _progressSubscription?.cancel();
     _logger.i('DownloadBloc: Progress stream subscription cancelled');
+
+    // 1.5: Cancel periodic flush timer and flush remaining pending saves
+    _dbFlushTimer?.cancel();
+    // ponytail: fire-and-forget — may not complete if event loop shutting down
+    _flushPendingDbSaves();
+    _logger.i('DownloadBloc: DB flush timer cancelled, pending saves flushed');
+
+    // 1.9: Remove FrameTiming callback
+    if (_frameTimingCallback != null) {
+      SchedulerBinding.instance.removeTimingsCallback(_frameTimingCallback!);
+      _frameTimingCallback = null;
+      _logger.i('DownloadBloc: FrameTiming callback removed');
+    }
 
     // Cancel all active downloads
     for (final task in _activeTasks.values) {

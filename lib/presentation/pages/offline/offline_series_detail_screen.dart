@@ -40,6 +40,15 @@ class OfflineSeriesDetailScreen extends StatefulWidget {
       _OfflineSeriesDetailScreenState();
 }
 
+enum _SortMode {
+  titleAsc,
+  titleDesc,
+  dateDesc,
+  dateAsc,
+  pagesDesc,
+  pagesAsc,
+}
+
 class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   final Map<String, double> _progressMap = {};
   ContentGroup? _contentGroup;
@@ -47,6 +56,11 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   late final OfflineSearchCubit _offlineSearchCubit;
   bool _didChange = false;
   bool _isResolving = false;
+
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  _SortMode _sortMode = _SortMode.dateDesc;
+  bool _showSearch = false;
 
   int _sizeFor(Content content) =>
       _contentGroup?.sizeForContent(content.id) ?? 0;
@@ -191,6 +205,38 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     return size;
   }
 
+  List<Content> get _filteredItems {
+    var result = List<Content>.from(_items);
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      result = result.where((c) =>
+        c.title.toLowerCase().contains(q) ||
+        c.id.toLowerCase().contains(q)
+      ).toList();
+    }
+    switch (_sortMode) {
+      case _SortMode.titleAsc:
+        result.sort((a, b) => a.title.compareTo(b.title));
+      case _SortMode.titleDesc:
+        result.sort((a, b) => b.title.compareTo(a.title));
+      case _SortMode.dateAsc:
+        result.sort((a, b) => a.uploadDate.compareTo(b.uploadDate));
+      case _SortMode.dateDesc:
+        result.sort((a, b) => b.uploadDate.compareTo(a.uploadDate));
+      case _SortMode.pagesAsc:
+        result.sort((a, b) => a.pageCount.compareTo(b.pageCount));
+      case _SortMode.pagesDesc:
+        result.sort((a, b) => b.pageCount.compareTo(a.pageCount));
+    }
+    return result;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProgress() async {
     final readerPosRepo = _tryGetReaderRepository();
 
@@ -231,7 +277,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final items = _items;
+    final items = _filteredItems;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return PopScope(
       canPop: false,
@@ -240,16 +287,92 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         context.pop(_didChange);
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(_didChange),
-          ),
-          title: Text(
-            widget.baseTitle,
-            style: TextStyleConst.titleLarge,
-          ),
-        ),
+        appBar: _showSearch
+            ? AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => setState(() {
+                    _showSearch = false;
+                    _searchController.clear();
+                    _searchQuery = '';
+                  }),
+                ),
+                title: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: TextStyleConst.bodyMedium
+                      .copyWith(color: colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'Search chapters...',
+                    hintStyle: TextStyleConst.bodyMedium
+                        .copyWith(color: colorScheme.onSurfaceVariant),
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (q) => setState(() => _searchQuery = q),
+                ),
+                actions: [
+                  if (_searchQuery.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    ),
+                ],
+              )
+            : AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.pop(_didChange),
+                ),
+                title: Text(widget.baseTitle,
+                    style: TextStyleConst.titleLarge),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () =>
+                        setState(() => _showSearch = true),
+                  ),
+                  PopupMenuButton<_SortMode>(
+                    icon: const Icon(Icons.sort),
+                    onSelected: (mode) =>
+                        setState(() => _sortMode = mode),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: _SortMode.dateDesc,
+                        child: Text('Newest',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                      PopupMenuItem(
+                        value: _SortMode.dateAsc,
+                        child: Text('Oldest',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                      PopupMenuItem(
+                        value: _SortMode.titleAsc,
+                        child: Text('A-Z',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                      PopupMenuItem(
+                        value: _SortMode.titleDesc,
+                        child: Text('Z-A',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                      PopupMenuItem(
+                        value: _SortMode.pagesAsc,
+                        child: Text('Pages ↑',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                      PopupMenuItem(
+                        value: _SortMode.pagesDesc,
+                        child: Text('Pages ↓',
+                            style: TextStyleConst.bodyMedium),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
         body: _contentGroup == null
             ? Center(
                 child: _isResolving
@@ -828,12 +951,14 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
     try {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.deletingContent(content.title)),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.deletingContent(content.title)),
+            duration: const Duration(seconds: 1),
+          ),
+        );
 
       await _offlineSearchCubit.deleteOfflineContent(content.id);
       getIt<DownloadBloc>().add(const DownloadRefreshEvent());
@@ -841,12 +966,15 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.contentDeleted),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.contentDeleted),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 3),
+          ),
+        );
 
       // Update local state by removing the item
       setState(() {

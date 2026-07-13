@@ -26,6 +26,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -84,6 +85,7 @@ class DownloadWorker(
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .connectionPool(ConnectionPool(1, 5, TimeUnit.SECONDS)) // 2.1: limit idle connections
         
         if (cookies != null && cookies.isNotEmpty()) {
             Log.d(TAG, "Creating HTTP client with ${cookies.size} cookies for authentication")

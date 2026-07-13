@@ -2876,6 +2876,7 @@
   "renameCollection": "Rename collection",
   "pressBackToExit": "Press back again to exit",
   "backToDetail": "Back to Detail",
+  "backToPreviousPage": "Back to previous page",
   "failedToOpenPdf": "Failed to open PDF: {error}",
   "@failedToOpenPdf": {
     "placeholders": {
@@ -4082,5 +4083,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "readerScreenSupporter": "Support Developer",
+  "readerScreenSupporterDesc": "If you like this app, consider supporting its development.",
+  "readerScreenThanks": "Thank You for Reading!",
+  "readerScreenThanksDesc": "Hope you enjoyed this chapter. See you in the next one!"
 }

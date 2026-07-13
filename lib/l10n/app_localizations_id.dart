@@ -3902,6 +3902,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get backToDetail => 'Kembali ke Detail';
 
   @override
+  String get backToPreviousPage => 'Kembali ke halaman sebelumnya';
+
+  @override
   String failedToOpenPdf(String error) {
     return 'Gagal membuka PDF: $error';
   }
@@ -5219,4 +5222,18 @@ class AppLocalizationsId extends AppLocalizations {
   String deleteSeriesWithCount(int count) {
     return 'Hapus Series ($count)';
   }
+
+  @override
+  String get readerScreenSupporter => 'Dukung Developer';
+
+  @override
+  String get readerScreenSupporterDesc =>
+      'Jika kamu suka aplikasi ini, pertimbangkan untuk mendukung pengembangannya.';
+
+  @override
+  String get readerScreenThanks => 'Terima Kasih Sudah Membaca!';
+
+  @override
+  String get readerScreenThanksDesc =>
+      'Semoga kamu menikmati chapter ini. Sampai jumpa di chapter berikutnya!';
 }

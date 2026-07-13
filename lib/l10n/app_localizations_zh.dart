@@ -3772,6 +3772,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backToDetail => '返回详情';
 
   @override
+  String get backToPreviousPage => '返回上一页';
+
+  @override
   String failedToOpenPdf(String error) {
     return '打开 PDF 失败：$error';
   }
@@ -5049,4 +5052,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String deleteSeriesWithCount(int count) {
     return '删除系列 ($count)';
   }
+
+  @override
+  String get readerScreenSupporter => '支持开发者';
+
+  @override
+  String get readerScreenSupporterDesc => '如果你喜欢这个应用，请考虑支持其开发。';
+
+  @override
+  String get readerScreenThanks => '感谢阅读！';
+
+  @override
+  String get readerScreenThanksDesc => '希望你享受这一章节。下一章再见！';
 }

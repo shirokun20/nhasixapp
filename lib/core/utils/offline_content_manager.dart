@@ -473,7 +473,8 @@ class OfflineContentManager {
       final failedPagesRaw = raw['failed_pages'];
       if (expectedVisiblePages == null ||
           expectedVisiblePages <= diskUrls.length ||
-          failedPagesRaw == null) {
+          failedPagesRaw == null ||
+          diskUrls.isEmpty) { // all-failed: no images to show
         return diskUrls;
       }
 
