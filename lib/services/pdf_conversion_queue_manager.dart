@@ -101,6 +101,10 @@ class PdfConversionQueueManager {
 
       // Broadcast status
       _broadcastStatus();
+      
+      // Update queue notification immediately so the "waiting" notification disappears
+      // if there are no more items in the queue.
+      await _updateQueueNotification();
 
       try {
         // Show progress notification with queue position
