@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **Native theme sync**: Kotlin activities (`PdfReaderActivity`, `WebViewActivity`, `CaptchaWebViewActivity`) now parse the `textColor` intent extra to dynamically tint their `navigationIcon` (back button) and `overflowIcon` (menu button) to match the Flutter app's active theme.
+- **Offline PDF routing**: `OfflineSeriesDetailScreen` now checks the offline chapter directory for `.pdf` files. If a PDF exists, clicking "Read Now (PDF)" correctly routes to the native PDF reader (`AppRouter.goToReaderPdf`) instead of the standard image reader.
+
 - **Dual-rate scroll processing**: Page indicator (via vsync-aligned `Ticker`) updates at 120 FPS, while heavy ops (prefetch/evict/history) remain throttled at 300ms. Zero extra cost when idle.
 - **GPU memory budget eviction**: Tracks heavy image count via `_heavyImageCount` — evicts farthest 25% pages only when budget exceeded (30 images within 5s window). No evict on low-memory chapters.
 - **Rapid tap detection**: Non-CS page transitions skip `animateToPage` (200ms) when user taps faster than animation duration — jump directly for instant response.
