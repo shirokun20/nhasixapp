@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/scheduler.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -81,7 +80,8 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMixin {
+class _ReaderScreenState extends State<ReaderScreen>
+    with TickerProviderStateMixin {
   Logger get _logger => getIt<Logger>();
 
   late PageController _pageController;
@@ -110,7 +110,6 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
   // 🎬 Heavy-image guard: content IDs where continuous-scroll is disabled.
   // Static so the lock persists across reader navigations in the same session.
   static final Set<String> _autoSwitchedContentIds = <String>{};
-
 
   // Throttle expensive continuous-scroll computations.
   // 🔥 THERMAL: Increased from 90ms → 150ms → 200ms → 300ms
@@ -459,8 +458,7 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
       );
     }
 
-    final isAtBottom =
-        metrics.pixels >= metrics.maxScrollExtent - 50;
+    final isAtBottom = metrics.pixels >= metrics.maxScrollExtent - 50;
     if (isAtBottom) {
       _debounceSaveHistory(state, totalPages);
     }
@@ -498,8 +496,8 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     // ~50μs for 200 pages — negligible even at 120 FPS.
     double cumulativeHeight = 0;
     for (int page = 1; page <= totalPages; page++) {
-      cumulativeHeight += (_cachedImageHeights[page] ?? avgHeight)
-          .clamp(1.0, double.infinity);
+      cumulativeHeight +=
+          (_cachedImageHeights[page] ?? avgHeight).clamp(1.0, double.infinity);
       if (viewportCenter < cumulativeHeight) return page;
     }
     return totalPages;
@@ -508,7 +506,8 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
   /// 🏎️ Ticker callback (vsync-aligned). Updates page indicator + animated pause
   /// at display refresh rate, separate from heavy ops throttle.
   void _onPageTick(Duration elapsed) {
-    if (_pendingEstimatedPage > 0 && _pendingEstimatedPage != _lastReportedPage) {
+    if (_pendingEstimatedPage > 0 &&
+        _pendingEstimatedPage != _lastReportedPage) {
       _lastReportedPage = _pendingEstimatedPage;
       // ponytail: page indicator (O(1) average) is approximate — good enough
       // for the UI counter. Animated pause notifier needs accurate page
@@ -518,7 +517,8 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
       _animatedPauseNotifier.value = _pendingEstimatedPage;
     }
     // Stop ticker when pending consumed or scroll stopped
-    if (_pendingEstimatedPage == _lastReportedPage || _pendingEstimatedPage == 0) {
+    if (_pendingEstimatedPage == _lastReportedPage ||
+        _pendingEstimatedPage == 0) {
       _isTicking = false;
       _pageTicker?.stop();
     }
@@ -540,14 +540,13 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     }
     // 2. From scroll metrics estimate
     if (metrics.maxScrollExtent > 0) {
-      return ((metrics.maxScrollExtent + metrics.viewportDimension) / totalPages)
+      return ((metrics.maxScrollExtent + metrics.viewportDimension) /
+              totalPages)
           .clamp(1.0, double.infinity);
     }
     // 3. Fallback viewport
     return screenHeight * 0.9;
   }
-
-
 
   double _resolveContinuousItemHeight(int pageNumber, double screenHeight) {
     final cachedHeight = _cachedImageHeights[pageNumber];
@@ -754,21 +753,24 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     // Offline → ExtendedFileImageProvider from LocalImagePreloader's file.
     // Both wrapped in ExtendedResizeImage — same wrapper ExtendedImage
     // (network/file) uses internally via cacheWidth param.
-    final decodeWidth =
-        (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round();
+    final decodeWidth = (MediaQuery.of(context).size.width *
+            MediaQuery.of(context).devicePixelRatio)
+        .round();
     for (final int targetPage in <int>{currentPage + 1, currentPage - 1}) {
       if (targetPage >= 1 && targetPage <= imageUrls.length) {
         final url = imageUrls[targetPage - 1];
         if (!url.startsWith('http')) continue;
         LocalImagePreloader.getLocalImagePath(
-          widget.contentId, targetPage,
+          widget.contentId,
+          targetPage,
         ).then((localPath) {
           if (!mounted) return;
           final ImageProvider provider;
           if (localPath != null && File(localPath).existsSync()) {
             provider = ExtendedFileImageProvider(File(localPath));
           } else {
-            provider = ExtendedNetworkImageProvider(url, headers: prefetchHeaders);
+            provider =
+                ExtendedNetworkImageProvider(url, headers: prefetchHeaders);
           }
           precacheImage(
             ExtendedResizeImage.resizeIfNeeded(
@@ -912,12 +914,14 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     const evictFraction = 0.25;
     final total = imageUrls.length;
     if (total <= keepRadius * 2 + 1) return;
-    final toEvict = (total * evictFraction).round().clamp(1, total - keepRadius * 2);
+    final toEvict =
+        (total * evictFraction).round().clamp(1, total - keepRadius * 2);
 
     // Sort pages by distance from current page, evict farthest
     // ponytail: O(n log n) sort — fine for <2000 pages, add binary if scaling needed.
     final pages = List.generate(total, (i) => i + 1);
-    pages.sort((a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
+    pages.sort(
+        (a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
 
     for (final page in pages.skip(total - toEvict).take(toEvict)) {
       final url = imageUrls[page - 1];
@@ -1394,195 +1398,9 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
     }
   }
 
-  /// Card on first/last page — subtle glow, gradient accent, interactive GitHub row
-  Widget _buildEndscreenCard(bool isFirst) {
-    final l10n = AppLocalizations.of(context);
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [
-            cs.surfaceContainerHigh.withValues(alpha: 0.85),
-            cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.2),
-          width: 0.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: isFirst ? _buildSupporterContent(l10n, cs) : _buildThanksContent(l10n, cs),
-    );
-  }
-
-  Widget _buildSupporterContent(AppLocalizations? l10n, ColorScheme cs) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Star icon
-        Icon(Icons.auto_awesome, size: 28, color: cs.primary),
-        const SizedBox(height: 10),
-        Text(
-          l10n?.readerScreenSupporter ?? 'Support Developer',
-          style: TextStyleConst.titleSmall.copyWith(
-            fontWeight: FontWeight.w700,
-            color: cs.onSurface,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          l10n?.readerScreenSupporterDesc ?? '',
-          style: TextStyleConst.bodySmall.copyWith(
-            color: cs.onSurfaceVariant,
-            height: 1.4,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 14),
-        // GitHub pill
-        GestureDetector(
-          onTap: () => launchUrl(
-            Uri.parse('https://github.com/shirokun20/nhasixapp'),
-            mode: LaunchMode.externalApplication,
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star, size: 16, color: cs.onPrimary),
-                const SizedBox(width: 6),
-                Text(
-                  'Star on GitHub',
-                  style: TextStyleConst.labelMedium.copyWith(
-                    color: cs.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildThanksContent(AppLocalizations? l10n, ColorScheme cs) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Book + sparkle
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_stories, size: 22, color: cs.primary),
-            const SizedBox(width: 4),
-            Icon(Icons.auto_awesome, size: 16, color: cs.tertiary),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          l10n?.readerScreenThanks ?? 'Thank You for Reading!',
-          style: TextStyleConst.titleSmall.copyWith(
-            fontWeight: FontWeight.w700,
-            color: cs.onSurface,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          l10n?.readerScreenThanksDesc ?? '',
-          style: TextStyleConst.bodySmall.copyWith(
-            color: cs.onSurfaceVariant,
-            height: 1.4,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 14),
-        // GitHub pill
-        GestureDetector(
-          onTap: () => launchUrl(
-            Uri.parse('https://github.com/shirokun20/nhasixapp'),
-            mode: LaunchMode.externalApplication,
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.favorite, size: 16, color: cs.onPrimary),
-                const SizedBox(width: 6),
-                Text(
-                  'Support',
-                  style: TextStyleConst.labelMedium.copyWith(
-                    color: cs.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _wrapEndscreen(Widget child, int pageNumber, int totalPages) {
-    if (totalPages <= 0) return child;
-    final isFirst = pageNumber == 1;
-    final isLast = pageNumber == totalPages;
-    if (!isFirst && !isLast) return child;
-    return LayoutBuilder(
-      builder: (context, constraints) => Column(
-        children: [
-          if (isFirst) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildEndscreenCard(true),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Expanded(child: child),
-        ],
-      ),
-    );
+    // passive pass-through — first-page supporter card removed
+    return child;
   }
 
   Widget _buildChapterNavigationPage(ReaderState state) {
@@ -1828,14 +1646,12 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.cloud_off_rounded,
-                size: 48,
-                color: Theme.of(context).colorScheme.error),
+                size: 48, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 12),
             Text('Page $pageNumber failed to download',
                 style: TextStyleConst.titleSmall),
             const SizedBox(height: 4),
-            Text('Tap to retry',
-                style: TextStyleConst.bodySmall),
+            Text('Tap to retry', style: TextStyleConst.bodySmall),
             if (canRetry)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -1855,8 +1671,8 @@ class _ReaderScreenState extends State<ReaderScreen> with TickerProviderStateMix
       {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
     // Failed page placeholder → show retry card, don't try to decode
     if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
-      final originalUrl = OfflineContentManager
-          .extractOriginalUrlFromPlaceholder(imageUrl);
+      final originalUrl =
+          OfflineContentManager.extractOriginalUrlFromPlaceholder(imageUrl);
       return _buildFailedPageCard(
         pageNumber,
         canRetry: originalUrl != null && originalUrl.trim().isNotEmpty,
