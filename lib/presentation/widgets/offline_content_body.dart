@@ -804,6 +804,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
                         contentGroup: contentGroup,
                         isListMode: state.isListMode,
+                        hideOfflineIndicator: true, // Everything here is offline
                         onTap: () => _openSeriesDetail(contentGroup),
                         onLongPress: () {
                           _showGroupContentActions(context, contentGroup);

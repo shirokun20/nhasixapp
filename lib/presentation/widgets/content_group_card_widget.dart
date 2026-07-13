@@ -17,6 +17,7 @@ class ContentGroupCardWidget extends StatelessWidget {
     this.onLongPress,
     this.aspectRatio = 0.7,
     this.isListMode = false,
+    this.hideOfflineIndicator = false,
   });
 
   final ContentGroup contentGroup;
@@ -24,6 +25,7 @@ class ContentGroupCardWidget extends StatelessWidget {
   final VoidCallback? onLongPress;
   final double aspectRatio;
   final bool isListMode;
+  final bool hideOfflineIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -88,16 +90,17 @@ class ContentGroupCardWidget extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: _buildStatusPill(
-                  icon: Icons.download_done_rounded,
-                  text: 'OFFLINE',
-                  color: offlineColor.withValues(alpha: 0.9),
-                  textColor: Colors.white,
+              if (!hideOfflineIndicator)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: _buildStatusPill(
+                    icon: Icons.download_done_rounded,
+                    text: 'OFFLINE',
+                    color: offlineColor.withValues(alpha: 0.9),
+                    textColor: Colors.white,
+                  ),
                 ),
-              ),
               if (hasReadProgress)
                 Positioned(
                   top: 8,
@@ -240,16 +243,17 @@ class ContentGroupCardWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: _buildStatusPill(
-                      icon: Icons.download_done_rounded,
-                      text: 'OFFLINE',
-                      color: offlineColor.withValues(alpha: 0.9),
-                      textColor: Colors.white,
+                  if (!hideOfflineIndicator)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: _buildStatusPill(
+                        icon: Icons.download_done_rounded,
+                        text: 'OFFLINE',
+                        color: offlineColor.withValues(alpha: 0.9),
+                        textColor: Colors.white,
+                      ),
                     ),
-                  ),
                   if (hasReadProgress)
                     Positioned(
                       top: 38,
@@ -368,13 +372,22 @@ class ContentGroupCardWidget extends StatelessWidget {
       return card;
     }
 
+    final borderColors = hideOfflineIndicator
+        ? <Color>[
+            readColor,
+            readColor.withValues(alpha: 0.4),
+            readColor,
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+          ]
+        : <Color>[
+            offlineColor,
+            readColor,
+            offlineColor,
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+          ];
+
     return AnimatedStatusBorderFrame(
-      colors: <Color>[
-        offlineColor,
-        readColor,
-        offlineColor,
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
-      ],
+      colors: borderColors,
       borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       strokeWidth: 1.2,
       shadowColor: readColor.withValues(alpha: 0.18),
@@ -403,13 +416,22 @@ class ContentGroupCardWidget extends StatelessWidget {
       return card;
     }
 
+    final borderColors = hideOfflineIndicator
+        ? <Color>[
+            readColor,
+            readColor.withValues(alpha: 0.4),
+            readColor,
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+          ]
+        : <Color>[
+            offlineColor,
+            readColor,
+            offlineColor,
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+          ];
+
     return AnimatedStatusBorderFrame(
-      colors: <Color>[
-        offlineColor,
-        readColor,
-        offlineColor,
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
-      ],
+      colors: borderColors,
       borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
       strokeWidth: 1.2,
       shadowColor: readColor.withValues(alpha: 0.16),
