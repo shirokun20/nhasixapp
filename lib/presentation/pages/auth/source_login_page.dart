@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -434,14 +435,13 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     if (cookieName == null) return;
     String? accessToken;
     for (final c in cookies) {
-      for (final part in c.split(';')) {
-        final t = part.trim();
-        if (t.startsWith('$cookieName=')) {
-          accessToken = t.substring('$cookieName='.length);
+      try {
+        final parsed = Cookie.fromSetCookieValue(c);
+        if (parsed.name == cookieName) {
+          accessToken = parsed.value;
           break;
         }
-      }
-      if (accessToken != null) break;
+      } catch (_) {}
     }
     if (accessToken == null || accessToken.isEmpty) return;
     final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
@@ -458,7 +458,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     await storage.write(key: sessionKey, value: jsonEncode({'accessToken': accessToken}));
   }
 
-  _LoginUrls? _getLoginUrls(String sourceId) {
+  ({String url, String? autoCloseCookie, List<String>? successFilters})? _getLoginUrls(String sourceId) {
     final config = getIt<RemoteConfigService>().getRawConfig(sourceId);
     if (config == null) return null;
     final auth = config['auth'] as Map<String, dynamic>?;
@@ -469,7 +469,7 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     final rawFilters = webview['successFilters'];
     final filters = rawFilters is List ? rawFilters.cast<String>() : null;
     if (url == null || url.isEmpty) return null;
-    return _LoginUrls(url: url, autoCloseCookie: cookieName, successFilters: filters);
+    return (url: url, autoCloseCookie: cookieName, successFilters: filters);
   }
 
   String _mapError(AppLocalizations l10n, String raw) {
@@ -480,11 +480,4 @@ class _SourceLoginPageState extends State<SourceLoginPage>
     if (text.contains('500')) return l10n.errorServer;
     return l10n.errorUnknown;
   }
-}
-
-class _LoginUrls {
-  final String url;
-  final String? autoCloseCookie;
-  final List<String>? successFilters;
-  _LoginUrls({required this.url, this.autoCloseCookie, this.successFilters});
 }

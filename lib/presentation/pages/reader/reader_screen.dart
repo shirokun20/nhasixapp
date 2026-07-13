@@ -199,8 +199,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     _readerCubit = getIt<ReaderCubit>();
     _pageTicker = createTicker(_onPageTick);
 
-    // 🚀 OPTIMIZATION: Initialize route extra synchronously before build
-    _initializeFromRouteExtraSync();
+    // 🚀 OPTIMIZATION: Initialize route extra
+    // This is handled in build() now.
 
     // Defer GoRouterState access until after widget is mounted (for any additional processing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -227,11 +227,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     // _startPreloading();
   }
 
-  /// Initialize preloaded content from route extra synchronously (before build)
-  void _initializeFromRouteExtraSync() {
-    // This is called in initState, but we can't access context yet
-    // The actual initialization will happen in build() or postFrameCallback
-  }
+
 
   /// Initialize preloaded content from route extra (called from build or postFrameCallback)
   void _initializeFromRouteExtra() {

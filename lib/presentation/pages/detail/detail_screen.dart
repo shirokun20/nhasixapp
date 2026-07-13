@@ -220,12 +220,9 @@ class _DetailScreenState extends State<DetailScreen> {
       if (url.isEmpty) continue;
 
       final uri = Uri.tryParse(url);
-      final segments = uri?.pathSegments ?? const <String>[];
-      for (final segment in segments.reversed) {
-        final candidate = segment.trim();
-        if (candidate.isNotEmpty && candidate != '0') {
-          return candidate;
-        }
+      final lastSegment = uri?.pathSegments.lastWhere((s) => s.trim().isNotEmpty && s.trim() != '0', orElse: () => '');
+      if (lastSegment != null && lastSegment.isNotEmpty) {
+        return lastSegment;
       }
     }
 
