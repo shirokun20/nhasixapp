@@ -50,16 +50,17 @@ class ContentGroupCardWidget extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           border: Border.all(
-            color: hasReadProgress ? Colors.transparent : offlineColor,
-            width: hasReadProgress ? 0 : 1.4,
+            color: hasReadProgress || hideOfflineIndicator ? Colors.transparent : offlineColor,
+            width: hasReadProgress || hideOfflineIndicator ? 0 : 1.4,
           ),
           boxShadow: [
-            BoxShadow(
-              color: (hasReadProgress ? readColor : offlineColor)
-                  .withValues(alpha: hasReadProgress ? 0.2 : 0.14),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
+            if (hasReadProgress || !hideOfflineIndicator)
+              BoxShadow(
+                color: (hasReadProgress ? readColor : offlineColor)
+                    .withValues(alpha: hasReadProgress ? 0.2 : 0.14),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
           ],
         ),
         child: ClipRRect(
@@ -201,16 +202,17 @@ class ContentGroupCardWidget extends StatelessWidget {
           ],
         ),
         border: Border.all(
-          color: hasReadProgress ? Colors.transparent : offlineColor,
-          width: hasReadProgress ? 0 : 1.2,
+          color: hasReadProgress || hideOfflineIndicator ? Colors.transparent : offlineColor,
+          width: hasReadProgress || hideOfflineIndicator ? 0 : 1.2,
         ),
         boxShadow: [
-          BoxShadow(
-            color: (hasReadProgress ? readColor : offlineColor)
-                .withValues(alpha: hasReadProgress ? 0.16 : 0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+          if (hasReadProgress || !hideOfflineIndicator)
+            BoxShadow(
+              color: (hasReadProgress ? readColor : offlineColor)
+                  .withValues(alpha: hasReadProgress ? 0.16 : 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
         ],
       ),
       child: ClipRRect(
