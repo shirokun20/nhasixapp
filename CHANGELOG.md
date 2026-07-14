@@ -8,29 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.9.23+33] - 2026-07-14
 
-### 🐛 Fixed
-
-- **Schale Network Image Loading**: Fixed `Bad state: Failed to load` CDN error on reader pages.
-  - The `generic_rest_adapter.dart` inadvertently appended a `?w=$quality` query parameter to the CDN image URL.
-  - Schale Network's Edge CDN (`erocdn.net`) rejects requests with query parameters (`404 Not Found`).
-  - Removed the `?w=` parameter, as Schale already embeds the resolution within the path (e.g. `/1280/`).
-  - Added Turnstile Challenge bypass using `showLoginWebView` and injected JavaScript to extract the `cf_clearance` cookie from `localStorage`.
-  - Added `_SchaleHttpSource` to intercept image requests and inject the `cf_clearance` cookie and User-Agent headers, preventing 403 Forbidden errors.
-### 🔧 Changed
-
-- **State management cleanup**: Replaced `ReaderInitial`/`ReaderLoading`/`ReaderLoaded`/`ReaderError` subclass pattern with `ReaderStatus` enum + single `ReaderState`. Removed `_undefined` sentinel `copyWith` — replaced with 7 focused copy methods (`copyWithPage`, `copyWithUI`, `copyWithContent`, `copyWithMessage`, `copyWithMode`, `copyWithTimer`, `copyWithOffline`). Reduced `Equatable.props` — `content?.id` instead of full object, removed `readingTimer`/`message`/`isOfflineMode` from equality comparison.
-- **BlocListener prefetch scoped to CS only**: Removed redundant `_prefetchImages` call for singlePage/verticalPage modes — ExtendedImage handles its own caching via PageView item builder.
-- **Rapid non-CS page sync**: Detects consecutive taps faster than 200ms and skips `animateToPage` — uses `jumpToPage` directly.
-- **Removed stale eviction fields**: `_lastEvictedPage`/`_evictionWindowPages` replaced by budget-based eviction.
-- **Removed `_resolveContinuousFallbackItemHeight`**: Replaced by `_resolveAverageItemHeight` + cached-heights scan.
-
 ### ✨ Added
 
 - **Note Mode**: Added `note` (monochrome UI with light background) and `note_dark` (monochrome UI with dark background) themes. In both modes, all images (native WebP and Flutter-rendered) are dynamically desaturated to grayscale using `ColorMatrix` and `ColorFiltered` for a distraction-free reading experience.
-
 - **Native theme sync**: Kotlin activities (`PdfReaderActivity`, `WebViewActivity`, `CaptchaWebViewActivity`) now parse the `textColor` intent extra to dynamically tint their `navigationIcon` (back button) and `overflowIcon` (menu button) to match the Flutter app's active theme.
 - **Offline PDF routing**: `OfflineSeriesDetailScreen` now checks the offline chapter directory for `.pdf` files. If a PDF exists, clicking "Read Now (PDF)" correctly routes to the native PDF reader (`AppRouter.goToReaderPdf`) instead of the standard image reader.
-
 - **Dual-rate scroll processing**: Page indicator (via vsync-aligned `Ticker`) updates at 120 FPS, while heavy ops (prefetch/evict/history) remain throttled at 300ms. Zero extra cost when idle.
 - **GPU memory budget eviction**: Tracks heavy image count via `_heavyImageCount` — evicts farthest 25% pages only when budget exceeded (30 images within 5s window). No evict on low-memory chapters.
 - **Rapid tap detection**: Non-CS page transitions skip `animateToPage` (200ms) when user taps faster than animation duration — jump directly for instant response.
@@ -38,13 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Responsive image sizing with cached height resolution in ReaderScreen**: `_resolveContinuousItemHeight()` uses neighbor-page cached heights (page±1, ±2 then last) before falling back to screen percentage. `ExtendedImageReaderWidget` wrapped in `SizedBox` with resolved height to prevent scroll jump during rebuild. Loading indicator redesigned for continuous scroll: card width 280px, linear progress bar, compact headline/detail layout.
 - **DynamicFormSearchUI Advanced Filters panel**: Added expandable "Advanced Filters" toggle with animated expand/collapse (AnimatedSize + AnimatedSwitcher), active-filter badge count, and smooth chevron rotation — matching the polished UX of `QueryStringSearchUI`. Primary fields (text search, sort) remain always visible; all other fields hide behind the toggle panel.
 - **Config `options` upgrade to label-value objects**: `SearchFormFieldConfig.options` now supports both plain strings (`["update"]`) and labeled objects (`[{"name": "Update", "value": "update"}]`). Added `SearchFormOptionConfig` model class with `value`, `name`, and `label` fields. Raw JSON path in `_optionsForField` and `_optionsForStaticField` now reads `"name"` key first, falling back to `"label"`. Typed path updated in `search_form_contract_adapter.dart`.
-- **`SearchFormFieldOption.fromMap` reads `name` key**: Canonical config bridge now reads `"name"` as label fallback (`displayLabel` → `label` → `name`). Fixes chip label display for configs using `{"name": "...", "value": "..."}` format.
-- **Field restore cross-contamination fix**: When restoring saved filter raw query, values are only restored to fields whose `valuePrefix` matches (e.g. `includeTag` values with prefix `tag:` don't leak to `excludeTag`/`artist`/`parody`). Added `joinMode: space` to spyfakku q-fields for correct `_restoreJoinedParamGroup` routing.
-- **Chip value double-prefix fix**: `_setRestoredFieldValue` now strips prefix/suffix from restored values using `_extractFieldCoreFromToken`, preventing `_formatFieldValue` from re-adding the prefix and producing `tag:"tag:Blowjob"`.
 - **CMS template analysis**: Analyzed 20 source configs, live-verified 11 sites via Playwright. Identified 3 reusable templates (Madara, ZManga, Blogger) — see `output/cms-template-analysis.md`.
 - **Config generator MangaThemesia support**: Added `cms_detector.dart` hints for mangareader theme, `listupd`/`bsx` class patterns. Full `mangathemesia` branch in `config_generator.dart` with correct containers, pagination, detail/chapter/reader selectors, genre URLs.
 - **Config generator smart probes**: `generate --url` now extracts `defaultLanguage` from `<html lang>`, `iconPath` from `<link rel="icon">`, `brandColor` from `<meta name="theme-color">`.
-- **Native DNS roll-out**: Promoted native Android DoH as canonical managed DNS path. Removed Dart-side DnsResolver from DI. Added device Private DNS diagnostics (ConnectivityManager API 29+), system DNS settings launch with layered fallback intent routing, and settings UI showing device-level Private DNS status with guidance text.
 - **Source health monitor proposal**: New OpenSpec change `source-health-monitor` — per-source HTTP health check (HEAD/GET to baseUrl, 10s timeout, staggered concurrency), green/red/grey dot indicators in settings, aggregate "N/N reachable" summary, manual "Check All" button. Advisory only, no auto-disable.
 - **SpyFakku remote tag autocomplete**: Added `tagSource` block to `spyfakku-config.json` with 4,423 tags extracted from hentalk.pw boot data. Tags loaded via `TagDataManager.loadAndCacheTagsFromUrl()` on first autocomplete query. No dedicated API endpoint needed.
 - **Multi-select filter support for query-string search UI**: `QueryStringSearchUI` now encodes multi-select filter selections (tag/artist/parody) into the query string (e.g. `-tag:"Lolicon" parody:"Azur Lane"`) so the generic REST adapter sends them via the `q=` parameter.
@@ -53,17 +31,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **MangaFire chapter pagination**: Added page-based pagination fallback in `_nextOffsetPageUrl()` for `meta.page`/`meta.lastPage` response. Config endpoint from `?page=1` to `?language={language}&sort=number&order=asc&limit=20`.
 - **MangaDex chapter language filtering**: `fetchChapters()` standalone injects `translatedLanguage[]` when `language` param passed. Detail initial load filters by first `availableTranslatedLanguages` language. Language chips from `available_language` tags.
 - **Volume/chapter separation in adapter**: `scanGroup` respected in `fetchChapters()` — skips volumes when `scanGroup='Chapter'` and vice versa.
-- **Chapter load more (MangaDex + MangaFire)**: Bottom sheet `_loadMoreChapters()` uses `page` (MangaFire) / `offset` (MangaDex) via `ContentRepository`. All hardcoded Dio/Dart calls removed.
 - **Reader lazy pool expansion**: `ReaderCubit._fetchAndMergePage()` fetches extra pages when prev/next hits boundary. `_ensureChapterInPool()` expands pool when chapter missing. Prev/next stays in same `scanGroup`.
-- **Language emoji flags**: Replaced SVG files with Unicode emoji flags across all card widgets. 60 language entries in `assets/configs/languages.json`. Removed `flagFile`/`flagAssetPath`/`flutter_svg` dependency.
 - **General language selection handler**: `onLanguageSelected` works for all sources (not just MangaFire) via `DetailCubit.loadChapterLane()`.
-- **`_selectLanguage` setState fix**: Chips update immediately instead of waiting for async fetch.
 - **ARB `loadMoreChapters` key**: Added to `app_en.arb`, `app_id.arb`, `app_zh.arb` with `{label}` placeholder.
-- **Deprecated legacy search UI removed**: Deleted `query_string_search_ui.dart` and `form_based_search_ui.dart`. `SearchScreen` hardwired to `DynamicFormSearchUI` unconditionally. Net -65KB, -3 imports, -3 routing methods (195->128 lines).
 - **Smart query syntax placeholder**: Added `(tag:yuri -tag:futanari language:english)` hint to search input placeholders in nhentai, ehentai, and hitomi configs.
+- **MangaFire multi-select filters**: Upgraded MangaFire's search form to use dynamic `dataSources` hitting `/api/filter-options`. The hardcoded select dropdowns for `type` and `status` have been replaced with full multi-select tag pickers (similar to MangaDex). Added pickers for `Genres`, `Themes`, `Demographics`, `Formats`, and `Content Ratings`, allowing complex multi-field filtering directly in the search UI.
+- **Domain entity for ReaderSettings**: Created `lib/domain/entities/reader_settings_entity.dart` with pure `ReaderSettings`, `ReadingMode`, `TapDirection`. Data model `ReaderSettingsModel` now extends the entity with JSON serialization only — eliminating the Presentation→Data import for reader settings across 3 files.
+- **AppInitializer domain abstraction**: New `lib/domain/services/app_initializer.dart` interface for `initialize()`, `checkCloudflareStatus()`, `bypassCloudflare()`. `RemoteDataSource implements AppInitializer` — SplashBloc no longer imports data layer directly.
+- **UserDataRepository search filter methods**: Implemented `saveSearchFilter`, `getLastSearchFilter`, `clearSearchFilter`, `addSearchHistory`, `getSearchHistory`, `clearSearchHistory`, `deleteSearchHistory` in `UserDataRepositoryImpl` — enabling 6 presentation files to drop direct `LocalDataSource` imports.
 
 ### 🐛 Fixed
 
+- **Schale Network Image Loading**: Fixed `Bad state: Failed to load` CDN error on reader pages.
+  - The `generic_rest_adapter.dart` inadvertently appended a `?w=$quality` query parameter to the CDN image URL.
+  - Schale Network's Edge CDN (`erocdn.net`) rejects requests with query parameters (`404 Not Found`).
+  - Removed the `?w=` parameter, as Schale already embeds the resolution within the path (e.g. `/1280/`).
+  - Added Turnstile Challenge bypass using `showLoginWebView` and injected JavaScript to extract the `cf_clearance` cookie from `localStorage`.
+  - Added `_SchaleHttpSource` to intercept image requests and inject the `cf_clearance` cookie and User-Agent headers, preventing 403 Forbidden errors.
 - **ViHentai packed JS image URL extraction**: Fixed `_imageUrlRegex` in `ViHentaiPackedJs` — JS-escaped forward slashes (`\/`) in decoded `KuroReader` output caused regex mismatch, falling back to `<img>` tag extraction which grabbed `/imgs/fav2.png` instead of real chapter images. Normalized `\/` → `/` before regex matching. Also aligned `_packedArgsRegex` group 1 to `(.+)` per Tachiyomi reference implementation. 18/18 tests pass.
 - **Dynamic Form multiple parameters**: Fixed a bug where multiple dropdowns or fields sharing the same `queryParam` (e.g. `rawParam` in MangaFire for `type` and `sort`) would overwrite each other when restoring the form state. `_setRestoredFieldValue` now properly checks if the restored value actually belongs to the field's available options before assigning it, allowing multiple `rawParam` fields to be selected and handled simultaneously.
 - **GenericJSONParser prefix logic**: Fixed an issue where `extractRaw` would not apply a `prefix` or `suffix` if the extracted value was not initially a `String` (e.g., an integer ID). This caused MangaFire volume IDs to miss their `https://mangafire.to/api/volumes/` prefix, leading the app to mistakenly use the chapters endpoint when fetching volume reader images. Non-string values are now converted to strings when a prefix or suffix is provided.
@@ -75,11 +59,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Offline metadata resync for hashed folders**: Full offline resync now rebuilds completed download rows from native `metadata.json` using the real `content_id`/source fields instead of the elegant/hash folder name. This fixes missing offline status detection on cards and detail actions for chapter-based sources like Crotpedia and KomikTap after DB recreation or local filesystem resync.
 - **HentaiNexus detail cover + reader stability**: Detail cover scraping now uses `meta[property="og:image"]` instead of guessing from page URLs, so header covers no longer depend on unstable reader-image extensions like `.jpg.thumb.jpg` or `.png.thumb.webp`. The HentaiNexus decrypt/runtime path also now deduplicates page URLs by page key with stable format priority, avoids stale detail cache reuse, and stops static WebP/AVIF pages from being misclassified as heavy animated content that forced the reader out of continuous scroll.
 - **ToonCubus reader and label routing**: ToonCubus now treats the detail `Baca Online` block as a real chapter lane, follows the explicit `tooncubus-read.my.id` reader URL before scraping images, uses Blogger cursor pagination from the live pager (`updated-max=...&start=...`) instead of repeating page 1, and routes detail-tag clicks to `/search/label/...` label pages instead of falling back to keyword search.
-
-### ✨ Added
-
-- **MangaFire multi-select filters**: Upgraded MangaFire's search form to use dynamic `dataSources` hitting `/api/filter-options`. The hardcoded select dropdowns for `type` and `status` have been replaced with full multi-select tag pickers (similar to MangaDex). Added pickers for `Genres`, `Themes`, `Demographics`, `Formats`, and `Content Ratings`, allowing complex multi-field filtering directly in the search UI.
+- **Numeric gallery ID search redirect**: When user types a numeric gallery ID (e.g. `544433`) in DynamicFormSearchUI, the form now redirects directly to `/content/{id}` instead of saving a search filter. Search APIs (nhentai, hentaifox, hentainexus, e-hentai, etc.) do full-text search and return empty results for numeric IDs. Detail endpoint fetches the gallery correctly.
+- **ARB key naming violation**: Renamed `ReaderSettingsEntityResetSuccess`/`ReaderSettingsEntityReset`/`ReaderSettingsEntity` to valid camelCase keys (`readerSettingsLabel`, `readerSettingsResetSuccessMsg`, `readerSettingsResetMsg`), fixing build failure.
+- **Crotpedia test config**: Added `home` pattern to `_crotpediaRawConfig` test fixture so empty query fallback resolves correctly instead of returning empty results.
+- **print() violation in downloads_screen.dart**: Removed debug `print()` inside assert block — semgrep now reports 0 print violations.
+- **`SearchFormFieldOption.fromMap` reads `name` key**: Canonical config bridge now reads `"name"` as label fallback (`displayLabel` → `label` → `name`). Fixes chip label display for configs using `{"name": "...", "value": "..."}` format.
+- **Field restore cross-contamination fix**: When restoring saved filter raw query, values are only restored to fields whose `valuePrefix` matches (e.g. `includeTag` values with prefix `tag:` don't leak to `excludeTag`/`artist`/`parody`). Added `joinMode: space` to spyfakku q-fields for correct `_restoreJoinedParamGroup` routing.
+- **Chip value double-prefix fix**: `_setRestoredFieldValue` now strips prefix/suffix from restored values using `_extractFieldCoreFromToken`, preventing `_formatFieldValue` from re-adding the prefix and producing `tag:"tag:Blowjob"`.
+- **`_selectLanguage` setState fix**: Chips update immediately instead of waiting for async fetch.
 - **DynamicFormSearchUI picker restore fix**: Fixed a bug where picker fields using `valuePrefix` (e.g. MangaFire's `genres_in[]=`) would fail to restore their selected state from a saved filter, causing them to either lose selection or duplicate dummy chips across fields that share the same `queryParam` (e.g. `rawParam`).
+- **gitleaks config**: Created `.gitleaks.toml` to exclude documentation fixtures and build artifacts — 45 false-positive leaks reduced to 0.
+
+### 🔧 Changed & Refactored
+
+- **State management cleanup**: Replaced `ReaderInitial`/`ReaderLoading`/`ReaderLoaded`/`ReaderError` subclass pattern with `ReaderStatus` enum + single `ReaderState`. Removed `_undefined` sentinel `copyWith` — replaced with 7 focused copy methods (`copyWithPage`, `copyWithUI`, `copyWithContent`, `copyWithMessage`, `copyWithMode`, `copyWithTimer`, `copyWithOffline`). Reduced `Equatable.props` — `content?.id` instead of full object, removed `readingTimer`/`message`/`isOfflineMode` from equality comparison.
+- **BlocListener prefetch scoped to CS only**: Removed redundant `_prefetchImages` call for singlePage/verticalPage modes — ExtendedImage handles its own caching via PageView item builder.
+- **Rapid non-CS page sync**: Detects consecutive taps faster than 200ms and skips `animateToPage` — uses `jumpToPage` directly.
+- **Removed stale eviction fields**: `_lastEvictedPage`/`_evictionWindowPages` replaced by budget-based eviction.
+- **Removed `_resolveContinuousFallbackItemHeight`**: Replaced by `_resolveAverageItemHeight` + cached-heights scan.
+- **Cursor pagination DRY**: Extracted duplicate 12-line cursor priming block (copy-pasted between `search()` and `_searchRaw()`) into single `_tryPrimeCursorPagination()` helper. Removed redundant `_hasCursorPagination()` method. Added `_maxPrimePages = 10` guard to prevent runaway serial HTTP requests. Net −63 lines, +1 import.
+- **Clean Architecture violations (Path A)**: Moved `ReaderSettings`, `ReadingMode`, `TapDirection` from `data/models/` to `domain/entities/`. Updated `ReaderSettingsRepository` interface + impl. Updated 3 presentation files + 2 test files to import from domain.
+- **Clean Architecture violations (Path B)**: Updated `search_bloc.dart`, `content_bloc.dart`, `main_screen_scrollable.dart`, `query_string_search_ui.dart`, `form_based_search_ui.dart`, `dynamic_form_search_ui.dart` to use `UserDataRepository`/`TagRepository` instead of direct `LocalDataSource`/`TagDataSource` imports. Updated `service_locator.dart` DI registration.
+- **CLAUDE.md + AGENTS.md**: Added FVM prefix to all commands, new `/security-review` and `/review` commands, added gitleaks + typos-cli to search tools section, added hyphen to section headers, removed ast-grep references.
 
 ### 🏗️ ManhwaRead Source Config
 
@@ -91,32 +92,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Tag count strip**: Author/artist/publisher selectors use regex `^(.*?)\s+\d+$` to strip trailing count (`Hwalhwasan\n7` → `Hwalhwasan`). Tags use `^(.*?)\s+[\d.]+K?$` for same purpose.
 - **Generic html reader padding fix**: `_extractChapterDataScriptImageUrls` now pads base64 input to multiple of 4 (`padRight`) before decoding, fixing `Invalid length` errors on unpadded base64 from `chapterData` script variable.
 
-### ✨ Added
-
-- **Domain entity for ReaderSettings**: Created `lib/domain/entities/reader_settings_entity.dart` with pure `ReaderSettings`, `ReadingMode`, `TapDirection`. Data model `ReaderSettingsModel` now extends the entity with JSON serialization only — eliminating the Presentation→Data import for reader settings across 3 files.
-- **AppInitializer domain abstraction**: New `lib/domain/services/app_initializer.dart` interface for `initialize()`, `checkCloudflareStatus()`, `bypassCloudflare()`. `RemoteDataSource implements AppInitializer` — SplashBloc no longer imports data layer directly.
-- **UserDataRepository search filter methods**: Implemented `saveSearchFilter`, `getLastSearchFilter`, `clearSearchFilter`, `addSearchHistory`, `getSearchHistory`, `clearSearchHistory`, `deleteSearchHistory` in `UserDataRepositoryImpl` — enabling 6 presentation files to drop direct `LocalDataSource` imports.
-- **gitleaks config**: Created `.gitleaks.toml` to exclude documentation fixtures and build artifacts — 45 false-positive leaks reduced to 0.
-
-### 🐛 Fixed
-
-- **Numeric gallery ID search redirect**: When user types a numeric gallery ID (e.g. `544433`) in DynamicFormSearchUI, the form now redirects directly to `/content/{id}` instead of saving a search filter. Search APIs (nhentai, hentaifox, hentainexus, e-hentai, etc.) do full-text search and return empty results for numeric IDs. Detail endpoint fetches the gallery correctly.
-- **ARB key naming violation**: Renamed `ReaderSettingsEntityResetSuccess`/`ReaderSettingsEntityReset`/`ReaderSettingsEntity` to valid camelCase keys (`readerSettingsLabel`, `readerSettingsResetSuccessMsg`, `readerSettingsResetMsg`), fixing build failure.
-- **Crotpedia test config**: Added `home` pattern to `_crotpediaRawConfig` test fixture so empty query fallback resolves correctly instead of returning empty results.
-- **print() violation in downloads_screen.dart**: Removed debug `print()` inside assert block — semgrep now reports 0 print violations.
-
-### ♻️ Refactored
-
-- **Cursor pagination DRY**: Extracted duplicate 12-line cursor priming block (copy-pasted between `search()` and `_searchRaw()`) into single `_tryPrimeCursorPagination()` helper. Removed redundant `_hasCursorPagination()` method. Added `_maxPrimePages = 10` guard to prevent runaway serial HTTP requests. Net −63 lines, +1 import.
-- **Clean Architecture violations (Path A)**: Moved `ReaderSettings`, `ReadingMode`, `TapDirection` from `data/models/` to `domain/entities/`. Updated `ReaderSettingsRepository` interface + impl. Updated 3 presentation files + 2 test files to import from domain.
-- **Clean Architecture violations (Path B)**: Updated `search_bloc.dart`, `content_bloc.dart`, `main_screen_scrollable.dart`, `query_string_search_ui.dart`, `form_based_search_ui.dart`, `dynamic_form_search_ui.dart` to use `UserDataRepository`/`TagRepository` instead of direct `LocalDataSource`/`TagDataSource` imports. Updated `service_locator.dart` DI registration.
-- **CLAUDE.md + AGENTS.md**: Added FVM prefix to all commands, new `/security-review` and `/review` commands, added gitleaks + typos-cli to search tools section, added hyphen to section headers, removed ast-grep references.
-
-### 🔧 Removed
+### 🗑️ Removed
 
 - **kuron_ads package**: Empty shell (no `lib/`, 0 Dart files, unreferenced) — deleted.
 - **ast-grep config artifacts**: Removed `sgconfig.yml` + `ast-grep-rules/` directory from project root.
 - **flutter_01.png**: Stray screenshot deleted.
+- **Native DNS roll-out**: Promoted native Android DoH as canonical managed DNS path. Removed Dart-side DnsResolver from DI. Added device Private DNS diagnostics (ConnectivityManager API 29+), system DNS settings launch with layered fallback intent routing, and settings UI showing device-level Private DNS status with guidance text.
+- **Chapter load more (MangaDex + MangaFire)**: Bottom sheet `_loadMoreChapters()` uses `page` (MangaFire) / `offset` (MangaDex) via `ContentRepository`. All hardcoded Dio/Dart calls removed.
+- **Language emoji flags**: Replaced SVG files with Unicode emoji flags across all card widgets. 60 language entries in `assets/configs/languages.json`. Removed `flagFile`/`flagAssetPath`/`flutter_svg` dependency.
+- **Deprecated legacy search UI removed**: Deleted `query_string_search_ui.dart` and `form_based_search_ui.dart`. `SearchScreen` hardwired to `DynamicFormSearchUI` unconditionally. Net -65KB, -3 imports, -3 routing methods (195->128 lines).
 
 ### 🧪 Tests
 
