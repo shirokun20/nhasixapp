@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.23+33] - 2026-07-14
+
 ### 🐛 Fixed
 
 - **Schale Network Image Loading**: Fixed `Bad state: Failed to load` CDN error on reader pages.
@@ -25,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Removed `_resolveContinuousFallbackItemHeight`**: Replaced by `_resolveAverageItemHeight` + cached-heights scan.
 
 ### ✨ Added
+
+- **Note Mode**: Added `note` (monochrome UI with light background) and `note_dark` (monochrome UI with dark background) themes. In both modes, all images (native WebP and Flutter-rendered) are dynamically desaturated to grayscale using `ColorMatrix` and `ColorFiltered` for a distraction-free reading experience.
 
 - **Native theme sync**: Kotlin activities (`PdfReaderActivity`, `WebViewActivity`, `CaptchaWebViewActivity`) now parse the `textColor` intent extra to dynamically tint their `navigationIcon` (back button) and `overflowIcon` (menu button) to match the Flutter app's active theme.
 - **Offline PDF routing**: `OfflineSeriesDetailScreen` now checks the offline chapter directory for `.pdf` files. If a PDF exists, clicking "Read Now (PDF)" correctly routes to the native PDF reader (`AppRouter.goToReaderPdf`) instead of the standard image reader.

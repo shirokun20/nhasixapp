@@ -13,7 +13,7 @@
 | **Repo** | `shirokun20/nhasixapp` |
 | **Platform** | Android (Flutter) |
 | **Flutter SDK** | Stable (3.24+, Dart 3.5+ via FVM) |
-| **Version** | 0.9.21+31 |
+| **Version** | 0.9.23+33 |
 | **Architecture** | Clean Architecture (Domain → Data → Presentation) |
 | **State Management** | `flutter_bloc` / `Cubit` (extending `BaseCubit`) |
 | **DI** | `GetIt` (`core/di/`) |
@@ -140,11 +140,12 @@ lib/
 - `2026-07-13-download-jank-reduction`
 - `2026-07-13-rawdevart-config`
 - `2026-07-13-sync-native-theme`
+- `2026-07-14-note-mode`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
+- `hdoujin-source-integration`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
-- `note-mode`
 - `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
 - `schale-network-source`
