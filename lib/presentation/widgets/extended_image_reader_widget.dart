@@ -1300,9 +1300,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   Widget _buildNetworkImage(
     BuildContext context,
-    String url, {
+    String rawUrl, {
     Map<String, String>? headers,
+    String? forceUrl,
   }) {
+    final targetUrl = forceUrl ?? rawUrl;
+    final urlParts = targetUrl.split('|');
+    final url = urlParts[0];
+    final fallbackUrl = urlParts.length > 1 ? urlParts[1] : null;
+
     if (_shouldResolveMangaFireImageBytes(url)) {
       return FutureBuilder<Uint8List?>(
         future: _mangaFireResolvedImageFuture,
@@ -1313,7 +1319,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
           final bytes = snapshot.data;
           if (bytes == null || bytes.isEmpty) {
-            return _buildStandardNetworkImage(context, url, headers: headers);
+            return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl, headers: headers);
           }
 
           return _buildMemoryImage(context, bytes);
@@ -1321,12 +1327,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       );
     }
 
-    return _buildStandardNetworkImage(context, url, headers: headers);
+    return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl, headers: headers);
   }
 
   Widget _buildStandardNetworkImage(
     BuildContext context,
-    String url, {
+    String rawUrl,
+    String url,
+    String? fallbackUrl, {
     Map<String, String>? headers,
   }) {
     // Only route to the native animated view after this URL has actually been
@@ -1430,6 +1438,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             }
             if (_tryNativeAnimatedFallback(url)) {
               return _buildLoadingIndicator(context);
+            }
+            if (fallbackUrl != null) {
+              _logger.w('🔄 Reader falling back to secondary network URL: $fallbackUrl');
+              return _buildNetworkImage(context, rawUrl, headers: headers, forceUrl: fallbackUrl);
             }
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&

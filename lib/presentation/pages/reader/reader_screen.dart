@@ -228,8 +228,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     // _startPreloading();
   }
 
-
-
   /// Initialize preloaded content from route extra (called from build or postFrameCallback)
   void _initializeFromRouteExtra() {
     if (_preloadedContent != null) return; // Already initialized
@@ -756,7 +754,8 @@ class _ReaderScreenState extends State<ReaderScreen>
         .round();
     for (final int targetPage in <int>{currentPage + 1, currentPage - 1}) {
       if (targetPage >= 1 && targetPage <= imageUrls.length) {
-        final url = imageUrls[targetPage - 1];
+        final rawUrl = imageUrls[targetPage - 1];
+        final url = rawUrl.split('|').first;
         if (!url.startsWith('http')) continue;
         LocalImagePreloader.getLocalImagePath(
           widget.contentId,
@@ -1720,7 +1719,8 @@ class _ReaderScreenState extends State<ReaderScreen>
               httpHeaders: headers,
               enableZoom: zoom,
               visiblePageNotifier: _animatedPauseNotifier,
-              grayscale: context.read<ThemeCubit>().currentTheme == 'note' || context.read<ThemeCubit>().currentTheme == 'note_dark',
+              grayscale: context.read<ThemeCubit>().currentTheme == 'note' ||
+                  context.read<ThemeCubit>().currentTheme == 'note_dark',
               onHeavyImageDetected: _onHeavyImageDetected,
               onRepairBrokenImage:
                   canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
@@ -1797,7 +1797,8 @@ class _ReaderScreenState extends State<ReaderScreen>
               httpHeaders: headers,
               enableZoom: zoom,
               visiblePageNotifier: _animatedPauseNotifier,
-              grayscale: context.read<ThemeCubit>().currentTheme == 'note' || context.read<ThemeCubit>().currentTheme == 'note_dark',
+              grayscale: context.read<ThemeCubit>().currentTheme == 'note' ||
+                  context.read<ThemeCubit>().currentTheme == 'note_dark',
               // Double tap = toggle UI (pinch handles zoom)
               onDoubleTapGesture: () => _readerCubit.toggleUI(),
               onRepairBrokenImage:

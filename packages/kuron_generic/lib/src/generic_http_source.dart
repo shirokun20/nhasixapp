@@ -637,6 +637,11 @@ class GenericHttpSource implements ContentSource {
       headers['Sec-Fetch-Site'] = 'cross-site';
     }
 
+    if (_id == 'schale-network') {
+      headers['Origin'] = 'https://niyaniya.moe';
+      headers['Referer'] = 'https://niyaniya.moe/';
+    }
+
     if (cookies != null && cookies.isNotEmpty) {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
