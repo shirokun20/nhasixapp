@@ -43,6 +43,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.onRepairBrokenImage,
     this.onOpenSourcePageForRepair,
     this.onDoubleTapGesture,
+    this.grayscale = false,
   });
 
   final String imageUrl;
@@ -71,6 +72,11 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   /// Notifier that emits the currently visible page number.
   /// Forwarded to [AnimatedWebPView] to auto-pause off-screen animations.
   final ValueNotifier<int>? visiblePageNotifier;
+
+  /// Whether the image should be forced to grayscale (Note theme).
+  final bool grayscale;
+
+  /// Callback when a heavy image (requires native rendering) is detected.;
 
   @override
   State<ExtendedImageReaderWidget> createState() =>
@@ -1566,6 +1572,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         autoPlay: playInlineInContinuousScroll || _shouldAutoPlayAnimatedView,
         pageNumber: widget.pageNumber,
         visiblePageNotifier: widget.visiblePageNotifier,
+        grayscale: widget.grayscale,
         loadingBuilder: (context, receivedBytes, totalBytes) =>
             _buildLoadingIndicator(
           context,

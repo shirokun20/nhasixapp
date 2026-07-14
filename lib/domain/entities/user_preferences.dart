@@ -87,7 +87,7 @@ class UserPreferences extends Equatable {
     this.wifiOnly = false,
   });
 
-  final String theme; // light, dark, amoled
+  final String theme; // light, dark, amoled, note, note_dark
   final String defaultLanguage;
   final String imageQuality; // low, medium, high, original
   final bool autoDownload;
@@ -288,7 +288,7 @@ class UserPreferences extends Equatable {
   }
 
   /// Check if theme is dark
-  bool get isDarkTheme => theme == 'dark' || theme == 'amoled';
+  bool get isDarkTheme => theme == 'dark' || theme == 'amoled' || theme == 'note_dark';
 
   /// Check if theme is AMOLED
   bool get isAmoledTheme => theme == 'amoled';
@@ -585,8 +585,10 @@ class ThemeOption {
   static const String light = 'light';
   static const String dark = 'dark';
   static const String amoled = 'amoled';
+  static const String note = 'note';
+  static const String noteDark = 'note_dark';
 
-  static const List<String> all = [light, dark, amoled];
+  static const List<String> all = [light, dark, amoled, note, noteDark];
 
   static String getDisplayName(String theme) {
     switch (theme.toLowerCase()) {
@@ -596,6 +598,10 @@ class ThemeOption {
         return 'Dark';
       case amoled:
         return 'AMOLED';
+      case note:
+        return 'Note';
+      case noteDark:
+        return 'Note (Dark)';
       default:
         return theme;
     }

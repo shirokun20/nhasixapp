@@ -40,6 +40,7 @@ class AnimatedWebPView extends StatefulWidget {
     this.visiblePageNotifier,
     this.loadingBuilder,
     required this.fallback,
+    this.grayscale = false,
   });
 
   final String url;
@@ -79,6 +80,9 @@ class AnimatedWebPView extends StatefulWidget {
 
   /// Widget shown while the thumbnail is loading or on non-Android platforms.
   final Widget fallback;
+
+  /// Whether the image should be forced to grayscale at the native level.
+  final bool grayscale;
 
   /// Whether [AnimatedWebPView] can render on the current platform.
   static bool get isAvailable => Platform.isAndroid;
@@ -430,6 +434,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
                 'headers': widget.headers,
                 if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
                 'staticOnly': widget.staticOnly,
+                'grayscale': widget.grayscale,
               },
               creationParamsCodec: const StandardMessageCodec(),
               gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},

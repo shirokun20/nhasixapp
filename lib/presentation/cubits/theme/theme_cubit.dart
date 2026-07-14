@@ -61,6 +61,10 @@ class ThemeCubit extends Cubit<ThemeState> {
         return _createDarkTheme();
       case 'amoled':
         return _createAmoledTheme();
+      case 'note':
+        return _createNoteTheme();
+      case 'note_dark':
+        return _createNoteDarkTheme();
       default:
         return _createDarkTheme();
     }
@@ -70,6 +74,7 @@ class ThemeCubit extends Cubit<ThemeState> {
   ThemeMode _getThemeMode(String theme) {
     switch (theme) {
       case 'light':
+      case 'note':
         return ThemeMode.light;
       case 'dark':
       case 'amoled':
@@ -417,6 +422,223 @@ class ThemeCubit extends Cubit<ThemeState> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           borderSide: const BorderSide(color: AppColors.brandCoral, width: 2),
+        ),
+      ),
+    );
+  }
+
+  /// Create Dark Note theme — pure monochrome B&W inverted
+  ThemeData _createNoteDarkTheme() {
+    return ThemeData(
+      brightness: Brightness.dark,
+      useMaterial3: true,
+      textTheme: _googleFontsTextTheme(ThemeData.dark().textTheme),
+      extensions: const [KuronColors.note],
+      colorScheme: const ColorScheme.dark(
+        primary: Colors.white,
+        onPrimary: Colors.black,
+        primaryContainer: Color(0xFF222222),
+        onPrimaryContainer: Colors.white,
+        secondary: Colors.white,
+        onSecondary: Colors.black,
+        secondaryContainer: Color(0xFF222222),
+        onSecondaryContainer: Colors.white,
+        tertiary: Color(0xFF888888),
+        onTertiary: Colors.black,
+        tertiaryContainer: Color(0xFF222222),
+        onTertiaryContainer: Colors.white,
+        error: Colors.white,
+        onError: Colors.black,
+        errorContainer: Colors.white,
+        onErrorContainer: Colors.black,
+        surface: Color(0xFF111111),
+        onSurface: Colors.white,
+        onSurfaceVariant: Color(0xFF888888),
+        surfaceContainerHighest: Color(0xFF222222),
+        outline: Color(0xFF444444),
+        outlineVariant: Color(0xFF222222),
+        shadow: Colors.transparent,
+        scrim: Colors.black87,
+        inverseSurface: Colors.white,
+        onInverseSurface: Colors.black,
+        inversePrimary: Colors.black,
+      ),
+      scaffoldBackgroundColor: Colors.black,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: DesignTokens.elevationNone,
+        centerTitle: false,
+        scrolledUnderElevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF111111),
+        elevation: DesignTokens.elevationNone,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+          side: const BorderSide(color: Color(0xFF444444), width: 1),
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Color(0xFF111111),
+        textColor: Colors.white,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF444444),
+        thickness: 1,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFF111111),
+        indicatorColor: const Color(0xFF333333),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            );
+          }
+          return const TextStyle(
+            color: Color(0xFF888888),
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: Colors.white);
+          }
+          return const IconThemeData(color: Color(0xFF888888));
+        }),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: DesignTokens.elevationMd,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF111111),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: Color(0xFF444444)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: Color(0xFF444444)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
+        ),
+      ),
+    );
+  }
+
+  /// Create Note theme — pure monochrome B&W
+  ThemeData _createNoteTheme() {
+    return ThemeData(
+      brightness: Brightness.light,
+      useMaterial3: true,
+      textTheme: _googleFontsTextTheme(ThemeData.light().textTheme),
+      extensions: const [KuronColors.note],
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.noteText,
+        onPrimary: Colors.white,
+        primaryContainer: AppColors.noteCardAlt,
+        onPrimaryContainer: Colors.black,
+        secondary: AppColors.noteText,
+        onSecondary: Colors.white,
+        secondaryContainer: AppColors.noteCardAlt,
+        onSecondaryContainer: Colors.black,
+        tertiary: AppColors.noteTextSub,
+        onTertiary: Colors.white,
+        tertiaryContainer: AppColors.noteCardAlt,
+        onTertiaryContainer: Colors.black,
+        error: Colors.black, // No colors allowed
+        onError: Colors.white,
+        errorContainer: Colors.black,
+        onErrorContainer: Colors.white,
+        surface: AppColors.noteSurface,
+        onSurface: AppColors.noteText,
+        onSurfaceVariant: AppColors.noteTextSub,
+        surfaceContainerHighest: AppColors.noteCard,
+        outline: AppColors.noteBorder,
+        outlineVariant: AppColors.noteCardAlt,
+        shadow: Color(0x40000000),
+        scrim: Colors.black,
+        inverseSurface: AppColors.noteText,
+        onInverseSurface: AppColors.noteBg,
+        inversePrimary: AppColors.noteText,
+      ),
+      scaffoldBackgroundColor: AppColors.noteBg,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.noteBg,
+        foregroundColor: AppColors.noteText,
+        elevation: DesignTokens.elevationNone,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: false,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.noteCard,
+        elevation: DesignTokens.elevationNone,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+          side: const BorderSide(color: AppColors.noteBorder, width: 1),
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        tileColor: AppColors.noteSurface,
+        textColor: AppColors.noteText,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.noteBorder,
+        thickness: 1,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.noteBg,
+        indicatorColor: AppColors.noteCard,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: AppColors.noteText,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            );
+          }
+          return const TextStyle(
+            color: AppColors.noteTextSub,
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.noteText);
+          }
+          return const IconThemeData(color: AppColors.noteTextSub);
+        }),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.noteText,
+        foregroundColor: Colors.white,
+        elevation: DesignTokens.elevationSm,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.noteSurface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: AppColors.noteBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: AppColors.noteBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          borderSide: const BorderSide(color: AppColors.noteText, width: 2),
         ),
       ),
     );

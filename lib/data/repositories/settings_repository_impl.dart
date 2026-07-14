@@ -247,6 +247,18 @@ class SettingsRepositoryImpl implements SettingsRepository {
           previewColors: ['#000000', '#FFFFFF', '#03DAC6'],
         ),
         ThemeOption(
+          id: 'note',
+          name: 'Note',
+          description: 'noteThemeDesc',
+          previewColors: ['#FFFFFF', '#000000', '#888888'],
+        ),
+        ThemeOption(
+          id: 'note_dark',
+          name: 'Note Dark',
+          description: 'noteDarkThemeDesc',
+          previewColors: ['#121212', '#FFFFFF', '#888888'],
+        ),
+        ThemeOption(
           id: 'system',
           name: 'System',
           description: 'systemThemeDesc',

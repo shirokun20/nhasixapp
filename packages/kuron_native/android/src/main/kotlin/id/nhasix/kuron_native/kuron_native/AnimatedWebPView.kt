@@ -101,6 +101,12 @@ class AnimatedWebPView(
         val filePath = params?.get("filePath") as? String
         val staticOnly = params?.get("staticOnly") == true
         targetWidth = (params?.get("targetWidth") as? Number)?.toInt()
+        val grayscale = params?.get("grayscale") == true
+
+        if (grayscale) {
+            val cm = android.graphics.ColorMatrix().apply { setSaturation(0f) }
+            imageView.colorFilter = android.graphics.ColorMatrixColorFilter(cm)
+        }
 
         @Suppress("UNCHECKED_CAST")
         val headers: Map<String, String> = (params?.get("headers") as? Map<*, *>)

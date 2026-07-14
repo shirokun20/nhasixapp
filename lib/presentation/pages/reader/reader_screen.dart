@@ -28,6 +28,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import '../../../services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
+import '../../cubits/theme/theme_cubit.dart';
 import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/progress_indicator_widget.dart';
@@ -1719,6 +1720,7 @@ class _ReaderScreenState extends State<ReaderScreen>
               httpHeaders: headers,
               enableZoom: zoom,
               visiblePageNotifier: _animatedPauseNotifier,
+              grayscale: context.read<ThemeCubit>().currentTheme == 'note' || context.read<ThemeCubit>().currentTheme == 'note_dark',
               onHeavyImageDetected: _onHeavyImageDetected,
               onRepairBrokenImage:
                   canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
@@ -1795,6 +1797,7 @@ class _ReaderScreenState extends State<ReaderScreen>
               httpHeaders: headers,
               enableZoom: zoom,
               visiblePageNotifier: _animatedPauseNotifier,
+              grayscale: context.read<ThemeCubit>().currentTheme == 'note' || context.read<ThemeCubit>().currentTheme == 'note_dark',
               // Double tap = toggle UI (pinch handles zoom)
               onDoubleTapGesture: () => _readerCubit.toggleUI(),
               onRepairBrokenImage:

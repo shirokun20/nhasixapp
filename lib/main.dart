@@ -147,8 +147,18 @@ class MyApp extends StatelessWidget {
                         PlatformNotSupportedDialog.show(context);
                       });
                     }
-                    return AppPrivacyOverlayGate(
+                    final child_ = AppPrivacyOverlayGate(
                       child: child ?? const SizedBox.shrink(),
+                    );
+                    if (themeState.currentTheme != 'note' && themeState.currentTheme != 'note_dark') return child_;
+                    return ColorFiltered(
+                      colorFilter: const ColorFilter.matrix(<double>[
+                        0.299, 0.587, 0.114, 0, 0,
+                        0.299, 0.587, 0.114, 0, 0,
+                        0.299, 0.587, 0.114, 0, 0,
+                        0,     0,     0,     1, 0,
+                      ]),
+                      child: child_,
                     );
                   },
                 );

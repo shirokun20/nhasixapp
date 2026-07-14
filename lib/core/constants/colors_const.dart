@@ -38,6 +38,15 @@ class AppColors {
   static const Color amoledText = Color(0xFFCCC4BC);
   static const Color amoledTextSub = Color(0xFF8E847C);
 
+  // Note mode — pure monochrome
+  static const Color noteBg = Color(0xFFFFFFFF);
+  static const Color noteSurface = Color(0xFFF5F5F5);
+  static const Color noteCard = Color(0xFFEEEEEE);
+  static const Color noteCardAlt = Color(0xFFE0E0E0);
+  static const Color noteBorder = Color(0xFFBDBDBD);
+  static const Color noteText = Color(0xFF000000);
+  static const Color noteTextSub = Color(0xFF757575);
+
   // New tokens — warm secondary accent
   static const Color warm = Color(0xFFD48A6A);
   static const Color warmMuted = Color(0xFFB87054);
@@ -53,6 +62,8 @@ class AppColors {
   static const Color readerTextLight = Color(0xFF2E2722);
   static const Color readerBgAmoled = Color(0xFF000000);
   static const Color readerTextAmoled = Color(0xFFCCC4BC);
+  static const Color readerBgNote = Color(0xFFFFFFFF);
+  static const Color readerTextNote = Color(0xFF000000);
 
   // Card gradient anchors
   static const Color darkGradientStart = Color(0xFF2A2522);
@@ -61,6 +72,8 @@ class AppColors {
   static const Color lightGradientEnd = Color(0xFFF5EDE4);
   static const Color amoledGradientStart = Color(0xFF12100E);
   static const Color amoledGradientEnd = Color(0xFF0C0A08);
+  static const Color noteGradientStart = Color(0xFFEEEEEE);
+  static const Color noteGradientEnd = Color(0xFFF5F5F5);
 
   // Semantic — derived from brand
   static const Color primary = brandCoral;
@@ -158,5 +171,14 @@ class KuronColors extends ThemeExtension<KuronColors> {
     readGold: AppColors.readGold,
     readerBg: AppColors.readerBgAmoled,
     readerText: AppColors.readerTextAmoled,
+  );
+
+  static const note = KuronColors(
+    cardGradientStart: AppColors.noteGradientStart,
+    cardGradientEnd: AppColors.noteGradientEnd,
+    cardBorder: AppColors.noteBorder,
+    readGold: Color(0xFF9E9E9E), // readGoldNote equivalent
+    readerBg: AppColors.readerBgNote,
+    readerText: AppColors.readerTextNote,
   );
 }
