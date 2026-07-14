@@ -2641,40 +2641,80 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     try {
       final dio = getIt<Dio>();
-      final candidate = await _buildCandidateFromLinkManifest(
+      final candidates = await _buildCandidatesFromLinkManifest(
         link: link,
         dio: dio,
         l10n: l10n,
       );
 
+      if (candidates.isEmpty) {
+        messenger.hideCurrentSnackBar();
+        return;
+      }
+
       if (!context.mounted) return;
-      final shouldInstall = await _showInstallPreviewDialog(
-        context,
-        candidate,
-      );
+      final shouldInstall = candidates.length == 1
+          // ignore: use_build_context_synchronously
+          ? await _showInstallPreviewDialog(context, candidates.first)
+          // ignore: use_build_context_synchronously
+          : await _showBatchInstallPreviewDialog(context, candidates);
       if (!shouldInstall) {
         messenger.hideCurrentSnackBar();
         return;
       }
 
       final remoteConfig = getIt<RemoteConfigService>();
-      await remoteConfig.applySourceConfigFromJson(
-        sourceId: candidate.sourceId,
-        rawJson: candidate.rawJson,
-        sourceLabel: 'link',
-      );
-      await remoteConfig.markSourceInstalled(candidate.sourceId);
+      final installed = <String>[];
+      final failed = <String>[];
+      final failedReasons = <String, String>{};
+
+      for (final candidate in candidates) {
+        try {
+          await remoteConfig.applySourceConfigFromJson(
+            sourceId: candidate.sourceId,
+            rawJson: candidate.rawJson,
+            sourceLabel: 'link',
+          );
+          await remoteConfig.markSourceInstalled(candidate.sourceId);
+
+          if (!context.mounted) return;
+          await _registerSourceInRegistry(context, candidate.sourceId);
+          installed.add(candidate.sourceId);
+        } catch (e, stackTrace) {
+          Logger().e(
+            'Failed installing source from link ${candidate.sourceId}: $e',
+            stackTrace: stackTrace,
+          );
+          failed.add(candidate.sourceId);
+          failedReasons[candidate.sourceId] = e.toString();
+        }
+      }
 
       if (!context.mounted) return;
-      await _registerSourceInRegistry(context, candidate.sourceId);
-
       messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.sourceImportInstalledFromLink(candidate.sourceId)),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      if (failed.isEmpty) {
+        final message = installed.length == 1
+            ? l10n.sourceImportInstalledFromLink(installed.first)
+            : l10n.installedSourcesFromZip(installed.length); // Use the same plural string
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        final reasonHint = failed.isNotEmpty
+            ? ' • ${failed.first}: ${failedReasons[failed.first] ?? 'unknown error'}'
+            : '';
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Installed ${installed.length}, failed ${failed.length}: ${failed.join(', ')}$reasonHint',
+            ),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
     } catch (e, stackTrace) {
       Logger()
           .e('Failed to install source from link: $e', stackTrace: stackTrace);
@@ -2802,7 +2842,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  Future<_InstallCandidate> _buildCandidateFromLinkManifest({
+  Future<List<_InstallCandidate>> _buildCandidatesFromLinkManifest({
     required String link,
     required Dio dio,
     required AppLocalizations l10n,
@@ -2833,14 +2873,16 @@ class _SettingsScreenState extends State<SettingsScreen>
         l10n.sourceImportSourceMismatch,
       );
       final version = (manifestMap['version'] as String?)?.trim() ?? 'unknown';
-      return _InstallCandidate(
-        sourceId: sourceId,
-        version: version,
-        displayName: null,
-        description: null,
-        rawJson: manifestRaw,
-        isVerified: false,
-      );
+      return [
+        _InstallCandidate(
+          sourceId: sourceId,
+          version: version,
+          displayName: null,
+          description: null,
+          rawJson: manifestRaw,
+          isVerified: false,
+        )
+      ];
     }
 
     // Case B: global app manifest with installableSources list.
@@ -2850,20 +2892,25 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (!mounted) {
         throw StateError('SettingsScreen is no longer mounted');
       }
-      final selectedEntry = await _selectGlobalManifestEntry(
+      final selectedEntries = await _selectGlobalManifestEntries(
         context: context,
         entries: installableSources,
       );
-      if (selectedEntry == null) {
+      if (selectedEntries.isEmpty) {
         throw const FormatException('Source selection cancelled');
       }
 
-      return _downloadCandidateFromEntry(
-        baseLink: link,
-        dio: dio,
-        entry: selectedEntry,
-        l10n: l10n,
+      final candidates = await Future.wait(
+        selectedEntries.map(
+          (entry) => _downloadCandidateFromEntry(
+            baseLink: link,
+            dio: dio,
+            entry: entry,
+            l10n: l10n,
+          ),
+        ),
       );
+      return candidates;
     }
 
     // Case C: package-level manifest for a single source.
@@ -2903,14 +2950,16 @@ class _SettingsScreenState extends State<SettingsScreen>
       throw FormatException(l10n.sourceImportSourceMismatch);
     }
 
-    return _InstallCandidate(
-      sourceId: manifest.sourceId,
-      version: manifest.version,
-      displayName: manifest.displayName,
-      description: null,
-      rawJson: rawJson,
-      isVerified: true,
-    );
+    return [
+      _InstallCandidate(
+        sourceId: manifest.sourceId,
+        version: manifest.version,
+        displayName: manifest.displayName,
+        description: null,
+        rawJson: rawJson,
+        isVerified: true,
+      )
+    ];
   }
 
   Future<_InstallCandidate> _downloadCandidateFromEntry({
@@ -2998,47 +3047,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         continue;
       }
     }
-  }
-
-  Future<_GlobalManifestEntry?> _selectGlobalManifestEntry({
-    required BuildContext context,
-    required List<_GlobalManifestEntry> entries,
-  }) async {
-    if (entries.length == 1) {
-      return entries.first;
-    }
-
-    return showModalBottomSheet<_GlobalManifestEntry>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title:
-                  Text(AppLocalizations.of(context)!.selectSourceFromManifest),
-              subtitle: Text(AppLocalizations.of(context)!.chooseOneSource),
-            ),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: entries.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (ctx, index) {
-                  final entry = entries[index];
-                  return ListTile(
-                    title: Text(entry.displayName ?? entry.id),
-                    subtitle: Text('${entry.id} • v${entry.version}'),
-                    onTap: () => ctx.pop(entry),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
