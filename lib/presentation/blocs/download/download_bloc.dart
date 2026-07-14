@@ -146,7 +146,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   // FrameTiming measurement (1.9)
   // ponytail: debug-only; remove when jank verification complete
-  static const bool _kFrameTimingEnabled = true;
+  static const bool _kFrameTimingEnabled = false;
   TimingsCallback? _frameTimingCallback;
   int _frameTimingBuildSamples = 0;
   int _frameTimingRasterSamples = 0;

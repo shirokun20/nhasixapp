@@ -56,7 +56,14 @@ void main() async {
 
   // Catch errors from platform (including Impeller/Vulkan)
   PlatformDispatcher.instance.onError = (error, stack) {
-    Logger().e('🔥 Platform Error: $error', error: error, stackTrace: stack);
+    // ponytail: skip known benign Flutter assertion noise (FocusNode/FocusScopeNode
+    // used-after-dispose fires in debug mode during navigation; not actionable)
+    final msg = error.toString();
+    if (msg.contains('FocusScopeNode was used after being disposed') ||
+        msg.contains('FocusNode was used after being disposed')) {
+      return true;
+    }
+    Logger().e('🔥 Platform Error: $msg', error: error, stackTrace: stack);
     return true; // Prevent crash
   };
 
