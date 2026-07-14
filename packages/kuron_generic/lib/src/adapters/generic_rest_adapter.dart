@@ -727,6 +727,7 @@ class GenericRestAdapter implements GenericAdapter {
         if (pageData is! Map) return null;
 
         final base = pageData['base']?.toString() ?? '';
+        final fallback = pageData['fallback']?.toString();
         final entries = pageData['entries'];
         if (base.isEmpty || entries is! List) return null;
 
@@ -737,7 +738,13 @@ class GenericRestAdapter implements GenericAdapter {
           if (p.isNotEmpty) {
             final cleanBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
             final cleanPath = p.startsWith('/') ? p.substring(1) : p;
-            final url = '$cleanBase/$cleanPath';
+            var url = '$cleanBase/$cleanPath';
+            
+            // Append fallback URL if available
+            if (fallback != null && fallback.isNotEmpty) {
+              final cleanFallback = fallback.endsWith('/') ? fallback.substring(0, fallback.length - 1) : fallback;
+              url = '$url|$cleanFallback/$cleanPath';
+            }
             images.add(url);
           }
         }

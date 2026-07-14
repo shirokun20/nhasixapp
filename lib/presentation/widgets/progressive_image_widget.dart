@@ -143,16 +143,17 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
 
-  String _networkCacheKey() {
+  String _networkCacheKey({String? urlToHash}) {
+    final targetUrl = urlToHash ?? widget.networkUrl.split('|').first;
     final headers = widget.httpHeaders;
     if (headers == null || headers.isEmpty) {
-      return widget.networkUrl;
+      return targetUrl;
     }
 
     final keys = headers.keys.toList()..sort();
     final normalized =
         keys.map((key) => '$key=${headers[key] ?? ''}').join('&');
-    return '${widget.networkUrl}::h=$normalized';
+    return '$targetUrl::h=$normalized';
   }
 
   @override
@@ -573,16 +574,22 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   }
 
   /// Build network image with caching
-  Widget _buildNetworkImage() {
+  Widget _buildNetworkImage({String? forceUrl}) {
+    // Check for fallback URLs separated by pipe
+    final targetUrl = forceUrl ?? widget.networkUrl;
+    final urlParts = targetUrl.split('|');
+    final primaryUrl = urlParts[0];
+    final fallbackUrl = urlParts.length > 1 ? urlParts[1] : null;
+
     // Improved GIF detection to handle query parameters
-    final uri = Uri.parse(widget.networkUrl);
+    final uri = Uri.parse(primaryUrl);
     final isGif = uri.path.toLowerCase().endsWith('.gif');
 
     if (isGif) {
       // Use efficient cached/processed GIF handling
       return FutureBuilder<File?>(
         future: getIt<ImageCacheService>()
-            .getOrProcessStaticGif(widget.networkUrl, widget.httpHeaders),
+            .getOrProcessStaticGif(primaryUrl, widget.httpHeaders),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return widget.placeholder ?? _buildPlaceholder();
@@ -592,6 +599,9 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
               _logger
                   .e('❌ Error loading GIF as static image: ${snapshot.error}');
             }
+            if (fallbackUrl != null) {
+              return _buildNetworkImage(forceUrl: fallbackUrl);
+            }
             return widget.errorWidget ?? _buildErrorWidget();
           }
 
@@ -600,8 +610,12 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
             width: widget.width,
             height: widget.height,
             fit: widget.fit,
-            errorBuilder: (context, error, stackTrace) =>
-                widget.errorWidget ?? _buildErrorWidget(),
+            errorBuilder: (context, error, stackTrace) {
+              if (fallbackUrl != null) {
+                return _buildNetworkImage(forceUrl: fallbackUrl);
+              }
+              return widget.errorWidget ?? _buildErrorWidget();
+            },
           );
 
           if (widget.borderRadius != null) {
@@ -616,8 +630,8 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     }
 
     Widget imageWidget = CachedNetworkImage(
-      imageUrl: widget.networkUrl,
-      cacheKey: _networkCacheKey(),
+      imageUrl: primaryUrl,
+      cacheKey: _networkCacheKey(urlToHash: primaryUrl),
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
@@ -629,13 +643,21 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         if (kDebugMode) {
           _logger.w('Network image load failed for $url: $error');
         }
+        
+        // If primary fails and we have a fallback URL, retry with fallback
+        if (fallbackUrl != null) {
+          if (kDebugMode) {
+            _logger.w('🔄 Falling back to secondary network URL: $fallbackUrl');
+          }
+          return _buildNetworkImage(forceUrl: fallbackUrl);
+        }
 
         if (shouldUseStaticNetworkDecodeFallback(
           url,
           pageNumber: widget.pageNumber,
           isThumbnail: widget.isThumbnail,
         )) {
-          return _buildStaticNetworkDecodeFallback();
+          return _buildStaticNetworkDecodeFallback(primaryUrl);
         }
 
         return widget.errorWidget ?? _buildErrorWidget();
@@ -656,10 +678,10 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return imageWidget;
   }
 
-  Widget _buildStaticNetworkDecodeFallback() {
+  Widget _buildStaticNetworkDecodeFallback(String url) {
     return FutureBuilder<File?>(
       future: getIt<ImageCacheService>().getOrProcessStaticImage(
-        widget.networkUrl,
+        url,
         headers: widget.httpHeaders,
       ),
       builder: (context, snapshot) {
@@ -671,7 +693,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         if (snapshot.hasError || file == null) {
           if (kDebugMode) {
             _logger.e(
-              'Static network decode fallback failed for ${widget.networkUrl}: ${snapshot.error}',
+              'Static network decode fallback failed for $url: ${snapshot.error}',
             );
           }
           return widget.errorWidget ?? _buildErrorWidget();
@@ -679,7 +701,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
         if (kDebugMode) {
           _logger.d(
-            'Using static network decode fallback for ${widget.networkUrl}: ${file.path}',
+            'Using static network decode fallback for $url: ${file.path}',
           );
         }
         return _buildImageFile(file.path);
@@ -802,9 +824,13 @@ class _ProgressiveReaderImageWidgetState
       _logger.d('🌐 Network URL: ${widget.networkUrl}');
     }
 
+    // Check for fallback URLs separated by pipe
+    final urlParts = widget.networkUrl.split('|');
+    final primaryUrl = urlParts[0];
+
     // Priority 1: Check ImageCacheService (memory + disk cache with TTL)
     final cachedImage =
-        await _imageCacheService.getCachedImage(widget.networkUrl);
+        await _imageCacheService.getCachedImage(primaryUrl);
     if (cachedImage != null) {
       if (kDebugMode) {
         _logger.d(
@@ -865,7 +891,7 @@ class _ProgressiveReaderImageWidgetState
     // Priority 3: Download and cache using LocalImagePreloader
     if (kDebugMode) {
       _logger.d(
-          'Reader: 📥 No local image found, downloading and caching: ${widget.networkUrl}');
+          'Reader: 📥 No local image found, downloading and caching: $primaryUrl');
     }
 
     final cachedPath = await LocalImagePreloader.downloadAndCacheImage(
@@ -937,19 +963,24 @@ class _ProgressiveReaderImageWidgetState
   }
 
   /// Build network image with dynamic sizing
-  Widget _buildNetworkImageWithDynamicSize(BuildContext context) {
+  Widget _buildNetworkImageWithDynamicSize(BuildContext context, {String? forceUrl}) {
+    final targetUrl = forceUrl ?? widget.networkUrl;
+    final urlParts = targetUrl.split('|');
+    final primaryUrl = urlParts[0];
+    final fallbackUrl = urlParts.length > 1 ? urlParts[1] : null;
+
     if (kDebugMode) {
       _logger.d(
-          '📡 Loading reader image with dynamic sizing for page ${widget.pageNumber}: ${widget.networkUrl}');
+          '📡 Loading reader image with dynamic sizing for page ${widget.pageNumber}: $primaryUrl');
     }
 
     // Use unique cache key combining contentId and pageNumber to prevent cache collision
     final uniqueCacheKey =
-        '${widget.contentId}_page_${widget.pageNumber}_${widget.networkUrl.hashCode}';
+        '${widget.contentId}_page_${widget.pageNumber}_${primaryUrl.hashCode}';
 
     return CachedNetworkImage(
       key: ValueKey(uniqueCacheKey),
-      imageUrl: widget.networkUrl,
+      imageUrl: primaryUrl,
       cacheKey: uniqueCacheKey, // Force unique cache per page
       fit: BoxFit.none, // Use BoxFit.none for custom sizing
       width: _getDisplaySize().width,
@@ -957,7 +988,15 @@ class _ProgressiveReaderImageWidgetState
       memCacheWidth: 800,
       memCacheHeight: 1200,
       placeholder: (context, url) => _buildReaderPlaceholder(context),
-      errorWidget: (context, url, error) => _buildReaderErrorWidget(context),
+      errorWidget: (context, url, error) {
+        if (fallbackUrl != null) {
+          if (kDebugMode) {
+            _logger.w('🔄 Reader falling back to secondary network URL: $fallbackUrl');
+          }
+          return _buildNetworkImageWithDynamicSize(context, forceUrl: fallbackUrl);
+        }
+        return _buildReaderErrorWidget(context);
+      },
       fadeInDuration: DesignTokens.durationPageTurn,
       // Cache image in ImageCacheService when loaded
       imageBuilder: (context, imageProvider) {
@@ -966,7 +1005,7 @@ class _ProgressiveReaderImageWidgetState
         imageStream.addListener(ImageStreamListener(_calculateImageSize));
 
         // Cache the image data in ImageCacheService for future use
-        _cacheNetworkImage(widget.networkUrl);
+        _cacheNetworkImage(primaryUrl);
         return Image(
           image: imageProvider,
           fit: BoxFit.fitWidth,
