@@ -227,12 +227,17 @@ class DownloadContentUseCase
         totalImages: totalAvailablePages,
       );
 
+      // Use the cleaned/resolved URLs from the pipeline (strips fallback '|' tokens).
+      // Fallback to rangeImageUrls if pipeline returns empty (should not happen for valid sources).
+      final resolvedDownloadUrls = const PageResolutionPipeline().toDownloadUrls(pipelineResult.pages);
+      final finalImageUrls = resolvedDownloadUrls.isNotEmpty ? resolvedDownloadUrls : rangeImageUrls;
+
       // Start Native Download (Fire and Forget)
       // Pass only the range-filtered URLs so native layer downloads the correct subset
       await _nativeDownloadService.startDownload(
         contentId: content.id,
         sourceId: content.sourceId,
-        imageUrls: rangeImageUrls,
+        imageUrls: finalImageUrls,
         destinationPath: destination,
         cookies: cookies,
         headers: headers, // Source-specific headers (Referer for Hitomi, etc.)

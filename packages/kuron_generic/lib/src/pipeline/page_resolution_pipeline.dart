@@ -98,7 +98,9 @@ class PageResolutionPipeline {
     // Build per-page requests.
     final List<ResolvedPageRequest> pages = <ResolvedPageRequest>[];
     int pageNumber = 1;
-    for (final String url in input.imageUrls) {
+    for (final String rawUrl in input.imageUrls) {
+      // Strip fallback URL if present (e.g. url1|url2) so native OkHttp doesn't fail parsing.
+      final String url = rawUrl.contains('|') ? rawUrl.split('|').first : rawUrl;
       final bool valid = url.isNotEmpty;
       if (!valid) {
         diags.add(ValidationDiagnostic(
