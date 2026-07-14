@@ -241,6 +241,13 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('makeHttpRequest() has not been implemented.');
   }
 
+  /// Gets the clearance token headlessly
+  Future<Map<String, dynamic>?> getHeadlessClearance({
+    required String url,
+  }) {
+    throw UnimplementedError('getHeadlessClearance() has not been implemented.');
+  }
+
   /// Download binary data (images, files) using native OkHttp with DoH support.
   /// Returns raw bytes.
   Future<Uint8List> downloadBinary({

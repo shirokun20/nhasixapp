@@ -243,18 +243,108 @@ class WebViewActivity : AppCompatActivity() {
             this.blockNetworkImage = blockNetworkImages
             if (userAgent != null) {
                 userAgentString = userAgent
+            } else {
+                userAgentString = userAgentString.replace("; wv", "")
             }
         }
 
 
 
+        webView.addJavascriptInterface(object : Any() {
+            @android.webkit.JavascriptInterface
+            fun sendToken(token: String) {
+                android.util.Log.d("KuronNative", "Caught token from JS interface: $token")
+                runOnUiThread {
+                    val cookieManager = android.webkit.CookieManager.getInstance()
+                    val cookies = cookieManager.getCookie(webView.url ?: "https://niyaniya.moe/")
+                    android.util.Log.d("KuronNative", "Cookies found alongside token: $cookies")
+
+                    val resultIntent = Intent()
+                    resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
+                    resultIntent.putExtra(RESULT_CURRENT_URL, webView.url)
+                    resultIntent.putExtra("pageFinishedScriptResult", token)
+                    resultIntent.putExtra(RESULT_COOKIES, cookies)
+                    setResult(android.app.Activity.RESULT_OK, resultIntent)
+                    finish()
+                }
+            }
+
+            @android.webkit.JavascriptInterface
+            fun logNetwork(log: String) {
+                android.util.Log.d("KuronNative", "JS Network Log: $log")
+            }
+        }, "KuronTokenInterface")
+
         webView.webViewClient = object : WebViewClient() {
+            private var pollingStarted = false
+
+            private fun startPolling(view: WebView?) {
+                if (pollingStarted) return
+                
+                val script = pageFinishedScript
+                if (!script.isNullOrBlank()) {
+                    pollingStarted = true
+                    val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                    val runnable = object : Runnable {
+                        override fun run() {
+                            if (isDestroyed || isFinishing) return
+                            view?.evaluateJavascript(script) { result ->
+                                android.util.Log.d("KuronNative", "evaluateJavascript result: $result")
+                                if (result != null && result != "null" && result != "\"\"" && result.isNotBlank()) {
+                                    android.util.Log.d("KuronNative", "Clearance found! Closing WebView.")
+                                    val resultIntent = Intent()
+                                    resultIntent.putExtra(RESULT_USER_AGENT, view?.settings?.userAgentString)
+                                    resultIntent.putExtra(RESULT_CURRENT_URL, view?.url)
+                                    resultIntent.putExtra("pageFinishedScriptResult", result)
+                                    setResult(android.app.Activity.RESULT_OK, resultIntent)
+                                    finish()
+                                } else {
+                                    handler.postDelayed(this, 1000)
+                                }
+                            }
+                        }
+                    }
+                    handler.postDelayed(runnable, 1000)
+                }
+            }
+
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 // SSO Check on Start
                 if (checkSsoRedirect(url)) return
                 
+                // Inject Network Interceptor to log everything
+                val interceptScript = """
+                    (function() {
+                        if (window.kuronInterceptInjected) return;
+                        window.kuronInterceptInjected = true;
+                        
+                        var originalFetch = window.fetch;
+                        window.fetch = function(input, init) {
+                            var url = typeof input === 'string' ? input : (input && input.url ? input.url : 'unknown');
+                            var headers = (init && init.headers) ? JSON.stringify(init.headers) : 'none';
+                            window.KuronTokenInterface.logNetwork('FETCH url: ' + url + ' headers: ' + headers);
+                            return originalFetch.apply(this, arguments);
+                        };
+                        
+                        var originalOpen = XMLHttpRequest.prototype.open;
+                        XMLHttpRequest.prototype.open = function(method, url) {
+                            this._url = url;
+                            window.KuronTokenInterface.logNetwork('XHR OPEN url: ' + url);
+                            return originalOpen.apply(this, arguments);
+                        };
+                        
+                        var originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+                        XMLHttpRequest.prototype.setRequestHeader = function(header, value) {
+                            window.KuronTokenInterface.logNetwork('XHR HEADER url: ' + this._url + ' header: ' + header + ' value: ' + value);
+                            return originalSetRequestHeader.apply(this, arguments);
+                        };
+                    })();
+                """.trimIndent()
+                view?.evaluateJavascript(interceptScript, null)
+
                 checkForSuccess(url)
+                startPolling(view)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -263,11 +353,7 @@ class WebViewActivity : AppCompatActivity() {
                 if (checkSsoRedirect(url)) return
                 
                 checkForSuccess(url)
-
-                val script = pageFinishedScript
-                if (!script.isNullOrBlank()) {
-                    view?.evaluateJavascript(script, null)
-                }
+                startPolling(view)
                 
                 // Update title
                 view?.title?.let {
@@ -303,6 +389,23 @@ class WebViewActivity : AppCompatActivity() {
             // AdBlock Implementation
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
                 val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
+
+                // Sniff for Authorization header (Schale Clearance)
+                val authHeader = request.requestHeaders?.entries?.firstOrNull { it.key.equals("Authorization", ignoreCase = true) }?.value
+                if (authHeader != null && authHeader.startsWith("Bearer ", ignoreCase = true)) {
+                    val token = authHeader.substring(7).trim()
+                    if (token.isNotBlank() && token != "null" && token.length > 10) {
+                        android.util.Log.d("KuronNative", "Caught token from Authorization header: $token")
+                        view?.post {
+                            val resultIntent = Intent()
+                            resultIntent.putExtra(RESULT_USER_AGENT, view.settings.userAgentString)
+                            resultIntent.putExtra(RESULT_CURRENT_URL, view.url)
+                            resultIntent.putExtra("pageFinishedScriptResult", token)
+                            setResult(android.app.Activity.RESULT_OK, resultIntent)
+                            finish()
+                        }
+                    }
+                }
 
                 if (captureRequestPatterns.any { requestUrl.contains(it) }) {
                     // ponytail: MangaFire captures one AJAX URL and exits; HentaiRead

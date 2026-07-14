@@ -189,6 +189,13 @@ class KuronNative {
     );
   }
 
+  /// Gets the clearance token headlessly
+  Future<Map<String, dynamic>?> getHeadlessClearance({
+    required String url,
+  }) {
+    return KuronNativePlatform.instance.getHeadlessClearance(url: url);
+  }
+
   Future<Map<String, dynamic>?> showCaptchaWebView({
     required String provider,
     required String siteKey,

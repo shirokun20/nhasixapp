@@ -180,6 +180,88 @@ class KuronNativePlugin :
             "showLoginWebView" -> {
                 handleShowLoginWebView(call, result)
             }
+            "getHeadlessClearance" -> {
+                val url = call.argument<String>("url") ?: "https://niyaniya.moe/"
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    try {
+                        val webview = android.webkit.WebView(context)
+                        webview.settings.apply {
+                            javaScriptEnabled = true
+                            domStorageEnabled = true
+                            databaseEnabled = true
+                            blockNetworkImage = true
+                        }
+                        
+                        var tokenFound = false
+                        
+                        webview.webViewClient = object : android.webkit.WebViewClient() {
+                            override fun onPageFinished(view: android.webkit.WebView?, pageUrl: String?) {
+                                view?.evaluateJavascript("window.localStorage.getItem('clearance')") { clearance ->
+                                    if (tokenFound) return@evaluateJavascript
+                                    
+                                    val token = clearance?.takeUnless { it == "null" || it.isBlank() }?.removeSurrounding("\"")
+                                    if (token != null) {
+                                        tokenFound = true
+                                        webview.stopLoading()
+                                        webview.destroy()
+                                        
+                                        val cookieManager = android.webkit.CookieManager.getInstance()
+                                        val cookies = cookieManager.getCookie(url)
+                                        val resultMap = mapOf(
+                                            "token" to token,
+                                            "userAgent" to view.settings.userAgentString,
+                                            "cookies" to cookies
+                                        )
+                                        result.success(resultMap)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Fallback polling just in case Turnstile takes longer than onPageFinished
+                        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                        var attempts = 0
+                        val pollRunnable = object : Runnable {
+                            override fun run() {
+                                if (tokenFound) return
+                                attempts++
+                                if (attempts > 15) {
+                                    if (!tokenFound) {
+                                        webview.stopLoading()
+                                        webview.destroy()
+                                        result.success(null)
+                                    }
+                                    return
+                                }
+                                webview.evaluateJavascript("window.localStorage.getItem('clearance')") { clearance ->
+                                    if (tokenFound) return@evaluateJavascript
+                                    val token = clearance?.takeUnless { it == "null" || it.isBlank() }?.removeSurrounding("\"")
+                                    if (token != null) {
+                                        tokenFound = true
+                                        webview.stopLoading()
+                                        webview.destroy()
+                                        val cookieManager = android.webkit.CookieManager.getInstance()
+                                        val cookies = cookieManager.getCookie(url)
+                                        val resultMap = mapOf(
+                                            "token" to token,
+                                            "userAgent" to webview.settings.userAgentString,
+                                            "cookies" to cookies
+                                        )
+                                        result.success(resultMap)
+                                    } else {
+                                        handler.postDelayed(this, 1000)
+                                    }
+                                }
+                            }
+                        }
+                        handler.postDelayed(pollRunnable, 1000)
+                        
+                        webview.loadUrl(url)
+                    } catch (e: Exception) {
+                        result.error("HEADLESS_WEBVIEW_ERROR", e.message, null)
+                    }
+                }
+            }
             "showCaptchaWebView" -> {
                 handleShowCaptchaWebView(call, result)
             }
@@ -994,6 +1076,7 @@ class KuronNativePlugin :
                     val capturedRequestUrl = data.getStringExtra(WebViewActivity.RESULT_CAPTURED_REQUEST_URL)
                     val pageHtml = data.getStringExtra(WebViewActivity.RESULT_PAGE_HTML)
                     val capturedImageUrls = data.getStringArrayListExtra(WebViewActivity.RESULT_CAPTURED_IMAGE_URLS)
+                    val pageFinishedScriptResult = data.getStringExtra("pageFinishedScriptResult")
 
                     val resultMap = HashMap<String, Any?>()
                     resultMap["cookies"] = cookies
@@ -1003,6 +1086,7 @@ class KuronNativePlugin :
                     resultMap["capturedRequestUrl"] = capturedRequestUrl
                     resultMap["pageHtml"] = pageHtml
                     resultMap["capturedImageUrls"] = capturedImageUrls
+                    resultMap["pageFinishedScriptResult"] = pageFinishedScriptResult
                     resultMap["success"] = true
                     
                     pendingResult?.success(resultMap)

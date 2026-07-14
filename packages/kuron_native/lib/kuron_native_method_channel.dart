@@ -339,6 +339,17 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<Map<String, dynamic>?> getHeadlessClearance({
+    required String url,
+  }) async {
+    final result = await methodChannel
+        .invokeMapMethod<String, dynamic>('getHeadlessClearance', {
+      'url': url,
+    });
+    return result;
+  }
+
+  @override
   Future<Map<String, dynamic>?> showCaptchaWebView({
     required String provider,
     required String siteKey,
