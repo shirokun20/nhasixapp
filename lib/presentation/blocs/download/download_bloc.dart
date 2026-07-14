@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding, TimingsCallback, FrameTiming;
+import 'package:flutter/scheduler.dart'
+    show SchedulerBinding, TimingsCallback, FrameTiming;
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -139,6 +140,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   // LifecycleWatcher sets this; DownloadBloc reads it before starting downloads
   static bool _isForeground = true;
   static int get defaultMaxParallelImages => _isForeground ? 1 : 3;
+
   /// Called by LifecycleWatcher on lifecycle changes
   static void updateForeground(bool foreground) {
     _isForeground = foreground;
@@ -146,7 +148,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
   // FrameTiming measurement (1.9)
   // ponytail: debug-only; remove when jank verification complete
-  static const bool _kFrameTimingEnabled = false;
+  static const bool _kFrameTimingEnabled = true;
   TimingsCallback? _frameTimingCallback;
   int _frameTimingBuildSamples = 0;
   int _frameTimingRasterSamples = 0;
@@ -386,13 +388,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _frameTimingRasterSamples++;
         }
         if (_frameTimingBuildSamples >= _kFrameTimingLogInterval) {
-          final avgBuild =
-              _frameTimingBuildTotal / _frameTimingBuildSamples;
-          final avgRaster =
-              _frameTimingRasterTotal / _frameTimingRasterSamples;
-          _logger.i(
-              'FrameTiming: ${avgBuild.toStringAsFixed(1)}µs build | ${avgRaster.toStringAsFixed(1)}µs raster '
-              '(threshold: 16000µs = 16ms)');
+          final avgBuild = _frameTimingBuildTotal / _frameTimingBuildSamples;
+          final avgRaster = _frameTimingRasterTotal / _frameTimingRasterSamples;
+          // ponytail: only log on actual jank — silent when smooth
+          if (avgRaster > 16000) {
+            _logger.w(
+                'FrameTiming JANK: ${avgBuild.toStringAsFixed(1)}µs build | '
+                '${avgRaster.toStringAsFixed(1)}µs raster (>16ms!)');
+          }
           _frameTimingBuildTotal = 0;
           _frameTimingRasterTotal = 0;
           _frameTimingBuildSamples = 0;
@@ -1344,8 +1347,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         cookies: cookies,
         headers: networkHeaders,
         savePath: savePath,
-        enableNotifications:
-            currentState.settings.enableNotifications,
+        enableNotifications: currentState.settings.enableNotifications,
         maxParallelImages: DownloadBloc.defaultMaxParallelImages,
       );
 
@@ -2140,8 +2142,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _dbSaveSkipCount[contentId] = 0;
           await _userDataRepository
               .saveDownloadStatus(updatedDownload)
-              .catchError(
-                  (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
+              .catchError((e) =>
+                  _logger.w('DownloadBloc: Failed to save progress: $e'));
           _pendingDbSave.remove(contentId);
         } else {
           _pendingDbSave.add(contentId);
@@ -2159,8 +2161,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           isPaused: false,
         )
             .catchError((e) {
-          _logger.w(
-              'DownloadBloc: Failed to update notification progress: $e');
+          _logger.w('DownloadBloc: Failed to update notification progress: $e');
         });
       }
 
