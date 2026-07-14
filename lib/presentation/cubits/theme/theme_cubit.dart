@@ -433,7 +433,7 @@ class ThemeCubit extends Cubit<ThemeState> {
       brightness: Brightness.dark,
       useMaterial3: true,
       textTheme: _googleFontsTextTheme(ThemeData.dark().textTheme),
-      extensions: const [KuronColors.note],
+      extensions: const [KuronColors.noteDark],
       colorScheme: const ColorScheme.dark(
         primary: Colors.white,
         onPrimary: Colors.black,

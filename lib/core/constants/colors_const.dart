@@ -181,4 +181,13 @@ class KuronColors extends ThemeExtension<KuronColors> {
     readerBg: AppColors.readerBgNote,
     readerText: AppColors.readerTextNote,
   );
+
+  static const noteDark = KuronColors(
+    cardGradientStart: Color(0xFF111111),
+    cardGradientEnd: Color(0xFF222222),
+    cardBorder: Color(0xFF444444),
+    readGold: Color(0xFF666666),
+    readerBg: Colors.black,
+    readerText: Colors.white,
+  );
 }
