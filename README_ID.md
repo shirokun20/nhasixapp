@@ -137,6 +137,14 @@ flutter run
 
 Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apapun. Setiap source cukup satu file JSON yang menjelaskan cara scraping atau pemanggilan API-nya.
 
+> [!TIP]
+> **Tidak ingin ribet membuat sendiri?**
+> Kamu bisa menginstal ratusan ekstensi buatan komunitas langsung dari repositori ekstensi resmi kami!
+> 
+> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**
+> 
+> Cukup copy link `manifest.json` dari repositori tersebut dan paste di aplikasi lewat menu **Settings → Sources → Add via Link**. Jangan lupa berikan star dan dukung developernya! ❤️
+
 ### Referensi
 
 | Panduan | Link |

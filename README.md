@@ -137,6 +137,14 @@ flutter run
 
 Kuron's source system is fully config-driven — no code changes required. Each source is a single JSON file that tells the app how to scrape or call an API.
 
+> [!TIP]
+> **Don't want to build from scratch?**
+> You can install hundreds of community-built extensions directly from our official extensions repository!
+> 
+> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**
+> 
+> Simply copy the `manifest.json` link from that repository and paste it into **Settings → Sources → Add via Link**. Don't forget to star the repo and support the developer! ❤️
+
 ### Where to look
 
 | Guide | Link |
