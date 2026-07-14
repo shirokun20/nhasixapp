@@ -6,8 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
-
 ## [0.9.23+33] - 2026-07-14
 
 ### 🐛 Fixed
@@ -126,6 +124,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Crotpedia test fixed**: Added mock for `home` URL fallback route.
 - **ReaderSettings test alignment**: Updated 2 test files (`reader_cubit_hentairead_test`, `extended_image_reader_widget_test`) to use domain entity import.
 - **Full test suite**: 73/73 passer (generic_scraper), 13/13 (ToonCubus + HentaiRead), 3/3 (ToonCubus config).
+
+---
 
 ## [0.9.22+32] - 2026-06-27
 
