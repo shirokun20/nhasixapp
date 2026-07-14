@@ -196,65 +196,48 @@ class KuronNativePlugin :
                         
                         webview.webViewClient = object : android.webkit.WebViewClient() {
                             override fun onPageFinished(view: android.webkit.WebView?, pageUrl: String?) {
-                                view?.evaluateJavascript("window.localStorage.getItem('clearance')") { clearance ->
-                                    if (tokenFound) return@evaluateJavascript
-                                    
-                                    val token = clearance?.takeUnless { it == "null" || it.isBlank() }?.removeSurrounding("\"")
-                                    if (token != null) {
-                                        tokenFound = true
-                                        webview.stopLoading()
-                                        webview.destroy()
-                                        
-                                        val cookieManager = android.webkit.CookieManager.getInstance()
-                                        val cookies = cookieManager.getCookie(url)
-                                        val resultMap = mapOf(
-                                            "token" to token,
-                                            "userAgent" to view.settings.userAgentString,
-                                            "cookies" to cookies
-                                        )
-                                        result.success(resultMap)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Fallback polling just in case Turnstile takes longer than onPageFinished
-                        val handler = android.os.Handler(android.os.Looper.getMainLooper())
-                        var attempts = 0
-                        val pollRunnable = object : Runnable {
-                            override fun run() {
                                 if (tokenFound) return
-                                attempts++
-                                if (attempts > 15) {
-                                    if (!tokenFound) {
-                                        webview.stopLoading()
-                                        webview.destroy()
-                                        result.success(null)
+
+                                val checkRunnable = object : Runnable {
+                                    var attempts = 0
+                                    override fun run() {
+                                        if (tokenFound) return
+                                        
+                                        view?.evaluateJavascript("window.localStorage.getItem('clearance')") { res ->
+                                            if (tokenFound) return@evaluateJavascript
+                                            
+                                            val token = res?.replace("\"", "")
+                                            if (!token.isNullOrEmpty() && token != "null") {
+                                                tokenFound = true
+                                                webview.stopLoading()
+                                                webview.destroy()
+                                                
+                                                val cookieManager = android.webkit.CookieManager.getInstance()
+                                                val c1 = cookieManager.getCookie(url) ?: ""
+                                                val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
+                                                val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
+                                                val cookies = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                                                
+                                                val resultMap = mapOf(
+                                                    "token" to token,
+                                                    "userAgent" to webview.settings.userAgentString,
+                                                    "cookies" to cookies
+                                                )
+                                                result.success(resultMap)
+                                            } else if (attempts < 30) { // 15 seconds
+                                                attempts++
+                                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 500)
+                                            } else {
+                                                webview.stopLoading()
+                                                webview.destroy()
+                                                result.success(null)
+                                            }
+                                        }
                                     }
-                                    return
                                 }
-                                webview.evaluateJavascript("window.localStorage.getItem('clearance')") { clearance ->
-                                    if (tokenFound) return@evaluateJavascript
-                                    val token = clearance?.takeUnless { it == "null" || it.isBlank() }?.removeSurrounding("\"")
-                                    if (token != null) {
-                                        tokenFound = true
-                                        webview.stopLoading()
-                                        webview.destroy()
-                                        val cookieManager = android.webkit.CookieManager.getInstance()
-                                        val cookies = cookieManager.getCookie(url)
-                                        val resultMap = mapOf(
-                                            "token" to token,
-                                            "userAgent" to webview.settings.userAgentString,
-                                            "cookies" to cookies
-                                        )
-                                        result.success(resultMap)
-                                    } else {
-                                        handler.postDelayed(this, 1000)
-                                    }
-                                }
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(checkRunnable, 1000)
                             }
                         }
-                        handler.postDelayed(pollRunnable, 1000)
                         
                         webview.loadUrl(url)
                     } catch (e: Exception) {

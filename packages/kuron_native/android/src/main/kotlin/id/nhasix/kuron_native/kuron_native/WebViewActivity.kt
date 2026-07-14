@@ -256,14 +256,17 @@ class WebViewActivity : AppCompatActivity() {
                 android.util.Log.d("KuronNative", "Caught token from JS interface: $token")
                 runOnUiThread {
                     val cookieManager = android.webkit.CookieManager.getInstance()
-                    val cookies = cookieManager.getCookie(webView.url ?: "https://niyaniya.moe/")
-                    android.util.Log.d("KuronNative", "Cookies found alongside token: $cookies")
+                    val cookies1 = cookieManager.getCookie("https://niyaniya.moe/") ?: ""
+                    val cookies2 = cookieManager.getCookie("https://api.schale.network") ?: ""
+                    val cookies3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
+                    val cookiesStr = "$cookies1; $cookies2; $cookies3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                    val cookieList = arrayListOf(cookiesStr)
 
                     val resultIntent = Intent()
                     resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
                     resultIntent.putExtra(RESULT_CURRENT_URL, webView.url)
                     resultIntent.putExtra("pageFinishedScriptResult", token)
-                    resultIntent.putExtra(RESULT_COOKIES, cookies)
+                    resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
                     setResult(android.app.Activity.RESULT_OK, resultIntent)
                     finish()
                 }
@@ -296,6 +299,15 @@ class WebViewActivity : AppCompatActivity() {
                                     resultIntent.putExtra(RESULT_USER_AGENT, view?.settings?.userAgentString)
                                     resultIntent.putExtra(RESULT_CURRENT_URL, view?.url)
                                     resultIntent.putExtra("pageFinishedScriptResult", result)
+                                    
+                                    val cookieManager = android.webkit.CookieManager.getInstance()
+                                    val c1 = cookieManager.getCookie(view?.url ?: "https://niyaniya.moe/") ?: ""
+                                    val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
+                                    val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
+                                    val cookiesStr = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                                    val cookieList = arrayListOf(cookiesStr)
+                                    resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
+                                    
                                     setResult(android.app.Activity.RESULT_OK, resultIntent)
                                     finish()
                                 } else {
@@ -396,14 +408,25 @@ class WebViewActivity : AppCompatActivity() {
                     val token = authHeader.substring(7).trim()
                     if (token.isNotBlank() && token != "null" && token.length > 10) {
                         android.util.Log.d("KuronNative", "Caught token from Authorization header: $token")
-                        view?.post {
+                        view?.postDelayed({
+                            val cookieManager = android.webkit.CookieManager.getInstance()
+                            cookieManager.flush()
+                            val c1 = cookieManager.getCookie(view.url ?: "https://niyaniya.moe/") ?: ""
+                            val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
+                            val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
+                            val cookiesStr = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                            val cookieList = arrayListOf(cookiesStr)
+
                             val resultIntent = Intent()
                             resultIntent.putExtra(RESULT_USER_AGENT, view.settings.userAgentString)
                             resultIntent.putExtra(RESULT_CURRENT_URL, view.url)
                             resultIntent.putExtra("pageFinishedScriptResult", token)
+                            resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
+                            
                             setResult(android.app.Activity.RESULT_OK, resultIntent)
                             finish()
-                        }
+                        }, 1000) // Delay 1 second to ensure cookies are written
+                        return super.shouldInterceptRequest(view, request)
                     }
                 }
 

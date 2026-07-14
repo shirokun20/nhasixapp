@@ -734,7 +734,12 @@ class GenericRestAdapter implements GenericAdapter {
         for (final e in entries) {
           if (e is! Map) continue;
           final p = e['path']?.toString() ?? '';
-          if (p.isNotEmpty) images.add('$base/$p?w=$quality');
+          if (p.isNotEmpty) {
+            final cleanBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+            final cleanPath = p.startsWith('/') ? p.substring(1) : p;
+            final url = '$cleanBase/$cleanPath';
+            images.add(url);
+          }
         }
         if (images.isEmpty) return null;
         _logger.d('$_sourceId schaleData: built ${images.length} CDN URLs');

@@ -8,7 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 🐛 Fixed
 
+- **Schale Network Image Loading**: Fixed `Bad state: Failed to load` CDN error on reader pages.
+  - The `generic_rest_adapter.dart` inadvertently appended a `?w=$quality` query parameter to the CDN image URL.
+  - Schale Network's Edge CDN (`erocdn.net`) rejects requests with query parameters (`404 Not Found`).
+  - Removed the `?w=` parameter, as Schale already embeds the resolution within the path (e.g. `/1280/`).
+  - Added Turnstile Challenge bypass using `showLoginWebView` and injected JavaScript to extract the `cf_clearance` cookie from `localStorage`.
+  - Added `_SchaleHttpSource` to intercept image requests and inject the `cf_clearance` cookie and User-Agent headers, preventing 403 Forbidden errors.
 ### 🔧 Changed
 
 - **State management cleanup**: Replaced `ReaderInitial`/`ReaderLoading`/`ReaderLoaded`/`ReaderError` subclass pattern with `ReaderStatus` enum + single `ReaderState`. Removed `_undefined` sentinel `copyWith` — replaced with 7 focused copy methods (`copyWithPage`, `copyWithUI`, `copyWithContent`, `copyWithMessage`, `copyWithMode`, `copyWithTimer`, `copyWithOffline`). Reduced `Equatable.props` — `content?.id` instead of full object, removed `readingTimer`/`message`/`isOfflineMode` from equality comparison.

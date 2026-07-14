@@ -64,6 +64,7 @@ class SchaleClearanceService {
 
       if (crt != null && crt.isNotEmpty) {
         _logger.i('schale: acquired clearance token crt (headless)');
+        _logger.i('schale: cookies extracted: $cookies');
         
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
@@ -90,12 +91,21 @@ class SchaleClearanceService {
     if (fallbackResult != null) {
       final scriptResult = fallbackResult['pageFinishedScriptResult'] as String?;
       final userAgent = fallbackResult['userAgent'] as String?;
-      final cookies = fallbackResult['cookies'] as String?;
+      
+      String? cookies;
+      final cookiesData = fallbackResult['cookies'];
+      if (cookiesData is List) {
+        cookies = cookiesData.join('; ');
+      } else if (cookiesData is String) {
+        cookies = cookiesData;
+      }
 
       // the script result might be wrapped in quotes
       final crt = scriptResult?.replaceAll('"', '');
       if (crt != null && crt != 'null' && crt.isNotEmpty) {
         _logger.i('schale: acquired clearance token crt (visible)');
+        _logger.i('schale: cookies extracted: $cookies');
+        
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
         if (cookies != null && cookies.isNotEmpty) _cachedCookies = cookies;
@@ -159,6 +169,7 @@ class _SchaleInterceptor extends Interceptor {
 
     if (isSchaleEndpoint && crt != null) {
       options.queryParameters['crt'] = crt;
+      options.headers['Authorization'] = 'Bearer $crt';
     }
 
     if (_service._cachedUserAgent != null) {
