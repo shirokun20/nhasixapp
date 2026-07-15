@@ -7,10 +7,14 @@ import 'package:logger/logger.dart';
 class SchaleClearanceService {
   final FlutterSecureStorage _secureStorage;
   final Logger _logger;
+  final String _sourceId;
+  final String _domainUrl;
+  final String _domainHost;
 
-  static const _storageKey = 'schale_clearance_token';
-  static const _userAgentKey = 'schale_user_agent';
-  static const _cookiesKey = 'schale_cookies';
+  String get _storageKey => '${_sourceId}_clearance_token';
+  String get _userAgentKey => '${_sourceId}_user_agent';
+  String get _cookiesKey => '${_sourceId}_cookies';
+  String get _logTag => _sourceId;
 
   String? _cachedToken;
   String? _cachedUserAgent;
@@ -19,8 +23,13 @@ class SchaleClearanceService {
   SchaleClearanceService({
     required FlutterSecureStorage secureStorage,
     required Logger logger,
+    required String sourceId,
+    required String domainUrl,
   })  : _secureStorage = secureStorage,
-        _logger = logger;
+        _logger = logger,
+        _sourceId = sourceId,
+        _domainUrl = domainUrl,
+        _domainHost = Uri.parse(domainUrl).host;
 
   Future<void>? _initFuture;
 
@@ -38,10 +47,10 @@ class SchaleClearanceService {
         _cachedToken = storedToken;
         if (storedUa != null && storedUa.isNotEmpty) _cachedUserAgent = storedUa;
         if (storedCookies != null && storedCookies.isNotEmpty) _cachedCookies = storedCookies;
-        _logger.i('schale: loaded cached clearance token');
+        _logger.i('$_logTag: loaded cached clearance token');
       }
     } catch (e) {
-      _logger.e('schale: failed to load cached clearance token', error: e);
+      _logger.e('$_logTag: failed to load cached clearance token', error: e);
     }
   }
 
@@ -52,9 +61,9 @@ class SchaleClearanceService {
     await init();
     if (_cachedToken != null) return _cachedToken;
 
-    _logger.i('schale: acquiring clearance via Headless WebView');
+    _logger.i('$_logTag: acquiring clearance via Headless WebView');
     final result = await KuronNative.instance.getHeadlessClearance(
-      url: 'https://niyaniya.moe/',
+      url: _domainUrl,
     );
 
     if (result != null) {
@@ -63,8 +72,8 @@ class SchaleClearanceService {
       final cookies = result['cookies'] as String?;
 
       if (crt != null && crt.isNotEmpty) {
-        _logger.i('schale: acquired clearance token crt (headless)');
-        _logger.i('schale: cookies extracted: $cookies');
+        _logger.i('$_logTag: acquired clearance token crt (headless)');
+        _logger.i('$_logTag: cookies extracted: $cookies');
         
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
@@ -82,9 +91,9 @@ class SchaleClearanceService {
       }
     }
     
-    _logger.w('schale: failed to acquire clearance via Headless WebView, falling back to visible WebView');
+    _logger.w('$_logTag: failed to acquire clearance via Headless WebView, falling back to visible WebView');
     final fallbackResult = await KuronNative.instance.showLoginWebView(
-      url: 'https://niyaniya.moe/',
+      url: _domainUrl,
       pageFinishedScript: "window.localStorage.getItem('clearance')",
     );
 
@@ -103,8 +112,8 @@ class SchaleClearanceService {
       // the script result might be wrapped in quotes
       final crt = scriptResult?.replaceAll('"', '');
       if (crt != null && crt != 'null' && crt.isNotEmpty) {
-        _logger.i('schale: acquired clearance token crt (visible)');
-        _logger.i('schale: cookies extracted: $cookies');
+        _logger.i('$_logTag: acquired clearance token crt (visible)');
+        _logger.i('$_logTag: cookies extracted: $cookies');
         
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
@@ -121,7 +130,7 @@ class SchaleClearanceService {
       }
     }
 
-    _logger.w('schale: completely failed to acquire clearance');
+    _logger.w('$_logTag: completely failed to acquire clearance');
     return null;
   }
 
@@ -155,9 +164,11 @@ class _SchaleInterceptor extends Interceptor {
     final isSchaleEndpoint = (options.method == 'POST' && url.contains('/books/detail/')) ||
         url.contains('/books/data/');
         
-    if (!isSchaleEndpoint && !url.contains('niyaniya.moe') && !url.contains('erocdn.net')) {
+    if (!isSchaleEndpoint && !url.contains(_service._domainHost) && !url.contains('erocdn.net')) {
       return handler.next(options);
     }
+    // ponytail: erocdn.net hardcoded — both sources share the same CDN.
+    // Extract to config-level CDN domain list when a 3rd source diverges.
     var crt = _service._cachedToken;
     if (crt == null) {
       await _service.init();
@@ -178,7 +189,7 @@ class _SchaleInterceptor extends Interceptor {
     if (_service._cachedCookies != null) {
       options.headers['Cookie'] = _service._cachedCookies!;
     }
-    options.headers['Referer'] = 'https://niyaniya.moe/';
+    options.headers['Referer'] = _service._domainUrl;
 
     handler.next(options);
   }
@@ -188,7 +199,7 @@ class _SchaleInterceptor extends Interceptor {
     if (err.response?.statusCode == 403 &&
         (err.requestOptions.uri.toString().contains('/books/detail/') ||
             err.requestOptions.uri.toString().contains('/books/data/'))) {
-      _service._logger.w('schale: clearance token expired, clearing cache');
+      _service._logger.w('${_service._logTag}: clearance token expired, clearing cache');
       await _service.clearToken();
     }
     handler.next(err);

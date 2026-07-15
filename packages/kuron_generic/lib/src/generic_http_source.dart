@@ -637,9 +637,15 @@ class GenericHttpSource implements ContentSource {
       headers['Sec-Fetch-Site'] = 'cross-site';
     }
 
-    if (_id == 'schale-network') {
-      headers['Origin'] = 'https://niyaniya.moe';
-      headers['Referer'] = 'https://niyaniya.moe/';
+    if (_id == 'schale-network' || _id == 'hdoujin') {
+      // CDN (erocdn.net) needs the source's main domain, not the API URL.
+      // refererHeader above used _baseUrl (API), so restore from config.
+      final origin = _defaultHeaders['Origin'];
+      final referer = _defaultHeaders['Referer'];
+      if (origin != null) headers['Origin'] = origin;
+      if (referer != null) headers['Referer'] = referer;
+      // ponytail: fallback omitted intentionally — if config lacks these headers
+      // the CDN request would fail, which is safer than silently sending wrong domain.
     }
 
     if (cookies != null && cookies.isNotEmpty) {

@@ -705,6 +705,12 @@ void _setupDataSources() {
           logger: getIt<Logger>(),
           secureStorage: const FlutterSecureStorage(),
         ),
+        SchaleSourceFactory(
+          sourceId: 'hdoujin',
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+          secureStorage: const FlutterSecureStorage(),
+        ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
     );

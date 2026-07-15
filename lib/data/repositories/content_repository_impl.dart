@@ -505,7 +505,7 @@ class ContentRepositoryImpl implements ContentRepository {
       return true;
     }
 
-    if (source == 'hentainexus' || source == 'schale-network') {
+    if (source == 'hentainexus' || source == 'schale-network' || source == 'hdoujin') {
       return true;
     }
 
