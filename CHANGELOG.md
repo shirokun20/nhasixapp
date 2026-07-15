@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+
+- **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator. Added `ponytail:` comments on intentional hardcode boundaries.
+
+### 🐛 Fixed
+
+- **HDoujin CDN headers**: `getImageDownloadHeaders()` in `generic_http_source.dart` now correctly restores Origin/Referer from config for hdoujin CDN requests (was using API URL instead of domain). Together with `schale-network`.
+- **HDoujin cache refresh**: `content_repository_impl.dart` now forces detail cache refresh for hdoujin source (same policy as schale-network).
+
+---
+
 ## [0.9.23+33] - 2026-07-14
 
 ### ✨ Added
