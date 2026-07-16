@@ -19,8 +19,6 @@
 
 ### Claude Code
 - **Primary instruction file**: `CLAUDE.md` (auto-loaded by Claude Code).
-- **Slash commands**: `.claude/commands/*.md` — invoked via `/command-name`.
-- Available commands: `/project`, `/feature`, `/bloc`, `/api`, `/di`, `/test`, `/codegen`, `/arch`, `/state`, `/scraper`, `/native`, `/git`, `/search`, `/simplify`, `/security-review`, `/review`.
 
 ### Codex
 - **Primary instruction file**: `AGENTS.md`.
@@ -34,7 +32,6 @@
 ### General Rules (All AI Tools)
 - Reuse existing project rules instead of creating parallel rule sets.
 - Keep `.github/copilot-instructions.md` aligned with this file; if guidance overlaps, follow the stricter local project rule.
-- Treat `@planner`, `@architect`, `@flutter-architect`, `@feature-dev`, `@code-reviewer`, `@ui-designer`, `@test-engineer`, and `@test-writer` as role intentions to emulate directly unless explicit sub-agent delegation is requested.
 - Startup sequence: `MEMORY.md` -> active `openspec/changes/` (non-archived) -> `proposal.md` + `tasks.md`.
 
 ## ⚡ Core Commands
