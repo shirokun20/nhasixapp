@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/core/routing/reader_route_extra.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_pdf_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
@@ -182,17 +185,20 @@ class AppRouter {
             extra?['activeChapterLanguage'],
           );
 
-          return ReaderScreen(
-            contentId: contentId,
-            initialPage: page,
-            forceStartFromBeginning: forceStartFromBeginning,
-            preloadedContent: content,
-            imageMetadata: imageMetadata,
-            chapterData: chapterData,
-            parentContent: parentContent,
-            allChapters: allChapters,
-            currentChapter: currentChapter,
-            activeChapterLanguage: activeChapterLanguage,
+          return BlocProvider<ReaderCubit>(
+            create: (_) => getIt<ReaderCubit>(),
+            child: ReaderScreen(
+              contentId: contentId,
+              initialPage: page,
+              forceStartFromBeginning: forceStartFromBeginning,
+              preloadedContent: content,
+              imageMetadata: imageMetadata,
+              chapterData: chapterData,
+              parentContent: parentContent,
+              allChapters: allChapters,
+              currentChapter: currentChapter,
+              activeChapterLanguage: activeChapterLanguage,
+            ),
           );
         },
       ),

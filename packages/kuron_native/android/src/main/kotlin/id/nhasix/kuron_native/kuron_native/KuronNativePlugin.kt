@@ -118,12 +118,15 @@ class KuronNativePlugin :
 
     companion object {
         const val TAG = "KuronNativePlugin"
-        
+
         // Webtoon detection threshold (matches Flutter's WebtoonDetector)
         private const val WEBTOON_ASPECT_RATIO_THRESHOLD = 2.5f
 
         // Maximum chunk height for splitting webtoons (matches Flutter's ImageSplitter)
         private const val MAX_CHUNK_HEIGHT = 3000
+
+        // Cancellation flags for in-flight getThumbnailForWebP requests.
+        val cancelledThumbnailRequests = mutableMapOf<String, Boolean>()
     }
 
     private val executor = Executors.newSingleThreadExecutor() // Shared background work
@@ -295,6 +298,15 @@ class KuronNativePlugin :
             "getThumbnailForWebP" -> {
                 handleGetWebPThumbnail(call, result)
             }
+            "cancelWebPThumbnail" -> {
+                val requestId = call.argument<String>("requestId")
+                if (requestId != null) {
+                    cancelledThumbnailRequests[requestId] = true
+                    result.success(null)
+                } else {
+                    result.error("INVALID_ARGS", "requestId required", null)
+                }
+            }
             "setDohProvider" -> {
                 handleSetDohProvider(call, result)
             }
@@ -379,11 +391,24 @@ class KuronNativePlugin :
 
         executor.execute {
             try {
+                // Early exit if cancelled before download starts
+                if (requestId != null && cancelledThumbnailRequests[requestId] == true) {
+                    cancelledThumbnailRequests.remove(requestId)
+                    mainThread { result.success(null) }
+                    return@execute
+                }
+
                 val sourceFile: File = when {
                     localSourceFile != null -> localSourceFile
                     cachedSourceFile != null -> cachedSourceFile
                     url != null -> {
                         val bytes = downloadBytesForThumbnail(url, headers, requestId)
+                        if (requestId != null && cancelledThumbnailRequests[requestId] == true) {
+                            // Cancelled mid-download — skip write + decode.
+                            cancelledThumbnailRequests.remove(requestId)
+                            mainThread { result.success(null) }
+                            return@execute
+                        }
                         if (!webpFile.exists() || webpFile.length() == 0L) {
                             webpFile.writeBytes(bytes)
                         }
@@ -478,6 +503,12 @@ class KuronNativePlugin :
                 var lastReportedBytes = 0L
 
                 while (true) {
+                    // Check cancellation before each read chunk
+                    if (requestId != null && cancelledThumbnailRequests[requestId] == true) {
+                        cancelledThumbnailRequests.remove(requestId)
+                        break
+                    }
+
                     val read = input.read(buffer)
                     if (read == -1) break
 

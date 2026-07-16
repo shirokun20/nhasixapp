@@ -65,46 +65,11 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - `sealed class` hierarchies for exhaustive pattern matching.
 - Pure logic/service classes (no serialization needed).
 
-## Development Workflow (4-Phase Lifecycle)
+## Git Conventions
 
-**Never write code without a plan.**
-
-| Phase | Location | Rules |
-|-------|----------|-------|
-| 1. Exploration | `openspec/changes/<name>/proposal.md` | **READ-ONLY**. Use `/opsx-explore` or `/opsx-propose`. |
-| 2. Execution | `openspec/changes/<name>/tasks.md` | **Code allowed**. Use `/opsx-apply`. Mark `[x]` on completion. |
-| 3. Archive | `openspec/changes/archive/<date>-<name>/` | Use `openspec archive -y` when done. |
-
-- **STOP & WAIT**: Do not implement without explicit user approval.
-- **Git**: NEVER run `git add` or `git commit`. User handles source control.
-
-## Core Commands
-
-This project uses **FVM** (Flutter Version Management). Always prefix with `fvm`:
-
-```bash
-# Build
-fvm flutter clean && fvm flutter pub get
-fvm flutter run --debug
-fvm flutter build apk --release
-./build_optimized.sh debug|release
-
-# Test & Lint
-fvm flutter test
-fvm flutter analyze
-fvm dart format .
-
-# Codegen
-fvm flutter pub run build_runner build --delete-conflicting-outputs
-
-# Analysis (single file)
-fvm dart analyze <path>
-
-# Scripts (run after project changes)
-fvm dart scripts/project_status.dart        # Update dashboards
-fvm dart scripts/create_feature.dart [name] # Scaffold feature
-./scripts/smart_search.sh <mode> <pat>  # Code search
-```
+- Conventional Commits: `feat(auth): add login`, `fix(reader): null check`.
+- Branches: `master` (prod), `develop`, `feature/*`, `fix/*`, `hotfix/*`.
+- **Never** run `git add` or `git commit`. User handles source control.
 
 ## Performance & Quality
 
@@ -125,30 +90,6 @@ fvm dart scripts/create_feature.dart [name] # Scaffold feature
 - Analyze suspicious code but REFUSE to improve/augment malware.
 - Never commit `.env` or signing keys.
 - No sensitive data in logs.
-
-## Available Slash Commands
-
-Use `/command-name` to invoke specialized skills:
-
-|---------|---------|
-| Command | Purpose |
-|---------|---------|
-| `/project` | Manage project lifecycle (init, start, finish, progress, issue) |
-| `/feature` | Scaffold complete Clean Architecture feature structure |
-| `/bloc` | Scaffold new BLoC with Freezed states/events |
-| `/api` | Step-by-step API endpoint integration guide |
-| `/di` | Dependency Injection setup with GetIt |
-| `/test` | Generate unit tests for a Dart class |
-| `/codegen` | Run `fvm flutter pub run build_runner build --delete-conflicting-outputs` |
-| `/arch` | Clean Architecture implementation guide |
-| `/state` | BLoC/Cubit state management patterns |
-| `/scraper` | Debug and fix HTML scrapers (Crotpedia/Nhentai) |
-| `/native` | Native Android (Kotlin) integration via Platform Channels |
-| `/git` | Git workflow and Conventional Commits guide |
-| `/search` | rg/ugrep/semgrep/gitleaks/typos — modern search & audit toolkit |
-| `/simplify` | Review changed code for reuse, quality, and efficiency |
-| `/security-review` | Run `semgrep` + `gitleaks` + `typos` on staged changes |
-| `/review` | Full code review with `ecc:code-reviewer` agent |
 
 ## 🔍 Search & Audit Tools (Modern — replaces grep)
 

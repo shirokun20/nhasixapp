@@ -139,12 +139,14 @@ class KuronNative {
     required String url,
     String? filePath,
     Map<String, String> headers = const {},
+    String? requestId,
     Function(int receivedBytes, int? totalBytes)? onProgress,
   }) {
     return KuronNativePlatform.instance.getThumbnailForWebP(
       url: url,
       filePath: filePath,
       headers: headers,
+      requestId: requestId,
       onProgress: onProgress,
     );
   }
@@ -313,5 +315,11 @@ class KuronNative {
   /// Open Android DNS-related system settings with fallback.
   Future<bool> openDnsSettings() {
     return KuronNativePlatform.instance.openDnsSettings();
+  }
+
+  /// Cancel an in-flight [getThumbnailForWebP] request by [requestId].
+  /// Called from widget [dispose] so the native HTTP download stops early.
+  Future<void> cancelWebPThumbnail(String requestId) {
+    return KuronNativePlatform.instance.cancelWebPThumbnail(requestId);
   }
 }

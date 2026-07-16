@@ -146,6 +146,32 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _isForeground = foreground;
   }
 
+  /// Pause background work when app goes to background.
+  /// Flushes pending DB saves, cancels periodic timer, removes frame timing callback.
+  void pauseBackgroundWork() {
+    _logger.i('DownloadBloc: Pausing background work');
+    _flushPendingDbSaves();
+    _dbFlushTimer?.cancel();
+    _dbFlushTimer = null;
+    if (_frameTimingCallback != null) {
+      SchedulerBinding.instance.removeTimingsCallback(_frameTimingCallback!);
+    }
+  }
+
+  /// Resume background work when app returns to foreground.
+  /// Re-creates periodic timer, re-registers frame timing callback.
+  void resumeBackgroundWork() {
+    _logger.i('DownloadBloc: Resuming background work');
+    _dbFlushTimer?.cancel();
+    _dbFlushTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _flushPendingDbSaves(),
+    );
+    if (_kFrameTimingEnabled && _frameTimingCallback != null) {
+      SchedulerBinding.instance.addTimingsCallback(_frameTimingCallback!);
+    }
+  }
+
   // FrameTiming measurement (1.9)
   // ponytail: debug-only; remove when jank verification complete
   static const bool _kFrameTimingEnabled = true;

@@ -9,7 +9,6 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 
 // Cubits (Simple State Management)
 import 'package:nhasixapp/presentation/cubits/cubits.dart';
-import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 
 class MultiBlocProviderConfig {
@@ -53,10 +52,6 @@ class MultiBlocProviderConfig {
 
     BlocProvider<FilterDataCubit>(
       create: (context) => getIt<FilterDataCubit>(),
-    ),
-
-    BlocProvider<ReaderCubit>(
-      create: (context) => getIt<ReaderCubit>(),
     ),
 
     BlocProvider<CrotpediaAuthCubit>(

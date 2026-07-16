@@ -145,6 +145,12 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   int _thumbnailDownloadedBytes = 0;
   int? _thumbnailTotalBytes;
 
+  /// Unique ID for this thumbnail request, used to cancel it on dispose.
+  String? _requestId;
+
+  /// Next counter for generating unique request IDs.
+  static int _nextRequestId = 0;
+
   bool get _shouldAutoPlay => AnimatedWebPView.shouldAutoPlayForTesting(
         autoPlay: widget.autoPlay,
         pageNumber: widget.pageNumber,
@@ -202,6 +208,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
 
   @override
   void dispose() {
+    _cancelThumbnailRequest();
     widget.visiblePageNotifier?.removeListener(_onVisiblePageChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -323,10 +330,22 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     }
   }
 
+  /// Cancel the in-flight thumbnail request, if any.
+  void _cancelThumbnailRequest() {
+    final rid = _requestId;
+    _requestId = null;
+    if (rid != null) {
+      KuronNative.instance.cancelWebPThumbnail(rid);
+    }
+  }
+
   /// Asks the native plugin to generate/return the JPEG thumbnail.
   Future<void> _loadThumbnail() async {
     if (_isLoadingThumbnail) return;
     _isLoadingThumbnail = true;
+
+    // Generate unique request ID for cancellation on dispose.
+    _requestId = 'awpv_${_nextRequestId++}';
     final existingFileBytes = _resolveExistingFileBytes();
 
     if (mounted) {
@@ -344,6 +363,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
         url: widget.url,
         filePath: widget.filePath,
         headers: widget.headers,
+        requestId: _requestId,
         onProgress: (receivedBytes, totalBytes) {
           if (!mounted) return;
           if (_thumbnailDownloadedBytes == receivedBytes &&

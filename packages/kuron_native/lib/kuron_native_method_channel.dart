@@ -272,15 +272,16 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     required String url,
     String? filePath,
     Map<String, String> headers = const {},
+    String? requestId,
     Function(int receivedBytes, int? totalBytes)? onProgress,
   }) async {
-    final requestId =
+    final resolvedRequestId = requestId ??
         'webp_thumb_${DateTime.now().microsecondsSinceEpoch}_${_nextWebPThumbnailRequestId++}';
     final filePathPayload =
         filePath != null ? <String, Object>{'filePath': filePath} : null;
 
     if (onProgress != null) {
-      _onWebPThumbnailProgress[requestId] = onProgress;
+      _onWebPThumbnailProgress[resolvedRequestId] = onProgress;
     }
 
     try {
@@ -288,10 +289,10 @@ class MethodChannelKuronNative extends KuronNativePlatform {
         'url': url,
         ...?filePathPayload,
         if (headers.isNotEmpty) 'headers': headers,
-        'requestId': requestId,
+        'requestId': resolvedRequestId,
       });
     } finally {
-      _onWebPThumbnailProgress.remove(requestId);
+      _onWebPThumbnailProgress.remove(resolvedRequestId);
     }
   }
 
@@ -437,6 +438,13 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     return await methodChannel.invokeMapMethod<String, dynamic>(
       'getPrivateDnsDiagnostics',
     );
+  }
+
+  @override
+  Future<void> cancelWebPThumbnail(String requestId) async {
+    await methodChannel.invokeMethod<void>('cancelWebPThumbnail', {
+      'requestId': requestId,
+    });
   }
 
   @override

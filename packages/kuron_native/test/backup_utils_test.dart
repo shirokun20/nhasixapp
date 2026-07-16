@@ -155,11 +155,15 @@ class MockKuronNativePlatform
     required String url,
     String? filePath,
     Map<String, String> headers = const {},
+    String? requestId,
     Function(int receivedBytes, int? totalBytes)? onProgress,
   }) async {
     onProgress?.call(0, null);
     return {'thumbnailPath': filePath, 'webpPath': filePath};
   }
+
+  @override
+  Future<void> cancelWebPThumbnail(String requestId) async {}
 
   @override
   Future<bool> setDohProvider(int provider) async => true;

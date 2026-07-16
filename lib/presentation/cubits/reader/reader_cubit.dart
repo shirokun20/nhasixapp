@@ -88,6 +88,10 @@ class ReaderCubit extends Cubit<ReaderState> {
   // Webtoon/manhwa auto-detection
   bool _hasDetectedWebtoon = false;
 
+  // Lifecycle state for background/foreground tracking
+  bool _isBackgrounded = false;
+  bool _wasKeepScreenOnBeforePause = false;
+
   // Chapter navigation context
   Content? _parentContent; // Parent series for chapter navigation
   List<Chapter>? _allChapters; // All chapters available for navigation
@@ -2680,6 +2684,33 @@ class ReaderCubit extends Cubit<ReaderState> {
     return null;
   }
 
+  /// Handle app lifecycle pause (lock screen, background).
+  /// Cancels reading timer and disables wakelock to prevent overheating.
+  void handleLifecyclePause() {
+    if (_isBackgrounded) return;
+    _isBackgrounded = true;
+
+    _wasKeepScreenOnBeforePause = state.keepScreenOn ?? false;
+
+    _stopReadingTimer();
+
+    // Fire-and-forget: disable wakelock in background
+    WakelockPlus.disable().catchError((_) {});
+  }
+
+  /// Handle app lifecycle resume (unlock screen, foreground).
+  /// Restarts reading timer and re-enables wakelock if it was on before pause.
+  void handleLifecycleResume() {
+    if (!_isBackgrounded) return;
+    _isBackgrounded = false;
+
+    if (_wasKeepScreenOnBeforePause) {
+      WakelockPlus.enable().catchError((_) {});
+    }
+
+    _startReadingTimer();
+  }
+
   /// Stop auto-hide UI timer
   void _stopAutoHideTimer() {
     _autoHideTimer?.cancel();
@@ -2688,6 +2719,10 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   @override
   Future<void> close() async {
+    // Reset lifecycle state in case we're closed while backgrounded
+    _isBackgrounded = false;
+    _wasKeepScreenOnBeforePause = false;
+
     // Stop timers
     _stopReadingTimer();
     _stopAutoHideTimer();

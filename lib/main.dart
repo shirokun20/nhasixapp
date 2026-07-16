@@ -49,18 +49,30 @@ void main() async {
 
   // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
   FlutterError.onError = (FlutterErrorDetails details) {
-    // Log the error instead of crashing
+    final msg = details.exception.toString();
+    // ponytail: skip FlutterImageDecoderImpl error — Impeller coba decode
+    // AVIF/WebP yang gak didukung; harmless, ExtendedImage otomatis fallback
+    if (msg.contains('Invalid image data')) {
+      return;
+    }
     Logger().e('🔥 Flutter Error: ${details.exception}',
         error: details.exception, stackTrace: details.stack);
   };
 
   // Catch errors from platform (including Impeller/Vulkan)
   PlatformDispatcher.instance.onError = (error, stack) {
+    final msg = error.toString();
     // ponytail: skip known benign Flutter assertion noise (FocusNode/FocusScopeNode
     // used-after-dispose fires in debug mode during navigation; not actionable)
-    final msg = error.toString();
     if (msg.contains('FocusScopeNode was used after being disposed') ||
         msg.contains('FocusNode was used after being disposed')) {
+      return true;
+    }
+    // ponytail: native ImageDecoder fails on unsupported AVIF/WebP variants
+    // when Impeller (Vulkan) tries to decode them. Harmless — the widget retries
+    // via fallback URL or native animated view. Silent skip to avoid log spam.
+    if (msg.contains('Failed to decode image') &&
+        msg.contains('FlutterImageDecoderImplDefault')) {
       return true;
     }
     Logger().e('🔥 Platform Error: $msg', error: error, stackTrace: stack);

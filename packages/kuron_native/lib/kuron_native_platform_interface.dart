@@ -122,10 +122,14 @@ abstract class KuronNativePlatform extends PlatformInterface {
 
   /// Prepare/generate a thumbnail for an animated WebP while optionally
   /// reporting byte-level download progress from the native side.
+  ///
+  /// [requestId] — if provided, allows this call to be cancelled via
+  /// [cancelWebPThumbnail] from the widget's dispose method.
   Future<Object?> getThumbnailForWebP({
     required String url,
     String? filePath,
     Map<String, String> headers = const {},
+    String? requestId,
     Function(int receivedBytes, int? totalBytes)? onProgress,
   }) {
     throw UnimplementedError('getThumbnailForWebP() has not been implemented.');
@@ -268,6 +272,13 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() {
     throw UnimplementedError(
       'getPrivateDnsDiagnostics() has not been implemented.',
+    );
+  }
+
+  /// Cancel an in-flight [getThumbnailForWebP] request by [requestId].
+  Future<void> cancelWebPThumbnail(String requestId) {
+    throw UnimplementedError(
+      'cancelWebPThumbnail() has not been implemented.',
     );
   }
 

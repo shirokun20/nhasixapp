@@ -83,7 +83,7 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   Logger get _logger => getIt<Logger>();
 
   late PageController _pageController;
@@ -172,6 +172,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _lastReportedPage = widget.initialPage;
     _pageController = PageController(initialPage: widget.initialPage - 1);
     _verticalPageController =
@@ -197,7 +198,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _scrollController = ScrollController(
       initialScrollOffset: initialScrollOffset > 0 ? initialScrollOffset : 0,
     );
-    _readerCubit = getIt<ReaderCubit>();
+    _readerCubit = context.read<ReaderCubit>();
     _pageTicker = createTicker(_onPageTick);
 
     // 🚀 OPTIMIZATION: Initialize route extra
@@ -664,7 +665,24 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        _readerCubit.handleLifecyclePause();
+        break;
+      case AppLifecycleState.resumed:
+        _readerCubit.handleLifecycleResume();
+        break;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _flushReaderProgressBeforeDispose();
 
     // 🚀 REMOVED: Old scroll listener (now using NotificationListener)

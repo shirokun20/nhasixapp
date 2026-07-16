@@ -11,11 +11,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### ✨ Added
 
 - **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator. Added `ponytail:` comments on intentional hardcode boundaries.
+- **Lifecycle-aware Cubits**: `ReaderCubit` now pauses reading timer and disables `WakelockPlus` on lock screen (via `didChangeAppLifecycleState` in `ReaderScreen`). `DownloadBloc` has `pauseBackgroundWork()` / `resumeBackgroundWork()` — cancels DB flush timer (5s) and FrameTimingCallback on background, restores on foreground. Prevents CPU/GPU overheating saat app di lock screen.
+- **ReaderCubit screen-level scoping**: Moved `ReaderCubit` from app-level `MultiBlocProviderConfig` to `BlocProvider` wrapping in route builder. Cubit `close()` sekarang kepanggil otomatis saat navigasi keluar dari reader — timer mati, wakelock di-disable, posisi baca tersimpan.
+- **Native HTTP cancel untuk WebP thumbnail**: `getThumbnailForWebP` sekarang support `cancelWebPThumbnail(requestId)` via MethodChannel. `AnimatedWebPViewState` generate unique `_requestId`, kirim cancel signal di `dispose()`. Native Kotlin `downloadBytesForThumbnail()` check cancellation flag tiap read chunk untuk stop HTTP request lebih awal.
 
 ### 🐛 Fixed
 
 - **HDoujin CDN headers**: `getImageDownloadHeaders()` in `generic_http_source.dart` now correctly restores Origin/Referer from config for hdoujin CDN requests (was using API URL instead of domain). Together with `schale-network`.
 - **HDoujin cache refresh**: `content_repository_impl.dart` now forces detail cache refresh for hdoujin source (same policy as schale-network).
+- **FlutterImageDecoder spam di log**: `FlutterError.onError` dan `PlatformDispatcher.instance.onError` skip `Failed to decode image` / `Invalid image data` dari Flutter engine native (`FlutterImageDecoderImplDefault`). Ini harmless — AVIF/WebP variant yang gak didukung engine dilewati dan ExtendedImage otomatis fallback. Tidak ada CPU hang atau crash.
 
 ---
 
