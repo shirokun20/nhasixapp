@@ -5,8 +5,8 @@ import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 
-import '../core/utils/directory_utils.dart';
-import '../core/utils/download_storage_utils.dart';
+import '../utils/directory_utils.dart';
+import '../utils/download_storage_utils.dart';
 import 'notification_service.dart';
 import 'native_pdf_service.dart';
 

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 
 /// Renders a privacy blur above the current routed content when the app moves
 /// into background-facing lifecycle states, so recent-apps previews capture an

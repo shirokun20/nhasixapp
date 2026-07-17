@@ -20,7 +20,7 @@ import 'package:nhasixapp/presentation/widgets/offline_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/core/utils/tag_blacklist_utils.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
-import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';

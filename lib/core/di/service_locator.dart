@@ -57,6 +57,7 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/cubits/theme/theme_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/tag_detail/tag_detail_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 
 // Repositories
@@ -93,33 +94,33 @@ import 'package:nhasixapp/domain/usecases/tags/get_tag_autocomplete_usecase.dart
 import 'package:nhasixapp/domain/usecases/tags/get_tag_detail_usecase.dart';
 
 // Services
-import 'package:nhasixapp/services/native_download_service.dart';
-import 'package:nhasixapp/services/native_pdf_service.dart';
-import 'package:nhasixapp/services/native_backup_service.dart';
-import 'package:nhasixapp/services/native_zip_import_service.dart';
-import 'package:nhasixapp/services/native_pdf_reader_service.dart';
-import 'package:nhasixapp/services/download_service.dart';
+import 'package:nhasixapp/core/services/native_download_service.dart';
+import 'package:nhasixapp/core/services/native_pdf_service.dart';
+import 'package:nhasixapp/core/services/native_backup_service.dart';
+import 'package:nhasixapp/core/services/native_zip_import_service.dart';
+import 'package:nhasixapp/core/services/native_pdf_reader_service.dart';
+import 'package:nhasixapp/core/services/download_service.dart';
 
 import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
-import 'package:nhasixapp/services/notification_service.dart';
-import 'package:nhasixapp/services/pdf_service.dart';
-import 'package:nhasixapp/services/pdf_conversion_service.dart';
-import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
-import 'package:nhasixapp/services/history_cleanup_service.dart';
-import 'package:nhasixapp/services/preferences_service.dart';
-import 'package:nhasixapp/services/analytics_service.dart';
-import 'package:nhasixapp/services/detail_cache_service.dart';
-import 'package:nhasixapp/services/request_deduplication_service.dart';
-import 'package:nhasixapp/services/app_update_service.dart';
-import 'package:nhasixapp/services/image_cache_service.dart';
-import 'package:nhasixapp/services/image_metadata_service.dart';
-import 'package:nhasixapp/services/export_service.dart';
-import 'package:nhasixapp/services/legal_content_service.dart';
-import 'package:nhasixapp/services/source_auth_service.dart';
-import 'package:nhasixapp/services/tag_blacklist_service.dart';
-import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
-import 'package:nhasixapp/services/cache/cache_manager.dart' as multi_cache;
+import 'package:nhasixapp/core/services/notification_service.dart';
+import 'package:nhasixapp/core/services/pdf_service.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
+import 'package:nhasixapp/core/services/history_cleanup_service.dart';
+import 'package:nhasixapp/core/services/preferences_service.dart';
+import 'package:nhasixapp/core/services/analytics_service.dart';
+import 'package:nhasixapp/core/services/detail_cache_service.dart';
+import 'package:nhasixapp/core/services/request_deduplication_service.dart';
+import 'package:nhasixapp/core/services/app_update_service.dart';
+import 'package:nhasixapp/core/services/image_cache_service.dart';
+import 'package:nhasixapp/core/services/image_metadata_service.dart';
+import 'package:nhasixapp/core/services/export_service.dart';
+import 'package:nhasixapp/core/services/legal_content_service.dart';
+import 'package:nhasixapp/core/services/source_auth_service.dart';
+import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/core/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
 
@@ -1094,7 +1095,13 @@ void _setupCubits() {
 
   // CommentsCubit
   getIt.registerFactory<CommentsCubit>(() => CommentsCubit(
-        getIt<GetCommentsUseCase>(),
+        getCommentsUseCase: getIt<GetCommentsUseCase>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // TagDetailCubit
+  getIt.registerFactory<TagDetailCubit>(() => TagDetailCubit(
+        logger: getIt<Logger>(),
       ));
 }
 

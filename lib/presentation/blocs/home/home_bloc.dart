@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logger/logger.dart';
 import '../../../core/di/service_locator.dart';
-import '../../../services/download_service.dart';
+import '../../../core/services/download_service.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';

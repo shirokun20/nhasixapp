@@ -1,18 +1,15 @@
-import 'package:bloc/bloc.dart';
-import 'package:logger/logger.dart';
 import '../../../../core/services/update_service.dart';
+import '../base/base_cubit.dart';
 import 'update_state.dart';
 
-class UpdateCubit extends Cubit<UpdateState> {
+class UpdateCubit extends BaseCubit<UpdateState> {
   final UpdateService _updateService;
-  final Logger _logger;
 
   UpdateCubit({
     required UpdateService updateService,
-    required Logger logger,
+    required super.logger,
   })  : _updateService = updateService,
-        _logger = logger,
-        super(UpdateInitial());
+        super(initialState: UpdateInitial());
 
   Future<void> checkForUpdate({bool isManual = false}) async {
     if (state is UpdateChecking) return;
@@ -28,7 +25,7 @@ class UpdateCubit extends Cubit<UpdateState> {
         emit(UpdateNotAvailable(isManualCheck: isManual));
       }
     } catch (e) {
-      _logger.e('UpdateCubit: Error checking for update', error: e);
+      logger.e('UpdateCubit: Error checking for update', error: e);
       emit(UpdateError(e.toString(), isManualCheck: isManual));
     }
   }

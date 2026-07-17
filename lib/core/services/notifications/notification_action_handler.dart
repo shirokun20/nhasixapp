@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/di/service_locator.dart';
+import '../../di/service_locator.dart';
 import '../native_pdf_reader_service.dart';
 import 'notification_constants.dart';
 

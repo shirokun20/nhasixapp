@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/services/native_pdf_reader_service.dart';
+import 'package:nhasixapp/core/services/native_pdf_reader_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

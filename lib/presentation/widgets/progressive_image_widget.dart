@@ -10,8 +10,8 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/image_cache_service.dart';
-import '../../services/local_image_preloader.dart';
+import '../../core/services/image_cache_service.dart';
+import '../../core/services/local_image_preloader.dart';
 import '../../core/utils/performance_monitor.dart';
 import '../../core/di/service_locator.dart';
 

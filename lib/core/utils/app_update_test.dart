@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nhasixapp/services/app_update_service.dart';
+import 'package:nhasixapp/core/services/app_update_service.dart';
 
 /// Test script to verify AppUpdateService behavior
 /// Run this from a test button or debug menu

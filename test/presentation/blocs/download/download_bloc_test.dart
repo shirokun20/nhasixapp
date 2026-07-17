@@ -10,16 +10,15 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
-import 'package:nhasixapp/domain/repositories/repositories.dart'
-    hide DownloadSettings;
+import 'package:nhasixapp/domain/repositories/repositories.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
-import 'package:nhasixapp/services/notification_service.dart';
-import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
-import 'package:nhasixapp/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/core/services/notification_service.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_service.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
-import 'package:nhasixapp/services/download_manager.dart'; // Import DownloadManager
+import 'package:nhasixapp/core/services/download_manager.dart'; // Import DownloadManager
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

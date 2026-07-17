@@ -26,7 +26,7 @@ import '../../../domain/entities/reader_settings_entity.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 import 'package:logger/logger.dart';
-import '../../../services/local_image_preloader.dart';
+import '../../../core/services/local_image_preloader.dart';
 import '../../cubits/reader/reader_cubit.dart';
 import '../../cubits/theme/theme_cubit.dart';
 import '../../utils/chapter_language_presenter.dart';

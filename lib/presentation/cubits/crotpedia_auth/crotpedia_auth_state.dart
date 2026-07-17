@@ -1,6 +1,6 @@
 part of 'crotpedia_auth_cubit.dart';
 
-abstract class CrotpediaAuthState extends Equatable {
+abstract class CrotpediaAuthState extends BaseCubitState {
   const CrotpediaAuthState();
 
   @override

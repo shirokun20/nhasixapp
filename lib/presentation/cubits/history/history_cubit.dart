@@ -1,6 +1,6 @@
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/usecases.dart';
-import '../../../services/history_cleanup_service.dart';
+import '../../../core/services/history_cleanup_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 import 'history_state.dart';

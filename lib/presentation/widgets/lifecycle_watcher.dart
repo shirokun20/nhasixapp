@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
-import '../../services/workers/download_lifecycle_mixin.dart';
+import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
+import '../../core/services/workers/download_lifecycle_mixin.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Monitors app lifecycle and interacts with DownloadBloc to handle

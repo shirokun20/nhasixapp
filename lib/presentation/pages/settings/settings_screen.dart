@@ -27,7 +27,7 @@ import '../../../domain/entities/search_filter.dart' as search_filter;
 import '../../../domain/entities/user_preferences.dart';
 import '../../../core/utils/tag_blacklist_utils.dart';
 import '../../../core/utils/source_config_display_utils.dart';
-import '../../../services/tag_blacklist_service.dart';
+import '../../../core/services/tag_blacklist_service.dart';
 
 import '../../cubits/settings/settings_cubit.dart';
 import '../../cubits/source/source_cubit.dart';

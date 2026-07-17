@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
@@ -116,7 +115,7 @@ class ImportZipUseCase {
       if (zipUris != null) {
         return zipUris;
       }
-    } on MissingPluginException {
+    } catch (_) {
       // Fallback to single picker on platforms without multi-select support.
     }
 

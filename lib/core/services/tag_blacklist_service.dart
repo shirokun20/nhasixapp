@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'package:kuron_core/kuron_core.dart';
 
 import 'package:nhasixapp/core/utils/tag_blacklist_utils.dart';
-import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/core/services/source_auth_service.dart';
 
 class OnlineBlacklistRule {
   const OnlineBlacklistRule({

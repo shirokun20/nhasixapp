@@ -15,7 +15,7 @@ import 'package:nhasixapp/domain/usecases/content/get_content_detail_usecase.dar
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
 import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
-import 'package:nhasixapp/services/image_metadata_service.dart';
+import 'package:nhasixapp/core/services/image_metadata_service.dart';
 
 class _MockGetContentDetailUseCase extends Mock
     implements GetContentDetailUseCase {}

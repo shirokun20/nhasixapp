@@ -16,7 +16,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
-import 'package:nhasixapp/services/pdf_conversion_queue_manager.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/permission_request_sheet.dart';

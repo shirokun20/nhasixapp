@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/services/workers/download_worker.dart';
+import 'package:nhasixapp/core/services/workers/download_worker.dart';
 
 void main() {
   group('DownloadWorkerTasks', () {

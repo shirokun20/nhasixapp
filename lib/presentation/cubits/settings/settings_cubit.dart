@@ -1,7 +1,7 @@
 import '../../../domain/entities/entities.dart';
 import '../../../core/utils/tag_blacklist_utils.dart';
-import '../../../services/preferences_service.dart';
-import '../../../services/app_disguise_service.dart';
+import '../../../core/services/preferences_service.dart';
+import '../../../core/services/app_disguise_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 

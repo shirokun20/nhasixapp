@@ -11,7 +11,7 @@ import '../../core/utils/responsive_grid_delegate.dart';
 import '../../core/utils/title_parser_utils.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/user_data_repository.dart';
-import '../../services/local_image_preloader.dart';
+import '../../core/services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
 import '../cubits/settings/settings_cubit.dart';

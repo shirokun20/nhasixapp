@@ -1,7 +1,7 @@
-import 'package:equatable/equatable.dart';
 import '../../../../domain/entities/crotpedia/crotpedia_entities.dart';
+import '../base/base_cubit.dart';
 
-abstract class CrotpediaFeatureState extends Equatable {
+abstract class CrotpediaFeatureState extends BaseCubitState {
   const CrotpediaFeatureState();
 
   @override

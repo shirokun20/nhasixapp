@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/services/notification_service.dart';
+import 'package:nhasixapp/core/services/notification_service.dart';
 
 /// Permission request bottom sheet for storage and notification permissions
 /// Shown when user tries to download or generate PDF

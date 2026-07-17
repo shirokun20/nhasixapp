@@ -6,11 +6,11 @@ import '../../domain/entities/entities.dart';
 import '../../domain/repositories/content_repository.dart';
 import '../../domain/value_objects/value_objects.dart';
 import '../datasources/remote/remote_data_source.dart';
-import '../../services/cache/cache_manager.dart' as multi_cache;
+import '../../core/services/cache/cache_manager.dart' as multi_cache;
 import '../models/tag_model.dart';
-import '../../services/detail_cache_service.dart';
+import '../../core/services/detail_cache_service.dart';
 import '../datasources/remote/exceptions.dart';
-import '../../services/request_deduplication_service.dart';
+import '../../core/services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
 
 /// Implementation of ContentRepository with caching strategy and offline-first architecture

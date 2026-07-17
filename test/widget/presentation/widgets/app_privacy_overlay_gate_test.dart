@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nhasixapp/presentation/widgets/app_privacy_overlay_gate.dart';
-import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 
 void main() {
   group('AppPrivacyOverlayGate', () {

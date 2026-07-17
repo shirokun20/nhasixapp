@@ -6,10 +6,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:share_plus/share_plus.dart';
 
-import '../domain/entities/download_status.dart';
-import '../domain/repositories/user_data_repository.dart';
-import '../core/utils/offline_content_manager.dart';
-import '../core/constants/app_constants.dart';
+import '../../domain/entities/download_status.dart';
+import '../../domain/repositories/user_data_repository.dart';
+import '../utils/offline_content_manager.dart';
+import '../constants/app_constants.dart';
 
 /// Service for exporting and importing offline library
 class ExportService {

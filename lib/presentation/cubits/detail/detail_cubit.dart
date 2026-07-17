@@ -7,7 +7,7 @@ import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../core/models/image_metadata.dart';
 import '../../../core/utils/offline_content_manager.dart';
-import '../../../services/image_metadata_service.dart';
+import '../../../core/services/image_metadata_service.dart';
 import '../base/base_cubit.dart';
 import 'package:kuron_core/kuron_core.dart';
 

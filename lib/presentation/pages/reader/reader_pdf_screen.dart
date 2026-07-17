@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/services/native_pdf_service.dart';
+import 'package:nhasixapp/core/services/native_pdf_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';

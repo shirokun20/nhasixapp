@@ -11,7 +11,7 @@ import 'package:nhasixapp/presentation/cubits/update/update_state.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
 import 'package:nhasixapp/presentation/widgets/update_available_sheet.dart';
 import 'package:nhasixapp/presentation/widgets/legal_content_sheet.dart';
-import 'package:nhasixapp/services/legal_content_service.dart';
+import 'package:nhasixapp/core/services/legal_content_service.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class AboutScreen extends StatelessWidget {

@@ -7,7 +7,7 @@ import 'package:crypto/crypto.dart';
 
 import '../constants/app_constants.dart';
 import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
-import 'storage_settings.dart';
+import 'directory_utils.dart';
 
 /// Utility class for download-related storage operations
 ///
@@ -19,108 +19,10 @@ class DownloadStorageUtils {
   static final Logger _logger = Logger();
 
   /// Smart Downloads directory detection
-  /// Priority:
-  /// 1. Check custom storage root (from StorageSettings) first
-  /// 2. Fallback to Downloads folder detection for backward compatibility
-  /// Tries multiple possible Downloads folder names and locations
+  /// Delegates to [DirectoryUtils.getDownloadsDirectory]
+  /// Kept for backward compatibility; prefer DirectoryUtils directly.
   static Future<String> getDownloadsDirectory() async {
-    try {
-      // PRIORITY 1: Check custom storage root first
-      final customRoot = await StorageSettings.getCustomRootPath();
-      if (customRoot != null && customRoot.isNotEmpty) {
-        final customDir = Directory(customRoot);
-        if (await customDir.exists()) {
-          _logger.d('Using custom storage root: $customRoot');
-          return customRoot;
-        } else {
-          _logger.w(
-              'Custom storage root set but does not exist: $customRoot, falling back to Downloads');
-        }
-      }
-
-      /*
-      // PRIORITY 2: Fallback to Downloads folder for backward compatibility
-      // First, try to get external storage directory
-      Directory? externalDir;
-      try {
-        externalDir = await getExternalStorageDirectory();
-      } catch (e) {
-        _logger.w('Could not get external storage directory: $e');
-      }
-
-      if (externalDir != null) {
-        // Try to find Downloads folder in external storage root
-        final externalRoot = externalDir.path.split('/Android')[0];
-
-        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
-        final downloadsFolderNames = [
-          'Download', // English (most common)
-          'Downloads', // English alternative
-          'Unduhan', // Indonesian
-          'Descargas', // Spanish
-          'Téléchargements', // French
-          'Downloads', // German uses English
-          'ダウンロード', // Japanese
-        ];
-
-        // Try each possible Downloads folder
-        for (final folderName in downloadsFolderNames) {
-          final downloadsDir = Directory(path.join(externalRoot, folderName));
-          if (await downloadsDir.exists()) {
-            _logger.d('Found Downloads directory: ${downloadsDir.path}');
-            return downloadsDir.path;
-          }
-        }
-
-        // If no Downloads folder found, check for app-specific external storage
-        final appDownloadsDir =
-            Directory(path.join(externalDir.path, 'downloads'));
-        if (await appDownloadsDir.exists()) {
-          _logger.d(
-              'Using app-specific downloads directory: ${appDownloadsDir.path}');
-          return appDownloadsDir.path;
-        }
-      }
-
-      // Fallback 1: Try hardcoded common paths
-      final commonPaths = [
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Downloads',
-        '/storage/emulated/0/Unduhan',
-        '/sdcard/Download',
-        '/sdcard/Downloads',
-      ];
-
-      for (final commonPath in commonPaths) {
-        final dir = Directory(commonPath);
-        if (await dir.exists()) {
-          _logger.d('Found Downloads directory at common path: $commonPath');
-          return commonPath;
-        }
-      }
-
-      // Fallback 2: Use application documents directory
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir =
-          Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.d(
-          'Using app documents downloads directory: ${documentsDownloadsDir.path}');
-      return documentsDownloadsDir.path;
-      */
-      throw Exception(
-          'No custom storage root selected. Please select a storage location in settings.');
-    } catch (e) {
-      _logger.e('Error detecting Downloads directory: $e');
-
-      /*
-      // Emergency fallback: use app documents
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-      _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
-      return emergencyDir.path;
-      */
-      rethrow;
-    }
+    return DirectoryUtils.getDownloadsDirectory();
   }
 
   /// Calculate total size of a directory recursively

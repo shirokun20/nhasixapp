@@ -51,7 +51,7 @@ import 'package:nhasixapp/presentation/widgets/dynamic_sorting_widget.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/config/source_loader.dart';
 import 'package:nhasixapp/presentation/pages/main/services/main_screen_utils.dart';
-import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 
 class MainScreenScrollable extends StatefulWidget {
   const MainScreenScrollable({super.key});

@@ -14,7 +14,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
-import 'package:nhasixapp/services/tag_blacklist_service.dart';
+import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/widgets/offline_content_body.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';
 

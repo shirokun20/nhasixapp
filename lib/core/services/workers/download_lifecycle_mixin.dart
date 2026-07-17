@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../workers/download_worker.dart';
+import './download_worker.dart';
 
 /// Mixin to handle app lifecycle for background download scheduling
 ///

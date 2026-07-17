@@ -1,7 +1,7 @@
 part of 'filter_data_cubit.dart';
 
 /// Base state for filter data screen
-class FilterDataState extends Equatable {
+class FilterDataState extends BaseCubitState {
   const FilterDataState({
     this.filterType,
     this.searchResults,

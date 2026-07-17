@@ -1,7 +1,7 @@
-import 'package:equatable/equatable.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import '../base/base_cubit.dart';
 
-abstract class CommentsState extends Equatable {
+abstract class CommentsState extends BaseCubitState {
   const CommentsState();
 
   @override

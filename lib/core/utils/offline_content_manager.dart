@@ -11,9 +11,9 @@ import 'package:nhasixapp/domain/extensions/content_extensions.dart';
 import '../../domain/entities/download_status.dart';
 import '../../domain/repositories/user_data_repository.dart';
 import '../constants/app_constants.dart';
+import 'directory_utils.dart';
 import 'download_storage_utils.dart';
 import 'reader_image_repair_utils.dart';
-import 'storage_settings.dart';
 
 /// Manager for offline content detection and operations
 class OfflineContentManager {
@@ -43,17 +43,10 @@ class OfflineContentManager {
   final Map<String, List<String>> _imageUrlsCache = {};
   final Map<String, DateTime> _imageUrlsCacheTime = {};
   final Map<String, Future<void>> _chapterMetadataWriteQueue = {};
-  String? _cachedDownloadsDirectory;
-  DateTime? _cachedDownloadsDirectoryTime;
 
   static const Duration _urlCacheDuration = Duration(minutes: 5);
   static const Duration _pathMissCacheDuration = Duration(seconds: 45);
   static const Duration _pathMissLogThrottle = Duration(minutes: 1);
-  static const Duration _downloadsDirectoryCacheDuration = Duration(minutes: 2);
-
-  String? _lastLoggedCustomRoot;
-  DateTime? _lastLoggedCustomRootTime;
-  static const Duration _customRootLogThrottle = Duration(minutes: 1);
 
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
@@ -2033,8 +2026,6 @@ class OfflineContentManager {
     _pathMissLogTime.clear();
     _metadataCache.clear();
     _metadataCacheTime.clear();
-    _cachedDownloadsDirectory = null;
-    _cachedDownloadsDirectoryTime = null;
     _logger.d('Offline content cache cleared');
   }
 
@@ -2054,151 +2045,7 @@ class OfflineContentManager {
   /// 2. Fallback to Downloads folder detection for backward compatibility
   /// Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
-    try {
-      if (_cachedDownloadsDirectory != null &&
-          _cachedDownloadsDirectoryTime != null &&
-          DateTime.now().difference(_cachedDownloadsDirectoryTime!) <=
-              _downloadsDirectoryCacheDuration) {
-        final cachedDir = Directory(_cachedDownloadsDirectory!);
-        if (await cachedDir.exists()) {
-          return _cachedDownloadsDirectory!;
-        }
-      }
-
-      // PRIORITY 1: Check custom storage root first
-      final customRoot = await StorageSettings.getCustomRootPath();
-      if (customRoot != null && customRoot.isNotEmpty) {
-        final customDir = Directory(customRoot);
-        if (await customDir.exists()) {
-          if (_lastLoggedCustomRoot != customRoot ||
-              _lastLoggedCustomRootTime == null ||
-              DateTime.now().difference(_lastLoggedCustomRootTime!) >
-                  _customRootLogThrottle) {
-            _lastLoggedCustomRoot = customRoot;
-            _lastLoggedCustomRootTime = DateTime.now();
-            _logger.d('Using custom storage root: $customRoot');
-          }
-          _cachedDownloadsDirectory = customRoot;
-          _cachedDownloadsDirectoryTime = DateTime.now();
-          return customRoot;
-        } else {
-          _logger.w(
-              'Custom storage root set but does not exist: $customRoot, falling back to Downloads');
-        }
-      }
-
-      // PRIORITY 2: Fallback to Downloads folder for backward compatibility
-      // First, try to get external storage directory
-      Directory? externalDir;
-      try {
-        externalDir = await getExternalStorageDirectory();
-      } catch (e) {
-        _logger.w('Could not get external storage directory: $e');
-      }
-
-      if (externalDir != null) {
-        // Try to find Downloads folder in external storage root
-        final externalRoot = externalDir.path.split('/Android')[0];
-
-        // Common Downloads folder names (English, Indonesian, Spanish, etc.)
-        final downloadsFolderNames = [
-          'Download', // English (most common)
-          'Downloads', // English alternative
-          'Unduhan', // Indonesian
-          'Descargas', // Spanish
-          'Téléchargements', // French
-          'Downloads', // German uses English
-          'ダウンロード', // Japanese
-        ];
-
-        // Try each possible Downloads folder
-        for (final folderName in downloadsFolderNames) {
-          final downloadsDir = Directory(path.join(externalRoot, folderName));
-          if (await downloadsDir.exists()) {
-            // _logger.i('Found Downloads directory: ${downloadsDir.path}');
-            _cachedDownloadsDirectory = downloadsDir.path;
-            _cachedDownloadsDirectoryTime = DateTime.now();
-            return downloadsDir.path;
-          }
-        }
-
-        // If no Downloads folder found, create one in external storage root
-        final defaultDownloadsDir =
-            Directory(path.join(externalRoot, 'Download'));
-        try {
-          if (!await defaultDownloadsDir.exists()) {
-            await defaultDownloadsDir.create(recursive: true);
-            _logger
-                .i('Created Downloads directory: ${defaultDownloadsDir.path}');
-          }
-          _cachedDownloadsDirectory = defaultDownloadsDir.path;
-          _cachedDownloadsDirectoryTime = DateTime.now();
-          return defaultDownloadsDir.path;
-        } catch (e) {
-          _logger.w(
-              'Could not create Downloads directory in external storage: $e');
-        }
-      }
-
-      // Fallback 1: Try hardcoded common paths
-      final commonPaths = [
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Downloads',
-        '/storage/emulated/0/Unduhan',
-        '/sdcard/Download',
-        '/sdcard/Downloads',
-      ];
-
-      for (final commonPath in commonPaths) {
-        final dir = Directory(commonPath);
-        if (await dir.exists()) {
-          _logger.i('Found Downloads directory at common path: $commonPath');
-          _cachedDownloadsDirectory = commonPath;
-          _cachedDownloadsDirectoryTime = DateTime.now();
-          return commonPath;
-        }
-      }
-
-      // Fallback 2: Use app-specific external storage
-      if (externalDir != null) {
-        final appDownloadsDir =
-            Directory(path.join(externalDir.path, 'downloads'));
-        if (!await appDownloadsDir.exists()) {
-          await appDownloadsDir.create(recursive: true);
-        }
-        _logger.i(
-            'Using app-specific downloads directory: ${appDownloadsDir.path}');
-        _cachedDownloadsDirectory = appDownloadsDir.path;
-        _cachedDownloadsDirectoryTime = DateTime.now();
-        return appDownloadsDir.path;
-      }
-
-      // Fallback 3: Use application documents directory
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final documentsDownloadsDir =
-          Directory(path.join(documentsDir.path, 'downloads'));
-      if (!await documentsDownloadsDir.exists()) {
-        await documentsDownloadsDir.create(recursive: true);
-      }
-      _logger.i(
-          'Using app documents downloads directory: ${documentsDownloadsDir.path}');
-      _cachedDownloadsDirectory = documentsDownloadsDir.path;
-      _cachedDownloadsDirectoryTime = DateTime.now();
-      return documentsDownloadsDir.path;
-    } catch (e) {
-      _logger.e('Error detecting Downloads directory: $e');
-
-      // Emergency fallback: use app documents
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final emergencyDir = Directory(path.join(documentsDir.path, 'downloads'));
-      if (!await emergencyDir.exists()) {
-        await emergencyDir.create(recursive: true);
-      }
-      _logger.w('Using emergency fallback directory: ${emergencyDir.path}');
-      _cachedDownloadsDirectory = emergencyDir.path;
-      _cachedDownloadsDirectoryTime = DateTime.now();
-      return emergencyDir.path;
-    }
+    return DirectoryUtils.getDownloadsDirectory();
   }
 
   /// Sync backup folder content to database

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 
 void main() {
   group('AppPrivacyOverlayService', () {

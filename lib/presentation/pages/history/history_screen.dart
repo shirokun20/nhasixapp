@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/analytics_service.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../cubits/history/history_cubit.dart';
 import '../../cubits/history/history_cubit_factory.dart';
 import '../../cubits/history/history_state.dart';
@@ -20,7 +20,7 @@ import '../history/widgets/history_empty_widget.dart';
 import '../history/widgets/history_cleanup_info_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import '../../../domain/entities/history.dart';
-import '../../../services/tag_blacklist_service.dart';
+import '../../../core/services/tag_blacklist_service.dart';
 
 /// Screen for displaying reading history with auto-cleanup features
 class HistoryScreen extends StatefulWidget {
@@ -397,7 +397,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _navigateToContent(BuildContext context, History historyItem) {
     // Navigate to detail screen for all content types
     // Chapter mode content will show read indicator in chapter list
-    Logger().d('Navigating to content: ${historyItem.toJson()}');
+    Logger().d('Navigating to content: ${historyItem.contentId}');
 
     // Determine the target content ID:
     // - For chapter mode with parentId: use parentId (series ID)

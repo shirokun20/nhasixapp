@@ -6,9 +6,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path;
 
 import '../../domain/entities/entities.dart' hide ThemeOption;
+import '../../domain/entities/settings/settings.dart';
 import '../../domain/repositories/settings_repository.dart';
 
-import 'package:nhasixapp/services/native_backup_service.dart';
+import 'package:nhasixapp/core/services/native_backup_service.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 
 /// Implementation of SettingsRepository using SharedPreferences

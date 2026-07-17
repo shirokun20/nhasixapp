@@ -2,7 +2,7 @@ import 'package:logger/logger.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../domain/usecases/usecases.dart';
-import '../../../services/history_cleanup_service.dart';
+import '../../../core/services/history_cleanup_service.dart';
 import 'history_cubit.dart';
 
 /// Factory class for creating HistoryCubit instances

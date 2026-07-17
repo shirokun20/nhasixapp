@@ -17,7 +17,7 @@ import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubi
 import 'package:nhasixapp/presentation/mixins/offline_management_mixin.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
-import '../../services/tag_blacklist_service.dart';
+import '../../core/services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../../core/config/remote_config_service.dart';
 import '../cubits/settings/settings_cubit.dart';

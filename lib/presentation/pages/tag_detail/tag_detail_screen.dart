@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
-import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
-import 'package:nhasixapp/domain/usecases/tags/get_tag_detail_usecase.dart';
+import 'package:nhasixapp/presentation/cubits/tag_detail/tag_detail_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/tag_detail/tag_detail_state.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 
 /// API-v2 oriented tag detail screen.
 ///
@@ -32,50 +33,14 @@ class TagDetailScreen extends StatefulWidget {
 }
 
 class _TagDetailScreenState extends State<TagDetailScreen> {
-  final Logger _logger = Logger();
-  TagDetailEntity? _tagDetail;
-  bool _isLoading = true;
-  String? _errorMessage;
-
   @override
   void initState() {
     super.initState();
-    _loadTagDetail();
-  }
-
-  Future<void> _loadTagDetail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final useCase = getIt<GetTagDetailUseCase>();
-      final tagDetail = await useCase(GetTagDetailParams(
-        tagType: widget.tagType,
-        slug: widget.slug,
-        sourceId: widget.sourceId,
-      ));
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _tagDetail = tagDetail;
-        _isLoading = false;
-      });
-    } catch (e, stackTrace) {
-      _logger.e('Error loading tag detail', error: e, stackTrace: stackTrace);
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
+    context.read<TagDetailCubit>().loadTagDetail(
+          tagType: widget.tagType,
+          slug: widget.slug,
+          sourceId: widget.sourceId,
+        );
   }
 
   @override
@@ -83,17 +48,24 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AppScaffoldWithOffline(
-      title: _tagDetail?.name ?? widget.slug,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? _buildErrorState(colorScheme, l10n)
-              : _buildContent(colorScheme, l10n),
+    return BlocProvider<TagDetailCubit>(
+      create: (_) => getIt<TagDetailCubit>(),
+      child: BlocBuilder<TagDetailCubit, TagDetailState>(
+        builder: (context, state) {
+          return AppScaffoldWithOffline(
+            title: state is TagDetailLoaded ? state.tagDetail.name : widget.slug,
+            body: switch (state) {
+              TagDetailInitial() || TagDetailLoading() => const Center(child: CircularProgressIndicator()),
+              TagDetailLoaded(tagDetail: final tag) => _buildContent(tag, colorScheme, l10n),
+              TagDetailError(message: final msg) => _buildErrorState(msg, colorScheme, l10n),
+            },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildErrorState(ColorScheme colorScheme, AppLocalizations? l10n) {
+  Widget _buildErrorState(String message, ColorScheme colorScheme, AppLocalizations? l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -108,7 +80,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMessage ?? 'Unknown error',
+              message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
@@ -116,7 +88,11 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: _loadTagDetail,
+              onPressed: () => context.read<TagDetailCubit>().loadTagDetail(
+                    tagType: widget.tagType,
+                    slug: widget.slug,
+                    sourceId: widget.sourceId,
+                  ),
               icon: const Icon(Icons.refresh),
               label: Text(l10n?.retry ?? 'Retry'),
             ),
@@ -126,12 +102,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
     );
   }
 
-  Widget _buildContent(ColorScheme colorScheme, AppLocalizations? l10n) {
-    final tag = _tagDetail;
-    if (tag == null) {
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildContent(TagDetailEntity tag, ColorScheme colorScheme, AppLocalizations? l10n) {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -174,8 +145,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
                     ),
                     _buildBadge(
                       icon: Icons.numbers,
-                      label:
-                          AppLocalizations.of(context)!.nGalleries(tag.count),
+                      label: AppLocalizations.of(context)!.nGalleries(tag.count),
                       colorScheme: colorScheme,
                     ),
                   ],
@@ -185,8 +155,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
           ),
           const SizedBox(height: 14),
           _buildMetaCard(tag, colorScheme),
-          if (tag.description != null &&
-              tag.description!.trim().isNotEmpty) ...[
+          if (tag.description != null && tag.description!.trim().isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildSectionCard(
               title: AppLocalizations.of(context)!.descriptionLabel,
@@ -245,15 +214,12 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            _buildMetaRow(AppLocalizations.of(context)!.tagId,
-                tag.id.toString(), colorScheme),
+            _buildMetaRow(AppLocalizations.of(context)!.tagId, tag.id.toString(), colorScheme),
             const Divider(height: 18),
-            _buildMetaRow(
-                AppLocalizations.of(context)!.slug, tag.slug, colorScheme),
+            _buildMetaRow(AppLocalizations.of(context)!.slug, tag.slug, colorScheme),
             if (tag.url != null && tag.url!.trim().isNotEmpty) ...[
               const Divider(height: 18),
-              _buildMetaRow(
-                  AppLocalizations.of(context)!.path, tag.url!, colorScheme),
+              _buildMetaRow(AppLocalizations.of(context)!.path, tag.url!, colorScheme),
             ],
           ],
         ),
@@ -308,11 +274,7 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
     );
   }
 
-  Widget _buildBadge({
-    required IconData icon,
-    required String label,
-    required ColorScheme colorScheme,
-  }) {
+  Widget _buildBadge({required IconData icon, required String label, required ColorScheme colorScheme}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -331,25 +293,19 @@ class _TagDetailScreenState extends State<TagDetailScreen> {
   }
 
   String _formatTagType(String type) {
-    if (type.isEmpty) {
-      return AppLocalizations.of(context)!.tag;
-    }
+    if (type.isEmpty) return AppLocalizations.of(context)!.tag;
     return '${type[0].toUpperCase()}${type.substring(1)}';
   }
 
   void _searchWithTag(TagDetailEntity tag) {
-    final rawConfig =
-        getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
+    final rawConfig = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
     final searchConfig = rawConfig?['searchConfig'] as Map?;
     final tokenTemplates = searchConfig?['queryTokenTemplates'] as Map?;
-    final includeTemplate =
-        (tokenTemplates?['include'] as String?) ?? '{type}:"{name}"';
+    final includeTemplate = (tokenTemplates?['include'] as String?) ?? '{type}:"{name}"';
 
     final token = includeTemplate
         .replaceAll('{type}', tag.type)
         .replaceAll('{name}', tag.name);
-
-    _logger.i('Search with tag token: $token');
 
     AppRouter.goToContentByTag(
       context,

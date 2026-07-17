@@ -13,7 +13,7 @@ import 'package:nhasixapp/presentation/cubits/comments/comments_state.dart';
 import 'package:nhasixapp/presentation/pages/detail/widgets/comment_item_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/core/services/source_auth_service.dart';
 
 class CommentsSectionWidget extends StatefulWidget {
   final String contentId;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/services/legal_content_service.dart';
+import 'package:nhasixapp/core/services/legal_content_service.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';

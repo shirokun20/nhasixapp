@@ -6,7 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
 
 import 'pdf_isolate_worker.dart';
-import '../core/utils/image_splitter.dart';
+import '../utils/image_splitter.dart';
 
 /// Service untuk convert downloaded images ke PDF
 class PdfService {

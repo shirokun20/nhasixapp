@@ -1,32 +1,27 @@
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:logger/logger.dart';
-
 import '../../../domain/entities/entities.dart';
 import '../../../domain/entities/tags/tag_entity.dart';
 import '../../../domain/usecases/tags/get_tag_autocomplete_usecase.dart';
 import '../../../domain/usecases/tags/get_tags_by_type_usecase.dart';
 import '../../../core/utils/tag_data_manager.dart';
+import '../base/base_cubit.dart';
 
 part 'filter_data_state.dart';
 
 /// Cubit for managing filter data screen state
-class FilterDataCubit extends Cubit<FilterDataState> {
+class FilterDataCubit extends BaseCubit<FilterDataState> {
   FilterDataCubit({
     required TagDataManager tagDataManager,
     required GetTagsByTypeUseCase getTagsByTypeUseCase,
     required GetTagAutocompleteUseCase getTagAutocompleteUseCase,
-    required Logger logger,
+    required super.logger,
   })  : _tagDataManager = tagDataManager,
         _getTagsByTypeUseCase = getTagsByTypeUseCase,
         _getTagAutocompleteUseCase = getTagAutocompleteUseCase,
-        _logger = logger,
-        super(const FilterDataInitial());
+        super(initialState: const FilterDataInitial());
 
   final TagDataManager _tagDataManager;
   final GetTagsByTypeUseCase _getTagsByTypeUseCase;
   final GetTagAutocompleteUseCase _getTagAutocompleteUseCase;
-  final Logger _logger;
 
   /// Whether this source should fetch tags from API v2 instead of local JSON
   bool _shouldUseApi(String sourceId) {
@@ -58,7 +53,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
     required List<FilterItem> selectedFilters,
   }) async {
     try {
-      _logger.i(
+      logger.i(
           'FilterDataCubit: Initializing with type: $filterType, source: $sourceId');
 
       _currentFilterType = filterType;
@@ -102,10 +97,10 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       );
 
       emit(FilterDataLoaded(state));
-      _logger.i(
+      logger.i(
           'FilterDataCubit: Loaded ${_filteredTags.length} tags for type: $filterType');
     } catch (e, stackTrace) {
-      _logger.e('FilterDataCubit: Error initializing',
+      logger.e('FilterDataCubit: Error initializing',
           error: e, stackTrace: stackTrace);
       emit(state.copyWith(
         message: 'failedInitFilterData',
@@ -173,10 +168,10 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
       emit(FilterDataLoaded(state));
 
-      _logger.d(
+      logger.d(
           'FilterDataCubit: Search results: ${_filteredTags.length} tags for query: "$_searchQuery"');
     } catch (e) {
-      _logger.e('FilterDataCubit: Error searching filter data', error: e);
+      logger.e('FilterDataCubit: Error searching filter data', error: e);
       // Don't emit error for search, just continue with current state
     }
   }
@@ -184,7 +179,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
   /// Switch filter type (tag, artist, character, etc.)
   Future<void> switchFilterType(String filterType) async {
     try {
-      _logger.i('FilterDataCubit: Switching to filter type: $filterType');
+      logger.i('FilterDataCubit: Switching to filter type: $filterType');
 
       _currentFilterType = filterType;
       _searchQuery = '';
@@ -221,10 +216,10 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
       emit(FilterDataLoaded(state));
 
-      _logger.i(
+      logger.i(
           'FilterDataCubit: Switched to ${_filteredTags.length} tags for type: $filterType');
     } catch (e, stackTrace) {
-      _logger.e('FilterDataCubit: Error switching filter type',
+      logger.e('FilterDataCubit: Error switching filter type',
           error: e, stackTrace: stackTrace);
       emit(state.copyWith(
         message: 'failedSwitchFilterType',
@@ -250,7 +245,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
         if (existingItem.isExcluded) {
           // Currently excluded, remove it
           _selectedFilters.removeAt(existingIndex);
-          _logger.d('FilterDataCubit: Removed filter item: ${tag.name}');
+          logger.d('FilterDataCubit: Removed filter item: ${tag.name}');
         } else {
           // Currently included, switch to excluded
           _selectedFilters[existingIndex] = FilterItem.exclude(
@@ -260,7 +255,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
             tagName: tag.name,
             tagSlug: tag.slug,
           );
-          _logger.d('FilterDataCubit: Switched to exclude: ${tag.name}');
+          logger.d('FilterDataCubit: Switched to exclude: ${tag.name}');
         }
       } else {
         // Not selected, add as include or exclude based on forceExclude
@@ -280,7 +275,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
                 tagSlug: tag.slug,
               );
         _selectedFilters.add(newItem);
-        _logger.d(
+        logger.d(
             'FilterDataCubit: Added filter item: ${tag.name} (${newItem.isExcluded ? 'exclude' : 'include'})');
       }
 
@@ -288,7 +283,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       final currentState = state;
       // if (currentState is FilterDataLoaded) {
       // Create completely new state instance
-      _logger.d(
+      logger.d(
           'FilterDataCubit: Force emitting new state with ${_selectedFilters.length} selected filters');
       emit(state.copyWith(
         filterType: currentState.filterType,
@@ -302,7 +297,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
       emit(FilterDataLoaded(state));
       // }
     } catch (e) {
-      _logger.e('FilterDataCubit: Error toggling filter item', error: e);
+      logger.e('FilterDataCubit: Error toggling filter item', error: e);
     }
   }
 
@@ -327,7 +322,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
         // Force emit new state by creating completely new instance
         final currentState = state;
         // if (currentState is FilterDataLoaded) {
-        _logger.d(
+        logger.d(
             'FilterDataCubit: Force emitting new state after removing $value, ${_selectedFilters.length} filters remaining');
         emit(state.copyWith(
           filterType: currentState.filterType,
@@ -340,10 +335,10 @@ class FilterDataCubit extends Cubit<FilterDataState> {
 
         emit(FilterDataLoaded(state));
         // }
-        _logger.d('FilterDataCubit: Removed filter item: $value');
+        logger.d('FilterDataCubit: Removed filter item: $value');
       }
     } catch (e) {
-      _logger.e('FilterDataCubit: Error removing filter item', error: e);
+      logger.e('FilterDataCubit: Error removing filter item', error: e);
     }
   }
 
@@ -357,7 +352,7 @@ class FilterDataCubit extends Cubit<FilterDataState> {
         // Force emit new state by creating completely new instance
         final currentState = state;
         // if (currentState is FilterDataLoaded) {
-        _logger.d(
+        logger.d(
             'FilterDataCubit: Force emitting new state after clearing all filters');
         emit(
           state.copyWith(
@@ -371,10 +366,10 @@ class FilterDataCubit extends Cubit<FilterDataState> {
         );
         emit(FilterDataLoaded(state));
         // }
-        _logger.i('FilterDataCubit: Cleared all filter items');
+        logger.i('FilterDataCubit: Cleared all filter items');
       }
     } catch (e) {
-      _logger.e('FilterDataCubit: Error clearing filters', error: e);
+      logger.e('FilterDataCubit: Error clearing filters', error: e);
     }
   }
 

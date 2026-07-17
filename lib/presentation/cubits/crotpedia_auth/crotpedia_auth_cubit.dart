@@ -1,22 +1,17 @@
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:kuron_special/kuron_special.dart';
-import 'package:logger/logger.dart';
-
 import 'package:kuron_native/kuron_native.dart';
+import '../base/base_cubit.dart';
 
 part 'crotpedia_auth_state.dart';
 
-class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
+class CrotpediaAuthCubit extends BaseCubit<CrotpediaAuthState> {
   final WebViewSessionAdapter _adapter;
-  final Logger _logger;
 
   CrotpediaAuthCubit({
     required WebViewSessionAdapter adapter,
-    required Logger logger,
+    required super.logger,
   })  : _adapter = adapter,
-        _logger = logger,
-        super(CrotpediaAuthInitial());
+        super(initialState: CrotpediaAuthInitial());
 
   Future<void> checkLoginStatus() async {
     if (isClosed) return;
@@ -28,7 +23,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
         emit(CrotpediaAuthInitial());
       }
     } catch (e) {
-      _logger.e('Failed to check login status', error: e);
+      logger.e('Failed to check login status', error: e);
       if (!isClosed) emit(CrotpediaAuthInitial());
     }
   }
@@ -50,7 +45,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
         emit(CrotpediaAuthError(result.errorMessage ?? 'Login failed'));
       }
     } catch (e) {
-      _logger.e('Login error', error: e);
+      logger.e('Login error', error: e);
       if (!isClosed) {
         emit(const CrotpediaAuthError('An unexpected error occurred during login'));
       }
@@ -65,7 +60,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
           username: username, rawCookies: rawCookies);
       if (!isClosed) emit(CrotpediaAuthSuccess(username));
     } catch (e, s) {
-      _logger.e('External login error: $e\n$s');
+      logger.e('External login error: $e\n$s');
       if (!isClosed) emit(const CrotpediaAuthError('Failed to capture session'));
     }
   }
@@ -76,7 +71,7 @@ class CrotpediaAuthCubit extends Cubit<CrotpediaAuthState> {
       await _adapter.logout();
       await KuronNative.instance.clearCookies();
     } catch (e) {
-      _logger.e('Logout error', error: e);
+      logger.e('Logout error', error: e);
     }
     if (isClosed) return;
     emit(CrotpediaAuthInitial());

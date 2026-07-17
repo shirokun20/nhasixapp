@@ -1,22 +1,20 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logger/logger.dart';
 import '../../../../domain/usecases/crotpedia/get_genre_list_usecase.dart';
 import '../../../../domain/usecases/crotpedia/get_doujin_list_usecase.dart';
 import '../../../../domain/usecases/crotpedia/get_request_list_usecase.dart';
+import '../base/base_cubit.dart';
 import 'crotpedia_feature_state.dart';
 
-class CrotpediaFeatureCubit extends Cubit<CrotpediaFeatureState> {
+class CrotpediaFeatureCubit extends BaseCubit<CrotpediaFeatureState> {
   final GetGenreListUseCase getGenreListUseCase;
   final GetDoujinListUseCase getDoujinListUseCase;
   final GetRequestListUseCase getRequestListUseCase;
-  final Logger logger;
 
   CrotpediaFeatureCubit({
     required this.getGenreListUseCase,
     required this.getDoujinListUseCase,
     required this.getRequestListUseCase,
-    required this.logger,
-  }) : super(CrotpediaFeatureInitial());
+    required super.logger,
+  }) : super(initialState: CrotpediaFeatureInitial());
 
   Future<void> loadGenreList() async {
     try {

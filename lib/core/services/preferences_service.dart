@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../domain/entities/user_preferences.dart';
+import '../../domain/entities/user_preferences.dart';
 
 /// Service for handling app preferences using SharedPreferences
 class PreferencesService {

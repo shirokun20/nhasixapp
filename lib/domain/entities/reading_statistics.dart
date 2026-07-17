@@ -127,41 +127,6 @@ class ReadingStatistics extends Equatable {
     );
   }
 
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'totalContentRead': totalContentRead,
-      'totalPagesRead': totalPagesRead,
-      'totalTimeSpent': totalTimeSpent.inMilliseconds,
-      'favoriteArtists': favoriteArtists,
-      'favoriteTags': favoriteTags,
-      'favoriteLanguages': favoriteLanguages,
-      'averageReadingTime': averageReadingTime.inMilliseconds,
-      'completedContent': completedContent,
-      'readingStreak': readingStreak,
-      'lastReadDate': lastReadDate?.toIso8601String(),
-    };
-  }
-
-  /// Create from JSON
-  factory ReadingStatistics.fromJson(Map<String, dynamic> json) {
-    return ReadingStatistics(
-      totalContentRead: json['totalContentRead'] ?? 0,
-      totalPagesRead: json['totalPagesRead'] ?? 0,
-      totalTimeSpent: Duration(milliseconds: json['totalTimeSpent'] ?? 0),
-      favoriteArtists: Map<String, int>.from(json['favoriteArtists'] ?? {}),
-      favoriteTags: Map<String, int>.from(json['favoriteTags'] ?? {}),
-      favoriteLanguages: Map<String, int>.from(json['favoriteLanguages'] ?? {}),
-      averageReadingTime:
-          Duration(milliseconds: json['averageReadingTime'] ?? 0),
-      completedContent: json['completedContent'] ?? 0,
-      readingStreak: json['readingStreak'] ?? 0,
-      lastReadDate: json['lastReadDate'] != null
-          ? DateTime.parse(json['lastReadDate'])
-          : null,
-    );
-  }
-
   @override
   List<Object?> get props => [
         totalContentRead,

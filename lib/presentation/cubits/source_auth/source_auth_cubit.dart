@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:nhasixapp/presentation/cubits/base/base_cubit.dart';
-import 'package:nhasixapp/services/source_auth_service.dart';
+import 'package:nhasixapp/core/services/source_auth_service.dart';
 
 part 'source_auth_state.dart';
 

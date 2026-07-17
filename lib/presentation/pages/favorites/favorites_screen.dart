@@ -22,7 +22,7 @@ import '../../../core/utils/storage_settings.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/responsive_grid_delegate.dart';
-import '../../../services/source_auth_service.dart';
+import '../../../core/services/source_auth_service.dart';
 import '../../cubits/favorite/favorite_cubit.dart';
 import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/widgets.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
-import 'package:nhasixapp/services/notifications/notification_action_handler.dart';
-import 'package:nhasixapp/services/notifications/notification_constants.dart';
+import 'package:nhasixapp/core/services/notifications/notification_action_handler.dart';
+import 'package:nhasixapp/core/services/notifications/notification_constants.dart';
 
 void main() {
   late NotificationActionHandler handler;

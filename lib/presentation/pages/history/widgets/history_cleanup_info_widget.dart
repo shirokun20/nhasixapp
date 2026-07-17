@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/text_style_const.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../services/history_cleanup_service.dart';
+import '../../../../core/services/history_cleanup_service.dart';
 import '../../../cubits/history/history_cubit.dart';
 
 /// Widget for displaying history cleanup information and settings

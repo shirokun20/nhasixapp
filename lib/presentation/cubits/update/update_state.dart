@@ -1,7 +1,7 @@
-import 'package:equatable/equatable.dart';
+import '../base/base_cubit.dart';
 import '../../../../core/services/update_service.dart';
 
-abstract class UpdateState extends Equatable {
+abstract class UpdateState extends BaseCubitState {
   const UpdateState();
 
   @override

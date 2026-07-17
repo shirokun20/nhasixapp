@@ -6,8 +6,8 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/config/remote_config_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/download_service.dart';
-import '../../services/pdf_conversion_service.dart';
+import '../../core/services/download_service.dart';
+import '../../core/services/pdf_conversion_service.dart';
 import '../../core/utils/download_storage_utils.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 

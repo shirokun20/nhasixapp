@@ -221,41 +221,4 @@ class History extends Equatable {
     );
   }
 
-  /// Convert to JSON map
-  Map<String, dynamic> toJson() {
-    return {
-      'contentId': contentId,
-      'sourceId': sourceId,
-      'lastViewed': lastViewed.millisecondsSinceEpoch,
-      'lastPage': lastPage,
-      'totalPages': totalPages,
-      'timeSpent': timeSpent.inMilliseconds,
-      'isCompleted': isCompleted,
-      'title': title,
-      'coverUrl': coverUrl,
-      'parentId': parentId,
-      'chapterId': chapterId,
-      'chapterIndex': chapterIndex,
-      'chapterTitle': chapterTitle,
-    };
-  }
-
-  /// Create from JSON map
-  factory History.fromJson(Map<String, dynamic> json) {
-    return History(
-      contentId: json['contentId'],
-      sourceId: json['sourceId'] ?? 'nhentai',
-      lastViewed: DateTime.fromMillisecondsSinceEpoch(json['lastViewed']),
-      lastPage: json['lastPage'] ?? 1,
-      totalPages: json['totalPages'] ?? 0,
-      timeSpent: Duration(milliseconds: json['timeSpent'] ?? 0),
-      isCompleted: json['isCompleted'] ?? false,
-      title: json['title'],
-      coverUrl: json['coverUrl'],
-      parentId: json['parentId'],
-      chapterId: json['chapterId'],
-      chapterIndex: json['chapterIndex'],
-      chapterTitle: json['chapterTitle'],
-    );
-  }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nhasixapp/services/workers/download_lifecycle_mixin.dart';
+import 'package:nhasixapp/core/services/workers/download_lifecycle_mixin.dart';
 
 void main() {
   group('ActiveDownloadInfo', () {

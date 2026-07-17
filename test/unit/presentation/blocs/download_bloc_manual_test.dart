@@ -5,7 +5,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/domain/entities/user_preferences.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
-import 'package:nhasixapp/services/notification_service.dart';
+import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +16,7 @@ import 'package:nhasixapp/domain/usecases/content/get_content_detail_usecase.dar
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart'; // Was network/
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
-import 'package:nhasixapp/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/core/services/pdf_conversion_service.dart';
 import 'package:logger/logger.dart';
 
 import '../../../presentation/blocs/download/download_bloc_test.dart';

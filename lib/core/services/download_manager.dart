@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:logger/logger.dart';
 
-import '../domain/entities/download_task.dart';
-import '../domain/entities/download_status.dart';
+import '../../domain/entities/download_task.dart';
+import '../../domain/entities/download_status.dart';
 import 'native_download_service.dart';
 
 /// Represents a progress update for a download

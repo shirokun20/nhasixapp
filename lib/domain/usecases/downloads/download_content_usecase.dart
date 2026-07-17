@@ -9,9 +9,9 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 import '../../repositories/user_data_repository.dart';
-import '../../../services/native_download_service.dart';
-import '../../../services/pdf_service.dart';
-import '../../../services/download_manager.dart';
+import '../../../core/services/native_download_service.dart';
+import '../../../core/services/pdf_service.dart';
+import '../../../core/services/download_manager.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/download_storage_utils.dart';
 

@@ -22,20 +22,20 @@ import '../../../domain/usecases/downloads/downloads_usecases.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/repositories/repositories.dart';
-import '../../../services/native_pdf_reader_service.dart';
+import '../../../core/services/native_pdf_reader_service.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/utils/offline_content_manager.dart';
-import '../../../services/notification_service.dart';
-import '../../../services/download_manager.dart';
-import '../../../services/pdf_conversion_service.dart';
-import '../../../services/pdf_conversion_queue_manager.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/download_manager.dart';
+import '../../../core/services/pdf_conversion_service.dart';
+import '../../../core/services/pdf_conversion_queue_manager.dart';
 import '../../../core/utils/download_storage_utils.dart';
 import '../../../core/utils/storage_settings.dart';
 import '../../widgets/content_list_widget.dart';
 
-import 'package:nhasixapp/services/workers/background_download_utils.dart';
-// import 'package:nhasixapp/services/workers/download_worker.dart'; // REMOVED
-import '../../../services/native_download_service.dart';
+import 'package:nhasixapp/core/services/workers/background_download_utils.dart';
+// import 'package:nhasixapp/core/services/workers/download_worker.dart'; // REMOVED
+import '../../../core/services/native_download_service.dart';
 
 part 'download_event.dart';
 part 'download_state.dart';

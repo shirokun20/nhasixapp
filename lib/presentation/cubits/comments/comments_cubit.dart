@@ -1,12 +1,16 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/domain/usecases/content/get_comments_usecase.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import '../base/base_cubit.dart';
 import 'comments_state.dart';
 
-class CommentsCubit extends Cubit<CommentsState> {
+class CommentsCubit extends BaseCubit<CommentsState> {
   final GetCommentsUseCase _getCommentsUseCase;
 
-  CommentsCubit(this._getCommentsUseCase) : super(CommentsInitial());
+  CommentsCubit({
+    required GetCommentsUseCase getCommentsUseCase,
+    required super.logger,
+  })  : _getCommentsUseCase = getCommentsUseCase,
+        super(initialState: CommentsInitial());
 
   Future<void> loadComments(String contentId) async {
     emit(CommentsLoading());

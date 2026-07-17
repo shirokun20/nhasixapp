@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import '../di/service_locator.dart';
-import '../../services/analytics_service.dart';
+import '../../core/services/analytics_service.dart';
 
 /// Performance Monitoring Utilities for App Optimization
 ///

@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
-import '../core/utils/storage_settings.dart';
+import '../utils/storage_settings.dart';
 
 /// Enhanced Local Image Preloader Service
 ///

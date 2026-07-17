@@ -9,8 +9,8 @@ import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
-import 'package:nhasixapp/services/export_service.dart';
-import 'package:nhasixapp/services/notification_service.dart';
+import 'package:nhasixapp/core/services/export_service.dart';
+import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 
