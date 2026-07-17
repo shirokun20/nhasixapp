@@ -2,30 +2,10 @@
     "version": "1.0.0",
     "lastUpdated": "2026-01-13T13:24:00+07:00",
     "sources": {
-        "crotpedia": {
-            "type": "remote",
-            "format": "array",
-            "structure": [
-                "id",
-                "name",
-                "slug",
-                "typeCode"
-            ],
-            "multiSelectSupport": {
-                "tag": true
-            },
-            "migration": {
-                "enabled": false,
-                "remoteUrl": "https://raw.githubusercontent.com/shirokun20/nhasixapp/refs/heads/configs/configs/tags/tags_crotpedia.json",
-                "fallbackUrl": "https://cdn.jsdelivr.net/gh/shirokun20/nhasixapp@master/configs/tags/tags_crotpedia.json",
-                "compression": "none",
-                "cacheTtlSeconds": 86400
-            }
-        }
     },
     "notes": [
         "nhentai: Removed (uses new /api/v2/galleries/tagged endpoint)",
-        "crotpedia: Tags loaded from remote (GitHub Raw)",
+        "crotpedia: Removed — tags loaded directly from API",
         "spyfakku: Tags extracted from hentalk.pw boot data (4,423 tags)",
         "Tag data in configs/tags/ directory",
         "Primary: main branch, Fallback: develop branch",

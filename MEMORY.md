@@ -71,7 +71,7 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-07-10
+> Tracked via `openspec/` — Last updated: 2026-07-16
 
 ### Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -141,6 +141,8 @@ lib/
 - `2026-07-13-rawdevart-config`
 - `2026-07-13-sync-native-theme`
 - `2026-07-14-note-mode`
+- `2026-07-14-schale-network-source`
+- `2026-07-16-fix-overheat-lock-screen`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
@@ -148,7 +150,6 @@ lib/
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
 - `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
-- `schale-network-source`
 
 ### Open Issues (in `openspec/changes/`)
 - *(none)*
