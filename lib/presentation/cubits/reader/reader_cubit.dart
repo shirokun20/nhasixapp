@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -290,10 +289,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
       // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
       if (content == null) {
-        debugPrint(
-            '🔍 READER_CUBIT all strategies failed, entering Strategy D');
+        _logger.i('🔍 READER_CUBIT all strategies failed, entering Strategy D');
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
-          debugPrint(
+          _logger.i(
               '🔍 READER_CUBIT Strategy D using preloaded fallback imageUrls=${preloadedContent.imageUrls.length}');
           _logger.w(
               '⚠️ Strategy D: Using preloaded content as fallback: $contentId');
@@ -414,7 +412,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e('Reader Cubit Error: $e', error: e, stackTrace: stackTrace);
       _stopAutoHideTimer();
       if (!isClosed) {
-        emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadContentError'));
+        emit(_withStatus(ReaderStatus.error)
+            .copyWithMessage('failedLoadContentError'));
       }
     }
   }
@@ -919,7 +918,8 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       if (_allChapters == null || _allChapters!.isEmpty) {
         _logger.e('⛔ Cannot navigate: No chapter list available');
-        emit(_withStatus(ReaderStatus.error).copyWithMessage('chapterNavNotAvailable'));
+        emit(_withStatus(ReaderStatus.error)
+            .copyWithMessage('chapterNavNotAvailable'));
         return;
       }
 
@@ -969,7 +969,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         if (!hasConnection) {
           _logger
               .e('❌ No internet connection and chapter not available offline');
-          emit(_withStatus(ReaderStatus.error).copyWithMessage('Cannot load chapter: No internet connection and chapter not downloaded'));
+          emit(_withStatus(ReaderStatus.error).copyWithMessage(
+              'Cannot load chapter: No internet connection and chapter not downloaded'));
           return;
         }
 
@@ -981,14 +982,16 @@ class ReaderCubit extends Cubit<ReaderState> {
           ));
 
           if (chapterData.images.isEmpty) {
-            emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapterImages'));
+            emit(_withStatus(ReaderStatus.error)
+                .copyWithMessage('failedLoadChapterImages'));
             return;
           }
 
           chapterImages = chapterData.images;
         } catch (e) {
           _logger.e('Failed to load chapter from online API: $e');
-          emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapter'));
+          emit(_withStatus(ReaderStatus.error)
+              .copyWithMessage('failedLoadChapter'));
           return;
         }
       }
@@ -1009,7 +1012,10 @@ class ReaderCubit extends Cubit<ReaderState> {
       _lastTrackedPage = 1;
 
       emit(_withStatus(ReaderStatus.loaded)
-          .copyWithContent(content: newContent, chapterData: chapterData, currentChapter: chapter)
+          .copyWithContent(
+              content: newContent,
+              chapterData: chapterData,
+              currentChapter: chapter)
           .copyWithPage(1)
           .copyWithTimer(Duration.zero)
           .copyWithOffline(loadedFromOffline));
@@ -1018,7 +1024,8 @@ class ReaderCubit extends Cubit<ReaderState> {
       await _saveToHistory();
     } catch (e) {
       _logger.e('Failed to load chapter: $e');
-      emit(_withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapter'));
+      emit(
+          _withStatus(ReaderStatus.error).copyWithMessage('failedLoadChapter'));
     }
   }
 
@@ -1538,7 +1545,8 @@ class ReaderCubit extends Cubit<ReaderState> {
         pageNumber,
       );
 
-      emit(_withStatus(ReaderStatus.loaded).copyWithContent(content: updatedContent));
+      emit(_withStatus(ReaderStatus.loaded)
+          .copyWithContent(content: updatedContent));
 
       _logger.i(
         'Reader repair succeeded for ${currentContent.id} '
@@ -2411,7 +2419,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Apply default settings to current state
       if (!isClosed) {
-        emit(state.copyWithUI(showUI: true, keepScreenOn: false).copyWithMode(readingMode: ReadingMode.singlePage));
+        emit(state
+            .copyWithUI(showUI: true, keepScreenOn: false)
+            .copyWithMode(readingMode: ReadingMode.singlePage));
       }
 
       // Disable wakelock
@@ -2427,7 +2437,9 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       // Still apply default settings to current state even if persistence failed
       if (!isClosed) {
-        emit(state.copyWithUI(showUI: true, keepScreenOn: false).copyWithMode(readingMode: ReadingMode.singlePage));
+        emit(state
+            .copyWithUI(showUI: true, keepScreenOn: false)
+            .copyWithMode(readingMode: ReadingMode.singlePage));
       }
 
       // Try to disable wakelock anyway

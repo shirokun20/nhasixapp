@@ -20,7 +20,7 @@ import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/permission_request_sheet.dart';
-import 'package:nhasixapp/domain/repositories/reader_repository.dart';
+import 'package:nhasixapp/domain/usecases/reader/get_reader_position_usecase.dart';
 import 'package:nhasixapp/core/utils/title_parser_utils.dart';
 
 class OfflineSeriesDetailScreen extends StatefulWidget {
@@ -131,7 +131,6 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
 
   Future<ContentGroup?> _resolveFromOfflineStorage() async {
     final offlineManager = getIt<OfflineContentManager>();
-    final readerRepository = _tryGetReaderRepository();
     final ids = await offlineManager.getOfflineContentIds();
     final items = <Content>[];
     final itemSizes = <String, int>{};
@@ -153,21 +152,19 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         itemSizes[id] = await _dirSize(Directory(contentPath));
       }
 
-      if (readerRepository != null) {
-        try {
-          final position = await readerRepository.getReaderPosition(id);
-          if (position != null && position.totalPages > 0) {
-            final progress =
-                (position.currentPage / position.totalPages).clamp(0.0, 1.0);
-            if (progress > maxProgress) maxProgress = progress;
-            if (position.currentPage >= position.totalPages - 1) {
-              isRead = true;
-            } else if (position.currentPage > 1) {
-              isReading = true;
-            }
+      try {
+        final position = await getIt<GetReaderPositionUseCase>()(id);
+        if (position != null && position.totalPages > 0) {
+          final progress =
+              (position.currentPage / position.totalPages).clamp(0.0, 1.0);
+          if (progress > maxProgress) maxProgress = progress;
+          if (position.currentPage >= position.totalPages - 1) {
+            isRead = true;
+          } else if (position.currentPage > 1) {
+            isReading = true;
           }
-        } catch (_) {}
-      }
+        }
+      } catch (_) {}
     }
 
     final uniqueItems = ContentGroup.dedupeItems(items);
@@ -187,14 +184,6 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     );
   }
 
-  ReaderRepository? _tryGetReaderRepository() {
-    try {
-      return getIt<ReaderRepository>();
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<int> _dirSize(Directory directory) async {
     int size = 0;
     try {
@@ -209,10 +198,11 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     var result = List<Content>.from(_items);
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      result = result.where((c) =>
-        c.title.toLowerCase().contains(q) ||
-        c.id.toLowerCase().contains(q)
-      ).toList();
+      result = result
+          .where((c) =>
+              c.title.toLowerCase().contains(q) ||
+              c.id.toLowerCase().contains(q))
+          .toList();
     }
     switch (_sortMode) {
       case _SortMode.titleAsc:
@@ -238,14 +228,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   }
 
   Future<void> _loadProgress() async {
-    final readerPosRepo = _tryGetReaderRepository();
-
-    if (readerPosRepo == null) return;
-
     final nextProgress = <String, double>{};
     for (final content in _items) {
       try {
-        final position = await readerPosRepo.getReaderPosition(content.id);
+        final position = await getIt<GetReaderPositionUseCase>()(content.id);
         if (position != null && position.totalPages > 0) {
           nextProgress[content.id] =
               (position.currentPage / position.totalPages).clamp(0.0, 1.0);
@@ -264,22 +250,22 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   }
 
   Future<void> _openReader(Content content) async {
-    debugPrint(
+    getIt<Logger>().i(
         '🔍 OFFLINE_READER: opening content id=${content.id} title=${content.title} imageUrls=${content.imageUrls.length} pageCount=${content.pageCount} sourceId=${content.sourceId}');
-        
+
     final offlineManager = getIt<OfflineContentManager>();
     String? pdfPath;
     try {
-      final firstImagePath = await offlineManager.getOfflineFirstImagePath(content.id);
+      final firstImagePath =
+          await offlineManager.getOfflineFirstImagePath(content.id);
       if (firstImagePath != null) {
         final contentDir = File(firstImagePath).parent.parent.path;
         final pdfDir = Directory(p.join(contentDir, 'pdf'));
         if (await pdfDir.exists()) {
           final files = await pdfDir.list().toList();
           final pdfFile = files.cast<File?>().firstWhere(
-            (f) => f != null && f.path.toLowerCase().endsWith('.pdf'), 
-            orElse: () => null
-          );
+              (f) => f != null && f.path.toLowerCase().endsWith('.pdf'),
+              orElse: () => null);
           pdfPath = pdfFile?.path;
         }
       }
@@ -303,7 +289,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         content: content,
       );
     }
-    
+
     if (!mounted) return;
     await _loadProgress();
   }
@@ -359,48 +345,41 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(_didChange),
                 ),
-                title: Text(widget.baseTitle,
-                    style: TextStyleConst.titleLarge),
+                title: Text(widget.baseTitle, style: TextStyleConst.titleLarge),
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.search),
-                    onPressed: () =>
-                        setState(() => _showSearch = true),
+                    onPressed: () => setState(() => _showSearch = true),
                   ),
                   PopupMenuButton<_SortMode>(
                     icon: const Icon(Icons.sort),
-                    onSelected: (mode) =>
-                        setState(() => _sortMode = mode),
+                    onSelected: (mode) => setState(() => _sortMode = mode),
                     itemBuilder: (_) => [
                       PopupMenuItem(
                         value: _SortMode.dateDesc,
-                        child: Text('Newest',
-                            style: TextStyleConst.bodyMedium),
+                        child: Text('Newest', style: TextStyleConst.bodyMedium),
                       ),
                       PopupMenuItem(
                         value: _SortMode.dateAsc,
-                        child: Text('Oldest',
-                            style: TextStyleConst.bodyMedium),
+                        child: Text('Oldest', style: TextStyleConst.bodyMedium),
                       ),
                       PopupMenuItem(
                         value: _SortMode.titleAsc,
-                        child: Text('A-Z',
-                            style: TextStyleConst.bodyMedium),
+                        child: Text('A-Z', style: TextStyleConst.bodyMedium),
                       ),
                       PopupMenuItem(
                         value: _SortMode.titleDesc,
-                        child: Text('Z-A',
-                            style: TextStyleConst.bodyMedium),
+                        child: Text('Z-A', style: TextStyleConst.bodyMedium),
                       ),
                       PopupMenuItem(
                         value: _SortMode.pagesAsc,
-                        child: Text('Pages ↑',
-                            style: TextStyleConst.bodyMedium),
+                        child:
+                            Text('Pages ↑', style: TextStyleConst.bodyMedium),
                       ),
                       PopupMenuItem(
                         value: _SortMode.pagesDesc,
-                        child: Text('Pages ↓',
-                            style: TextStyleConst.bodyMedium),
+                        child:
+                            Text('Pages ↓', style: TextStyleConst.bodyMedium),
                       ),
                     ],
                   ),

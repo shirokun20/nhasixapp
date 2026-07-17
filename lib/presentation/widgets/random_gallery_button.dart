@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
-import 'package:nhasixapp/domain/repositories/content_repository.dart';
+import 'package:nhasixapp/domain/usecases/content/get_random_galleries_usecase.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'animated_dice_widget.dart';
 
@@ -174,13 +174,11 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
     unawaited(_showLoadingDialog());
 
     try {
-      final repo = getIt<ContentRepository>();
-
-      // Fetch random gallery(ies)
-      final randomGalleries = await repo.getRandomGalleries(
+      final useCase = getIt<GetRandomGalleriesUseCase>();
+      final randomGalleries = await useCase(GetRandomGalleriesParams(
         sourceId: sourceId,
         count: 1,
-      );
+      ));
 
       if (!mounted) return;
 

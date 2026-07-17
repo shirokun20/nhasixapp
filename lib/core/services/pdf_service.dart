@@ -44,13 +44,13 @@ class PdfService {
               }
             } catch (e) {
               // Skip failed chunk, continue with others
-              debugPrint('Failed to process chunk for image $imagePath: $e');
+              Logger().e('Failed to process chunk for image $imagePath: $e');
               continue;
             }
           }
         } catch (e) {
           // Skip failed images, continue processing
-          debugPrint('Failed to process image $imagePath: $e');
+          Logger().e('Failed to process image $imagePath: $e');
           continue;
         }
       }
@@ -113,7 +113,7 @@ class PdfService {
 
       return Uint8List.fromList(compressedBytes);
     } catch (e) {
-      debugPrint('Error processing image bytes: $e');
+      Logger().e('Error processing image bytes: $e');
       return null;
     }
   }

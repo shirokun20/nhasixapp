@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -686,7 +687,7 @@ class AppRouter {
       return result;
     } catch (e) {
       // Log error and return null
-      debugPrint('AppRouter.goToFilterData error: $e');
+      Logger().e('AppRouter.goToFilterData error: $e');
       return null;
     }
   }
@@ -712,7 +713,7 @@ class AppRouter {
       final typedFilters = List<FilterItem>.from(selectedFilters);
       context.pop(typedFilters);
     } catch (e) {
-      debugPrint('AppRouter.returnFromFilterData error: $e');
+      Logger().e('AppRouter.returnFromFilterData error: $e');
       context.pop(<FilterItem>[]);
     }
   }

@@ -11,6 +11,7 @@ import '../../core/utils/responsive_grid_delegate.dart';
 import '../../core/utils/title_parser_utils.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/user_data_repository.dart';
+import '../../domain/usecases/history/get_history_usecase.dart';
 import '../../core/services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
@@ -369,6 +370,7 @@ class ContentReadCache {
     }
 
     try {
+      final getHistoryUseCase = getIt<GetHistoryUseCase>();
       final userDataRepository = getIt<UserDataRepository>();
 
       // Batch: load recent history once, match by ID — avoids N+1 per item
@@ -379,7 +381,7 @@ class ContentReadCache {
               const Duration(seconds: 10)) {
         recentHistory = await _recentHistoryFuture!;
       } else {
-        _recentHistoryFuture = userDataRepository.getHistory(limit: 100);
+        _recentHistoryFuture = getHistoryUseCase(GetHistoryParams(limit: 100));
         _recentHistoryCacheTime = DateTime.now();
         recentHistory = await _recentHistoryFuture!;
       }

@@ -74,6 +74,7 @@ import 'package:nhasixapp/data/repositories/tag_repository_impl.dart';
 
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
+import 'package:nhasixapp/domain/usecases/reader/get_reader_position_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_comments_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
@@ -892,6 +893,18 @@ void _setupUseCases() {
       () => GetChapterImagesUseCase(getIt()));
   getIt.registerLazySingleton<GetCommentsUseCase>(
       () => GetCommentsUseCase(getIt()));
+  getIt.registerLazySingleton<GetRandomGalleriesUseCase>(
+      () => GetRandomGalleriesUseCase(contentRepository: getIt()));
+  getIt.registerLazySingleton<GetContentByTagUseCase>(
+      () => GetContentByTagUseCase(contentRepository: getIt()));
+  getIt.registerLazySingleton<GetContentChaptersUseCase>(
+      () => GetContentChaptersUseCase(contentRepository: getIt()));
+  getIt.registerLazySingleton<GetRelatedContentUseCase>(
+      () => GetRelatedContentUseCase(contentRepository: getIt()));
+  getIt.registerLazySingleton<GetPopularContentUseCase>(
+      () => GetPopularContentUseCase(contentRepository: getIt()));
+  getIt.registerLazySingleton<GetReaderPositionUseCase>(
+      () => GetReaderPositionUseCase(readerRepository: getIt()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(
@@ -949,7 +962,8 @@ void _setupBlocs() {
   getIt.registerLazySingleton<ContentBloc>(() => ContentBloc(
         getContentListUseCase: getIt<GetContentListUseCase>(),
         searchContentUseCase: getIt<SearchContentUseCase>(),
-        contentRepository: getIt<ContentRepository>(),
+        getContentByTagUseCase: getIt<GetContentByTagUseCase>(),
+        getPopularContentUseCase: getIt<GetPopularContentUseCase>(),
         logger: getIt<Logger>(),
       ));
 
@@ -1012,11 +1026,12 @@ void _setupCubits() {
   // DetailCubit - Content detail management
   getIt.registerFactory<DetailCubit>(() => DetailCubit(
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
+        getRelatedContentUseCase: getIt<GetRelatedContentUseCase>(),
+        getContentChaptersUseCase: getIt<GetContentChaptersUseCase>(),
         addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
         removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         imageMetadataService: getIt<ImageMetadataService>(),
-        contentRepository: getIt<ContentRepository>(),
         contentSourceRegistry: getIt<ContentSourceRegistry>(),
         offlineContentManager: getIt<OfflineContentManager>(),
         logger: getIt<Logger>(),

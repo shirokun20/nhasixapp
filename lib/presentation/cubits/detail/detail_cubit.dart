@@ -2,7 +2,6 @@ import 'dart:async';
 
 import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
-import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../core/models/image_metadata.dart';
@@ -41,20 +40,22 @@ List<Chapter> mergeChaptersById(
 class DetailCubit extends BaseCubit<DetailState> {
   DetailCubit({
     required GetContentDetailUseCase getContentDetailUseCase,
+    required GetRelatedContentUseCase getRelatedContentUseCase,
+    required GetContentChaptersUseCase getContentChaptersUseCase,
     required AddToFavoritesUseCase addToFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
     required UserDataRepository userDataRepository,
     required ImageMetadataService imageMetadataService,
-    required ContentRepository contentRepository,
     required ContentSourceRegistry contentSourceRegistry,
     required OfflineContentManager offlineContentManager,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
+        _getRelatedContentUseCase = getRelatedContentUseCase,
+        _getContentChaptersUseCase = getContentChaptersUseCase,
         _addToFavoritesUseCase = addToFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
         _userDataRepository = userDataRepository,
         _imageMetadataService = imageMetadataService,
-        _contentRepository = contentRepository,
         _contentSourceRegistry = contentSourceRegistry,
         _offlineContentManager = offlineContentManager,
         super(
@@ -62,11 +63,12 @@ class DetailCubit extends BaseCubit<DetailState> {
         );
 
   final GetContentDetailUseCase _getContentDetailUseCase;
+  final GetRelatedContentUseCase _getRelatedContentUseCase;
+  final GetContentChaptersUseCase _getContentChaptersUseCase;
   final AddToFavoritesUseCase _addToFavoritesUseCase;
   final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
   final UserDataRepository _userDataRepository;
   final ImageMetadataService _imageMetadataService;
-  final ContentRepository _contentRepository;
   final ContentSourceRegistry _contentSourceRegistry;
   final OfflineContentManager _offlineContentManager;
 
@@ -268,9 +270,8 @@ class DetailCubit extends BaseCubit<DetailState> {
       logInfo('Loading related content for ID: ${currentState.content.id}');
 
       final contentId = ContentId(currentState.content.id);
-      final relatedContents = await _contentRepository.getRelatedContent(
-        contentId: contentId,
-        limit: 10,
+      final relatedContents = await _getRelatedContentUseCase(
+        GetRelatedContentParams(contentId: contentId, limit: 10),
       );
 
       if (isClosed) return;
@@ -330,13 +331,14 @@ class DetailCubit extends BaseCubit<DetailState> {
 
     emit(currentState.copyWith(isChaptersLoading: true));
 
-    final incoming = await _contentRepository.getContentChapters(
-      ContentId(currentState.content.id),
-      sourceId: currentState.content.sourceId,
-      language: language,
-      scanGroup: scanGroup,
-      page: page,
-      limit: limit,
+    final incoming = await _getContentChaptersUseCase(
+      GetContentChaptersParams(
+        contentId: ContentId(currentState.content.id),
+        sourceId: currentState.content.sourceId,
+        language: language,
+        scanGroup: scanGroup,
+        page: page,
+      ),
     );
     if (isClosed) {
       return;
@@ -368,10 +370,12 @@ class DetailCubit extends BaseCubit<DetailState> {
       return;
     }
 
-    final incoming = await _contentRepository.getContentChapters(
-      ContentId(contentId),
-      sourceId: sourceId,
-      language: language,
+    final incoming = await _getContentChaptersUseCase(
+      GetContentChaptersParams(
+        contentId: ContentId(contentId),
+        sourceId: sourceId,
+        language: language,
+      ),
     );
 
     if (isClosed) {

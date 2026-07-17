@@ -1,9 +1,8 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:logger/logger.dart';
-import 'package:get_it/get_it.dart';
 
 import '../utils/directory_utils.dart';
 import '../utils/download_storage_utils.dart';
@@ -35,7 +34,7 @@ class PdfConversionService {
     String testTitle = 'PDF Notification Test',
   }) async {
     try {
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - STARTING test');
+      _logger.i('PDF_NOTIFICATION: testPdfNotification - STARTING test');
       await _ensureNotificationServiceReady();
 
       await _notificationService.showPdfConversionStarted(
@@ -53,17 +52,18 @@ class PdfConversionService {
       );
       return true;
     } catch (e) {
-      debugPrint('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: $e');
+      _logger.i('PDF_NOTIFICATION: testPdfNotification - EXCEPTION: $e');
       return false;
     }
   }
 
   static Future<void> quickTestPdfNotifications() async {
     try {
-      final service = GetIt.instance<PdfConversionService>();
+      final service = getIt<PdfConversionService>();
       await service.testPdfNotification();
     } catch (e) {
-      debugPrint('PDF_NOTIFICATION: quickTestPdfNotifications - FAILED: $e');
+      getIt<Logger>()
+          .i('PDF_NOTIFICATION: quickTestPdfNotifications - FAILED: $e');
     }
   }
 
@@ -95,7 +95,7 @@ class PdfConversionService {
     int maxPagesPerFile = 50, // Deprecated parameter, kept for compatibility
   }) async {
     try {
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - STARTED for contentId=$contentId, title=$title, sourceId=$sourceId, images=${imagePaths.length}');
 
       _logger.i(
@@ -113,7 +113,7 @@ class PdfConversionService {
       // Show notification that PDF conversion has started
       _logger.i(
           'PdfConversionService: Showing PDF conversion started notification');
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted');
 
       await _notificationService.showPdfConversionStarted(
@@ -121,7 +121,7 @@ class PdfConversionService {
         title: title,
       );
 
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
       // Create output directory for PDFs
@@ -161,13 +161,13 @@ class PdfConversionService {
           error: e,
           stackTrace: stackTrace);
 
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - ERROR occurred: ${e.toString()}');
 
       // Ensure notification service is ready for error notification
       await _ensureNotificationServiceReady();
 
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionError');
 
       await _notificationService.showPdfConversionError(
@@ -176,7 +176,7 @@ class PdfConversionService {
         error: 'Conversion failed: ${e.toString()}',
       );
 
-      debugPrint(
+      _logger.i(
           'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionError completed');
     }
   }

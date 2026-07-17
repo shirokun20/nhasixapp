@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
-import 'package:nhasixapp/domain/repositories/repositories.dart';
+import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 
@@ -10,7 +10,9 @@ class MockGetContentListUseCase extends Mock implements GetContentListUseCase {}
 
 class MockSearchContentUseCase extends Mock implements SearchContentUseCase {}
 
-class MockContentRepository extends Mock implements ContentRepository {}
+class MockGetContentByTagUseCase extends Mock implements GetContentByTagUseCase {}
+
+class MockGetPopularContentUseCase extends Mock implements GetPopularContentUseCase {}
 
 class MockLogger extends Mock implements Logger {}
 
@@ -18,19 +20,22 @@ void main() {
   late ContentBloc contentBloc;
   late MockGetContentListUseCase mockGetContentListUseCase;
   late MockSearchContentUseCase mockSearchContentUseCase;
-  late MockContentRepository mockContentRepository;
+  late MockGetContentByTagUseCase mockGetContentByTagUseCase;
+  late MockGetPopularContentUseCase mockGetPopularContentUseCase;
   late MockLogger mockLogger;
 
   setUp(() {
     mockGetContentListUseCase = MockGetContentListUseCase();
     mockSearchContentUseCase = MockSearchContentUseCase();
-    mockContentRepository = MockContentRepository();
+    mockGetContentByTagUseCase = MockGetContentByTagUseCase();
+    mockGetPopularContentUseCase = MockGetPopularContentUseCase();
     mockLogger = MockLogger();
 
     contentBloc = ContentBloc(
       getContentListUseCase: mockGetContentListUseCase,
       searchContentUseCase: mockSearchContentUseCase,
-      contentRepository: mockContentRepository,
+      getContentByTagUseCase: mockGetContentByTagUseCase,
+      getPopularContentUseCase: mockGetPopularContentUseCase,
       logger: mockLogger,
     );
 

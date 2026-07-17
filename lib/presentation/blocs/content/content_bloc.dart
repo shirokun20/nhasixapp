@@ -16,11 +16,13 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ContentBloc({
     required GetContentListUseCase getContentListUseCase,
     required SearchContentUseCase searchContentUseCase,
-    required ContentRepository contentRepository,
+    required GetContentByTagUseCase getContentByTagUseCase,
+    required GetPopularContentUseCase getPopularContentUseCase,
     required Logger logger,
   })  : _getContentListUseCase = getContentListUseCase,
         _searchContentUseCase = searchContentUseCase,
-        _contentRepository = contentRepository,
+        _getContentByTagUseCase = getContentByTagUseCase,
+        _getPopularContentUseCase = getPopularContentUseCase,
         _logger = logger,
         super(const ContentInitial()) {
     // Register event handlers
@@ -41,7 +43,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
 
   final GetContentListUseCase _getContentListUseCase;
   final SearchContentUseCase _searchContentUseCase;
-  final ContentRepository _contentRepository;
+  final GetContentByTagUseCase _getContentByTagUseCase;
+  final GetPopularContentUseCase _getPopularContentUseCase;
   final Logger _logger;
 
   // Internal state tracking
@@ -190,17 +193,17 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         result = await _searchContentUseCase(nextPageFilter);
       } else if (currentState.tag != null) {
         // Load more content by tag
-        result = await _contentRepository.getContentByTag(
+        result = await _getContentByTagUseCase(GetContentByTagParams(
           tag: currentState.tag!,
           page: currentState.currentPage + 1,
           sortBy: currentState.sortBy,
-        );
+        ));
       } else if (currentState.timeframe != null) {
         // Load more popular content
-        result = await _contentRepository.getPopularContent(
+        result = await _getPopularContentUseCase(GetPopularContentParams(
           timeframe: currentState.timeframe!,
           page: currentState.currentPage + 1,
-        );
+        ));
       } else {
         // Load more regular content
         final params = GetContentListParams(
@@ -272,17 +275,17 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           result = await _searchContentUseCase(refreshFilter);
         } else if (currentState.tag != null) {
           // Refresh content by tag from current page
-          result = await _contentRepository.getContentByTag(
+          result = await _getContentByTagUseCase(GetContentByTagParams(
             tag: currentState.tag!,
             page: event.currentPage,
             sortBy: currentState.sortBy,
-          );
+          ));
         } else if (currentState.timeframe != null) {
           // Refresh popular content from current page
-          result = await _contentRepository.getPopularContent(
+          result = await _getPopularContentUseCase(GetPopularContentParams(
             timeframe: currentState.timeframe!,
             page: event.currentPage,
-          );
+          ));
         } else {
           // Refresh regular content from current page
           final params = GetContentListParams(
@@ -687,10 +690,10 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         emit(const ContentLoading(message: 'loadingPopularContent'));
       }
 
-      final result = await _contentRepository.getPopularContent(
+      final result = await _getPopularContentUseCase(GetPopularContentParams(
         timeframe: event.timeframe,
         page: 1,
-      );
+      ));
 
       if (result.isEmpty) {
         emit(const ContentEmpty(
@@ -761,11 +764,11 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         emit(const ContentLoading(message: 'loadingContentByTag'));
       }
 
-      final result = await _contentRepository.getContentByTag(
+      final result = await _getContentByTagUseCase(GetContentByTagParams(
         tag: event.tag,
         page: 1,
         sortBy: event.sortBy,
-      );
+      ));
 
       if (result.isEmpty) {
         emit(ContentEmpty(
@@ -933,17 +936,17 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
         result = await _searchContentUseCase(pageFilter);
       } else if (currentState.tag != null) {
         // Load content by tag page
-        result = await _contentRepository.getContentByTag(
+        result = await _getContentByTagUseCase(GetContentByTagParams(
           tag: currentState.tag!,
           page: page,
           sortBy: currentState.sortBy,
-        );
+        ));
       } else if (currentState.timeframe != null) {
         // Load popular content page
-        result = await _contentRepository.getPopularContent(
+        result = await _getPopularContentUseCase(GetPopularContentParams(
           timeframe: currentState.timeframe!,
           page: page,
-        );
+        ));
       } else {
         // Load regular content page
         final params = GetContentListParams(

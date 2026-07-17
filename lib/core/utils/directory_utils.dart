@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:logger/logger.dart';
@@ -124,9 +123,9 @@ class DirectoryUtils {
       return documentsDownloadsDir.path;
       */
       _logger.e('DirectoryUtils: No custom storage root found!');
-      debugPrint(
+      _logger.i(
           '📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
-      debugPrint(
+      _logger.i(
           '📁 DIRECTORY_UTILS: This should not happen if user previously set storage location');
       throw Exception(
           'No custom storage root selected. Please select a storage location in settings.');
@@ -155,15 +154,15 @@ class DirectoryUtils {
   /// Used by offline content screen for automatic backup detection
   static Future<String?> findNhasixBackupFolder() async {
     try {
-      debugPrint('DIRECTORY_UTILS: Starting findNhasixBackupFolder...');
+      _logger.i('DIRECTORY_UTILS: Starting findNhasixBackupFolder...');
 
       // PRIORITY 1: Check custom storage root first
       final customRoot = await StorageSettings.getCustomRootPath();
       if (customRoot != null && customRoot.isNotEmpty) {
-        debugPrint('DIRECTORY_UTILS: Found custom storage root: $customRoot');
+        _logger.i('DIRECTORY_UTILS: Found custom storage root: $customRoot');
         final customDir = Directory(customRoot);
         final customExists = await customDir.exists();
-        debugPrint('DIRECTORY_UTILS: Custom storage exists: $customExists');
+        _logger.i('DIRECTORY_UTILS: Custom storage exists: $customExists');
 
         if (customExists) {
           // Check if 'nhasix' subfolder exists inside custom root (Standard structure)
@@ -171,7 +170,7 @@ class DirectoryUtils {
           if (await nhasixInCustom.exists()) {
             _logger.d(
                 'DirectoryUtils: Found nhasix folder in custom root: ${nhasixInCustom.path}');
-            debugPrint(
+            _logger.i(
                 'DIRECTORY_UTILS: Found nhasix folder in custom root: ${nhasixInCustom.path}');
             return nhasixInCustom.path;
           }
@@ -179,43 +178,43 @@ class DirectoryUtils {
           // If 'nhasix' subfolder doesn't exist, assume custom root IS the backup folder (User selected the 'nhasix' folder itself or a custom named folder)
           _logger.d(
               'DirectoryUtils: nhasix subfolder not found, using custom root as base: $customRoot');
-          debugPrint(
+          _logger.i(
               'DIRECTORY_UTILS: nhasix subfolder not found, using custom root as base: $customRoot');
           return customRoot;
         } else {
-          debugPrint(
+          _logger.i(
               'DIRECTORY_UTILS: Custom storage root does not exist, falling back to Downloads/nhasix');
         }
       } else {
-        debugPrint(
+        _logger.i(
             'DIRECTORY_UTILS: No custom storage root set, checking Downloads/nhasix');
       }
 
       // PRIORITY 2: Fallback to Downloads/nhasix for backward compatibility
       final downloadsPath = await getDownloadsDirectory();
-      debugPrint(
+      _logger.i(
           'DIRECTORY_UTILS: getDownloadsDirectory() returned: $downloadsPath');
 
       final nhasixPath = path.join(downloadsPath, 'nhasix');
-      debugPrint('DIRECTORY_UTILS: Looking for nhasix folder at: $nhasixPath');
+      _logger.i('DIRECTORY_UTILS: Looking for nhasix folder at: $nhasixPath');
 
       final nhasixDir = Directory(nhasixPath);
       final exists = await nhasixDir.exists();
-      debugPrint('DIRECTORY_UTILS: Downloads/nhasix directory exists: $exists');
+      _logger.i('DIRECTORY_UTILS: Downloads/nhasix directory exists: $exists');
 
       if (exists) {
         _logger.d(
             'DirectoryUtils: Found nhasix backup folder in Downloads: $nhasixPath');
-        debugPrint(
+        _logger.i(
             'DIRECTORY_UTILS: Found nhasix backup folder in Downloads: $nhasixPath');
         return nhasixPath;
       }
 
-      debugPrint('DIRECTORY_UTILS: nhasix backup folder not found anywhere');
+      _logger.i('DIRECTORY_UTILS: nhasix backup folder not found anywhere');
       _logger.d('DirectoryUtils: nhasix backup folder not found');
       return null;
     } catch (e) {
-      debugPrint('DIRECTORY_UTILS: Error finding nhasix backup folder: $e');
+      _logger.i('DIRECTORY_UTILS: Error finding nhasix backup folder: $e');
       _logger.w('DirectoryUtils: Error finding nhasix backup folder: $e');
       return null;
     }

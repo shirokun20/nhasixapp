@@ -13,7 +13,7 @@ import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
-import 'package:nhasixapp/domain/repositories/content_repository.dart';
+import 'package:nhasixapp/domain/usecases/content/get_content_chapters_usecase.dart';
 import 'package:nhasixapp/domain/value_objects/value_objects.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
@@ -38,7 +38,7 @@ class ChapterListBottomSheet extends StatefulWidget {
 
 class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   late final List<Chapter> _chapters;
-  final _contentRepository = getIt<ContentRepository>();
+  final _getContentChaptersUseCase = getIt<GetContentChaptersUseCase>();
   String? _selectedLanguageKey;
   bool _isLoadingMore = false;
   String? _loadMoreError;
@@ -678,14 +678,15 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
               ChapterLanguagePresenter.normalize(languageKey))
           .length;
       final isPageSource = widget.content.sourceId == 'mangafire';
-      final next = await _contentRepository.getContentChapters(
-        ContentId(widget.content.id),
-        sourceId: widget.content.sourceId,
-        language: languageKey,
-        page: isPageSource ? (loadedForLang ~/ limit + 1) : null,
-        offset: isPageSource ? null : loadedForLang,
-        limit: limit,
-        scanGroup: widget.initialScanGroup ?? 'Chapter',
+      final next = await _getContentChaptersUseCase(
+        GetContentChaptersParams(
+          contentId: ContentId(widget.content.id),
+          sourceId: widget.content.sourceId,
+          language: languageKey,
+          page: isPageSource ? (loadedForLang ~/ limit + 1) : null,
+          offset: isPageSource ? null : loadedForLang,
+          scanGroup: widget.initialScanGroup ?? 'Chapter',
+        ),
       );
       final existingIds = _chapters.map((chapter) => chapter.id).toSet();
       final nextChapters = next

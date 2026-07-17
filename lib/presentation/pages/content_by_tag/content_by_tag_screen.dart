@@ -22,7 +22,6 @@ import 'package:nhasixapp/core/utils/tag_blacklist_utils.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
-import 'package:nhasixapp/domain/repositories/content_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
@@ -84,7 +83,8 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     _contentBloc = ContentBloc(
       getContentListUseCase: getIt<GetContentListUseCase>(),
       searchContentUseCase: getIt<SearchContentUseCase>(),
-      contentRepository: getIt<ContentRepository>(),
+      getContentByTagUseCase: getIt<GetContentByTagUseCase>(),
+      getPopularContentUseCase: getIt<GetPopularContentUseCase>(),
       logger: getIt<Logger>(),
     );
     _tagBlacklistService = getIt<TagBlacklistService>()

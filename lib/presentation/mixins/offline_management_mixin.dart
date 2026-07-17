@@ -1,3 +1,4 @@
+import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -160,15 +161,15 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     BuildContext context, {
     String? sourceId,
   }) async {
-    debugPrint('OFFLINE_AUTO_SCAN: Starting auto-scan for backup folder...');
+    Logger().i('OFFLINE_AUTO_SCAN: Starting auto-scan for backup folder...');
 
     final backupPath = await DirectoryUtils.findNhasixBackupFolder();
-    debugPrint(
+    Logger().i(
         'OFFLINE_AUTO_SCAN: DirectoryUtils.findNhasixBackupFolder() returned: $backupPath');
 
     if (backupPath != null) {
       final scanPath = _resolveBackupSourcePath(backupPath, sourceId);
-      debugPrint(
+      Logger().i(
           'OFFLINE_AUTO_SCAN: Found backup path: $scanPath, starting sync...');
 
       // Auto-sync backup content to database
@@ -219,16 +220,16 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       // without requiring app restart
       try {
         context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-        debugPrint(
+        Logger().i(
             'OFFLINE_AUTO_SCAN: Triggered DownloadBloc refresh after sync');
       } catch (e) {
         // DownloadBloc might not be available in all contexts (e.g., if Downloads Screen hasn't been visited)
         // This is non-critical, so just log and continue
-        debugPrint(
+        Logger().i(
             'OFFLINE_AUTO_SCAN: Could not refresh DownloadBloc (not initialized yet): $e');
       }
     } else {
-      debugPrint('OFFLINE_AUTO_SCAN: No backup folder found automatically');
+      Logger().i('OFFLINE_AUTO_SCAN: No backup folder found automatically');
 
       if (!context.mounted) return;
 
@@ -385,7 +386,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
             context.read<DownloadBloc>().add(const DownloadRefreshEvent());
           } catch (e) {
             // DownloadBloc not available in this context
-            debugPrint('Could not refresh DownloadBloc: $e');
+            Logger().i('Could not refresh DownloadBloc: $e');
           }
         }
       } else {
