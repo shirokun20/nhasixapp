@@ -6,6 +6,7 @@ library;
 
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 import '../../../../core/config/remote_config_service.dart';
@@ -49,7 +50,7 @@ class NhentaiApiException implements Exception {
 /// Includes automatic retry logic and rate limiting.
 class NhentaiApiClient {
   final Dio _dio;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
   final RequestRateManager _rateManager;
   final RemoteConfigService _remoteConfigService;
   final AntiDetection _antiDetection;

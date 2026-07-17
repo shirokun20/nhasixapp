@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
@@ -15,7 +16,7 @@ class DiskCacheService<T> implements CacheService<T> {
   final String namespace;
   final int maxSizeMB;
   final Duration defaultTTL;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   Database? _database;
   Directory? _cacheDir;

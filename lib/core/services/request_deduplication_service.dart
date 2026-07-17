@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 /// Service for deduplicating concurrent API requests
 /// Prevents multiple simultaneous requests for the same resource
 class RequestDeduplicationService {
   static const Duration _defaultTimeout = Duration(seconds: 30);
 
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
   final Map<String, _PendingRequest> _pendingRequests = {};
 
   /// Execute a request with deduplication

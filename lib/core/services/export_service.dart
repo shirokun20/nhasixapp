@@ -105,7 +105,9 @@ class ExportService {
         if (await exportDir.exists()) {
           await exportDir.delete(recursive: true);
         }
-      } catch (_) {}
+      } catch (e) {
+        _logger.e('Export cleanup failed', error: e);
+      }
       rethrow;
     }
   }

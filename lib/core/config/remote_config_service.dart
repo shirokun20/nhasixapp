@@ -263,7 +263,9 @@ class RemoteConfigService {
             raw['features'] as Map<String, dynamic>,
           );
           return selector(featureConfig);
-        } catch (_) {}
+        } catch (e) {
+          _logger.e('Feature config parse failed', error: e);
+        }
       }
       return false;
     }

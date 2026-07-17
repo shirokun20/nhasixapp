@@ -1427,7 +1427,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   // Online large payload detected: lock continuous mode early.
                   _maybeNotifyHeavyImageDetected();
                 }
-              } catch (_) {}
+              } catch (e) {
+                _logger.w('Heavy image detection failed', error: e);
+              }
             }
 
             return _buildLoadingIndicator(context, state: state);

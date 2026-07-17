@@ -23,7 +23,7 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
 
   bool _isLoading = false;
   bool _isDialogOpen = false;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
   final ValueNotifier<bool> _foundState = ValueNotifier<bool>(false);
 
   String _resolveActiveSourceId() {

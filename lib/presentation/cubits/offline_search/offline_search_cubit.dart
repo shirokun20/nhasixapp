@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -709,7 +710,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           final file = File(content.imageUrls.first);
           final dirPath = file.parent.path;
           totalStorageUsage += await _getDirectorySize(Directory(dirPath));
-        } catch (_) {}
+        } catch (e) {
+          getIt<Logger>().e("OfflineSearch storage calc failed", error: e);
+        }
       }
     }
 
@@ -895,7 +898,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             final file = File(content.imageUrls.first);
             final dirPath = file.parent.path;
             totalStorageUsage += await _getDirectorySize(Directory(dirPath));
-          } catch (_) {}
+          } catch (e) {
+            getIt<Logger>().e("OfflineSearch storage calc failed", error: e);
+          }
         }
       }
 

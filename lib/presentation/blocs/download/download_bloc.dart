@@ -1871,7 +1871,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // reader does not serve stale offline paths after the files are deleted.
       try {
         getIt<OfflineContentManager>().invalidateCacheFor(event.contentId);
-      } catch (_) {}
+      } catch (e) {
+        _logger.e('Cache invalidation failed', error: e);
+      }
 
       // Refresh downloads
       add(const DownloadRefreshEvent());
@@ -3435,7 +3437,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           // 🐛 FIX Bug B: Invalidate OfflineContentManager cache for each deleted item
           try {
             getIt<OfflineContentManager>().invalidateCacheFor(contentId);
-          } catch (_) {}
+          } catch (e) {
+            _logger.e('Cache invalidation failed for $contentId', error: e);
+          }
 
           successCount++;
           _logger.d('DownloadBloc: Successfully deleted $contentId');

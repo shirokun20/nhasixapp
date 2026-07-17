@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path/path.dart' as path;
 import 'package:crypto/crypto.dart';
 
@@ -16,7 +17,7 @@ import 'directory_utils.dart';
 class DownloadStorageUtils {
   DownloadStorageUtils._();
 
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   /// Smart Downloads directory detection
   /// Delegates to [DirectoryUtils.getDownloadsDirectory]

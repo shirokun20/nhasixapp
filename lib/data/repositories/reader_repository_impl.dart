@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import '../../domain/entities/reader_position.dart';
 import '../../domain/repositories/reader_repository.dart';
 import '../datasources/local/local_data_source.dart';
@@ -8,7 +9,7 @@ import '../models/reader_position_model.dart';
 /// Handles reader position persistence using SQLite database
 class ReaderRepositoryImpl implements ReaderRepository {
   final LocalDataSource _localDataSource;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   ReaderRepositoryImpl({
     required LocalDataSource localDataSource,

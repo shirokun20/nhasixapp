@@ -84,7 +84,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           _deviceDnsState = deviceState;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      getIt<Logger>().w('DNS diagnostics failed', error: e);
+    }
   }
 
   @override
@@ -3043,7 +3045,8 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
       try {
         yield _GlobalManifestEntry.fromMap(item, l10n);
-      } catch (_) {
+      } catch (e) {
+        getIt<Logger>().w('Settings manifest parse failed', error: e);
         continue;
       }
     }

@@ -303,7 +303,9 @@ class ReaderCubit extends Cubit<ReaderState> {
             content =
                 await offlineContentManager.createOfflineContent(contentId);
             if (content != null) isOfflineMode = true;
-          } catch (_) {}
+          } catch (_) {
+            _logger.w('Offline content creation fallback failed');
+          }
         }
       }
 

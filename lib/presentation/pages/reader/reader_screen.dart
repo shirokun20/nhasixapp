@@ -1968,7 +1968,9 @@ class _ReaderScreenState extends State<ReaderScreen>
   void _refreshDownloadBloc() {
     try {
       context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-    } catch (_) {}
+    } catch (e) {
+      _logger.w('DownloadBloc refresh failed', error: e);
+    }
   }
 
   void _showRepairSnackBar(int pageNumber, ReaderImageRepairResult result) {

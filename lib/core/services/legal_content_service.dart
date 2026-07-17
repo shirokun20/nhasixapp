@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Types of legal content available
@@ -20,7 +21,7 @@ class LegalContentService {
 
   final Dio _dio;
   final SharedPreferences _prefs;
-  final _logger = Logger();
+  final _logger = getIt<Logger>();
 
   /// GitHub raw content base URL
   static const _githubBaseUrl =

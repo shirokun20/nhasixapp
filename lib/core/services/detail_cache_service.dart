@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../data/models/content_model.dart';
@@ -13,7 +14,7 @@ class DetailCacheService {
       Duration(hours: 24); // 24 hours cache
   static const int _maxCacheEntries = 50; // Limit cache size
 
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   /// Get cached content detail by ID
   Future<Content?> getCachedDetail(String contentId) async {

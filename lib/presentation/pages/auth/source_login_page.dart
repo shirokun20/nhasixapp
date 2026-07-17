@@ -441,7 +441,9 @@ class _SourceLoginPageState extends State<SourceLoginPage>
           accessToken = parsed.value;
           break;
         }
-      } catch (_) {}
+      } catch (e) {
+        getIt<Logger>().w('Access token parse failed', error: e);
+      }
     }
     if (accessToken == null || accessToken.isEmpty) return;
     final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);

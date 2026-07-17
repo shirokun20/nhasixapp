@@ -1,12 +1,13 @@
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'local_image_preloader.dart';
 
 /// Service to detect app updates and clear cache when needed
 class AppUpdateService {
   static const String _lastAppVersionKey = 'last_app_version';
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   /// Initialize the service and check for app updates
   static Future<void> initialize() async {

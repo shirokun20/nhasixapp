@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
@@ -139,7 +140,9 @@ class _RequestListBodyState extends State<_RequestListBody> {
         AppRouter.goToContentDetail(context, slug,
             sourceId: SourceType.crotpedia.id);
       }
-    } catch (_) {}
+    } catch (e) {
+      getIt<Logger>().e('Request list navigation failed', error: e);
+    }
   }
 }
 

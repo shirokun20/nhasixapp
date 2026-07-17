@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 /// Database helper class for managing SQLite database
 class DatabaseHelper {
@@ -11,7 +12,7 @@ class DatabaseHelper {
       13; // Updated for favorite collections support
 
   static Database? _database;
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();

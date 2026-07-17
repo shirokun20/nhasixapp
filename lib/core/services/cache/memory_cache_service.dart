@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'cache_service.dart';
 
 /// In-memory LRU cache implementation
@@ -9,7 +10,7 @@ import 'cache_service.dart';
 class MemoryCacheService<T> implements CacheService<T> {
   final int maxEntries;
   final Duration defaultTTL;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   // LRU cache using LinkedHashMap (maintains insertion order)
   final LinkedHashMap<String, CacheEntry<T>> _cache = LinkedHashMap();

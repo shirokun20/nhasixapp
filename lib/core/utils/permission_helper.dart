@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Helper class untuk handle permissions dengan user-friendly approach
 class PermissionHelper {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   /// Request storage permission dengan user guidance
   static Future<bool> requestStoragePermission(BuildContext? context) async {

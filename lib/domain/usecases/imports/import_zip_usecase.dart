@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
 
@@ -28,7 +29,7 @@ class ImportZipParams {
 class ImportZipUseCase {
   final KuronNative _kuronNative;
   final UserDataRepository _userDataRepository;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   ImportZipUseCase({
     required KuronNative kuronNative,

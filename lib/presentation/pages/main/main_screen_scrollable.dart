@@ -863,13 +863,17 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     // (value:"popular-week" matches apiValue but not name "popularWeek").
     try {
       return config.options.firstWhere((o) => o.value == option.name).value;
-    } catch (_) {}
+    } catch (e) {
+      Logger().w('Config option match failed', error: e);
+    }
 
     try {
       return config.options
           .firstWhere((o) => o.apiValue == option.apiValue)
           .value;
-    } catch (_) {}
+    } catch (e) {
+      Logger().w('Config apiValue match failed', error: e);
+    }
 
     // Fallback to default option
     return config.options

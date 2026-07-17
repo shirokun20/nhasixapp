@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Comprehensive Analytics Service for Local User Behavior Tracking
@@ -13,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - Error analytics: Track and categorize application errors
 /// - Reading patterns: Anonymous reading behavior analysis
 class AnalyticsService {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
   static const String _analyticsEnabledKey = 'analytics_enabled';
   static const String _analyticsDataKey = 'analytics_data';
   static const String _sessionDataKey = 'session_data';

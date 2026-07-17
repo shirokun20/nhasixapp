@@ -1,9 +1,10 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 
 class NativePdfService {
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   /// Generate PDF using native high-performance implementation
   ///

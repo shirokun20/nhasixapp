@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 import '../../presentation/cubits/settings/settings_cubit.dart';
 import '../../presentation/cubits/theme/theme_cubit.dart';
 
 /// Debug utility for theme debugging
 class ThemeDebugUtility {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   /// Log current theme state
   static void logCurrentTheme(BuildContext context) {

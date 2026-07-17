@@ -2,12 +2,13 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/storage_settings.dart';
 
 /// Utility class for smart directory detection across different Android devices
 /// Handles various Download folder names and storage configurations
 class DirectoryUtils {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
 
   /// Smart Downloads directory detection
   /// Tries multiple possible Downloads folder names and locations

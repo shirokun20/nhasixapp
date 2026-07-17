@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 import 'package:nhasixapp/core/constants/app_constants.dart';
 import '../../models/download_status_model.dart';
@@ -14,7 +15,7 @@ import 'database_helper.dart';
 /// Local data source for database operations (simplified)
 class LocalDataSource {
   final DatabaseHelper _databaseHelper;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   LocalDataSource(this._databaseHelper);
 

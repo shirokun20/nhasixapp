@@ -132,7 +132,7 @@ class ProgressiveImageWidget extends StatefulWidget {
 }
 
 class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
   static final Map<String, String?> _pathCache =
       {}; // ✅ Cache for resolved paths
   static const int _heavyAnimatedThumbnailThresholdBytes =
@@ -789,7 +789,7 @@ class ProgressiveReaderImageWidget extends StatefulWidget {
 
 class _ProgressiveReaderImageWidgetState
     extends State<ProgressiveReaderImageWidget> {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
   late final ImageCacheService _imageCacheService;
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;

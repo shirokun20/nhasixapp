@@ -9,7 +9,7 @@ import '../../core/services/analytics_service.dart';
 /// Provides easy-to-use wrappers for tracking performance metrics
 /// and identifying bottlenecks in the application.
 class PerformanceMonitor {
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
   static AnalyticsService? _analytics;
 
   /// Initialize performance monitoring (called during app startup)

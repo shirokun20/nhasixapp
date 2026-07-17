@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'cache_service.dart';
 import 'memory_cache_service.dart';
 import 'disk_cache_service.dart';
@@ -13,7 +14,7 @@ import 'disk_cache_service.dart';
 class CacheManager<T> implements CacheService<T> {
   final MemoryCacheService<T> memoryCache;
   final DiskCacheService<T> diskCache;
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   // Combined statistics
   int _totalHits = 0;

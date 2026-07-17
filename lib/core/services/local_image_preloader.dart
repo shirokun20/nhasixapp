@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -21,7 +22,7 @@ class LocalImagePreloader {
   static const String _cacheSubPath = 'cache';
   static const Duration _cacheExpiryDuration =
       Duration(hours: 6); // Cache expires in 6 hours
-  static final Logger _logger = Logger();
+  static final Logger _logger = getIt<Logger>();
   static bool _didLogDownloadDirectorySelection = false;
 
   /// Get all possible base paths where images might be stored

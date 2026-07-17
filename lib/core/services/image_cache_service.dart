@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -29,7 +30,7 @@ class ImageCacheService {
   static const Duration _defaultCacheDuration = Duration(hours: 24); // 24 hours
   static const int _maxCacheSizeMB = 100; // 100MB max cache size
 
-  final Logger _logger = Logger();
+  final Logger _logger = getIt<Logger>();
 
   // In-memory cache for fast access
   final Map<String, _CachedImageData> _memoryCache = {};

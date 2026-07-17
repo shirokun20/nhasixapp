@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 
 import '../../domain/entities/download_task.dart';
 import '../../domain/entities/download_status.dart';
@@ -40,7 +41,7 @@ class DownloadManager {
   static final DownloadManager _instance = DownloadManager._internal();
   factory DownloadManager() => _instance;
   DownloadManager._internal() {
-    _logger = Logger();
+    _logger = getIt<Logger>();
     _logger.i('DownloadManager: Initialized');
     _initializeNativeListener();
   }

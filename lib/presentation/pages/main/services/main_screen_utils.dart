@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/search_filter.dart'
     show SearchFilter, FilterItem;
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -143,7 +145,9 @@ class MainScreenUtils {
       if (byApi.isNotEmpty && byApi['apiValue'] != null) {
         return byApi['apiValue'] as String;
       }
-    } catch (_) {}
+    } catch (e) {
+      getIt<Logger>().w('Sort option API value lookup failed', error: e);
+    }
 
     return fallbackSortApiValue;
   }
@@ -207,7 +211,9 @@ class MainScreenUtils {
           return '${uri.scheme}://$publicHost';
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      getIt<Logger>().w('Public host extraction failed', error: e);
+    }
 
     return null;
   }
