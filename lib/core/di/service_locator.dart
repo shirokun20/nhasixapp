@@ -75,11 +75,21 @@ import 'package:nhasixapp/data/repositories/tag_repository_impl.dart';
 // Use Cases
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/domain/usecases/reader/get_reader_position_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_reader_position_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/clear_all_reader_positions_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/get_reader_settings_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_reader_settings_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_comments_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
+import 'package:nhasixapp/domain/usecases/favorites/get_favorite_collections_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/create_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/rename_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/delete_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/add_to_favorite_collection_usecase.dart';
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
+import 'package:nhasixapp/domain/usecases/history/get_all_chapter_history_usecase.dart';
 import 'package:nhasixapp/domain/usecases/history/get_history_usecase.dart';
 import 'package:nhasixapp/domain/usecases/history/clear_history_usecase.dart';
 import 'package:nhasixapp/domain/usecases/history/remove_history_item_usecase.dart';
@@ -395,8 +405,8 @@ void _setupDataSources() {
     final rawConfig =
         getIt<RemoteConfigService>().getRawConfig('crotpedia') ?? {};
     final baseUrl =
-        (rawConfig['api'] as Map<String, dynamic>?)?['baseUrl'] as String? ??
-            (rawConfig['baseUrl'] as String?) ??
+        (rawConfig['api'] is Map<String, dynamic> ? rawConfig['api'] as Map<String, dynamic> : null)?['baseUrl'] as String? ??
+            rawConfig['baseUrl']?.toString() ??
             'https://crotpedia.net';
     final cookieStorage = GenericCookieStorage('crotpedia');
     final cookieJar = PersistCookieJar(storage: cookieStorage);
@@ -418,7 +428,7 @@ void _setupDataSources() {
       final rawConfig =
           getIt<RemoteConfigService>().getRawConfig('doujindesuv2') ?? {};
       final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://doujindesu.tv';
+          rawConfig['baseUrl']?.toString() ?? 'https://doujindesu.tv';
       final cookieStorage = GenericCookieStorage('doujindesuv2');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -438,10 +448,10 @@ void _setupDataSources() {
         getIt<RemoteConfigService>().getRawConfig('komiktap') ?? {},
       );
       final network = Map<String, dynamic>.from(
-        (rawConfig['network'] as Map?)?.cast<String, dynamic>() ?? const {},
+        (rawConfig['network'] is Map ? rawConfig['network'] as Map : null)?.cast<String, dynamic>() ?? const {},
       );
       final siteProtection = Map<String, dynamic>.from(
-        (network['siteProtection'] as Map?)?.cast<String, dynamic>() ??
+        (network['siteProtection'] is Map ? network['siteProtection'] as Map : null)?.cast<String, dynamic>() ??
             const {},
       );
       network['requiresBypass'] = true;
@@ -450,7 +460,7 @@ void _setupDataSources() {
       network['siteProtection'] = siteProtection;
       rawConfig['network'] = network;
       final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://komiktap.info';
+          rawConfig['baseUrl']?.toString() ?? 'https://komiktap.info';
       final cookieStorage = GenericCookieStorage('komiktap');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -480,9 +490,9 @@ void _setupDataSources() {
     // so WebView stays open until user solves the interactive challenge
     // and presses back.
     final network = Map<String, dynamic>.from(
-        (raw['network'] as Map?)?.cast<String, dynamic>() ?? {});
+        (raw['network'] is Map ? raw['network'] as Map : null)?.cast<String, dynamic>() ?? {});
     final cf = Map<String, dynamic>.from(
-        (network['cloudflare'] as Map?)?.cast<String, dynamic>() ?? {});
+        (network['cloudflare'] is Map ? network['cloudflare'] as Map : null)?.cast<String, dynamic>() ?? {});
     cf['autoCloseOnCookie'] = '';
     network['cloudflare'] = cf;
     raw['network'] = network;
@@ -494,7 +504,7 @@ void _setupDataSources() {
     () {
       final rawConfig = turnstileConfig('hentairead');
       final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://hentairead.com';
+          rawConfig['baseUrl']?.toString() ?? 'https://hentairead.com';
       final cookieStorage = GenericCookieStorage('cf_hentairead');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -512,8 +522,7 @@ void _setupDataSources() {
     instanceName: 'cf_manhwaread',
     () {
       final rawConfig = turnstileConfig('manhwaread');
-      final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://manhwaread.com';
+      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://manhwaread.com';
       final cookieStorage = GenericCookieStorage('cf_manhwaread');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -530,8 +539,7 @@ void _setupDataSources() {
     instanceName: 'cf_hentaicosplay',
     () {
       final rawConfig = turnstileConfig('hentaicosplay');
-      final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://hentaicosplay.com';
+      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://hentaicosplay.com';
       final cookieStorage = GenericCookieStorage('cf_hentaicosplay');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -548,8 +556,7 @@ void _setupDataSources() {
     instanceName: 'cf_spyfakku',
     () {
       final rawConfig = turnstileConfig('spyfakku');
-      final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://spyfakku.com';
+      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://spyfakku.com';
       final cookieStorage = GenericCookieStorage('cf_spyfakku');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -575,8 +582,7 @@ void _setupDataSources() {
     instanceName: 'cf_vihentai',
     () {
       final rawConfig = turnstileConfig('vihentai');
-      final baseUrl =
-          (rawConfig['baseUrl'] as String?) ?? 'https://vi-hentai.moe';
+      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://vi-hentai.moe';
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: getIt<PersistCookieJar>(instanceName: 'vihentai_jar'),
@@ -903,8 +909,17 @@ void _setupUseCases() {
       () => GetRelatedContentUseCase(contentRepository: getIt()));
   getIt.registerLazySingleton<GetPopularContentUseCase>(
       () => GetPopularContentUseCase(contentRepository: getIt()));
+	// Reader Use Cases
   getIt.registerLazySingleton<GetReaderPositionUseCase>(
       () => GetReaderPositionUseCase(readerRepository: getIt()));
+  getIt.registerLazySingleton<SaveReaderPositionUseCase>(
+      () => SaveReaderPositionUseCase(getIt<ReaderRepository>()));
+  getIt.registerLazySingleton<ClearAllReaderPositionsUseCase>(
+      () => ClearAllReaderPositionsUseCase(getIt<ReaderRepository>()));
+  getIt.registerLazySingleton<GetReaderSettingsUseCase>(
+      () => GetReaderSettingsUseCase(getIt<ReaderSettingsEntityRepository>()));
+  getIt.registerLazySingleton<SaveReaderSettingsUseCase>(
+      () => SaveReaderSettingsUseCase(getIt<ReaderSettingsEntityRepository>()));
 
   // Favorites Use Cases
   getIt.registerLazySingleton<AddToFavoritesUseCase>(
@@ -913,6 +928,16 @@ void _setupUseCases() {
       () => RemoveFromFavoritesUseCase(getIt()));
   getIt.registerLazySingleton<GetFavoritesUseCase>(
       () => GetFavoritesUseCase(getIt(), getIt()));
+  getIt.registerLazySingleton<GetFavoriteCollectionsUseCase>(
+      () => GetFavoriteCollectionsUseCase(getIt()));
+  getIt.registerLazySingleton<CreateFavoriteCollectionUseCase>(
+      () => CreateFavoriteCollectionUseCase(getIt()));
+  getIt.registerLazySingleton<RenameFavoriteCollectionUseCase>(
+      () => RenameFavoriteCollectionUseCase(getIt()));
+  getIt.registerLazySingleton<DeleteFavoriteCollectionUseCase>(
+      () => DeleteFavoriteCollectionUseCase(getIt()));
+  getIt.registerLazySingleton<AddToFavoriteCollectionUseCase>(
+      () => AddToFavoriteCollectionUseCase(getIt()));
 
   // Download Use Cases
   getIt.registerLazySingleton<DownloadContentUseCase>(
@@ -932,6 +957,8 @@ void _setupUseCases() {
       () => AddToHistoryUseCase(getIt()));
   getIt.registerLazySingleton<GetHistoryUseCase>(
       () => GetHistoryUseCase(getIt()));
+  getIt.registerLazySingleton<GetAllChapterHistoryUseCase>(
+      () => GetAllChapterHistoryUseCase(getIt()));
   getIt.registerLazySingleton<ClearHistoryUseCase>(
       () => ClearHistoryUseCase(getIt()));
   getIt.registerLazySingleton<RemoveHistoryItemUseCase>(
@@ -1070,6 +1097,11 @@ void _setupCubits() {
         getContentDetailUseCase: getIt<GetContentDetailUseCase>(),
         getChapterImagesUseCase: getIt<GetChapterImagesUseCase>(),
         addToHistoryUseCase: getIt<AddToHistoryUseCase>(),
+        getReaderSettingsUseCase: getIt<GetReaderSettingsUseCase>(),
+        saveReaderSettingsUseCase: getIt<SaveReaderSettingsUseCase>(),
+        saveReaderPositionUseCase: getIt<SaveReaderPositionUseCase>(),
+        clearAllReaderPositionsUseCase: getIt<ClearAllReaderPositionsUseCase>(),
+        getReaderPositionUseCase: getIt<GetReaderPositionUseCase>(),
         readerSettingsEntityRepository: getIt<ReaderSettingsEntityRepository>(),
         readerRepository: getIt<ReaderRepository>(),
         offlineContentManager: getIt<OfflineContentManager>(),
@@ -1095,6 +1127,11 @@ void _setupCubits() {
         addToFavoritesUseCase: getIt<AddToFavoritesUseCase>(),
         getFavoritesUseCase: getIt<GetFavoritesUseCase>(),
         removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
+        getFavoriteCollectionsUseCase: getIt<GetFavoriteCollectionsUseCase>(),
+        createFavoriteCollectionUseCase: getIt<CreateFavoriteCollectionUseCase>(),
+        renameFavoriteCollectionUseCase: getIt<RenameFavoriteCollectionUseCase>(),
+        deleteFavoriteCollectionUseCase: getIt<DeleteFavoriteCollectionUseCase>(),
+        addToFavoriteCollectionUseCase: getIt<AddToFavoriteCollectionUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
       ));

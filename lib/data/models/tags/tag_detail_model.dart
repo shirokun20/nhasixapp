@@ -15,10 +15,10 @@ class TagDetailModel extends TagDetailEntity {
 
   factory TagDetailModel.fromJson(Map<String, dynamic> json) {
     return TagDetailModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
-      type: json['type'] as String,
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      type: json['type'] as String? ?? '',
       count: json['count'] as int? ?? 0,
       url: json['url'] as String?,
       description: json['description'] as String?,

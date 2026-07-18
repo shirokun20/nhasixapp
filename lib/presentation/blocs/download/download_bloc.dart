@@ -39,13 +39,10 @@ import '../../../core/services/native_download_service.dart';
 
 part 'download_event.dart';
 part 'download_state.dart';
+part 'download_bloc_helpers.dart';
 
 /// BLoC for managing downloads with queue system and concurrent downloads
 class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
-  static const String _ehentaiSourceId = 'ehentai';
-  static const String _ehentaiPartPrefix = '__ehpart__';
-  static const String _ehentaiChunkPrefix = '__ehchunk__';
-
   DownloadBloc({
     required DownloadContentUseCase downloadContentUseCase,
     required GetContentDetailUseCase getContentDetailUseCase,
@@ -252,42 +249,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
 
     return contentId;
-  }
-
-  String? _extractEndpointPath(dynamic endpoint) {
-    if (endpoint is String && endpoint.isNotEmpty) {
-      return endpoint;
-    }
-    if (endpoint is Map) {
-      final pathValue = endpoint['path'];
-      if (pathValue is String && pathValue.isNotEmpty) {
-        return pathValue;
-      }
-      final urlValue = endpoint['url'];
-      if (urlValue is String && urlValue.isNotEmpty) {
-        return urlValue;
-      }
-    }
-    return null;
-  }
-
-  bool _isEhentaiSource(String? sourceId) {
-    if (sourceId == null || sourceId.isEmpty) {
-      return false;
-    }
-    return sourceId.toLowerCase() == _ehentaiSourceId;
-  }
-
-  bool _isEhentaiChunkId(String chapterId) {
-    return chapterId.startsWith(_ehentaiChunkPrefix);
-  }
-
-  bool _isEhentaiPartId(String chapterId) {
-    return chapterId.startsWith(_ehentaiPartPrefix);
-  }
-
-  bool _isEhentaiVirtualChapterId(String chapterId) {
-    return _isEhentaiPartId(chapterId) || _isEhentaiChunkId(chapterId);
   }
 
   Future<List<String>> _collectEhentaiChapterImages({
@@ -2202,53 +2163,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
-  Future<int> _countDownloadedImages({
-    required String contentId,
-    required String? sourceId,
-    String? downloadPath,
-  }) async {
-    bool isImageFile(String filePath) {
-      final lower = filePath.toLowerCase();
-      return lower.endsWith('.jpg') ||
-          lower.endsWith('.jpeg') ||
-          lower.endsWith('.png') ||
-          lower.endsWith('.webp') ||
-          lower.endsWith('.avif') ||
-          lower.endsWith('.gif') ||
-          lower.endsWith('.bmp');
-    }
-
-    Future<int> countFromBasePath(String basePath) async {
-      final baseDir = Directory(basePath);
-      if (!await baseDir.exists()) {
-        return 0;
-      }
-
-      final imagesDir =
-          Directory(path.join(baseDir.path, AppStorage.imagesSubfolder));
-      final targetDir = await imagesDir.exists() ? imagesDir : baseDir;
-
-      final entities = await targetDir.list().toList();
-      return entities
-          .whereType<File>()
-          .where((f) => isImageFile(f.path))
-          .length;
-    }
-
-    if (downloadPath != null && downloadPath.isNotEmpty) {
-      final directCount = await countFromBasePath(downloadPath);
-      if (directCount > 0) {
-        return directCount;
-      }
-    }
-
-    final resolvedPaths = await DownloadStorageUtils.getDownloadedImagePaths(
-      contentId,
-      sourceId: sourceId,
-    );
-    return resolvedPaths.length;
-  }
-
   /// Handle download completion
   Future<void> _onCompleted(
     DownloadCompletedEvent event,
@@ -2556,35 +2470,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Unregister task from DownloadManager
       DownloadManager().unregisterTask(contentId);
       _logger.d('DownloadBloc: Cancelled task for $contentId');
-    }
-  }
-
-  /// Determine error type from exception
-  DownloadErrorType _determineErrorType(dynamic error) {
-    final errorString = error.toString().toLowerCase();
-
-    if (errorString.contains('network') ||
-        errorString.contains('connection') ||
-        errorString.contains('timeout')) {
-      return DownloadErrorType.network;
-    } else if (errorString.contains('storage') ||
-        errorString.contains('space') ||
-        errorString.contains('disk')) {
-      return DownloadErrorType.storage;
-    } else if (errorString.contains('permission') ||
-        errorString.contains('denied')) {
-      return DownloadErrorType.permission;
-    } else if (errorString.contains('server') || errorString.contains('5')) {
-      return DownloadErrorType.server;
-    } else if (errorString.contains('parse') ||
-        errorString.contains('format')) {
-      return DownloadErrorType.parsing;
-    } else if (errorString.contains('timeout')) {
-      return DownloadErrorType.timeout;
-    } else if (errorString.contains('cancel')) {
-      return DownloadErrorType.cancelled;
-    } else {
-      return DownloadErrorType.unknown;
     }
   }
 

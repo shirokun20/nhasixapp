@@ -111,11 +111,15 @@ class NhentaiImages {
   factory NhentaiImages.fromJson(Map<String, dynamic> json) {
     return NhentaiImages(
       pages: (json['pages'] as List<dynamic>?)
-              ?.map((e) => NhentaiImageInfo.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => e is Map<String, dynamic>
+                  ? NhentaiImageInfo.fromJson(e)
+                  : NhentaiImageInfo.fromJson({}))
               .toList() ??
           [],
-      cover: NhentaiImageInfo.fromJson(json['cover'] as Map<String, dynamic>),
-      thumbnail: json['thumbnail'] != null
+      cover: json['cover'] is Map<String, dynamic>
+          ? NhentaiImageInfo.fromJson(json['cover'] as Map<String, dynamic>)
+          : NhentaiImageInfo.fromJson({}),
+      thumbnail: json['thumbnail'] is Map<String, dynamic>
           ? NhentaiImageInfo.fromJson(json['thumbnail'] as Map<String, dynamic>)
           : null,
     );
@@ -192,13 +196,19 @@ class NhentaiGalleryResponse {
       id: _parseInt(json['id']) ?? 0,
       mediaId: json['media_id'] as String? ?? '',
       title:
-          NhentaiTitle.fromJson(json['title'] as Map<String, dynamic>? ?? {}),
+          json['title'] is Map<String, dynamic>
+              ? NhentaiTitle.fromJson(json['title'] as Map<String, dynamic>)
+              : NhentaiTitle.fromJson({}),
       images:
-          NhentaiImages.fromJson(json['images'] as Map<String, dynamic>? ?? {}),
+          json['images'] is Map<String, dynamic>
+              ? NhentaiImages.fromJson(json['images'] as Map<String, dynamic>)
+              : NhentaiImages.fromJson({}),
       scanlator: json['scanlator'] as String?,
       uploadDate: _parseInt(json['upload_date']),
       tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => NhentaiTagInfo.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => e is Map<String, dynamic>
+                  ? NhentaiTagInfo.fromJson(e)
+                  : NhentaiTagInfo.fromJson({}))
               .toList() ??
           [],
       numPages: _parseInt(json['num_pages']),
@@ -234,8 +244,9 @@ class NhentaiListResponse {
   factory NhentaiListResponse.fromJson(Map<String, dynamic> json) {
     return NhentaiListResponse(
       result: (json['result'] as List<dynamic>?)
-              ?.map((e) =>
-                  NhentaiGalleryResponse.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => e is Map<String, dynamic>
+                  ? NhentaiGalleryResponse.fromJson(e)
+                  : NhentaiGalleryResponse.fromJson({}))
               .toList() ??
           [],
       numPages: _parseInt(json['num_pages']),
@@ -261,8 +272,9 @@ class NhentaiRelatedResponse {
   factory NhentaiRelatedResponse.fromJson(Map<String, dynamic> json) {
     return NhentaiRelatedResponse(
       result: (json['result'] as List<dynamic>?)
-              ?.map((e) =>
-                  NhentaiGalleryResponse.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => e is Map<String, dynamic>
+                  ? NhentaiGalleryResponse.fromJson(e)
+                  : NhentaiGalleryResponse.fromJson({}))
               .toList() ??
           [],
     );

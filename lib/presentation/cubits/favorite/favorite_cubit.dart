@@ -1,5 +1,10 @@
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
+import '../../../domain/usecases/favorites/get_favorite_collections_usecase.dart';
+import '../../../domain/usecases/favorites/create_favorite_collection_usecase.dart';
+import '../../../domain/usecases/favorites/rename_favorite_collection_usecase.dart';
+import '../../../domain/usecases/favorites/delete_favorite_collection_usecase.dart';
+import '../../../domain/usecases/favorites/add_to_favorite_collection_usecase.dart';
 import '../../../domain/repositories/repositories.dart';
 import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
@@ -13,12 +18,22 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     required AddToFavoritesUseCase addToFavoritesUseCase,
     required GetFavoritesUseCase getFavoritesUseCase,
     required RemoveFromFavoritesUseCase removeFromFavoritesUseCase,
+    required GetFavoriteCollectionsUseCase getFavoriteCollectionsUseCase,
+    required CreateFavoriteCollectionUseCase createFavoriteCollectionUseCase,
+    required RenameFavoriteCollectionUseCase renameFavoriteCollectionUseCase,
+    required DeleteFavoriteCollectionUseCase deleteFavoriteCollectionUseCase,
+    required AddToFavoriteCollectionUseCase addToFavoriteCollectionUseCase,
     required UserDataRepository userDataRepository,
     required super.logger,
     this.localizations,
   })  : _addToFavoritesUseCase = addToFavoritesUseCase,
         _getFavoritesUseCase = getFavoritesUseCase,
         _removeFromFavoritesUseCase = removeFromFavoritesUseCase,
+        _getFavoriteCollectionsUseCase = getFavoriteCollectionsUseCase,
+        _createFavoriteCollectionUseCase = createFavoriteCollectionUseCase,
+        _renameFavoriteCollectionUseCase = renameFavoriteCollectionUseCase,
+        _deleteFavoriteCollectionUseCase = deleteFavoriteCollectionUseCase,
+        _addToFavoriteCollectionUseCase = addToFavoriteCollectionUseCase,
         _userDataRepository = userDataRepository,
         super(
           initialState: const FavoriteInitial(),
@@ -27,6 +42,11 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   final AddToFavoritesUseCase _addToFavoritesUseCase;
   final GetFavoritesUseCase _getFavoritesUseCase;
   final RemoveFromFavoritesUseCase _removeFromFavoritesUseCase;
+  final GetFavoriteCollectionsUseCase _getFavoriteCollectionsUseCase;
+  final CreateFavoriteCollectionUseCase _createFavoriteCollectionUseCase;
+  final RenameFavoriteCollectionUseCase _renameFavoriteCollectionUseCase;
+  final DeleteFavoriteCollectionUseCase _deleteFavoriteCollectionUseCase;
+  final AddToFavoriteCollectionUseCase _addToFavoriteCollectionUseCase;
   final UserDataRepository _userDataRepository;
   final AppLocalizations? localizations;
 
@@ -89,7 +109,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
         emit(const FavoriteLoading());
       }
 
-      final collections = await _userDataRepository.getFavoriteCollections();
+      final collections = await _getFavoriteCollectionsUseCase();
       final params = GetFavoritesParams.page(
         _currentPage,
         limit: _itemsPerPage,
@@ -409,7 +429,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       throw ArgumentError('Collection name cannot be empty');
     }
 
-    await _userDataRepository.createFavoriteCollection(name: trimmedName);
+    await _createFavoriteCollectionUseCase(trimmedName);
     await loadFavorites(refresh: true, collectionId: _activeCollectionId);
   }
 
@@ -422,7 +442,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
       throw ArgumentError('Collection name cannot be empty');
     }
 
-    await _userDataRepository.renameFavoriteCollection(
+    await _renameFavoriteCollectionUseCase(
       collectionId: collectionId,
       name: trimmedName,
     );
@@ -430,7 +450,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
   }
 
   Future<void> deleteCollection(String collectionId) async {
-    await _userDataRepository.deleteFavoriteCollection(collectionId);
+    await _deleteFavoriteCollectionUseCase(collectionId);
     if (_activeCollectionId == collectionId) {
       _activeCollectionId = null;
     }
@@ -452,7 +472,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     required String sourceId,
     required List<String> collectionIds,
   }) async {
-    await _userDataRepository.setFavoriteCollectionIds(
+    await _addToFavoriteCollectionUseCase(
       favoriteId: favoriteId,
       sourceId: sourceId,
       collectionIds: collectionIds,
@@ -494,9 +514,9 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     try {
       logInfo('Importing favorites data');
 
-      final favorites = data['favorites'] as List<dynamic>? ?? [];
-      final collectionMaps = data['collections'] as List<dynamic>? ?? [];
-      final collectionItems = data['collection_items'] as List<dynamic>? ?? [];
+      final favorites = data['favorites'] is List ? data['favorites'] as List<dynamic> : <dynamic>[];
+      final collectionMaps = data['collections'] is List ? data['collections'] as List<dynamic> : <dynamic>[];
+      final collectionItems = data['collection_items'] is List ? data['collection_items'] as List<dynamic> : <dynamic>[];
       int importedCount = 0;
       final importedCollectionIdsBySource = <String, String>{};
 

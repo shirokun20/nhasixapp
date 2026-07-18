@@ -16,11 +16,13 @@ class NhentaiComment {
 
   factory NhentaiComment.fromJson(Map<String, dynamic> json) {
     return NhentaiComment(
-      id: json['id'] as int,
-      galleryId: json['gallery_id'] as int,
-      poster: NhentaiUser.fromJson(json['poster'] as Map<String, dynamic>),
-      body: json['body'] as String,
-      postDate: json['post_date'] as int,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      galleryId: (json['gallery_id'] as num?)?.toInt() ?? 0,
+      poster: json['poster'] is Map<String, dynamic>
+          ? NhentaiUser.fromJson(json['poster'] as Map<String, dynamic>)
+          : NhentaiUser.fromJson({}),
+      body: json['body'] as String? ?? '',
+      postDate: (json['post_date'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -45,12 +47,12 @@ class NhentaiUser {
 
   factory NhentaiUser.fromJson(Map<String, dynamic> json) {
     return NhentaiUser(
-      id: json['id'] as int,
-      username: json['username'] as String,
-      slug: json['slug'] as String,
-      avatarUrl: json['avatar_url'] as String,
-      isSuperuser: json['is_superuser'] as bool,
-      isStaff: json['is_staff'] as bool,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      username: json['username'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String? ?? '',
+      isSuperuser: json['is_superuser'] as bool? ?? false,
+      isStaff: json['is_staff'] as bool? ?? false,
     );
   }
 }

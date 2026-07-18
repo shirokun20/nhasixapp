@@ -1252,8 +1252,9 @@ class OfflineContentManager {
         if (await metadataFile.exists()) {
           try {
             final metadataContent = await metadataFile.readAsString();
-            final fileMetadata =
-                json.decode(metadataContent) as Map<String, dynamic>;
+            final decoded = json.decode(metadataContent);
+            if (decoded is! Map<String, dynamic>) return null;
+            final fileMetadata = decoded;
             final metadata = {
               'id': contentId,
               'title': DownloadStorageUtils.getSafeTitleFromMetadata(

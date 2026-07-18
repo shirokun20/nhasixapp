@@ -10,8 +10,8 @@ import '../../l10n/app_localizations.dart';
 import '../../core/utils/responsive_grid_delegate.dart';
 import '../../core/utils/title_parser_utils.dart';
 import '../../domain/entities/entities.dart';
-import '../../domain/repositories/user_data_repository.dart';
 import '../../domain/usecases/history/get_history_usecase.dart';
+import '../../domain/usecases/history/get_all_chapter_history_usecase.dart';
 import '../../core/services/local_image_preloader.dart';
 import '../blocs/content/content_bloc.dart';
 import '../blocs/download/download_bloc.dart'; // 🐛 FIXED: Added import for DownloadBloc
@@ -371,7 +371,7 @@ class ContentReadCache {
 
     try {
       final getHistoryUseCase = getIt<GetHistoryUseCase>();
-      final userDataRepository = getIt<UserDataRepository>();
+      final getAllChapterHistory = getIt<GetAllChapterHistoryUseCase>();
 
       // Batch: load recent history once, match by ID — avoids N+1 per item
       List<History> recentHistory;
@@ -430,8 +430,7 @@ class ContentReadCache {
       }
 
       // Per-item chapter history fallback (rare — only when no batch match)
-      final chapterHistory =
-          await userDataRepository.getAllChapterHistory(contentId);
+      final chapterHistory = await getAllChapterHistory(contentId);
       final chapterProgress = chapterHistory
           .where((item) => _isValidProgress(item, sourceId))
           .map(_normalizeProgress)

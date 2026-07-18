@@ -118,7 +118,7 @@ class NativeDownloadService {
   Stream<Map<String, dynamic>> getProgressStream() {
     _progressStream ??= _progressChannel
         .receiveBroadcastStream()
-        .map((data) => Map<String, dynamic>.from(data as Map));
+        .map((data) => Map<String, dynamic>.from(data as Map? ?? const {}));
     return _progressStream!;
   }
 

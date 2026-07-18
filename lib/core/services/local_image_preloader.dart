@@ -173,7 +173,9 @@ class LocalImagePreloader {
             try {
               final metadataContent = await cacheMetadataFile.readAsString();
               final metadata =
-                  jsonDecode(metadataContent) as Map<String, dynamic>;
+                  jsonDecode(metadataContent) is Map<String, dynamic>
+                      ? jsonDecode(metadataContent) as Map<String, dynamic>
+                      : <String, dynamic>{};
               final cacheTime = DateTime.parse(metadata['cached_at'] as String);
 
               if (now.difference(cacheTime) > _cacheExpiryDuration) {
@@ -470,7 +472,9 @@ class LocalImagePreloader {
 
         if (await file.exists()) {
           final jsonString = await file.readAsString();
-          final metadata = jsonDecode(jsonString) as Map<String, dynamic>;
+          final metadata = jsonDecode(jsonString) is Map<String, dynamic>
+              ? jsonDecode(jsonString) as Map<String, dynamic>
+              : <String, dynamic>{};
           _logger.d(
               'Successfully read metadata for $contentId from $metadataPath');
           return metadata;

@@ -23,8 +23,12 @@ class TagsRemoteDataSource {
 
   Map<String, String>? _getNetworkHeaders(String sourceId) {
     final rawConfig = _configService.getRawConfig(sourceId);
-    return (rawConfig?['network']?['headers'] as Map<String, dynamic>?)
-        ?.map((k, v) => MapEntry(k, v.toString()));
+    final headersRaw = rawConfig?['network']?['headers'];
+    if (headersRaw is Map) {
+      return (headersRaw as Map<String, dynamic>?)
+          ?.map((k, v) => MapEntry(k, v.toString()));
+    }
+    return null;
   }
 
   /// Get tags by type from API v2
@@ -101,7 +105,8 @@ class TagsRemoteDataSource {
         List<dynamic> results;
         if (data is Map) {
           // nhentai returns {"result": [...], "num_pages": ..., "per_page": ...}
-          results = (data['result'] ?? data['results']) as List<dynamic>? ?? [];
+          final rawResults = data['result'] ?? data['results'];
+          results = rawResults is List ? rawResults : [];
         } else if (data is List) {
           results = data;
         } else if (data is String) {
@@ -215,9 +220,12 @@ class TagsRemoteDataSource {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        return TagDetailModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        if (response.data is Map) {
+          return TagDetailModel.fromJson(
+            response.data as Map<String, dynamic>,
+          );
+        }
+        throw Exception('Unexpected response format for tag detail');
       }
 
       throw Exception('Failed to fetch tag detail: ${response.statusCode}');

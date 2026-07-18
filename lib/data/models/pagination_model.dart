@@ -32,7 +32,7 @@ class PaginationModel extends Equatable {
       nextPage: json['nextPage'] as int?,
       previousPage: json['previousPage'] as int?,
       visiblePages: (json['visiblePages'] as List<dynamic>?)
-              ?.map((e) => e as int)
+              ?.cast<int>()
               .toList() ??
           const [],
     );

@@ -45,13 +45,14 @@ class ReaderPositionModel extends ReaderPosition {
   /// Create model from database map
   factory ReaderPositionModel.fromMap(Map<String, dynamic> map) {
     return ReaderPositionModel(
-      contentId: map['content_id'] as String,
-      currentPage: map['current_page'] as int,
-      totalPages: map['total_pages'] as int,
-      lastAccessed:
-          DateTime.fromMillisecondsSinceEpoch(map['last_accessed'] as int),
-      readingProgress: (map['reading_progress'] as num).toDouble(),
-      readingTimeMinutes: map['reading_time_minutes'] as int,
+      contentId: (map['content_id'] as String?) ?? '',
+      currentPage: (map['current_page'] as num?)?.toInt() ?? 0,
+      totalPages: (map['total_pages'] as num?)?.toInt() ?? 0,
+      lastAccessed: DateTime.fromMillisecondsSinceEpoch(
+        (map['last_accessed'] as num?)?.toInt() ?? 0,
+      ),
+      readingProgress: (map['reading_progress'] as num?)?.toDouble() ?? 0.0,
+      readingTimeMinutes: (map['reading_time_minutes'] as num?)?.toInt() ?? 0,
       title: map['title'] as String?,
       coverUrl: map['cover_url'] as String?,
     );
@@ -76,12 +77,12 @@ class ReaderPositionModel extends ReaderPosition {
   /// Create model from JSON
   factory ReaderPositionModel.fromJson(Map<String, dynamic> json) {
     return ReaderPositionModel(
-      contentId: json['contentId'] as String,
-      currentPage: json['currentPage'] as int,
-      totalPages: json['totalPages'] as int,
-      lastAccessed: DateTime.parse(json['lastAccessed'] as String),
-      readingProgress: (json['readingProgress'] as num).toDouble(),
-      readingTimeMinutes: json['readingTimeMinutes'] as int,
+      contentId: (json['contentId'] as String?) ?? '',
+      currentPage: (json['currentPage'] as num?)?.toInt() ?? 0,
+      totalPages: (json['totalPages'] as num?)?.toInt() ?? 0,
+      lastAccessed: DateTime.parse((json['lastAccessed'] as String?) ?? ''),
+      readingProgress: (json['readingProgress'] as num?)?.toDouble() ?? 0.0,
+      readingTimeMinutes: (json['readingTimeMinutes'] as num?)?.toInt() ?? 0,
       title: json['title'] as String?,
       coverUrl: json['coverUrl'] as String?,
     );

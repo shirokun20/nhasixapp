@@ -949,7 +949,7 @@ class SearchFormOptionConfig {
     if (json is String) {
       return SearchFormOptionConfig(value: json, label: json, name: json);
     }
-    return _$SearchFormOptionConfigFromJson(json as Map<String, dynamic>);
+    return _$SearchFormOptionConfigFromJson(Map<String, dynamic>.from(json));
   }
   Map<String, dynamic> toJson() => _$SearchFormOptionConfigToJson(this);
 }

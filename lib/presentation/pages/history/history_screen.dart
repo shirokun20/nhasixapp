@@ -397,7 +397,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _navigateToContent(BuildContext context, History historyItem) {
     // Navigate to detail screen for all content types
     // Chapter mode content will show read indicator in chapter list
-    Logger().d('Navigating to content: ${historyItem.contentId}');
+    getIt<Logger>().d('Navigating to content: ${historyItem.contentId}');
 
     // Determine the target content ID:
     // - For chapter mode with parentId: use parentId (series ID)
@@ -427,7 +427,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final encodedContentId = Uri.encodeComponent(targetContentId);
 
-    Logger().d('🔗 Navigating to: /content/$encodedContentId?$queryString');
+    getIt<Logger>().d('🔗 Navigating to: /content/$encodedContentId?$queryString');
 
     // Navigate to detail screen
     context.push('/content/$encodedContentId?$queryString');

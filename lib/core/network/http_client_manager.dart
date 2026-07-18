@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
-import 'dns_resolver.dart'; // NEW
-import 'dns_interceptor.dart'; // NEW
+import '../di/service_locator.dart';
+import 'dns_resolver.dart';
+import 'dns_interceptor.dart';
 
 /// Singleton HTTP client manager to ensure proper lifecycle management
 /// and prevent disposal issues across the application
@@ -27,7 +28,7 @@ class HttpClientManager {
     Duration? timeout,
     String? userAgent,
   }) {
-    _logger = logger ?? Logger();
+    _logger = logger ?? (() { try { return getIt<Logger>(); } catch (_) { return Logger(); } })();
 
     if (_httpClient != null) {
       _logger

@@ -59,11 +59,11 @@ class DownloadManager {
       _nativeSubscription =
           NativeDownloadService().getProgressStream().listen((data) {
         try {
-          final String contentId = data['contentId'] as String;
-          final String status = data['status'] as String;
-          // Native sends int, but safety cast is good
-          final int downloaded = (data['downloadedPages'] as num).toInt();
-          final int total = (data['totalPages'] as num).toInt();
+          final String? contentId = data['contentId'] as String?;
+          final String? status = data['status'] as String?;
+          if (contentId == null || status == null) return;
+          final int downloaded = (data['downloadedPages'] as num?)?.toInt() ?? 0;
+          final int total = (data['totalPages'] as num?)?.toInt() ?? 0;
           final double speed =
               (data['downloadSpeed'] as num?)?.toDouble() ?? 0.0;
 

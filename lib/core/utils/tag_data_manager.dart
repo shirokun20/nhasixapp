@@ -322,12 +322,12 @@ class TagDataManager {
       for (final item in jsonData) {
         if (item is List && item.length >= 4) {
           try {
-            final id = item[0] as int;
-            final name = item[1] as String;
-            final slug = item[2] as String;
-            final typeCode = item[3] as int;
+            final id = (item[0] as num?)?.toInt() ?? 0;
+            final name = item[1]?.toString() ?? '';
+            final slug = item[2]?.toString() ?? '';
+            final typeCode = (item[3] as num?)?.toInt() ?? 0;
             // Count might be missing in old formats or some datasets
-            final count = (item.length > 4) ? (item[4] as int) : 0;
+            final count = (item.length > 4) ? ((item[4] as num?)?.toInt() ?? 0) : 0;
 
             final type = TagType.fromCode(typeCode);
 

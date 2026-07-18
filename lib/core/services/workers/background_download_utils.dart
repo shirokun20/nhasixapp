@@ -214,7 +214,7 @@ class BackgroundDownloadUtils {
     final prefs = await SharedPreferences.getInstance();
     final dataStr = prefs.getString('resume_state_$contentId');
     if (dataStr != null) {
-      return jsonDecode(dataStr) as Map<String, dynamic>;
+      return jsonDecode(dataStr) as Map<String, dynamic>? ?? <String, dynamic>{};
     }
     return null;
   }

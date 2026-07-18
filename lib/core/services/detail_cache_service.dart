@@ -91,13 +91,14 @@ class DetailCacheService {
   /// Parse tags from cached data
   List<Tag> _parseTagsFromCache(List<dynamic> tagsData) {
     return tagsData.map((tagData) {
-      final map = tagData as Map<String, dynamic>;
+      final map = tagData as Map<String, dynamic>?;
+      if (map == null) return const Tag(id: 0, name: '', type: '', count: 0);
       return Tag(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        type: map['type'] as String,
-        count: map['count'] as int,
-        url: map['url'] as String,
+        id: map['id'] as int? ?? 0,
+        name: (map['name'] as String?) ?? '',
+        type: (map['type'] as String?) ?? '',
+        count: map['count'] as int? ?? 0,
+        url: (map['url'] as String?) ?? '',
         slug: map['slug'] as String?,
       );
     }).toList();

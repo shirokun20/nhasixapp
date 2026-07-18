@@ -164,7 +164,9 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
             isReading = true;
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        // Ignore — non-critical progress calculation
+      }
     }
 
     final uniqueItems = ContentGroup.dedupeItems(items);
@@ -190,7 +192,9 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       await for (final entity in directory.list(recursive: true)) {
         if (entity is File) size += await entity.length();
       }
-    } catch (_) {}
+    } catch (_) {
+      // Ignore — non-critical directory size calculation
+    }
     return size;
   }
 

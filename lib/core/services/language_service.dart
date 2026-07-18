@@ -40,10 +40,12 @@ class LanguageService {
     if (isLoaded) return;
     try {
       final raw = await rootBundle.loadString('assets/configs/languages.json');
-      final parsed = json.decode(raw) as Map<String, dynamic>;
+      final parsed = json.decode(raw) as Map<String, dynamic>? ?? {};
       final languages = parsed['languages'] as Map<String, dynamic>? ?? {};
       for (final entry in languages.entries) {
-        final data = entry.value as Map<String, dynamic>;
+        final data = entry.value is Map<String, dynamic>
+            ? entry.value as Map<String, dynamic>
+            : <String, dynamic>{};
         _entries[entry.key] = LanguageInfo(
           displayName: data['displayName'] as String,
           code: data['code'] as String,

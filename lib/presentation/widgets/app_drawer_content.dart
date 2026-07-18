@@ -350,7 +350,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           menuConfig.forEach((key, value) {
                             if (value is Map<String, dynamic> &&
                                 value['enabled'] == true) {
-                              final label = value['label'] as String;
+                              final label = value['label']?.toString() ?? '';
                               final iconName = value['icon'] as String?;
                               final route = getRoute(key);
 

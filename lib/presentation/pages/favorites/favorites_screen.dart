@@ -121,7 +121,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (sourceId == null) return ('', '');
 
     final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
-    final assetHosts = rawConfig?['assetHosts'] as Map<String, dynamic>?;
+    final rawHosts = rawConfig?['assetHosts'];
+    final assetHosts = rawHosts is Map<String, dynamic> ? rawHosts : null;
     final thumbnailHost = assetHosts?['thumbnail']?.toString().trim() ?? '';
     final imageHost = assetHosts?['image']?.toString().trim() ?? '';
     return (thumbnailHost, imageHost);
@@ -2056,7 +2057,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     try {
-      final date = DateTime.fromMillisecondsSinceEpoch(timestamp as int);
+      final date = DateTime.fromMillisecondsSinceEpoch((timestamp as num?)?.toInt() ?? 0);
       final now = DateTime.now();
       final difference = now.difference(date);
 

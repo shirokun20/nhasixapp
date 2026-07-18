@@ -1388,8 +1388,9 @@ class LocalDataSource {
 
       if (result.isEmpty) return null;
 
-      final filterDataString = result.first['filter_data'] as String;
-      return jsonDecode(filterDataString) as Map<String, dynamic>;
+      final filterDataString = result.first['filter_data'] as String? ?? '{}';
+      final decoded = jsonDecode(filterDataString);
+      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } catch (e) {
       _logger.e('Error getting search filter: $e');
       return null;

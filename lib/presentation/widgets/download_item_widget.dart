@@ -636,9 +636,9 @@ class DownloadItemWidget extends StatelessWidget {
         }
 
         final data = snapshot.data!;
-        final actualCount = data['actualCount'] as int;
+        final actualCount = (data['actualCount'] as num?)?.toInt() ?? 0;
         final expectedCount = data['expectedCount'] as int?;
-        final isRangeDownload = data['isRangeDownload'] as bool;
+        final isRangeDownload = data['isRangeDownload'] == true;
 
         // If expectedCount is null or 0, fall back to database values
         if (expectedCount == null || expectedCount == 0) {

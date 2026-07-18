@@ -6,7 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, listEquals;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -23,9 +23,7 @@ import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/network/source_health_monitor.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import '../../../domain/entities/search_filter.dart' as search_filter;
 import '../../../domain/entities/user_preferences.dart';
-import '../../../core/utils/tag_blacklist_utils.dart';
 import '../../../core/utils/source_config_display_utils.dart';
 import '../../../core/services/tag_blacklist_service.dart';
 
@@ -34,8 +32,10 @@ import '../../cubits/source/source_cubit.dart';
 import '../../cubits/source/source_state.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../../core/utils/app_update_test.dart';
-import '../../../core/utils/storage_settings.dart';
 import '../../widgets/app_main_drawer_widget.dart';
+import 'settings_theme_widgets.dart';
+import 'settings_download_widgets.dart';
+import 'settings_privacy_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -172,10 +172,10 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 16),
 
           // Display Settings Card
-          _buildSectionHeader(Icons.palette_outlined, 'DISPLAY', theme),
+          buildSettingsSectionHeader(Icons.palette_outlined, 'DISPLAY', theme),
           const SizedBox(height: 12),
-          _buildSettingsCard([
-            _buildDropdownTile(
+          buildSettingsCard([
+            buildSettingsDropdownTile(
               context: context,
               title: l10n.theme,
               subtitle: l10n.themeDescription,
@@ -191,8 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               onChanged: (v) => context.read<SettingsCubit>().updateTheme(v!),
               theme: theme,
             ),
-            _buildDivider(theme),
-            _buildDropdownTile(
+            buildSettingsDivider(theme),
+            buildSettingsDropdownTile(
               context: context,
               title: l10n.appLanguage,
               subtitle: 'Select your preferred language',
@@ -209,8 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   context.read<SettingsCubit>().updateDefaultLanguage(v!),
               theme: theme,
             ),
-            _buildDivider(theme),
-            _buildDropdownTile(
+            buildSettingsDivider(theme),
+            buildSettingsDropdownTile(
               context: context,
               title: l10n.imageQuality,
               subtitle: l10n.imageQualityDescription,
@@ -227,8 +227,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   context.read<SettingsCubit>().updateImageQuality(v!),
               theme: theme,
             ),
-            _buildDivider(theme),
-            _buildSwitchTile(
+            buildSettingsDivider(theme),
+            buildSettingsSwitchTile(
               title: l10n.blurThumbnails,
               subtitle: l10n.blurThumbnailsDescription,
               value: prefs.blurThumbnails,
@@ -240,59 +240,59 @@ class _SettingsScreenState extends State<SettingsScreen>
 
           const SizedBox(height: 24),
 
-          _buildSectionHeader(
+          buildSettingsSectionHeader(
             Icons.visibility_off_outlined,
             AppLocalizations.of(context)!.contentFilters,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildInfoBanner(
+          buildSettingsInfoBanner(
             AppLocalizations.of(context)!.blurCoversDescription,
             Icons.shield_moon_outlined,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildTagBlacklistSection(context, prefs, theme),
+          buildTagBlacklistSection(context, prefs, theme, tagBlacklistService: _tagBlacklistService),
 
           const SizedBox(height: 24),
 
           // Storage Settings Card
-          _buildSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
+          buildSettingsSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
           const SizedBox(height: 12),
-          _buildInfoBanner(
+          buildSettingsInfoBanner(
             l10n.storageDescription,
             Icons.info_outline,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildStorageSection(context, theme, l10n),
+          buildStorageSection(context, theme, l10n, onRefresh: () => setState(() {})),
 
           const SizedBox(height: 24),
 
           // Download Settings Card
-          _buildSectionHeader(Icons.download_outlined, 'DOWNLOAD', theme),
+          buildSettingsSectionHeader(Icons.download_outlined, 'DOWNLOAD', theme),
           const SizedBox(height: 12),
-          _buildInfoBanner(
+          buildSettingsInfoBanner(
             l10n.imageQualityDescription,
             Icons.info_outline,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildDownloadSection(context, theme, l10n),
+          buildDownloadSection(context, theme, l10n),
 
           const SizedBox(height: 24),
 
           // Reader Settings Card
-          _buildSectionHeader(Icons.auto_stories_outlined, 'READER', theme),
+          buildSettingsSectionHeader(Icons.auto_stories_outlined, 'READER', theme),
           const SizedBox(height: 12),
-          _buildInfoBanner(
+          buildSettingsInfoBanner(
             l10n.autoCleanupDescription,
             Icons.info_outline,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildSettingsCard([
-            _buildSwitchTile(
+          buildSettingsCard([
+            buildSettingsSwitchTile(
               title: l10n.autoCleanupHistory,
               subtitle: l10n.automaticallyCleanOldReadingHistory,
               value: prefs.autoCleanupHistory,
@@ -301,8 +301,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               theme: theme,
             ),
             if (prefs.autoCleanupHistory) ...[
-              _buildDivider(theme),
-              _buildDropdownTile(
+              buildSettingsDivider(theme),
+              buildSettingsDropdownTile(
                 context: context,
                 title: l10n.cleanupInterval,
                 subtitle: l10n.howOftenToCleanupHistory,
@@ -322,8 +322,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     .updateHistoryCleanupInterval(v!),
                 theme: theme,
               ),
-              _buildDivider(theme),
-              _buildDropdownTile(
+              buildSettingsDivider(theme),
+              buildSettingsDropdownTile(
                 context: context,
                 title: l10n.maxHistoryDays,
                 subtitle: l10n.maximumDaysToKeepHistory,
@@ -342,8 +342,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     context.read<SettingsCubit>().updateMaxHistoryDays(v!),
                 theme: theme,
               ),
-              _buildDivider(theme),
-              _buildSwitchTile(
+              buildSettingsDivider(theme),
+              buildSettingsSwitchTile(
                 title: l10n.cleanupOnInactivity,
                 subtitle: l10n.cleanHistoryWhenAppUnused,
                 value: prefs.cleanupOnInactivity,
@@ -352,8 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                 theme: theme,
               ),
               if (prefs.cleanupOnInactivity) ...[
-                _buildDivider(theme),
-                _buildDropdownTile(
+                buildSettingsDivider(theme),
+                buildSettingsDropdownTile(
                   context: context,
                   title: l10n.inactivityThreshold,
                   subtitle: l10n.daysOfInactivityBeforeCleanup,
@@ -378,26 +378,26 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 24),
 
           // App Disguise Card
-          _buildSectionHeader(
+          buildSettingsSectionHeader(
             Icons.visibility_off_outlined,
             AppLocalizations.of(context)!.appDisguise,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildSettingsCard([
-            _buildDisguiseModeTile(prefs, theme, l10n),
+          buildSettingsCard([
+            buildDisguiseModeTile(prefs, theme, l10n),
           ], theme),
 
           const SizedBox(height: 24),
 
           // DNS Status Section
-          _buildSectionHeader(
+          buildSettingsSectionHeader(
             Icons.dns_outlined,
             'DNS',
             theme,
           ),
           const SizedBox(height: 12),
-          _buildDnsStatusCard(context, theme, l10n),
+          buildDnsStatusCard(context, theme, l10n, deviceDnsState: _deviceDnsState),
 
           const SizedBox(height: 24),
 
@@ -407,13 +407,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 24),
 
           // Developer Tools Card
-          _buildSectionHeader(
+          buildSettingsSectionHeader(
             Icons.bug_report_outlined,
             AppLocalizations.of(context)!.developerTools,
             theme,
           ),
           const SizedBox(height: 12),
-          _buildSettingsCard([
+          buildSettingsCard([
             if (kDebugMode) ...[
               ListTile(
                 contentPadding:
@@ -425,17 +425,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => AppRouter.goToDohTest(context),
               ),
-              _buildDivider(theme),
+              buildSettingsDivider(theme),
             ],
-            _buildActionTile(
+            buildSettingsActionTile(
               title: l10n.testCacheClearing,
               subtitle: l10n.testCacheClearingDescription,
               actionLabel: l10n.runTest,
               onTap: () => AppUpdateTest.runTests(context),
               theme: theme,
             ),
-            _buildDivider(theme),
-            _buildActionTile(
+            buildSettingsDivider(theme),
+            buildSettingsActionTile(
               title: l10n.forceClearCache,
               subtitle: l10n.forceClearCacheDescription,
               actionLabel: l10n.clearCacheButton,
@@ -448,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 24),
 
           // Reset Button
-          _buildResetButton(context, theme, l10n),
+          buildResetButton(context, theme, l10n),
 
           const SizedBox(height: 32),
         ],
@@ -456,1819 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildSectionHeader(IconData icon, String title, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            ),
-            child: Icon(icon, size: 16, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsCard(List<Widget> children, ThemeData theme) {
-    return Card(
-      elevation: DesignTokens.elevationNone,
-      color: theme.colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(children: children),
-      ),
-    );
-  }
-
-  Widget _buildDivider(ThemeData theme) {
-    return Divider(
-      height: 1,
-      indent: 16,
-      endIndent: 16,
-      color: theme.dividerColor.withValues(alpha: 0.2),
-    );
-  }
-
-  Widget _buildDropdownTile<T>({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required T value,
-    required List<DropdownMenuItem<T>> items,
-    required Function(T?) onChanged,
-    required ThemeData theme,
-    bool enabled = true,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: TextStyleConst.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-          color: enabled ? theme.colorScheme.onSurface : theme.disabledColor,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyleConst.bodySmall.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.3),
-          ),
-        ),
-        child: DropdownButton<T>(
-          value: value,
-          underline: const SizedBox(),
-          icon: Icon(
-            Icons.arrow_drop_down,
-            color: theme.colorScheme.primary,
-            size: 20,
-          ),
-          style: TextStyleConst.bodyMedium.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-          dropdownColor: theme.colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-          items: items,
-          onChanged: enabled ? onChanged : null,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required Function(bool) onChanged,
-    required ThemeData theme,
-    bool enabled = true,
-  }) {
-    return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: TextStyleConst.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-          color: enabled ? theme.colorScheme.onSurface : theme.disabledColor,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyleConst.bodySmall.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      value: value,
-      onChanged: enabled ? onChanged : null,
-      activeThumbColor: theme.colorScheme.primary,
-    );
-  }
-
-  Widget _buildActionTile({
-    required String title,
-    required String subtitle,
-    required String actionLabel,
-    required VoidCallback onTap,
-    required ThemeData theme,
-    bool isDestructive = false,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: TextStyleConst.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyleConst.bodySmall.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: FilledButton(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          backgroundColor: isDestructive
-              ? theme.colorScheme.error
-              : theme.colorScheme.primary,
-          foregroundColor: isDestructive
-              ? theme.colorScheme.onError
-              : theme.colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        child: Text(
-          actionLabel,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoBanner(String text, IconData icon, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: theme.colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTagBlacklistSection(
-    BuildContext context,
-    UserPreferences prefs,
-    ThemeData theme,
-  ) {
-    return AnimatedBuilder(
-      animation: _tagBlacklistService,
-      builder: (context, _) {
-        final mergedEntries = _tagBlacklistService.getMergedEntries(
-          sourceId: 'nhentai',
-          localEntries: prefs.blacklistedTags,
-        );
-        final onlineRules = _tagBlacklistService.getCachedOnlineRules(
-          'nhentai',
-        );
-        final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
-        final isSyncingRules = _tagBlacklistService.isSyncingRules('nhentai');
-
-        return _buildSettingsCard([
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.visibility_off_rounded,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.tagBlacklist,
-                            style: TextStyleConst.bodyLarge.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppLocalizations.of(context)!.blacklistDescription,
-                            style: TextStyleConst.bodySmall.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: () =>
-                          _showTagBlacklistSheet(context, prefs, theme),
-                      icon: const Icon(Icons.tune_rounded, size: 18),
-                      label: Text(AppLocalizations.of(context)!.manage),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildBlacklistStatChip(
-                      theme: theme,
-                      label: AppLocalizations.of(context)!.local,
-                      value: '${prefs.blacklistedTags.length}',
-                      icon: Icons.sd_storage_rounded,
-                    ),
-                    _buildBlacklistStatChip(
-                      theme: theme,
-                      label: AppLocalizations.of(context)!.rules,
-                      value: hasSession
-                          ? '${onlineRules.length}'
-                          : AppLocalizations.of(context)!.login,
-                      icon: Icons.rule_rounded,
-                      isLoading: isSyncingRules,
-                    ),
-                    _buildBlacklistStatChip(
-                      theme: theme,
-                      label: AppLocalizations.of(context)!.active,
-                      value: '${mergedEntries.length}',
-                      icon: Icons.layers_rounded,
-                    ),
-                  ],
-                ),
-                if (hasSession) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    AppLocalizations.of(context)!
-                        .onlineRuleDetailsCount(onlineRules.length),
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (onlineRules.isEmpty)
-                    _buildSheetHint(
-                      theme,
-                      AppLocalizations.of(context)!.noOnlineRulesYet,
-                    )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: onlineRules
-                          .take(12)
-                          .map(
-                            (rule) => _buildBlacklistEntryChip(
-                              theme,
-                              rule.displayLabel,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                ],
-                const SizedBox(height: 16),
-                if (mergedEntries.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.noBlacklistRulesYet,
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!
-                          .activeCoverageDescription(mergedEntries.length),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ], theme);
-      },
-    );
-  }
-
-  Widget _buildBlacklistStatChip({
-    required ThemeData theme,
-    required String label,
-    required String value,
-    required IconData icon,
-    bool isLoading = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isLoading)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.primary,
-              ),
-            )
-          else
-            Icon(icon, size: 16, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
-          Text(
-            '$label • $value',
-            style: TextStyleConst.labelMedium.copyWith(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBlacklistEntryChip(ThemeData theme, String entry) {
-    final chipLabel = int.tryParse(entry) != null ? '#$entry' : entry;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-      ),
-      child: Text(
-        chipLabel,
-        style: TextStyleConst.labelMedium.copyWith(
-          color: theme.colorScheme.onPrimaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  String _buildLocalBlacklistLabel(
-    String entry,
-    List<OnlineBlacklistRule> onlineRules,
-    Map<String, BlacklistedTagMetadata> localMetadata,
-  ) {
-    final normalized = TagBlacklistUtils.normalizeEntry(entry);
-
-    String? idCandidate;
-    if (int.tryParse(normalized) != null) {
-      idCandidate = normalized;
-    } else {
-      final idMatch =
-          RegExp(r'^(?:id|tag_id|tagid|tag):\s*(\d+)$').firstMatch(normalized);
-      idCandidate = idMatch?.group(1);
-    }
-
-    if (idCandidate == null) {
-      return entry;
-    }
-
-    final localMeta = localMetadata[idCandidate];
-    if (localMeta != null && localMeta.name.isNotEmpty) {
-      return '${localMeta.type}:${localMeta.name} (#$idCandidate)';
-    }
-
-    for (final rule in onlineRules) {
-      if (rule.id == idCandidate) {
-        return '${rule.displayLabel} (#$idCandidate)';
-      }
-    }
-
-    return '#$idCandidate';
-  }
-
-  Future<void> _showTagBlacklistSheet(
-    BuildContext context,
-    UserPreferences prefs,
-    ThemeData theme,
-  ) async {
-    final controller = TextEditingController();
-    var localEntries = List<String>.from(prefs.blacklistedTags);
-    var localMetadata =
-        Map<String, BlacklistedTagMetadata>.from(prefs.blacklistedTagMetadata);
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
-            // Initialize: sync from Cubit to ensure fresh data on first open
-            final settingsState = sheetContext.read<SettingsCubit>().state;
-            if (settingsState is SettingsLoaded &&
-                (!listEquals(localEntries,
-                        settingsState.preferences.blacklistedTags) ||
-                    localMetadata.length !=
-                        settingsState
-                            .preferences.blacklistedTagMetadata.length)) {
-              // If Cubit has different data, use that (source of truth)
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                localEntries = List<String>.from(
-                    settingsState.preferences.blacklistedTags);
-                localMetadata = Map<String, BlacklistedTagMetadata>.from(
-                  settingsState.preferences.blacklistedTagMetadata,
-                );
-                if (sheetContext.mounted) {
-                  setSheetState(() {});
-                }
-              });
-            }
-
-            final mediaQuery = MediaQuery.of(sheetContext);
-            final mergedEntries = _tagBlacklistService.getMergedEntries(
-              sourceId: 'nhentai',
-              localEntries: localEntries,
-            );
-            final onlineRules = _tagBlacklistService.getCachedOnlineRules(
-              'nhentai',
-            );
-            final hasSession = _tagBlacklistService.hasActiveSession('nhentai');
-            final isSyncing = _tagBlacklistService.isSyncing('nhentai');
-            final isSyncingRules = _tagBlacklistService.isSyncingRules(
-              'nhentai',
-            );
-
-            /// Sync localEntries from Cubit state to ensure data consistency
-            void syncFromCubit() {
-              final settingsState = context.read<SettingsCubit>().state;
-              if (settingsState is SettingsLoaded) {
-                localEntries = List<String>.from(
-                    settingsState.preferences.blacklistedTags);
-                localMetadata = Map<String, BlacklistedTagMetadata>.from(
-                  settingsState.preferences.blacklistedTagMetadata,
-                );
-              }
-            }
-
-            Future<void> saveState() async {
-              await context
-                  .read<SettingsCubit>()
-                  .updateBlacklistedTagsWithMetadata(
-                    localEntries,
-                    localMetadata,
-                  );
-            }
-
-            Future<void> pickFromTags() async {
-              final selectedFiltersForPicker = localEntries.map((entry) {
-                final normalizedEntry = TagBlacklistUtils.normalizeEntry(entry);
-                final numericId = int.tryParse(normalizedEntry);
-                if (numericId == null) {
-                  return search_filter.FilterItem.include(
-                    entry,
-                    tagName: entry,
-                  );
-                }
-
-                final localMeta = localMetadata[normalizedEntry];
-                if (localMeta != null) {
-                  return search_filter.FilterItem.include(
-                    normalizedEntry,
-                    tagId: numericId,
-                    tagType: localMeta.type,
-                    tagName: localMeta.name,
-                    tagSlug: localMeta.slug,
-                  );
-                }
-
-                final onlineMeta = onlineRules.firstWhere(
-                  (rule) => rule.id == normalizedEntry,
-                  orElse: () => OnlineBlacklistRule(token: normalizedEntry),
-                );
-                return search_filter.FilterItem.include(
-                  normalizedEntry,
-                  tagId: numericId,
-                  tagType: onlineMeta.type,
-                  tagName: onlineMeta.name,
-                );
-              }).toList(growable: false);
-
-              final selected = await AppRouter.goToFilterData(
-                context,
-                filterType: 'tag',
-                sourceId: 'nhentai',
-                hideOtherTabs: false,
-                supportsExclude: false,
-                selectedFilters: selectedFiltersForPicker,
-              );
-
-              if (!context.mounted || selected == null) {
-                return;
-              }
-
-              final backupEntries = List<String>.from(localEntries);
-              final backupMetadata =
-                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
-
-              // FilterData works as a full selector. Apply should replace
-              // current local selections, including the empty state.
-              localEntries = <String>[];
-              localMetadata = <String, BlacklistedTagMetadata>{};
-
-              for (final filter in selected.where((item) => !item.isExcluded)) {
-                final id = filter.tagId;
-                if (id != null && id > 0) {
-                  final idString = id.toString();
-                  localEntries.add(idString);
-                  localMetadata[idString] = BlacklistedTagMetadata(
-                    id: idString,
-                    type: filter.tagType ?? 'tag',
-                    name: filter.tagName ?? filter.value,
-                    slug: filter.tagSlug,
-                  );
-                } else {
-                  localEntries.add(filter.value);
-                }
-              }
-
-              localEntries = TagBlacklistUtils.sanitizeEntries(localEntries);
-
-              try {
-                await saveState();
-                syncFromCubit();
-              } catch (e) {
-                localEntries = backupEntries;
-                localMetadata = backupMetadata;
-                if (sheetContext.mounted) {
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(
-                        content: Text(AppLocalizations.of(context)!
-                            .failedToSave(e.toString()))),
-                  );
-                }
-                return;
-              }
-
-              if (sheetContext.mounted) {
-                setSheetState(() {});
-              }
-            }
-
-            Future<void> addEntries() async {
-              final parsedEntries =
-                  TagBlacklistUtils.parseManualEntries(controller.text);
-              if (parsedEntries.isEmpty) {
-                return;
-              }
-
-              // Diagnostic: check Cubit state BEFORE add
-              final cubitBefore = context.read<SettingsCubit>().state;
-              if (cubitBefore is SettingsLoaded) {
-                getIt<Logger>().d(
-                    'SHEET_ADD_BEFORE: blur=${cubitBefore.preferences.blurThumbnails}, tags=${cubitBefore.preferences.blacklistedTags.length}');
-              }
-
-              final backup = List<String>.from(localEntries);
-              localEntries = TagBlacklistUtils.sanitizeEntries([
-                ...localEntries,
-                ...parsedEntries,
-              ]);
-
-              try {
-                await saveState();
-
-                // Diagnostic: check Cubit state AFTER add
-                if (!context.mounted) return;
-                final cubitAfter = context.read<SettingsCubit>().state;
-                if (cubitAfter is SettingsLoaded) {
-                  getIt<Logger>().d(
-                      'SHEET_ADD_AFTER: blur=${cubitAfter.preferences.blurThumbnails}, tags=${cubitAfter.preferences.blacklistedTags.length}');
-                }
-
-                // Sync back from Cubit to ensure data consistency
-                syncFromCubit();
-
-                controller.clear();
-              } catch (e) {
-                // Restore backup if save failed
-                localEntries = backup;
-                if (sheetContext.mounted) {
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(
-                        content: Text(AppLocalizations.of(context)!
-                            .failedToSave(e.toString()))),
-                  );
-                }
-                return;
-              }
-
-              if (sheetContext.mounted) {
-                setSheetState(() {});
-              }
-            }
-
-            Future<void> removeEntry(String entry) async {
-              final backup = List<String>.from(localEntries);
-              final backupMetadata =
-                  Map<String, BlacklistedTagMetadata>.from(localMetadata);
-              localEntries = localEntries
-                  .where((current) => current != entry)
-                  .toList(growable: false);
-              final normalized = TagBlacklistUtils.normalizeEntry(entry);
-              localMetadata.remove(normalized);
-
-              try {
-                await saveState();
-
-                // Sync back from Cubit to ensure data consistency
-                syncFromCubit();
-              } catch (e) {
-                // Restore backup if save failed
-                localEntries = backup;
-                localMetadata = backupMetadata;
-                if (sheetContext.mounted) {
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    SnackBar(
-                        content: Text(AppLocalizations.of(context)!
-                            .failedToDelete(e.toString()))),
-                  );
-                }
-                return;
-              }
-
-              if (sheetContext.mounted) {
-                setSheetState(() {});
-              }
-            }
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: mediaQuery.size.height * 0.9,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(28),
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: Container(
-                                width: 42,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.outline
-                                      .withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(
-                                      DesignTokens.radiusFull),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary
-                                        .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(
-                                        DesignTokens.radiusXl),
-                                  ),
-                                  child: Icon(
-                                    Icons.visibility_off_rounded,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        AppLocalizations.of(context)!
-                                            .manageTagBlacklist,
-                                        style: TextStyleConst.headingSmall
-                                            .copyWith(
-                                          color: theme.colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        AppLocalizations.of(context)!
-                                            .addTagRulesDescription,
-                                        style:
-                                            TextStyleConst.bodySmall.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            TextField(
-                              controller: controller,
-                              minLines: 1,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!
-                                    .searchExampleHint,
-                                prefixIcon: const Icon(Icons.tag_rounded),
-                                filled: true,
-                                fillColor:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide(
-                                    color: theme.colorScheme.outline
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide(
-                                    color: theme.colorScheme.outline
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                ),
-                              ),
-                              onSubmitted: (_) => addEntries(),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: isSyncing
-                                        ? null
-                                        : () async {
-                                            await Future.wait([
-                                              _tagBlacklistService
-                                                  .syncOnlineEntries(
-                                                'nhentai',
-                                                forceRefresh: true,
-                                              ),
-                                              _tagBlacklistService
-                                                  .syncOnlineRules(
-                                                'nhentai',
-                                                forceRefresh: true,
-                                              ),
-                                            ]);
-                                            if (sheetContext.mounted) {
-                                              setSheetState(() {});
-                                            }
-                                          },
-                                    icon: isSyncing
-                                        ? SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: theme.colorScheme.primary,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.sync_rounded,
-                                            size: 18,
-                                          ),
-                                    label: Text(
-                                      AppLocalizations.of(context)!
-                                          .refreshOnline,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    onPressed: addEntries,
-                                    icon: const Icon(
-                                      Icons.add_rounded,
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      AppLocalizations.of(context)!.addRules,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: pickFromTags,
-                                icon: const Icon(Icons.playlist_add_rounded),
-                                label: Text(
-                                  AppLocalizations.of(context)!.pickFromTags,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!
-                                    .localRulesCount(localEntries.length),
-                                style: TextStyleConst.bodyLarge.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              if (localEntries.isEmpty)
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .nothingSavedLocally,
-                                )
-                              else
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: localEntries
-                                      .map(
-                                        (entry) => InputChip(
-                                          label: Text(
-                                            _buildLocalBlacklistLabel(
-                                              entry,
-                                              onlineRules,
-                                              localMetadata,
-                                            ),
-                                          ),
-                                          onDeleted: () => removeEntry(entry),
-                                          deleteIconColor: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              const SizedBox(height: 20),
-                              Text(
-                                hasSession
-                                    ? AppLocalizations.of(context)!
-                                        .onlineRulesMetadataCount(
-                                            onlineRules.length)
-                                    : AppLocalizations.of(context)!
-                                        .onlineRulesMetadata,
-                                style: TextStyleConst.bodyLarge.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              if (!hasSession)
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .loginRequiredForRules,
-                                )
-                              else if (isSyncingRules && onlineRules.isEmpty)
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .syncingOnlineRules,
-                                )
-                              else if (onlineRules.isEmpty)
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .noOnlineRuleDetails,
-                                )
-                              else
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: onlineRules
-                                      .map(
-                                        (rule) => _buildBlacklistEntryChip(
-                                          theme,
-                                          rule.displayLabel,
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              const SizedBox(height: 20),
-                              Text(
-                                AppLocalizations.of(context)!
-                                    .activeCoverageCount(mergedEntries.length),
-                                style: TextStyleConst.bodyLarge.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              if (mergedEntries.isEmpty)
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .blacklistGalleriesInfo,
-                                )
-                              else
-                                _buildSheetHint(
-                                  theme,
-                                  AppLocalizations.of(context)!
-                                      .coverageActiveDescription(
-                                    mergedEntries.length,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: () async {
-                              // Ensure all pending updates are flushed before closing
-                              // This gives time for any lingering async updates to complete
-                              await Future.delayed(
-                                const Duration(milliseconds: 100),
-                              );
-                              if (sheetContext.mounted) {
-                                sheetContext.pop();
-                              }
-                            },
-                            child: Text(AppLocalizations.of(context)!.done),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSheetHint(ThemeData theme, String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Text(
-        text,
-        style: TextStyleConst.bodySmall.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDisguiseModeTile(
-    UserPreferences prefs,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        final isLoading =
-            state is SettingsLoaded && state.isUpdatingDisguiseMode;
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
-          ),
-          title: Text(
-            l10n.disguiseMode,
-            style: TextStyleConst.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            isLoading
-                ? l10n.applyingDisguiseMode
-                : l10n.disguiseModeDescription,
-            style: TextStyleConst.bodySmall.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3),
-              ),
-            ),
-            child: DropdownButton<String>(
-              value: prefs.disguiseMode,
-              underline: const SizedBox(),
-              icon: isLoading
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : Icon(
-                      Icons.arrow_drop_down,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-              dropdownColor: theme.colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              items: [
-                DropdownMenuItem(
-                  value: 'default',
-                  child: Text(l10n.disguiseDefault),
-                ),
-                DropdownMenuItem(
-                  value: 'calculator',
-                  child: Text(l10n.disguiseCalculator),
-                ),
-                DropdownMenuItem(
-                  value: 'notes',
-                  child: Text(l10n.disguiseNotes),
-                ),
-                DropdownMenuItem(
-                  value: 'weather',
-                  child: Text(l10n.disguiseWeather),
-                ),
-              ],
-              onChanged: isLoading
-                  ? null
-                  : (mode) {
-                      if (mode != null) {
-                        context.read<SettingsCubit>().updateDisguiseMode(mode);
-                      }
-                    },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDnsStatusCard(
-    BuildContext context,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    final deviceActive = _deviceDnsState?['isActive'] == true;
-    final deviceServerName = _deviceDnsState?['serverName'] as String?;
-    final deviceReason = _deviceDnsState?['reason'] as String?;
-
-    return _buildSettingsCard([
-      // ponytail: App DNS status hidden — no user changer yet
-      // Device Private DNS status
-      ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading:
-            Icon(Icons.security_outlined, color: theme.colorScheme.primary),
-        title: Text(
-          l10n.devicePrivateDns,
-          style: TextStyleConst.bodyLarge.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(
-          deviceActive
-              ? (deviceServerName != null
-                  ? l10n.dnsPrivateDnsStrict(deviceServerName)
-                  : l10n.dnsPrivateDnsOpportunistic)
-              : (deviceReason == 'API_29_REQUIRED'
-                  ? l10n.dnsPrivateDnsRequirements
-                  : l10n.dnsPrivateDnsOff),
-          style: TextStyleConst.bodySmall.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: (deviceActive
-                    ? AppColors.success
-                    : theme.colorScheme.surfaceContainerHighest)
-                .withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
-          ),
-          child: Text(
-            deviceActive ? l10n.dnsModeOn : l10n.dnsModeOff,
-            style: TextStyleConst.labelMedium.copyWith(
-              color: deviceActive
-                  ? AppColors.success
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-
-      // Open DNS settings + guidance
-      _buildDivider(theme),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              deviceReason == 'API_29_REQUIRED'
-                  ? l10n.dnsPrivateDnsRequiresAndroid10
-                  : l10n.dnsPrivateDnsGuidance,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.dnsPrivateDnsCannotAutoSet,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (!deviceActive && deviceReason != 'API_29_REQUIRED') ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => KuronNative.instance.openDnsSettings(),
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: Text(l10n.openDnsSettings),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    ], theme);
-  }
-
-  Widget _buildStorageSection(
-    BuildContext context,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    return FutureBuilder<String?>(
-      future: StorageSettings.getCustomRootPath(),
-      builder: (context, snapshot) {
-        final customPath = snapshot.data;
-        final hasCustomPath = customPath != null && customPath.isNotEmpty;
-
-        return _buildSettingsCard([
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            leading: Icon(
-              Icons.folder_open,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(
-              l10n.downloadDirectory,
-              style: TextStyleConst.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            subtitle: Text(
-              hasCustomPath ? customPath : l10n.defaultStorage,
-              style: TextStyleConst.bodySmall.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              tooltip: l10n.changeDirectory,
-              onPressed: () async {
-                final newPath = await StorageSettings.pickAndSaveCustomRoot(
-                  context,
-                );
-                if (newPath != null && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n.downloadDirectoryUpdated,
-                      ),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                  setState(() {}); // Refresh UI
-                }
-              },
-            ),
-          ),
-          if (hasCustomPath) ...[
-            _buildDivider(theme),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
-              leading: Icon(
-                Icons.refresh,
-                color: theme.colorScheme.error,
-              ),
-              title: Text(
-                l10n.resetToDefault,
-                style: TextStyleConst.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.error,
-                ),
-              ),
-              subtitle: Text(
-                l10n.useDefaultInternalStorage,
-                style: TextStyleConst.bodySmall.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              onTap: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: theme.colorScheme.surface,
-                    title: Text(l10n.resetToDefault,
-                        style: TextStyle(color: theme.colorScheme.onSurface)),
-                    content: Text(
-                      l10n.confirmResetStorageDirectory,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => ctx.pop(false),
-                        child: Text(l10n.cancel),
-                      ),
-                      FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: theme.colorScheme.error,
-                          foregroundColor: theme.colorScheme.onError,
-                        ),
-                        onPressed: () => ctx.pop(true),
-                        child: Text(l10n.reset),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirmed == true) {
-                  await StorageSettings.clearCustomRoot();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.downloadDirectoryReset,
-                        ),
-                      ),
-                    );
-                    setState(() {}); // Refresh UI
-                  }
-                }
-              },
-            ),
-          ],
-        ], theme);
-      },
-    );
-  }
-
-  Widget _buildDownloadSection(
-    BuildContext context,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    return BlocBuilder<DownloadBloc, DownloadBlocState>(
-      builder: (context, state) {
-        if (state is DownloadError) {
-          return _buildSettingsCard([
-            ListTile(
-              title: Text(
-                l10n.failedToLoad,
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  state.message,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              trailing: state.canRetry
-                  ? IconButton(
-                      onPressed: () => context
-                          .read<DownloadBloc>()
-                          .add(const DownloadInitializeEvent()),
-                      icon: const Icon(Icons.refresh_rounded),
-                      tooltip: l10n.retry,
-                    )
-                  : null,
-            ),
-          ], theme);
-        }
-
-        if (state is DownloadInitial || state is DownloadInitializing) {
-          return _buildSettingsCard([
-            ListTile(
-              leading: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              title: Text(
-                l10n.loadingDownloads,
-                style: TextStyleConst.bodyMedium.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ], theme);
-        }
-
-        if (state is! DownloadLoaded) {
-          return const SizedBox.shrink();
-        }
-
-        final settings = state.settings;
-
-        return _buildSettingsCard([
-          // Max Concurrent Downloads
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            title: Text(
-              l10n.maxConcurrentDownloads,
-              style: TextStyleConst.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Slider(
-                  value: settings.maxConcurrentDownloads.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  label: '${settings.maxConcurrentDownloads}',
-                  onChanged: (value) {
-                    context.read<DownloadBloc>().add(
-                          DownloadSettingsUpdateEvent(
-                            maxConcurrentDownloads: value.toInt(),
-                            imageQuality: settings.imageQuality,
-                            autoRetry: settings.autoRetry,
-                            retryAttempts: settings.retryAttempts,
-                            retryDelay: settings.retryDelay,
-                            timeoutDuration: settings.timeoutDuration,
-                            enableNotifications: settings.enableNotifications,
-                            wifiOnly: settings.wifiOnly,
-                            customStorageRoot: settings.customStorageRoot,
-                          ),
-                        );
-                  },
-                ),
-                Text(
-                  l10n.concurrentDownloadsWarning,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildDivider(theme),
-
-          // Image Quality
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            title: Text(
-              l10n.imageQualityLabel,
-              style: TextStyleConst.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            subtitle: DropdownButton<String>(
-              value: settings.imageQuality,
-              isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: 'low',
-                  child: Text(l10n.lowQuality),
-                ),
-                DropdownMenuItem(
-                  value: 'medium',
-                  child: Text(l10n.mediumQuality),
-                ),
-                DropdownMenuItem(
-                  value: 'high',
-                  child: Text(l10n.highQuality),
-                ),
-                DropdownMenuItem(
-                  value: 'original',
-                  child: Text(l10n.originalQuality),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<DownloadBloc>().add(
-                        DownloadSettingsUpdateEvent(
-                          maxConcurrentDownloads:
-                              settings.maxConcurrentDownloads,
-                          imageQuality: value,
-                          autoRetry: settings.autoRetry,
-                          retryAttempts: settings.retryAttempts,
-                          retryDelay: settings.retryDelay,
-                          timeoutDuration: settings.timeoutDuration,
-                          enableNotifications: settings.enableNotifications,
-                          wifiOnly: settings.wifiOnly,
-                          customStorageRoot: settings.customStorageRoot,
-                        ),
-                      );
-                }
-              },
-            ),
-          ),
-          _buildDivider(theme),
-
-          // Auto Retry
-          _buildSwitchTile(
-            title: l10n.autoRetryFailedDownloads,
-            subtitle: l10n.autoRetryDescription,
-            value: settings.autoRetry,
-            onChanged: (value) {
-              context.read<DownloadBloc>().add(
-                    DownloadSettingsUpdateEvent(
-                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
-                      imageQuality: settings.imageQuality,
-                      autoRetry: value,
-                      retryAttempts: settings.retryAttempts,
-                      retryDelay: settings.retryDelay,
-                      timeoutDuration: settings.timeoutDuration,
-                      enableNotifications: settings.enableNotifications,
-                      wifiOnly: settings.wifiOnly,
-                      customStorageRoot: settings.customStorageRoot,
-                    ),
-                  );
-            },
-            theme: theme,
-          ),
-
-          if (settings.autoRetry) ...[
-            _buildDivider(theme),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
-              title: Text(
-                l10n.maxRetryAttempts,
-                style: TextStyleConst.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              subtitle: Slider(
-                value: settings.retryAttempts.toDouble(),
-                min: 1,
-                max: 10,
-                divisions: 9,
-                label: '${settings.retryAttempts}',
-                onChanged: (value) {
-                  context.read<DownloadBloc>().add(
-                        DownloadSettingsUpdateEvent(
-                          maxConcurrentDownloads:
-                              settings.maxConcurrentDownloads,
-                          imageQuality: settings.imageQuality,
-                          autoRetry: settings.autoRetry,
-                          retryAttempts: value.toInt(),
-                          retryDelay: settings.retryDelay,
-                          timeoutDuration: settings.timeoutDuration,
-                          enableNotifications: settings.enableNotifications,
-                          wifiOnly: settings.wifiOnly,
-                          customStorageRoot: settings.customStorageRoot,
-                        ),
-                      );
-                },
-              ),
-            ),
-          ],
-          _buildDivider(theme),
-
-          // WiFi Only
-          _buildSwitchTile(
-            title: l10n.wifiOnlyLabel,
-            subtitle: l10n.wifiOnlyDescription,
-            value: settings.wifiOnly,
-            onChanged: (value) {
-              context.read<DownloadBloc>().add(
-                    DownloadSettingsUpdateEvent(
-                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
-                      imageQuality: settings.imageQuality,
-                      autoRetry: settings.autoRetry,
-                      retryAttempts: settings.retryAttempts,
-                      retryDelay: settings.retryDelay,
-                      timeoutDuration: settings.timeoutDuration,
-                      enableNotifications: settings.enableNotifications,
-                      wifiOnly: value,
-                      customStorageRoot: settings.customStorageRoot,
-                    ),
-                  );
-            },
-            theme: theme,
-          ),
-          _buildDivider(theme),
-
-          // Download Timeout
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            title: Text(
-              l10n.downloadTimeoutLabel,
-              style: TextStyleConst.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  '${settings.timeoutDuration.inMinutes} ${l10n.minutesUnit}',
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                Slider(
-                  value: settings.timeoutDuration.inMinutes.toDouble(),
-                  min: 1,
-                  max: 30,
-                  divisions: 29,
-                  label: AppLocalizations.of(context)!
-                      .timeoutMinutes(settings.timeoutDuration.inMinutes),
-                  onChanged: (value) {
-                    context.read<DownloadBloc>().add(
-                          DownloadSettingsUpdateEvent(
-                            maxConcurrentDownloads:
-                                settings.maxConcurrentDownloads,
-                            imageQuality: settings.imageQuality,
-                            autoRetry: settings.autoRetry,
-                            retryAttempts: settings.retryAttempts,
-                            retryDelay: settings.retryDelay,
-                            timeoutDuration: Duration(minutes: value.toInt()),
-                            enableNotifications: settings.enableNotifications,
-                            wifiOnly: settings.wifiOnly,
-                            customStorageRoot: settings.customStorageRoot,
-                          ),
-                        );
-                  },
-                ),
-              ],
-            ),
-          ),
-          _buildDivider(theme),
-
-          // Enable Notifications
-          _buildSwitchTile(
-            title: l10n.enableNotificationsLabel,
-            subtitle: l10n.enableNotificationsDescription,
-            value: settings.enableNotifications,
-            onChanged: (value) {
-              context.read<DownloadBloc>().add(
-                    DownloadSettingsUpdateEvent(
-                      maxConcurrentDownloads: settings.maxConcurrentDownloads,
-                      imageQuality: settings.imageQuality,
-                      autoRetry: settings.autoRetry,
-                      retryAttempts: settings.retryAttempts,
-                      retryDelay: settings.retryDelay,
-                      timeoutDuration: settings.timeoutDuration,
-                      enableNotifications: value,
-                      wifiOnly: settings.wifiOnly,
-                      customStorageRoot: settings.customStorageRoot,
-                    ),
-                  );
-            },
-            theme: theme,
-          ),
-        ], theme);
-      },
-    );
-  }
-
-  Widget _buildResetButton(
-    BuildContext context,
-    ThemeData theme,
-    AppLocalizations l10n,
-  ) {
-    return FilledButton.icon(
-      onPressed: () async {
-        final settingsCubit = context.read<SettingsCubit>();
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: theme.colorScheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-            ),
-            title: Text(l10n.resetSettings, style: TextStyleConst.headingSmall),
-            content: Text(
-              l10n.confirmResetSettings,
-              style: TextStyleConst.bodyMedium,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => ctx.pop(false),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error,
-                  foregroundColor: theme.colorScheme.onError,
-                ),
-                onPressed: () => ctx.pop(true),
-                child: Text(l10n.reset),
-              ),
-            ],
-          ),
-        );
-        if (confirm == true) {
-          await settingsCubit.resetToDefaults();
-        }
-      },
-      icon: const Icon(Icons.refresh),
-      label: Text(l10n.resetToDefault),
-      style: FilledButton.styleFrom(
-        backgroundColor: theme.colorScheme.error,
-        foregroundColor: theme.colorScheme.onError,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
-      ),
-    );
-  }
-
-  /// Build colored dot for source reachability status.
-  Widget _healthDot(
-    ContentSource source,
-    SourceHealthStatus health,
-    ThemeData theme,
-  ) {
-    Color color;
-    switch (health) {
-      case SourceHealthStatus.reachable:
-        color = const Color(0xFF4CAF50); // green
-      case SourceHealthStatus.unreachable:
-        color = const Color(0xFFF44336); // red
-      case SourceHealthStatus.unknown:
-        color = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.38);
-    }
-    return SizedBox(
-      width: 24,
-      height: 24,
-      child: Icon(
-        Icons.circle,
-        size: 12,
-        color: color,
-      ),
-    );
-  }
+  /// Build the "Available Sources" section for manual Link/ZIP installation.
 
   /// Build the "Available Sources" section for manual Link/ZIP installation.
   Widget _buildAvailableSourcesSection(ThemeData theme, AppLocalizations l10n) {
@@ -2276,14 +464,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header
-        _buildSectionHeader(
+        buildSettingsSectionHeader(
           Icons.download_outlined,
           AppLocalizations.of(context)!.availableSources,
           theme,
         ),
         const SizedBox(height: 12),
 
-        _buildSettingsCard([
+        buildSettingsCard([
           ListTile(
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -2333,7 +521,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 .where((s) =>
                     _sourceHealthStatuses[s.id] == SourceHealthStatus.reachable)
                 .length;
-            return _buildSettingsCard([
+            return buildSettingsCard([
               ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -2412,7 +600,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   return ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                    leading: _healthDot(source, health, theme),
+                    leading: buildHealthDot(source, health, theme),
                     title: Text(
                       source.displayName,
                       style: TextStyleConst.bodyMedium.copyWith(

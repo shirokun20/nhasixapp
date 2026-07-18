@@ -8,6 +8,11 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/usecases/favorites/add_to_favorites_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/get_favorites_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/remove_from_favorites_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/get_favorite_collections_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/create_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/rename_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/delete_favorite_collection_usecase.dart';
+import 'package:nhasixapp/domain/usecases/favorites/add_to_favorite_collection_usecase.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 
 class MockAddToFavoritesUseCase extends Mock implements AddToFavoritesUseCase {}
@@ -16,6 +21,21 @@ class MockGetFavoritesUseCase extends Mock implements GetFavoritesUseCase {}
 
 class MockRemoveFromFavoritesUseCase extends Mock
     implements RemoveFromFavoritesUseCase {}
+
+class MockGetFavoriteCollectionsUseCase extends Mock
+    implements GetFavoriteCollectionsUseCase {}
+
+class MockCreateFavoriteCollectionUseCase extends Mock
+    implements CreateFavoriteCollectionUseCase {}
+
+class MockRenameFavoriteCollectionUseCase extends Mock
+    implements RenameFavoriteCollectionUseCase {}
+
+class MockDeleteFavoriteCollectionUseCase extends Mock
+    implements DeleteFavoriteCollectionUseCase {}
+
+class MockAddToFavoriteCollectionUseCase extends Mock
+    implements AddToFavoriteCollectionUseCase {}
 
 class MockUserDataRepository extends Mock implements UserDataRepository {}
 
@@ -26,6 +46,11 @@ void main() {
   late MockAddToFavoritesUseCase mockAddToFavoritesUseCase;
   late MockGetFavoritesUseCase mockGetFavoritesUseCase;
   late MockRemoveFromFavoritesUseCase mockRemoveFromFavoritesUseCase;
+  late MockGetFavoriteCollectionsUseCase mockGetFavoriteCollectionsUseCase;
+  late MockCreateFavoriteCollectionUseCase mockCreateFavoriteCollectionUseCase;
+  late MockRenameFavoriteCollectionUseCase mockRenameFavoriteCollectionUseCase;
+  late MockDeleteFavoriteCollectionUseCase mockDeleteFavoriteCollectionUseCase;
+  late MockAddToFavoriteCollectionUseCase mockAddToFavoriteCollectionUseCase;
   late MockUserDataRepository mockUserDataRepository;
   late MockLogger mockLogger;
 
@@ -68,6 +93,15 @@ void main() {
     mockAddToFavoritesUseCase = MockAddToFavoritesUseCase();
     mockGetFavoritesUseCase = MockGetFavoritesUseCase();
     mockRemoveFromFavoritesUseCase = MockRemoveFromFavoritesUseCase();
+    mockGetFavoriteCollectionsUseCase = MockGetFavoriteCollectionsUseCase();
+    mockCreateFavoriteCollectionUseCase =
+        MockCreateFavoriteCollectionUseCase();
+    mockRenameFavoriteCollectionUseCase =
+        MockRenameFavoriteCollectionUseCase();
+    mockDeleteFavoriteCollectionUseCase =
+        MockDeleteFavoriteCollectionUseCase();
+    mockAddToFavoriteCollectionUseCase =
+        MockAddToFavoriteCollectionUseCase();
     mockUserDataRepository = MockUserDataRepository();
     mockLogger = MockLogger();
 
@@ -75,6 +109,11 @@ void main() {
       addToFavoritesUseCase: mockAddToFavoritesUseCase,
       getFavoritesUseCase: mockGetFavoritesUseCase,
       removeFromFavoritesUseCase: mockRemoveFromFavoritesUseCase,
+      getFavoriteCollectionsUseCase: mockGetFavoriteCollectionsUseCase,
+      createFavoriteCollectionUseCase: mockCreateFavoriteCollectionUseCase,
+      renameFavoriteCollectionUseCase: mockRenameFavoriteCollectionUseCase,
+      deleteFavoriteCollectionUseCase: mockDeleteFavoriteCollectionUseCase,
+      addToFavoriteCollectionUseCase: mockAddToFavoriteCollectionUseCase,
       userDataRepository: mockUserDataRepository,
       logger: mockLogger,
     );
@@ -92,7 +131,7 @@ void main() {
     blocTest<FavoriteCubit, FavoriteState>(
       'loadFavorites emits loaded state with collections and active collection',
       build: () {
-        when(() => mockUserDataRepository.getFavoriteCollections())
+        when(() => mockGetFavoriteCollectionsUseCase())
             .thenAnswer((_) async => [tCollection]);
         when(() => mockGetFavoritesUseCase(any())).thenAnswer((_) async => [
               {
@@ -122,7 +161,7 @@ void main() {
             .having((s) => s.totalCount, 'totalCount', 1),
       ],
       verify: (_) {
-        verify(() => mockUserDataRepository.getFavoriteCollections()).called(1);
+        verify(() => mockGetFavoriteCollectionsUseCase()).called(1);
         verify(() => mockUserDataRepository.getFavoritesCount(
               collectionId: 'collection_1',
             )).called(1);
@@ -132,16 +171,15 @@ void main() {
     blocTest<FavoriteCubit, FavoriteState>(
       'createCollection refreshes current list after repository succeeds',
       build: () {
-        when(() => mockUserDataRepository.createFavoriteCollection(
-              name: 'Favorites 2',
-              collectionId: any(named: 'collectionId'),
+        when(() => mockCreateFavoriteCollectionUseCase(
+              any(),
             )).thenAnswer((_) async => FavoriteCollection(
               id: 'collection_2',
               name: 'Favorites 2',
               createdAt: DateTime(2026, 4, 12),
               updatedAt: DateTime(2026, 4, 12),
             ));
-        when(() => mockUserDataRepository.getFavoriteCollections())
+        when(() => mockGetFavoriteCollectionsUseCase())
             .thenAnswer((_) async => [
                   tCollection,
                   FavoriteCollection(
@@ -170,9 +208,8 @@ void main() {
         ),
       ],
       verify: (_) {
-        verify(() => mockUserDataRepository.createFavoriteCollection(
-              name: 'Favorites 2',
-              collectionId: any(named: 'collectionId'),
+        verify(() => mockCreateFavoriteCollectionUseCase(
+              any(),
             )).called(1);
       },
     );
@@ -180,7 +217,7 @@ void main() {
     blocTest<FavoriteCubit, FavoriteState>(
       'loadMoreFavorites deduplicates merged favorites by source and id',
       build: () {
-        when(() => mockUserDataRepository.getFavoriteCollections())
+        when(() => mockGetFavoriteCollectionsUseCase())
             .thenAnswer((_) async => []);
         when(() => mockUserDataRepository.getFavoritesCount(
               collectionId: any(named: 'collectionId'),
@@ -243,7 +280,7 @@ void main() {
     blocTest<FavoriteCubit, FavoriteState>(
       'searchFavorites finds items outside currently loaded page',
       build: () {
-        when(() => mockUserDataRepository.getFavoriteCollections())
+        when(() => mockGetFavoriteCollectionsUseCase())
             .thenAnswer((_) async => []);
         when(() => mockUserDataRepository.getFavoritesCount(
               collectionId: any(named: 'collectionId'),
@@ -307,7 +344,7 @@ void main() {
     blocTest<FavoriteCubit, FavoriteState>(
       'searchFavorites matches source_id',
       build: () {
-        when(() => mockUserDataRepository.getFavoriteCollections())
+        when(() => mockGetFavoriteCollectionsUseCase())
             .thenAnswer((_) async => []);
         when(() => mockUserDataRepository.getFavoritesCount(
               collectionId: any(named: 'collectionId'),

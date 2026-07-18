@@ -40,17 +40,26 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
       return false;
     }
 
-    final features = rawConfig['features'] as Map<String, dynamic>?;
+    final features = rawConfig['features'] is Map<String, dynamic>
+        ? rawConfig['features'] as Map<String, dynamic>
+        : null;
     final rawFeatureEnabled = features?['randomGallery'];
     final featureEnabled =
         rawFeatureEnabled is bool ? rawFeatureEnabled : false;
 
-    final api = rawConfig['api'] as Map<String, dynamic>?;
-    final apiEndpoints = api?['endpoints'] as Map<String, dynamic>?;
+    final api = rawConfig['api'] is Map<String, dynamic>
+        ? rawConfig['api'] as Map<String, dynamic>
+        : null;
+    final rawEndpoints = api?['endpoints'];
+    final apiEndpoints = rawEndpoints is Map<String, dynamic> ? rawEndpoints : null;
     final apiRandomPath = apiEndpoints?['random']?.toString().trim() ?? '';
 
-    final scraper = rawConfig['scraper'] as Map<String, dynamic>?;
-    final scraperEndpoints = scraper?['endpoints'] as Map<String, dynamic>?;
+    final scraper = rawConfig['scraper'] is Map<String, dynamic>
+        ? rawConfig['scraper'] as Map<String, dynamic>
+        : null;
+    final rawScraperEndpoints = scraper?['endpoints'];
+    final scraperEndpoints =
+        rawScraperEndpoints is Map<String, dynamic> ? rawScraperEndpoints : null;
     final scraperRandomPath = scraperEndpoints?['random']?.toString().trim() ??
         scraper?['randomUrl']?.toString().trim() ??
         '';

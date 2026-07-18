@@ -12,6 +12,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../../domain/entities/reader_position.dart';
+import '../../../domain/usecases/reader/get_reader_settings_usecase.dart';
+import '../../../domain/usecases/reader/save_reader_settings_usecase.dart';
+import '../../../domain/usecases/reader/save_reader_position_usecase.dart';
+import '../../../domain/usecases/reader/clear_all_reader_positions_usecase.dart';
+import '../../../domain/usecases/reader/get_reader_position_usecase.dart';
 import '../../../domain/usecases/content/get_content_detail_usecase.dart';
 import '../../../domain/usecases/content/get_chapter_images_usecase.dart';
 import '../../../domain/usecases/history/add_to_history_usecase.dart';
@@ -54,6 +59,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.getContentDetailUseCase,
     required this.getChapterImagesUseCase,
     required this.addToHistoryUseCase,
+    required this.getReaderSettingsUseCase,
+    required this.saveReaderSettingsUseCase,
+    required this.saveReaderPositionUseCase,
+    required this.clearAllReaderPositionsUseCase,
+    required this.getReaderPositionUseCase,
     required this.readerSettingsEntityRepository,
     required this.readerRepository,
     required this.offlineContentManager,
@@ -70,6 +80,11 @@ class ReaderCubit extends Cubit<ReaderState> {
   final GetContentDetailUseCase getContentDetailUseCase;
   final GetChapterImagesUseCase getChapterImagesUseCase;
   final AddToHistoryUseCase addToHistoryUseCase;
+  final GetReaderSettingsUseCase getReaderSettingsUseCase;
+  final SaveReaderSettingsUseCase saveReaderSettingsUseCase;
+  final SaveReaderPositionUseCase saveReaderPositionUseCase;
+  final ClearAllReaderPositionsUseCase clearAllReaderPositionsUseCase;
+  final GetReaderPositionUseCase getReaderPositionUseCase;
   final ReaderSettingsEntityRepository readerSettingsEntityRepository;
   final ReaderRepository readerRepository;
   final OfflineContentManager offlineContentManager;
@@ -439,7 +454,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// 🚀 OPTIMIZATION: Simplified reader settings loading
   Future<ReaderSettingsEntity> _loadReaderSettingsEntityOptimized() async {
     try {
-      return await readerSettingsEntityRepository.getReaderSettingsEntity();
+      return await getReaderSettingsUseCase();
     } catch (e) {
       _logger.w('Failed to load reader settings, using defaults: $e');
       return const ReaderSettingsEntity(); // Use defaults
@@ -1111,7 +1126,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
       );
 
-      await readerRepository.saveReaderPosition(position);
+      await saveReaderPositionUseCase(position);
 
       if (state.isOfflineMode == true) return;
 
@@ -1312,8 +1327,8 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
     try {
       final current =
-          await readerSettingsEntityRepository.getReaderSettingsEntity();
-      await readerSettingsEntityRepository.saveReaderSettingsEntity(
+          await getReaderSettingsUseCase();
+      await saveReaderSettingsUseCase(
           current.copyWith(enableZoom: newEnableZoom));
       _logger.i('Successfully saved enable zoom: $newEnableZoom');
     } catch (e, stackTrace) {
@@ -1380,7 +1395,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Clear all reader positions (useful for debugging)
   Future<void> clearAllReaderPositions() async {
     try {
-      await readerRepository.clearAllReaderPositions();
+      await clearAllReaderPositionsUseCase();
       _logger.i('🗑️ Cleared all reader positions');
     } catch (e) {
       _logger.e('Failed to clear all reader positions: $e');
@@ -2588,7 +2603,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         readingTimeMinutes: (state.readingTimer?.inMinutes ?? 0),
       );
       // if (position.currentPage <= position.totalPages) {
-      await readerRepository.saveReaderPosition(position);
+      await saveReaderPositionUseCase(position);
       // }
       // _logger.i(
       //     '✅ Saved reader position: ${state.content!.id} at page ${state.currentPage}/${state.content!.pageCount}');
@@ -2601,7 +2616,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   /// Restore reader position if exists
   Future<int> _restoreReaderPosition(String contentId) async {
     try {
-      final position = await readerRepository.getReaderPosition(contentId);
+      final position = await getReaderPositionUseCase(contentId);
       if (position != null) {
         _logger.i(
             '📖 Restored reader position: $contentId at page ${position.currentPage}/${position.totalPages}');

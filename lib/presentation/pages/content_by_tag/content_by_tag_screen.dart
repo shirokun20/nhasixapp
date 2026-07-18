@@ -135,7 +135,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
 
       setState(() {});
     } catch (e) {
-      Logger().e('ContentByTagScreen: Error initializing content: $e');
+      getIt<Logger>().e('ContentByTagScreen: Error initializing content: $e');
       // Fallback to simple tag search
       final searchFilter = SearchFilter(
         query: widget.tagQuery == '{query}' ? '' : widget.tagQuery,
@@ -336,7 +336,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
         _contentBloc.add(ContentSearchEvent(newFilter));
       }
     } catch (e) {
-      Logger().e('ContentByTagScreen: Error changing sorting: $e');
+      getIt<Logger>().e('ContentByTagScreen: Error changing sorting: $e');
       // Revert sort option on error
       setState(() {
         _currentSortOption = _currentSortOption;

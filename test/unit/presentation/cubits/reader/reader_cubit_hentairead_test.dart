@@ -10,6 +10,11 @@ import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/domain/entities/reader_position.dart';
 import 'package:nhasixapp/domain/repositories/reader_repository.dart';
 import 'package:nhasixapp/domain/repositories/reader_settings_repository.dart';
+import 'package:nhasixapp/domain/usecases/reader/get_reader_settings_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_reader_settings_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_reader_position_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/clear_all_reader_positions_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/get_reader_position_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_content_detail_usecase.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
@@ -24,6 +29,21 @@ class _MockGetChapterImagesUseCase extends Mock
     implements GetChapterImagesUseCase {}
 
 class _MockAddToHistoryUseCase extends Mock implements AddToHistoryUseCase {}
+
+class _MockGetReaderSettingsUseCase extends Mock
+    implements GetReaderSettingsUseCase {}
+
+class _MockSaveReaderSettingsUseCase extends Mock
+    implements SaveReaderSettingsUseCase {}
+
+class _MockSaveReaderPositionUseCase extends Mock
+    implements SaveReaderPositionUseCase {}
+
+class _MockClearAllReaderPositionsUseCase extends Mock
+    implements ClearAllReaderPositionsUseCase {}
+
+class _MockGetReaderPositionUseCase extends Mock
+    implements GetReaderPositionUseCase {}
 
 class _MockReaderSettingsEntityRepository extends Mock
     implements ReaderSettingsEntityRepository {}
@@ -92,6 +112,12 @@ void main() {
     final getContentDetailUseCase = _MockGetContentDetailUseCase();
     final getChapterImagesUseCase = _MockGetChapterImagesUseCase();
     final addToHistoryUseCase = _MockAddToHistoryUseCase();
+    final getReaderSettingsUseCase = _MockGetReaderSettingsUseCase();
+    final saveReaderSettingsUseCase = _MockSaveReaderSettingsUseCase();
+    final saveReaderPositionUseCase = _MockSaveReaderPositionUseCase();
+    final clearAllReaderPositionsUseCase =
+        _MockClearAllReaderPositionsUseCase();
+    final getReaderPositionUseCase = _MockGetReaderPositionUseCase();
     final readerSettingsEntityRepository =
         _MockReaderSettingsEntityRepository();
     final readerRepository = _MockReaderRepository();
@@ -122,6 +148,11 @@ void main() {
       getContentDetailUseCase: getContentDetailUseCase,
       getChapterImagesUseCase: getChapterImagesUseCase,
       addToHistoryUseCase: addToHistoryUseCase,
+      getReaderSettingsUseCase: getReaderSettingsUseCase,
+      saveReaderSettingsUseCase: saveReaderSettingsUseCase,
+      saveReaderPositionUseCase: saveReaderPositionUseCase,
+      clearAllReaderPositionsUseCase: clearAllReaderPositionsUseCase,
+      getReaderPositionUseCase: getReaderPositionUseCase,
       readerSettingsEntityRepository: readerSettingsEntityRepository,
       readerRepository: readerRepository,
       offlineContentManager: offlineContentManager,
@@ -160,6 +191,12 @@ void main() {
     final getContentDetailUseCase = _MockGetContentDetailUseCase();
     final getChapterImagesUseCase = _MockGetChapterImagesUseCase();
     final addToHistoryUseCase = _MockAddToHistoryUseCase();
+    final getReaderSettingsUseCase = _MockGetReaderSettingsUseCase();
+    final saveReaderSettingsUseCase = _MockSaveReaderSettingsUseCase();
+    final saveReaderPositionUseCase = _MockSaveReaderPositionUseCase();
+    final clearAllReaderPositionsUseCase =
+        _MockClearAllReaderPositionsUseCase();
+    final getReaderPositionUseCase = _MockGetReaderPositionUseCase();
     final readerSettingsEntityRepository =
         _MockReaderSettingsEntityRepository();
     final readerRepository = _MockReaderRepository();
@@ -190,6 +227,11 @@ void main() {
       getContentDetailUseCase: getContentDetailUseCase,
       getChapterImagesUseCase: getChapterImagesUseCase,
       addToHistoryUseCase: addToHistoryUseCase,
+      getReaderSettingsUseCase: getReaderSettingsUseCase,
+      saveReaderSettingsUseCase: saveReaderSettingsUseCase,
+      saveReaderPositionUseCase: saveReaderPositionUseCase,
+      clearAllReaderPositionsUseCase: clearAllReaderPositionsUseCase,
+      getReaderPositionUseCase: getReaderPositionUseCase,
       readerSettingsEntityRepository: readerSettingsEntityRepository,
       readerRepository: readerRepository,
       offlineContentManager: offlineContentManager,
