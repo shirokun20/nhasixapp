@@ -4087,5 +4087,6 @@
   "readerScreenSupporter": "Support Developer",
   "readerScreenSupporterDesc": "If you like this app, consider supporting its development.",
   "readerScreenThanks": "Thank You for Reading!",
-  "readerScreenThanksDesc": "Hope you enjoyed this chapter. See you in the next one!"
+  "readerScreenThanksDesc": "Hope you enjoyed this chapter. See you in the next one!",
+  "readerScreenGoToFirstPage": "Go to First Page"
 }

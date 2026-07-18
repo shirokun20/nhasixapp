@@ -8867,6 +8867,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hope you enjoyed this chapter. See you in the next one!'**
   String get readerScreenThanksDesc;
+
+  /// No description provided for @readerScreenGoToFirstPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to First Page'**
+  String get readerScreenGoToFirstPage;
 }
 
 class _AppLocalizationsDelegate

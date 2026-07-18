@@ -138,7 +138,7 @@ class ImageCacheService {
       // This strips animation frames and returns just the first frame
       return Uint8List.fromList(img.encodeJpg(image, quality: 85));
     } catch (e) {
-      debugPrint('Error decoding static image preview in isolate: $e');
+      getIt<Logger>().w('Error decoding static image preview in isolate: $e');
       return null;
     }
   }

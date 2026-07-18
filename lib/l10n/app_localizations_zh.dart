@@ -5064,4 +5064,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerScreenThanksDesc => '希望你享受这一章节。下一章再见！';
+
+  @override
+  String get readerScreenGoToFirstPage => '回到第一页';
 }

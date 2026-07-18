@@ -38,6 +38,9 @@ import 'chapter_open_overlay.dart';
 import 'end_of_chapter_overlay.dart';
 
 part 'reader_overlay_widgets.dart';
+part 'reader_settings_widgets.dart';
+part 'reader_image_widgets.dart';
+part 'reader_mode_widgets.dart';
 
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
@@ -133,8 +136,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _lastUIVisibleState = true;
 
   // 🎯 Tap-to-toggle detection for continuous scroll
-  Offset _tapDownPosition = Offset.zero;
-  DateTime _tapDownTime = DateTime.now();
   // 🎯 Floating page indicator (ValueNotifiers avoid full-screen rebuild)
   final ValueNotifier<int> _visiblePageNotifier = ValueNotifier<int>(1);
   final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
@@ -336,62 +337,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       _isPreloading = false;
     }
   }
-
-  /// 🚀 DEPRECATED: Old scroll handler - replaced by NotificationListener
-  /// Keeping code for reference, but disabled to prevent duplicate saves
-  /*
-  void _onScrollChanged() {
-    final state = _readerCubit.state;
-    if (state.readingMode == ReadingMode.continuousScroll &&
-        state.content != null) {
-      // 🚀 SIMPLE: Only prefetch images, no page tracking or state updates
-      // Calculate visible page for prefetching only
-      final screenHeight = MediaQuery.of(context).size.height;
-      final approximateItemHeight =
-          screenHeight * 0.9; // Slightly larger for better detection
-      final visiblePage =
-          (_scrollController.offset / approximateItemHeight).round() + 1;
-      final clampedPage = visiblePage.clamp(1, state.content!.pageCount);
-
-      // 🚀 FIX: Update ReaderCubit state so progress bar moves (even if estimation is rough)
-      if (clampedPage != _lastReportedPage) {
-        _lastReportedPage = clampedPage;
-
-        if (!_isProgrammaticAnimation) {
-          _readerCubit.updateCurrentPageFromSwipe(clampedPage);
-        }
-
-        _prefetchImages(
-            clampedPage, state.content!.imageUrls, state.imageMetadata);
-      }
-
-      // 🐛 FIX: Check if user truly reached bottom in continuous scroll
-      // Mark as complete only when scroll position is at bottom
-      final scrollPosition = _scrollController.position;
-      if (scrollPosition.hasPixels) {
-        final isAtBottom = scrollPosition.pixels >=
-            scrollPosition.maxScrollExtent - 100; // 100px threshold
-
-        if (isAtBottom) {
-          // User reached bottom -> save with last page to mark complete
-          _readerCubit.updateCurrentPageFromSwipe(state.content!.pageCount);
-        }
-      }
-
-      // ✨ Auto-hide UI on scroll down
-      final scrollDirection = _scrollController.position.userScrollDirection;
-      if (scrollDirection == ScrollDirection.reverse &&
-          (state.showUI ?? false)) {
-        _readerCubit.hideUI();
-      }
-      // ✨ Auto-show UI on scroll up
-      else if (scrollDirection == ScrollDirection.forward &&
-          !(state.showUI ?? false)) {
-        _readerCubit.showUI();
-      }
-    }
-  }
-  */
 
   /// 🚀 NEW: Handle scroll notification with accurate metrics
   void _onScrollNotification(
@@ -658,6 +603,144 @@ class _ReaderScreenState extends State<ReaderScreen>
       SnackBar(
         content: Text(l10n.readerContinuousDisabledHeavyImage),
         duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _onContinuousImageLoaded(int page, Size imageSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (imageSize.width > 0) {
+      final renderedHeight = imageSize.height * (screenWidth / imageSize.width);
+      final totalHeight = renderedHeight + 8.0;
+      if (_cachedImageHeights[page] != totalHeight) {
+        _cachedImageHeights[page] = totalHeight;
+        _pendingHeightUpdates.add(page);
+        _heightBatchTimer?.cancel();
+        _heightBatchTimer = Timer(
+          const Duration(milliseconds: 16),
+          () {
+            if (!mounted) return;
+            _pendingHeightUpdates.clear();
+            setState(() {});
+          },
+        );
+      }
+    }
+    _readerCubit.onImageLoaded(page, imageSize);
+  }
+
+  Future<bool> _repairBrokenImage(int pageNumber) async {
+    final result = await _readerCubit.repairBrokenImage(pageNumber);
+    if (!mounted) return result.success;
+    _showRepairSnackBar(pageNumber, result);
+    return result.success;
+  }
+
+  Future<bool> _openSourcePageForRepair(int pageNumber) async {
+    final manualContext =
+        await _readerCubit.prepareManualRepairContext(pageNumber);
+    if (manualContext == null) {
+      if (mounted) {
+        _showRepairSnackBar(
+          pageNumber,
+          (success: false, reason: 'remote_unavailable', statusCode: null),
+        );
+      }
+      return false;
+    }
+
+    final sourceRules = resolveSourceImageResolutionRules(
+      _getSourceRawConfig(manualContext.sourceId),
+    );
+    final webViewResult = await KuronNative.instance.showLoginWebView(
+      url: manualContext.sourcePageUrl,
+      successUrlFilters: const <String>[],
+      initialCookie: manualContext.initialCookie,
+      userAgent: null,
+      backgroundColor: NativeThemeHelper.backgroundColorHex,
+      textColor: NativeThemeHelper.textColorHex,
+      domImageSelectors: sourceRules.imageSelectors,
+      domImageAttributes: sourceRules.imageAttributes,
+      domLinkSelectors: sourceRules.linkSelectors,
+      clearCookies: false,
+    );
+
+    if (!mounted) return false;
+
+    final launched = (webViewResult?['success'] as bool?) == true;
+    if (!launched) {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final l10n = AppLocalizations.of(context)!;
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(l10n.failedToOpenBrowser),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return false;
+    }
+
+    final rawCookies =
+        (webViewResult?['cookies'] as List<dynamic>?)?.cast<String>() ??
+            const <String>[];
+    final userAgent = webViewResult?['userAgent'] as String?;
+    final sessionUrl = webViewResult?['currentUrl'] as String?;
+    final resolvedImageUrl = webViewResult?['resolvedImageUrl'] as String?;
+
+    final result = await _readerCubit.retryRepairAfterManualSession(
+      pageNumber: pageNumber,
+      sourcePageUrl: manualContext.sourcePageUrl,
+      sessionUrl: sessionUrl,
+      resolvedImageUrl: resolvedImageUrl,
+      rawCookies: rawCookies,
+      userAgent: userAgent,
+    );
+
+    if (mounted) {
+      _showRepairSnackBar(pageNumber, result);
+      _refreshDownloadBloc();
+    }
+
+    return result.success;
+  }
+
+  Map<String, dynamic>? _getSourceRawConfig(String? sourceId) {
+    if (sourceId == null || sourceId.trim().isEmpty) return null;
+    return getIt<RemoteConfigService>().getRawConfig(sourceId);
+  }
+
+  void _refreshDownloadBloc() {
+    try {
+      context.read<DownloadBloc>().add(const DownloadRefreshEvent());
+    } catch (e) {
+      _logger.w('DownloadBloc refresh failed', error: e);
+    }
+  }
+
+  void _showRepairSnackBar(int pageNumber, ReaderImageRepairResult result) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = AppLocalizations.of(context)!;
+    final message = switch (result.reason) {
+      'success' => l10n.readerImageRepairSuccess(pageNumber),
+      'no_connection' => l10n.noInternetConnection,
+      'http_status' =>
+        l10n.readerImageRepairHttpStatus(pageNumber, result.statusCode ?? 0),
+      'invalid_image' => l10n.readerImageRepairInvalidImage(pageNumber),
+      'provider_unavailable' ||
+      'remote_unavailable' ||
+      'page_unavailable' ||
+      'content_unavailable' =>
+        l10n.readerImageRepairUnavailable(pageNumber),
+      _ => l10n.readerImageRepairFailed(pageNumber),
+    };
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: result.success
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -1249,1603 +1332,71 @@ class _ReaderScreenState extends State<ReaderScreen>
         ),
       );
     }
-    return _buildReader(state);
-  }
-
-  Widget _buildReader(ReaderState state) {
-    // Show chapter open overlay once on first content load
-    final showOverlay = !_chapterOverlayShown && (state.content != null);
-
-    return Stack(
-      children: [
-        // Main reader content
-        _buildReaderContent(state),
-
-        // 🎬 Animated UI overlay (always in tree for smooth transitions)
-        _ReaderUIOverlay(
-          isVisible: state.showUI ?? false,
-          topBar: _ReaderTopBar(
-            state: state,
-            onBack: () => context.pop(),
-            onToggleKeepScreenOn: _readerCubit.toggleKeepScreenOn,
-            onOpenSettings: () => _showReaderSettingsEntity(state),
-          ),
-          bottomBar: state.readingMode != ReadingMode.continuousScroll
-              ? _ReaderBottomBar(
-                  state: state,
-                  onPrevPage: _readerCubit.previousPage,
-                  onNextPage: _readerCubit.nextPage,
-                  onJumpToPage: _readerCubit.jumpToPage,
-                  onChangeReadingMode: () {
-                    final newMode = _getNextReadingMode(
-                      state.readingMode ?? ReadingMode.singlePage,
-                      disableContinuousScroll:
-                          _isContinuousScrollDisabledForCurrentContent(),
-                    );
-                    _readerCubit.changeReadingMode(newMode);
-                  },
-                  disableContinuousScroll:
-                      _isContinuousScrollDisabledForCurrentContent(),
-                )
-              : null,
-        ),
-
-        _ReaderMiniChromeToggle(
-          isVisible: state.showUI ?? false,
-          onToggle: _readerCubit.toggleUI,
-        ),
-
-        // 🎯 Floating page indicator for continuous scroll
-        if (state.readingMode == ReadingMode.continuousScroll)
-          _ReaderFloatingPageIndicator(
-            scrollingNotifier: _scrollingNotifier,
-            visiblePageNotifier: _visiblePageNotifier,
-            totalPages: state.content?.pageCount ?? 0,
-          ),
-
-        // 📖 Chapter open overlay (auto-dismiss, shown once per session)
-        if (showOverlay)
-          ChapterOpenOverlay(
-            title: state.content!.getDisplayTitle(),
-            totalPages: state.content!.pageCount,
-            onDismiss: () {
-              if (mounted) setState(() => _chapterOverlayShown = true);
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _buildReaderContent(ReaderState state) {
-    final showNav = _shouldShowNavigationItem(state);
-
-    final content = switch (state.readingMode ?? ReadingMode.singlePage) {
-      ReadingMode.singlePage =>
-        _buildSinglePageReader(state, showNavigation: showNav),
-      ReadingMode.verticalPage =>
-        _buildVerticalPageReader(state, showNavigation: showNav),
-      ReadingMode.continuousScroll =>
-        _buildContinuousReader(state, showNavigation: showNav),
-    };
-
-    if ((state.readingMode ?? ReadingMode.singlePage) ==
-        ReadingMode.continuousScroll) {
-      return content;
-    }
-
-    return _buildPaginatedTapListener(state, child: content);
-  }
-
-  bool _shouldShowNavigationItem(ReaderState state) {
-    final hasContent =
-        state.content != null && (state.content!.imageUrls.isNotEmpty);
-    return hasContent;
-  }
-
-  /// Returns true if the tap at [tapX] (horizontal) should navigate to the
-  /// next page, respecting the current [tapDirection] setting.
-  bool _isNextTap(double tapX, double screenWidth, TapDirection tapDirection) {
-    final isRightSide = tapX > screenWidth * 0.7;
-    return tapDirection == TapDirection.inverted ? !isRightSide : isRightSide;
-  }
-
-  /// Returns true if the tap at [tapX] (horizontal) should navigate to the
-  /// previous page, respecting the current [tapDirection] setting.
-  bool _isPrevTap(double tapX, double screenWidth, TapDirection tapDirection) {
-    final isLeftSide = tapX < screenWidth * 0.3;
-    return tapDirection == TapDirection.inverted ? !isLeftSide : isLeftSide;
-  }
-
-  Widget _buildPaginatedTapListener(ReaderState state,
-      {required Widget child}) {
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (event) {
-        _tapDownPosition = event.position;
-        _tapDownTime = DateTime.now();
-      },
-      onPointerUp: (event) {
-        final distance = (event.position - _tapDownPosition).distance;
-        final duration = DateTime.now().difference(_tapDownTime);
-        if (distance >= 20 || duration.inMilliseconds >= 300) return;
-
-        if ((state.showUI ?? false) && _isTapInsideChrome(event.position)) {
-          return;
-        }
-
-        _handlePaginatedTap(event.position, state);
-      },
-      child: child,
-    );
-  }
-
-  bool _isTapInsideChrome(Offset position) {
-    final size = MediaQuery.of(context).size;
-    final topInset = MediaQuery.of(context).padding.top;
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    return position.dy <= topInset + 64 ||
-        position.dy >= size.height - bottomInset - 76;
-  }
-
-  void _handlePaginatedTap(Offset position, ReaderState state) {
-    final tapDir = state.tapDirection ?? TapDirection.normal;
-    final mode = state.readingMode ?? ReadingMode.singlePage;
-
-    if (mode == ReadingMode.verticalPage) {
-      final screenHeight = MediaQuery.of(context).size.height;
-      final isTopArea = position.dy < screenHeight * 0.3;
-      final isBottomArea = position.dy > screenHeight * 0.7;
-      final prevArea =
-          tapDir == TapDirection.inverted ? isBottomArea : isTopArea;
-      final nextArea =
-          tapDir == TapDirection.inverted ? isTopArea : isBottomArea;
-
-      if (prevArea) {
-        _readerCubit.previousPage();
-      } else if (nextArea) {
-        _readerCubit.nextPage();
-      } else {
-        _readerCubit.toggleUI();
-      }
-      return;
-    }
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (_isPrevTap(position.dx, screenWidth, tapDir)) {
-      _readerCubit.previousPage();
-    } else if (_isNextTap(position.dx, screenWidth, tapDir)) {
-      _readerCubit.nextPage();
-    } else {
-      _readerCubit.toggleUI();
-    }
-  }
-
-  Widget _wrapEndscreen(Widget child, int pageNumber, int totalPages) {
-    // passive pass-through — first-page supporter card removed
-    return child;
-  }
-
-  Widget _buildChapterNavigationPage(ReaderState state) {
-    final bool hasPrevChapter = _readerCubit.hasPreviousChapter;
-    final bool hasNextChapter = _readerCubit.hasNextChapter;
-    final bool isChapterMode = state.chapterData != null ||
-        state.currentChapter != null ||
-        hasPrevChapter ||
-        hasNextChapter;
-
-    return EndOfChapterOverlay(
+    return _ReaderContentWidget(
       state: state,
-      isChapterMode: isChapterMode,
-      isOfflineMode: state.isOfflineMode ?? false,
-      onBackToDetail: () => context.pop(),
-      onPreviousChapter:
-          hasPrevChapter ? () => _readerCubit.loadPreviousChapter() : null,
-      onNextChapter:
-          hasNextChapter ? () => _readerCubit.loadNextChapter() : null,
-    );
-  }
-
-  Widget _buildSinglePageReader(ReaderState state,
-      {bool showNavigation = false}) {
-    final pageCount = state.content?.imageUrls.length ?? 0;
-    final totalItems = showNavigation ? pageCount + 1 : pageCount;
-
-    _logger.d(
-        '📖 SinglePageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
-
-    return PageView.builder(
-      key: const ValueKey('horizontal_page_view'),
-      controller: _pageController,
-      scrollDirection: Axis.horizontal,
-      // ponytail: Clip.none avoids GPU overdraw on clipped edges.
-      // pageSnapping=true feels more natural for manga pager mode.
-      clipBehavior: Clip.none,
-      onPageChanged: (index) {
-        // Convert 0-indexed to 1-indexed page number
-        // For navigation page (index == pageCount), report pageCount + 1
-        final reportPage = index + 1;
-
-        // Update visible notifier (page indicator) + animated pause notifier
-        _visiblePageNotifier.value = reportPage;
-        _animatedPauseNotifier.value = reportPage;
-
-        _logger.d(
-            '📖 PageView changed to index=$index (reporting page $reportPage)');
-
-        // Only handle UI tasks, no navigation logic
-        final imageUrls = state.content?.imageUrls ?? [];
-        // Don't prefetch for navigation page
-        if (index < pageCount) {
-          // ponytail: non-CS PageView pre-builds adjacent pages automatically.
-          // No need for prefetch/evict — images already render from ExtendedImage
-          // cache. Prefetch triggers redundant resolve() per tap = lag.
-          if (state.readingMode != ReadingMode.singlePage &&
-              state.readingMode != ReadingMode.verticalPage) {
-            _prefetchImages(
-              reportPage,
-              imageUrls,
-              state.imageMetadata,
-              sourceId: state.content?.sourceId,
-            );
-            _evictDistantPages(reportPage, imageUrls,
-                isOffline: state.isOfflineMode ?? false);
-          }
-        }
-
-        // Update ReaderCubit state
-        if (!_isProgrammaticAnimation) {
-          _readerCubit.updateCurrentPageFromSwipe(reportPage);
-        }
+      cubit: _readerCubit,
+      pageController: _pageController,
+      verticalPageController: _verticalPageController,
+      scrollController: _scrollController,
+      visiblePageNotifier: _visiblePageNotifier,
+      animatedPauseNotifier: _animatedPauseNotifier,
+      scrollingNotifier: _scrollingNotifier,
+      contentId: widget.contentId,
+      chapterOverlayShown: _chapterOverlayShown,
+      isProgrammaticAnimation: _isProgrammaticAnimation,
+      logger: _logger,
+      onHeavyImageDetected: _onHeavyImageDetected,
+      onContinuousImageLoaded: _onContinuousImageLoaded,
+      onRepairBrokenImage: _repairBrokenImage,
+      onOpenSourcePageForRepair: _openSourcePageForRepair,
+      onScrollNotification: _onScrollNotification,
+      onShowSettings: _showReaderSettingsEntity,
+      onDismissChapterOverlay: () {
+        if (mounted) setState(() => _chapterOverlayShown = true);
       },
-      itemCount: totalItems,
-      itemBuilder: (context, index) {
-        if (showNavigation && index == pageCount) {
-          return _buildChapterNavigationPage(state);
-        }
-        final imageUrl = state.content?.imageUrls[index] ?? '';
-        final pageNumber = index + 1;
-
-        return _wrapEndscreen(
-          _buildImageViewer(imageUrl, pageNumber),
-          pageNumber,
-          pageCount,
-        );
-      },
+      prefetchImages: _prefetchImages,
+      evictDistantPages: _evictDistantPages,
+      resolveContinuousItemHeight: _resolveContinuousItemHeight,
+      isHeavyPrefetchSource: _isHeavyPrefetchSource,
+      isContinuousScrollDisabled: _isContinuousScrollDisabledForCurrentContent,
+      getNextReadingMode: _getNextReadingMode,
     );
   }
-
-  Widget _buildVerticalPageReader(ReaderState state,
-      {bool showNavigation = false}) {
-    final pageCount = state.content?.imageUrls.length ?? 0;
-    final totalItems = showNavigation ? pageCount + 1 : pageCount;
-
-    _logger.d(
-        '📖 VerticalPageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
-
-    return PageView.builder(
-      key: const ValueKey('vertical_page_view'),
-      controller: _verticalPageController,
-      scrollDirection: Axis.vertical,
-      clipBehavior: Clip.none,
-      onPageChanged: (index) {
-        // Convert 0-indexed to 1-indexed page number
-        // For navigation page (index == pageCount), report pageCount + 1
-        final reportPage = index + 1;
-
-        // Update visible notifier (page indicator) + animated pause notifier
-        _visiblePageNotifier.value = reportPage;
-        _animatedPauseNotifier.value = reportPage;
-
-        _logger.d(
-            '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
-
-        // Only handle UI tasks, no navigation logic
-        final imageUrls = state.content?.imageUrls ?? [];
-        // Don't prefetch for navigation page
-        if (index < pageCount) {
-          _prefetchImages(
-            reportPage,
-            imageUrls,
-            state.imageMetadata,
-            sourceId: state.content?.sourceId,
-          );
-          // LRU eviction: release images far from current position
-          _evictDistantPages(reportPage, imageUrls,
-              isOffline: state.isOfflineMode ?? false);
-        }
-
-        // Update ReaderCubit state
-        if (!_isProgrammaticAnimation) {
-          _readerCubit.updateCurrentPageFromSwipe(reportPage);
-        }
-      },
-      itemCount: totalItems,
-      itemBuilder: (context, index) {
-        if (showNavigation && index == pageCount) {
-          return _buildChapterNavigationPage(state);
-        }
-        final imageUrl = state.content?.imageUrls[index] ?? '';
-        final pageNumber = index + 1;
-        return _wrapEndscreen(
-          _buildImageViewer(
-            imageUrl,
-            pageNumber,
-            sourceId: state.content?.sourceId,
-          ),
-          pageNumber,
-          pageCount,
-        );
-      },
-    );
-  }
-
-  Widget _buildContinuousReader(ReaderState state,
-      {bool showNavigation = false}) {
-    final pageCount = state.content?.imageUrls.length ?? 0;
-    final totalItems = showNavigation ? pageCount + 1 : pageCount;
-
-    // 🎯 Tap-to-toggle: Use Listener (raw pointer) instead of GestureDetector
-    // to avoid competing with ListView's scroll gesture recognizer.
-    // Detects quick taps (< 20px movement, < 300ms) in center 60% of screen.
-
-    // 🚀 OPTIMIZATION: Get enableZoom once outside itemBuilder to avoid BlocBuilder in ListView
-    final enableZoom = state.enableZoom ?? true;
-    final isHeavySource = _isHeavyPrefetchSource(state.content?.sourceId);
-    final viewportHeight = MediaQuery.of(context).size.height;
-
-    // 🎯 Wrap in Listener for tap-to-toggle UI (bypasses gesture arena)
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (event) {
-        _tapDownPosition = event.position;
-        _tapDownTime = DateTime.now();
-      },
-      onPointerUp: (event) {
-        final distance = (event.position - _tapDownPosition).distance;
-        final duration = DateTime.now().difference(_tapDownTime);
-        // Quick tap with minimal movement = toggle UI
-        if (distance < 20 && duration.inMilliseconds < 300) {
-          final screenHeight = MediaQuery.of(context).size.height;
-          final tapY = event.position.dy;
-          // Only in center 60% of screen (avoid accidental taps near edges)
-          if (tapY > screenHeight * 0.2 && tapY < screenHeight * 0.8) {
-            _readerCubit.toggleUI();
-          }
-        }
-      },
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification notification) {
-          if (notification is ScrollUpdateNotification) {
-            _onScrollNotification(notification, state);
-          }
-          return false; // Allow notification to bubble up
-        },
-        child: ListView.builder(
-          scrollCacheExtent: ScrollCacheExtent.pixels(isHeavySource
-              ? viewportHeight *
-                  0.25 // 🔥 THERMAL: reduce offscreen builds for heavy sources
-              : 2500.0),
-          controller: _scrollController,
-          physics: isHeavySource
-              ? const ClampingScrollPhysics()
-              : const BouncingScrollPhysics(), // Keep fewer offscreen pages for heavy sources
-          addAutomaticKeepAlives:
-              true, // Heavy animated images set wantKeepAlive=true; normal images stay false
-          itemCount: totalItems,
-          itemBuilder: (context, index) {
-            if (showNavigation && index == pageCount) {
-              return SizedBox(
-                height: MediaQuery.of(context).size.height * 0.8,
-                child: _buildChapterNavigationPage(state),
-              );
-            }
-
-            final pageNumber = index + 1;
-            final imageUrl = state.content?.imageUrls[index] ?? '';
-            return _wrapEndscreen(
-              _buildImageViewer(
-                imageUrl,
-                pageNumber,
-                isContinuous: true,
-                enableZoom: enableZoom,
-                sourceId: state.content?.sourceId,
-              ),
-              pageNumber,
-              pageCount,
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // DELETED: _buildFailedPageCard (extracted to _FailedPageCard widget)
-
-  Widget _buildImageViewer(String imageUrl, int pageNumber,
-      {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
-    // Failed page placeholder → show retry card, don't try to decode
-    if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
-      final originalUrl =
-          OfflineContentManager.extractOriginalUrlFromPlaceholder(imageUrl);
-      return _FailedPageCard(
-        pageNumber: pageNumber,
-        canRetry: originalUrl != null && originalUrl.trim().isNotEmpty,
-        onRetry: () => _repairBrokenImage(pageNumber),
-      );
-    }
-
-    // 🚀 OPTIMIZATION: For continuous scroll mode, avoid BlocBuilder to prevent re-renders
-    // Pass enableZoom as parameter instead of reading from state
-    if (isContinuous) {
-      final zoom = enableZoom ?? true;
-      final canRepairImage = _canRepairBrokenImage(
-        imageUrl: imageUrl,
-        sourceId: sourceId,
-      );
-      final canOpenSourcePage = _canOpenSourcePageForRepair(
-        imageUrl: imageUrl,
-        sourceId: sourceId,
-      );
-      final headers = sourceId == null
-          ? null
-          : getIt<ContentSourceRegistry>()
-              .getSource(sourceId)
-              ?.getImageDownloadHeaders(imageUrl: imageUrl);
-      final sourceRawConfig = _getSourceRawConfig(sourceId);
-      // 🐛 FIX: Use cached height (or viewport fallback) to prevent scroll
-      // jumping when items are rebuilt during scroll-up.
-      final resolvedHeight = _resolveContinuousItemHeight(
-        pageNumber,
-        MediaQuery.of(context).size.height,
-      );
-
-      return RepaintBoundary(
-        child: SizedBox(
-          key: ValueKey(
-              'image_viewer_$pageNumber'), // 🐛 FIX: Preserve widget identity to prevent re-loading
-          height: resolvedHeight,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: ExtendedImageReaderWidget(
-              imageUrl: imageUrl,
-              contentId: widget.contentId,
-              pageNumber: pageNumber,
-              readingMode: ReadingMode.continuousScroll,
-              sourceId: sourceId,
-              sourceRawConfig: sourceRawConfig,
-              httpHeaders: headers,
-              enableZoom: zoom,
-              visiblePageNotifier: _animatedPauseNotifier,
-              grayscale: context.read<ThemeCubit>().currentTheme == 'note' ||
-                  context.read<ThemeCubit>().currentTheme == 'note_dark',
-              onHeavyImageDetected: _onHeavyImageDetected,
-              onRepairBrokenImage:
-                  canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
-              onOpenSourcePageForRepair: canOpenSourcePage
-                  ? () => _openSourcePageForRepair(pageNumber)
-                  : null,
-              onImageLoaded: (int page, Size imageSize) {
-                // Cache rendered height: image scaled to screen width
-                final screenWidth = MediaQuery.of(context).size.width;
-                if (imageSize.width > 0) {
-                  final renderedHeight =
-                      imageSize.height * (screenWidth / imageSize.width);
-                  // Add margin (8.0) to match the padding
-                  final totalHeight = renderedHeight + 8.0;
-                  if (_cachedImageHeights[page] != totalHeight) {
-                    _cachedImageHeights[page] = totalHeight;
-                    // ponytail: batch height updates — 20 images loading
-                    // simultaneously trigger 20 setState() cascades.
-                    // Collect pending pages and flush once per frame.
-                    _pendingHeightUpdates.add(page);
-                    _heightBatchTimer?.cancel();
-                    _heightBatchTimer = Timer(
-                      const Duration(milliseconds: 16),
-                      () {
-                        if (!mounted) return;
-                        _pendingHeightUpdates.clear();
-                        setState(() {});
-                      },
-                    );
-                  }
-                }
-                // Forward to cubit for webtoon detection
-                _readerCubit.onImageLoaded(page, imageSize);
-              },
-            ),
-          ),
-        ),
-      );
-    }
-
-    // For single page and vertical modes, use BlocBuilder for dynamic updates
-    return BlocBuilder<ReaderCubit, ReaderState>(
-      builder: (context, state) {
-        final zoom = enableZoom ?? state.enableZoom ?? true;
-        final resolvedSourceId = sourceId ?? state.content?.sourceId;
-        final canRepairImage = _canRepairBrokenImage(
-          imageUrl: imageUrl,
-          sourceId: resolvedSourceId,
-        );
-        final canOpenSourcePage = _canOpenSourcePageForRepair(
-          imageUrl: imageUrl,
-          sourceId: resolvedSourceId,
-        );
-        final headers = resolvedSourceId == null
-            ? null
-            : getIt<ContentSourceRegistry>()
-                .getSource(resolvedSourceId)
-                ?.getImageDownloadHeaders(imageUrl: imageUrl);
-        final sourceRawConfig = _getSourceRawConfig(resolvedSourceId);
-
-        // 🚀 FEATURE FLAG: Toggle between ExtendedImage (new) and PhotoView (legacy)
-        const bool useExtendedImage = true; // Set to false for rollback
-
-        if (useExtendedImage) {
-          // ✨ NEW: Use ExtendedImageReaderWidget for all modes
-          return RepaintBoundary(
-            child: ExtendedImageReaderWidget(
-              imageUrl: imageUrl,
-              contentId: widget.contentId,
-              pageNumber: pageNumber,
-              readingMode: state.readingMode ?? ReadingMode.singlePage,
-              sourceId: resolvedSourceId,
-              sourceRawConfig: sourceRawConfig,
-              httpHeaders: headers,
-              enableZoom: zoom,
-              visiblePageNotifier: _animatedPauseNotifier,
-              grayscale: context.read<ThemeCubit>().currentTheme == 'note' ||
-                  context.read<ThemeCubit>().currentTheme == 'note_dark',
-              // Double tap = toggle UI (pinch handles zoom)
-              onDoubleTapGesture: () => _readerCubit.toggleUI(),
-              onRepairBrokenImage:
-                  canRepairImage ? () => _repairBrokenImage(pageNumber) : null,
-              onOpenSourcePageForRepair: canOpenSourcePage
-                  ? () => _openSourcePageForRepair(pageNumber)
-                  : null,
-              onImageLoaded:
-                  _readerCubit.onImageLoaded, // 🎨 Auto-detect webtoon/manhwa
-            ),
-          );
-        }
-
-        // 📦 LEGACY: PhotoView fallback (for rollback)
-      },
-    );
-  }
-
-  bool _canRepairBrokenImage({
-    required String imageUrl,
-    required String? sourceId,
-  }) {
-    if (!_readerCubit.networkCubit.isConnected) {
-      return false;
-    }
-
-    if (sourceId == null || sourceId.trim().isEmpty) {
-      return false;
-    }
-
-    if (getIt<ContentSourceRegistry>().getSource(sourceId) == null) {
-      return false;
-    }
-
-    if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
-      final originalUrl =
-          OfflineContentManager.extractOriginalUrlFromPlaceholder(imageUrl);
-      return originalUrl != null && originalUrl.trim().isNotEmpty;
-    }
-
-    if (!imageUrl.startsWith('/') && !imageUrl.startsWith('file://')) {
-      return false;
-    }
-
-    return isLocalReaderImagePath(normalizeLocalReaderImagePath(imageUrl));
-  }
-
-  Map<String, dynamic>? _getSourceRawConfig(String? sourceId) {
-    if (sourceId == null || sourceId.trim().isEmpty) {
-      return null;
-    }
-    return getIt<RemoteConfigService>().getRawConfig(sourceId);
-  }
-
-  bool _canOpenSourcePageForRepair({
-    required String imageUrl,
-    required String? sourceId,
-  }) {
-    if (!_canRepairBrokenImage(imageUrl: imageUrl, sourceId: sourceId)) {
-      return false;
-    }
-
-    return supportsSourcePageManualRepair(_getSourceRawConfig(sourceId));
-  }
-
-  Future<bool> _repairBrokenImage(int pageNumber) async {
-    final result = await _readerCubit.repairBrokenImage(pageNumber);
-    if (!mounted) {
-      return result.success;
-    }
-
-    _showRepairSnackBar(pageNumber, result);
-
-    return result.success;
-  }
-
-  Future<bool> _openSourcePageForRepair(int pageNumber) async {
-    final manualContext = await _readerCubit.prepareManualRepairContext(
-      pageNumber,
-    );
-    if (manualContext == null) {
-      if (mounted) {
-        _showRepairSnackBar(
-          pageNumber,
-          (success: false, reason: 'remote_unavailable', statusCode: null),
-        );
-      }
-      return false;
-    }
-
-    final sourceRules = resolveSourceImageResolutionRules(
-      _getSourceRawConfig(manualContext.sourceId),
-    );
-    final webViewResult = await KuronNative.instance.showLoginWebView(
-      url: manualContext.sourcePageUrl,
-      successUrlFilters: const <String>[],
-      initialCookie: manualContext.initialCookie,
-      userAgent: null,
-      backgroundColor: NativeThemeHelper.backgroundColorHex,
-      textColor: NativeThemeHelper.textColorHex,
-      domImageSelectors: sourceRules.imageSelectors,
-      domImageAttributes: sourceRules.imageAttributes,
-      domLinkSelectors: sourceRules.linkSelectors,
-      clearCookies: false,
-    );
-
-    if (!mounted) {
-      return false;
-    }
-
-    final launched = (webViewResult?['success'] as bool?) == true;
-    if (!launched) {
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      final l10n = AppLocalizations.of(context)!;
-      messenger?.showSnackBar(
-        SnackBar(
-          content: Text(l10n.failedToOpenBrowser),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return false;
-    }
-
-    final rawCookies =
-        (webViewResult?['cookies'] as List<dynamic>?)?.cast<String>() ??
-            const <String>[];
-    final userAgent = webViewResult?['userAgent'] as String?;
-    final sessionUrl = webViewResult?['currentUrl'] as String?;
-    final resolvedImageUrl = webViewResult?['resolvedImageUrl'] as String?;
-
-    final result = await _readerCubit.retryRepairAfterManualSession(
-      pageNumber: pageNumber,
-      sourcePageUrl: manualContext.sourcePageUrl,
-      sessionUrl: sessionUrl,
-      resolvedImageUrl: resolvedImageUrl,
-      rawCookies: rawCookies,
-      userAgent: userAgent,
-    );
-
-    if (mounted) {
-      _showRepairSnackBar(pageNumber, result);
-      _refreshDownloadBloc();
-    }
-
-    return result.success;
-  }
-
-  void _refreshDownloadBloc() {
-    try {
-      context.read<DownloadBloc>().add(const DownloadRefreshEvent());
-    } catch (e) {
-      _logger.w('DownloadBloc refresh failed', error: e);
-    }
-  }
-
-  void _showRepairSnackBar(int pageNumber, ReaderImageRepairResult result) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    final l10n = AppLocalizations.of(context)!;
-
-    final message = switch (result.reason) {
-      'success' => l10n.readerImageRepairSuccess(pageNumber),
-      'no_connection' => l10n.noInternetConnection,
-      'http_status' => l10n.readerImageRepairHttpStatus(
-          pageNumber,
-          result.statusCode ?? 0,
-        ),
-      'invalid_image' => l10n.readerImageRepairInvalidImage(pageNumber),
-      'provider_unavailable' ||
-      'remote_unavailable' ||
-      'page_unavailable' ||
-      'content_unavailable' =>
-        l10n.readerImageRepairUnavailable(pageNumber),
-      _ => l10n.readerImageRepairFailed(pageNumber),
-    };
-
-    messenger?.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: result.success
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.error,
-      ),
-    );
-  }
-
-  /// 🎬 Animated UI overlay — always in widget tree for smooth fade/slide transitions
-  // DELETED: _buildAnimatedUIOverlay (extracted to _ReaderUIOverlay widget)
-
-  // DELETED: _buildFloatingPageIndicator (extracted to _ReaderFloatingPageIndicator widget)
-
-  // DELETED: _buildMiniChromeToggle, _miniChromeToggleSize, _clampMiniChromeToggleOffset (extracted to _ReaderMiniChromeToggle widget)
-
-  // DELETED: _buildTopBar (extracted to _ReaderTopBar widget)
-
-  // DELETED: _buildBottomBar (extracted to _ReaderBottomBar widget)
-  // DELETED: _buildEndOfChapterOverlay (moved to extra page in builder)
-
-  // DISABLED: Jump to page feature temporarily disabled to prevent navigation bugs
-  // Users should focus on sequential reading for better experience
-  /*
-  void _showPageJumpDialog(ReaderState state) {
-    final controller =
-        TextEditingController(text: (state.currentPage ?? 1).toString());
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        title: Text(
-          AppLocalizations.of(context)!.jumpToPage,
-          style: TextStyleConst.headingMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: TextStyleConst.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)!.pageInputLabel(state.content?.pageCount ?? 1),
-            labelStyle: TextStyleConst.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            border: OutlineInputBorder(
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text(
-              AppLocalizations.of(context)!.cancel,
-              style: TextStyleConst.buttonMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              context.pop();
-              final page = int.tryParse(controller.text);
-              if (page != null &&
-                  page >= 1 &&
-                  page <= (state.content?.pageCount ?? 1)) {
-                
-                _logger.d('🎯 JUMP DEBUG: User requested page $page');
-                
-                // Let ReaderCubit handle all navigation via BlocListener → _syncControllersWithState()
-                // This prevents race condition between manual PageController animation and automatic sync
-                _readerCubit.jumpToPage(page);
-              }
-            },
-            child: Text(
-              AppLocalizations.of(context)!.jump,
-              style: TextStyleConst.buttonMedium.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  */
 
   void _showReaderSettingsEntity(ReaderState state) {
-    final kuron = Theme.of(context).extension<KuronColors>();
-    final glassBg = kuron?.readerBg.withValues(alpha: 0.92) ??
-        Theme.of(context).colorScheme.surfaceContainer;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => BlocBuilder<ReaderCubit, ReaderState>(
-        bloc: _readerCubit,
-        builder: (context, currentState) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: glassBg,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-                border: Border(
-                  top: BorderSide(
-                    color: kuron?.cardBorder.withValues(alpha: 0.3) ??
-                        Colors.white12,
-                  ),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Handle bar
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: glassBg.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-
-                  Text(
-                    AppLocalizations.of(context)?.readerSettings ??
-                        AppLocalizations.of(context)!.readerSettings,
-                    style: TextStyleConst.headingMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Reading mode
-                  ListTile(
-                    title: Text(
-                      AppLocalizations.of(context)!.readingMode,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    subtitle: Text(
-                      _isContinuousScrollDisabledForCurrentContent()
-                          ? '${_getReadingModeLabel(currentState.readingMode ?? ReadingMode.singlePage)} • ${AppLocalizations.of(context)!.readerContinuousOffHeavyImage}'
-                          : _getReadingModeLabel(currentState.readingMode ??
-                              ReadingMode.singlePage),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: IconButton(
-                      onPressed: () {
-                        final currentMode =
-                            currentState.readingMode ?? ReadingMode.singlePage;
-                        final newMode = _getNextReadingMode(
-                          currentMode,
-                          disableContinuousScroll:
-                              _isContinuousScrollDisabledForCurrentContent(),
-                        );
-
-                        _readerCubit.changeReadingMode(newMode);
-                      },
-                      icon: Icon(
-                        _getReadingModeIcon(
-                            currentState.readingMode ?? ReadingMode.singlePage),
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-
-                  // Tap Direction (only for non-continuous-scroll modes)
-                  if (currentState.readingMode !=
-                      ReadingMode.continuousScroll) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      title: Text(
-                        AppLocalizations.of(context)!.readerTapDirectionLabel,
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        _getTapDirectionDescription(
-                          currentState.tapDirection ?? TapDirection.normal,
-                        ),
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: SegmentedButton<TapDirection>(
-                        segments: [
-                          ButtonSegment(
-                            value: TapDirection.normal,
-                            icon: const Icon(Icons.arrow_forward, size: 16),
-                            label: Text(
-                              AppLocalizations.of(context)!
-                                  .readerTapDirectionNormal,
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: TapDirection.inverted,
-                            icon: const Icon(Icons.arrow_back, size: 16),
-                            label: Text(
-                              AppLocalizations.of(context)!
-                                  .readerTapDirectionInverted,
-                            ),
-                          ),
-                        ],
-                        selected: {
-                          currentState.tapDirection ?? TapDirection.normal
-                        },
-                        onSelectionChanged: (s) =>
-                            _readerCubit.setTapDirection(s.first),
-                        style: const ButtonStyle(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Chapter Selector (only in chapter mode)
-                  if (currentState.chapterData != null ||
-                      currentState.currentChapter != null) ...[
-                    const Divider(height: 32),
-                    ListTile(
-                      title: Text(
-                        AppLocalizations.of(context)!.chapterLabel,
-                        style: TextStyleConst.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      subtitle: Text(
-                        currentState.currentChapter?.title ??
-                            currentState.content?.title.split(' - ').last ??
-                            AppLocalizations.of(context)!.noChapterSelected,
-                        style: TextStyleConst.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Icon(
-                        Icons.list,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      onTap: () {
-                        // Show chapter list in a dialog
-                        context.pop(); // Close settings
-                        _showChapterSelector(currentState);
-                      },
-                    ),
-                  ],
-
-                  // Keep screen on
-                  ListTile(
-                    title: Text(
-                      AppLocalizations.of(context)!.keepScreenOn,
-                      style: TextStyleConst.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    subtitle: Text(
-                      AppLocalizations.of(context)!.keepScreenOnDescription,
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: Switch(
-                      value: currentState.keepScreenOn ?? false,
-                      onChanged: (_) => _readerCubit.toggleKeepScreenOn(),
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Clear image cache button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _clearReaderImageCache,
-                      icon: Icon(
-                        Icons.delete_sweep_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      label: Text(
-                        AppLocalizations.of(context)!.readerClearImageCache,
-                        style: TextStyleConst.buttonMedium.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Reset settings button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showResetConfirmationDialog(),
-                      icon: Icon(
-                        Icons.restore,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      label: Text(
-                        AppLocalizations.of(context)!.resetToDefaults,
-                        style: TextStyleConst.buttonMedium.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.error),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // DELETED: _getReadingModeIcon (extracted to part file helper function)
-
-  String _getReadingModeLabel(ReadingMode mode) {
-    switch (mode) {
-      case ReadingMode.singlePage:
-        return AppLocalizations.of(context)!.horizontalPages;
-      case ReadingMode.verticalPage:
-        return AppLocalizations.of(context)!.verticalPages;
-      case ReadingMode.continuousScroll:
-        return AppLocalizations.of(context)!.continuousScroll;
-    }
-  }
-
-  String _getTapDirectionDescription(TapDirection direction) {
-    switch (direction) {
-      case TapDirection.normal:
-        return AppLocalizations.of(context)!
-            .readerTapDirectionNormalDescription;
-      case TapDirection.inverted:
-        return AppLocalizations.of(context)!
-            .readerTapDirectionInvertedDescription;
-    }
-  }
-
-  void _showResetConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        title: Text(
-          AppLocalizations.of(context)!.resetReaderSettings,
-          style: TextStyleConst.headingMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
-          '${AppLocalizations.of(context)!.resetReaderSettingsConfirmation}'
-          '• ${AppLocalizations.of(context)!.readingModeLabel}\n'
-          '• ${AppLocalizations.of(context)!.keepScreenOnLabel}\n'
-          '• ${AppLocalizations.of(context)!.showUILabel}\n\n'
-          '${AppLocalizations.of(context)!.areYouSure}',
-          style: TextStyleConst.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text(
-              AppLocalizations.of(context)!.cancel,
-              style: TextStyleConst.buttonMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              context.pop();
-              _resetReaderSettings();
-            },
-            child: Text(
-              AppLocalizations.of(context)!.reset,
-              style: TextStyleConst.buttonMedium.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChapterSelector(ReaderState state) {
-    if (_readerCubit.allChapters == null || _readerCubit.allChapters!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.noChaptersAvailable),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    final allChapters = _readerCubit.allChapters!;
-
-    // ponytail: filter to match current reading mode (chapters or volumes)
-    final isVolumeMode = state.currentChapter?.scanGroup == 'Volume';
-    final chaptersOnly = allChapters
-        .where((c) => isVolumeMode
-            ? c.scanGroup == 'Volume'
-            : c.scanGroup == null || c.scanGroup != 'Volume')
-        .toList();
-
+    final disableContinuous = _isContinuousScrollDisabledForCurrentContent();
+    final readingModeLabel = disableContinuous
+        ? '${_getReadingModeLabel(context, state.readingMode ?? ReadingMode.singlePage)} • ${AppLocalizations.of(context)!.readerContinuousOffHeavyImage}'
+        : _getReadingModeLabel(
+            context, state.readingMode ?? ReadingMode.singlePage);
+    final tapDirectionDescription = _getTapDirectionDescription(
+        context, state.tapDirection ?? TapDirection.normal);
     final activeLanguage = _normalizeLanguageForFilter(
-      state.currentChapter?.language ??
-          _preloadedActiveChapterLanguage ??
-          widget.activeChapterLanguage,
-    );
-
-    final chapters = activeLanguage == null
-        ? chaptersOnly
-        : chaptersOnly.where((chapter) {
-            final chapterLanguage =
-                _normalizeLanguageForFilter(chapter.language);
-            return chapterLanguage == activeLanguage;
-          }).toList();
-
-    final effectiveChapters = chapters.isNotEmpty ? chapters : chaptersOnly;
-
-    int currentIndex = -1;
-    for (int i = 0; i < effectiveChapters.length; i++) {
-      final isMatch = state.currentChapter != null
-          ? effectiveChapters[i].id == state.currentChapter!.id
-          : effectiveChapters[i].id == state.content?.id;
-      if (isMatch) {
-        currentIndex = i;
-        break;
-      }
-    }
+        state.currentChapter?.language ??
+            _preloadedActiveChapterLanguage ??
+            widget.activeChapterLanguage);
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          builder: (_, scrollController) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (currentIndex > 0 && scrollController.hasClients) {
-                final targetOffset = currentIndex * 72.0 - 100;
-                if (targetOffset > 0) {
-                  scrollController.animateTo(
-                    targetOffset,
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOutCubic,
-                  );
-                }
-              }
-            });
-
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.menu_book_rounded,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppLocalizations.of(context)!.chapters,
-                                    style: TextStyleConst.headingSmall.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    activeLanguage != null &&
-                                            effectiveChapters.isNotEmpty
-                                        ? '${AppLocalizations.of(context)!.nChapters(effectiveChapters.length)} • ${activeLanguage.toUpperCase()}'
-                                        : AppLocalizations.of(context)!
-                                            .nChapters(
-                                                effectiveChapters.length),
-                                    style: TextStyleConst.bodySmall.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () => sheetContext.pop(),
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .outlineVariant
-                        .withValues(alpha: 0.5),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                    child: Text(
-                      'Showing first ${effectiveChapters.length} chapters. '
-                      'Go back to detail page and use "View All" to see more.',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurfaceVariant
-                            .withValues(alpha: 0.7),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      itemCount: effectiveChapters.length,
-                      itemBuilder: (_, index) {
-                        final chapter = effectiveChapters[index];
-                        final isCurrent = index == currentIndex;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Material(
-                            color: isCurrent
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer
-                                    .withValues(alpha: 0.4)
-                                : Colors.transparent,
-                            borderRadius:
-                                BorderRadius.circular(DesignTokens.radiusLg),
-                            child: InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(DesignTokens.radiusLg),
-                              onTap: () {
-                                sheetContext.pop();
-                                if (!isCurrent) {
-                                  _readerCubit.loadChapter(chapter.id);
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        gradient: isCurrent
-                                            ? LinearGradient(
-                                                colors: [
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .secondary,
-                                                ],
-                                              )
-                                            : null,
-                                        color: isCurrent
-                                            ? null
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Center(
-                                        child: isCurrent
-                                            ? Icon(
-                                                Icons.play_arrow_rounded,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                                size: 20,
-                                              )
-                                            : Text(
-                                                '${index + 1}',
-                                                style: TextStyleConst
-                                                    .labelMedium
-                                                    .copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            chapter.title,
-                                            style: TextStyleConst.bodyMedium
-                                                .copyWith(
-                                              color: isCurrent
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface,
-                                              fontWeight: isCurrent
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w500,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (chapter.uploadDate != null) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _formatChapterDate(
-                                                  chapter.uploadDate!),
-                                              style: TextStyleConst.bodySmall
-                                                  .copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                    if (isCurrent)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          borderRadius: BorderRadius.circular(
-                                              DesignTokens.radiusMd),
-                                        ),
-                                        child: Text(
-                                          AppLocalizations.of(context)!
-                                              .chapterCurrentBadge,
-                                          style: TextStyleConst.labelSmall
-                                              .copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 10,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
+      isScrollControlled: true,
+      builder: (_) => BlocBuilder<ReaderCubit, ReaderState>(
+        bloc: _readerCubit,
+        builder: (context, currentState) => _ReaderSettingsSheet(
+          cubit: _readerCubit,
+          state: currentState,
+          readingModeLabel: readingModeLabel,
+          tapDirectionDescription: tapDirectionDescription,
+          onShowResetConfirmation: () => _showResetConfirmationDialog(
+              context, () => _resetReaderSettings(context, _readerCubit)),
+          onShowChapterSelector: () {
+            context.pop();
+            _showChapterSelector(context, _readerCubit, currentState,
+                activeLanguage: activeLanguage);
           },
-        );
-      },
-    );
-  }
-
-  String? _normalizeLanguageForFilter(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    return ChapterLanguagePresenter.normalize(value);
-  }
-
-  String _formatChapterDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays == 0) return AppLocalizations.of(context)!.today;
-    if (diff.inDays == 1) return AppLocalizations.of(context)!.yesterday;
-    if (diff.inDays < 7) {
-      return AppLocalizations.of(context)!.readerDaysAgoShort(diff.inDays);
-    }
-    if (diff.inDays < 30) {
-      return AppLocalizations.of(context)!
-          .readerWeeksAgoShort((diff.inDays / 7).floor());
-    }
-    if (diff.inDays < 365) {
-      return AppLocalizations.of(context)!
-          .readerMonthsAgoShort((diff.inDays / 30).floor());
-    }
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  Future<void> _clearReaderImageCache() async {
-    context.pop(); // close settings sheet
-    await ExtendedImageReaderWidget.clearNativeAnimatedCache();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.readerImageCacheCleared),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          duration: const Duration(seconds: 2),
+          onClearImageCache: () => _clearReaderImageCache(context),
         ),
-      );
-    }
-  }
-
-  Future<void> _resetReaderSettings() async {
-    try {
-      // Close the settings modal first
-      context.pop();
-
-      // Reset the settings
-      await _readerCubit.resetReaderSettings();
-
-      // Show success notification
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)?.readerSettingsResetSuccess ??
-                  AppLocalizations.of(context)!.readerSettingsResetSuccess,
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      // Handle reset errors gracefully
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)
-                      ?.failedToResetSettings(e.toString()) ??
-                  AppLocalizations.of(context)!
-                      .failedToResetSettings(e.toString()),
-              style: TextStyleConst.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onError,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            ),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.retry,
-              textColor: Theme.of(context).colorScheme.onError,
-              onPressed: () => _resetReaderSettings(),
-            ),
-          ),
-        );
-      }
-    }
+      ),
+    );
   }
 }

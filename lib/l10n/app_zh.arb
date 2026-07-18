@@ -3631,5 +3631,6 @@
   "readerScreenSupporter": "支持开发者",
   "readerScreenSupporterDesc": "如果你喜欢这个应用，请考虑支持其开发。",
   "readerScreenThanks": "感谢阅读！",
-  "readerScreenThanksDesc": "希望你享受这一章节。下一章再见！"
+  "readerScreenThanksDesc": "希望你享受这一章节。下一章再见！",
+  "readerScreenGoToFirstPage": "回到第一页"
 }

@@ -71,7 +71,7 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-07-16
+> Tracked via `openspec/` — Last updated: 2026-07-18
 
 ### Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -143,6 +143,8 @@ lib/
 - `2026-07-14-note-mode`
 - `2026-07-14-schale-network-source`
 - `2026-07-16-fix-overheat-lock-screen`
+- `2026-07-17-code-quality-refactor-phase-1`
+- `2026-07-18-code-quality-refactor-phase-2`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
@@ -190,6 +192,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-18 | OpenCode | Code Quality Refactor — Phase 2 Complete + CS Go to First Page | Done | Phase 2 (91/91 tasks) complete. Verified all tasks, squashed 1 missed `debugPrint` in `image_cache_service.dart`. Plus: added "Go to First Page" button to `EndOfChapterOverlay` in CS mode via `onGoToFirstPage` callback → jumps to page 0. Files: `end_of_chapter_overlay.dart`, `reader_screen.dart`. Archived `code-quality-refactor-phase-2`. |
 | 2026-07-17 | Claude Code | Code Quality Refactor — Phase 1 & Phase 2 | Done (Ph1), In Progress (Ph2) | Phase 1 (44 tasks): dead code removal, services/→core/services/, settings entity extraction, BaseCubit compliance, domain JSON purification, ContentRepository→UseCase (5 new UseCases, 4 callers migrated). Phase 2 (~59 tasks done): debugPrint→Logger (51 calls in 9 files), Logger injection (25 files), catch-block logging (15 files), GetReaderPositionUseCase + offline_series + content_list migrated. Remaining heavy: ~460 safe casts, ReaderCubit/FavoriteCubit UseCase boundary, mega-file splits. See [[code-quality-refactor-phases]]. |
 | 2026-07-16 | Claude Code | Overheat fix — lifecyle-aware Cubits + native cancel WebP (openspec: fix-overheat-lock-screen) | Done | Fixed CPU/GPU overheating saat lock screen. **ReaderCubit**: +`WidgetsBindingObserver` di ReaderScreen, `handleLifecyclePause()` cancel timer + disable wakelock, `handleLifecycleResume()` restore. **DownloadBloc**: +`pauseBackgroundWork()` flush DB timer + remove FrameTimingCallback, `resumeBackgroundWork()` restore. **ReaderCubit pindah screen-level**: removed from app-level BlocProviderConfig → `BlocProvider` wrapping di route builder → `close()` kepanggil otomatis. **Native HTTP cancel WebP**: `requestId` + `cancelWebPThumbnail()` MethodChannel, flag check di native `downloadBytesForThumbnail()` read loop, cancel di `AnimatedWebPViewState.dispose()`. **Suppress decode errors**: `FlutterError.onError` + `PlatformDispatcher.onError` skip `Failed to decode image` + `Invalid image data`. Files: `reader_cubit.dart`, `reader_screen.dart`, `download_bloc.dart`, `lifecycle_watcher.dart`, `multi_bloc_provider_config.dart`, `app_router.dart`, `main.dart`, `KuronNativePlugin.kt`, `kuron_native.dart` + method_channel + platform_interface, `animated_webp_view.dart`, `kuron_native_test.dart`, `backup_utils_test.dart`. |
 | 2026-07-14 | Kiro | HDoujin source integration (openspec: hdoujin-source-integration) | Done | Added HDoujin as readable source reusing Schale Network's clearance engine. Created `hdoujin-config.json`, refactored `SchaleClearanceService` for dynamic `domainUrl`+`sourceId`, refactored `SchaleSourceFactory` for conditional routing, registered hdoujin in service locator. Fixed `getImageDownloadHeaders()` in `generic_http_source.dart` so hdoujin CDN requests get correct Origin/Referer from config instead of API URL. Added hdoujin to forced cache refresh in `content_repository_impl.dart`. Added `ponytail:` comments on hardcoded boundaries (erocdn.net, switch catch-all, fallback omission). Files: +`informations/configs/hdoujin-config.json`, `schale_clearance_service.dart`, `schale_source_factory.dart`, `service_locator.dart`, `generic_http_source.dart`, `content_repository_impl.dart`. |

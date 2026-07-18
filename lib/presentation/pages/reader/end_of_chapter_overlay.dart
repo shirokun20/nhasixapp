@@ -11,6 +11,7 @@ class EndOfChapterOverlay extends StatelessWidget {
   final VoidCallback onBackToDetail;
   final VoidCallback? onPreviousChapter;
   final VoidCallback? onNextChapter;
+  final VoidCallback? onGoToFirstPage;
   final bool isChapterMode;
   final bool isOfflineMode;
 
@@ -20,6 +21,7 @@ class EndOfChapterOverlay extends StatelessWidget {
     required this.onBackToDetail,
     this.onPreviousChapter,
     this.onNextChapter,
+    this.onGoToFirstPage,
     required this.isChapterMode,
     this.isOfflineMode = false,
   });
@@ -111,7 +113,6 @@ class EndOfChapterOverlay extends StatelessWidget {
                       ),
                     ),
                   ),
-
               ],
 
               // Back to Detail / Back to Previous Page — always show
@@ -129,6 +130,23 @@ class EndOfChapterOverlay extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Go to First Page — CS mode only
+              if (onGoToFirstPage != null) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: onGoToFirstPage,
+                    icon: const Icon(Icons.vertical_align_top),
+                    label: Text(AppLocalizations.of(context)!
+                        .readerScreenGoToFirstPage),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 24),
               _buildSupportSection(context),
@@ -175,17 +193,17 @@ class EndOfChapterOverlay extends StatelessWidget {
           Text(
             l10n?.readerScreenSupporter ?? 'Support Developer',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
           ),
           const SizedBox(height: 4),
           Text(
             l10n?.readerScreenSupporterDesc ?? '',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
-              height: 1.4,
-            ),
+                  color: cs.onSurfaceVariant,
+                  height: 1.4,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),

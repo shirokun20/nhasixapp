@@ -5211,4 +5211,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get readerScreenThanksDesc =>
       'Hope you enjoyed this chapter. See you in the next one!';
+
+  @override
+  String get readerScreenGoToFirstPage => 'Go to First Page';
 }

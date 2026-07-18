@@ -5236,4 +5236,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get readerScreenThanksDesc =>
       'Semoga kamu menikmati chapter ini. Sampai jumpa di chapter berikutnya!';
+
+  @override
+  String get readerScreenGoToFirstPage => 'Baca dari Awal';
 }

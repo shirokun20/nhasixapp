@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **CS Reader "Go to First Page" button**: Added `onGoToFirstPage` callback to `EndOfChapterOverlay` — when reaching chapter end in continuous scroll mode, tapping "Go to First Page" jumps back to page 0. Files: `end_of_chapter_overlay.dart`, `reader_screen.dart`.
 - **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator. Added `ponytail:` comments on intentional hardcode boundaries.
 - **Lifecycle-aware Cubits**: `ReaderCubit` now pauses reading timer and disables `WakelockPlus` on lock screen (via `didChangeAppLifecycleState` in `ReaderScreen`). `DownloadBloc` has `pauseBackgroundWork()` / `resumeBackgroundWork()` — cancels DB flush timer (5s) and FrameTimingCallback on background, restores on foreground. Prevents CPU/GPU overheating saat app di lock screen.
 - **ReaderCubit screen-level scoping**: Moved `ReaderCubit` from app-level `MultiBlocProviderConfig` to `BlocProvider` wrapping in route builder. Cubit `close()` sekarang kepanggil otomatis saat navigasi keluar dari reader — timer mati, wakelock di-disable, posisi baca tersimpan.
