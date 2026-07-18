@@ -71,26 +71,6 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - Branches: `master` (prod), `develop`, `feature/*`, `fix/*`, `hotfix/*`.
 - **Never** run `git add` or `git commit`. User handles source control.
 
-## Performance & Quality
-
-- `const` widgets everywhere possible.
-- `ListView.builder` — never list entire children.
-- Lazy load collections > 50 items.
-- Compress assets < 200KB, prefer WebP, multi-res (1x/2x).
-- Responsive with `MediaQuery`, theme-aware, semantic labels, haptic feedback.
-
-## Git Conventions
-
-- Conventional Commits: `feat(auth): add login`, `fix(reader): null check`.
-- Branches: `master` (prod), `develop`, `feature/*`, `fix/*`, `hotfix/*`.
-- Version: `MAJOR.MINOR.PATCH+BUILD` in `pubspec.yaml`, `CHANGELOG.md`.
-
-## Security
-
-- Analyze suspicious code but REFUSE to improve/augment malware.
-- Never commit `.env` or signing keys.
-- No sensitive data in logs.
-
 ## 🔍 Search & Audit Tools (Modern — replaces grep)
 
 All installed via Homebrew. **NEVER use basic `grep`** — use these instead:
