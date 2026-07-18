@@ -5,7 +5,10 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.22%2B33-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.23%2B33-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](#)
+[![Code Quality](https://img.shields.io/badge/code_quality-A+-blueviolet?style=for-the-badge)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
@@ -14,13 +17,16 @@
 > [!TIP]
 > **[🇺🇸 Read in English](README.md)**
 
-**Kuron** (sebelumnya NhasixApp) menghadirkan pengalaman membaca komik mobile **70% lebih cepat** dengan privasi sebagai prioritas utama. Dibangun dengan **Clean Architecture**, aplikasi ini fitur membaca offline cerdas, mode penyamaran (App Disguise), desain Material 3 yang modern, dan dukungan **multiple content providers** termasuk E-Hentai, HentaiNexus, dan Hitomi.
+> **Kuron** — pembaca komik mobile **70% lebih cepat** dari browser, **privasi utama**, **siap offline**.
+>
+> 🚀 **70% lebih cepat** · 🔒 **App Disguise** + Recent Apps blur · 📦 **Offline-first** dengan DL background
+> 🧩 **Multi-provider**: nhentai, E-Hentai, Hitomi, + ekstensi config-driven · 🎨 **Material 3**
 
 ---
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.22+33**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.23%2B33)
+[📦 **Download v0.9.23+33**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.23%2B33)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
@@ -31,44 +37,49 @@
 
 ## ✨ **Fitur Utama**
 
-### � **Login Nhentai, Sinkronisasi & Komentar**
-- **Login Akun**: Masuk dengan akun nhentai langsung di aplikasi (Drawer → Login).
-- **CAPTCHA Solver**: Native Android WebView untuk menyelesaikan Turnstile / hCaptcha dengan mulus.
-- **Favorit Online**: Sinkronkan favorit dengan akun nhentai — pilih Offline, Online, atau Keduanya per galeri.
-- **Sinkronisasi Tag Blacklist**: Gabungkan blacklist server nhentai dengan aturan lokal; thumbnail di-blur di semua feed.
-- **Kirim Komentar**: Pengguna yang login sekarang bisa menulis komentar langsung dari halaman detail galeri, dengan fallback CAPTCHA saat dibutuhkan.
-- **Galeri Acak**: Temukan konten acak dengan satu ketukan dari layar utama.
-
-### 💬 **Dukungan Multi-Provider (v0.9.14)**
-- **E-Hentai Gallery**: Dukungan penuh dengan session adapter dan pembaca per-halaman.
-- **HentaiNexus**: XOR decryption adapter dengan transformasi URL gambar.
-- **Dukungan Hitomi**: Registrasi fallback-safe untuk jangkauan konten yang lebih luas.
-- **Paginasi Cerdas**: Token-based & indexed pagination di semua provider.
-
-> ⚠️ **Source Premium**: E-Hentai, HentaiNexus, Hitomi, dan source pihak ketiga lainnya adalah **source lanjutan/premium** yang memerlukan instalasi manual melalui **Pengaturan → Sources → Add via Link atau Import ZIP**. nhentai adalah source gratis default yang sudah tersedia.
-
-### 💬 **Interaksi Komunitas**
-- **Lihat & Kirim Komentar**: Baca diskusi dan kirim komentar langsung di halaman detail saat login.
-- **Tampilan Modern**: UI komentar berbentuk kartu yang rapi di mode Terang & Gelap.
-- **Data Realtime**: Menggunakan API resmi untuk data komentar yang akurat dan cepat.
-
-### 🎯 **Membaca & Menjelajah**
-- **Immersive Reader**: Mode layar penuh, transisi halus, dan rendering tajam.
-- **Pencarian Cerdas**: Filter canggih berdasarkan tag, popularitas, dan tanggal.
-- **Auto-Bookmark**: Lanjut baca dari halaman terakhir secara otomatis.
-
-### 🛡️ **Privasi & Offline**
-- **App Disguise**: Samarkan aplikasi menjadi Kalkulator, Catatan, atau Cuaca.
-- **Privasi Recent Apps**: Preview aplikasi di recent apps akan di-obscure otomatis, dengan fallback native yang lebih kuat di Android 13+.
-- **Download Pribadi**: Konten tersembunyi dari galeri HP (`.nomedia`).
-- **Offline First**: Baca tanpa internet dengan download di latar belakang.
-- **Export Library**: Backup seluruh koleksi beserta database untuk dibagikan atau dipulihkan.
-- **Blur Thumbnail**: Thumbnail blur untuk privasi, aktif secara default.
-
-### 🎨 **Performa & UX**
-- **Loading Cepat**: Preloading gambar cerdas membuat bacaan 70% lebih lancar.
-- **UI Adaptif**: Desain responsif dengan mode Gelap/Terang.
-- **Hemat Baterai**: Penggunaan daya efisien dengan Wakelock dan caching.
+<table>
+  <tr>
+    <td width="50%">
+      <h4>🔐 Login nhentai & Sinkronisasi</h4>
+      Login akun nhentai — CAPTCHA solver, favorit online (Offline/Online/Keduanya), sinkron tag blacklist, komentar, galeri acak.
+    </td>
+    <td width="50%">
+      <h4>🧩 Multi-Provider</h4>
+      nhentai (default) + E-Hentai, HentaiNexus, Hitomi — dukungan penuh. Ratusan lagi via <a href="#🔧-menambahkan-source-kustom">ekstensi config-driven</a>.<br/>
+      <small>⚠️ Source premium install via Pengaturan → Sources → Add via Link atau Import ZIP.</small>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>📖 Pembaca Imersif</h4>
+      Layar penuh, 120fps mulus, dual-rate scroll, tap zones, toggle chrome drag, auto-bookmark, continuous scroll <i>dan</i> single-page.
+    </td>
+    <td>
+      <h4>🔍 Pencarian Cerdas</h4>
+      Filter canggih: tag, popularitas, tanggal, bahasa — UI form dinamis, sort, chip multi-pilih. Bekerja di semua provider.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🛡️ Privasi Utama</h4>
+      App Disguise (Kalkulator/Catatan/Cuaca), Recent Apps blur, download <code>.nomedia</code>, thumbnail blur default. Data tetap milikmu.
+    </td>
+    <td>
+      <h4>📦 Offline-First</h4>
+      Download background, manajemen massal, import ZIP, ekspor/restore library, pembaca offline dengan sinkron progress. Koleksi lokal lengkap dengan sorting & filter.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🎨 Material 3</h4>
+      Tema Gelap/Terang/AMOLED adaptif, layout responsif, animasi Lottie, shimmer loading. Dibuat untuk Android modern.
+    </td>
+    <td>
+      <h4>⚡ Performa</h4>
+      70% lebih cepat dari browser — preloading cerdas, cache gambar, GPU memory budget, hemat baterai dengan Wakelock.
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -84,9 +95,9 @@
     <td align="center"><b>Mode Baca</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/flutter_02.png" width="250" alt="Layar Beranda"/></td>
-    <td><img src="screenshots/flutter_13.png" width="250" alt="Layar Detail"/></td>
-    <td><img src="screenshots/flutter_12.png" width="250" alt="Mode Baca"/></td>
+    <td><img src="screenshots/flutter_02.png" width="250" alt="Layar Beranda" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_13.png" width="250" alt="Layar Detail" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_12.png" width="250" alt="Mode Baca" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
   </tr>
   <tr>
     <td align="center"><b>Pencarian & Filter</b></td>
@@ -94,9 +105,9 @@
     <td align="center"><b>Download & Offline</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/flutter_04.png" width="250" alt="Pencarian"/></td>
-    <td><img src="screenshots/flutter_06.png" width="250" alt="Pengaturan"/></td>
-    <td><img src="screenshots/flutter_11.png" width="250" alt="Download"/></td>
+    <td><img src="screenshots/flutter_04.png" width="250" alt="Pencarian" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_06.png" width="250" alt="Pengaturan" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_11.png" width="250" alt="Download" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
   </tr>
 </table>
 
@@ -106,13 +117,13 @@
 
 ## 🛠️ **Teknologi**
 
-| Layer | Teknologi |
-|:------|:-------------|
-| **Core** | Flutter 3.24+, Dart 3.5+ |
-| **Arch** | Clean Architecture, BLoC Pattern, GetIt (DI) |
-| **Data** | SQLite (Offline), SharedPreferences, Dio (Network) |
-| **UI/UX** | CachedNetworkImage, PhotoView, Shimmer, Lottie |
-| **System** | Local Notifications, Wakelock Plus, Permission Handler |
+| Layer | Stack |
+|:------|:------|
+| 🎯 **Bahasa** | Flutter 3.24+ · Dart 3.5+ |
+| 🏗️ **Arsitektur** | Clean Architecture · BLoC/Cubit · GetIt DI · Injectable |
+| 🗄️ **Data** | SQLite · SharedPreferences · Dio · GoRouter |
+| 🎨 **UI** | Material 3 · CachedNetworkImage · Lottie · PhotoView |
+| 🔧 **Sistem** | Wakelock+ · Local Notifications · Permission Handler |
 
 ---
 
@@ -135,15 +146,15 @@ flutter run
 
 ## 🔧 **Menambahkan Source Kustom**
 
-Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apapun. Setiap source cukup satu file JSON yang menjelaskan cara scraping atau pemanggilan API-nya.
-
 > [!TIP]
-> **Tidak ingin ribet membuat sendiri?**
-> Kamu bisa menginstal ratusan ekstensi buatan komunitas langsung dari repositori ekstensi resmi kami!
+> **Tidak ingin ribet membuat sendiri?**  
+> Install **ratusan ekstensi buatan komunitas** dari repositori resmi:
 > 
-> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**
-> 
-> Cukup copy link `manifest.json` dari repositori tersebut dan paste di aplikasi lewat menu **Settings → Sources → Add via Link**. Jangan lupa berikan star dan dukung developernya! ❤️
+> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**  
+> Copy link `manifest.json` → paste di **Pengaturan → Sources → Add via Link**.  
+> Jangan lupa star repo & dukung developernya! ❤️
+
+Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apapun. Setiap source cukup satu file JSON yang menjelaskan cara scraping atau pemanggilan API-nya.
 
 ### Referensi
 

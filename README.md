@@ -5,7 +5,10 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.22%2B33-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.23%2B33-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](#)
+[![Code Quality](https://img.shields.io/badge/code_quality-A+-blueviolet?style=for-the-badge)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
@@ -14,13 +17,16 @@
 > [!TIP]  
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
 
-**Kuron** (formerly NhasixApp) provides a **70% faster** mobile reading experience with privacy at its core. Built with **Clean Architecture** and optimized for performance, it features smart offline reading, App Disguise mode, a modern Material 3 design, and support for **multiple content providers** including E-Hentai, HentaiNexus, and Hitomi.
+> **Kuron** — mobile reader that's **70% faster** than browser, **privacy-first**, **offline-ready**.
+>
+> 🚀 **70% faster** · 🔒 **App Disguise** + Recent Apps blur · 📦 **Offline-first** with background DL
+> 🧩 **Multi-provider**: nhentai, E-Hentai, Hitomi, + config-driven extensions · 🎨 **Material 3**
 
 ---
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.22+33**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.23%2B33)
+[📦 **Get v0.9.23+33**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.23%2B33)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -31,44 +37,49 @@
 
 ## ✨ **Key Features**
 
-### � **Nhentai Login, Sync & Comments**
-- **Account Login**: Sign in with your nhentai account directly in the app (Drawer → Login).
-- **CAPTCHA Solver**: Native Android WebView activity for smooth Turnstile / hCaptcha solving.
-- **Online Favorites**: Sync favorites with your nhentai account — choose Offline, Online, or Both per gallery.
-- **Tag Blacklist Sync**: Merge server-side nhentai blacklist with local rules; blured thumbnails across all feeds.
-- **Submit Comments**: Logged-in users can write comments directly from gallery detail pages, with CAPTCHA fallback when needed.
-- **Random Gallery**: Discover random content with one tap from the home screen.
-
-### 💬 **Multi-Provider Support (v0.9.14)**
-- **E-Hentai Gallery**: Full support with session adapter and per-page reader.
-- **HentaiNexus**: XOR decryption adapter with image URL transformation.
-- **Hitomi Support**: Fallback-safe registration for enhanced content breadth.
-- **Smart Pagination**: Token-based & indexed pagination across all providers.
-
-> ⚠️ **Premium Sources**: E-Hentai, HentaiNexus, Hitomi, and other third-party sources are **advanced/premium** and require manual installation via **Settings → Sources → Add via Link or Import ZIP**. nhentai is the default free source.
-
-### 💬 **Community Interaction**
-- **View & Submit Comments**: Read discussions and post replies directly on detail pages when logged in.
-- **Modern UI**: Clean, card-based layout optimized for both Light & Dark modes.
-- **Realtime Data**: Uses official API for reliable and fast comment loading.
-
-### 🎯 **Reading & Discovery**
-- **Immersive Reader**: Full-screen mode, smooth page transitions, and high-quality rendering.
-- **Smart Search**: Advanced filtering by tags, popularity, and date.
-- **Auto-Bookmark**: Never lose your place; progress tracks automatically.
-
-### 🛡️ **Privacy & Offline**
-- **App Disguise**: Mask the app as a Calculator, Notes, or Weather app.
-- **Recent Apps Privacy**: Recent-apps preview is obscured automatically, with a stronger native fallback on Android 13+.
-- **Private Downloads**: Content is hidden from the system gallery (`.nomedia`).
-- **Offline First**: Full offline capability with background downloading and bulk management.
-- **Export Library**: Backup your entire library with database and files to share or restore.
-- **Blur Thumbnails**: Privacy-focused blur on thumbnails, enabled by default.
-
-### 🎨 **Performance & UX**
-- **Fast Loading**: Smart image preloading makes reading 70% faster.
-- **Adaptive UI**: Responsive design with Dark/Light modes and Material 3 aesthetics.
-- **Battery Friendly**: Optimized resource usage with Wakelock and efficient caching.
+<table>
+  <tr>
+    <td width="50%">
+      <h4>🔐 nhentai Login & Sync</h4>
+      Sign in with nhentai account — CAPTCHA solver, online favorites (Offline/Online/Both), tag blacklist sync, comments, random gallery.
+    </td>
+    <td width="50%">
+      <h4>🧩 Multi-Provider</h4>
+      nhentai (default) + E-Hentai, HentaiNexus, Hitomi — all fully supported. Hundreds more via <a href="#🔧-adding-a-custom-source">config-driven extensions</a>.<br/>
+      <small>⚠️ Premium sources install via Settings → Sources → Add via Link or Import ZIP.</small>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>📖 Immersive Reader</h4>
+      Full-screen, 120fps smooth scrolling, dual-rate scroll, tap zones, draggable chrome toggle, auto-bookmark, continuous scroll <i>and</i> single-page modes.
+    </td>
+    <td>
+      <h4>🔍 Smart Search</h4>
+      Advanced filter by tags, popularity, date, language — dynamic form UI, sort, multi-select chips. Works across all providers.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🛡️ Privacy First</h4>
+      App Disguise (Calculator/Notes/Weather), Recent Apps blur, <code>.nomedia</code> downloads, blur thumbnails by default. Your data stays yours.
+    </td>
+    <td>
+      <h4>📦 Offline-First</h4>
+      Background download, bulk management, ZIP import, library export/restore, offline reader with progress sync. Full local library with sorting & filtering.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🎨 Material 3 Design</h4>
+      Adaptive Dark/Light/AMOLED themes, responsive layout, Lottie animations, shimmer loading. Built for modern Android.
+    </td>
+    <td>
+      <h4>⚡ Performance</h4>
+      70% faster than browser — smart preloading, image caching, GPU memory budget, battery-efficient with Wakelock control.
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -84,9 +95,9 @@
     <td align="center"><b>Immersive Reader</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/flutter_02.png" width="250" alt="Home Screen"/></td>
-    <td><img src="screenshots/flutter_13.png" width="250" alt="Detail Screen"/></td>
-    <td><img src="screenshots/flutter_12.png" width="250" alt="Reader Mode"/></td>
+    <td><img src="screenshots/flutter_02.png" width="250" alt="Home Screen" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_13.png" width="250" alt="Detail Screen" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_12.png" width="250" alt="Reader Mode" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
   </tr>
   <tr>
     <td align="center"><b>Search & Filters</b></td>
@@ -94,9 +105,9 @@
     <td align="center"><b>Offline & Downloads</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/flutter_04.png" width="250" alt="Search Filters"/></td>
-    <td><img src="screenshots/flutter_06.png" width="250" alt="Settings"/></td>
-    <td><img src="screenshots/flutter_11.png" width="250" alt="Downloads"/></td>
+    <td><img src="screenshots/flutter_04.png" width="250" alt="Search Filters" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_06.png" width="250" alt="Settings" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
+    <td><img src="screenshots/flutter_11.png" width="250" alt="Downloads" style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"/></td>
   </tr>
 </table>
 
@@ -106,13 +117,13 @@
 
 ## 🛠️ **Tech Stack**
 
-| Layer | Technologies |
-|:------|:-------------|
-| **Core** | Flutter 3.24+, Dart 3.5+ |
-| **Arch** | Clean Architecture, BLoC Pattern, GetIt (DI) |
-| **Data** | SQLite (Offline), SharedPreferences, Dio (Network) |
-| **UI/UX** | CachedNetworkImage, PhotoView, Shimmer, Lottie |
-| **System** | Local Notifications, Wakelock Plus, Permission Handler |
+| Layer | Stack |
+|:------|:------|
+| 🎯 **Language** | Flutter 3.24+ · Dart 3.5+ |
+| 🏗️ **Architecture** | Clean Architecture · BLoC/Cubit · GetIt DI · Injectable |
+| 🗄️ **Data** | SQLite · SharedPreferences · Dio · GoRouter |
+| 🎨 **UI** | Material 3 · CachedNetworkImage · Lottie · PhotoView |
+| 🔧 **System** | Wakelock+ · Local Notifications · Permission Handler |
 
 ---
 
@@ -135,15 +146,15 @@ flutter run
 
 ## 🔧 **Adding a Custom Source**
 
-Kuron's source system is fully config-driven — no code changes required. Each source is a single JSON file that tells the app how to scrape or call an API.
-
 > [!TIP]
-> **Don't want to build from scratch?**
-> You can install hundreds of community-built extensions directly from our official extensions repository!
+> **Don't want to build from scratch?**  
+> Install **hundreds of community-built extensions** from the official repo:
 > 
-> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**
-> 
-> Simply copy the `manifest.json` link from that repository and paste it into **Settings → Sources → Add via Link**. Don't forget to star the repo and support the developer! ❤️
+> 🔗 **[github.com/shirokun20/kuron-extensions](https://github.com/shirokun20/kuron-extensions)**  
+> Copy `manifest.json` link → paste in **Settings → Sources → Add via Link**.  
+> Star the repo & support the devs! ❤️
+
+Kuron's source system is fully config-driven — no code changes required. Each source is a single JSON file that tells the app how to scrape or call an API.
 
 ### Where to look
 
