@@ -1,6 +1,6 @@
 # Kebijakan Privasi
 
-**Terakhir Diperbarui: Januari 2026**
+**Terakhir Diperbarui: Juli 2026**
 
 ## Ringkasan
 
@@ -12,7 +12,7 @@ Kuron ("Aplikasi") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi 
 
 ✅ **Tidak ada informasi pribadi** - Kami tidak mengumpulkan nama, email, atau informasi identitas apapun
 
-✅ **Tidak ada sistem akun** - Tidak perlu login atau registrasi untuk menjelajah. Login opsional tersedia untuk sumber tertentu (misal: Crotpedia) untuk mengakses konten penuh.
+✅ **Tidak ada sistem akun** - Tidak perlu login atau registrasi untuk menjelajah. Login opsional tersedia untuk sumber tertentu (misal: nhentai, Crotpedia) untuk mengakses konten penuh atau fitur sinkronisasi.
 
 ✅ **Tidak ada pelacakan eksternal** - Tidak ada layanan analitik atau pelacakan pihak ketiga
 
@@ -43,11 +43,9 @@ Data berikut disimpan **hanya di perangkat Anda**:
 
 Aplikasi terhubung ke:
 
-- **nhentai.net** - Untuk mengambil konten dan gambar
-- **crotpedia.net** - Untuk mengambil konten dan gambar
-- **komiktap.info** - Untuk mengambil konten dan gambar
-- **GitHub** - Untuk memeriksa pembaruan aplikasi dan memuat dokumen hukum
-- **Tidak ada koneksi lain**
+- **Source konten yang dikonfigurasi pengguna** — Source yang kamu instal (misal: nhentai, MangaDex, E-Hentai, dll.) untuk mengambil konten dan gambar. Aplikasi hanya terhubung ke source yang kamu tambahkan secara eksplisit.
+- **GitHub** — Untuk memeriksa pembaruan aplikasi dan memuat dokumen hukum.
+- **Tidak ada koneksi lain** — Tidak ada analitik, iklan, atau layanan pelacakan pihak ketiga.
 
 ## Keamanan Data
 

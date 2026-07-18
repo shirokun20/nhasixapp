@@ -1,4 +1,4 @@
-![Kuron](https://socialify.git.ci/shirokun20/nhasixapp/image?custom_description=&description=1&font=Source+Code+Pro&forks=1&issues=1&logo=https://github.com/shirokun20/nhasixapp/blob/master/assets/icons/logo_app.png%3Fraw%3Dtrue&name=1&owner=1&pattern=Floating+Cogs&pulls=1&stargazers=1&theme=Auto)
+![Kuron](https://socialify.git.ci/shirokun20/nhasixapp/image?description=1&font=Source+Code+Pro&forks=1&issues=1&logo=https://github.com/shirokun20/nhasixapp/blob/master/assets/icons/logo_app.png%3Fraw%3Dtrue&name=1&owner=1&pattern=Floating+Cogs&pulls=1&stargazers=1&theme=Auto)
 # 📱 Kuron - Unofficial Nhentai Client
 
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
@@ -11,10 +11,10 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
 [![Downloads](https://img.shields.io/github/downloads/shirokun20/nhasixapp/total?style=for-the-badge&logo=github&logoColor=white&color=007ec6)](https://github.com/shirokun20/nhasixapp/releases)
 [![Hits](https://komarev.com/ghpvc/?username=shirokun20&repo=nhasixapp&style=for-the-badge&color=007ec6)](https://github.com/shirokun20/nhasixapp)
+[![Stars](https://img.shields.io/github/stars/shirokun20/nhasixapp?style=for-the-badge&logo=github&logoColor=white&color=yellow)](https://github.com/shirokun20/nhasixapp/stargazers)
 <a href="https://trakteer.id/shirokun20" target="_blank"><img src="https://img.shields.io/badge/Support_Me-Trakteer-be1e2d?style=for-the-badge&logo=ko-fi&logoColor=white" height="30"/></a>
-[![Sponsor shirokun20](https://img.shields.io/badge/Sponsor-shirokun20-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/shirokun20)
 
-> [!TIP]  
+> [!TIP]
 > **[🇮🇩 Baca dalam Bahasa Indonesia](README_ID.md)**
 
 > **Kuron** — mobile reader that's **70% faster** than browser, **privacy-first**, **offline-ready**.
@@ -196,6 +196,8 @@ Kuron's source system is fully config-driven — no code changes required. Each 
 - **Can't Install?** Enable "Unknown Sources" and check your architecture (ARM64 vs ARM32).
 - **Missing Images?** Check your internet or clear cache.
 - **Hidden Downloads?** They are private by design. View them inside the app.
+- **How to add new source?** Go to Settings → Sources → Add via Link (paste manifest URL) or Import ZIP.
+- **App slow on first load?** First load downloads source configs and caches data. Subsequent launches are faster.
 
 ---
 
@@ -220,20 +222,6 @@ You can also scan the QRIS below to donate:
 Thanks to all contributors who helped make kuron better!
 
 [![Contributors](https://contrib.rocks/image?repo=shirokun20/nhasixapp&max=150&columns=15&anon=1&v=20260309)](https://github.com/shirokun20/nhasixapp/graphs/contributors)
-
----
-
-## 📈 **Star History**
-
-<div align="center">
-  <a href="https://www.star-history.com/#shirokun20/nhasixapp&type=date&legend=top-left">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&theme=dark&legend=top-left" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&legend=top-left" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=shirokun20/nhasixapp&type=date&legend=top-left" width="600"/>
-    </picture>
-  </a>
-</div>
 
 ---
 

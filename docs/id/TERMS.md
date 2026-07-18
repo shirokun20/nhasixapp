@@ -1,6 +1,6 @@
 # Syarat dan Ketentuan
 
-**Terakhir Diperbarui: Januari 2026**
+**Terakhir Diperbarui: Juli 2026**
 
 ## 1. Penerimaan Syarat
 

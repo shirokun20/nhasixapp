@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: January 2026**
+**Last Updated: July 2026**
 
 ## Overview
 
@@ -12,7 +12,7 @@ Kuron ("the App") is committed to protecting your privacy. This Privacy Policy e
 
 ✅ **No personal information** - We do not collect names, emails, or any identifying information
 
-✅ **No account system** - No login or registration required for browsing. Optional login available for specific sources (e.g., Crotpedia) to access full content.
+✅ **No account system** - No login or registration required for browsing. Optional login available for specific sources (e.g., nhentai, Crotpedia) to access full content or sync features.
 
 ✅ **No external tracking** - No third-party analytics or tracking services
 
@@ -43,11 +43,9 @@ The following data is stored **only on your device**:
 
 The App connects to:
 
-- **nhentai.net** - To fetch content and images
-- **crotpedia.net** - To fetch content and images
-- **komiktap.info** - To fetch content and images
-- **GitHub** - To check for app updates and load legal documents
-- **No other connections**
+- **User-configured content sources** — Any source you install (e.g., nhentai, MangaDex, E-Hentai, etc.) to fetch content and images. The app does not connect to any source you haven't explicitly added.
+- **GitHub** — To check for app updates and load legal documents.
+- **No other connections** — No analytics, ads, or third-party tracking services.
 
 ## Data Security
 
