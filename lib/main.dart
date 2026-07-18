@@ -25,6 +25,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
 
+  // Configure Flutter ImageCache for reader workloads
+  PaintingBinding.instance.imageCache.maximumSize = 200;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024;
+
   // Initialize Performance Monitoring
   await PerformanceMonitor.initialize();
 
@@ -162,13 +166,32 @@ class MyApp extends StatelessWidget {
                     final child_ = AppPrivacyOverlayGate(
                       child: child ?? const SizedBox.shrink(),
                     );
-                    if (themeState.currentTheme != 'note' && themeState.currentTheme != 'note_dark') return child_;
+                    if (themeState.currentTheme != 'note' &&
+                        themeState.currentTheme != 'note_dark') {
+                      return child_;
+                    }
                     return ColorFiltered(
                       colorFilter: const ColorFilter.matrix(<double>[
-                        0.299, 0.587, 0.114, 0, 0,
-                        0.299, 0.587, 0.114, 0, 0,
-                        0.299, 0.587, 0.114, 0, 0,
-                        0,     0,     0,     1, 0,
+                        0.299,
+                        0.587,
+                        0.114,
+                        0,
+                        0,
+                        0.299,
+                        0.587,
+                        0.114,
+                        0,
+                        0,
+                        0.299,
+                        0.587,
+                        0.114,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
                       ]),
                       child: child_,
                     );

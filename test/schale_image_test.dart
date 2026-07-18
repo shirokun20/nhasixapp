@@ -5,6 +5,9 @@ import 'dart:io';
 import 'dart:async';
 
 void main() {
+  final liveNetworkEnabled =
+      Platform.environment['ENABLE_LIVE_NETWORK_TESTS'] == 'true';
+
   setUpAll(() {
     HttpOverrides.global = null; // ALLOW REAL NETWORK REQUESTS
   });
@@ -44,9 +47,9 @@ void main() {
     try {
       await completer.future.timeout(Duration(seconds: 10));
     } catch (e) {
-      // Intentionally swallow to let the test fail naturally if needed
+      // Intentionally swallow
     }
 
     expect(capturedError, isNull, reason: 'Image should load without errors');
-  });
+  }, skip: !liveNetworkEnabled);
 }

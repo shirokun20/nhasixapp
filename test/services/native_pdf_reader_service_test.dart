@@ -74,8 +74,8 @@ void main() {
       );
 
       // Act & Assert
-      expect(
-        () => service.openPdf('/path/to/file.pdf'),
+      await expectLater(
+        service.openPdf('/path/to/file.pdf'),
         throwsA(isA<PlatformException>()),
       );
     });

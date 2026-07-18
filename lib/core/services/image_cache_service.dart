@@ -29,10 +29,11 @@ class ImageCacheService {
   static const String _cacheVersion = '1.0.0';
   static const Duration _defaultCacheDuration = Duration(hours: 24); // 24 hours
   static const int _maxCacheSizeMB = 100; // 100MB max cache size
+  static const int _maxMemoryEntries = 100; // max entries in memory cache
 
   final Logger _logger = getIt<Logger>();
 
-  // In-memory cache for fast access
+  // In-memory cache for fast access with LRU eviction
   final Map<String, _CachedImageData> _memoryCache = {};
 
   /// Get cached image data by URL
@@ -65,6 +66,7 @@ class ImageCacheService {
             cachedAt: DateTime.parse(cacheEntry['cachedAt']),
             size: await cacheFile.length(),
           );
+          _evictMemoryCacheIfNeeded();
 
           _logger.d('Image cache hit (disk): $imageUrl (static: $isStaticGif)');
           return cacheFile;
@@ -163,6 +165,7 @@ class ImageCacheService {
         cachedAt: cachedAt,
         size: fileSize,
       );
+      _evictMemoryCacheIfNeeded();
 
       // Update metadata
       await _addToMetadata(cacheKey, cachedAt, fileSize);
@@ -381,6 +384,15 @@ class ImageCacheService {
       }
     } catch (e) {
       _logger.w('Error during cache cleanup: $e');
+    }
+  }
+
+  /// Evict oldest entries from memory cache when over limit
+  void _evictMemoryCacheIfNeeded() {
+    while (_memoryCache.length > _maxMemoryEntries) {
+      final oldestKey = _memoryCache.keys.first;
+      _memoryCache.remove(oldestKey);
+      _logger.d('Evicted oldest memory cache entry: $oldestKey');
     }
   }
 

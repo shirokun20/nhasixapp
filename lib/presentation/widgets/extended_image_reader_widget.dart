@@ -95,7 +95,6 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     _ExtendedImageReaderWidgetState._confirmedAnimatedWebPUrls.clear();
     _ExtendedImageReaderWidgetState._nonNativeAnimatedUrls.clear();
     _ExtendedImageReaderWidgetState._cachedFilePathByUrl.clear();
-    _ExtendedImageReaderWidgetState._syntheticProgressByImageKey.clear();
     _ExtendedImageReaderWidgetState._knownBrokenLocalAvifPaths.clear();
     await clearDiskCachedImages();
   }
@@ -222,8 +221,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Map<String, Future<String?>> _ehentaiResolveInFlight =
       <String, Future<String?>>{};
   static const Duration _ehentaiResolvedImageCacheTtl = Duration(minutes: 2);
-  static final Map<String, double> _syntheticProgressByImageKey =
-      <String, double>{};
   static final Set<String> _knownBrokenLocalAvifPaths = <String>{};
   static final Set<String> _heavyImageUrls = <String>{};
   static final Set<String> _notifiedHeavyContentIds = <String>{};
@@ -271,8 +268,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   int _ehentaiResolveRetries = 0;
   static const int _maxEhentaiResolveRetries = 2;
   Timer? _autoRetryTimer;
-  Timer? _syntheticProgressTimer;
-  double _syntheticProgressValue = 0.0;
   bool _isRepairingBrokenImage = false;
   bool _isOpeningSourcePage = false;
   bool _shouldBypassLocalDecode = false;
@@ -287,8 +282,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// view, which avoids the "getPixels failed with error invalid input" crash
   /// from Android's ImageDecoder attempting to decode an avis sequence.
   bool _awaitingNativeCheck = false;
-
-  String get _imageProgressKey => '${widget.contentId}_${widget.pageNumber}';
 
   // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
@@ -336,9 +329,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         if (mounted) _pinchHintController.forward();
       });
     }
-
-    _syntheticProgressValue =
-        _syntheticProgressByImageKey[_imageProgressKey] ?? 0.0;
 
     // Restore heavy-image state from static maps so keep-alive and native-view
     // routing are applied immediately on the first build — and the native view
@@ -957,56 +947,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _pinchHintController.dispose();
     _zoomController.dispose();
     _autoRetryTimer?.cancel();
-    _syntheticProgressTimer?.cancel();
     super.dispose();
-  }
-
-  bool _hasRealByteProgress(ExtendedImageState state) {
-    try {
-      final dynamic progressEvent = (state as dynamic).loadingProgress;
-      final dynamic loadedRaw = progressEvent?.cumulativeBytesLoaded;
-      return loadedRaw is num && loadedRaw > 0;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  void _startSyntheticProgress() {
-    if (_syntheticProgressTimer != null) return;
-
-    if (_syntheticProgressValue <= 0.0) {
-      _syntheticProgressValue = 0.05;
-      _syntheticProgressByImageKey[_imageProgressKey] = _syntheticProgressValue;
-    }
-
-    _syntheticProgressTimer =
-        Timer.periodic(const Duration(milliseconds: 180), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        _syntheticProgressTimer = null;
-        return;
-      }
-
-      setState(() {
-        // Slow down as it approaches completion to look natural.
-        final step = _syntheticProgressValue > 0.9 ? 0.006 : 0.015;
-        _syntheticProgressValue =
-            (_syntheticProgressValue + step).clamp(0.05, 0.99);
-        _syntheticProgressByImageKey[_imageProgressKey] =
-            _syntheticProgressValue;
-      });
-    });
-  }
-
-  void _stopSyntheticProgress({bool reset = false}) {
-    _syntheticProgressTimer?.cancel();
-    _syntheticProgressTimer = null;
-    if (reset) {
-      _syntheticProgressValue = 0.0;
-      _syntheticProgressByImageKey.remove(_imageProgressKey);
-    } else {
-      _syntheticProgressByImageKey[_imageProgressKey] = _syntheticProgressValue;
-    }
   }
 
   /// Adaptive BoxFit based on reading mode and image type for optimal reading comfort.
@@ -1152,20 +1093,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         loadStateChanged: (ExtendedImageState state) {
           switch (state.extendedImageLoadState) {
             case LoadState.loading:
-              // ponytail: skip loading indicator for local files — decode is
-              // near-instant (<50ms). The synthetic progress timer + setState
-              // overhead per frame adds measurable jank in fast tap offline.
               if (!_isLocalFilePath(normalizedLocalPath)) {
-                if (_hasRealByteProgress(state)) {
-                  _stopSyntheticProgress();
-                } else {
-                  _startSyntheticProgress();
-                }
                 return _buildLoadingIndicator(context, state: state);
               }
               return null; // no loading indicator for local files
             case LoadState.failed:
-              _stopSyntheticProgress(reset: true);
               if (_tryNativeAnimatedFallback(normalizedLocalPath)) {
                 return _buildLoadingIndicator(context);
               }
@@ -1176,7 +1108,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 onRetry: _retryBrokenLocalImage,
               );
             case LoadState.completed:
-              _stopSyntheticProgress(reset: true);
               // 🎯 PHASE 1: Report image dimensions when loaded
               if (widget.onImageLoaded != null &&
                   state.extendedImageInfo?.image != null) {
@@ -1319,7 +1250,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
           final bytes = snapshot.data;
           if (bytes == null || bytes.isEmpty) {
-            return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl, headers: headers);
+            return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl,
+                headers: headers);
           }
 
           return _buildMemoryImage(context, bytes);
@@ -1327,7 +1259,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       );
     }
 
-    return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl, headers: headers);
+    return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl,
+        headers: headers);
   }
 
   Widget _buildStandardNetworkImage(
@@ -1410,12 +1343,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
-            if (_hasRealByteProgress(state)) {
-              _stopSyntheticProgress();
-            } else {
-              _startSyntheticProgress();
-            }
-
             // Optional pre-seed via Content-Length (only if server sends it):
             // servers that skip Content-Length are handled at LoadState.completed.
             if (!_isHeavyImage) {
@@ -1434,7 +1361,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
             return _buildLoadingIndicator(context, state: state);
           case LoadState.failed:
-            _stopSyntheticProgress(reset: true);
             if (_tryRefreshEhentaiResolvedImageUrl(url)) {
               return _buildLoadingIndicator(context);
             }
@@ -1442,8 +1368,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               return _buildLoadingIndicator(context);
             }
             if (fallbackUrl != null) {
-              _logger.w('🔄 Reader falling back to secondary network URL: $fallbackUrl');
-              return _buildNetworkImage(context, rawUrl, headers: headers, forceUrl: fallbackUrl);
+              _logger.w(
+                  '🔄 Reader falling back to secondary network URL: $fallbackUrl');
+              return _buildNetworkImage(context, rawUrl,
+                  headers: headers, forceUrl: fallbackUrl);
             }
             // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
@@ -1456,8 +1384,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               failedSource: url,
             );
           case LoadState.completed:
-            _stopSyntheticProgress(reset: true);
-            _syntheticProgressByImageKey[_imageProgressKey] = 1.0;
             _imageLoadRetries = 0; // Reset retries on success
             _ehentaiResolveRetries = 0;
             if (widget.onImageLoaded != null &&
@@ -2186,7 +2112,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       bytes,
       key: ValueKey('extended_memory_${widget.contentId}_${widget.pageNumber}'),
       fit: _getAdaptiveBoxFit(),
-      filterQuality: FilterQuality.high,
+      filterQuality: FilterQuality.low,
       mode: widget.enableZoom &&
               widget.readingMode != ReadingMode.continuousScroll
           ? ExtendedImageMode.gesture
@@ -2410,18 +2336,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         progressValue = (loadedBytes / totalBytes).clamp(0.0, 1.0);
         progressPercent = (progressValue * 100).floor();
       }
-
-      if (loadedBytes <= 0 &&
-          progressValue == null &&
-          _syntheticProgressValue > 0) {
-        progressValue = _syntheticProgressValue;
-      }
-    } catch (_) {
-      // Keep indicator indeterminate when progress fields are unavailable.
-      if (loadedBytes <= 0 && _syntheticProgressValue > 0) {
-        progressValue = _syntheticProgressValue;
-      }
-    }
+    } catch (_) {}
 
     final bool hasKnownTotal = totalBytes != null && totalBytes > 0;
     final bool hasRealByteCount = loadedBytes > 0;
@@ -2440,9 +2355,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             ? '${_formatByteSize(loadedBytes)} / ${_formatByteSize(resolvedTotalBytes)}'
             : hasRealByteCount
                 ? l10n.downloaded(_formatByteSize(loadedBytes))
-                : _syntheticProgressValue > 0
-                    ? l10n.estimatingProgress
-                    : l10n.downloadingImageData;
+                : l10n.downloadingImageData;
     final double? indicatorValue = progressValue;
     final bool showIndeterminateFromRealBytes =
         hasRealByteCount && !hasKnownTotal;

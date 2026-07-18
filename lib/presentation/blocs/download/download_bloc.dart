@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/scheduler.dart'
-    show SchedulerBinding, TimingsCallback, FrameTiming;
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -150,13 +148,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _flushPendingDbSaves();
     _dbFlushTimer?.cancel();
     _dbFlushTimer = null;
-    if (_frameTimingCallback != null) {
-      SchedulerBinding.instance.removeTimingsCallback(_frameTimingCallback!);
-    }
   }
 
   /// Resume background work when app returns to foreground.
-  /// Re-creates periodic timer, re-registers frame timing callback.
+  /// Re-creates periodic timer.
   void resumeBackgroundWork() {
     _logger.i('DownloadBloc: Resuming background work');
     _dbFlushTimer?.cancel();
@@ -164,20 +159,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       const Duration(seconds: 5),
       (_) => _flushPendingDbSaves(),
     );
-    if (_kFrameTimingEnabled && _frameTimingCallback != null) {
-      SchedulerBinding.instance.addTimingsCallback(_frameTimingCallback!);
-    }
   }
-
-  // FrameTiming measurement (1.9)
-  // ponytail: debug-only; remove when jank verification complete
-  static const bool _kFrameTimingEnabled = true;
-  TimingsCallback? _frameTimingCallback;
-  int _frameTimingBuildSamples = 0;
-  int _frameTimingRasterSamples = 0;
-  double _frameTimingBuildTotal = 0;
-  double _frameTimingRasterTotal = 0;
-  static const int _kFrameTimingLogInterval = 60; // every 60 frames
 
   /// Helper to generate fallback URL based on source
   String _generateFallbackUrl(String? sourceId, String contentId) {
@@ -364,34 +346,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       const Duration(seconds: 5),
       (_) => _flushPendingDbSaves(),
     );
-
-    // 1.9: Register FrameTiming callback
-    if (_kFrameTimingEnabled) {
-      _frameTimingCallback = (List<FrameTiming> timings) {
-        for (final timing in timings) {
-          _frameTimingBuildTotal += timing.buildDuration.inMicroseconds;
-          _frameTimingRasterTotal += timing.rasterDuration.inMicroseconds;
-          _frameTimingBuildSamples++;
-          _frameTimingRasterSamples++;
-        }
-        if (_frameTimingBuildSamples >= _kFrameTimingLogInterval) {
-          final avgBuild = _frameTimingBuildTotal / _frameTimingBuildSamples;
-          final avgRaster = _frameTimingRasterTotal / _frameTimingRasterSamples;
-          // ponytail: only log on actual jank — silent when smooth
-          if (avgRaster > 16000) {
-            _logger.w(
-                'FrameTiming JANK: ${avgBuild.toStringAsFixed(1)}µs build | '
-                '${avgRaster.toStringAsFixed(1)}µs raster (>16ms!)');
-          }
-          _frameTimingBuildTotal = 0;
-          _frameTimingRasterTotal = 0;
-          _frameTimingBuildSamples = 0;
-          _frameTimingRasterSamples = 0;
-        }
-      };
-      SchedulerBinding.instance.addTimingsCallback(_frameTimingCallback!);
-      _logger.i('DownloadBloc: FrameTiming callback registered');
-    }
 
     _logger.i('DownloadBloc: Progress stream subscription initialized');
   }
@@ -3406,13 +3360,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     // ponytail: fire-and-forget — may not complete if event loop shutting down
     _flushPendingDbSaves();
     _logger.i('DownloadBloc: DB flush timer cancelled, pending saves flushed');
-
-    // 1.9: Remove FrameTiming callback
-    if (_frameTimingCallback != null) {
-      SchedulerBinding.instance.removeTimingsCallback(_frameTimingCallback!);
-      _frameTimingCallback = null;
-      _logger.i('DownloadBloc: FrameTiming callback removed');
-    }
 
     // Cancel all active downloads
     for (final task in _activeTasks.values) {
