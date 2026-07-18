@@ -2354,6 +2354,11 @@ class GenericScraperAdapter implements GenericAdapter {
               .map(_extractSlugFromUrl)
               .where((v) => v.isNotEmpty)
               .toList();
+        } else if (transform == 'base64') {
+          values = values
+              .map((v) => _decodeBase64(v) ?? v)
+              .where((v) => v.isNotEmpty)
+              .toList();
         }
 
         final seenValues = <String>{};
@@ -2389,6 +2394,8 @@ class GenericScraperAdapter implements GenericAdapter {
         var value = _parser.extractString(doc, sel) ?? '';
         if (transform == 'slug' && value.isNotEmpty) {
           value = _extractSlugFromUrl(value);
+        } else if (transform == 'base64' && value.isNotEmpty) {
+          value = _decodeBase64(value) ?? value;
         }
         _logger
             .d('$_sourceId: extracted field "${entry.key}" (single): "$value"');
@@ -2890,6 +2897,15 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return null;
+  }
+
+  String? _decodeBase64(String value) {
+    try {
+      final padded = value.padRight((value.length + 3) ~/ 4 * 4, '=');
+      return utf8.decode(base64.decode(padded));
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Extract image URLs from a `chapterData` JS variable pattern.
