@@ -37,6 +37,8 @@ import '../../widgets/extended_image_reader_widget.dart';
 import 'chapter_open_overlay.dart';
 import 'end_of_chapter_overlay.dart';
 
+part 'reader_overlay_widgets.dart';
+
 /// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
@@ -133,8 +135,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   // 🎯 Tap-to-toggle detection for continuous scroll
   Offset _tapDownPosition = Offset.zero;
   DateTime _tapDownTime = DateTime.now();
-  Offset? _miniChromeToggleOffset;
-
   // 🎯 Floating page indicator (ValueNotifiers avoid full-screen rebuild)
   final ValueNotifier<int> _visiblePageNotifier = ValueNotifier<int>(1);
   final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
@@ -146,8 +146,6 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   // Slider footer previews the destination locally while dragging and only
   // commits navigation once on release, preventing overlapping PageView syncs.
-  double? _sliderPreviewValue;
-
   // 🚀 OPTIMIZATION: Preload content before BlocProvider setup
   Content? _preloadedContent;
   List<ImageMetadata>? _preloadedImageMetadata;
@@ -969,31 +967,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     return _autoSwitchedContentIds.contains(widget.contentId);
   }
 
-  ReadingMode _getNextReadingMode(
-    ReadingMode currentMode, {
-    required bool disableContinuousScroll,
-  }) {
-    if (!disableContinuousScroll) {
-      switch (currentMode) {
-        case ReadingMode.singlePage:
-          return ReadingMode.verticalPage;
-        case ReadingMode.verticalPage:
-          return ReadingMode.continuousScroll;
-        case ReadingMode.continuousScroll:
-          return ReadingMode.singlePage;
-      }
-    }
-
-    // Continuous-scroll is locked for heavy-image content.
-    switch (currentMode) {
-      case ReadingMode.singlePage:
-        return ReadingMode.verticalPage;
-      case ReadingMode.verticalPage:
-        return ReadingMode.singlePage;
-      case ReadingMode.continuousScroll:
-        return ReadingMode.singlePage;
-    }
-  }
+  // DELETED: _getNextReadingMode (extracted to part file helper function)
 
   void _syncControllersWithState(ReaderState state) {
     // 🚀 OPTIMIZATION: Skip sync for continuous scroll - let user scroll freely
@@ -1288,13 +1262,46 @@ class _ReaderScreenState extends State<ReaderScreen>
         _buildReaderContent(state),
 
         // 🎬 Animated UI overlay (always in tree for smooth transitions)
-        _buildAnimatedUIOverlay(state),
+        _ReaderUIOverlay(
+          isVisible: state.showUI ?? false,
+          topBar: _ReaderTopBar(
+            state: state,
+            onBack: () => context.pop(),
+            onToggleKeepScreenOn: _readerCubit.toggleKeepScreenOn,
+            onOpenSettings: () => _showReaderSettingsEntity(state),
+          ),
+          bottomBar: state.readingMode != ReadingMode.continuousScroll
+              ? _ReaderBottomBar(
+                  state: state,
+                  onPrevPage: _readerCubit.previousPage,
+                  onNextPage: _readerCubit.nextPage,
+                  onJumpToPage: _readerCubit.jumpToPage,
+                  onChangeReadingMode: () {
+                    final newMode = _getNextReadingMode(
+                      state.readingMode ?? ReadingMode.singlePage,
+                      disableContinuousScroll:
+                          _isContinuousScrollDisabledForCurrentContent(),
+                    );
+                    _readerCubit.changeReadingMode(newMode);
+                  },
+                  disableContinuousScroll:
+                      _isContinuousScrollDisabledForCurrentContent(),
+                )
+              : null,
+        ),
 
-        _buildMiniChromeToggle(state),
+        _ReaderMiniChromeToggle(
+          isVisible: state.showUI ?? false,
+          onToggle: _readerCubit.toggleUI,
+        ),
 
         // 🎯 Floating page indicator for continuous scroll
         if (state.readingMode == ReadingMode.continuousScroll)
-          _buildFloatingPageIndicator(state),
+          _ReaderFloatingPageIndicator(
+            scrollingNotifier: _scrollingNotifier,
+            visiblePageNotifier: _visiblePageNotifier,
+            totalPages: state.content?.pageCount ?? 0,
+          ),
 
         // 📖 Chapter open overlay (auto-dismiss, shown once per session)
         if (showOverlay)
@@ -1652,35 +1659,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
   }
 
-  Widget _buildFailedPageCard(int pageNumber,
-      {bool canRetry = false, String? sourceId}) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.cloud_off_rounded,
-                size: 48, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 12),
-            Text('Page $pageNumber failed to download',
-                style: TextStyleConst.titleSmall),
-            const SizedBox(height: 4),
-            Text('Tap to retry', style: TextStyleConst.bodySmall),
-            if (canRetry)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: FilledButton.tonalIcon(
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Retry'),
-                  onPressed: () => _repairBrokenImage(pageNumber),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  // DELETED: _buildFailedPageCard (extracted to _FailedPageCard widget)
 
   Widget _buildImageViewer(String imageUrl, int pageNumber,
       {bool isContinuous = false, bool? enableZoom, String? sourceId}) {
@@ -1688,10 +1667,10 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (OfflineContentManager.isFailedPagePlaceholder(imageUrl)) {
       final originalUrl =
           OfflineContentManager.extractOriginalUrlFromPlaceholder(imageUrl);
-      return _buildFailedPageCard(
-        pageNumber,
+      return _FailedPageCard(
+        pageNumber: pageNumber,
         canRetry: originalUrl != null && originalUrl.trim().isNotEmpty,
-        sourceId: sourceId,
+        onRetry: () => _repairBrokenImage(pageNumber),
       );
     }
 
@@ -2005,473 +1984,15 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   /// 🎬 Animated UI overlay — always in widget tree for smooth fade/slide transitions
-  Widget _buildAnimatedUIOverlay(ReaderState state) {
-    final isVisible = state.showUI ?? false;
+  // DELETED: _buildAnimatedUIOverlay (extracted to _ReaderUIOverlay widget)
 
-    return IgnorePointer(
-      ignoring: !isVisible,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Top bar — slides down from top
-            AnimatedSlide(
-              offset: isVisible ? Offset.zero : const Offset(0, -1),
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
-              child: AnimatedOpacity(
-                opacity: isVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 250),
-                child: _buildTopBar(state),
-              ),
-            ),
+  // DELETED: _buildFloatingPageIndicator (extracted to _ReaderFloatingPageIndicator widget)
 
-            const Spacer(),
+  // DELETED: _buildMiniChromeToggle, _miniChromeToggleSize, _clampMiniChromeToggleOffset (extracted to _ReaderMiniChromeToggle widget)
 
-            // Bottom bar — slides up from bottom (paginated modes only)
-            if (state.readingMode != ReadingMode.continuousScroll)
-              AnimatedSlide(
-                offset: isVisible ? Offset.zero : const Offset(0, 1),
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-                child: AnimatedOpacity(
-                  opacity: isVisible ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 250),
-                  child: _buildBottomBar(state),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  // DELETED: _buildTopBar (extracted to _ReaderTopBar widget)
 
-  /// 🎯 Floating page indicator pill for continuous scroll mode
-  /// Uses ValueNotifiers to avoid full-screen rebuilds during scroll.
-  Widget _buildFloatingPageIndicator(ReaderState state) {
-    final totalPages = state.content?.pageCount ?? 0;
-    if (totalPages == 0) return const SizedBox.shrink();
-
-    return Positioned(
-      bottom: 24,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _scrollingNotifier,
-          builder: (context, isScrolling, _) {
-            return AnimatedOpacity(
-              opacity: isScrolling ? 1.0 : 0.0,
-              duration: Duration(milliseconds: isScrolling ? 200 : 600),
-              curve: Curves.easeOut,
-              child: ValueListenableBuilder<int>(
-                valueListenable: _visiblePageNotifier,
-                builder: (context, page, _) {
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .inverseSurface
-                          .withValues(alpha: 0.85),
-                      borderRadius:
-                          BorderRadius.circular(DesignTokens.radius2xl),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      '$page / $totalPages',
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onInverseSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMiniChromeToggle(ReaderState state) {
-    final isVisible = state.showUI ?? false;
-    final colorScheme = Theme.of(context).colorScheme;
-    final mediaQuery = MediaQuery.of(context);
-    final defaultOffset = Offset(
-      mediaQuery.size.width - _miniChromeToggleSize - 12,
-      mediaQuery.padding.top + 82,
-    );
-    final offset = _clampMiniChromeToggleOffset(
-      _miniChromeToggleOffset ?? defaultOffset,
-      mediaQuery,
-    );
-
-    return Positioned(
-      left: offset.dx,
-      top: offset.dy,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanUpdate: (details) {
-          setState(() {
-            final currentOffset = _miniChromeToggleOffset ?? offset;
-            _miniChromeToggleOffset = _clampMiniChromeToggleOffset(
-              currentOffset + details.delta,
-              MediaQuery.of(context),
-            );
-          });
-        },
-        child: AnimatedOpacity(
-          opacity: isVisible ? 0.55 : 0.9,
-          duration: const Duration(milliseconds: 180),
-          child: Material(
-            color: Colors.transparent,
-            child: Tooltip(
-              message: isVisible ? 'Hide controls' : 'Show controls',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(_miniChromeToggleSize / 2),
-                onTap: _readerCubit.toggleUI,
-                child: Container(
-                  width: _miniChromeToggleSize,
-                  height: _miniChromeToggleSize,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: colorScheme.inverseSurface.withValues(alpha: 0.72),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          colorScheme.onInverseSurface.withValues(alpha: 0.18),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.18),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isVisible
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.more_horiz_rounded,
-                    size: 22,
-                    color: colorScheme.onInverseSurface,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static const double _miniChromeToggleSize = 40;
-
-  Offset _clampMiniChromeToggleOffset(
-    Offset offset,
-    MediaQueryData mediaQuery,
-  ) {
-    const margin = 8.0;
-    const minX = margin;
-    final maxX = mediaQuery.size.width - _miniChromeToggleSize - margin;
-    final minY = mediaQuery.padding.top + margin;
-    final maxY = mediaQuery.size.height -
-        mediaQuery.padding.bottom -
-        _miniChromeToggleSize -
-        margin;
-
-    return Offset(
-      offset.dx.clamp(minX, maxX),
-      offset.dy.clamp(minY, maxY),
-    );
-  }
-
-  Widget _buildTopBar(ReaderState state) {
-    final kuron = Theme.of(context).extension<KuronColors>();
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-    final glassBg =
-        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
-    final iconColor = isDark ? Colors.white : const Color(0xFF2E2722);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2722);
-    final subColor = isDark ? Colors.white60 : const Color(0xFF7A6E66);
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          decoration: BoxDecoration(
-            color: glassBg,
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(16)),
-          ),
-          child: Row(
-            children: [
-              // Back button
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: Icon(Icons.arrow_back, color: iconColor),
-                iconSize: 22,
-                visualDensity: VisualDensity.compact,
-              ),
-
-              // Title + subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            state.content?.getDisplayTitle() ??
-                                AppLocalizations.of(context)?.loading ??
-                                '',
-                            style: TextStyleConst.headingMedium.copyWith(
-                              color: textColor,
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // Offline indicator
-                        if (state.isOfflineMode ?? false) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: iconColor.withValues(alpha: 0.2),
-                              borderRadius:
-                                  BorderRadius.circular(DesignTokens.radiusSm),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.offline_bolt,
-                                    size: 11, color: subColor),
-                                const SizedBox(width: 2),
-                                Text('offline',
-                                    style: TextStyle(
-                                        color: subColor, fontSize: 10)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    // Page counter (paginated modes only)
-                    if (state.readingMode != ReadingMode.continuousScroll)
-                      Text(
-                        (state.currentPage ?? 1) >
-                                (state.content?.pageCount ?? 1)
-                            ? (AppLocalizations.of(context)?.chapterComplete ??
-                                '')
-                            : (AppLocalizations.of(context)?.pageOfPages(
-                                    state.currentPage ?? 1,
-                                    state.content?.pageCount ?? 1) ??
-                                AppLocalizations.of(context)!.pageOfContent(
-                                    state.currentPage ?? 1,
-                                    state.content?.pageCount ?? 1)),
-                        style: TextStyle(color: subColor, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-
-              // Keep screen on toggle (compact)
-              IconButton(
-                onPressed: () => _readerCubit.toggleKeepScreenOn(),
-                icon: Icon(
-                  (state.keepScreenOn ?? false)
-                      ? Icons.screen_lock_portrait
-                      : Icons.screen_lock_portrait_outlined,
-                  color: (state.keepScreenOn ?? false)
-                      ? Colors.amberAccent
-                      : subColor,
-                ),
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
-              ),
-
-              // Settings button
-              IconButton(
-                onPressed: () => _showReaderSettingsEntity(state),
-                icon: Icon(Icons.settings, color: subColor),
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomBar(ReaderState state) {
-    // Clamp display values for navigation page
-    final isOnNavigationPage =
-        (state.currentPage ?? 1) > (state.content?.pageCount ?? 1);
-    final totalPages = state.content?.pageCount ?? 1;
-    final currentPage = isOnNavigationPage
-        ? totalPages
-        : (state.currentPage ?? 1).clamp(1, totalPages);
-    final sliderValue = (_sliderPreviewValue ?? currentPage.toDouble())
-        .clamp(1.0, totalPages.toDouble())
-        .toDouble();
-    final displayPage = sliderValue.round().clamp(1, totalPages);
-    final kuron = Theme.of(context).extension<KuronColors>();
-    final glassBg =
-        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-          decoration: BoxDecoration(
-            color: glassBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Row(
-            children: [
-              // Prev button
-              IconButton(
-                onPressed: state.isFirstPage
-                    ? null
-                    : () => _readerCubit.previousPage(),
-                icon: Icon(
-                  Icons.navigate_before,
-                  color: state.isFirstPage
-                      ? Colors.white.withValues(alpha: 0.3)
-                      : Colors.white,
-                ),
-                iconSize: 22,
-                visualDensity: VisualDensity.compact,
-              ),
-
-              // Slider + label
-              Expanded(
-                child: isOnNavigationPage
-                    ? Center(
-                        child: Text(
-                          '$totalPages / $totalPages',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                      )
-                    : Row(
-                        children: [
-                          // Page label
-                          Text(
-                            '$displayPage',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 11),
-                          ),
-                          const SizedBox(width: 4),
-                          // Slider
-                          Expanded(
-                            child: SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 6),
-                                overlayShape: const RoundSliderOverlayShape(
-                                    overlayRadius: 14),
-                                trackHeight: 2.5,
-                                activeTrackColor: Colors.white,
-                                inactiveTrackColor:
-                                    Colors.white.withValues(alpha: 0.25),
-                                thumbColor: Colors.white,
-                                overlayColor:
-                                    Colors.white.withValues(alpha: 0.2),
-                              ),
-                              child: Slider(
-                                value: sliderValue,
-                                min: 1,
-                                max: totalPages
-                                    .toDouble()
-                                    .clamp(1, double.infinity),
-                                onChanged: (v) {
-                                  if (_sliderPreviewValue == v) {
-                                    return;
-                                  }
-                                  setState(() {
-                                    _sliderPreviewValue = v;
-                                  });
-                                },
-                                onChangeEnd: (v) {
-                                  final targetPage =
-                                      v.round().clamp(1, totalPages);
-                                  setState(() {
-                                    _sliderPreviewValue = null;
-                                  });
-
-                                  if (targetPage != currentPage) {
-                                    _readerCubit.jumpToPage(targetPage);
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          // Total label
-                          Text(
-                            '$totalPages',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 11),
-                          ),
-                        ],
-                      ),
-              ),
-
-              // Next button
-              IconButton(
-                onPressed: () => _readerCubit.nextPage(),
-                icon: const Icon(Icons.navigate_next, color: Colors.white),
-                iconSize: 22,
-                visualDensity: VisualDensity.compact,
-              ),
-
-              // Mode toggle icon
-              IconButton(
-                onPressed: () {
-                  final newMode = _getNextReadingMode(
-                    state.readingMode ?? ReadingMode.singlePage,
-                    disableContinuousScroll:
-                        _isContinuousScrollDisabledForCurrentContent(),
-                  );
-                  _readerCubit.changeReadingMode(newMode);
-                },
-                icon: Icon(
-                  _getReadingModeIcon(
-                      state.readingMode ?? ReadingMode.singlePage),
-                  color: Colors.white,
-                ),
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // DELETED: _buildBottomBar (extracted to _ReaderBottomBar widget)
   // DELETED: _buildEndOfChapterOverlay (moved to extra page in builder)
 
   // DISABLED: Jump to page feature temporarily disabled to prevent navigation bugs
@@ -2801,16 +2322,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
   }
 
-  IconData _getReadingModeIcon(ReadingMode mode) {
-    switch (mode) {
-      case ReadingMode.singlePage:
-        return Icons.view_carousel; // Horizontal pages
-      case ReadingMode.verticalPage:
-        return Icons.view_agenda; // Vertical pages
-      case ReadingMode.continuousScroll:
-        return Icons.view_stream; // Continuous scroll
-    }
-  }
+  // DELETED: _getReadingModeIcon (extracted to part file helper function)
 
   String _getReadingModeLabel(ReadingMode mode) {
     switch (mode) {
