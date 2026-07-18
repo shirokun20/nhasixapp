@@ -2057,7 +2057,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     try {
-      final date = DateTime.fromMillisecondsSinceEpoch((timestamp as num?)?.toInt() ?? 0);
+      final date = DateTime.fromMillisecondsSinceEpoch(
+          (timestamp as num?)?.toInt() ?? 0);
       final now = DateTime.now();
       final difference = now.difference(date);
 
@@ -2102,8 +2103,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-          duration:
-              const Duration(minutes: 1), // Long duration while processing
+          duration: const Duration(seconds: 10),
         ),
       );
 

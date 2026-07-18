@@ -46,25 +46,6 @@ class NotificationActions {
   static const String retryPdf = 'retry_pdf';
 }
 
-/// Notification ID Ranges
-///
-/// Separates notification types by ID range to avoid conflicts.
-class NotificationIdRanges {
-  NotificationIdRanges._();
-
-  /// Base ID for download notifications (0-99999)
-  static const int downloadBase = 0;
-
-  /// Base ID for PDF notifications (100000-199999)
-  static const int pdfBase = 100000;
-
-  /// Base ID for general notifications (200000+)
-  static const int generalBase = 200000;
-
-  /// Test notification ID
-  static const int testNotificationId = 999999;
-}
-
 /// Notification Display Limits
 class NotificationLimits {
   NotificationLimits._();
@@ -77,18 +58,4 @@ class NotificationLimits {
 
   /// Progress update interval (only update every N percent)
   static const int progressUpdateInterval = 10;
-}
-
-/// Notification Payload Keys
-class NotificationPayloadKeys {
-  NotificationPayloadKeys._();
-
-  static const String contentId = 'contentId';
-  static const String action = 'action';
-  static const String pdfPath = 'pdfPath';
-  static const String type = 'type';
-
-  // Type values
-  static const String typeDownload = 'download';
-  static const String typePdf = 'pdf';
 }

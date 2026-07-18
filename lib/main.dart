@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
@@ -16,10 +20,15 @@ import 'package:nhasixapp/core/services/analytics_service.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:nhasixapp/core/services/workers/download_worker.dart';
+import 'package:nhasixapp/core/utils/notification_localizer.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'package:logger/logger.dart';
-import 'dart:io';
+
+/// Stored cold-start notification payload, read from
+/// NotificationAppLaunchDetails before runApp().
+String? _pendingNotifPayload;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +58,14 @@ void main() async {
   // Initialize WorkManager for background downloads
   await initializeWorkManager(isDebugMode: kDebugMode);
 
+  // Capture cold-start notification launch payload
+  try {
+    final plugin = FlutterLocalNotificationsPlugin();
+    final details = await plugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp ?? false) {
+      _pendingNotifPayload = details?.notificationResponse?.payload;
+    }
+  } catch (_) {}
   // _setupAllServiceLocalizationCallbacks();
 
   // Setup error handlers to prevent app crashes (especially Impeller/Vulkan issues)
@@ -122,11 +139,50 @@ void main() async {
     );
   };
 
-  runApp(const MyApp());
+  runApp(MyApp(launchPayload: _pendingNotifPayload));
+}
+
+/// Navigates to content on cold-start notification tap.
+class _LaunchPayloadNavigator extends StatefulWidget {
+  final String? payload;
+  const _LaunchPayloadNavigator({this.payload});
+
+  @override
+  State<_LaunchPayloadNavigator> createState() =>
+      _LaunchPayloadNavigatorState();
+}
+
+class _LaunchPayloadNavigatorState extends State<_LaunchPayloadNavigator> {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _initialized) return;
+      _initialized = true;
+      _setupNotificationLocalization();
+      if (widget.payload != null && widget.payload!.isNotEmpty) {
+        context.go(AppRoute.contentDetail.replaceFirst(':id', widget.payload!));
+      }
+    });
+  }
+
+  void _setupNotificationLocalization() {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+    getIt<NotificationService>().setLocalizationCallback((String key,
+            {Map<String, dynamic>? args}) =>
+        localizeNotification(l10n, key, args) ?? '');
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? launchPayload;
+  const MyApp({super.key, this.launchPayload});
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +219,13 @@ class MyApp extends StatelessWidget {
                         PlatformNotSupportedDialog.show(context);
                       });
                     }
-                    final child_ = AppPrivacyOverlayGate(
-                      child: child ?? const SizedBox.shrink(),
+                    final child_ = Stack(
+                      children: [
+                        AppPrivacyOverlayGate(
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                        _LaunchPayloadNavigator(payload: launchPayload),
+                      ],
                     );
                     if (themeState.currentTheme != 'note' &&
                         themeState.currentTheme != 'note_dark') {

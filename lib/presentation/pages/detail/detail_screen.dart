@@ -134,10 +134,12 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void _showLoginRequiredSnackBar(String message) {
     final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: l10n.login,
           onPressed: _goToCrotpediaLogin,
@@ -155,7 +157,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     final message =
         ErrorMessageUtils.getFriendlyErrorMessage(state.error, l10n);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
@@ -220,7 +223,9 @@ class _DetailScreenState extends State<DetailScreen> {
       if (url.isEmpty) continue;
 
       final uri = Uri.tryParse(url);
-      final lastSegment = uri?.pathSegments.lastWhere((s) => s.trim().isNotEmpty && s.trim() != '0', orElse: () => '');
+      final lastSegment = uri?.pathSegments.lastWhere(
+          (s) => s.trim().isNotEmpty && s.trim() != '0',
+          orElse: () => '');
       if (lastSegment != null && lastSegment.isNotEmpty) {
         return lastSegment;
       }
@@ -331,7 +336,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final galleryId = int.tryParse(detailState.content.id);
     if (galleryId == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.unsupportedGalleryId),
           backgroundColor: Theme.of(context).colorScheme.error,
@@ -359,7 +365,8 @@ class _DetailScreenState extends State<DetailScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             status.favorited
@@ -371,7 +378,8 @@ class _DetailScreenState extends State<DetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             AppLocalizations.of(context)!.unableToSyncSettings,
@@ -542,7 +550,8 @@ class _DetailScreenState extends State<DetailScreen> {
           'Tag mapping failed for $tagType:$tagName (tagId=$tagId), navigation cancelled to avoid invalid query',
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -566,9 +575,9 @@ class _DetailScreenState extends State<DetailScreen> {
       Logger().e('Error navigating to tag: $tagName',
           error: e, stackTrace: stackTrace);
 
-      // Handle error gracefully
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.errorBrowsingTag),
             backgroundColor: Theme.of(context).colorScheme.error,
@@ -610,7 +619,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       parentContent: state.content, // Parent series
                       chapterData: state.chapterData, // Navigation data
                       currentChapter: state.currentChapter, // Current chapter
-                      allChapters: _detailCubit.chaptersByLang(state.currentChapter?.language),
+                      allChapters: _detailCubit
+                          .chaptersByLang(state.currentChapter?.language),
                     );
                     context.read<DetailCubit>().resetToLoaded();
                   } else if (state is DetailActionFailure) {
@@ -1101,8 +1111,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 } else {
                   unawaited(_detailCubit.loadChapterLane(
                     language: ChapterLanguagePresenter.normalize(languageKey),
-                    scanGroup: content.chapters?.firstOrNull?.scanGroup ??
-                        'Chapter',
+                    scanGroup:
+                        content.chapters?.firstOrNull?.scanGroup ?? 'Chapter',
                   ));
                 }
               },
@@ -1462,7 +1472,8 @@ class _DetailScreenState extends State<DetailScreen> {
       chapterData: chapterData,
       parentContent: parentContent,
       currentChapter: currentChapter,
-      allChapters: allChapters ?? _detailCubit.chaptersByLang(currentChapter?.language),
+      allChapters:
+          allChapters ?? _detailCubit.chaptersByLang(currentChapter?.language),
     );
 
     Logger().w('Content to pass: ${launchPayload.content}');
@@ -1566,7 +1577,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
       // Show success feedback
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -1597,7 +1609,8 @@ class _DetailScreenState extends State<DetailScreen> {
       final contentUrl = _buildContentUrl(content);
       await Clipboard.setData(ClipboardData(text: contentUrl));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -1699,7 +1712,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     if (!mounted || !hasPermissions) {
       if (mounted && !hasPermissions) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -1732,7 +1746,8 @@ class _DetailScreenState extends State<DetailScreen> {
       downloadBloc.add(DownloadQueueEvent(content: content));
 
       // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -1754,6 +1769,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary,
+          duration: const Duration(seconds: 6),
           action: SnackBarAction(
             label: AppLocalizations.of(context)!.viewDownloadsAction,
             textColor: Theme.of(context).colorScheme.onSecondary,
@@ -1766,7 +1782,8 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       Logger().e('Error starting download: $e');
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -1824,7 +1841,8 @@ class _DetailScreenState extends State<DetailScreen> {
       Clipboard.setData(ClipboardData(text: contentLink));
 
       // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -1845,11 +1863,11 @@ class _DetailScreenState extends State<DetailScreen> {
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary,
+          duration: const Duration(seconds: 6),
           action: SnackBarAction(
             label: AppLocalizations.of(context)!.viewDownloadsAction,
             textColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
-              // Show copied link in a dialog for verification
               if (mounted) {
                 _showCopiedLinkDialog(contentLink);
               }
@@ -1860,8 +1878,10 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       Logger().e('Error copying link: $e');
 
+      final messenger = ScaffoldMessenger.of(context);
+
       // Show error feedback
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -1983,7 +2003,8 @@ class _DetailScreenState extends State<DetailScreen> {
             onPressed: () {
               context.pop();
               AppStateManager().setOfflineMode(false);
-              ScaffoldMessenger.of(context).showSnackBar(
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.showSnackBar(
                 SnackBar(
                   content: Text(
                     AppLocalizations.of(context)!.goingOnline,
@@ -2126,7 +2147,8 @@ class _DetailScreenState extends State<DetailScreen> {
                             collectionIds: selectedIds.toList(growable: false),
                           );
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            final messenger = ScaffoldMessenger.of(context);
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text(AppLocalizations.of(context)!
                                     .collectionsUpdatedSuccessfully),
@@ -2216,7 +2238,8 @@ class _DetailScreenState extends State<DetailScreen> {
       return true;
     } catch (e) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!
               .failedToCreateCollection(e.toString())),

@@ -35,8 +35,7 @@ Widget _buildAvailableSourcesSection(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () =>
-                      _installSourceFromLink(state, state.context),
+                  onPressed: () => _installSourceFromLink(state, state.context),
                   icon: const Icon(Icons.link),
                   label: Text(l10n.settingsAddViaLink),
                 ),
@@ -44,8 +43,7 @@ Widget _buildAvailableSourcesSection(
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () =>
-                      _installSourceFromZip(state, state.context),
+                  onPressed: () => _installSourceFromZip(state, state.context),
                   icon: const Icon(Icons.folder_zip_outlined),
                   label: Text(l10n.settingsImportZip),
                 ),
@@ -90,10 +88,10 @@ Widget _buildAvailableSourcesSection(
                       child: Text(
                         '$reachableCount/${srcState.availableSources.length} sources reachable',
                         style: TextStyleConst.bodySmall.copyWith(
-                          color: reachableCount ==
-                                  srcState.availableSources.length
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.error,
+                          color:
+                              reachableCount == srcState.availableSources.length
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.error,
                         ),
                       ),
                     ),
@@ -133,10 +131,9 @@ Widget _buildAvailableSourcesSection(
                   sourceId: source.id,
                 );
                 final description = sourceInfo.description;
-                final subtitle =
-                    (description != null && description.isNotEmpty)
-                        ? '$description\n${sourceInfo.idWithVersion}'
-                        : sourceInfo.idWithVersion;
+                final subtitle = (description != null && description.isNotEmpty)
+                    ? '$description\n${sourceInfo.idWithVersion}'
+                    : sourceInfo.idWithVersion;
                 return ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -238,7 +235,7 @@ Future<void> _registerSourceInRegistry(
   }
 
   context.read<SourceCubit>().refreshSources();
-      state._triggerRebuild();
+  state._triggerRebuild();
 }
 
 Future<void> _confirmAndUninstallSource(
@@ -258,8 +255,7 @@ Future<void> _confirmAndUninstallSource(
           title: Text(AppLocalizations.of(context)!.uninstallSourceTitle,
               style: TextStyle(color: theme.colorScheme.onSurface)),
           content: Text(
-            AppLocalizations.of(context)!
-                .removeSourceConfirmation(sourceId),
+            AppLocalizations.of(context)!.removeSourceConfirmation(sourceId),
             style: TextStyle(color: theme.colorScheme.onSurface),
           ),
           actions: [
@@ -296,15 +292,15 @@ Future<void> _confirmAndUninstallSource(
     }
 
     if (!state.mounted) return;
-        state._triggerRebuild();
+    state._triggerRebuild();
 
     if (!context.mounted) return;
 
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: Text(
-            AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
+        content:
+            Text(AppLocalizations.of(context)!.sourceUninstalled(sourceId)),
         backgroundColor: AppColors.success,
       ),
     );
@@ -363,7 +359,7 @@ Future<void> _installSourceFromLink(
   messenger.showSnackBar(
     SnackBar(
       content: Text(l10n.sourceImportInstallingFromLink),
-      duration: const Duration(seconds: 30),
+      duration: const Duration(seconds: 10),
     ),
   );
 
@@ -474,7 +470,7 @@ Future<void> _installSourceFromZip(
     messenger.showSnackBar(
       SnackBar(
         content: Text(l10n.sourceImportInstallingFromZip),
-        duration: const Duration(seconds: 30),
+        duration: const Duration(seconds: 10),
       ),
     );
 
@@ -555,8 +551,7 @@ Future<void> _installSourceFromZip(
       );
     }
   } catch (e, stackTrace) {
-    Logger()
-        .e('Failed to install source from ZIP: $e', stackTrace: stackTrace);
+    Logger().e('Failed to install source from ZIP: $e', stackTrace: stackTrace);
     if (!context.mounted) return;
 
     messenger.hideCurrentSnackBar();
@@ -599,8 +594,7 @@ Future<List<_InstallCandidate>> _buildCandidatesFromLinkManifest({
       'source',
       l10n.sourceImportSourceMismatch,
     );
-    final version =
-        (manifestMap['version'] as String?)?.trim() ?? 'unknown';
+    final version = (manifestMap['version'] as String?)?.trim() ?? 'unknown';
     return [
       _InstallCandidate(
         sourceId: sourceId,
@@ -694,8 +688,7 @@ Future<_InstallCandidate> _downloadCandidateFromEntry({
   required _GlobalManifestEntry entry,
   required AppLocalizations l10n,
 }) async {
-  final resolvedConfigUrl =
-      Uri.parse(baseLink).resolve(entry.url).toString();
+  final resolvedConfigUrl = Uri.parse(baseLink).resolve(entry.url).toString();
   final configResponse = await dio.get<String>(
     resolvedConfigUrl,
     options: Options(
@@ -797,8 +790,8 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
               ListTile(
                 title: Text(
                     AppLocalizations.of(context)!.selectSourceFromManifest),
-                subtitle: Text(
-                    AppLocalizations.of(context)!.chooseMultipleSources),
+                subtitle:
+                    Text(AppLocalizations.of(context)!.chooseMultipleSources),
               ),
               Expanded(
                 child: ListView.separated(
@@ -810,8 +803,7 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
                     return CheckboxListTile(
                       value: isSelected,
                       title: Text(entry.displayName ?? entry.id),
-                      subtitle:
-                          Text('${entry.id} • v${entry.version}'),
+                      subtitle: Text('${entry.id} • v${entry.version}'),
                       onChanged: (value) {
                         setModalState(() {
                           if (value == true) {
@@ -832,8 +824,7 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
                     Expanded(
                       child: TextButton(
                         onPressed: () => ctx.pop(const []),
-                        child:
-                            Text(AppLocalizations.of(context)!.cancel),
+                        child: Text(AppLocalizations.of(context)!.cancel),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -843,8 +834,8 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
                             ? null
                             : () => ctx.pop(
                                   entries
-                                      .where((entry) =>
-                                          selected.contains(entry))
+                                      .where(
+                                          (entry) => selected.contains(entry))
                                       .toList(growable: false),
                                 ),
                         child: Text(AppLocalizations.of(context)!
@@ -974,8 +965,7 @@ Future<List<_InstallCandidate>> _buildCandidateFromZip({
       'source',
       l10n.sourceImportSourceMismatch,
     );
-    final version =
-        (manifestMap['version'] as String?)?.trim() ?? 'unknown';
+    final version = (manifestMap['version'] as String?)?.trim() ?? 'unknown';
     return [
       _InstallCandidate(
         sourceId: sourceId,
@@ -1036,10 +1026,10 @@ Future<List<_InstallCandidate>> _buildCandidateFromZip({
 }
 
 void _attachManifestMetadata(
-    Map<String, dynamic> configMap, {
-    String? displayName,
-    String? description,
-  }) {
+  Map<String, dynamic> configMap, {
+  String? displayName,
+  String? description,
+}) {
   final meta = (configMap['meta'] as Map?)?.cast<String, dynamic>() ??
       <String, dynamic>{};
 
@@ -1062,10 +1052,9 @@ Future<void> _cacheIconForZipCandidate({
   String? entryIconUrl,
 }) async {
   final configIconPath = _readConfigIconPath(configMap);
-  final candidatePath =
-      (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
-          ? entryIconUrl.trim()
-          : configIconPath;
+  final candidatePath = (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
+      ? entryIconUrl.trim()
+      : configIconPath;
   if (candidatePath == null || candidatePath.isEmpty) {
     return;
   }
@@ -1097,10 +1086,9 @@ Future<void> _cacheIconForLinkCandidate({
   String? entryIconUrl,
 }) async {
   final configIconPath = _readConfigIconPath(configMap);
-  final candidatePath =
-      (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
-          ? entryIconUrl.trim()
-          : configIconPath;
+  final candidatePath = (entryIconUrl != null && entryIconUrl.trim().isNotEmpty)
+      ? entryIconUrl.trim()
+      : configIconPath;
   if (candidatePath == null || candidatePath.isEmpty) {
     return;
   }
@@ -1156,12 +1144,11 @@ String? _readConfigIconPath(Map<String, dynamic> configMap) {
   return null;
 }
 
-void _setConfigIconPath(
-    Map<String, dynamic> configMap, String localPath) {
+void _setConfigIconPath(Map<String, dynamic> configMap, String localPath) {
   configMap['iconPath'] = localPath;
 
-  final uiMap = (configMap['ui'] as Map?)?.cast<String, dynamic>() ??
-      <String, dynamic>{};
+  final uiMap =
+      (configMap['ui'] as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
   uiMap['iconPath'] = localPath;
   configMap['ui'] = uiMap;
 }
@@ -1237,8 +1224,7 @@ Future<bool> _showInstallPreviewDialog(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-              '${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}',
+          Text('${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}',
               style: TextStyle(color: cs.onSurface)),
           const SizedBox(height: 6),
           Text('${l10n.sourceImportPreviewVersion}: ${candidate.version}',

@@ -6,32 +6,62 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../domain/entities/download_status.dart';
 import '../blocs/download/download_bloc.dart';
-// Note: DownloadEvent is part of download_bloc.dart
 
-/// Global widget to display active download progress at the top of the screen
-class GlobalDownloadProgressWidget extends StatelessWidget {
+class GlobalDownloadProgressWidget extends StatefulWidget {
   const GlobalDownloadProgressWidget({super.key});
+
+  @override
+  State<GlobalDownloadProgressWidget> createState() =>
+      _GlobalDownloadProgressWidgetState();
+}
+
+class _GlobalDownloadProgressWidgetState
+    extends State<GlobalDownloadProgressWidget>
+    with SingleTickerProviderStateMixin {
+  bool _dismissed = false;
+  int _lastActiveCount = 0;
+  late final AnimationController _slideController;
+  late final Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _slideController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
       buildWhen: (previous, current) {
         if (previous is DownloadLoaded && current is DownloadLoaded) {
-          // Rebuild if active count changes
           if (previous.activeDownloads.length !=
               current.activeDownloads.length) {
             return true;
           }
-
-          if (current.activeDownloads.isEmpty) return false;
-
-          // If multiple downloads, check total stats
+          if (current.activeDownloads.isEmpty) {
+            // Show completion state then hide
+            return true;
+          }
           if (current.activeDownloads.length > 1) {
             return previous.totalProgress != current.totalProgress ||
                 previous.totalDownloadSpeed != current.totalDownloadSpeed;
           }
-
-          // Single download check
           final prevDownload = previous.activeDownloads.first;
           final currDownload = current.activeDownloads.first;
           return prevDownload.progress != currDownload.progress ||
@@ -41,22 +71,51 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
         return previous.runtimeType != current.runtimeType;
       },
       builder: (context, state) {
-        if (state is! DownloadLoaded || state.activeDownloads.isEmpty) {
+        if (state is! DownloadLoaded) {
+          _slideController.reverse();
           return const SizedBox.shrink();
         }
 
-        // Check for multiple downloads
-        if (state.activeDownloads.length > 1) {
-          return _buildMultipleDownloadsView(context, state);
+        if (state.activeDownloads.isEmpty) {
+          if (_lastActiveCount > 0 && _slideController.isCompleted) {
+            scheduleAutoHide();
+          }
+          _lastActiveCount = 0;
+          return const SizedBox.shrink();
         }
 
-        // Single download view
-        return _buildSingleDownloadView(context, state.activeDownloads.first);
+        _lastActiveCount = state.activeDownloads.length;
+        if (_dismissed) {
+          // Reset dismiss flag when new downloads appear after hide
+          _dismissed = false;
+        }
+
+        _slideController.forward();
+        final child = state.activeDownloads.length > 1
+            ? _buildMultipleDownloadsView(context, state)
+            : _buildSingleDownloadView(context, state.activeDownloads.first);
+
+        return SlideTransition(
+          position: _slideAnimation,
+          child: child,
+        );
       },
     );
   }
 
-  /// Build view for multiple active downloads
+  bool _hiding = false;
+
+  void scheduleAutoHide() {
+    if (_hiding) return;
+    _hiding = true;
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _hiding = false;
+      if (mounted) {
+        _slideController.reverse();
+      }
+    });
+  }
+
   Widget _buildMultipleDownloadsView(
       BuildContext context, DownloadLoaded state) {
     final activeCount = state.activeDownloads.length;
@@ -67,16 +126,11 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
       elevation: DesignTokens.elevationLg,
       color: Theme.of(context).colorScheme.primaryContainer,
       child: InkWell(
-        onTap: () {
-          // Navigate to downloads screen
-          // context.push('/downloads');
-          // For now, we can trigger an event or rely on parent navigation
-        },
+        onTap: () {},
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: Row(
             children: [
-              // Summary Icon
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -93,8 +147,6 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Summary Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +177,6 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Show speed and percentage
                         Text(
                           '$speed • ${(totalProgress * 100).toInt()}%',
                           style: TextStyleConst.labelSmall.copyWith(
@@ -139,14 +190,19 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
-              // Action: Cancel All or Pause All could be added here,
-              // but for safety, we just show a "Go to Details" arrow
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.primary,
+              IconButton(
+                icon: Icon(
+                  Icons.expand_less,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  setState(() => _dismissed = true);
+                  _slideController.reverse();
+                },
+                tooltip: 'Hide',
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
               ),
             ],
           ),
@@ -155,7 +211,6 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
     );
   }
 
-  /// Build view for a single active download
   Widget _buildSingleDownloadView(
       BuildContext context, DownloadStatus download) {
     final isPaused = download.isPaused;
@@ -165,15 +220,11 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
       elevation: DesignTokens.elevationLg,
       color: Theme.of(context).colorScheme.primaryContainer,
       child: InkWell(
-        onTap: () {
-          // Navigation to downloads screen could happen here if needed
-          // context.push('/downloads');
-        },
+        onTap: () {},
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: Row(
             children: [
-              // Icon or Thumbnail
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -190,8 +241,6 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,10 +285,7 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
-              // Actions
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -267,15 +313,14 @@ class GlobalDownloadProgressWidget extends StatelessWidget {
                   ),
                   IconButton(
                     icon: Icon(
-                      Icons.close,
-                      color: Theme.of(context).colorScheme.error,
+                      Icons.expand_less,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     onPressed: () {
-                      context.read<DownloadBloc>().add(
-                            DownloadCancelEvent(download.contentId),
-                          );
+                      setState(() => _dismissed = true);
+                      _slideController.reverse();
                     },
-                    tooltip: AppLocalizations.of(context)?.cancel,
+                    tooltip: 'Hide',
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.all(8),
                   ),

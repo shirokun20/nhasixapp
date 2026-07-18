@@ -140,20 +140,9 @@ void main() {
       expect(NotificationActions.sharePdf, 'share_pdf');
     });
 
-    test('NotificationIdRanges has correct values', () {
-      expect(NotificationIdRanges.downloadBase, 0);
-      expect(NotificationIdRanges.pdfBase, 100000);
-      expect(NotificationIdRanges.generalBase, 200000);
-    });
-
     test('NotificationLimits has correct values', () {
       expect(NotificationLimits.maxTitleLength, 40);
       expect(NotificationLimits.maxErrorLength, 100);
-    });
-
-    test('NotificationPayloadKeys has correct values', () {
-      expect(NotificationPayloadKeys.contentId, 'contentId');
-      expect(NotificationPayloadKeys.typePdf, 'pdf');
     });
   });
 }

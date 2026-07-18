@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
@@ -81,6 +82,7 @@ class NotificationService {
 
   bool _permissionGranted = false;
   bool _initialized = false;
+  Completer<void>? _initCompleter;
 
   // Action handler for notification actions
   late final NotificationActionHandler _actionHandler;
@@ -94,17 +96,14 @@ class NotificationService {
   // ============================================================
 
   /// Request notification permission from user
-  /// Enhanced for Android 13+ and release mode compatibility
   Future<bool> requestNotificationPermission() async {
     final granted = await _permissionHandler.requestPermission();
 
-    // Update internal state
     _permissionGranted = granted;
 
-    // If permission granted and not yet initialized, initialize now
     if (granted && !_initialized) {
-      // Use _initializePlugin directly to avoid race condition
-      // Don't call initialize() which re-checks permission
+      // Create fresh completer for late init (previous one may be done)
+      _initCompleter = Completer<void>();
       await _initializePlugin();
     }
 
@@ -116,45 +115,13 @@ class NotificationService {
   // ============================================================
 
   /// Show PDF conversion started notification
-  /// Displays a notification when PDF conversion begins
   Future<void> showPdfConversionStarted({
     required String contentId,
     required String title,
   }) async {
-    _logger.i(
-        'PDF_NOTIFICATION: showPdfConversionStarted - ENTER method for contentId=$contentId, title=$title');
-
-    _logger.i(
-        'NotificationService: showPdfConversionStarted called for $contentId (title: $title)');
-    _logger.i(
-        'NotificationService: isEnabled = $isEnabled (_permissionGranted: $_permissionGranted, _initialized: $_initialized)');
-
-    _logger.i(
-        'PDF_NOTIFICATION: showPdfConversionStarted - isEnabled=$isEnabled, _permissionGranted=$_permissionGranted, _initialized=$_initialized');
-
-    if (!isEnabled) {
-      _logger.w(
-          'NotificationService: PDF conversion start notification disabled, skipping for $contentId');
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - DISABLED, returning early');
-      return;
-    }
-
+    if (!isEnabled) return;
     try {
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - Starting notification creation');
-
-      _logger.i(
-          'NotificationService: Showing PDF conversion started notification for $contentId');
       final notificationId = _getNotificationId('pdf_$contentId');
-
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - Generated notificationId=$notificationId');
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - Using channel: ${NotificationChannels.downloadChannelId}');
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - About to call _notificationsPlugin.show()');
-
       await _notificationsPlugin.show(
           id: notificationId,
           title:
@@ -169,23 +136,9 @@ class NotificationService {
             enableVibration: true,
           ),
           payload: contentId);
-
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - _notificationsPlugin.show() completed successfully');
-      _logger.i(
-          'PDF conversion started notification shown successfully for: $contentId');
-    } catch (e, stackTrace) {
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - EXCEPTION caught: ${e.toString()}');
-      _logger.i(
-          'PDF_NOTIFICATION: showPdfConversionStarted - STACKTRACE: ${stackTrace.toString()}');
-      _logger.e(
-          'Failed to show PDF conversion started notification for $contentId: $e',
-          error: e,
-          stackTrace: stackTrace);
+    } catch (e) {
+      _logger.e('Failed to show PDF conversion started notification: $e');
     }
-
-    _logger.i('PDF_NOTIFICATION: showPdfConversionStarted - EXIT method');
   }
 
   /// Update PDF conversion progress notification
@@ -446,25 +399,18 @@ class NotificationService {
   bool get hasPermission => _permissionGranted;
 
   /// Wait for notification service to be fully initialized
-  /// This prevents race conditions when requesting permission and immediately showing notifications
   Future<bool> waitForInitialization(
       {Duration timeout = const Duration(seconds: 5)}) async {
     if (isEnabled) return true;
-
-    _logger.i('NotificationService: Waiting for initialization...');
-    final startTime = DateTime.now();
-
-    while (!isEnabled) {
-      if (DateTime.now().difference(startTime) > timeout) {
-        _logger.w(
-            'NotificationService: Initialization timeout after ${timeout.inSeconds}s');
-        return false;
-      }
-      await Future.delayed(const Duration(milliseconds: 100));
+    if (_initCompleter == null || _initCompleter!.isCompleted) {
+      return isEnabled;
     }
-
-    _logger.i('NotificationService: Initialization complete');
-    return true;
+    try {
+      await _initCompleter!.future.timeout(timeout);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Debug method to log current notification service state
@@ -480,10 +426,8 @@ class NotificationService {
   /// Initialize the notification plugin without checking permission
   /// Used internally after permission is already granted
   Future<void> _initializePlugin() async {
+    if (_initialized) return;
     try {
-      _logger.i('NotificationService: Initializing plugin...');
-
-      // Android initialization
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -491,82 +435,90 @@ class NotificationService {
         android: androidSettings,
       );
 
-      final initResult = await _notificationsPlugin.initialize(
+      await _notificationsPlugin.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      if (initResult == null || !initResult) {
-        _logger.w(
-            'NotificationService: Plugin initialization returned false or null');
-      } else {
-        _logger.i('NotificationService: Plugin initialization successful');
-      }
-
-      // Create notification channel for Android
       await _createNotificationChannel();
 
       _initialized = true;
-      _logger.i(
-          'NotificationService plugin initialized (Permission: $_permissionGranted, Initialized: $_initialized)');
+      _initCompleter?.complete();
     } catch (e, stackTrace) {
+      _initialized = false;
+      _initCompleter?.completeError(e);
       _logger.e('Failed to initialize NotificationService plugin: $e',
           error: e, stackTrace: stackTrace);
-      _initialized = false;
     }
   }
 
   /// Initialize notification service
-  /// Enhanced initialization for debug and release mode compatibility
-  /// NOTE: This only checks existing permission, does NOT request it
-  /// Use requestNotificationPermission() explicitly when needed
+  /// Idempotent — safe to call multiple times. Concurrent callers await same future.
   Future<void> initialize() async {
+    if (_initCompleter != null) return _initCompleter!.future;
+    _initCompleter = Completer<void>();
     try {
-      _logger.i('NotificationService: Starting initialization...');
-
-      // Check if permission is already granted (don't request)
       final permissionStatus = await _permissionHandler.checkPermission();
 
       if (!permissionStatus) {
-        _logger.w(
-            'NotificationService: Permission not yet granted, notifications will be disabled until permission is granted');
         _permissionGranted = false;
-        // ✅ FIX: DON'T mark as initialized if permission not granted
-        // This allows requestNotificationPermission() to initialize the plugin later
         _initialized = false;
+        // Don't complete — permission may be granted later via requestNotificationPermission()
         return;
       }
 
       _permissionGranted = true;
-      _logger.i(
-          'NotificationService: Permission already granted, proceeding with initialization');
-
-      // Initialize the plugin
       await _initializePlugin();
     } catch (e, stackTrace) {
       _initialized = false;
       _permissionGranted = false;
+      _initCompleter!.completeError(e);
       _logger.e('Failed to initialize NotificationService: $e',
           error: e, stackTrace: stackTrace);
     }
   }
 
-  /// Create notification channel for Android
+  /// Create notification channels for Android
   Future<void> _createNotificationChannel() async {
-    const androidChannel = AndroidNotificationChannel(
-      NotificationChannels.downloadChannelId,
-      NotificationChannels.downloadChannelName,
-      description: NotificationChannels.downloadChannelDescription,
-      importance: Importance.high, // High importance for action buttons to work
-      enableVibration: true,
-      playSound: true,
-      showBadge: true,
-    );
+    final implementation =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
-    await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(androidChannel);
+    if (implementation == null) return;
+
+    const channels = [
+      AndroidNotificationChannel(
+        NotificationChannels.downloadChannelId,
+        NotificationChannels.downloadChannelName,
+        description: NotificationChannels.downloadChannelDescription,
+        importance: Importance.high,
+        enableVibration: true,
+        playSound: true,
+        showBadge: true,
+      ),
+      AndroidNotificationChannel(
+        NotificationChannels.pdfChannelId,
+        NotificationChannels.pdfChannelName,
+        description: NotificationChannels.pdfChannelDescription,
+        importance: Importance.low,
+        enableVibration: false,
+        playSound: false,
+        showBadge: false,
+      ),
+      AndroidNotificationChannel(
+        NotificationChannels.generalChannelId,
+        NotificationChannels.generalChannelName,
+        description: NotificationChannels.generalChannelDescription,
+        importance: Importance.defaultImportance,
+        enableVibration: true,
+        playSound: true,
+        showBadge: true,
+      ),
+    ];
+
+    for (final channel in channels) {
+      await implementation.createNotificationChannel(channel);
+    }
   }
 
   /// Handle notification tap
@@ -846,68 +798,6 @@ class NotificationService {
     }
   }
 
-  /// Request notification permissions
-  Future<bool> requestNotificationPermissions() async {
-    try {
-      final androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-
-      if (androidImplementation != null) {
-        return await androidImplementation.requestNotificationsPermission() ??
-            false;
-      }
-
-      return true; // Assume granted for other platforms
-    } catch (e) {
-      _logger.e('Failed to request notification permissions: $e');
-      return false;
-    }
-  }
-
-  /// Test action buttons functionality
-  Future<void> showTestActionNotification() async {
-    if (!isEnabled) return;
-
-    try {
-      await _notificationsPlugin.show(
-          id: 99999,
-          title: // Fixed test ID
-              'Test Action Buttons',
-          body: 'This is a test notification with action buttons',
-          notificationDetails: const NotificationDetails(
-            android: AndroidNotificationDetails(
-              NotificationChannels.downloadChannelId,
-              NotificationChannels.downloadChannelName,
-              channelDescription:
-                  NotificationChannels.downloadChannelDescription,
-              importance: Importance.high,
-              priority: Priority.high,
-              ongoing: false,
-              autoCancel: true,
-              // Remove icons and actions to avoid drawable resource errors
-              styleInformation: BigTextStyleInformation(
-                'Simple test notification without icons',
-                contentTitle: 'Test Action Buttons',
-                summaryText: 'Testing...',
-              ),
-            ),
-          ),
-          payload: '/test/path/test.pdf');
-
-      _logger.i('🧪 Test action notification created');
-    } catch (e) {
-      _logger.e('Failed to show test action notification: $e');
-    }
-  }
-
-  /// Quick test method to be called from main for debugging
-  static Future<void> testNotificationActions() async {
-    final service = NotificationService();
-    await service.initialize();
-    await service.showTestActionNotification();
-  }
-
   /// Factory constructor untuk setup NotificationService dengan DownloadBloc
   /// Ini memudahkan integrasi dengan DownloadBloc tanpa tight coupling
   static NotificationService withCallbacks({
@@ -977,7 +867,9 @@ class NotificationService {
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
-      return _localize?.call(key, args: args) ?? fallback ?? key;
+      final result = _localize?.call(key, args: args);
+      if (result != null && result.isNotEmpty) return result;
+      return fallback ?? key;
     } catch (e) {
       _logger.w('Failed to get localized string for key: $key, error: $e');
       return fallback ?? key;
