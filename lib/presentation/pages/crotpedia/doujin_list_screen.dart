@@ -46,8 +46,6 @@ class _DoujinListBody extends StatefulWidget {
 
 class _DoujinListBodyState extends State<_DoujinListBody> {
   final ItemScrollController _itemScrollController = ItemScrollController();
-  final ItemPositionsListener _itemPositionsListener =
-      ItemPositionsListener.create();
   final TextEditingController _searchController = TextEditingController();
 
   final List<String> _sections = [
@@ -305,7 +303,6 @@ class _DoujinListBodyState extends State<_DoujinListBody> {
                             )
                           : ScrollablePositionedList.builder(
                               itemScrollController: _itemScrollController,
-                              itemPositionsListener: _itemPositionsListener,
                               padding:
                                   const EdgeInsets.only(right: 36, bottom: 16),
                               itemCount: _listItems.length,
