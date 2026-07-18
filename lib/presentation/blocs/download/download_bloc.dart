@@ -2049,18 +2049,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // 1.1: Skip List.from() — mutate in place
       downloads[downloadIndex] = updatedDownload;
+      final newDownloads = List<DownloadStatus>.from(downloads);
 
-      // Emit appropriate state based on current state type
       if (currentState is DownloadLoaded) {
         emit(currentState.copyWith(
-          downloads: downloads, // same list ref, mutated in place
+          downloads: newDownloads,
           lastUpdated: DateTime.now(),
         ));
       } else if (currentState is DownloadProcessing) {
         emit(DownloadLoaded(
-          downloads: downloads,
+          downloads: newDownloads,
           settings: settings,
           lastUpdated: DateTime.now(),
         ));

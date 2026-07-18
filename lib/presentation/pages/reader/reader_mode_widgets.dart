@@ -207,7 +207,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         widget.animatedPauseNotifier.value = reportPage;
 
         widget.logger.d(
-            '📖 PageView changed to index=$index (reporting page $reportPage)');
+            '📖 VerticalPageView changed to index=$index (reporting page $reportPage)');
 
         final imageUrls = state.content?.imageUrls ?? [];
         if (index < pageCount) {
@@ -215,14 +215,10 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
               state.readingMode != ReadingMode.verticalPage) {
             widget.prefetchImages(reportPage, imageUrls, state.imageMetadata,
                 sourceId: state.content?.sourceId);
-            widget.evictDistantPages(reportPage, imageUrls,
-                isOffline: state.isOfflineMode ?? false);
           }
         }
 
-        if (!widget.isProgrammaticAnimation) {
-          widget.cubit.updateCurrentPageFromSwipe(reportPage);
-        }
+        widget.cubit.updateCurrentPageFromSwipe(reportPage);
       },
       itemCount: totalItems,
       itemBuilder: (context, index) {
