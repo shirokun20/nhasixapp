@@ -505,15 +505,11 @@ class ContentRepositoryImpl implements ContentRepository {
       return true;
     }
 
-    if (source == 'hentainexus' || source == 'schale-network' || source == 'hdoujin') {
+    if (source == 'hentainexus' || source == 'schale-network' || source == 'hdoujin' || source == 'nicomanga') {
       return true;
     }
 
     if (source == 'hitomi') {
-      return true;
-    }
-
-    if (source == 'nicomanga' && _isNicomangaTagCacheIncomplete(content)) {
       return true;
     }
 
@@ -551,21 +547,6 @@ class ContentRepositoryImpl implements ContentRepository {
     return false;
   }
 
-  bool _isNicomangaTagCacheIncomplete(Content content) {
-    if (content.tags.isEmpty) {
-      return true;
-    }
-
-    if (content.tags.length == 1) {
-      final tagName = content.tags.first.name.trim().toLowerCase();
-      final language = content.language.trim().toLowerCase();
-      if (tagName.isNotEmpty && language.isNotEmpty && tagName == language) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   core.SearchFilter _mapToCoreSearchFilter(SearchFilter appFilter) {
     // Map SortOption

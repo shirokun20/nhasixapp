@@ -455,7 +455,7 @@ const _nicomangaDetailFixtureConfig = {
   'scraper': {
     'urlPatterns': {
       'detail': '/manga/{id}.html',
-      'chapter': '/read-{id}.html',
+      'chapter': '{id}',
     },
     'selectors': {
       'detail': {
