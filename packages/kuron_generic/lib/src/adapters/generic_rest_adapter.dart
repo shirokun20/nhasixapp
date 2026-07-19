@@ -279,6 +279,15 @@ class GenericRestAdapter implements GenericAdapter {
 
     if (rawParams != null && rawParams.isNotEmpty) {
       final rawMap = _parseRawQueryParams(rawParams);
+      // When raw params have no text query (only sort/browse),
+      // use allGalleries to avoid sending empty query to endpoints
+      // that require a non-empty query param.
+      final hasRawTextQuery = rawMap.keys.any((k) =>
+          ['query', 'q', 'search', 'keyword'].contains(k));
+      final rawTmpl = (!hasRawTextQuery &&
+              endpoints['allGalleries'] is String
+          ? endpoints['allGalleries'] as String
+          : searchTemplate);
       final tagSearchTemplate = endpoints['tagSearch'] ?? '';
 
       // Check if we have a tagSearch endpoint and any raw params
@@ -307,10 +316,10 @@ class GenericRestAdapter implements GenericAdapter {
 
           url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
         } else {
-          url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
+          url = _buildRawSearchUrl(rawTmpl, rawParams, adjustedFilter);
         }
       } else {
-        url = _buildRawSearchUrl(searchTemplate, rawParams, adjustedFilter);
+        url = _buildRawSearchUrl(rawTmpl, rawParams, adjustedFilter);
       }
     } else {
       url = _urlBuilder.buildSearchUrl(
@@ -1018,6 +1027,15 @@ class GenericRestAdapter implements GenericAdapter {
 
     if (rawParams != null && rawParams.isNotEmpty) {
       final rawMap = _parseRawQueryParams(rawParams);
+      // When raw params have no text query (only sort/browse),
+      // use allGalleries to avoid sending empty query to endpoints
+      // that require a non-empty query param.
+      final hasRawTextQuery = rawMap.keys.any((k) =>
+          ['query', 'q', 'search', 'keyword'].contains(k));
+      final rawTmpl = (!hasRawTextQuery &&
+              endpoints['allGalleries'] is String
+          ? endpoints['allGalleries'] as String
+          : template);
       final tagSearchTemplate = endpoints['tagSearch'] ?? '';
 
       // Check if we have a tagSearch endpoint and any raw params
@@ -1046,10 +1064,10 @@ class GenericRestAdapter implements GenericAdapter {
 
           url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
         } else {
-          url = _buildRawSearchUrl(template, rawParams, filter);
+          url = _buildRawSearchUrl(rawTmpl, rawParams, filter);
         }
       } else {
-        url = _buildRawSearchUrl(template, rawParams, filter);
+        url = _buildRawSearchUrl(rawTmpl, rawParams, filter);
       }
     } else {
       url = _urlBuilder.buildSearchUrl(
