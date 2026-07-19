@@ -197,6 +197,7 @@ Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apa
 - **Gambar Hilang?** Cek koneksi internet atau hapus cache aplikasi.
 - **Download Tidak Muncul?** Memang didesain privat agar tidak memenuhi galeri.
 - **Cara tambah source baru?** Buka Pengaturan → Sources → Add via Link (tempel URL manifest) atau Import ZIP.
+- **Search tidak muncul / error "colliding tags"?** NHentai API mewajibkan ada isian di kolom search kalau mau pake sorting atau filter tag. Ketik minimal 1 karakter di kolom pencarian sebelum milih sort/tag. Atau gunakan dropdown sort di tab Home untuk browsing Popular tanpa keyword. Lihat [GitHub Issue #47](https://github.com/shirokun20/nhasixapp/issues/47) untuk detail.
 - **Aplikasi lambat pertama buka?** Pertama kali download config source dan cache data. Berikutnya lebih cepat.
 
 ---

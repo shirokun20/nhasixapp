@@ -197,6 +197,7 @@ Kuron's source system is fully config-driven — no code changes required. Each 
 - **Missing Images?** Check your internet or clear cache.
 - **Hidden Downloads?** They are private by design. View them inside the app.
 - **How to add new source?** Go to Settings → Sources → Add via Link (paste manifest URL) or Import ZIP.
+- **Search shows nothing / "colliding tags" error?** NHentai API requires a search query when using sort or tag filters. Simply type at least 1 character in the search field before selecting sort/tags. Or use the Home tab sort dropdown for Popular browsing without a keyword. See [GitHub Issue #47](https://github.com/shirokun20/nhasixapp/issues/47) for details.
 - **App slow on first load?** First load downloads source configs and caches data. Subsequent launches are faster.
 
 ---
