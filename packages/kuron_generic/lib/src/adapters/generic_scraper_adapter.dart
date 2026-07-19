@@ -2031,12 +2031,14 @@ class GenericScraperAdapter implements GenericAdapter {
         ? filter.includeTags.first.name
         : rawQuery;
     final tagTransform = (patternMap?['tagTransform'] as String? ?? '').trim();
-    final tagValue = tagTransform == 'urlEncode'
-        ? Uri.encodeComponent(rawTagValue)
-        : rawTagValue
+    final tagValue = switch (tagTransform) {
+      'urlEncode' => Uri.encodeComponent(rawTagValue),
+      'base64'    => base64Encode(utf8.encode(rawTagValue)),
+      _           => rawTagValue
             .toLowerCase()
             .replaceAll(RegExp(r'\s+'), '-')
-            .replaceAll(RegExp(r'^-|-$'), '');
+            .replaceAll(RegExp(r'^-|-$'), ''),
+    };
     final params = <String, String>{
       'page': filter.page.toString(),
       'query': Uri.encodeQueryComponent(rawQuery),

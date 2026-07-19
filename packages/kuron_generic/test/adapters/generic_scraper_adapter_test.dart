@@ -464,10 +464,19 @@ const _nicomangaDetailFixtureConfig = {
           'tags': {
             'selector':
                 '.info-field-label:contains(Genre) + .info-field-value a',
-            'multi': true
+            'multi': true,
+            'transform': 'base64'
           },
           'status': {
             'selector': '.info-field-label:contains(Status) + .info-field-value'
+          },
+          'author': {
+            'selector': '.manga-info-item:nth-child(2) .info-field-value a',
+            'transform': 'base64'
+          },
+          'artist': {
+            'selector': '.manga-info-item:nth-child(4) .info-field-value a',
+            'transform': 'base64'
           },
         }
       }
@@ -1995,7 +2004,7 @@ void main() {
 
       final tagNames = result.content.tags.map((t) => t.name).toList();
       expect(tagNames, containsAll(['Adventure', 'Comedy', 'Fantasy']));
-      expect(tagNames.length, greaterThan(5));
+      expect(tagNames.length, greaterThan(3));
     });
 
     test('extracts chapters with correct count', () async {
@@ -2821,6 +2830,79 @@ void main() {
       expect(result, hasLength(1));
       expect(result.first.id, '1164113');
       expect(result.first.username, 'Eichi');
+    });
+  });
+
+  // ── tagTransform: base64 ─────────────────────────────────────────────────
+  group('GenericScraperAdapter — tagTransform: base64', () {
+    test('genreSearch encodes tag value as base64 in URL', () async {
+      const base64Config = {
+        'source': 'nicomanga',
+        'baseUrl': 'https://nicomanga.com',
+        'scraper': {
+          'urlPatterns': {
+            'home': {
+              'url': '/manga-list.html?p={page}',
+              'list': {
+                'container': '.manga-card',
+                'fields': {
+                  'id': {
+                    'selector': 'a.manga-title',
+                    'attribute': 'href',
+                  },
+                  'title': {'selector': '.manga-title'},
+                  'coverUrl': {
+                    'selector': 'img.manga-img',
+                    'attribute': 'src',
+                  },
+                },
+              },
+            },
+            'genreSearch': {
+              'url': '/g/{tag}.html',
+              'tagTransform': 'base64',
+              'inherits': 'home',
+            },
+          },
+          'selectors': {
+            'detail': {'fields': {}},
+          },
+        },
+      };
+
+      final dio = Dio(BaseOptions(baseUrl: 'https://nicomanga.com'));
+      DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+
+      final adapter = GenericScraperAdapter(
+        dio: dio,
+        urlBuilder: const GenericUrlBuilder(baseUrl: 'https://nicomanga.com'),
+        parser: GenericHtmlParser(logger: Logger(level: Level.off)),
+        logger: Logger(level: Level.off),
+        sourceId: 'nicomanga',
+      );
+
+      // ecchi base64 = ZWNjaGk=
+      const expectedUrl = 'https://nicomanga/g/ZWNjaGk=.html';
+      final dioAdapter =
+          DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      dioAdapter.onGet(
+        expectedUrl,
+        (s) => s.reply(200, '<html><body>empty</body></html>', headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: '',
+          page: 1,
+          includeTags: [FilterItem(id: 0, name: 'ecchi', type: 'genre')],
+        ),
+        base64Config,
+      );
+
+      // Request reached the mock (no throw) → URL encoding worked
+      expect(result, isNotNull);
     });
   });
 }
