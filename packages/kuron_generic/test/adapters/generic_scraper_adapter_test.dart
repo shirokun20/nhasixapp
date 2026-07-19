@@ -1562,6 +1562,7 @@ void main() {
         (s) => s.reply(200, _searchHtml, headers: {
           Headers.contentTypeHeader: ['text/html; charset=utf-8']
         }),
+        headers: {'Referer': '$_nicomangaBaseUrl/manga-list.html?n=isekai'},
       );
 
       final result = await adapter.search(
@@ -1581,6 +1582,7 @@ void main() {
         (s) => s.reply(200, _searchHtml, headers: {
           Headers.contentTypeHeader: ['text/html; charset=utf-8']
         }),
+        headers: {'Referer': '$_nicomangaBaseUrl/manga-list.html?n=isekai'},
       );
 
       final result = await adapter.search(
@@ -1611,6 +1613,7 @@ void main() {
         (s) => s.reply(200, _searchHtml, headers: {
           Headers.contentTypeHeader: ['text/html; charset=utf-8']
         }),
+        headers: {'Referer': '$_nicomangaBaseUrl/manga-list.html?n=isekai'},
       );
 
       final result = await adapter.search(

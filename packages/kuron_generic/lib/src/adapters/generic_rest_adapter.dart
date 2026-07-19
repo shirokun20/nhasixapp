@@ -1164,8 +1164,11 @@ class GenericRestAdapter implements GenericAdapter {
       final items = rawItems
           .map((item) {
             final fields = _extractRestFields(item, fieldsConfig);
-            final mapped =
-                GenericContentMapper.toListItem(fields, sourceId: _sourceId);
+            _resolveLanguageTagMap(fields, rawConfig);
+            final mapped = GenericContentMapper.toListItem(
+              fields,
+              sourceId: _sourceId,
+            );
             return _applyDefaultLanguageIfMissing(mapped, rawConfig);
           })
           .where((c) => c.id.isNotEmpty)
@@ -3041,6 +3044,29 @@ class GenericRestAdapter implements GenericAdapter {
     }
 
     return '';
+  }
+
+  /// Resolve [fields]`tagIds` → `language` via config `languageTagMap`.
+  /// Called after [_extractRestFields] for the new schema path.
+  void _resolveLanguageTagMap(
+    Map<String, dynamic> fields,
+    Map<String, dynamic> rawConfig,
+  ) {
+    final rawIds = fields['tagIds'];
+    if (rawIds == null) return;
+    final tagMap = (rawConfig['languageTagMap'] as Map<String, dynamic>?) ?? {};
+    if (tagMap.isEmpty) return;
+
+    final ids = rawIds is List
+        ? rawIds.map((e) => e.toString().trim()).where((s) => s.isNotEmpty)
+        : [rawIds.toString().trim()];
+    for (final id in ids) {
+      final lang = tagMap[id]?.toString().trim();
+      if (lang != null && lang.isNotEmpty && lang != 'translated') {
+        fields['language'] = lang;
+        return;
+      }
+    }
   }
 
   bool _isNhentaiV2Search(Map<String, dynamic> rawConfig) {

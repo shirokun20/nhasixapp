@@ -77,7 +77,7 @@ void main() {
       expect(result.items, isNotEmpty);
       expect(
         result.items.first.title,
-        'My Body is Atop Her Tongue Bahasa Indonesia',
+        'Teacher Yoonji',
       );
       expect(result.items.first.title, isNot(startsWith('<img')));
       expect(

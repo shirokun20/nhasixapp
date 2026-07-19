@@ -18,6 +18,7 @@ Map<String, dynamic> _loadConfig() {
   final candidates = [
     'manga18.club-config.json',
     '../../manga18.club-config.json',
+    '../../informations/configs/manga18.club-config.json',
   ];
 
   for (final path in candidates) {
@@ -237,7 +238,7 @@ void main() {
     test('uses the main recoment_box cards and keeps titles non-empty',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/latest-release/',
+        '$_baseUrl/list-manga/1',
         (server) => server.reply(
           200,
           _readFixture('halaman-utama.html'),
@@ -245,6 +246,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.search(const SearchFilter(), config);
@@ -277,7 +282,7 @@ void main() {
     test('homePage keeps working when page 2 header changes to Lastest Update',
         () async {
       dioAdapter.onGet(
-        '$_baseUrl/latest-release/2',
+        '$_baseUrl/list-manga/2',
         (server) => server.reply(
           200,
           _latestReleasePage2Html,
@@ -285,6 +290,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.search(
@@ -309,6 +318,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.search(
@@ -340,6 +353,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.search(
@@ -364,6 +381,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.search(
@@ -400,6 +421,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result = await adapter.fetchDetail('secret-class', config);
@@ -434,6 +459,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result =
@@ -458,6 +487,10 @@ void main() {
             Headers.contentTypeHeader: ['text/html; charset=utf-8'],
           },
         ),
+        headers: {
+          'Referer': '$_baseUrl/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       );
 
       final result =
