@@ -279,15 +279,19 @@ class GenericRestAdapter implements GenericAdapter {
 
     if (rawParams != null && rawParams.isNotEmpty) {
       final rawMap = _parseRawQueryParams(rawParams);
-      // When raw params have no text query (only sort/browse),
-      // use allGalleries to avoid sending empty query to endpoints
-      // that require a non-empty query param.
-      final hasRawTextQuery = rawMap.keys.any((k) =>
-          ['query', 'q', 'search', 'keyword'].contains(k));
-      final rawTmpl = (!hasRawTextQuery &&
-              endpoints['allGalleries'] is String
-          ? endpoints['allGalleries'] as String
-          : searchTemplate);
+      // NHentai v2 search endpoint rejects requests without a non-empty query
+      // param. When raw params have no text query (sort-only), route to
+      // allGalleries endpoint which doesn't require a query string.
+      final String rawBrowseTmpl;
+      if (_sourceId == 'nhentai') {
+        rawBrowseTmpl = (!rawMap.keys.any((k) =>
+            ['query', 'q', 'search', 'keyword'].contains(k)) &&
+            endpoints['allGalleries'] is String
+            ? endpoints['allGalleries'] as String
+            : searchTemplate);
+      } else {
+        rawBrowseTmpl = searchTemplate;
+      }
       final tagSearchTemplate = endpoints['tagSearch'] ?? '';
 
       // Check if we have a tagSearch endpoint and any raw params
@@ -316,10 +320,10 @@ class GenericRestAdapter implements GenericAdapter {
 
           url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
         } else {
-          url = _buildRawSearchUrl(rawTmpl, rawParams, adjustedFilter);
+          url = _buildRawSearchUrl(rawBrowseTmpl, rawParams, adjustedFilter);
         }
       } else {
-        url = _buildRawSearchUrl(rawTmpl, rawParams, adjustedFilter);
+        url = _buildRawSearchUrl(rawBrowseTmpl, rawParams, adjustedFilter);
       }
     } else {
       url = _urlBuilder.buildSearchUrl(
@@ -1027,15 +1031,19 @@ class GenericRestAdapter implements GenericAdapter {
 
     if (rawParams != null && rawParams.isNotEmpty) {
       final rawMap = _parseRawQueryParams(rawParams);
-      // When raw params have no text query (only sort/browse),
-      // use allGalleries to avoid sending empty query to endpoints
-      // that require a non-empty query param.
-      final hasRawTextQuery = rawMap.keys.any((k) =>
-          ['query', 'q', 'search', 'keyword'].contains(k));
-      final rawTmpl = (!hasRawTextQuery &&
-              endpoints['allGalleries'] is String
-          ? endpoints['allGalleries'] as String
-          : template);
+      // NHentai v2 search endpoint rejects requests without a non-empty query
+      // param. When raw params have no text query (sort-only), route to
+      // allGalleries endpoint which doesn't require a query string.
+      final String rawBrowseTmpl;
+      if (_sourceId == 'nhentai') {
+        rawBrowseTmpl = (!rawMap.keys.any((k) =>
+            ['query', 'q', 'search', 'keyword'].contains(k)) &&
+            endpoints['allGalleries'] is String
+            ? endpoints['allGalleries'] as String
+            : template);
+      } else {
+        rawBrowseTmpl = template;
+      }
       final tagSearchTemplate = endpoints['tagSearch'] ?? '';
 
       // Check if we have a tagSearch endpoint and any raw params
@@ -1064,10 +1072,10 @@ class GenericRestAdapter implements GenericAdapter {
 
           url = _rebuildUrlWithQueryParams(baseTaggedUrl, mergedParams);
         } else {
-          url = _buildRawSearchUrl(rawTmpl, rawParams, filter);
+          url = _buildRawSearchUrl(rawBrowseTmpl, rawParams, filter);
         }
       } else {
-        url = _buildRawSearchUrl(rawTmpl, rawParams, filter);
+        url = _buildRawSearchUrl(rawBrowseTmpl, rawParams, filter);
       }
     } else {
       url = _urlBuilder.buildSearchUrl(
