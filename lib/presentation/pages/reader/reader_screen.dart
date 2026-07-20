@@ -128,6 +128,9 @@ class _ReaderScreenState extends State<ReaderScreen>
   // Debounce mechanism to prevent onPageChanged loops
   bool _isProgrammaticAnimation = false;
 
+  // Track last content ID to detect chapter changes vs timer-only updates
+  String? _lastSyncedContentId;
+
   // 🚀 OPTIMIZATION: Throttle save to DB and UI toggle
   Timer? _saveDebounceTimer;
   Timer? _pageUpdateTimer; // Separate timer for page updates
@@ -1053,9 +1056,13 @@ class _ReaderScreenState extends State<ReaderScreen>
   // DELETED: _getNextReadingMode (extracted to part file helper function)
 
   void _syncControllersWithState(ReaderState state) {
-    // 🚀 OPTIMIZATION: Skip sync for continuous scroll - let user scroll freely
-    // Prevents scroll position reset when readingTimer updates state every second
-    if (state.readingMode == ReadingMode.continuousScroll) {
+    final contentChanged = state.content?.id != _lastSyncedContentId;
+    _lastSyncedContentId = state.content?.id;
+
+    // 🚀 OPTIMIZATION: Skip sync for continuous scroll when same content
+    // Prevents scroll position reset when readingTimer updates state every second.
+    // Allow sync when content changes (chapter navigation) so scroll resets to top.
+    if (state.readingMode == ReadingMode.continuousScroll && !contentChanged) {
       return;
     }
 
@@ -1150,22 +1157,26 @@ class _ReaderScreenState extends State<ReaderScreen>
 
     // Sync ScrollController for continuous scroll mode
     else if (state.readingMode == ReadingMode.continuousScroll) {
-      if (_scrollController.hasClients && state.content != null) {
-        // Calculate approximate scroll position based on current page
-        final screenHeight = MediaQuery.of(context).size.height;
-        final approximateItemHeight =
-            screenHeight * 0.9; // Match with scroll detection
-        final targetScrollOffset = (currentPage - 1) * approximateItemHeight;
+      if (state.content == null) return;
+      final targetPage = state.currentPage ?? 1;
+      final targetScrollOffset = (targetPage - 1) * 0.0; // page 1 → top
 
+      // Defer to post-frame so ListView.builder is mounted with new content.
+      // Without this, _scrollController may lack clients right after a chapter
+      // change emit, or the old client's offset is stale.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final threshold =
+            MediaQuery.of(context).size.height * 0.5;
         if ((_scrollController.offset - targetScrollOffset).abs() >
-            approximateItemHeight * 0.5) {
+            threshold) {
           _scrollController.animateTo(
             targetScrollOffset,
             duration: DesignTokens.durationNormal,
             curve: Curves.easeInOut,
           );
         }
-      }
+      });
     }
   }
 

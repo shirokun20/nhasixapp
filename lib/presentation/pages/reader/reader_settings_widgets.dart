@@ -740,12 +740,12 @@ void _showChapterSelector(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _ReaderChapterSelector(
+    builder: (ctx) => _ReaderChapterSelector(
       chapters: effectiveChapters,
       currentIndex: currentIndex,
       activeLanguage: activeLanguage,
       onChapterSelected: (chapterId) {
-        Navigator.of(context).pop();
+        Navigator.of(ctx).pop();
         cubit.loadChapter(chapterId);
       },
     ),

@@ -756,12 +756,17 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
     }
 
+    // Prefer pool lookup so IDs match _allChapters format.
+    // Fallback to chapterData only when pool gives nothing.
+    final poolId = _resolveAdjacentChapterId(step: 1);
+    if (poolId != null) return poolId;
+
     final directNextId = state.chapterData?.nextChapterId;
     if (directNextId != null && directNextId.isNotEmpty) {
       return directNextId;
     }
 
-    return _resolveAdjacentChapterId(step: 1);
+    return null;
   }
 
   String? _resolvePreviousChapterId() {
@@ -773,12 +778,17 @@ class ReaderCubit extends Cubit<ReaderState> {
       );
     }
 
+    // Prefer pool lookup so IDs match _allChapters format.
+    // Fallback to chapterData only when pool gives nothing.
+    final poolId = _resolveAdjacentChapterId(step: -1);
+    if (poolId != null) return poolId;
+
     final directPrevId = state.chapterData?.prevChapterId;
     if (directPrevId != null && directPrevId.isNotEmpty) {
       return directPrevId;
     }
 
-    return _resolveAdjacentChapterId(step: -1);
+    return null;
   }
 
   String? _resolveAdjacentChapterId({

@@ -1513,7 +1513,13 @@ class GenericScraperAdapter implements GenericAdapter {
     final chapterTemplate = _patternUrl(urlPatternsCfg, 'chapter');
     if (chapterTemplate.isEmpty) return null;
 
-    final url = _urlBuilder.buildDetailUrl(chapterTemplate, chapterId);
+    // Normalize: strip the chapter template's static prefix from chapterId.
+    // Some configs have a broad regex that produces IDs already containing the
+    // prefix (e.g. "/manhwa/queen-bee/side-story-3"), causing double prefix when
+    // buildDetailUrl prepends it again. Strip leading /baseUrl/path segments
+    // that match the template's static part.
+    final normalizedId = _normalizeChapterIdForTemplate(chapterId, chapterTemplate);
+    final url = _urlBuilder.buildDetailUrl(chapterTemplate, normalizedId);
     _logger.d('$_sourceId scraper chapter: $url');
     final chapterRequestHeaders =
         _resolveRequestHeaders(rawConfig, fallbackReferer: url);
@@ -2518,6 +2524,50 @@ class GenericScraperAdapter implements GenericAdapter {
         uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
       );
 
+  /// Normalize chapterId against template prefix to prevent double-prefix.
+  ///
+  /// When a broad regex extracts an ID that already includes a URL path prefix
+  /// (e.g. `/manhwa/queen-bee/side-story-3`), and the template also has that
+  /// prefix (e.g. `/manhwa/{id}`), building the full URL produces
+  /// `/manhwa//manhwa/queen-bee/...`. Strip the template's static prefix from
+  /// the ID so substitution is clean.
+  ///
+  /// ponytail: simple path-based stripping — works for all current configs.
+  /// Upgrade to template-aware AST parsing if exotic configs collide.
+  String _normalizeChapterIdForTemplate(String chapterId, String template) {
+    if (chapterId.isEmpty) return chapterId;
+
+    final placeholder = template.contains('{contentId}') ? '{contentId}' : '{id}';
+    if (!template.contains(placeholder)) return chapterId;
+
+    final prefix = template.split(placeholder).first;
+    if (prefix.isEmpty || prefix == '/') {
+      // Template starts with placeholder — nothing to strip.
+      // Still strip leading `/` if id starts with `/` and baseUrl is about to
+      // prepend, so `https://host//path` doesn't appear.
+      while (chapterId.startsWith('/')) {
+        chapterId = chapterId.substring(1);
+      }
+      return chapterId;
+    }
+
+    // Strip prefix from the beginning of the id.
+    final normPrefix = prefix.endsWith('/') ? prefix : '$prefix/';
+    var stripped = chapterId;
+    if (stripped.startsWith(normPrefix)) {
+      stripped = stripped.substring(normPrefix.length);
+    }
+    // Strip any path separators at the start.
+    while (stripped.startsWith('/')) {
+      stripped = stripped.substring(1);
+    }
+    // Strip trailing slash so the built URL doesn't end with //path/.
+    if (stripped.endsWith('/')) {
+      stripped = stripped.substring(0, stripped.length - 1);
+    }
+    return stripped;
+  }
+
   /// Extract the last meaningful path slug from a URL.
   ///
   /// We match the common `/manga/<slug>` and `/<slug>-chapter-<number>`
@@ -2537,6 +2587,7 @@ class GenericScraperAdapter implements GenericAdapter {
 
     final patterns = <RegExp>[
       RegExp(r'/manga/([^/?#]+)'),
+      RegExp(r'/manhwa/([^/?#]+(?:/[^/?#]+)?)'),
       RegExp(r'/([^/?#]+?-chapter-[\d.-]+)(?:/|[?#]|$)'),
     ];
     for (final pattern in patterns) {
