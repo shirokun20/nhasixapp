@@ -50,45 +50,18 @@ class _GlobalDownloadProgressWidgetState
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
-      buildWhen: (previous, current) {
-        if (previous is DownloadLoaded && current is DownloadLoaded) {
-          if (previous.activeDownloads.length !=
-              current.activeDownloads.length) {
-            return true;
-          }
-          if (current.activeDownloads.isEmpty) {
-            // Show completion state then hide
-            return true;
-          }
-          if (current.activeDownloads.length > 1) {
-            // Any individual download changed? TotalProgress can be stale
-            // when one finishes (100%) and another starts (0%).
-            if (previous.activeDownloads.length !=
-                current.activeDownloads.length) {
-              return true;
-            }
-            for (final curr in current.activeDownloads) {
-              final prev =
-                  previous.activeDownloads.cast<DownloadStatus?>().firstWhere(
-                        (p) => p?.contentId == curr.contentId,
-                        orElse: () => null,
-                      );
-              if (prev == null ||
-                  prev.progress != curr.progress ||
-                  prev.state != curr.state) {
-                return true;
-              }
-            }
-            return false;
-          }
-          final prevDownload = previous.activeDownloads.first;
-          final currDownload = current.activeDownloads.first;
-          return prevDownload.progress != currDownload.progress ||
-              prevDownload.state != currDownload.state ||
-              prevDownload.contentId != currDownload.contentId;
-        }
-        return previous.runtimeType != current.runtimeType;
-      },
+      buildWhen: (previous, current) =>
+          previous.runtimeType != current.runtimeType ||
+          (previous is DownloadLoaded &&
+              current is DownloadLoaded &&
+              previous.activeDownloads.length !=
+                  current.activeDownloads.length) ||
+          (previous is DownloadLoaded &&
+              current is DownloadLoaded &&
+              current.activeDownloads.isNotEmpty &&
+              previous.activeDownloads.isNotEmpty &&
+              previous.activeDownloads.first.progress !=
+                  current.activeDownloads.first.progress),
       builder: (context, state) {
         if (state is! DownloadLoaded) {
           _slideController.reverse();
