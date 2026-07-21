@@ -34,7 +34,7 @@ void main() {
       // Factory singleton — reset internal state
       // re-depends on singleton defaults; each test constructs fresh
 
-      // idle default: appHeap=256, budget=256*0.4=102, reader=102*0.4=40 → 40MB
+      // idle default: appHeap=256, budget=102, reader=102*0.3=31→31MB
       final idleReader = c.readerDecodedBudgetBytes;
       final idleParallel = c.maxDownloadParallel;
 
@@ -78,14 +78,13 @@ void main() {
   });
 
   group('_recalculate math', () {
-    test('appHeap 256MB idle → budget 41MB reader, 20MB cache, parallel 3', () {
+    test('appHeap 256MB idle → budget 30MB reader, 35MB cache, parallel 3', () {
       final c = MemoryBudgetCoordinator();
-      // singleton, reset ke idle
       c.onReaderActiveChanged(false);
-      // idle: budget=256*0.4=102.4→round=102, reader=102*0.4=40.8→round=41→41*1024*1024=42991616
-      // cache=102*0.2=20.4→round=20→20971520
-      expect(c.readerDecodedBudgetBytes, 42991616);
-      expect(c.imageCacheBudgetBytes, 20971520);
+      // idle: budget=256*0.4=102.4→round=102, reader=102*0.3=30.6→round=31→31*1024*1024=32505856
+      // cache=102*0.35=35.7→round=36→36*1024*1024=37748736
+      expect(c.readerDecodedBudgetBytes, 32505856);
+      expect(c.imageCacheBudgetBytes, 37748736);
       expect(c.maxDownloadParallel, 3);
     });
 
@@ -123,9 +122,9 @@ void main() {
     test('imageCache maximumSizeBytes di-set sesuai cache budget', () {
       final c = MemoryBudgetCoordinator();
 
-      // idle state: cache budget 20MB → 20971520
+      // idle state: cache budget 36MB → 37748736
       c.onReaderActiveChanged(false);
-      expect(PaintingBinding.instance.imageCache.maximumSizeBytes, 20971520);
+      expect(PaintingBinding.instance.imageCache.maximumSizeBytes, 37748736);
 
       // active state: cache budget 20MB → 20971520
       c.onReaderActiveChanged(true);

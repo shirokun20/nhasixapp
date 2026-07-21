@@ -27,8 +27,8 @@ class MemoryBudgetCoordinator {
   static const double _totalAppRatio = 0.4;
   static const double _readerActiveRatio = 0.60;
   static const double _cacheActiveRatio = 0.20;
-  static const double _readerIdleRatio = 0.40;
-  static const double _cacheIdleRatio = 0.20;
+  static const double _readerIdleRatio = 0.30;
+  static const double _cacheIdleRatio = 0.35;
 
   bool get isReaderActive => _isReaderActive;
   int get readerDecodedBudgetBytes => _readerDecodedBudgetBytes;
