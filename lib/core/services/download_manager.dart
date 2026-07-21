@@ -279,6 +279,10 @@ class DownloadManager {
 
   /// Close the stream controller
   void dispose() {
+    try {
+      getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive')
+          .removeListener(_onReaderActiveChanged);
+    } catch (_) {}
     _nativeSubscription?.cancel();
     if (!_progressController.isClosed) {
       _progressController.close();
