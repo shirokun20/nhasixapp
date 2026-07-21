@@ -60,57 +60,6 @@ Located in `scripts/` folder. **ALWAYS run after project changes:**
 
 **Note**: `project_status.dart` auto-updates all README dashboards with progress bars and statistics.
 
-## 🔍 Search & Audit Tools (Modern — replaces grep)
-
-All installed via Homebrew. **NEVER use basic `grep`** — use these instead:
-
-| Tool | Best For | Command |
-|---|---|---|
-| **`rg`** (ripgrep) | Fast text + regex + PCRE2 | `rg "pattern" lib/ -t dart` |
-| **`ugrep`** | Fast search, fuzzy/approx | `ugrep "pattern" -R lib/ -g "*.dart"` |
-| **`semgrep`** | AST-aware Dart patterns, security | `semgrep --lang dart -e 'Logger().i(...)' lib/` |
-| **`gitleaks`** | Secret scanning (API keys, tokens) | `gitleaks detect --source . --no-git` |
-| **`typos-cli`** | Spell check source code | `typos lib/` |
-
-### Smart Search Script
-```bash
-./scripts/smart_search.sh text "pattern"         # ripgrep
-./scripts/smart_search.sh ast '$X.find()'         # semgrep
-./scripts/smart_search.sh interactive "pattern"   # ugrep TUI
-./scripts/smart_search.sh fuzzy "patern"           # ugrep fuzzy
-./scripts/smart_search.sh audit                    # Architecture audit
-./scripts/smart_search.sh debugprint                 # DebugPrint violation scan
-./scripts/smart_search.sh violations               # Code standard check
-```
-
-### Quick Reference
-```bash
-# Find print violations
-rg "(print|debugPrint)\(" lib/ -t dart
-
-# Find all TODOs
-rg "(TODO|FIXME|HACK)" lib/ -t dart
-
-# Find unused imports
-rg "import '" lib/ -t dart --stats
-
-# AST: find direct API calls in UI (violation)
-semgrep --lang dart -e 'http.get($URL)' lib/presentation/
-```
-
-### gitleaks Secrets
-```bash
-gitleaks detect --source . --no-git
-```
-
-### typos-cli
-```bash
-typos lib/                    # Find typos
-typos --diff lib/             # Show fixes without applying
-typos lib/ --write-changes    # Auto-fix
-```
-**Note**: Indonesian/localization false positives (`lokal` → `local`). Add `--exclude "*.arb"`.
-
 ## 🧠 Development Workflow (CRITICAL)
 
 We operate with professional discipline. Code is ephemeral; Architecture is permanent.
