@@ -185,7 +185,7 @@ class _GlobalDownloadProgressWidgetState
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: totalProgress,
+                            value: totalProgress > 0 ? totalProgress : null,
                             backgroundColor: Theme.of(context)
                                 .colorScheme
                                 .surface
@@ -280,7 +280,7 @@ class _GlobalDownloadProgressWidgetState
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: progress,
+                            value: progress > 0 ? progress : null,
                             backgroundColor: Theme.of(context)
                                 .colorScheme
                                 .surface

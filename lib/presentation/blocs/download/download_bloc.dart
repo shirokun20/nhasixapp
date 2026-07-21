@@ -2000,8 +2000,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // HANDLE NORMAL DOWNLOAD PROGRESS
       // ============================================================
 
-      // Update progress only if download is still in progress
-      if (!currentDownload.isInProgress) {
+      // Update progress only if download is still active
+      // Allow queued state — native WorkManager may start before state transitions.
+      if (!currentDownload.isInProgress && !currentDownload.isQueued) {
         _logger.d(
             'DownloadBloc: Ignoring progress update for non-active download: ${event.contentId}');
         return;
@@ -2040,9 +2041,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final contentId = event.contentId;
 
       // ✅ FIXED: Check if download should be completed (progress = 100%)
+      // Allow null estimatedTimeRemaining — native may not send it.
+      final isCompleteSignal = event.estimatedTimeRemaining == null ||
+          event.estimatedTimeRemaining == Duration.zero;
       if (event.downloadedPages >= event.totalPages &&
           event.downloadSpeed == 0.0 &&
-          event.estimatedTimeRemaining == Duration.zero) {
+          isCompleteSignal) {
         _logger.i(
             'DownloadBloc: Download appears completed, refreshing status for $contentId');
         add(const DownloadRefreshEvent());
@@ -2155,6 +2159,15 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         add(const DownloadRefreshEvent());
         return;
       }
+
+      // Force progress to 100%: native completed all pages.
+      currentDownload = currentDownload.copyWith(
+        downloadedPages: currentDownload.pagesToDownload,
+        totalPages: currentDownload.totalPages > 0
+            ? currentDownload.totalPages
+            : currentDownload.pagesToDownload,
+        state: DownloadState.completed,
+      );
 
       // Update status to completed
       int totalSize = currentDownload.fileSize;
