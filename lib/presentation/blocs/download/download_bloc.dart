@@ -85,6 +85,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
     on<DownloadBulkActionEvent>(_onBulkAction);
     on<DownloadSelectionActionEvent>(_onSelectionAction);
+    // Legacy backward-compat — screen still dispatches these
+    on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
+    on<DownloadSelectItemEvent>(_onSelectItem);
+    on<DownloadSelectAllEvent>(_onSelectAll);
+    on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadConvertToPdfEvent>(_onConvertToPdf);
     on<DownloadOpenContentEvent>(_onOpenContent);
     on<DownloadCleanupStorageEvent>(_onCleanupStorage);
@@ -3174,6 +3179,19 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   }
 
   /// Handle toggle selection mode event
+  Future<void> _onToggleSelectionMode(
+    DownloadToggleSelectionModeEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+    emit(currentState.copyWith(
+      isSelectionMode: !currentState.isSelectionMode,
+      selectedItems: const {},
+      lastUpdated: DateTime.now(),
+    ));
+  }
+
   /// Handle select item event
   Future<void> _onSelectItem(
     DownloadSelectItemEvent event,
