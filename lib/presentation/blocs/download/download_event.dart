@@ -8,6 +8,30 @@ abstract class DownloadEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Collapsed bulk action types.
+enum BulkAction { pauseAll, resumeAll, cancelAll, clearCompleted }
+
+/// Parameterized bulk action event — replaces 4 separate events.
+class DownloadBulkActionEvent extends DownloadEvent {
+  const DownloadBulkActionEvent(this.action);
+  final BulkAction action;
+  @override
+  List<Object?> get props => [action];
+}
+
+/// Collapsed selection action types.
+enum SelectionAction { selectItem, selectAll, clearSelection }
+
+/// Parameterized selection action event — replaces 3 separate events.
+class DownloadSelectionActionEvent extends DownloadEvent {
+  const DownloadSelectionActionEvent(this.action, {this.contentId, this.isSelected});
+  final SelectionAction action;
+  final String? contentId;
+  final bool? isSelected;
+  @override
+  List<Object?> get props => [action, contentId, isSelected];
+}
+
 /// Event to initialize download manager
 class DownloadInitializeEvent extends DownloadEvent {
   const DownloadInitializeEvent();
@@ -200,20 +224,28 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
       ];
 }
 
-/// Event to pause all downloads
-class DownloadPauseAllEvent extends DownloadEvent {
-  const DownloadPauseAllEvent();
-}
+// ─── Legacy events (kept for backward compat during refactor) ───
 
-/// Event to resume all downloads
-class DownloadResumeAllEvent extends DownloadEvent {
-  const DownloadResumeAllEvent();
+/// @nodoc
+class DownloadPauseAllEvent extends DownloadEvent { const DownloadPauseAllEvent(); }
+/// @nodoc
+class DownloadResumeAllEvent extends DownloadEvent { const DownloadResumeAllEvent(); }
+/// @nodoc
+class DownloadCancelAllEvent extends DownloadEvent { const DownloadCancelAllEvent(); }
+/// @nodoc
+class DownloadClearCompletedEvent extends DownloadEvent { const DownloadClearCompletedEvent(); }
+/// @nodoc
+class DownloadToggleSelectionModeEvent extends DownloadEvent { const DownloadToggleSelectionModeEvent(); }
+/// @nodoc
+class DownloadSelectItemEvent extends DownloadEvent {
+  const DownloadSelectItemEvent(this.contentId, this.isSelected);
+  final String contentId; final bool isSelected;
+  @override List<Object?> get props => [contentId, isSelected];
 }
-
-/// Event to cancel all downloads
-class DownloadCancelAllEvent extends DownloadEvent {
-  const DownloadCancelAllEvent();
-}
+/// @nodoc
+class DownloadSelectAllEvent extends DownloadEvent { const DownloadSelectAllEvent(); }
+/// @nodoc
+class DownloadClearSelectionEvent extends DownloadEvent { const DownloadClearSelectionEvent(); }
 
 /// Event to mark a download as completed
 class DownloadCompletedEvent extends DownloadEvent {
@@ -234,11 +266,6 @@ class DownloadNativeFailedEvent extends DownloadEvent {
 
   @override
   List<Object?> get props => [contentId, error];
-}
-
-/// Event to clear completed downloads
-class DownloadClearCompletedEvent extends DownloadEvent {
-  const DownloadClearCompletedEvent();
 }
 
 /// Event to cleanup storage
@@ -271,32 +298,6 @@ class DownloadOpenContentEvent extends DownloadEvent {
 
   @override
   List<Object?> get props => [contentId];
-}
-
-/// Event to toggle selection mode for bulk operations
-class DownloadToggleSelectionModeEvent extends DownloadEvent {
-  const DownloadToggleSelectionModeEvent();
-}
-
-/// Event to select/deselect an item in selection mode
-class DownloadSelectItemEvent extends DownloadEvent {
-  const DownloadSelectItemEvent(this.contentId, this.isSelected);
-
-  final String contentId;
-  final bool isSelected;
-
-  @override
-  List<Object?> get props => [contentId, isSelected];
-}
-
-/// Event to select all items in current tab
-class DownloadSelectAllEvent extends DownloadEvent {
-  const DownloadSelectAllEvent();
-}
-
-/// Event to clear all selections
-class DownloadClearSelectionEvent extends DownloadEvent {
-  const DownloadClearSelectionEvent();
 }
 
 /// Event to perform bulk delete operation

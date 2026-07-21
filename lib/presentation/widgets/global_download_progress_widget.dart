@@ -54,14 +54,7 @@ class _GlobalDownloadProgressWidgetState
           previous.runtimeType != current.runtimeType ||
           (previous is DownloadLoaded &&
               current is DownloadLoaded &&
-              previous.activeDownloads.length !=
-                  current.activeDownloads.length) ||
-          (previous is DownloadLoaded &&
-              current is DownloadLoaded &&
-              current.activeDownloads.isNotEmpty &&
-              previous.activeDownloads.isNotEmpty &&
-              previous.activeDownloads.first.progress !=
-                  current.activeDownloads.first.progress),
+              previous.downloads != current.downloads),
       builder: (context, state) {
         if (state is! DownloadLoaded) {
           _slideController.reverse();

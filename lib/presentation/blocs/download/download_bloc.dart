@@ -83,18 +83,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadRefreshEvent>(_onRefresh);
     on<DownloadProgressUpdateEvent>(_onProgressUpdate);
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
-    on<DownloadPauseAllEvent>(_onPauseAll);
-    on<DownloadResumeAllEvent>(_onResumeAll);
-    on<DownloadCancelAllEvent>(_onCancelAll);
-    on<DownloadClearCompletedEvent>(_onClearCompleted);
+    on<DownloadBulkActionEvent>(_onBulkAction);
+    on<DownloadSelectionActionEvent>(_onSelectionAction);
     on<DownloadConvertToPdfEvent>(_onConvertToPdf);
     on<DownloadOpenContentEvent>(_onOpenContent);
     on<DownloadCleanupStorageEvent>(_onCleanupStorage);
     on<DownloadExportEvent>(_onExport);
-    on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
-    on<DownloadSelectItemEvent>(_onSelectItem);
-    on<DownloadSelectAllEvent>(_onSelectAll);
-    on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadBulkDeleteEvent>(_onBulkDelete);
     on<DownloadCompletedEvent>(_onCompleted);
     on<DownloadNativeFailedEvent>(_onNativeFailed);
@@ -2008,12 +2002,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      final resolvedTotalPages = event.totalPages > 0
-          ? (event.totalPages > currentDownload.totalPages
-              ? event.totalPages
-              : currentDownload.totalPages)
-          : currentDownload.totalPages;
-
       if (event.downloadedPages < currentDownload.downloadedPages) {
         _logger.w(
           'DownloadBloc: Ignoring regressive progress update for '
@@ -2023,35 +2011,25 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
-      // ✅ FIXED: Only update if progress actually changed to prevent unnecessary updates
-      if (currentDownload.downloadedPages == event.downloadedPages &&
-          currentDownload.totalPages == resolvedTotalPages) {
-        _logger.d(
-            'DownloadBloc: Ignoring duplicate progress update for ${event.contentId}');
-        return;
-      }
+      // Always update totalPages from native — it has the real page count.
+      // Skip the resolvedTotalPages logic that caused the first 0/N event to be
+      // treated as duplicate (guard compared against stale content.pageCount).
+      final effectiveTotal = event.totalPages > 0
+          ? event.totalPages
+          : currentDownload.totalPages;
 
       // Create updated download with new progress
       final updatedDownload = currentDownload.copyWith(
         downloadedPages: event.downloadedPages,
-        totalPages: resolvedTotalPages,
+        totalPages: effectiveTotal,
         speed: event.downloadSpeed,
       );
 
       final contentId = event.contentId;
 
-      // ✅ FIXED: Check if download should be completed (progress = 100%)
-      // Allow null estimatedTimeRemaining — native may not send it.
-      final isCompleteSignal = event.estimatedTimeRemaining == null ||
-          event.estimatedTimeRemaining == Duration.zero;
-      if (event.downloadedPages >= event.totalPages &&
-          event.downloadSpeed == 0.0 &&
-          isCompleteSignal) {
-        _logger.i(
-            'DownloadBloc: Download appears completed, refreshing status for $contentId');
-        add(const DownloadRefreshEvent());
-        return;
-      }
+      // Native COMPLETED event is handled via _onCompleted (terminal marker).
+      // Regular progress events just update the state — no completion deduction
+      // from speed/estimatedTimeRemaining here.
 
       downloads[downloadIndex] = updatedDownload;
       final newDownloads = List<DownloadStatus>.from(downloads);
@@ -2436,6 +2414,61 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Unregister task from DownloadManager
       DownloadManager().unregisterTask(contentId);
       _logger.d('DownloadBloc: Cancelled task for $contentId');
+    }
+  }
+
+  /// Handle collapsed bulk actions (pauseAll, resumeAll, cancelAll, clearCompleted)
+  Future<void> _onBulkAction(
+    DownloadBulkActionEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    switch (event.action) {
+      case BulkAction.pauseAll:
+        await _onPauseAll(
+          DownloadPauseAllEvent(),
+          emit,
+        );
+      case BulkAction.resumeAll:
+        await _onResumeAll(
+          DownloadResumeAllEvent(),
+          emit,
+        );
+      case BulkAction.cancelAll:
+        await _onCancelAll(
+          DownloadCancelAllEvent(),
+          emit,
+        );
+      case BulkAction.clearCompleted:
+        await _onClearCompleted(
+          DownloadClearCompletedEvent(),
+          emit,
+        );
+    }
+  }
+
+  /// Handle collapsed selection actions (selectItem, selectAll, clearSelection)
+  Future<void> _onSelectionAction(
+    DownloadSelectionActionEvent event,
+    Emitter<DownloadBlocState> emit,
+  ) async {
+    switch (event.action) {
+      case SelectionAction.selectItem:
+        if (event.contentId != null && event.isSelected != null) {
+          await _onSelectItem(
+            DownloadSelectItemEvent(event.contentId!, event.isSelected!),
+            emit,
+          );
+        }
+      case SelectionAction.selectAll:
+        await _onSelectAll(
+          DownloadSelectAllEvent(),
+          emit,
+        );
+      case SelectionAction.clearSelection:
+        await _onClearSelection(
+          DownloadClearSelectionEvent(),
+          emit,
+        );
     }
   }
 
@@ -3141,30 +3174,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   }
 
   /// Handle toggle selection mode event
-  Future<void> _onToggleSelectionMode(
-    DownloadToggleSelectionModeEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Toggling selection mode');
-
-      emit(currentState.copyWith(
-        isSelectionMode: !currentState.isSelectionMode,
-        selectedItems: const {},
-        lastUpdated: DateTime.now(),
-      ));
-
-      _logger.i(
-          'DownloadBloc: Selection mode toggled to ${!currentState.isSelectionMode}');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error toggling selection mode',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
   /// Handle select item event
   Future<void> _onSelectItem(
     DownloadSelectItemEvent event,
