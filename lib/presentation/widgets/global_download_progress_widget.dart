@@ -19,6 +19,8 @@ class _GlobalDownloadProgressWidgetState
     extends State<GlobalDownloadProgressWidget>
     with SingleTickerProviderStateMixin {
   bool _dismissed = false;
+  DateTime? _dismissedAt;
+  static const Duration _dismissCooldown = Duration(seconds: 30);
   int _lastActiveCount = 0;
   late final AnimationController _slideController;
   late final Animation<Offset> _slideAnimation;
@@ -59,8 +61,25 @@ class _GlobalDownloadProgressWidgetState
             return true;
           }
           if (current.activeDownloads.length > 1) {
-            return previous.totalProgress != current.totalProgress ||
-                previous.totalDownloadSpeed != current.totalDownloadSpeed;
+            // Any individual download changed? TotalProgress can be stale
+            // when one finishes (100%) and another starts (0%).
+            if (previous.activeDownloads.length !=
+                current.activeDownloads.length) {
+              return true;
+            }
+            for (final curr in current.activeDownloads) {
+              final prev =
+                  previous.activeDownloads.cast<DownloadStatus?>().firstWhere(
+                        (p) => p?.contentId == curr.contentId,
+                        orElse: () => null,
+                      );
+              if (prev == null ||
+                  prev.progress != curr.progress ||
+                  prev.state != curr.state) {
+                return true;
+              }
+            }
+            return false;
           }
           final prevDownload = previous.activeDownloads.first;
           final currDownload = current.activeDownloads.first;
@@ -85,9 +104,11 @@ class _GlobalDownloadProgressWidgetState
         }
 
         _lastActiveCount = state.activeDownloads.length;
-        if (_dismissed) {
-          // Reset dismiss flag when new downloads appear after hide
-          _dismissed = false;
+        // Respect dismiss cooldown — don't re-show widget for N seconds
+        if (_dismissed ||
+            (_dismissedAt != null &&
+                DateTime.now().difference(_dismissedAt!) < _dismissCooldown)) {
+          return const SizedBox.shrink();
         }
 
         _slideController.forward();
@@ -317,7 +338,10 @@ class _GlobalDownloadProgressWidgetState
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     onPressed: () {
-                      setState(() => _dismissed = true);
+                      setState(() {
+                        _dismissed = true;
+                        _dismissedAt = DateTime.now();
+                      });
                       _slideController.reverse();
                     },
                     tooltip: 'Hide',
