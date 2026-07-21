@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
+import '../../../core/services/memory_budget_coordinator.dart';
 import '../../repositories/user_data_repository.dart';
 import '../../../core/services/native_download_service.dart';
 import '../../../core/services/pdf_service.dart';
@@ -97,6 +98,12 @@ class DownloadContentUseCase
 
       // Start actual download if not just queuing
       if (params.startImmediately) {
+        // Query coordinator for dynamic maxParallel
+        final coordinator = MemoryBudgetCoordinator();
+        final dynamicParallel = coordinator.isReaderActive
+            ? coordinator.maxDownloadParallel
+            : params.maxParallelImages;
+
         downloadStatus = await _performActualDownload(
           params.content,
           downloadStatus,
@@ -109,7 +116,7 @@ class DownloadContentUseCase
           params.headers,
           effectiveSavePath,
           false,
-          params.maxParallelImages,
+          dynamicParallel,
         );
       }
 

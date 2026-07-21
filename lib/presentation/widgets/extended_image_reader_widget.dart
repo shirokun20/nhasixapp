@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
@@ -12,6 +12,7 @@ import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
+import '../../core/utils/header_inspector.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -229,6 +230,51 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Set<String> _nonNativeAnimatedUrls = <String>{};
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
 
+  // Batch header inspection for isolate offload.
+  // Collects pending file paths; triggers `compute()` when count ≥ [_headerBatchThreshold].
+  static final List<String> _pendingHeaderPaths = <String>[];
+  static bool _headerBatchInProgress = false;
+  static const int _headerBatchThreshold = 10;
+  static Future<Map<String, FileHeaderResult>>? _headerBatchFuture;
+
+  /// Enqueue a file path for header inspection.
+  /// Returns the result for [path] — from batch cache if available, or sync inspect.
+  static Future<FileHeaderResult> _enqueueHeaderInspect(String path) async {
+    // Fast path: single file, inspect sync.
+    if (_pendingHeaderPaths.isEmpty && _headerBatchFuture == null) {
+      return inspectFileHeader(path);
+    }
+
+    _pendingHeaderPaths.add(path);
+    if (_pendingHeaderPaths.length >= _headerBatchThreshold && !_headerBatchInProgress) {
+      _flushHeaderBatch();
+    }
+
+    // If batch in progress, wait for it and return cached result.
+    if (_headerBatchFuture != null) {
+      final results = await _headerBatchFuture!;
+      if (results.containsKey(path)) return results[path]!;
+    }
+    // Fallback: sync inspect (batch not ready or path not in batch).
+    return inspectFileHeader(path);
+  }
+
+  static void _flushHeaderBatch() {
+    if (_pendingHeaderPaths.isEmpty) return;
+    _headerBatchInProgress = true;
+    final batch = List<String>.from(_pendingHeaderPaths);
+    _pendingHeaderPaths.clear();
+    _headerBatchFuture = compute(batchInspectHeaders, batch).then((results) {
+      _headerBatchInProgress = false;
+      _headerBatchFuture = null;
+      final map = <String, FileHeaderResult>{};
+      for (int i = 0; i < batch.length && i < results.length; i++) {
+        map[batch[i]] = results[i];
+      }
+      return map;
+    });
+  }
+
   /// Files ≥ 10 MB get a more aggressive native target width because the
   /// offline reader otherwise pays twice: thumbnail prep + animated playback.
   static const int _ultraHeavyAnimatedImageThresholdBytes =
@@ -375,9 +421,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
   /// seed the static maps and trigger a rebuild to route straight to native.
+  /// Uses [_enqueueHeaderInspect] for batch-aware header inspection.
   void _preCheckDiskCacheForHeavy() {
     getCachedImageFile(widget.imageUrl).then((file) async {
       if (file == null) return;
+      _enqueueHeaderInspect(file.path); // seed batch collector
       final size = file.lengthSync();
       final avifInfo = _inspectAvifHeaderForRouting(file);
       final shouldConvertTallAvis = avifInfo.isAvif &&
@@ -1687,131 +1735,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// For WebP, dimensions are not parsed (returns `null` for width/height).
   static ({String? format, int? width, int? height})
       _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
-    const empty = (format: null, width: null, height: null);
-    RandomAccessFile? raf;
-    try {
-      raf = file.openSync(mode: FileMode.read);
-      final length = raf.lengthSync();
-      if (length < 16) {
-        return empty;
-      }
-
-      // Read a wider AVIF header window so `ispe` is still found when the box
-      // is pushed back by extra metadata. Without width/height we cannot apply
-      // the native AspectRatio wrapper, which makes some AVIF pages appear not
-      // to fill the reader width.
-      final sampleLength = length < 4096 ? length : 4096;
-      final bytes = raf.readSync(sampleLength);
-      final ext = inferImageExtension(bytes: bytes);
-      if (ext == 'webp') {
-        // Only route to native AnimatedWebPView if the header confirms animation.
-        // Static WebP files (thumbnails, cover images, etc.) must stay on the
-        // Flutter codec path — returning non-null here marks the image as heavy
-        // which prevents normal keep-alive recycling and forces native rendering.
-        if (!_looksLikeAnimatedWebPHeader(bytes)) return empty;
-
-        int? width;
-        int? height;
-        int offset = 12;
-        while (offset + 8 <= bytes.length) {
-          final chunkType =
-              String.fromCharCodes(bytes.sublist(offset, offset + 4));
-          final chunkSize = bytes[offset + 4] |
-              (bytes[offset + 5] << 8) |
-              (bytes[offset + 6] << 16) |
-              (bytes[offset + 7] << 24);
-
-          if (chunkType == 'VP8X' &&
-              chunkSize >= 10 &&
-              offset + 18 <= bytes.length) {
-            width = 1 +
-                (bytes[offset + 12] |
-                    (bytes[offset + 13] << 8) |
-                    (bytes[offset + 14] << 16));
-            height = 1 +
-                (bytes[offset + 15] |
-                    (bytes[offset + 16] << 8) |
-                    (bytes[offset + 17] << 16));
-            break;
-          }
-
-          offset += 8 + chunkSize;
-          if (chunkSize % 2 != 0) offset++;
-        }
-
-        return (format: 'webp', width: width, height: height);
-      }
-      if (ext == 'avif') {
-        // Route to native AnimatedWebPView only for avis-brand AVIF within the
-        // hardware AV1 decoder's dimension limit.
-        //
-        // Background:
-        //   manga18.club encodes manga pages as tiled AVIF sequences (brand:
-        //   avis + msf1). Both working and failing files share identical ftyp
-        //   brands — the only discriminator is image HEIGHT.
-        //
-        //   MIUI HeifDecoderImpl uses a hardware AV1 decoder capped at ~4096px.
-        //   Images taller than that crash with "videoFrame is a nullptr".
-        //   Flutter's libavif uses software AV1 (dav1d/aom) with no size limit.
-        //
-        //   Verified:
-        //     04.avif  1440×3444  (≤ 4096) → native  ✓ works
-        //     26.avif  1440×5044  (> 4096) → Flutter ✓ works
-        //
-        // Step 1: check major brand — only avis targets native view.
-        if (bytes.length < 12) return empty;
-        const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
-        if (bytes[8] != kAvis0 ||
-            bytes[9] != kAvis1 ||
-            bytes[10] != kAvis2 ||
-            bytes[11] != kAvis3) {
-          return empty; // avif / mif1 brand → Flutter codec
-        }
-
-        // Step 2: parse the ispe (image spatial extents) box for image dimensions.
-        //
-        // ispe box layout:
-        //   [4B box-size][4B 'ispe'][4B version+flags][4B width][4B height]
-        //    ^box_start  ^i         i+4                i+8       i+12
-        //
-        // The ispe box for manga18.club AVIF files often sits near byte ~203,
-        // but some files place it later. Search the wider sample and read the
-        // dimensions so scroll layout can reserve full-width height correctly.
-        const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
-
-        for (int i = 0; i <= bytes.length - 16; i++) {
-          if (_matchesBytes(bytes, i, kIspe)) {
-            final int width = ((bytes[i + 8] & 0xFF) << 24) |
-                ((bytes[i + 9] & 0xFF) << 16) |
-                ((bytes[i + 10] & 0xFF) << 8) |
-                (bytes[i + 11] & 0xFF);
-            final int height = ((bytes[i + 12] & 0xFF) << 24) |
-                ((bytes[i + 13] & 0xFF) << 16) |
-                ((bytes[i + 14] & 0xFF) << 8) |
-                (bytes[i + 15] & 0xFF);
-            if (height > _maxNativeAvifHeight) {
-              return empty; // too tall for hardware AV1 decoder → Flutter
-            }
-            // avis + height ≤ 4096 → native AnimatedWebPView
-            return (
-              format: 'avif',
-              width: width > 0 ? width : null,
-              height: height > 0 ? height : null,
-            );
-          }
-        }
-
-        // Keep AVIF on the Flutter codec path when dimensions are unknown.
-        // The native view needs a known aspect ratio to reserve the correct
-        // full-width layout in the reader.
-        return empty;
-      }
-      return empty;
-    } catch (_) {
-      return empty;
-    } finally {
-      raf?.closeSync();
-    }
+    return inspectFileHeader(file.path);
   }
 
   static bool _looksLikeAnimatedWebPHeader(Uint8List bytes) {
