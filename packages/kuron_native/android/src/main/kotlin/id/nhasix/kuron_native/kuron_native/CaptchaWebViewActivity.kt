@@ -232,6 +232,12 @@ class CaptchaWebViewActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        webView.removeAllViews()
+        webView.destroy()
+        super.onDestroy()
+    }
+
     private fun loadCaptchaHtml() {
         challengeErrorCode = null
         challengeErrorMessage = null

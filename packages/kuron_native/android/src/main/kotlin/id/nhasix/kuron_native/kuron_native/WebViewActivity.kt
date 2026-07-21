@@ -757,6 +757,12 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        webView.removeAllViews()
+        webView.destroy()
+        super.onDestroy()
+    }
+
     private data class ImageExtractionResult(
         val currentUrl: String? = null,
         val imageUrl: String? = null,

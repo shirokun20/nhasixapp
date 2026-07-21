@@ -499,5 +499,6 @@ class DownloadHandler(
     fun dispose() {
         eventChannel.setStreamHandler(null)
         stopObservingProgress()
+        scope.cancel() // prevent coroutine leaks
     }
 }
