@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
@@ -40,10 +41,37 @@ class DownloadProgressUpdate {
 class DownloadManager {
   static final DownloadManager _instance = DownloadManager._internal();
   factory DownloadManager() => _instance;
+
   DownloadManager._internal() {
     _logger = getIt<Logger>();
     _logger.i('DownloadManager: Initialized');
     _initializeNativeListener();
+    _listenToReaderActive();
+  }
+
+  void _listenToReaderActive() {
+    try {
+      final notifier = getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive');
+      notifier.addListener(_onReaderActiveChanged);
+    } catch (e) {
+      _logger.w('DownloadManager: failed to listen to readerActive: $e');
+    }
+  }
+
+  void _onReaderActiveChanged() {
+    try {
+      final active = getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive').value;
+      _logger.d('DownloadManager: readerActive=$active');
+      if (active) {
+        for (final contentId in _tasks.keys) {
+          if (!isPaused(contentId)) {
+            pauseDownload(contentId);
+          }
+        }
+      }
+    } catch (e) {
+      _logger.w('DownloadManager: onReaderActiveChanged error: $e');
+    }
   }
 
   late final Logger _logger;

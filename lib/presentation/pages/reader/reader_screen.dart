@@ -27,6 +27,7 @@ import 'package:kuron_core/kuron_core.dart';
 
 import 'package:logger/logger.dart';
 import '../../../core/services/local_image_preloader.dart';
+import '../../../core/services/memory_budget_coordinator.dart';
 import '../../cubits/reader/reader_cubit.dart';
 import '../../cubits/theme/theme_cubit.dart';
 import '../../utils/chapter_language_presenter.dart';
@@ -125,6 +126,13 @@ class _ReaderScreenState extends State<ReaderScreen>
   static const Duration _scrollHeavyOpsInterval = Duration(milliseconds: 300);
   DateTime _lastHeavyOpsAt = DateTime.fromMillisecondsSinceEpoch(0);
 
+  // 🚀 OPTIMIZATION: Frame-aligned decode throttle
+  // Queues prefetch decode requests and processes max 2 per frame tick.
+  // Visible page decodes bypass the queue (priority path).
+  final List<void Function()> _decodeQueue = [];
+  static const int _maxDecodePerFrame = 2;
+  bool _isDecodeTickScheduled = false;
+
   // Debounce mechanism to prevent onPageChanged loops
   bool _isProgrammaticAnimation = false;
 
@@ -175,6 +183,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive').value = true;
+    MemoryBudgetCoordinator().onReaderActiveChanged(true);
     _lastReportedPage = widget.initialPage;
     _pageController = PageController(initialPage: widget.initialPage - 1);
     _verticalPageController =
@@ -792,6 +802,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       overlays: SystemUiOverlay.values,
     );
 
+    getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive').value = false;
+    MemoryBudgetCoordinator().onReaderActiveChanged(false);
     super.dispose();
   }
 
@@ -826,6 +838,25 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
+  /// Process queued decode requests on the next frame tick.
+  /// Max [_maxDecodePerFrame] per tick — prevents main-isolate flood.
+  void _scheduleFrameDecode() {
+    if (_isDecodeTickScheduled) return;
+    if (_decodeQueue.isEmpty) return;
+    _isDecodeTickScheduled = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _isDecodeTickScheduled = false;
+      if (!mounted || _decodeQueue.isEmpty) return;
+      for (int i = 0; i < _maxDecodePerFrame && _decodeQueue.isNotEmpty; i++) {
+        final task = _decodeQueue.removeAt(0);
+        task();
+      }
+      if (_decodeQueue.isNotEmpty) {
+        _scheduleFrameDecode();
+      }
+    });
+  }
+
   /// Prefetch next few images in background for smoother reading experience
   void _prefetchImages(int currentPage, List<String> imageUrls,
       List<ImageMetadata>? imageMetadata,
@@ -854,34 +885,40 @@ class _ReaderScreenState extends State<ReaderScreen>
     final decodeWidth = (MediaQuery.of(context).size.width *
             MediaQuery.of(context).devicePixelRatio)
         .round();
+
+    // Queue adjacent page decodes — processed max 2 per frame tick.
     for (final int targetPage in <int>{currentPage + 1, currentPage - 1}) {
       if (targetPage >= 1 && targetPage <= imageUrls.length) {
         final rawUrl = imageUrls[targetPage - 1];
         final url = rawUrl.split('|').first;
         if (!url.startsWith('http')) continue;
-        LocalImagePreloader.getLocalImagePath(
-          widget.contentId,
-          targetPage,
-        ).then((localPath) {
+        _decodeQueue.add(() {
           if (!mounted) return;
-          final ImageProvider provider;
-          if (localPath != null && File(localPath).existsSync()) {
-            provider = ExtendedFileImageProvider(File(localPath));
-          } else {
-            provider =
-                ExtendedNetworkImageProvider(url, headers: prefetchHeaders);
-          }
-          precacheImage(
-            ExtendedResizeImage.resizeIfNeeded(
-              cacheWidth: decodeWidth,
-              cacheHeight: null,
-              provider: provider,
-            ),
-            context,
-          );
+          LocalImagePreloader.getLocalImagePath(
+            widget.contentId,
+            targetPage,
+          ).then((localPath) {
+            if (!mounted) return;
+            final ImageProvider provider;
+            if (localPath != null && File(localPath).existsSync()) {
+              provider = ExtendedFileImageProvider(File(localPath));
+            } else {
+              provider =
+                  ExtendedNetworkImageProvider(url, headers: prefetchHeaders);
+            }
+            precacheImage(
+              ExtendedResizeImage.resizeIfNeeded(
+                cacheWidth: decodeWidth,
+                cacheHeight: null,
+                provider: provider,
+              ),
+              context,
+            );
+          });
         });
       }
     }
+    _scheduleFrameDecode();
 
     // HentaiNexus: DISABLE state prefetch (GPU saturation)
     if (_isHeavyPrefetchSource(sourceId)) {
@@ -974,58 +1011,72 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// Evict image providers for pages that are far from the current reading position.
+  /// Evict excess pages when decoded image budget is exceeded.
   ///
-  /// Pages outside the window [currentPage - 4, currentPage + 4] are evicted
-  /// from the Flutter image cache to reduce memory pressure during long chapters.
-  /// Eviction is skipped for offline content (page images are already on disk).
-  /// All evictions are queued after the current frame via [WidgetsBinding.instance].
-  // ponytail: track how many heavy images are currently kept alive.
-  // When count exceeds [_gpuMemoryBudgetPages], evict farthest pages.
-  // Reset once user stops scrolling for [_gpuMemoryBudgetResetMs].
-  static const int _gpuMemoryBudgetPages = 30;
-  static const Duration _gpuMemoryBudgetResetMs = Duration(seconds: 5);
-  int _heavyImageCount = 0;
+  /// Uses byte budget from [MemoryBudgetCoordinator] — estimates decoded size
+  /// per page (width × height × 4) and evicts farthest pages until under budget.
+  /// Eviction is skipped for offline content (pages are on disk).
+  // ponytail: page-count heuristic replaced by byte-aware budget from coordinator.
+  // Budget resets [_heavyImageBudgetResetMs] after last scroll tick.
+  static const Duration _heavyImageBudgetResetMs = Duration(seconds: 5);
+  int _estimatedDecodedBytes = 0;
   Timer? _heavyImageBudgetTimer;
 
   void _evictDistantPages(int currentPage, List<String> imageUrls,
       {bool isOffline = false}) {
     if (isOffline || imageUrls.isEmpty) return;
 
-    // Reset the budget timer on each scroll tick.
+    final coordinator = MemoryBudgetCoordinator();
+    final budget = coordinator.readerDecodedBudgetBytes;
+
+    // Reset byte accumulator on each scroll tick.
     _heavyImageBudgetTimer?.cancel();
-    _heavyImageBudgetTimer = Timer(_gpuMemoryBudgetResetMs, () {
-      _heavyImageCount = 0;
+    _heavyImageBudgetTimer = Timer(_heavyImageBudgetResetMs, () {
+      _estimatedDecodedBytes = 0;
     });
 
-    _heavyImageCount++;
+    _estimatedDecodedBytes += _estimatePageBytes(currentPage);
 
-    if (_heavyImageCount < _gpuMemoryBudgetPages) return;
+    if (_estimatedDecodedBytes < budget) return;
 
-    // Budget exceeded: evict farthest 25% pages.
-    _evictFarthestPages(currentPage, imageUrls);
-    _heavyImageCount = 0;
+    // Budget exceeded: evict farthest pages until ≤ 80% of budget.
+    final target = (budget * 0.8).round();
+    _evictFarthestBytes(currentPage, imageUrls, target);
+    _estimatedDecodedBytes = 0;
   }
 
-  /// Evict the farthest [fraction] of pages from [currentPage].
-  void _evictFarthestPages(int currentPage, List<String> imageUrls) {
+  /// Estimate decoded bytes for a single page from cached image dimensions.
+  int _estimatePageBytes(int page) {
+    final h = _cachedImageHeights[page];
+    if (h == null || h <= 0) return 0;
+    // ponytail: assumes screen-width image. Actual decode width is viewport-based.
+    // Estimate screen width from first non-null height's aspect ratio, or fallback 1080.
+    final w = 1080; // typical phone width in logical px
+    final pixelBytes = (w * h * 4).round(); // RGBA
+    return pixelBytes;
+  }
+
+  /// Evict farthest pages until total estimated bytes ≤ [targetBytes].
+  void _evictFarthestBytes(
+      int currentPage, List<String> imageUrls, int targetBytes) {
     const keepRadius = 4;
-    const evictFraction = 0.25;
     final total = imageUrls.length;
     if (total <= keepRadius * 2 + 1) return;
-    final toEvict =
-        (total * evictFraction).round().clamp(1, total - keepRadius * 2);
 
-    // Sort pages by distance from current page, evict farthest
-    // ponytail: O(n log n) sort — fine for <2000 pages, add binary if scaling needed.
-    final pages = List.generate(total, (i) => i + 1);
-    pages.sort(
-        (a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
+    // Build pages sorted by distance from current page (farthest first).
+    final sorted = List.generate(total, (i) => i + 1);
+    sorted.sort(
+        (a, b) => (b - currentPage).abs().compareTo((a - currentPage).abs()));
 
-    for (final page in pages.skip(total - toEvict).take(toEvict)) {
+    int accumulated = 0;
+    for (final page in sorted) {
+      if ((page - currentPage).abs() <= keepRadius) continue;
       final url = imageUrls[page - 1];
       if (!url.startsWith('http')) continue;
+
       NetworkImage(url).evict();
+      accumulated += _estimatePageBytes(page);
+      if (accumulated >= (_estimatedDecodedBytes - targetBytes)) break;
     }
   }
 
@@ -1058,6 +1109,12 @@ class _ReaderScreenState extends State<ReaderScreen>
   void _syncControllersWithState(ReaderState state) {
     final contentChanged = state.content?.id != _lastSyncedContentId;
     _lastSyncedContentId = state.content?.id;
+
+    // Clear height cache when content changes (chapter navigation)
+    // Prevents stale heights from previous chapter in continuous scroll.
+    if (contentChanged) {
+      _cachedImageHeights.clear();
+    }
 
     // 🚀 OPTIMIZATION: Skip sync for continuous scroll when same content
     // Prevents scroll position reset when readingTimer updates state every second.

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:cookie_jar/cookie_jar.dart';
@@ -125,6 +126,7 @@ import 'package:nhasixapp/core/services/detail_cache_service.dart';
 import 'package:nhasixapp/core/services/request_deduplication_service.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/image_cache_service.dart';
+import 'package:nhasixapp/core/services/memory_budget_coordinator.dart';
 import 'package:nhasixapp/core/services/image_metadata_service.dart';
 import 'package:nhasixapp/core/services/export_service.dart';
 import 'package:nhasixapp/core/services/legal_content_service.dart';
@@ -313,6 +315,15 @@ void _setupServices() {
 
   // Image Cache Service - Advanced image caching with TTL and size management
   getIt.registerLazySingleton<ImageCacheService>(() => ImageCacheService());
+
+  // Memory Budget Coordinator - Device-aware resource governor
+  getIt.registerLazySingleton<MemoryBudgetCoordinator>(
+      () => MemoryBudgetCoordinator());
+
+  // Global reader-active notifier — used by coordinator + DownloadManager
+  getIt.registerLazySingleton<ValueNotifier<bool>>(
+      () => ValueNotifier<bool>(false),
+    instanceName: 'globalReaderActive');
 
   // Github Update Service
   getIt.registerLazySingleton<UpdateService>(() => UpdateService(

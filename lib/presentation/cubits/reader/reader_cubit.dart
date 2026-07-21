@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
+import 'package:flutter/painting.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -950,6 +950,9 @@ class ReaderCubit extends Cubit<ReaderState> {
         return;
       }
 
+      // Clear Flutter image cache before loading new chapter
+      // Prevents stale decoded frames from previous chapter (fix image mixup)
+      PaintingBinding.instance.imageCache.clear();
       emit(_withStatus(ReaderStatus.loading));
 
       // Expand pool if chapter not in current _allChapters
@@ -1336,8 +1339,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       emit(state.copyWithUI(enableZoom: newEnableZoom));
     }
     try {
-      final current =
-          await getReaderSettingsUseCase();
+      final current = await getReaderSettingsUseCase();
       await saveReaderSettingsUseCase(
           current.copyWith(enableZoom: newEnableZoom));
       _logger.i('Successfully saved enable zoom: $newEnableZoom');

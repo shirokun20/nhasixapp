@@ -947,6 +947,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _pinchHintController.dispose();
     _zoomController.dispose();
     _autoRetryTimer?.cancel();
+    _isHeavyImage = false;
+    _isConfirmedAnimatedWebP = false;
+    _cachedFilePath = null;
+    _awaitingNativeCheck = false;
     super.dispose();
   }
 
