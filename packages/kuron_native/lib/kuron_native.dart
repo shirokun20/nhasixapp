@@ -234,11 +234,17 @@ class KuronNative {
     required String url,
     required String script,
     int timeoutMs = 10000,
+    int captureDelayMs = 0,
+    int postScriptDelayMs = 0,
+    String? captureUrlPattern,
   }) {
     return KuronNativePlatform.instance.headlessGetClearance(
       url: url,
       script: script,
       timeoutMs: timeoutMs,
+      captureDelayMs: captureDelayMs,
+      postScriptDelayMs: postScriptDelayMs,
+      captureUrlPattern: captureUrlPattern,
     );
   }
 

@@ -730,6 +730,11 @@ void _setupDataSources() {
           logger: getIt<Logger>(),
           secureStorage: const FlutterSecureStorage(),
         ),
+        MangaFireSourceFactory(
+          sourceId: 'mangafire',
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
     );

@@ -16,3 +16,8 @@ export 'src/generic_bypass/generic_bypass_source_factory.dart';
 export 'src/hentairead/hentairead_source_factory.dart';
 export 'src/vihentai/vihentai_source_factory.dart';
 export 'src/schale/schale_source_factory.dart';
+export 'src/mangafire/mangafire_source_factory.dart';
+export 'src/mangafire/mangafire_vrf_config.dart';
+export 'src/mangafire/mangafire_vrf_cache.dart';
+export 'src/mangafire/mangafire_vrf_interceptor.dart';
+export 'src/mangafire/mangafire_vrf_capture_service.dart';

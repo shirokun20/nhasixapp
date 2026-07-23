@@ -360,7 +360,6 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>(
       'showCaptchaWebView',
-
       {
         'provider': provider,
         'siteKey': siteKey,
@@ -377,10 +376,20 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     required String url,
     required String script,
     int timeoutMs = 10000,
+    int captureDelayMs = 0,
+    int postScriptDelayMs = 0,
+    String? captureUrlPattern,
   }) async {
     return await methodChannel.invokeMethod<String>(
       'headlessGetClearance',
-      {'url': url, 'script': script, 'timeoutMs': timeoutMs},
+      {
+        'url': url,
+        'script': script,
+        'timeoutMs': timeoutMs,
+        'captureDelayMs': captureDelayMs,
+        'postScriptDelayMs': postScriptDelayMs,
+        if (captureUrlPattern != null) 'captureUrlPattern': captureUrlPattern,
+      },
     );
   }
 
