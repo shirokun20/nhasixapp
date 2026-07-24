@@ -124,6 +124,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final Set<String> _pendingDbSave = {};
   Timer? _dbFlushTimer;
   static const int _kDbSaveInterval = 10;
+  // Session download completion counter (not total in DB)
+  int _sessionCompletedCount = 0;
 
   // 2.2: foreground-aware maxParallelImages
   // LifecycleWatcher sets this; DownloadBloc reads it before starting downloads
@@ -1957,10 +1959,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (cs is! DownloadLoaded) return;
     final active = cs.downloads
         .where((d) => d.state == DownloadState.downloading).toList();
-    final completed = cs.downloads
-        .where((d) => d.state == DownloadState.completed).toList();
-    if (active.isEmpty && completed.isNotEmpty) {
-      _notificationService.showDownloadGroupCompleted(completed.length);
+    if (active.isEmpty && _sessionCompletedCount > 0) {
+      _notificationService.showDownloadGroupCompleted(_sessionCompletedCount);
+      _sessionCompletedCount = 0;
     }
   }
 
@@ -2164,6 +2165,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       // 4. Update group notification
+      _sessionCompletedCount++;
       _updateDownloadGroupNotification();
       _notifyAllDownloadsComplete();
 
