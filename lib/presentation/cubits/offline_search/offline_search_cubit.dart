@@ -980,6 +980,29 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
+  /// Bulk delete multiple offline contents
+  Future<void> bulkDeleteOfflineContent(List<String> contentIds) async {
+    try {
+      for (final id in contentIds) {
+        final deleted = await _offlineContentManager.deleteOfflineContent(id);
+        if (deleted) _sizeBytesByContentId.remove(id);
+      }
+      if (state is OfflineSearchLoaded) {
+        final query = (state as OfflineSearchLoaded).query;
+        if (query.isNotEmpty) {
+          await searchOfflineContent(query);
+        } else {
+          await getAllOfflineContent();
+        }
+      } else {
+        await getAllOfflineContent();
+      }
+      logInfo('Bulk deleted ${contentIds.length} contents');
+    } catch (e, stackTrace) {
+      handleError(e, stackTrace, 'bulk delete offline content');
+    }
+  }
+
   /// Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
   Future<List<ContentGroup>> _groupContent(
     List<Content> flatItems, {

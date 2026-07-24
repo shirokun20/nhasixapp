@@ -61,7 +61,7 @@ class _GlobalDownloadProgressWidgetState
           return const SizedBox.shrink();
         }
 
-        if (state.activeDownloads.isEmpty) {
+        if (state.downloads.where((d) => d.state == DownloadState.downloading).isEmpty) {
           if (_lastActiveCount > 0 && _slideController.isCompleted) {
             scheduleAutoHide();
           }
@@ -69,8 +69,9 @@ class _GlobalDownloadProgressWidgetState
           return const SizedBox.shrink();
         }
 
-        _lastActiveCount = state.activeDownloads.length;
-        // Respect dismiss cooldown — don't re-show widget for N seconds
+        final active = state.downloads
+            .where((d) => d.state == DownloadState.downloading).toList();
+        _lastActiveCount = active.length;
         if (_dismissed ||
             (_dismissedAt != null &&
                 DateTime.now().difference(_dismissedAt!) < _dismissCooldown)) {
@@ -78,9 +79,9 @@ class _GlobalDownloadProgressWidgetState
         }
 
         _slideController.forward();
-        final child = state.activeDownloads.length > 1
+        final child = active.length > 1
             ? _buildMultipleDownloadsView(context, state)
-            : _buildSingleDownloadView(context, state.activeDownloads.first);
+            : _buildSingleDownloadView(context, active.first);
 
         return SlideTransition(
           position: _slideAnimation,
@@ -105,9 +106,16 @@ class _GlobalDownloadProgressWidgetState
 
   Widget _buildMultipleDownloadsView(
       BuildContext context, DownloadLoaded state) {
-    final activeCount = state.activeDownloads.length;
-    final totalProgress = state.totalProgress;
-    final speed = state.formattedTotalSpeed;
+    final active = state.downloads
+        .where((d) => d.state == DownloadState.downloading).toList();
+    final activeCount = active.length;
+    final totalPages = active.fold<int>(0, (s, d) => s + d.totalPages);
+    final donePages = active.fold<int>(0, (s, d) => s + d.downloadedPages);
+    final totalProgress = totalPages == 0 ? 0.0 : donePages / totalPages;
+    final speed = active.fold<double>(0, (s, d) => s + d.speed);
+    final formattedSpeed = speed <= 0
+        ? '0 B/s'
+        : '${(speed >= 1024 * 1024 ? speed / (1024 * 1024) : speed >= 1024 ? speed / 1024 : speed).toStringAsFixed(1)} ${speed >= 1024 * 1024 ? 'MB/s' : speed >= 1024 ? 'KB/s' : 'B/s'}';
 
     return Material(
       elevation: DesignTokens.elevationLg,
@@ -165,7 +173,7 @@ class _GlobalDownloadProgressWidgetState
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '$speed • ${(totalProgress * 100).toInt()}%',
+                          '$formattedSpeed • ${(totalProgress * 100).toInt()}%',
                           style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme

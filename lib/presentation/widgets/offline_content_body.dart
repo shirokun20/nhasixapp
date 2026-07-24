@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -104,8 +105,10 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 // Only trigger if completed downloads count changes (success or delete)
                 // This filters out frequent progress updates
                 if (previous is DownloadLoaded && current is DownloadLoaded) {
-                  return previous.completedDownloads.length !=
-                      current.completedDownloads.length;
+                  return previous.downloads
+                          .where((d) => d.state == DownloadState.completed).length !=
+                      current.downloads
+                          .where((d) => d.state == DownloadState.completed).length;
                 }
                 return true;
               },

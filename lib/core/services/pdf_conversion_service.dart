@@ -92,7 +92,8 @@ class PdfConversionService {
     required List<String> imagePaths,
     String? sourceId,
     String? outputDir,
-    int maxPagesPerFile = 50, // Deprecated parameter, kept for compatibility
+    int maxPagesPerFile = 50,
+    void Function(int progress, String message)? onProgress, // NEW: group notification callback
   }) async {
     try {
       _logger.i(
@@ -101,28 +102,12 @@ class PdfConversionService {
       _logger.i(
           'PdfConversionService: Starting NATIVE PDF conversion for $contentId');
 
-      // Validasi input parameters
       if (imagePaths.isEmpty) {
         throw Exception(_getLocalized('pdfNoImagesProvided',
             fallback: 'No images provided for PDF conversion'));
       }
 
-      // Ensure notification service is ready
       await _ensureNotificationServiceReady();
-
-      // Show notification that PDF conversion has started
-      _logger.i(
-          'PdfConversionService: Showing PDF conversion started notification');
-      _logger.i(
-          'PDF_NOTIFICATION: convertToPdfInBackground - Calling showPdfConversionStarted');
-
-      await _notificationService.showPdfConversionStarted(
-        contentId: contentId,
-        title: title,
-      );
-
-      _logger.i(
-          'PDF_NOTIFICATION: convertToPdfInBackground - showPdfConversionStarted completed');
 
       // Create output directory for PDFs
       final pdfOutputDir = await _createPdfOutputDirectory(
@@ -150,6 +135,7 @@ class PdfConversionService {
         imagePaths: imagePaths,
         sourceId: sourceId,
         pdfOutputDir: pdfOutputDir,
+        onProgress: onProgress,
       );
 
       _logger.i(
@@ -191,6 +177,7 @@ class PdfConversionService {
     required List<String> imagePaths,
     String? sourceId,
     required Directory pdfOutputDir,
+    void Function(int progress, String message)? onProgress,
   }) async {
     _logger.i('Starting NATIVE PDF generation...');
 
@@ -221,11 +208,7 @@ class PdfConversionService {
             lastUpdateTime = now;
 
             // Update notification with real-time progress from native
-            await _notificationService.updatePdfConversionProgress(
-              contentId: contentId,
-              progress: progress,
-              title: message,
-            );
+            onProgress?.call(progress, message);
             _logger.d('Native progress: $progress% - $message');
           }
         },

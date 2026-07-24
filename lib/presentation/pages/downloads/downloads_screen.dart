@@ -215,7 +215,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 icon: const Icon(Icons.close),
                 onPressed: () => context
                     .read<DownloadBloc>()
-                    .add(const DownloadToggleSelectionModeEvent()),
+                    .add(const DownloadSelectionActionEvent(SelectionAction.toggleSelectionMode)),
               ),
               title: Text(
                 AppLocalizations.of(context)!
@@ -230,14 +230,14 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     icon: const Icon(Icons.select_all),
                     onPressed: () => context
                         .read<DownloadBloc>()
-                        .add(const DownloadSelectAllEvent()),
+                        .add(const DownloadSelectionActionEvent(SelectionAction.selectAll)),
                     tooltip: 'Select All',
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear),
                     onPressed: () => context
                         .read<DownloadBloc>()
-                        .add(const DownloadClearSelectionEvent()),
+                        .add(const DownloadSelectionActionEvent(SelectionAction.clearSelection)),
                     tooltip: AppLocalizations.of(context)!.clearSelection,
                   ),
                   IconButton(
@@ -282,7 +282,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 icon: const Icon(Icons.checklist),
                 onPressed: () => context
                     .read<DownloadBloc>()
-                    .add(const DownloadToggleSelectionModeEvent()),
+                    .add(const DownloadSelectionActionEvent(SelectionAction.toggleSelectionMode)),
                 tooltip: 'Select Mode',
               ),
               PopupMenuButton<String>(
@@ -295,8 +295,10 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'pause_all',
-                    enabled: state.activeDownloads.isNotEmpty ||
-                        state.queuedDownloads.isNotEmpty,
+                    enabled: state.downloads
+                            .any((d) => d.state == DownloadState.downloading) ||
+                        state.downloads
+                            .any((d) => d.state == DownloadState.queued),
                     child: Row(
                       children: [
                         Icon(Icons.pause,
@@ -346,7 +348,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   const PopupMenuDivider(),
                   PopupMenuItem(
                     value: 'clear_completed',
-                    enabled: state.completedDownloads.isNotEmpty,
+                    enabled: state.downloads
+                            .any((d) => d.state == DownloadState.completed),
                     child: Row(
                       children: [
                         Icon(Icons.clear_all,
@@ -431,13 +434,17 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             children: [
               _buildDownloadsList(state.downloads,
                   AppLocalizations.of(context)!.noDownloadsYet),
-              _buildDownloadsList(state.activeDownloads,
+              _buildDownloadsList(state.downloads
+                  .where((d) => d.state == DownloadState.downloading).toList(),
                   AppLocalizations.of(context)!.noActiveDownloads),
-              _buildDownloadsList(state.queuedDownloads,
+              _buildDownloadsList(state.downloads
+                  .where((d) => d.state == DownloadState.queued).toList(),
                   AppLocalizations.of(context)!.noQueuedDownloads),
-              _buildDownloadsList(state.completedDownloads,
+              _buildDownloadsList(state.downloads
+                  .where((d) => d.state == DownloadState.completed).toList(),
                   AppLocalizations.of(context)!.noCompletedDownloads),
-              _buildDownloadsList(state.failedDownloads,
+              _buildDownloadsList(state.downloads
+                  .where((d) => d.state == DownloadState.failed).toList(),
                   AppLocalizations.of(context)!.noFailedDownloads),
             ],
           ),
@@ -509,16 +516,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
 
     switch (action) {
       case 'pause_all':
-        downloadBloc.add(const DownloadPauseAllEvent());
+        downloadBloc.add(const DownloadBulkActionEvent(BulkAction.pauseAll));
         break;
       case 'resume_all':
-        downloadBloc.add(const DownloadResumeAllEvent());
+        downloadBloc.add(const DownloadBulkActionEvent(BulkAction.resumeAll));
         break;
       case 'cancel_all':
         _showCancelAllDialog();
         break;
       case 'clear_completed':
-        downloadBloc.add(const DownloadClearCompletedEvent());
+        downloadBloc.add(const DownloadBulkActionEvent(BulkAction.clearCompleted));
         break;
       case 'cleanup_storage':
         _showCleanupDialog();
@@ -542,8 +549,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
       // In selection mode, toggle selection
       final isSelected =
           currentState.selectedItems.contains(download.contentId);
-      downloadBloc
-          .add(DownloadSelectItemEvent(download.contentId, !isSelected));
+      downloadBloc.add(DownloadSelectionActionEvent(
+        SelectionAction.selectItem,
+        contentId: download.contentId,
+        isSelected: !isSelected,
+      ));
     } else {
       // Normal mode behavior
       if (download.isCompleted) {
@@ -749,7 +759,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           TextButton(
             onPressed: () {
               context.pop();
-              context.read<DownloadBloc>().add(const DownloadCancelAllEvent());
+              context.read<DownloadBloc>().add(const DownloadBulkActionEvent(BulkAction.cancelAll));
             },
             child: Text(
               AppLocalizations.of(context)!.cancelAll,

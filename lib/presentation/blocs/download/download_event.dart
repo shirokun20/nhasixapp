@@ -20,7 +20,7 @@ class DownloadBulkActionEvent extends DownloadEvent {
 }
 
 /// Collapsed selection action types.
-enum SelectionAction { selectItem, selectAll, clearSelection }
+enum SelectionAction { selectItem, selectAll, clearSelection, toggleSelectionMode }
 
 /// Parameterized selection action event — replaces 3 separate events.
 class DownloadSelectionActionEvent extends DownloadEvent {
@@ -223,29 +223,6 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
         customStorageRoot,
       ];
 }
-
-// ─── Legacy events (kept for backward compat during refactor) ───
-
-/// @nodoc
-class DownloadPauseAllEvent extends DownloadEvent { const DownloadPauseAllEvent(); }
-/// @nodoc
-class DownloadResumeAllEvent extends DownloadEvent { const DownloadResumeAllEvent(); }
-/// @nodoc
-class DownloadCancelAllEvent extends DownloadEvent { const DownloadCancelAllEvent(); }
-/// @nodoc
-class DownloadClearCompletedEvent extends DownloadEvent { const DownloadClearCompletedEvent(); }
-/// @nodoc
-class DownloadToggleSelectionModeEvent extends DownloadEvent { const DownloadToggleSelectionModeEvent(); }
-/// @nodoc
-class DownloadSelectItemEvent extends DownloadEvent {
-  const DownloadSelectItemEvent(this.contentId, this.isSelected);
-  final String contentId; final bool isSelected;
-  @override List<Object?> get props => [contentId, isSelected];
-}
-/// @nodoc
-class DownloadSelectAllEvent extends DownloadEvent { const DownloadSelectAllEvent(); }
-/// @nodoc
-class DownloadClearSelectionEvent extends DownloadEvent { const DownloadClearSelectionEvent(); }
 
 /// Event to mark a download as completed
 class DownloadCompletedEvent extends DownloadEvent {

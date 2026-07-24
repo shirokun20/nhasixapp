@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 import '../../core/services/workers/download_lifecycle_mixin.dart';
@@ -63,7 +64,8 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
 
     if (downloadState is DownloadLoaded) {
       // Map to ActiveDownloadInfo
-      final activeDownloads = downloadState.activeDownloads.map((download) {
+      final activeDownloads = downloadState.downloads
+          .where((d) => d.state == DownloadState.downloading).map((download) {
         return ActiveDownloadInfo(
           contentId: download.contentId,
           isInProgress: true, // Only active ones are here

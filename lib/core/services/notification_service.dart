@@ -762,6 +762,147 @@ class NotificationService {
     }
   }
 
+  // ─── Grouped download notification (single notification for all) ───
+
+  static const int _downloadGroupId = 777778;
+
+  /// Show or update the single grouped download progress notification.
+  /// Replaces individual per-content notifications with one aggregate.
+  Future<void> updateDownloadGroupProgress({
+    required int activeCount,
+    required int totalProgress,
+    String? speedText,
+  }) async {
+    if (!isEnabled) return;
+    try {
+      final title = activeCount == 1
+          ? 'Downloading 1 item'
+          : 'Downloading $activeCount items';
+      final body = (speedText != null && speedText.isNotEmpty)
+          ? '$totalProgress% • $speedText'
+          : '$totalProgress%';
+      await _notificationsPlugin.show(
+        id: _downloadGroupId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetailsBuilder.progress(
+          progress: totalProgress,
+        ),
+        payload: null,
+      );
+    } catch (e) {
+      _logger.e('Failed to update download group notification: $e');
+    }
+  }
+
+  /// Show the grouped "all done" notification.
+  Future<void> showDownloadGroupCompleted(int count) async {
+    if (!isEnabled) return;
+    try {
+      final title = 'Downloads Complete';
+      final body = count == 1 ? '1 download completed' : '$count downloads completed';
+      await _notificationsPlugin.show(
+        id: _downloadGroupId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetailsBuilder.success(),
+        payload: null,
+      );
+    } catch (e) {
+      _logger.e('Failed to show download group completed notification: $e');
+    }
+  }
+
+  /// Cancel the grouped download notification.
+  Future<void> cancelDownloadGroup() async {
+    try {
+      await _notificationsPlugin.cancel(id: _downloadGroupId);
+    } catch (e) {
+      _logger.e('Failed to cancel download group notification: $e');
+    }
+  }
+
+  // ─── Grouped PDF conversion notification ───
+
+  static const int _pdfGroupId = 777776;
+
+  /// Show or update the single grouped PDF conversion progress notification.
+  Future<void> updatePdfGroupProgress({
+    required int currentIndex,
+    required int totalCount,
+    required int progress,
+    required String title,
+  }) async {
+    if (!isEnabled) return;
+    try {
+      final titleText = 'Converting PDF $currentIndex of $totalCount';
+      final bodyText = '$progress% — $title';
+      await _notificationsPlugin.show(
+        id: _pdfGroupId,
+        title: titleText,
+        body: bodyText,
+        notificationDetails: NotificationDetailsBuilder.progress(
+          progress: progress,
+        ),
+        payload: null,
+      );
+    } catch (e) {
+      _logger.e('Failed to update PDF group notification: $e');
+    }
+  }
+
+  /// Show PDF group completed notification.
+  Future<void> showPdfGroupCompleted(int count) async {
+    if (!isEnabled) return;
+    try {
+      final body = count == 1 ? '1 PDF created' : '$count PDFs created';
+      await _notificationsPlugin.show(
+        id: _pdfGroupId,
+        title: 'PDF Conversions Complete',
+        body: body,
+        notificationDetails: NotificationDetailsBuilder.success(),
+        payload: null,
+      );
+    } catch (e) {
+      _logger.e('Failed to show PDF group completed notification: $e');
+    }
+  }
+
+  /// Show PDF group error notification (non-fatal, queue continues).
+  Future<void> showPdfGroupError({
+    required int currentIndex,
+    required int totalCount,
+    required String error,
+  }) async {
+    if (!isEnabled) return;
+    try {
+      final title = 'PDF $currentIndex of $totalCount failed';
+      final body = _truncateError(error);
+      await _notificationsPlugin.show(
+        id: _pdfGroupId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetailsBuilder.error(
+          bigText: error,
+          contentTitle: title,
+          summaryText: body,
+        ),
+        payload: null,
+      );
+    } catch (e) {
+      _logger.e('Failed to show PDF group error notification: $e');
+    }
+  }
+
+  /// Cancel the grouped PDF notification.
+  Future<void> cancelPdfGroup() async {
+    try {
+      await _notificationsPlugin.cancel(id: _pdfGroupId);
+    } catch (e) {
+      _logger.e('Failed to cancel PDF group notification: $e');
+    }
+  }
+
   /// Get notification ID from content ID
   /// Get notification ID from content ID
   int _getNotificationId(String contentId) {

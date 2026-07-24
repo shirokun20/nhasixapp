@@ -61,6 +61,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   String _searchQuery = '';
   _SortMode _sortMode = _SortMode.dateDesc;
   bool _showSearch = false;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedContentIds = {};
 
   int _sizeFor(Content content) =>
       _contentGroup?.sizeForContent(content.id) ?? 0;
@@ -306,89 +308,109 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
+        if (_isSelectionMode) {
+          setState(() { _isSelectionMode = false; _selectedContentIds.clear(); });
+          return;
+        }
         if (didPop) return;
         context.pop(_didChange);
       },
       child: Scaffold(
-        appBar: _showSearch
+        appBar: _isSelectionMode
             ? AppBar(
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => setState(() {
-                    _showSearch = false;
-                    _searchController.clear();
-                    _searchQuery = '';
-                  }),
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() { _isSelectionMode = false; _selectedContentIds.clear(); }),
                 ),
-                title: TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  style: TextStyleConst.bodyMedium
-                      .copyWith(color: colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    hintText: 'Search chapters...',
-                    hintStyle: TextStyleConst.bodyMedium
-                        .copyWith(color: colorScheme.onSurfaceVariant),
-                    border: InputBorder.none,
-                  ),
-                  onChanged: (q) => setState(() => _searchQuery = q),
-                ),
+                title: Text('${_selectedContentIds.length} selected',
+                    style: TextStyleConst.titleLarge),
                 actions: [
-                  if (_searchQuery.isNotEmpty)
+                  if (_selectedContentIds.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _showBulkDeleteConfirmation(context),
                     ),
                 ],
               )
-            : AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(_didChange),
-                ),
-                title: Text(widget.baseTitle, style: TextStyleConst.titleLarge),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () => setState(() => _showSearch = true),
-                  ),
-                  PopupMenuButton<_SortMode>(
-                    icon: const Icon(Icons.sort),
-                    onSelected: (mode) => setState(() => _sortMode = mode),
-                    itemBuilder: (_) => [
-                      PopupMenuItem(
-                        value: _SortMode.dateDesc,
-                        child: Text('Newest', style: TextStyleConst.bodyMedium),
+            : _showSearch
+                ? AppBar(
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => setState(() {
+                        _showSearch = false;
+                        _searchController.clear();
+                        _searchQuery = '';
+                      }),
+                    ),
+                    title: TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      style: TextStyleConst.bodyMedium
+                          .copyWith(color: colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Search chapters...',
+                        hintStyle: TextStyleConst.bodyMedium
+                            .copyWith(color: colorScheme.onSurfaceVariant),
+                        border: InputBorder.none,
                       ),
-                      PopupMenuItem(
-                        value: _SortMode.dateAsc,
-                        child: Text('Oldest', style: TextStyleConst.bodyMedium),
+                      onChanged: (q) => setState(() => _searchQuery = q),
+                    ),
+                    actions: [
+                      if (_searchQuery.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        ),
+                    ],
+                  )
+                : AppBar(
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => context.pop(_didChange),
+                    ),
+                    title: Text(widget.baseTitle, style: TextStyleConst.titleLarge),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: () => setState(() => _showSearch = true),
                       ),
-                      PopupMenuItem(
-                        value: _SortMode.titleAsc,
-                        child: Text('A-Z', style: TextStyleConst.bodyMedium),
-                      ),
-                      PopupMenuItem(
-                        value: _SortMode.titleDesc,
-                        child: Text('Z-A', style: TextStyleConst.bodyMedium),
-                      ),
-                      PopupMenuItem(
-                        value: _SortMode.pagesAsc,
-                        child:
-                            Text('Pages ↑', style: TextStyleConst.bodyMedium),
-                      ),
-                      PopupMenuItem(
-                        value: _SortMode.pagesDesc,
-                        child:
-                            Text('Pages ↓', style: TextStyleConst.bodyMedium),
+                      PopupMenuButton<_SortMode>(
+                        icon: const Icon(Icons.sort),
+                        onSelected: (mode) => setState(() => _sortMode = mode),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _SortMode.dateDesc,
+                            child: Text('Newest', style: TextStyleConst.bodyMedium),
+                          ),
+                          PopupMenuItem(
+                            value: _SortMode.dateAsc,
+                            child: Text('Oldest', style: TextStyleConst.bodyMedium),
+                          ),
+                          PopupMenuItem(
+                            value: _SortMode.titleAsc,
+                            child: Text('A-Z', style: TextStyleConst.bodyMedium),
+                          ),
+                          PopupMenuItem(
+                            value: _SortMode.titleDesc,
+                            child: Text('Z-A', style: TextStyleConst.bodyMedium),
+                          ),
+                          PopupMenuItem(
+                            value: _SortMode.pagesAsc,
+                            child:
+                                Text('Pages ↑', style: TextStyleConst.bodyMedium),
+                          ),
+                          PopupMenuItem(
+                            value: _SortMode.pagesDesc,
+                            child:
+                                Text('Pages ↓', style: TextStyleConst.bodyMedium),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
         body: _contentGroup == null
             ? Center(
                 child: _isResolving
@@ -431,13 +453,36 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       ),
                     ),
                     child: InkWell(
-                      onTap: () => _openReader(content),
-                      onLongPress: () => _showBottomSheet(context, content),
+                      onTap: _isSelectionMode
+                          ? () => setState(() {
+                              if (_selectedContentIds.contains(content.id)) {
+                                _selectedContentIds.remove(content.id);
+                                if (_selectedContentIds.isEmpty) {
+                                  _isSelectionMode = false;
+                                }
+                              } else {
+                                _selectedContentIds.add(content.id);
+                              }
+                            })
+                          : () => _openReader(content),
+                      onLongPress: _isSelectionMode
+                          ? null
+                          : () => _showBottomSheet(context, content),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (_isSelectionMode)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: Icon(
+                                  _selectedContentIds.contains(content.id)
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
                             Container(
                               width: 48,
                               height: 48,
@@ -1009,6 +1054,73 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+    }
+  }
+
+  /// Show bulk delete confirmation for selected items
+  void _showBulkDeleteConfirmation(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final count = _selectedContentIds.length;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text('Delete $count items?',
+            style: TextStyle(color: colorScheme.onSurface)),
+        content: Text('Remove $count offline chapters?',
+            style: TextStyle(color: colorScheme.onSurface)),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              ctx.pop();
+              _bulkDeleteContent();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bulk delete selected offline contents
+  Future<void> _bulkDeleteContent() async {
+    final ids = List<String>.from(_selectedContentIds);
+    setState(() { _isSelectionMode = false; _selectedContentIds.clear(); });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Deleting ${ids.length} items...'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+    await _offlineSearchCubit.bulkDeleteOfflineContent(ids);
+    getIt<DownloadBloc>().add(const DownloadRefreshEvent());
+    _didChange = true;
+
+    if (!mounted) return;
+    setState(() {
+      for (final id in ids) {
+        _items.removeWhere((item) => item.id == id);
+        _progressMap.remove(id);
+      }
+    });
+
+    if (_items.isEmpty && mounted) {
+      context.pop(_didChange);
     }
   }
 

@@ -184,8 +184,10 @@ class ContentDownloadCache {
       try {
         final downloadState = context.read<DownloadBloc>().state;
         if (downloadState is DownloadLoaded) {
-          final isDownloaded = downloadState.completedDownloads.any(
-            (download) => matchesDownload(
+          final isDownloaded = downloadState.downloads.any(
+            (download) =>
+                download.state == DownloadState.completed &&
+                matchesDownload(
               download,
               contentId,
               sourceId: sourceId,

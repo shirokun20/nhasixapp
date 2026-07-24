@@ -92,99 +92,28 @@ class DownloadLoaded extends DownloadBlocState {
     return downloads.where((d) => d.state == state).toList();
   }
 
-  /// Get active downloads
-  List<DownloadStatus> get activeDownloads =>
-      getDownloadsByState(DownloadState.downloading);
-
-  /// Get queued downloads
-  List<DownloadStatus> get queuedDownloads =>
-      getDownloadsByState(DownloadState.queued);
-
-  /// Get completed downloads
-  List<DownloadStatus> get completedDownloads =>
-      getDownloadsByState(DownloadState.completed);
-
-  /// Get failed downloads
-  List<DownloadStatus> get failedDownloads =>
-      getDownloadsByState(DownloadState.failed);
-
-  /// Get paused downloads
-  List<DownloadStatus> get pausedDownloads =>
-      getDownloadsByState(DownloadState.paused);
-
   /// Check if content is being downloaded
   bool isDownloading(String contentId) {
-    return activeDownloads.any((d) => d.contentId == contentId);
+    return downloads.any((d) =>
+        d.contentId == contentId && d.state == DownloadState.downloading);
   }
 
   /// Check if content is queued for download
   bool isQueued(String contentId) {
-    return queuedDownloads.any((d) => d.contentId == contentId);
+    return downloads.any((d) =>
+        d.contentId == contentId && d.state == DownloadState.queued);
   }
 
   /// Check if content is downloaded
   bool isDownloaded(String contentId) {
-    return completedDownloads.any((d) => d.contentId == contentId);
+    return downloads.any((d) =>
+        d.contentId == contentId && d.state == DownloadState.completed);
   }
 
   /// Check if download failed
   bool isFailed(String contentId) {
-    return failedDownloads.any((d) => d.contentId == contentId);
-  }
-
-  /// Get total progress percentage
-  double get totalProgress {
-    if (activeDownloads.isEmpty) return 0.0;
-
-    final totalPages =
-        activeDownloads.fold<int>(0, (sum, d) => sum + d.totalPages);
-    final downloadedPages =
-        activeDownloads.fold<int>(0, (sum, d) => sum + d.downloadedPages);
-
-    if (totalPages == 0) return 0.0;
-    return downloadedPages / totalPages;
-  }
-
-  /// Get total downloaded size
-  int get totalDownloadedSize {
-    return downloads.fold<int>(0, (sum, d) => sum + d.fileSize);
-  }
-
-  /// Get total download speed
-  double get totalDownloadSpeed {
-    return activeDownloads.fold<double>(0.0, (sum, d) => sum + d.speed);
-  }
-
-  /// Get formatted total download speed
-  String get formattedTotalSpeed {
-    if (totalDownloadSpeed <= 0) return '0 B/s';
-
-    const suffixes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
-    var speed = totalDownloadSpeed;
-    var suffixIndex = 0;
-
-    while (speed >= 1024 && suffixIndex < suffixes.length - 1) {
-      speed /= 1024;
-      suffixIndex++;
-    }
-
-    return '${speed.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
-  }
-
-  /// Get formatted total downloaded size
-  String get formattedTotalSize {
-    if (totalDownloadedSize == 0) return '0 B';
-
-    const suffixes = ['B', 'KB', 'MB', 'GB'];
-    var size = totalDownloadedSize.toDouble();
-    var suffixIndex = 0;
-
-    while (size >= 1024 && suffixIndex < suffixes.length - 1) {
-      size /= 1024;
-      suffixIndex++;
-    }
-
-    return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
+    return downloads.any((d) =>
+        d.contentId == contentId && d.state == DownloadState.failed);
   }
 
   /// Copy with updated values

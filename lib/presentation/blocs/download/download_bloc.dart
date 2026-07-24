@@ -85,11 +85,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     on<DownloadSettingsUpdateEvent>(_onSettingsUpdate);
     on<DownloadBulkActionEvent>(_onBulkAction);
     on<DownloadSelectionActionEvent>(_onSelectionAction);
-    // Legacy backward-compat — screen still dispatches these
-    on<DownloadToggleSelectionModeEvent>(_onToggleSelectionMode);
-    on<DownloadSelectItemEvent>(_onSelectItem);
-    on<DownloadSelectAllEvent>(_onSelectAll);
-    on<DownloadClearSelectionEvent>(_onClearSelection);
     on<DownloadConvertToPdfEvent>(_onConvertToPdf);
     on<DownloadOpenContentEvent>(_onOpenContent);
     on<DownloadCleanupStorageEvent>(_onCleanupStorage);
@@ -539,8 +534,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       // Get queued and active downloads
-      final queuedDownloads = currentState.queuedDownloads;
-      final activeDownloads = currentState.activeDownloads;
+      final queuedDownloads = currentState.downloads
+          .where((d) => d.state == DownloadState.queued).toList();
+      final activeDownloads = currentState.downloads
+          .where((d) => d.state == DownloadState.downloading).toList();
 
       // Check if we can start more downloads
       if (queuedDownloads.isEmpty) {
@@ -685,16 +682,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       // Send notification (Flutter-side)
-      if (currentState.settings.enableNotifications) {
-        final title = event.content.title;
-        final rangeText = downloadStatus.isRangeDownload
-            ? ' (Pages ${downloadStatus.startPage}-${downloadStatus.endPage})'
-            : '';
-        await _notificationService.showDownloadStarted(
-          contentId: event.content.id,
-          title: '$title$rangeText',
-        );
-      }
+      _updateDownloadGroupNotification();
 
       _logger.i('DownloadBloc: Queued download for ${event.content.id}');
 
@@ -790,15 +778,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      // Send notification with range info (Flutter-side)
-      if (currentState.settings.enableNotifications) {
-        final title = event.content.title;
-        final rangeText = ' (Pages ${event.startPage}-${event.endPage})';
-        await _notificationService.showDownloadStarted(
-          contentId: event.content.id,
-          title: '$title$rangeText',
-        );
-      }
+      _updateDownloadGroupNotification();
 
       _logger.i('DownloadBloc: Queued range download for ${event.content.id}');
 
@@ -1083,12 +1063,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       // Register task with DownloadManager
       DownloadManager().registerTask(task);
 
-      if (currentState.settings.enableNotifications) {
-        await _notificationService.showDownloadStarted(
-          contentId: event.contentId,
-          title: content.title,
-        );
-      }
+      _updateDownloadGroupNotification();
 
       // Prepare download path
       String? savePath;
@@ -1878,232 +1853,106 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     DownloadProgressUpdateEvent event,
     Emitter<DownloadBlocState> emit,
   ) async {
-    final currentState = state;
+    final cs = state;
+    if (cs is! DownloadLoaded && cs is! DownloadProcessing) return;
 
-    // Handle different state types more flexibly
-    List<DownloadStatus> downloads;
-    DownloadSettings settings;
+    final dl = cs.downloads;
+    final idx = dl.indexWhere((d) => d.contentId == event.contentId);
+    if (idx == -1) return;
 
-    if (currentState is DownloadLoaded) {
-      downloads = currentState.downloads;
-      settings = currentState.settings;
-    } else if (currentState is DownloadProcessing) {
-      downloads = currentState.downloads;
-      settings = currentState.settings;
-    } else {
-      // If not in a state where we can update progress, try to refresh first
-      _logger.d(
-          'DownloadBloc: Not in updatable state, refreshing downloads for progress update');
-      add(const DownloadRefreshEvent());
+    final cur = dl[idx];
+    if (event.downloadedPages < cur.downloadedPages && event.downloadedPages >= 0) {
+      _logger.w('DownloadBloc: Ignoring regressive progress for ${event.contentId}');
       return;
     }
 
-    try {
-      // Find the download and update its progress
-      final downloadIndex = downloads.indexWhere(
-        (d) => d.contentId == event.contentId,
-      );
+    final targetState = cur.state == DownloadState.queued
+        ? DownloadState.downloading
+        : cur.state;
 
-      if (downloadIndex == -1) {
-        _logger.w(
-            'DownloadBloc: Download not found for progress update: ${event.contentId}');
-        return;
-      }
+    final effectiveTotal =
+        event.totalPages > 0 ? event.totalPages : cur.totalPages;
 
-      final currentDownload = downloads[downloadIndex];
+    final updated = cur.copyWith(
+      state: targetState,
+      downloadedPages: event.downloadedPages,
+      totalPages: effectiveTotal,
+      speed: event.downloadSpeed,
+    );
 
-      // ============================================================
-      // HANDLE VERIFICATION PROGRESS (Special Case)
-      // ============================================================
-      // downloadedPages = -2 signals verification progress
-      // totalPages = verification percentage (0-100)
-      if (event.downloadedPages == -2) {
-        _logger.d(
-            'DownloadBloc: Verification progress update for ${event.contentId}: ${event.totalPages}%');
+    final newDownloads = [...dl]..[idx] = updated;
+    emit(DownloadLoaded(
+      downloads: newDownloads,
+      settings: cs is DownloadLoaded ? cs.settings : (cs as DownloadProcessing).settings,
+      lastUpdated: DateTime.now(),
+    ));
 
-        // Show verification notification
-        // DISABLED: Using Native Notifications exclusively
-        /*
-        if (currentState.settings.enableNotifications) {
-          final verificationPercentage = event.totalPages;
-
-          // Show verification started on first progress update
-          if (verificationPercentage == 0 || verificationPercentage == 1) {
-            _notificationService
-                .showVerificationStarted(
-              contentId: event.contentId,
-              title: currentDownload.title ?? currentDownload.contentId,
-            )
-                .catchError((e) {
-              _logger.w(
-                  'DownloadBloc: Failed to show verification started notification: $e');
-            });
-          }
-
-          // Update verification progress (only every 20% to reduce spam)
-          // ✅ FIXED: Don't update at 100% to avoid race condition with showDownloadCompleted
-          if ((verificationPercentage % 20 == 0 ||
-                  verificationPercentage >= 95) &&
-              verificationPercentage < 100) {
-            _notificationService
-                .updateVerificationProgress(
-              contentId: event.contentId,
-              progress: verificationPercentage,
-              title: currentDownload.title ?? currentDownload.contentId,
-            )
-                .catchError((e) {
-              _logger.w(
-                  'DownloadBloc: Failed to update verification progress: $e');
-            });
-          }
-
-          // Cancel verification notification when complete
-          if (verificationPercentage >= 100) {
-            // ✅ FIXED: Explicitly cancel the verification notification first
-            // This prevents "Verifying 100%" from sticking around
-            if (currentState.settings.enableNotifications) {
-              _notificationService
-                  .cancelVerificationNotification(event.contentId);
-            }
-
-            // Explicitly show completion notification here
-            // This fixes the issue where notification gets stuck at "Verifying 100%"
-            // because the normal completion event might have been processed or missed
-            if (currentState.settings.enableNotifications) {
-              _notificationService
-                  .showDownloadCompleted(
-                contentId: event.contentId,
-                title: currentDownload.title ?? currentDownload.contentId,
-                downloadPath: currentDownload.downloadPath ?? '',
-              )
-                  .catchError((e) {
-                _logger.w(
-                    'DownloadBloc: Failed to show completion notification after verification: $e');
-              });
-            }
-
-            _logger.i(
-                'DownloadBloc: Verification complete, forced completion notification for ${event.contentId}');
-
-            // Trigger refresh to ensure UI is up to date
-            add(const DownloadRefreshEvent());
-          }
-        }
-        */
-
-        // Don't update download status for verification progress
-        return;
-      }
-
-      // ============================================================
-      // HANDLE NORMAL DOWNLOAD PROGRESS
-      // ============================================================
-
-      // Update progress only if download is still active
-      // Allow queued state — native WorkManager may start before state transitions.
-      if (!currentDownload.isInProgress && !currentDownload.isQueued) {
-        _logger.d(
-            'DownloadBloc: Ignoring progress update for non-active download: ${event.contentId}');
-        return;
-      }
-
-      if (event.downloadedPages < currentDownload.downloadedPages) {
-        _logger.w(
-          'DownloadBloc: Ignoring regressive progress update for '
-          '${event.contentId}: ${event.downloadedPages}/${event.totalPages} '
-          '(current ${currentDownload.downloadedPages}/${currentDownload.totalPages})',
-        );
-        return;
-      }
-
-      // Always update totalPages from native — it has the real page count.
-      // Skip the resolvedTotalPages logic that caused the first 0/N event to be
-      // treated as duplicate (guard compared against stale content.pageCount).
-      final effectiveTotal = event.totalPages > 0
-          ? event.totalPages
-          : currentDownload.totalPages;
-
-      // Create updated download with new progress
-      final updatedDownload = currentDownload.copyWith(
-        downloadedPages: event.downloadedPages,
-        totalPages: effectiveTotal,
-        speed: event.downloadSpeed,
-      );
-
-      final contentId = event.contentId;
-
-      // Native COMPLETED event is handled via _onCompleted (terminal marker).
-      // Regular progress events just update the state — no completion deduction
-      // from speed/estimatedTimeRemaining here.
-
-      downloads[downloadIndex] = updatedDownload;
-      final newDownloads = List<DownloadStatus>.from(downloads);
-
-      if (currentState is DownloadLoaded) {
-        emit(currentState.copyWith(
-          downloads: newDownloads,
-          lastUpdated: DateTime.now(),
-        ));
-      } else if (currentState is DownloadProcessing) {
-        emit(DownloadLoaded(
-          downloads: newDownloads,
-          settings: settings,
-          lastUpdated: DateTime.now(),
-        ));
-      }
-
-      final isProgressComplete =
-          updatedDownload.downloadedPages >= updatedDownload.totalPages;
-
-      // 1.2-1.3: Batch DB save — only every 10th event per contentId
-      // 1.6: Force save on terminal state (progress complete)
-      if (isProgressComplete) {
-        // ponytail: force-save on terminal (progress >= totalPages)
-        await _userDataRepository
-            .saveDownloadStatus(updatedDownload)
-            .catchError(
-                (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
-        _pendingDbSave.remove(contentId);
+    // Batch DB save
+    final isTerminal = updated.downloadedPages >= updated.totalPages;
+    if (isTerminal) {
+      await _userDataRepository.saveDownloadStatus(updated).catchError(
+          (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
+      _pendingDbSave.remove(event.contentId);
+    } else {
+      final skip = (_dbSaveSkipCount[event.contentId] ?? 0) + 1;
+      _dbSaveSkipCount[event.contentId] = skip;
+      if (skip >= _kDbSaveInterval) {
+        _dbSaveSkipCount[event.contentId] = 0;
+        await _userDataRepository.saveDownloadStatus(updated).catchError(
+            (e) => _logger.w('DownloadBloc: Failed to save progress: $e'));
+        _pendingDbSave.remove(event.contentId);
       } else {
-        final skipCount = (_dbSaveSkipCount[contentId] ?? 0) + 1;
-        _dbSaveSkipCount[contentId] = skipCount;
-        if (skipCount >= _kDbSaveInterval) {
-          _dbSaveSkipCount[contentId] = 0;
-          await _userDataRepository
-              .saveDownloadStatus(updatedDownload)
-              .catchError((e) =>
-                  _logger.w('DownloadBloc: Failed to save progress: $e'));
-          _pendingDbSave.remove(contentId);
-        } else {
-          _pendingDbSave.add(contentId);
-        }
+        _pendingDbSave.add(event.contentId);
       }
+    }
 
-      // Notify every progress event — notification platform channel is cheap
-      if (currentState.settings.enableNotifications) {
-        final progressPercentage = updatedDownload.progressPercentage.round();
-        await _notificationService
-            .updateDownloadProgress(
-          contentId: contentId,
-          progress: progressPercentage,
-          title: updatedDownload.title ?? updatedDownload.contentId,
-          isPaused: false,
-        )
-            .catchError((e) {
-          _logger.w('DownloadBloc: Failed to update notification progress: $e');
-        });
-      }
+    _updateDownloadGroupNotification();
 
-      _logger.d(
-          'DownloadBloc: Updated progress for $contentId: ${event.downloadedPages}/${event.totalPages}');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error updating progress',
-          error: e, stackTrace: stackTrace);
-      // Don't emit error state for progress updates to avoid disrupting downloads
+    _logger.d(
+        'DownloadBloc: Progress ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');
+  }
+
+  /// Update the single grouped download notification from current state.
+  void _updateDownloadGroupNotification() {
+    final cs = state;
+    if (cs is! DownloadLoaded) return;
+    final active = cs.downloads
+        .where((d) => d.state == DownloadState.downloading).toList();
+    if (active.isEmpty) return;
+    final total = active.fold<int>(0, (s, d) => s + d.totalPages);
+    final done = active.fold<int>(0, (s, d) => s + d.downloadedPages);
+    final pct = total > 0 ? (done / total * 100).round() : 0;
+    final speed = active.fold<double>(0, (s, d) => s + d.speed);
+    final speedText = _formatSpeedForNotif(speed);
+    _notificationService.updateDownloadGroupProgress(
+      activeCount: active.length,
+      totalProgress: pct,
+      speedText: speedText,
+    );
+  }
+
+  String _formatSpeedForNotif(double speed) {
+    if (speed <= 0) return '';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    var v = speed;
+    var i = 0;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return '${v.toStringAsFixed(1)} ${units[i]}';
+  }
+
+  /// Show group download completed notification when all downloads finish.
+  void _notifyAllDownloadsComplete() {
+    final cs = state;
+    if (cs is! DownloadLoaded) return;
+    final active = cs.downloads
+        .where((d) => d.state == DownloadState.downloading).toList();
+    final completed = cs.downloads
+        .where((d) => d.state == DownloadState.completed).toList();
+    if (active.isEmpty && completed.isNotEmpty) {
+      _notificationService.showDownloadGroupCompleted(completed.length);
     }
   }
 
-  /// Handle download completion
   Future<void> _onCompleted(
     DownloadCompletedEvent event,
     Emitter<DownloadBlocState> emit,
@@ -2303,16 +2152,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.d('Updated state with completed download');
       }
 
-      // 4. Trigger Notifications
-      if (currentState is DownloadLoaded &&
-          currentState.settings.enableNotifications) {
-        _logger.d('Showing completion notification');
-        await _notificationService.showDownloadCompleted(
-          contentId: event.contentId,
-          title: completedDownload.title ?? event.contentId,
-          downloadPath: completedDownload.downloadPath ?? '',
-        );
-      }
+      // 4. Update group notification
+      _updateDownloadGroupNotification();
+      _notifyAllDownloadsComplete();
 
       // 5. Force refresh to update offline content screen with correct file sizes
       _logger.d('Triggering refresh to sync offline content...');
@@ -2427,27 +2269,107 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     DownloadBulkActionEvent event,
     Emitter<DownloadBlocState> emit,
   ) async {
-    switch (event.action) {
-      case BulkAction.pauseAll:
-        await _onPauseAll(
-          DownloadPauseAllEvent(),
-          emit,
-        );
-      case BulkAction.resumeAll:
-        await _onResumeAll(
-          DownloadResumeAllEvent(),
-          emit,
-        );
-      case BulkAction.cancelAll:
-        await _onCancelAll(
-          DownloadCancelAllEvent(),
-          emit,
-        );
-      case BulkAction.clearCompleted:
-        await _onClearCompleted(
-          DownloadClearCompletedEvent(),
-          emit,
-        );
+    final currentState = state;
+    if (currentState is! DownloadLoaded) return;
+
+    try {
+      _logger.i('DownloadBloc: Bulk action ${event.action}');
+
+      List<DownloadStatus> targets;
+      DownloadState newState;
+      String operation;
+
+      switch (event.action) {
+        case BulkAction.pauseAll:
+          targets = currentState.downloads
+              .where((d) => d.state == DownloadState.downloading)
+              .toList();
+          if (targets.isEmpty) {
+            _logger.i('DownloadBloc: No active downloads to pause');
+            emit(currentState.copyWith(lastUpdated: DateTime.now()));
+            return;
+          }
+          newState = DownloadState.paused;
+          operation = 'Pausing all downloads';
+        case BulkAction.resumeAll:
+          targets = currentState.downloads
+              .where((d) => d.state == DownloadState.paused)
+              .toList();
+          if (targets.isEmpty) {
+            _logger.i('DownloadBloc: No paused downloads to resume');
+            emit(currentState.copyWith(lastUpdated: DateTime.now()));
+            return;
+          }
+          newState = DownloadState.queued;
+          operation = 'Resuming all downloads';
+        case BulkAction.cancelAll:
+          targets = currentState.downloads
+              .where((d) =>
+                  d.state == DownloadState.downloading ||
+                  d.state == DownloadState.queued)
+              .toList();
+          if (targets.isEmpty) {
+            _logger.i('DownloadBloc: No active or queued downloads to cancel');
+            emit(currentState.copyWith(lastUpdated: DateTime.now()));
+            return;
+          }
+          newState = DownloadState.cancelled;
+          operation = 'Cancelling all downloads';
+        case BulkAction.clearCompleted:
+          targets = currentState.downloads
+              .where((d) => d.state == DownloadState.completed)
+              .toList();
+          if (targets.isEmpty) {
+            _logger.i('DownloadBloc: No completed downloads to clear');
+            emit(currentState.copyWith(lastUpdated: DateTime.now()));
+            return;
+          }
+          emit(DownloadProcessing(
+            downloads: currentState.downloads,
+            settings: currentState.settings,
+            operation: 'Clearing completed downloads',
+            lastUpdated: currentState.lastUpdated,
+          ));
+          for (final d in targets) {
+            await _userDataRepository.deleteDownloadStatus(d.contentId);
+          }
+          add(const DownloadRefreshEvent());
+          _logger.i('DownloadBloc: Cleared ${targets.length} completed downloads');
+          return;
+      }
+
+      emit(DownloadProcessing(
+        downloads: currentState.downloads,
+        settings: currentState.settings,
+        operation: operation,
+        lastUpdated: currentState.lastUpdated,
+      ));
+
+      for (final download in targets) {
+        if (newState == DownloadState.paused ||
+            newState == DownloadState.cancelled) {
+          _cancelDownloadTask(download.contentId);
+        }
+        final updated = download.copyWith(state: newState, endTime: newState == DownloadState.queued ? null : DateTime.now());
+        await _userDataRepository.saveDownloadStatus(updated);
+      }
+
+      add(const DownloadRefreshEvent());
+      if (event.action == BulkAction.resumeAll) await _processQueue();
+
+      _logger.i('DownloadBloc: Bulk action ${event.action} completed');
+    } catch (e, stackTrace) {
+      _logger.e('DownloadBloc: Error in bulk action ${event.action}',
+          error: e, stackTrace: stackTrace);
+      emit(DownloadError(
+        message: _getLocalizedString(
+          (l10n) => l10n.failedToPauseAllDownloads(e.toString()),
+          'Bulk action failed: ${e.toString()}',
+        ),
+        errorType: _determineErrorType(e),
+        previousState: currentState,
+        stackTrace: stackTrace,
+      ));
     }
   }
 
@@ -2456,259 +2378,55 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     DownloadSelectionActionEvent event,
     Emitter<DownloadBlocState> emit,
   ) async {
-    switch (event.action) {
-      case SelectionAction.selectItem:
-        if (event.contentId != null && event.isSelected != null) {
-          await _onSelectItem(
-            DownloadSelectItemEvent(event.contentId!, event.isSelected!),
-            emit,
-          );
-        }
-      case SelectionAction.selectAll:
-        await _onSelectAll(
-          DownloadSelectAllEvent(),
-          emit,
-        );
-      case SelectionAction.clearSelection:
-        await _onClearSelection(
-          DownloadClearSelectionEvent(),
-          emit,
-        );
-    }
-  }
-
-  /// Pause all active downloads
-  Future<void> _onPauseAll(
-    DownloadPauseAllEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
     final currentState = state;
     if (currentState is! DownloadLoaded) return;
 
     try {
-      _logger.i('DownloadBloc: Pausing all downloads');
+      _logger.i('DownloadBloc: Selection action ${event.action}');
 
-      emit(DownloadProcessing(
-        downloads: currentState.downloads,
-        settings: currentState.settings,
-        operation: 'Pausing all downloads',
-        lastUpdated: currentState.lastUpdated,
-      ));
+      switch (event.action) {
+        case SelectionAction.selectItem:
+          if (event.contentId == null || event.isSelected == null) return;
+          final updated = Set<String>.from(currentState.selectedItems);
+          if (event.isSelected!) {
+            updated.add(event.contentId!);
+          } else {
+            updated.remove(event.contentId!);
+          }
+          emit(currentState.copyWith(
+            selectedItems: updated,
+            lastUpdated: DateTime.now(),
+          ));
 
-      // Get all active downloads
-      final activeDownloads = currentState.activeDownloads;
+        case SelectionAction.selectAll:
+          final allIds = currentState.downloads.map((d) => d.contentId).toSet();
+          emit(currentState.copyWith(
+            selectedItems: allIds,
+            lastUpdated: DateTime.now(),
+          ));
 
-      if (activeDownloads.isEmpty) {
-        _logger.i('DownloadBloc: No active downloads to pause');
-        emit(currentState.copyWith(lastUpdated: DateTime.now()));
-        return;
+        case SelectionAction.clearSelection:
+          emit(currentState.copyWith(
+            selectedItems: const {},
+            lastUpdated: DateTime.now(),
+          ));
+
+        case SelectionAction.toggleSelectionMode:
+          emit(currentState.copyWith(
+            isSelectionMode: !currentState.isSelectionMode,
+            selectedItems: const {},
+            lastUpdated: DateTime.now(),
+          ));
       }
 
-      // Cancel all active download tasks
-      for (final download in activeDownloads) {
-        _cancelDownloadTask(download.contentId);
-
-        // Update status to paused
-        final updatedDownload = download.copyWith(
-          state: DownloadState.paused,
-          endTime: DateTime.now(),
-        );
-
-        await _userDataRepository.saveDownloadStatus(updatedDownload);
-      }
-
-      // Refresh downloads
-      add(const DownloadRefreshEvent());
-
-      _logger.i('DownloadBloc: Paused all downloads');
+      _logger.i('DownloadBloc: Selection action ${event.action} completed');
     } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error pausing all downloads',
+      _logger.e('DownloadBloc: Error in selection action',
           error: e, stackTrace: stackTrace);
-      emit(DownloadError(
-        message: _getLocalizedString(
-          (l10n) => l10n.failedToPauseAllDownloads(e.toString()),
-          'Failed to pause all downloads: ${e.toString()}',
-        ),
-        errorType: _determineErrorType(e),
-        previousState: currentState,
-        stackTrace: stackTrace,
-      ));
     }
   }
 
-  /// Resume all paused downloads
-  Future<void> _onResumeAll(
-    DownloadResumeAllEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Resuming all paused downloads');
-
-      emit(DownloadProcessing(
-        downloads: currentState.downloads,
-        settings: currentState.settings,
-        operation: 'Resuming all downloads',
-        lastUpdated: currentState.lastUpdated,
-      ));
-
-      // Get all paused downloads
-      final pausedDownloads = currentState.pausedDownloads;
-
-      if (pausedDownloads.isEmpty) {
-        _logger.i('DownloadBloc: No paused downloads to resume');
-        emit(currentState.copyWith(lastUpdated: DateTime.now()));
-        return;
-      }
-
-      // Update each paused download to queued
-      for (final download in pausedDownloads) {
-        final updatedDownload = download.copyWith(
-          state: DownloadState.queued,
-          startTime: DateTime.now(),
-          endTime: null,
-        );
-
-        await _userDataRepository.saveDownloadStatus(updatedDownload);
-      }
-
-      // Refresh downloads and process queue
-      add(const DownloadRefreshEvent());
-      await _processQueue();
-
-      _logger.i('DownloadBloc: Resumed all paused downloads');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error resuming all downloads',
-          error: e, stackTrace: stackTrace);
-      emit(DownloadError(
-        message: _getLocalizedString(
-          (l10n) => l10n.failedToResumeAllDownloads(e.toString()),
-          'Failed to resume all downloads: ${e.toString()}',
-        ),
-        errorType: _determineErrorType(e),
-        previousState: currentState,
-        stackTrace: stackTrace,
-      ));
-    }
-  }
-
-  /// Cancel all active downloads
-  Future<void> _onCancelAll(
-    DownloadCancelAllEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Cancelling all downloads');
-
-      emit(DownloadProcessing(
-        downloads: currentState.downloads,
-        settings: currentState.settings,
-        operation: 'Cancelling all downloads',
-        lastUpdated: currentState.lastUpdated,
-      ));
-
-      // Get all active and queued downloads
-      final activeDownloads = [
-        ...currentState.activeDownloads,
-        ...currentState.queuedDownloads
-      ];
-
-      if (activeDownloads.isEmpty) {
-        _logger.i('DownloadBloc: No active or queued downloads to cancel');
-        emit(currentState.copyWith(lastUpdated: DateTime.now()));
-        return;
-      }
-
-      // Cancel all active download tasks
-      for (final download in activeDownloads) {
-        _cancelDownloadTask(download.contentId);
-
-        // Update status to cancelled
-        final updatedDownload = download.copyWith(
-          state: DownloadState.cancelled,
-          endTime: DateTime.now(),
-        );
-
-        await _userDataRepository.saveDownloadStatus(updatedDownload);
-      }
-
-      // Refresh downloads
-      add(const DownloadRefreshEvent());
-
-      _logger.i('DownloadBloc: Cancelled all downloads');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error cancelling all downloads',
-          error: e, stackTrace: stackTrace);
-      emit(DownloadError(
-        message: _getLocalizedString(
-          (l10n) => l10n.failedToCancelAllDownloads(e.toString()),
-          'Failed to cancel all downloads: ${e.toString()}',
-        ),
-        errorType: _determineErrorType(e),
-        previousState: currentState,
-        stackTrace: stackTrace,
-      ));
-    }
-  }
-
-  /// Clear completed downloads
-  Future<void> _onClearCompleted(
-    DownloadClearCompletedEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Clearing completed downloads');
-
-      emit(DownloadProcessing(
-        downloads: currentState.downloads,
-        settings: currentState.settings,
-        operation: 'Clearing completed downloads',
-        lastUpdated: currentState.lastUpdated,
-      ));
-
-      // Get all completed downloads
-      final completedDownloads = currentState.completedDownloads;
-
-      if (completedDownloads.isEmpty) {
-        _logger.i('DownloadBloc: No completed downloads to clear');
-        emit(currentState.copyWith(lastUpdated: DateTime.now()));
-        return;
-      }
-
-      // Remove each completed download
-      for (final download in completedDownloads) {
-        await _userDataRepository.deleteDownloadStatus(download.contentId);
-      }
-
-      // Refresh downloads
-      add(const DownloadRefreshEvent());
-
-      _logger.i(
-          'DownloadBloc: Cleared ${completedDownloads.length} completed downloads');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error clearing completed downloads',
-          error: e, stackTrace: stackTrace);
-      emit(DownloadError(
-        message: _getLocalizedString(
-          (l10n) => l10n.failedToClearCompletedDownloads(e.toString()),
-          'Failed to clear completed downloads: ${e.toString()}',
-        ),
-        errorType: _determineErrorType(e),
-        previousState: currentState,
-        stackTrace: stackTrace,
-      ));
-    }
-  }
-
-  /// Convert completed download to PDF with background processing
+  /// Open downloaded content
   /// This handler triggers PDF conversion using PdfConversionService
   /// which handles splitting, notifications, and background processing
   Future<void> _onConvertToPdf(
@@ -3178,103 +2896,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
-  /// Handle toggle selection mode event
-  Future<void> _onToggleSelectionMode(
-    DownloadToggleSelectionModeEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-    emit(currentState.copyWith(
-      isSelectionMode: !currentState.isSelectionMode,
-      selectedItems: const {},
-      lastUpdated: DateTime.now(),
-    ));
-  }
-
-  /// Handle select item event
-  Future<void> _onSelectItem(
-    DownloadSelectItemEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i(
-          'DownloadBloc: Selecting item ${event.contentId}: ${event.isSelected}');
-
-      final updatedSelectedItems = Set<String>.from(currentState.selectedItems);
-      if (event.isSelected) {
-        updatedSelectedItems.add(event.contentId);
-      } else {
-        updatedSelectedItems.remove(event.contentId);
-      }
-
-      emit(currentState.copyWith(
-        selectedItems: updatedSelectedItems,
-        lastUpdated: DateTime.now(),
-      ));
-
-      _logger.i(
-          'DownloadBloc: Selected items count: ${updatedSelectedItems.length}');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error selecting item',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
-  /// Handle select all event
-  Future<void> _onSelectAll(
-    DownloadSelectAllEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Selecting all items in current tab');
-
-      // Get current tab's downloads (this would need to be passed or determined)
-      // For now, select all downloads
-      final allContentIds =
-          currentState.downloads.map((d) => d.contentId).toSet();
-
-      emit(currentState.copyWith(
-        selectedItems: allContentIds,
-        lastUpdated: DateTime.now(),
-      ));
-
-      _logger.i('DownloadBloc: Selected all ${allContentIds.length} items');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error selecting all items',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
-  /// Handle clear selection event
-  Future<void> _onClearSelection(
-    DownloadClearSelectionEvent event,
-    Emitter<DownloadBlocState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! DownloadLoaded) return;
-
-    try {
-      _logger.i('DownloadBloc: Clearing all selections');
-
-      emit(currentState.copyWith(
-        selectedItems: const {},
-        lastUpdated: DateTime.now(),
-      ));
-
-      _logger.i('DownloadBloc: All selections cleared');
-    } catch (e, stackTrace) {
-      _logger.e('DownloadBloc: Error clearing selections',
-          error: e, stackTrace: stackTrace);
-    }
-  }
-
   /// Handle bulk delete event
   Future<void> _onBulkDelete(
     DownloadBulkDeleteEvent event,
@@ -3342,22 +2963,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-      // Show result notification
-      if (currentState.settings.enableNotifications) {
-        if (failureCount == 0) {
-          await _notificationService.showDownloadCompleted(
-            contentId: 'bulk_delete',
-            title: 'bulkDeleteCompleted',
-            downloadPath: '',
-          );
-        } else {
-          await _notificationService.showDownloadError(
-            contentId: 'bulk_delete',
-            title: 'bulkDeletePartial',
-            error: 'Deleted $successCount items, failed $failureCount items',
-          );
-        }
-      }
+      // Skip notification for bulk ops — UI updates immediately via state emit
 
       _logger.i(
           'DownloadBloc: Bulk delete completed. Success: $successCount, Failures: $failureCount');

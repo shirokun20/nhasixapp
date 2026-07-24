@@ -75,9 +75,6 @@ class PdfConversionQueueManager {
     // Broadcast status update
     _broadcastStatus();
 
-    // Update notification for queued items
-    await _updateQueueNotification();
-
     // Start processing if not already running
     if (!_isProcessing) {
       await _processQueue();
@@ -101,26 +98,30 @@ class PdfConversionQueueManager {
 
       // Broadcast status
       _broadcastStatus();
-      
-      // Update queue notification immediately so the "waiting" notification disappears
-      // if there are no more items in the queue.
-      await _updateQueueNotification();
-
       try {
-        // Show progress notification with queue position
-        await _notificationService!.showPdfConversionQueued(
-          contentId: _currentTask!.contentId,
-          title: _currentTask!.title,
+        // Update group notification: starting
+        await _notificationService!.updatePdfGroupProgress(
           currentIndex: position,
           totalCount: totalItems,
+          progress: 0,
+          title: _currentTask!.title,
         );
 
-        // Perform actual conversion with progress tracking
+        // Perform actual conversion with group progress callback
+        final taskTitle = _currentTask!.title;
         await _conversionService!.convertToPdfInBackground(
           contentId: _currentTask!.contentId,
           title: _currentTask!.title,
           imagePaths: _currentTask!.imagePaths,
           sourceId: _currentTask!.sourceId,
+          onProgress: (progress, message) {
+            _notificationService?.updatePdfGroupProgress(
+              currentIndex: position,
+              totalCount: totalItems,
+              progress: progress,
+              title: taskTitle,
+            );
+          },
         );
 
         _logger?.i('✅ PDF conversion completed: ${_currentTask!.contentId}');
@@ -128,46 +129,27 @@ class PdfConversionQueueManager {
       } catch (e, stackTrace) {
         _logger?.e('❌ PDF conversion failed for ${_currentTask!.contentId}',
             error: e, stackTrace: stackTrace);
-        // Error notification already handled by PdfConversionService
-        // Continue processing queue despite error
+        // Show group error (non-fatal, queue continues)
+        _notificationService?.showPdfGroupError(
+          currentIndex: position,
+          totalCount: totalItems,
+          error: e.toString(),
+        );
       }
 
       _currentTask = null;
       _broadcastStatus();
-      await _updateQueueNotification();
     }
 
     _isProcessing = false;
     _logger?.i(
         '🏁 PDF conversion queue completed. Total processed: $_totalProcessed');
 
-    // Show summary notification if multiple items were processed
-    if (_totalProcessed > 1) {
-      await _notificationService!.showPdfBatchCompleted(
-        count: _totalProcessed,
-      );
-      // Reset counter for next batch
-      _totalProcessed = 0;
-    }
+    // Show summary notification
+    await _notificationService!.showPdfGroupCompleted(_totalProcessed);
+    _totalProcessed = 0;
 
     _broadcastStatus();
-  }
-
-  /// Update notification for queued items
-  Future<void> _updateQueueNotification() async {
-    if (_queue.isEmpty) {
-      // Clear queue notification if any
-      await _notificationService?.clearPdfQueueNotification();
-      return;
-    }
-
-    final queuedCount = _queue.length;
-    final queuedTitles = _queue.take(3).map((t) => t.title).join(', ');
-
-    await _notificationService?.showPdfQueueStatus(
-      queuedCount: queuedCount,
-      queuedTitles: queuedTitles,
-    );
   }
 
   /// Broadcast current queue status to listeners
@@ -181,7 +163,7 @@ class PdfConversionQueueManager {
   Future<void> cancelAll() async {
     _logger?.w('🚫 Cancelling all queued PDF conversions');
     _queue.clear();
-    await _notificationService?.clearPdfQueueNotification();
+    await _notificationService?.cancelPdfGroup();
     _broadcastStatus();
   }
 

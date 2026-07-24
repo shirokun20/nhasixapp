@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/entities.dart';
 import '../../core/constants/text_style_const.dart';
-import '../../l10n/app_localizations.dart';
 import '../../core/constants/design_tokens.dart';
+import '../../l10n/app_localizations.dart';
 import '../blocs/download/download_bloc.dart';
 
 /// Widget for displaying download statistics and overall progress
@@ -16,6 +17,20 @@ class DownloadStatsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeDownloads = state.downloads
+        .where((d) => d.state == DownloadState.downloading)
+        .toList();
+    final completedDownloads = state.downloads
+        .where((d) => d.state == DownloadState.completed)
+        .toList();
+    final queuedDownloads =
+        state.downloads.where((d) => d.state == DownloadState.queued).toList();
+    final failedDownloads =
+        state.downloads.where((d) => d.state == DownloadState.failed).toList();
+    final totalProgress = _calcTotalProgress(activeDownloads);
+    final totalSpeed = activeDownloads.fold<double>(0, (s, d) => s + d.speed);
+    final totalSize = state.downloads.fold<int>(0, (s, d) => s + d.fileSize);
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -29,8 +44,7 @@ class DownloadStatsWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Overall progress - ONLY show if there are active downloads
-          if (state.activeDownloads.isNotEmpty) ...[
+          if (activeDownloads.isNotEmpty) ...[
             Row(
               children: [
                 Expanded(
@@ -45,7 +59,7 @@ class DownloadStatsWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
-                        value: state.totalProgress,
+                        value: totalProgress,
                         backgroundColor: Theme.of(context)
                             .colorScheme
                             .onSurface
@@ -59,7 +73,7 @@ class DownloadStatsWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  '${(state.totalProgress * 100).toInt()}%',
+                  '${(totalProgress * 100).toInt()}%',
                   style: TextStyleConst.headingLarge.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -68,8 +82,6 @@ class DownloadStatsWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-
-          // Stats grid
           Row(
             children: [
               Expanded(
@@ -87,7 +99,7 @@ class DownloadStatsWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.downloading,
                   label: AppLocalizations.of(context)!.active,
-                  value: state.activeDownloads.length.toString(),
+                  value: activeDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
@@ -97,7 +109,7 @@ class DownloadStatsWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.schedule,
                   label: AppLocalizations.of(context)!.queued,
-                  value: state.queuedDownloads.length.toString(),
+                  value: queuedDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.tertiary,
                 ),
               ),
@@ -107,46 +119,41 @@ class DownloadStatsWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.check_circle,
                   label: AppLocalizations.of(context)!.done,
-                  value: state.completedDownloads.length.toString(),
+                  value: completedDownloads.length.toString(),
                   color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
             ],
           ),
-
-          // Speed and size info
-          if (state.activeDownloads.isNotEmpty ||
-              state.totalDownloadedSize > 0) ...[
+          if (activeDownloads.isNotEmpty || totalSize > 0) ...[
             const SizedBox(height: 16),
             Row(
               children: [
-                if (state.totalDownloadSpeed > 0) ...[
+                if (totalSpeed > 0) ...[
                   Expanded(
                     child: _buildInfoRow(
                       context: context,
                       icon: Icons.speed,
                       label: AppLocalizations.of(context)!.speed,
-                      value: state.formattedTotalSpeed,
+                      value: _formatSpeed(totalSpeed),
                     ),
                   ),
                 ],
-                if (state.totalDownloadedSize > 0) ...[
-                  if (state.totalDownloadSpeed > 0) const SizedBox(width: 16),
+                if (totalSize > 0) ...[
+                  if (totalSpeed > 0) const SizedBox(width: 16),
                   Expanded(
                     child: _buildInfoRow(
                       context: context,
                       icon: Icons.storage,
                       label: AppLocalizations.of(context)!.download,
-                      value: state.formattedTotalSize,
+                      value: _formatSize(totalSize),
                     ),
                   ),
                 ],
               ],
             ),
           ],
-
-          // Failed downloads warning
-          if (state.failedDownloads.isNotEmpty) ...[
+          if (failedDownloads.isNotEmpty) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -173,18 +180,15 @@ class DownloadStatsWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       AppLocalizations.of(context)!.downloadsFailed(
-                          state.failedDownloads.length,
-                          state.failedDownloads.length == 1 ? '' : 's'),
+                          failedDownloads.length,
+                          failedDownloads.length == 1 ? '' : 's'),
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      // Switch to failed tab
-                      // This would need to be handled by the parent widget
-                    },
+                    onPressed: () {},
                     style: TextButton.styleFrom(
                       foregroundColor: Theme.of(context).colorScheme.error,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -201,8 +205,6 @@ class DownloadStatsWidget extends StatelessWidget {
               ),
             ),
           ],
-
-          // Processing indicator
           if (state.isProcessing) ...[
             const SizedBox(height: 16),
             Row(
@@ -234,6 +236,37 @@ class DownloadStatsWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double _calcTotalProgress(List<DownloadStatus> active) {
+    if (active.isEmpty) return 0.0;
+    final total = active.fold<int>(0, (s, d) => s + d.totalPages);
+    final done = active.fold<int>(0, (s, d) => s + d.downloadedPages);
+    return total == 0 ? 0.0 : done / total;
+  }
+
+  String _formatSpeed(double speed) {
+    if (speed <= 0) return '0 B/s';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    var v = speed;
+    var i = 0;
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
+    return '${v.toStringAsFixed(1)} ${units[i]}';
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes == 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var v = bytes.toDouble();
+    var i = 0;
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
+    return '${v.toStringAsFixed(1)} ${units[i]}';
   }
 
   Widget _buildStatCard({
