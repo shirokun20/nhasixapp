@@ -325,6 +325,13 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                 title: Text('${_selectedContentIds.length} selected',
                     style: TextStyleConst.titleLarge),
                 actions: [
+                  if (_selectedContentIds.length < _items.length)
+                    IconButton(
+                      icon: const Icon(Icons.select_all),
+                      onPressed: () => setState(() {
+                        _selectedContentIds.addAll(_items.map((c) => c.id));
+                      }),
+                    ),
                   if (_selectedContentIds.isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.delete),
@@ -373,6 +380,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                     ),
                     title: Text(widget.baseTitle, style: TextStyleConst.titleLarge),
                     actions: [
+                      IconButton(
+                        icon: const Icon(Icons.checklist),
+                        onPressed: () => setState(() { _isSelectionMode = true; }),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.search),
                         onPressed: () => setState(() => _showSearch = true),
