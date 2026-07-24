@@ -148,6 +148,8 @@ lib/
 - `2026-07-18-fix-performance-overheat`
 - `2026-07-18-hdoujin-source-integration`
 - `2026-07-18-notification-snackbar-audit-fix`
+- `2026-07-24-reader-download-overheat-fix`
+- `2026-07-24-add-mangafire-vrf-capture` — **REVERTED**: VRF capture via headless WebView menyebabkan jank/memory. Source di-set maintenance.
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
@@ -194,6 +196,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-24 | Codex | Revert MangaFire VRF + SearchScreen reset fix | Done | Revert `137a6c8c` (VRF capture -> jank/memory). Set mangafire maintenance. Archived `add-mangafire-vrf-capture` + `reader-download-overheat-fix`. Fix: SearchScreen reset now clears saved filter + pops to Home to trigger `_loadDefaultContent()`. |
 | 2026-07-20 | Claude Code | Reader fixes: chapter selector crash, CS scroll reset, prev/next 404, manhwaread double prefix | Done | **4 bug fixes**: (1) `_ReaderChapterSelector` crash — `Navigator.of(context).pop()` pake context stale dari BlocBuilder yg udah di-pop. Fix: ganti ke `ctx` builder. (2) CS scroll gak reset pas ganti chapter — `_syncControllersWithState` pake `_lastSyncedContentId` + post-frame callback. (3) Prev/next 404 — prioritas `chapterData.nextChapterId` yg isi raw URL. Balik ke pool `_allChapters` dulu. (4) ManhwaRead side-story double `/manhwa/` — 3 lapis: config regex, slug extraction, normalize template. Files: `reader_settings_widgets.dart`, `reader_screen.dart`, `reader_cubit.dart`, `manhwaread-config.json`, `generic_scraper_adapter.dart`. |
 | 2026-07-19 | Claude Code | Nicomanga config fix: detail tag selector via contains() + chapter id self + cache bypass, answer.md | Done | **Nicomanga** site HTML changed completely. Detail page: info fields restructured (.manga-info-item > .info-field-label/.info-field-value), author/genre/magazine text now **base64 encoded**. Reader unchanged. **Config v1.0.3->v1.1.0**: fixed detail selectors using `:contains()` + `transform: base64`, genreSearch URL `/g/{tag}.html` + `tagTransform: base64`. **Adapter**: added `tagTransform: "base64"` in `GenericScraperAdapter._resolvePattern()`. **Bug found**: config file pake `.manga-info-item:nth-child(N)` yg **tidak didukung `package:html`** → tags selalu kosong. Fix: ganti ke `:contains(Label)` yg custom parser `_selectAll` support. **Chapter id**: container `<a>` langsung, fix pake `selector: "self"`, `attribute: "href"` + chapter template `"{id}"` (absolute URL). **Detail cache**: `content_repository_impl` bypass list include `nicomanga`. **Tests**: 74/74 pass, +1 test for base64 encoding. **Files**: `nicomanga-config.json`, `generic_scraper_adapter.dart`, `generic_scraper_adapter_test.dart`, `content_repository_impl.dart`. |
 | 2026-07-18 | OpenCode | Code Quality Refactor — Phase 2 Complete + CS Go to First Page | Done | Phase 2 (91/91 tasks) complete. Verified all tasks, squashed 1 missed `debugPrint` in `image_cache_service.dart`. Plus: added "Go to First Page" button to `EndOfChapterOverlay` in CS mode via `onGoToFirstPage` callback → jumps to page 0. Files: `end_of_chapter_overlay.dart`, `reader_screen.dart`. Archived `code-quality-refactor-phase-2`. |

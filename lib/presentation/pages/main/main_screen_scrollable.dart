@@ -296,9 +296,10 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         }
       }
 
-      // No valid filter, clear search state
+      // No valid filter, clear search state and load default content
       _isShowingSearchResults = false;
       _currentSearchFilter = null;
+      _loadDefaultContent();
       setState(() {});
     } catch (e) {
       Logger().e('MainScreen: Error reloading search filter: $e');

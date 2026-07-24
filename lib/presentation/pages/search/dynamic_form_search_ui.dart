@@ -538,7 +538,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
     _logger.w('DynamicFormSearchUI: search filter saved but route cannot pop');
   }
 
-  void _onReset() {
+  Future<void> _onReset() async {
     for (final c in _textControllers.values) {
       c.clear();
     }
@@ -553,6 +553,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
         _tagChipValues[key] = [];
       }
     });
+    await getIt<UserDataRepository>().clearSearchFilter(widget.sourceId);
+    if (mounted && context.canPop()) {
+      context.pop(true);
+    }
   }
 
   bool _isAdvancedField(String name, SearchFormFieldConfig field) {
