@@ -452,14 +452,12 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
                 else if (widget.filePath != null)
                   'filePath': widget.filePath!,
                 'headers': widget.headers,
-                if (widget.targetWidth != null)
-                  'targetWidth': widget.targetWidth!,
+                if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
                 'staticOnly': widget.staticOnly,
                 'grayscale': widget.grayscale,
               },
               creationParamsCodec: const StandardMessageCodec(),
-              gestureRecognizers: const <Factory<
-                  OneSequenceGestureRecognizer>>{},
+              gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
             ),
           ),
         ],

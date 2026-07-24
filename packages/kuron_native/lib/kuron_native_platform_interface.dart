@@ -219,18 +219,10 @@ abstract class KuronNativePlatform extends PlatformInterface {
 
   /// Create headless WebView (no UI, no Activity) to execute JS and return result.
   /// Replicates Tachiyomi's getClearance() approach.
-  /// [captureDelayMs] — delay after onPageFinished before evaluating script.
-  /// [postScriptDelayMs] — delay after script completes before destroying WebView;
-  ///   allows `shouldInterceptRequest` to capture API calls triggered by script.
-  /// [captureUrlPattern] — if set, `shouldInterceptRequest` captures all URLs
-  ///   containing this substring; combined with JS result in returned JSON.
   Future<String?> headlessGetClearance({
     required String url,
     required String script,
     int timeoutMs = 10000,
-    int captureDelayMs = 0,
-    int postScriptDelayMs = 0,
-    String? captureUrlPattern,
   }) {
     throw UnimplementedError(
         'headlessGetClearance() has not been implemented.');
@@ -257,8 +249,7 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<Map<String, dynamic>?> getHeadlessClearance({
     required String url,
   }) {
-    throw UnimplementedError(
-        'getHeadlessClearance() has not been implemented.');
+    throw UnimplementedError('getHeadlessClearance() has not been implemented.');
   }
 
   /// Download binary data (images, files) using native OkHttp with DoH support.

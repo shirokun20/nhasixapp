@@ -136,7 +136,7 @@ class MockKuronNativePlatform
   }
 
   @override
-  Future<String?> headlessGetClearance({required String url, required String script, int timeoutMs = 10000, int captureDelayMs = 0, int postScriptDelayMs = 0, String? captureUrlPattern}) async => null;
+  Future<String?> headlessGetClearance({required String url, required String script, int timeoutMs = 10000}) async => null;
   @override
   Future<Map<String, dynamic>?> showCaptchaWebView({
     required String provider,

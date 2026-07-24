@@ -76,19 +76,13 @@ class KuronNativePlugin :
             result.error("INVALID_ARGS", "script is required", null); return
         }
         val timeoutMs = (call.argument<Int>("timeoutMs") ?: 10000).toLong()
-        val captureDelayMs = (call.argument<Int>("captureDelayMs") ?: 0).toLong()
-        val postScriptDelayMs = (call.argument<Int>("postScriptDelayMs") ?: 0).toLong()
-        val capturePattern = call.argument<String>("captureUrlPattern")
 
         Thread {
             val latch = CountDownLatch(1)
             var jsResult: String? = null
-            var webViewRef: android.webkit.WebView? = null
-            val capturedUrls = java.util.concurrent.ConcurrentLinkedQueue<String>()
 
             Handler(Looper.getMainLooper()).post {
                 val webView = android.webkit.WebView(context)
-                webViewRef = webView
                 with(webView.settings) {
                     javaScriptEnabled = true
                     domStorageEnabled = true
@@ -96,106 +90,24 @@ class KuronNativePlugin :
                     blockNetworkImage = true
                 }
                 webView.webViewClient = object : android.webkit.WebViewClient() {
-                    override fun shouldInterceptRequest(
-                        view: android.webkit.WebView?,
-                        request: android.webkit.WebResourceRequest?
-                    ): android.webkit.WebResourceResponse? {
-                        val urlStr = request?.url?.toString()
-                        if (urlStr != null && capturePattern != null && urlStr.contains(capturePattern)) {
-                            capturedUrls.add(urlStr)
-                        }
-                        // Inject XHR override into main-frame HTML
-                        if (urlStr != null && request?.isForMainFrame == true &&
-                            (urlStr.startsWith("https://mangafire.to/") || urlStr.startsWith("http://mangafire.to/"))) {
-                            try {
-                                val conn = java.net.URL(urlStr).openConnection() as java.net.HttpURLConnection
-                                conn.setRequestProperty("User-Agent", webView.settings.userAgentString)
-                                conn.connectTimeout = 8000
-                                conn.readTimeout = 8000
-                                val html = conn.inputStream.bufferedReader().readText()
-                                conn.disconnect()
-                                val injected = "(function(){" +
-                                    "if(window.__vrf_patched)return;window.__vrf_patched=1;" +
-                                    "var m=location.search.match(/__page=(\\d+)/);" +
-                                    "var tp=m?m[1]:null;" +
-                                    "var o=XMLHttpRequest.prototype.open;" +
-                                    "XMLHttpRequest.prototype.open=function(m,u){" +
-                                    "if(u.indexOf(\"/chapters?\")>-1){" +
-                                    "u=u.replace(/&limit=\\d+/,tp?\"&limit=200\":\"&limit=100\");" +
-                                    "if(tp)u=u.replace(/&page=\\d+/,tp);" +
-                                    "arguments[1]=u;}" +
-                                    "return o.apply(this,arguments);};})();"
-                                val modified = html.replace("</head>", "<script>$injected</script></head>")
-                                val stream = java.io.ByteArrayInputStream(modified.toByteArray())
-                                return android.webkit.WebResourceResponse("text/html", "UTF-8", stream)
-                            } catch (_: Exception) {}
-                        }
-                        return null
-                    }
-
                     override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            view?.evaluateJavascript(script) { value ->
-                                jsResult = value
-                                    ?.removeSurrounding("\"")
-                                    ?.takeUnless { it == "null" || it.isEmpty() }
-                                if (postScriptDelayMs > 0) {
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        webView.stopLoading()
-                                        webView.destroy()
-                                        latch.countDown()
-                                    }, postScriptDelayMs)
-                                } else {
-                                    webView.stopLoading()
-                                    webView.destroy()
-                                    latch.countDown()
-                                }
-                            }
-                        }, captureDelayMs)
+                        view?.evaluateJavascript(script) { value ->
+                            jsResult = value
+                                ?.removeSurrounding("\"")
+                                ?.takeUnless { it == "null" || it.isEmpty() }
+                            webView.stopLoading()
+                            webView.destroy()
+                            latch.countDown()
+                        }
                     }
                 }
                 webView.loadUrl(url)
             }
 
             try {
-                if (latch.await(timeoutMs + captureDelayMs + postScriptDelayMs, TimeUnit.MILLISECONDS)) {
-                    // Return both JS result and captured URLs as JSON
-                    val perfMap = try {
-                        if (jsResult != null) org.json.JSONObject(jsResult) else null
-                    } catch (_: org.json.JSONException) { null }
-                    val resultMap = org.json.JSONObject()
-                    if (perfMap != null) resultMap.put("performance", perfMap)
-                    val urlsArr = org.json.JSONArray()
-                    for (cu in capturedUrls) urlsArr.put(cu)
-                    if (urlsArr.length() > 0) {
-                        resultMap.put("capturedUrls", urlsArr)
-                        // Also store each captured URL's VRF as perf entries
-                        for (i in 0 until urlsArr.length()) {
-                            val cu = urlsArr.getString(i)
-                            try {
-                                val parsed = android.net.Uri.parse(cu)
-                                val vrf = parsed.getQueryParameter("vrf")
-                                if (vrf != null && (perfMap?.has(cu) == true)) {
-                                    // Build key from path + sorted params minus vrf
-                                    val path = parsed.path ?: ""
-                                    val paramKeys = parsed.queryParameterNames.filter { it != "vrf" }.sorted()
-                                    val paramBuf = paramKeys.joinToString("&") { "$it=${parsed.getQueryParameter(it) ?: ""}" }
-                                    val key = if (paramBuf.isEmpty()) path else "$path?$paramBuf"
-                                    resultMap.put(key, vrf)
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    }
-                    result.success(resultMap.toString())
+                if (latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    result.success(jsResult)
                 } else {
-                    // Timeout — destroy WebView to prevent leak
-                    val wv = webViewRef
-                    if (wv != null) {
-                        Handler(Looper.getMainLooper()).post {
-                            wv.stopLoading()
-                            wv.destroy()
-                        }
-                    }
                     result.success(null)
                 }
             } catch (e: Exception) {
