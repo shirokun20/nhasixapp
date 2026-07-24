@@ -1849,6 +1849,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   }
 
   /// Update download progress in real-time
+  DateTime _lastNotifUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _notifThrottle = Duration(milliseconds: 300);
+
   Future<void> _onProgressUpdate(
     DownloadProgressUpdateEvent event,
     Emitter<DownloadBlocState> emit,
@@ -1865,6 +1868,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       _logger.w('DownloadBloc: Ignoring regressive progress for ${event.contentId}');
       return;
     }
+
+    // Skip emit if downloadedPages unchanged (duplicate event from stream)
+    if (event.downloadedPages == cur.downloadedPages) return;
 
     final targetState = cur.state == DownloadState.queued
         ? DownloadState.downloading
@@ -1906,7 +1912,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
     }
 
-    _updateDownloadGroupNotification();
+    // Throttle notification update to max 1 per 300ms (platform channel is expensive)
+    final now = DateTime.now();
+    if (now.difference(_lastNotifUpdate) >= _notifThrottle) {
+      _lastNotifUpdate = now;
+      _updateDownloadGroupNotification();
+    }
 
     _logger.d(
         'DownloadBloc: Progress ${event.contentId}: ${event.downloadedPages}/${event.totalPages}');

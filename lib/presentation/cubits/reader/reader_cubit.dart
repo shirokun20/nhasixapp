@@ -1114,8 +1114,14 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
+  /// Throttle silent DB saves — skip if same page saved recently
+  int _lastSilentSavedPage = -1;
+  DateTime _lastSilentSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _silentSaveThrottle = Duration(seconds: 2);
+
   /// Update current page for continuous scroll (silent update without state emission)
   /// This prevents re-rendering all ListView items when page changes
+  /// Saves to DB only when page changes AND at most once per 2s.
   void updateCurrentPageSilent(int page) async {
     if (!isClosed && state.content == null) return;
 
@@ -1123,6 +1129,17 @@ class ReaderCubit extends Cubit<ReaderState> {
     final validPage = page.clamp(1, totalPages);
 
     _lastTrackedPage = validPage;
+
+    // Skip DB write if same page or too soon since last save
+    final now = DateTime.now();
+    if (validPage == _lastSilentSavedPage &&
+        now.difference(_lastSilentSaveAt) < _silentSaveThrottle) {
+      _logger.d(
+          '📍 Skipping silent DB save for $validPage (throttled, last saved $_lastSilentSavedPage)');
+      return;
+    }
+    _lastSilentSavedPage = validPage;
+    _lastSilentSaveAt = now;
 
     _logger.d(
         '📍 Silent page update for continuous scroll: $validPage (total: $totalPages)');
