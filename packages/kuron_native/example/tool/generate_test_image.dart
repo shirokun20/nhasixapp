@@ -14,10 +14,7 @@ void main() {
 
   // Panel 1
   _drawPanel(image, 30, 30, 740, 340);
-  allBubbles.addAll([
-    _bubble(80, 80, 280, 90),
-    _bubble(450, 100, 280, 85),
-  ]);
+  allBubbles.addAll([_bubble(80, 80, 280, 90), _bubble(450, 100, 280, 85)]);
 
   // Panel 2
   _drawPanel(image, 30, 390, 740, 300);
@@ -38,9 +35,33 @@ void main() {
 
   // Panel borders
   final black = img.ColorRgba8(0, 0, 0, 255);
-  img.drawRect(image, x1: 30, y1: 30, x2: 770, y2: 370, color: black, thickness: 2);
-  img.drawRect(image, x1: 30, y1: 390, x2: 770, y2: 690, color: black, thickness: 2);
-  img.drawRect(image, x1: 30, y1: 710, x2: 770, y2: 1070, color: black, thickness: 2);
+  img.drawRect(
+    image,
+    x1: 30,
+    y1: 30,
+    x2: 770,
+    y2: 370,
+    color: black,
+    thickness: 2,
+  );
+  img.drawRect(
+    image,
+    x1: 30,
+    y1: 390,
+    x2: 770,
+    y2: 690,
+    color: black,
+    thickness: 2,
+  );
+  img.drawRect(
+    image,
+    x1: 30,
+    y1: 710,
+    x2: 770,
+    y2: 1070,
+    color: black,
+    thickness: 2,
+  );
 
   // Bubble borders
   final blue = img.ColorRgba8(0, 100, 200, 255);
@@ -75,7 +96,6 @@ void main() {
   final outPath = '${outDir.path}/sample_manga.jpg';
   final jpeg = img.encodeJpg(image, quality: 90);
   File(outPath).writeAsBytesSync(jpeg);
-  print('Generated: $outPath (${jpeg.length} bytes, ${width}x$height)');
 }
 
 class _Bubble {
