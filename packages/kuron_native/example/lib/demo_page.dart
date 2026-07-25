@@ -29,7 +29,6 @@ class _DemoPageState extends State<DemoPage> {
   String _targetLang = 'Indonesia';
   bool _overlayVisible = false;
   bool _showDetection = false;
-  bool _showMosaic = false;
   bool _isManualMode = false;
   double _renderScaleX = 1.0, _renderScaleY = 1.0; // image→widget scale
 
@@ -140,7 +139,7 @@ Future<Uint8List?> _buildMosaicIsolate(
     _manualBoxes.clear();
     _overlayVisible = false;
     _showDetection = false;
-    _showMosaic = false;
+
     _isDrawing = false;
     _error = null;
   }
@@ -158,20 +157,6 @@ Future<Uint8List?> _buildMosaicIsolate(
     _showDetection = true;
     _overlayVisible = false;
     _logm('Detection done: ${_detectedBoxes.length} bubbles');
-    setState(() => _state = PipelineState.detected);
-  }
-
-  // ── Mosaic ────────────────────────────────────────────────
-
-  Future<void> _buildMosaic() async {
-    final boxes = _activeBoxes;
-    if (boxes.isEmpty) return;
-    _logm('Building mosaic from ${boxes.length} bubbles...');
-    setState(() => _state = PipelineState.buildingMosaic);
-    await Future.delayed(const Duration(milliseconds: 500));
-    _showMosaic = true;
-    _showDetection = false;
-    _logm('Mosaic ready');
     setState(() => _state = PipelineState.detected);
   }
 
@@ -336,7 +321,7 @@ Future<Uint8List?> _buildMosaicIsolate(
 
         _translation = PageTranslation(bubbles: bubbleTranslations);
         _overlayVisible = true;
-        _showMosaic = false;
+    
         _logm('Done! ${bubbleTranslations.where((b) => !b.isSkipped).length} bubbles translated');
         setState(() => _state = PipelineState.translated);
       } finally {
@@ -525,8 +510,6 @@ Future<Uint8List?> _buildMosaicIsolate(
             ))),
         if (_state == PipelineState.imageLoaded)
           FilledButton.tonalIcon(onPressed: _runDetection, icon: const Icon(Icons.search, size: 18), label: const Text('Detect')),
-        if (_state == PipelineState.detected && _detectedBoxes.isNotEmpty && !_isManualMode)
-          Padding(padding: const EdgeInsets.only(left: 4), child: FilledButton.tonalIcon(onPressed: _buildMosaic, icon: const Icon(Icons.grid_view, size: 18), label: const Text('Mosaic'))),
         if (_state == PipelineState.detected && boxes.isNotEmpty)
           Padding(padding: const EdgeInsets.only(left: 4), child: FilledButton.icon(onPressed: _runTranslation, icon: const Icon(Icons.translate, size: 18), label: const Text('Translate'))),
         Padding(
@@ -686,10 +669,6 @@ Future<Uint8List?> _buildMosaicIsolate(
                   );
                 }),
 
-              // Mosaic preview
-              if (_showMosaic && boxes.isNotEmpty)
-                Positioned(right: 4, bottom: 4, child: _MosaicCard(boxes: boxes, style: _style)),
-
               // Loading overlay
               if (_state == PipelineState.detecting || _state == PipelineState.buildingMosaic || _state == PipelineState.translating)
                 Positioned.fill(child: Container(color: Colors.black26, child: const Center(child: CircularProgressIndicator()))),
@@ -791,59 +770,6 @@ class _RectPainter extends CustomPainter {
   bool shouldRepaint(_RectPainter old) => rect != old.rect;
 }
 
-// ── Mosaic minimap ──────────────────────────────────────
-
-class _MosaicCard extends StatelessWidget {
-  final List<BubbleBox> boxes; final String style;
-  const _MosaicCard({required this.boxes, required this.style});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 150, constraints: const BoxConstraints(maxHeight: 280),
-      decoration: BoxDecoration(
-        color: Colors.black87, borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white12))),
-          child: const Row(children: [
-            Icon(Icons.grid_view, size: 12, color: Colors.white54),
-            SizedBox(width: 4),
-            Text('MOSAIC', style: TextStyle(fontSize: 9, color: Colors.white54)),
-          ]),
-        ),
-        Flexible(child: ListView(
-          shrinkWrap: true, padding: const EdgeInsets.all(4),
-          children: List.generate(boxes.length, (i) {
-            // ignore: unused_local_variable
-            final box = boxes[i];
-            return Padding(padding: const EdgeInsets.only(bottom: 2), child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(width: 16, height: 16,
-                  decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(2))),
-                  child: Center(child: Text('${i + 1}',
-                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
-                ),
-                const SizedBox(width: 4),
-                Expanded(child: Container(
-                  height: 16,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2)),
-                  child: Center(child: Text(
-                    'Chip ${i + 1}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 7, color: Colors.white70),
-                  )),
-                )),
-              ],
-            ));
-          }),
-        )),
-      ]),
-    );
-  }
-}
 
 // ── Provider test sheet ─────────────────────────────────
 
