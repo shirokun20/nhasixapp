@@ -33,9 +33,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     context.read<SourceCubit>().refreshSources();
 
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reloading search filters'),
+      SnackBar(
+        content: Text(l10n.reloadingSearchFilters),
       ),
     );
   }
@@ -46,7 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
       title: AppLocalizations.of(context)?.searchTitle ?? 'Search',
       actions: [
         IconButton(
-          tooltip: 'Reload search UI',
+          tooltip: AppLocalizations.of(context)!.reloadSearchUI,
           onPressed: () => _reloadSearchUi(
             context.read<SourceCubit>().state.activeSource?.id ?? 'nhentai',
           ),

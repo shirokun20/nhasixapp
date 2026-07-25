@@ -3791,6 +3791,211 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get checkAll => 'Check All';
+
+  @override
+  String get copyPath => 'Copy path';
+
+  @override
+  String get createCollection => 'Create collection';
+
+  @override
+  String daysAgoShort(Object days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String get deleteCollection => 'Delete collection';
+
+  @override
+  String deleteCollectionConfirm(Object name) {
+    return 'Delete \"$name\"? Item favorites stay saved, only the collection grouping is removed.';
+  }
+
+  @override
+  String deleteItems(Object count) {
+    return 'Delete $count items?';
+  }
+
+  @override
+  String deletingItems(Object count) {
+    return 'Deleting $count items...';
+  }
+
+  @override
+  String get doujinList => 'Doujin List';
+
+  @override
+  String get downloadGalleryRange => 'Choose gallery range';
+
+  @override
+  String get downloadGalleryRangeDesc => 'Uses original gallery page numbers.';
+
+  @override
+  String get downloadGalleryWide => 'Gallery-wide range';
+
+  @override
+  String get downloadGalleryWideDesc =>
+      'Uses original E-Hentai gallery page numbers.';
+
+  @override
+  String get downloadThisPart => 'Download this part';
+
+  @override
+  String get downloadThisPartDesc => 'Downloads only the selected part.';
+
+  @override
+  String get downloadWholeGallery => 'Download whole gallery';
+
+  @override
+  String get downloadWholeGalleryDesc => 'Queues every part in gallery order.';
+
+  @override
+  String get ehentaiOnly => 'Only available for E-Hentai galleries.';
+
+  @override
+  String get ehentaiOnlyDesc =>
+      'Gallery download options for whole-series and range are only available on E-Hentai.';
+
+  @override
+  String get ehentaiOnlyTitle => 'E-Hentai Only';
+
+  @override
+  String get genres => 'Genres';
+
+  @override
+  String get genreOptionsFailed => 'Genre options failed';
+
+  @override
+  String get gitHubRaw => 'GitHub raw';
+
+  @override
+  String get hide => 'Hide';
+
+  @override
+  String get liveTags => 'Live tags';
+
+  @override
+  String get loadingGenreOptions => 'Loading genre options';
+
+  @override
+  String monthsAgo(int months) {
+    return '${months}mo ago';
+  }
+
+  @override
+  String get openInExplorer => 'Open in explorer';
+
+  @override
+  String pageFailedDownload(Object page) {
+    return 'Page $page failed to download';
+  }
+
+  @override
+  String pageInputPage(Object page) {
+    return 'Page $page';
+  }
+
+  @override
+  String get pathCopied => 'Path copied to clipboard';
+
+  @override
+  String get pathsCopied => 'Paths copied';
+
+  @override
+  String get reloadSearchUI => 'Reload search UI';
+
+  @override
+  String get reloadingSearchFilters => 'Reloading search filters';
+
+  @override
+  String get remoteSource => 'Remote source';
+
+  @override
+  String removeOfflineChapters(Object count) {
+    return 'Remove $count offline chapters?';
+  }
+
+  @override
+  String get requestList => 'Request List';
+
+  @override
+  String get retryFetch => 'Retry fetch';
+
+  @override
+  String get selectMode => 'Select Mode';
+
+  @override
+  String get showAvailability => 'Show availability';
+
+  @override
+  String showingFirstChapters(Object count) {
+    return 'Showing first $count chapters. Go to detail page and use \"View All\" to see more.';
+  }
+
+  @override
+  String get sortAZ => 'A - Z';
+
+  @override
+  String get sortDirectionAZ => 'A - Z';
+
+  @override
+  String get sortDirectionZA => 'Z - A';
+
+  @override
+  String get sortNewToOld => 'New to Old';
+
+  @override
+  String get sortNewest => 'Newest';
+
+  @override
+  String get sortOldToNew => 'Old to New';
+
+  @override
+  String get sortOldest => 'Oldest';
+
+  @override
+  String get sortOptions => 'Sort Options';
+
+  @override
+  String get sortPagesAsc => 'Pages (Ascending)';
+
+  @override
+  String get sortPagesDesc => 'Pages (Descending)';
+
+  @override
+  String get sortZA => 'Z - A';
+
+  @override
+  String get specialSeriesDownload => 'Special Series Download';
+
+  @override
+  String get starOnGitHub => 'Star on GitHub';
+
+  @override
+  String get statusError => 'Error';
+
+  @override
+  String get statusIdle => 'Idle';
+
+  @override
+  String get statusLoading => 'Loading';
+
+  @override
+  String get statusLocal => 'Local';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String weeksAgo(int weeks) {
+    return '${weeks}w ago';
+  }
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
   String get noGenreListLoaded =>
       'No remote genre list loaded. Reload to sync from source.';
 
@@ -4435,12 +4640,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Collections updated successfully';
 
   @override
-  String get createCollection => 'Create collection';
-
-  @override
-  String get deleteCollection => 'Delete collection';
-
-  @override
   String get blacklistMatchWarning =>
       'This gallery matches blacklist rules. Cover/cards can be blurred in list views.';
 
@@ -4928,12 +5127,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String nChapters(int count) {
     return '$count chapters';
   }
-
-  @override
-  String get today => 'Today';
-
-  @override
-  String get yesterday => 'Yesterday';
 
   @override
   String get failedToLoadOptionsTap => 'Failed to load options. Tap to retry.';

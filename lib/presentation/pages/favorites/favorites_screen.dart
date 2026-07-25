@@ -908,7 +908,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             icon: Icon(Icons.create_new_folder,
                 color: Theme.of(context).colorScheme.onSurface),
             onPressed: _showCreateCollectionDialog,
-            tooltip: 'Create collection',
+            tooltip: AppLocalizations.of(context)!.createCollection,
           ),
           IconButton(
             icon: Icon(Icons.select_all,
@@ -1038,7 +1038,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     FavoriteCollection? collection,
   }) async {
     final title = collection == null
-        ? 'Create collection'
+        ? AppLocalizations.of(context)!.createCollection
         : AppLocalizations.of(context)!.renameCollection;
 
     TextEditingController? controller;
@@ -1140,7 +1140,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 color: Theme.of(sheetContext).colorScheme.error,
               ),
               title: Text(
-                'Delete collection',
+                AppLocalizations.of(context)!.deleteCollection,
                 style: TextStyleConst.withColor(
                   TextStyleConst.bodyMedium,
                   Theme.of(sheetContext).colorScheme.error,
@@ -1157,7 +1157,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         title: Text(
                             AppLocalizations.of(context)!.deleteCollection),
                         content: Text(
-                          'Delete "${collection.name}"? Item favorites stay saved, only the collection grouping is removed.',
+                          AppLocalizations.of(context)!.deleteCollectionConfirm(collection.name),
                         ),
                         actions: [
                           TextButton(

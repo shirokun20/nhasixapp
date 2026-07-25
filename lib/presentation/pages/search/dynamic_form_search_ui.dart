@@ -2724,8 +2724,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           Expanded(
                             child: Text(
                               isError
-                                  ? 'Genre options failed'
-                                  : 'Loading genre options',
+                                  ? AppLocalizations.of(context)!.genreOptionsFailed
+                                  : AppLocalizations.of(context)!.loadingGenreOptions,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
@@ -2734,10 +2734,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           _buildRemoteStateBadge(
                             colorScheme: colorScheme,
                             label: isLoading
-                                ? 'Loading'
+                                ? AppLocalizations.of(context)!.statusLoading
                                 : isError
-                                    ? 'Error'
-                                    : 'Idle',
+                                    ? AppLocalizations.of(context)!.statusError
+                                    : AppLocalizations.of(context)!.statusIdle,
                             filled: isLoading || isIdle,
                             isError: isError,
                           ),
@@ -2820,12 +2820,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 runSpacing: 8,
                 children: [
                   _buildGhostChip(
-                    label: 'Remote source',
+                    label: AppLocalizations.of(context)!.remoteSource,
                     colorScheme: colorScheme,
                     emphasized: true,
                   ),
                   _buildGhostChip(
-                    label: 'Retry fetch',
+                    label: AppLocalizations.of(context)!.retryFetch,
                     colorScheme: colorScheme,
                   ),
                 ],
@@ -2843,16 +2843,16 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 runSpacing: 8,
                 children: [
                   _buildGhostChip(
-                    label: 'Idle',
+                    label: AppLocalizations.of(context)!.statusIdle,
                     colorScheme: colorScheme,
                     emphasized: true,
                   ),
                   _buildGhostChip(
-                    label: 'GitHub raw',
+                    label: AppLocalizations.of(context)!.gitHubRaw,
                     colorScheme: colorScheme,
                   ),
                   _buildGhostChip(
-                    label: 'Live tags',
+                    label: AppLocalizations.of(context)!.liveTags,
                     colorScheme: colorScheme,
                   ),
                 ],
@@ -2873,7 +2873,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                     label: Text(
                       isError
                           ? AppLocalizations.of(context)!.retryAction
-                          : 'Reload genre',
+                          : AppLocalizations.of(context)!.reloadSearchUI,
                     ),
                   ),
                 ),

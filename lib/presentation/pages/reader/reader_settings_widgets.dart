@@ -315,8 +315,8 @@ class _ReaderChapterSelector extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                 child: Text(
-                  'Showing first ${chapters.length} chapters. '
-                  'Go back to detail page and use "View All" to see more.',
+                  AppLocalizations.of(context)!
+                      .showingFirstChapters(chapters.length),
                   style: TextStyleConst.bodySmall.copyWith(
                     color: Theme.of(context)
                         .colorScheme
@@ -453,7 +453,8 @@ class _ReaderChapterSelector extends StatelessWidget {
                       if (chapter.uploadDate != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          _formatChapterDate(chapter.uploadDate!),
+                          _formatChapterDate(
+                              context, chapter.uploadDate!),
                           style: TextStyleConst.bodySmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -534,14 +535,15 @@ class _ReaderChapterSelector extends StatelessWidget {
 
 // ───── Helper ─────
 
-String _formatChapterDate(DateTime date) {
+String _formatChapterDate(BuildContext context, DateTime date) {
   final now = DateTime.now();
   final diff = now.difference(date);
-  if (diff.inDays == 0) return 'Today';
-  if (diff.inDays == 1) return 'Yesterday';
-  if (diff.inDays < 7) return '${diff.inDays}d ago';
-  if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
-  if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+  final l10n = AppLocalizations.of(context)!;
+  if (diff.inDays == 0) return l10n.today;
+  if (diff.inDays == 1) return l10n.yesterday;
+  if (diff.inDays < 7) return l10n.daysAgoShort(diff.inDays);
+  if (diff.inDays < 30) return l10n.weeksAgo((diff.inDays / 7).floor());
+  if (diff.inDays < 365) return l10n.monthsAgo((diff.inDays / 30).floor());
   return '${date.day}/${date.month}/${date.year}';
 }
 

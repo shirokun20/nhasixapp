@@ -3689,6 +3689,209 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get checkAll => '检查全部';
+
+  @override
+  String get copyPath => '复制路径';
+
+  @override
+  String get createCollection => '创建合集';
+
+  @override
+  String daysAgoShort(Object days) {
+    return '$days天前';
+  }
+
+  @override
+  String get deleteCollection => '删除合集';
+
+  @override
+  String deleteCollectionConfirm(Object name) {
+    return '删除\"$name\"？项目收藏仍保留，仅移除收藏集分组。';
+  }
+
+  @override
+  String deleteItems(Object count) {
+    return '删除$count项？';
+  }
+
+  @override
+  String deletingItems(Object count) {
+    return '正在删除$count项...';
+  }
+
+  @override
+  String get doujinList => '同人列表';
+
+  @override
+  String get downloadGalleryRange => '选择画廊范围';
+
+  @override
+  String get downloadGalleryRangeDesc => '使用原始画廊页码。';
+
+  @override
+  String get downloadGalleryWide => '全画廊范围';
+
+  @override
+  String get downloadGalleryWideDesc => '使用原始 E-Hentai 画廊页码。';
+
+  @override
+  String get downloadThisPart => '下载此部分';
+
+  @override
+  String get downloadThisPartDesc => '仅下载所选部分。';
+
+  @override
+  String get downloadWholeGallery => '下载整个画廊';
+
+  @override
+  String get downloadWholeGalleryDesc => '按画廊顺序排队所有部分。';
+
+  @override
+  String get ehentaiOnly => '仅适用于 E-Hentai 画廊。';
+
+  @override
+  String get ehentaiOnlyDesc => '画廊下载选项（全系列和范围）仅在 E-Hentai 上可用。';
+
+  @override
+  String get ehentaiOnlyTitle => '仅限 E-Hentai';
+
+  @override
+  String get genres => '类型';
+
+  @override
+  String get genreOptionsFailed => '类型选项失败';
+
+  @override
+  String get gitHubRaw => 'GitHub raw';
+
+  @override
+  String get hide => '隐藏';
+
+  @override
+  String get liveTags => '实时标签';
+
+  @override
+  String get loadingGenreOptions => '加载类型选项';
+
+  @override
+  String monthsAgo(int months) {
+    return '$months个月前';
+  }
+
+  @override
+  String get openInExplorer => '在文件管理器中打开';
+
+  @override
+  String pageFailedDownload(Object page) {
+    return '第$page页下载失败';
+  }
+
+  @override
+  String pageInputPage(Object page) {
+    return '第$page页';
+  }
+
+  @override
+  String get pathCopied => '路径已复制到剪贴板';
+
+  @override
+  String get pathsCopied => '路径已复制';
+
+  @override
+  String get reloadSearchUI => '重新加载搜索界面';
+
+  @override
+  String get reloadingSearchFilters => '重新加载搜索筛选器';
+
+  @override
+  String get remoteSource => '远程源';
+
+  @override
+  String removeOfflineChapters(Object count) {
+    return '移除$count个离线章节？';
+  }
+
+  @override
+  String get requestList => '请求列表';
+
+  @override
+  String get retryFetch => '重试获取';
+
+  @override
+  String get selectMode => '选择模式';
+
+  @override
+  String get showAvailability => '查看可用性';
+
+  @override
+  String showingFirstChapters(Object count) {
+    return '显示前$count章。前往详情页并使用\"查看全部\"以查看更多。';
+  }
+
+  @override
+  String get sortAZ => 'A - Z';
+
+  @override
+  String get sortDirectionAZ => 'A - Z';
+
+  @override
+  String get sortDirectionZA => 'Z - A';
+
+  @override
+  String get sortNewToOld => '从新到旧';
+
+  @override
+  String get sortNewest => '最新';
+
+  @override
+  String get sortOldToNew => '从旧到新';
+
+  @override
+  String get sortOldest => '最旧';
+
+  @override
+  String get sortOptions => '排序选项';
+
+  @override
+  String get sortPagesAsc => '页数 (升序)';
+
+  @override
+  String get sortPagesDesc => '页数 (降序)';
+
+  @override
+  String get sortZA => 'Z - A';
+
+  @override
+  String get specialSeriesDownload => '特殊系列下载';
+
+  @override
+  String get starOnGitHub => '在 GitHub 上标星';
+
+  @override
+  String get statusError => '错误';
+
+  @override
+  String get statusIdle => '空闲';
+
+  @override
+  String get statusLoading => '加载中';
+
+  @override
+  String get statusLocal => '本地';
+
+  @override
+  String get today => '今天';
+
+  @override
+  String weeksAgo(int weeks) {
+    return '$weeks周前';
+  }
+
+  @override
+  String get yesterday => '昨天';
+
+  @override
   String get noGenreListLoaded => '远程类型列表尚未加载。重新加载以从源同步。';
 
   @override
@@ -4317,12 +4520,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get collectionsUpdatedSuccessfully => '合集更新成功';
 
   @override
-  String get createCollection => '创建合集';
-
-  @override
-  String get deleteCollection => '删除合集';
-
-  @override
   String get blacklistMatchWarning => '此画廊匹配黑名单规则。封面/卡片可在列表视图中模糊显示。';
 
   @override
@@ -4796,12 +4993,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String nChapters(int count) {
     return '$count 章';
   }
-
-  @override
-  String get today => '今天';
-
-  @override
-  String get yesterday => '昨天';
 
   @override
   String get failedToLoadOptionsTap => '加载选项失败。点击重试。';

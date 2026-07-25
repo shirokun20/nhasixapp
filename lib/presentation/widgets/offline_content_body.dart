@@ -188,7 +188,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   ),
                   const SizedBox(height: DesignTokens.spaceLg),
                   Text(
-                    'Sort Options',
+                    AppLocalizations.of(context)!.sortOptions,
                     style: TextStyleConst.titleLarge.copyWith(
                       color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
@@ -294,15 +294,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           controller: scrollController,
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            buildSortTile('A - Z', 'title', false, Icons.sort_by_alpha_rounded),
-            buildSortTile('Z - A', 'title', true, Icons.sort_by_alpha_rounded),
-            buildSortTile(
-                'New to Old', 'created_at', true, Icons.new_releases_rounded),
-            buildSortTile(
-                'Old to New', 'created_at', false, Icons.history_rounded),
-            buildSortTile('Pages (Ascending)', 'total_pages', false,
+            buildSortTile(AppLocalizations.of(context)!.sortAZ, 'title', false, Icons.sort_by_alpha_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortZA, 'title', true, Icons.sort_by_alpha_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortNewToOld, 'created_at', true, Icons.new_releases_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortOldToNew, 'created_at', false, Icons.history_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortPagesAsc, 'total_pages', false,
                 Icons.format_list_numbered_rounded),
-            buildSortTile('Pages (Descending)', 'total_pages', true,
+            buildSortTile(AppLocalizations.of(context)!.sortPagesDesc, 'total_pages', true,
                 Icons.format_list_numbered_rtl_rounded),
           ],
         );
@@ -315,7 +313,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       onPressed: _showSortFilterModal,
       icon: const Icon(Icons.sort),
       label: Text(
-        'Sort',
+        AppLocalizations.of(context)!.sortBy,
         style: TextStyleConst.buttonMedium,
       ),
       elevation: DesignTokens.elevationLg,
@@ -462,7 +460,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               const SizedBox(width: 8),
               _buildFilterChip(
                 context,
-                label: 'Local',
+                label: AppLocalizations.of(context)!.statusLocal,
                 isSelected: selectedSourceId == 'local',
                 onSelected: (selected) {
                   if (selected) _offlineSearchCubit.filterBySource('local');
@@ -1014,7 +1012,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.copy_all_rounded),
-                    tooltip: 'Copy all paths',
+                    tooltip: AppLocalizations.of(context)!.copyPath,
                     onPressed: () {
                       Clipboard.setData(
                         ClipboardData(
@@ -1024,7 +1022,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         ),
                       );
                       ScaffoldMessenger.of(parentContext).showSnackBar(
-                        const SnackBar(content: Text('Paths copied')),
+                      SnackBar(content: Text(AppLocalizations.of(parentContext)!.pathsCopied)),
                       );
                     },
                   ),
@@ -1084,21 +1082,21 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.copy_rounded, size: 18),
-                                tooltip: 'Copy path',
+                                tooltip: AppLocalizations.of(context)!.copyPath,
                                 onPressed: () {
                                   Clipboard.setData(
                                       ClipboardData(text: entry.path));
                                   ScaffoldMessenger.of(parentContext)
                                       .showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Path copied')),
+                                    SnackBar(
+                                        content: Text(AppLocalizations.of(parentContext)!.pathCopied)),
                                   );
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.open_in_new_rounded,
                                     size: 18),
-                                tooltip: 'Open in explorer',
+                                tooltip: AppLocalizations.of(context)!.openInExplorer,
                                 onPressed: () => OpenFile.open(entry.path),
                               ),
                             ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/config/config_models.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
+import 'package:nhasixapp/core/config/config_models.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// A dynamic sorting widget that adapts based on [SortingConfig].
 ///
@@ -139,7 +140,7 @@ class DynamicSortingWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  config.messages.dropdownLabel ?? 'Sort by',
+                  config.messages.dropdownLabel ?? AppLocalizations.of(context)!.sortBy,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

@@ -61,16 +61,16 @@ class _FailedPageCard extends StatelessWidget {
             Icon(Icons.cloud_off_rounded,
                 size: 48, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 12),
-            Text('Page $pageNumber failed to download',
+            Text(AppLocalizations.of(context)!.pageFailedDownload(pageNumber),
                 style: TextStyleConst.titleSmall),
             const SizedBox(height: 4),
-            Text('Tap to retry', style: TextStyleConst.bodySmall),
+            Text(AppLocalizations.of(context)!.tapToRetry, style: TextStyleConst.bodySmall),
             if (canRetry)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: FilledButton.tonalIcon(
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Retry'),
+                  label: Text(AppLocalizations.of(context)!.retry),
                   onPressed: onRetry,
                 ),
               ),

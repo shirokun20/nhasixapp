@@ -231,7 +231,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                     onPressed: () => context
                         .read<DownloadBloc>()
                         .add(const DownloadSelectionActionEvent(SelectionAction.selectAll)),
-                    tooltip: 'Select All',
+                    tooltip: AppLocalizations.of(context)!.selectAll,
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear),
@@ -283,7 +283,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 onPressed: () => context
                     .read<DownloadBloc>()
                     .add(const DownloadSelectionActionEvent(SelectionAction.toggleSelectionMode)),
-                tooltip: 'Select Mode',
+                tooltip: AppLocalizations.of(context)!.selectMode,
               ),
               PopupMenuButton<String>(
                 icon: Icon(

@@ -649,11 +649,12 @@ class DownloadButtonWidget extends StatelessWidget {
         _startDownload(context);
         return;
       case EhentaiDownloadStrategyKind.galleryRange:
+        final gL10n = AppLocalizations.of(context)!;
         _showRangeSelector(
           context,
           content,
-          scopeTitle: 'Gallery-wide range',
-          scopeDescription: 'Uses original E-Hentai gallery page numbers.',
+          scopeTitle: gL10n.downloadGalleryWide,
+          scopeDescription: gL10n.downloadGalleryWideDesc,
         );
         return;
       case EhentaiDownloadStrategyKind.partRange:

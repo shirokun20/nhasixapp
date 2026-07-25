@@ -234,7 +234,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                   Icon(Icons.star, size: 16, color: cs.onPrimary),
                   const SizedBox(width: 6),
                   Text(
-                    'Star on GitHub',
+                    l10n!.starOnGitHub,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

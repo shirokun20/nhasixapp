@@ -1058,7 +1058,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     Text(
                       supportsEhentaiGalleryDownload
                           ? l10n.download
-                          : 'Special Series Download',
+                          : l10n.specialSeriesDownload,
                       style: TextStyleConst.labelLarge.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w800,
@@ -1068,7 +1068,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                     Text(
                       supportsEhentaiGalleryDownload
                           ? '${l10n.downloadAll} • ${l10n.downloadRange}'
-                          : 'Only available for E-Hentai galleries.',
+                          : l10n.ehentaiOnly,
                       style: TextStyleConst.bodySmall.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
@@ -1113,7 +1113,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
               child: OutlinedButton.icon(
                 onPressed: () => _showUnsupportedGalleryDownloadAlert(context),
                 icon: const Icon(Icons.info_outline_rounded),
-                label: const Text('Show availability'),
+                label: Text(l10n.showAvailability),
                 style: OutlinedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -1139,17 +1139,16 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
   }
 
   void _showUnsupportedGalleryDownloadAlert(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('E-Hentai Only'),
-        content: const Text(
-          'Gallery download options for whole-series and range are only available on E-Hentai.',
-        ),
+        title: Text(l10n.ehentaiOnlyTitle),
+        content: Text(l10n.ehentaiOnlyDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(AppLocalizations.of(context)!.ok),
+            child: Text(l10n.ok),
           ),
         ],
       ),

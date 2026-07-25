@@ -195,7 +195,7 @@ class _GlobalDownloadProgressWidgetState
                   setState(() => _dismissed = true);
                   _slideController.reverse();
                 },
-                tooltip: 'Hide',
+                tooltip: AppLocalizations.of(context)!.hide,
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(8),
               ),
@@ -241,7 +241,7 @@ class _GlobalDownloadProgressWidgetState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      download.title ?? 'Download',
+                      download.title ?? AppLocalizations.of(context)!.download,
                       style: TextStyleConst.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,
@@ -318,7 +318,7 @@ class _GlobalDownloadProgressWidgetState
                       });
                       _slideController.reverse();
                     },
-                    tooltip: 'Hide',
+                    tooltip: AppLocalizations.of(context)!.hide,
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.all(8),
                   ),

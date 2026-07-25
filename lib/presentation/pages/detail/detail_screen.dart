@@ -986,6 +986,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
@@ -996,7 +997,7 @@ class _DetailScreenState extends State<DetailScreen> {
           builder: (context, _) => Row(
             children: [
               _buildMangaFireTypeChip(
-                label: 'Chapters',
+                label: l10n.chapters,
                 value: 'Chapter',
                 icon: Icons.menu_book,
                 colorScheme: colorScheme,
@@ -1374,8 +1375,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final isLoginError = state.errorType == 'login_required';
     final l10n = AppLocalizations.of(context)!;
     return DetailErrorView(
-      headerTitle: isLoginError ? 'Authentication Required' : l10n.error,
-      errorTitle: isLoginError ? 'Login Required' : l10n.failedToLoadContent,
+      headerTitle: isLoginError ? l10n.loginRequired : l10n.error,
+      errorTitle: isLoginError ? l10n.loginRequired : l10n.failedToLoadContent,
       errorMessage: isLoginError
           ? l10n.loginRequiredForContent
           : ErrorMessageUtils.getFriendlyErrorMessage(state.error, l10n),

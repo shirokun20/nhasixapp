@@ -6522,6 +6522,372 @@ abstract class AppLocalizations {
   /// **'Error parsing URL: {url}'**
   String errorParsingUrl(String url);
 
+  /// No description provided for @checkAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Check All'**
+  String get checkAll;
+
+  /// No description provided for @copyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get copyPath;
+
+  /// No description provided for @createCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Create collection'**
+  String get createCollection;
+
+  /// No description provided for @daysAgoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d ago'**
+  String daysAgoShort(Object days);
+
+  /// No description provided for @deleteCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get deleteCollection;
+
+  /// No description provided for @deleteCollectionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? Item favorites stay saved, only the collection grouping is removed.'**
+  String deleteCollectionConfirm(Object name);
+
+  /// No description provided for @deleteItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} items?'**
+  String deleteItems(Object count);
+
+  /// No description provided for @deletingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting {count} items...'**
+  String deletingItems(Object count);
+
+  /// No description provided for @doujinList.
+  ///
+  /// In en, this message translates to:
+  /// **'Doujin List'**
+  String get doujinList;
+
+  /// No description provided for @downloadGalleryRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose gallery range'**
+  String get downloadGalleryRange;
+
+  /// No description provided for @downloadGalleryRangeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses original gallery page numbers.'**
+  String get downloadGalleryRangeDesc;
+
+  /// No description provided for @downloadGalleryWide.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery-wide range'**
+  String get downloadGalleryWide;
+
+  /// No description provided for @downloadGalleryWideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses original E-Hentai gallery page numbers.'**
+  String get downloadGalleryWideDesc;
+
+  /// No description provided for @downloadThisPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Download this part'**
+  String get downloadThisPart;
+
+  /// No description provided for @downloadThisPartDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads only the selected part.'**
+  String get downloadThisPartDesc;
+
+  /// No description provided for @downloadWholeGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Download whole gallery'**
+  String get downloadWholeGallery;
+
+  /// No description provided for @downloadWholeGalleryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Queues every part in gallery order.'**
+  String get downloadWholeGalleryDesc;
+
+  /// No description provided for @ehentaiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only available for E-Hentai galleries.'**
+  String get ehentaiOnly;
+
+  /// No description provided for @ehentaiOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery download options for whole-series and range are only available on E-Hentai.'**
+  String get ehentaiOnlyDesc;
+
+  /// No description provided for @ehentaiOnlyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'E-Hentai Only'**
+  String get ehentaiOnlyTitle;
+
+  /// No description provided for @genres.
+  ///
+  /// In en, this message translates to:
+  /// **'Genres'**
+  String get genres;
+
+  /// No description provided for @genreOptionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre options failed'**
+  String get genreOptionsFailed;
+
+  /// No description provided for @gitHubRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub raw'**
+  String get gitHubRaw;
+
+  /// No description provided for @hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hide;
+
+  /// No description provided for @liveTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tags'**
+  String get liveTags;
+
+  /// No description provided for @loadingGenreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading genre options'**
+  String get loadingGenreOptions;
+
+  /// No description provided for @monthsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{months}mo ago'**
+  String monthsAgo(int months);
+
+  /// No description provided for @openInExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in explorer'**
+  String get openInExplorer;
+
+  /// No description provided for @pageFailedDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} failed to download'**
+  String pageFailedDownload(Object page);
+
+  /// No description provided for @pageInputPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}'**
+  String pageInputPage(Object page);
+
+  /// No description provided for @pathCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Path copied to clipboard'**
+  String get pathCopied;
+
+  /// No description provided for @pathsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Paths copied'**
+  String get pathsCopied;
+
+  /// No description provided for @reloadSearchUI.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload search UI'**
+  String get reloadSearchUI;
+
+  /// No description provided for @reloadingSearchFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reloading search filters'**
+  String get reloadingSearchFilters;
+
+  /// No description provided for @remoteSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote source'**
+  String get remoteSource;
+
+  /// No description provided for @removeOfflineChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {count} offline chapters?'**
+  String removeOfflineChapters(Object count);
+
+  /// No description provided for @requestList.
+  ///
+  /// In en, this message translates to:
+  /// **'Request List'**
+  String get requestList;
+
+  /// No description provided for @retryFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry fetch'**
+  String get retryFetch;
+
+  /// No description provided for @selectMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Mode'**
+  String get selectMode;
+
+  /// No description provided for @showAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Show availability'**
+  String get showAvailability;
+
+  /// No description provided for @showingFirstChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing first {count} chapters. Go to detail page and use \"View All\" to see more.'**
+  String showingFirstChapters(Object count);
+
+  /// No description provided for @sortAZ.
+  ///
+  /// In en, this message translates to:
+  /// **'A - Z'**
+  String get sortAZ;
+
+  /// No description provided for @sortDirectionAZ.
+  ///
+  /// In en, this message translates to:
+  /// **'A - Z'**
+  String get sortDirectionAZ;
+
+  /// No description provided for @sortDirectionZA.
+  ///
+  /// In en, this message translates to:
+  /// **'Z - A'**
+  String get sortDirectionZA;
+
+  /// No description provided for @sortNewToOld.
+  ///
+  /// In en, this message translates to:
+  /// **'New to Old'**
+  String get sortNewToOld;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get sortNewest;
+
+  /// No description provided for @sortOldToNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Old to New'**
+  String get sortOldToNew;
+
+  /// No description provided for @sortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get sortOldest;
+
+  /// No description provided for @sortOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort Options'**
+  String get sortOptions;
+
+  /// No description provided for @sortPagesAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages (Ascending)'**
+  String get sortPagesAsc;
+
+  /// No description provided for @sortPagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages (Descending)'**
+  String get sortPagesDesc;
+
+  /// No description provided for @sortZA.
+  ///
+  /// In en, this message translates to:
+  /// **'Z - A'**
+  String get sortZA;
+
+  /// No description provided for @specialSeriesDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Series Download'**
+  String get specialSeriesDownload;
+
+  /// No description provided for @starOnGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Star on GitHub'**
+  String get starOnGitHub;
+
+  /// No description provided for @statusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get statusError;
+
+  /// No description provided for @statusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get statusIdle;
+
+  /// No description provided for @statusLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get statusLoading;
+
+  /// No description provided for @statusLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get statusLocal;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @weeksAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks}w ago'**
+  String weeksAgo(int weeks);
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
   /// No description provided for @noGenreListLoaded.
   ///
   /// In en, this message translates to:
@@ -7596,18 +7962,6 @@ abstract class AppLocalizations {
   /// **'Collections updated successfully'**
   String get collectionsUpdatedSuccessfully;
 
-  /// No description provided for @createCollection.
-  ///
-  /// In en, this message translates to:
-  /// **'Create collection'**
-  String get createCollection;
-
-  /// No description provided for @deleteCollection.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete collection'**
-  String get deleteCollection;
-
   /// No description provided for @blacklistMatchWarning.
   ///
   /// In en, this message translates to:
@@ -8387,18 +8741,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} chapters'**
   String nChapters(int count);
-
-  /// No description provided for @today.
-  ///
-  /// In en, this message translates to:
-  /// **'Today'**
-  String get today;
-
-  /// No description provided for @yesterday.
-  ///
-  /// In en, this message translates to:
-  /// **'Yesterday'**
-  String get yesterday;
 
   /// No description provided for @failedToLoadOptionsTap.
   ///

@@ -3810,6 +3810,213 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get checkAll => 'Periksa Semua';
+
+  @override
+  String get copyPath => 'Salin path';
+
+  @override
+  String get createCollection => 'Buat koleksi';
+
+  @override
+  String daysAgoShort(Object days) {
+    return '${days}hr yg lalu';
+  }
+
+  @override
+  String get deleteCollection => 'Hapus koleksi';
+
+  @override
+  String deleteCollectionConfirm(Object name) {
+    return 'Hapus \"$name\"? Favorit item tetap tersimpan, hanya pengelompokan koleksi yang dihapus.';
+  }
+
+  @override
+  String deleteItems(Object count) {
+    return 'Hapus $count item?';
+  }
+
+  @override
+  String deletingItems(Object count) {
+    return 'Menghapus $count item...';
+  }
+
+  @override
+  String get doujinList => 'Daftar Doujin';
+
+  @override
+  String get downloadGalleryRange => 'Pilih rentang galeri';
+
+  @override
+  String get downloadGalleryRangeDesc =>
+      'Menggunakan nomor halaman galeri asli.';
+
+  @override
+  String get downloadGalleryWide => 'Rentang seluruh galeri';
+
+  @override
+  String get downloadGalleryWideDesc =>
+      'Menggunakan nomor halaman galeri E-Hentai asli.';
+
+  @override
+  String get downloadThisPart => 'Unduh bagian ini';
+
+  @override
+  String get downloadThisPartDesc => 'Mengunduh hanya bagian yang dipilih.';
+
+  @override
+  String get downloadWholeGallery => 'Unduh seluruh galeri';
+
+  @override
+  String get downloadWholeGalleryDesc =>
+      'Antrikan setiap bagian sesuai urutan galeri.';
+
+  @override
+  String get ehentaiOnly => 'Hanya tersedia untuk galeri E-Hentai.';
+
+  @override
+  String get ehentaiOnlyDesc =>
+      'Opsi unduh galeri untuk seluruh seri dan rentang hanya tersedia di E-Hentai.';
+
+  @override
+  String get ehentaiOnlyTitle => 'Khusus E-Hentai';
+
+  @override
+  String get genres => 'Genre';
+
+  @override
+  String get genreOptionsFailed => 'Opsi genre gagal';
+
+  @override
+  String get gitHubRaw => 'GitHub raw';
+
+  @override
+  String get hide => 'Sembunyikan';
+
+  @override
+  String get liveTags => 'Tag live';
+
+  @override
+  String get loadingGenreOptions => 'Memuat opsi genre';
+
+  @override
+  String monthsAgo(int months) {
+    return '${months}bln yg lalu';
+  }
+
+  @override
+  String get openInExplorer => 'Buka di explorer';
+
+  @override
+  String pageFailedDownload(Object page) {
+    return 'Halaman $page gagal diunduh';
+  }
+
+  @override
+  String pageInputPage(Object page) {
+    return 'Halaman $page';
+  }
+
+  @override
+  String get pathCopied => 'Path disalin ke clipboard';
+
+  @override
+  String get pathsCopied => 'Path disalin';
+
+  @override
+  String get reloadSearchUI => 'Muat ulang UI cari';
+
+  @override
+  String get reloadingSearchFilters => 'Memuat ulang filter';
+
+  @override
+  String get remoteSource => 'Sumber remote';
+
+  @override
+  String removeOfflineChapters(Object count) {
+    return 'Hapus $count chapter offline?';
+  }
+
+  @override
+  String get requestList => 'Daftar Permintaan';
+
+  @override
+  String get retryFetch => 'Ambil ulang';
+
+  @override
+  String get selectMode => 'Mode Pilih';
+
+  @override
+  String get showAvailability => 'Lihat ketersediaan';
+
+  @override
+  String showingFirstChapters(Object count) {
+    return 'Menampilkan $count chapter pertama. Buka halaman detail dan gunakan \"Lihat Semua\" untuk lebih.';
+  }
+
+  @override
+  String get sortAZ => 'A - Z';
+
+  @override
+  String get sortDirectionAZ => 'A - Z';
+
+  @override
+  String get sortDirectionZA => 'Z - A';
+
+  @override
+  String get sortNewToOld => 'Baru ke Lama';
+
+  @override
+  String get sortNewest => 'Terbaru';
+
+  @override
+  String get sortOldToNew => 'Lama ke Baru';
+
+  @override
+  String get sortOldest => 'Terlama';
+
+  @override
+  String get sortOptions => 'Opsi Urutan';
+
+  @override
+  String get sortPagesAsc => 'Halaman (Naik)';
+
+  @override
+  String get sortPagesDesc => 'Halaman (Turun)';
+
+  @override
+  String get sortZA => 'Z - A';
+
+  @override
+  String get specialSeriesDownload => 'Unduh Seri Khusus';
+
+  @override
+  String get starOnGitHub => 'Star di GitHub';
+
+  @override
+  String get statusError => 'Error';
+
+  @override
+  String get statusIdle => 'Menganggur';
+
+  @override
+  String get statusLoading => 'Memuat';
+
+  @override
+  String get statusLocal => 'Lokal';
+
+  @override
+  String get today => 'Hari ini';
+
+  @override
+  String weeksAgo(int weeks) {
+    return '${weeks}mg yg lalu';
+  }
+
+  @override
+  String get yesterday => 'Kemarin';
+
+  @override
   String get noGenreListLoaded =>
       'Daftar genre remote belum dimuat. Muat ulang untuk sinkronisasi.';
 
@@ -4453,12 +4660,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get collectionsUpdatedSuccessfully => 'Koleksi berhasil diperbarui';
 
   @override
-  String get createCollection => 'Buat koleksi';
-
-  @override
-  String get deleteCollection => 'Hapus koleksi';
-
-  @override
   String get blacklistMatchWarning =>
       'Galeri ini cocok dengan aturan daftar hitam. Sampul/kartu dapat diburamkan di tampilan daftar.';
 
@@ -4947,12 +5148,6 @@ class AppLocalizationsId extends AppLocalizations {
   String nChapters(int count) {
     return '$count bab';
   }
-
-  @override
-  String get today => 'Hari ini';
-
-  @override
-  String get yesterday => 'Kemarin';
 
   @override
   String get failedToLoadOptionsTap =>
