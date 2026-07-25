@@ -34,7 +34,7 @@ class DemoPage extends StatefulWidget {
 class _DemoPageState extends State<DemoPage> {
   PipelineState _state = PipelineState.welcome;
   String? _error;
-  String _style = 'natural';
+  String _style = 'genz';
   String _targetLang = 'Indonesia';
   bool _overlayVisible = false;
   bool _showDetection = false;
@@ -240,7 +240,7 @@ class _DemoPageState extends State<DemoPage> {
           '<|3|>SKIP\n\n'
           'RULES:\n'
           '- SFX-only bubbles → SKIP\n'
-          '- Keep honorifics (-san, -kun, -chan) as-is\n'
+          '- Lokalisasi honorifik (-san/-kun/-chan) sesuai target style\n'
           '- Translate ALL visible bubbles\n'
           '$styleInjection\n'
           'Return ONLY the <|N|> lines. No markdown, no thinking.';
@@ -421,22 +421,46 @@ class _DemoPageState extends State<DemoPage> {
 
   String _stylePrompt(String style) {
     switch (style) {
-      case 'literal':
-        return 'Translate accurately and literally. Preserve exact tone.';
-      case 'natural':
-        return 'Use natural, fluent Indonesian as a native speaker.';
-      case 'gaul':
-        return 'Use informal Indonesian slang: gue/lo instead of saya/kamu.';
-      case 'perwibuan':
-        return 'Gunakan bahasa Indonesia keraton: hamba, paduka, berkenan.';
-      case 'kasar':
-        return 'Gunakan kata kasar ringan: anjir, bangsat, goblok.';
-      case 'emakGosip':
-        return 'Gaya emak gosip: Eh tau nggak sih!, Ya ampun!';
-      case 'bapack':
-        return 'Gaya bapak-bapak: ngab, suhu, kopi dulu, mantap jaya.';
-      case 'betawi':
-        return 'Gaya Betawi: aye, elu, kagak. Plus pantun pendek.';
+      case 'genz':
+        return 'Gaya: anak muda Jakarta ngobrol santai.\n'
+            '- Gue/lo, bukan saya/kamu.\n'
+            '- Kata: sih, dong, nih, deh, aja, doang.\n'
+            '- Boleh: literally, wkwk, banger, ngeri, relate.\n'
+            '- JANGAN pake honorifik (-san/-kun/-chan). Lokalisasi!\n'
+            '- Buat kayak obrolan asli, BUKAN terjemahan kaku.\n'
+            'Contoh: "行こうぜ" → "Yuk, gas!"\n'
+            '"ちょっと待って" → "Wait bentar"\n'
+            '"知らないよ" → "Gak tau, dah."';
+      case 'action':
+        return 'Gaya: dialog petarungan yg keras dan nendang.\n'
+            '- Kalimat pendek-pendek. Tegas. Tanpa basa-basi.\n'
+            '- Kata seru: Hah!, Hragh!, Hadep!, Mati lo!, SIAL!\n'
+            '- JANGAN pake honorifik. Lokalisasi total.\n'
+            '- Gerakan: "Hragh!" "DOR!" "BRUK!"\n'
+            '- Kayak nonton anime Indo, keren tapi natural.\n'
+            '- Boleh pake: bacok, gebuk, hajar, babat.\n'
+            'Contoh: "これで終わりだ" → "Ini akhir lo!"\n'
+            '"お前を倒す" → "Gue bakal hajar lo."';
+      case 'romantis':
+        return 'Gaya: romantis, puitis, lembut dan dalam.\n'
+            '- Metafora ringan, puitis tapi gak lebay.\n'
+            '- JANGAN pake honorifik. Lokalisasi nama.\n'
+            '- "Aku"/"Kamu" lebih cocok dari "Gue"/"Lo".\n'
+            '- Contoh natural: "Bersamamu, aku utuh."\n'
+            '- Hindari kata terlalu formal.\n'
+            '- Bikin baper, bukan kaku.\n'
+            'Contoh: "好きだ" → "Aku suka kamu."\n'
+            '"ずっと一緒にいたい" → "Pengin selamanya sama kamu."';
+      case 'formal':
+        return 'Gaya: formal untuk narrator, misteri, horor.\n'
+            '- Bahasa Indonesia baku, rapi, enak dibaca.\n'
+            '- TIDAK kaku kayak koran/laporan.\n'
+            '- JANGAN pake honorifik. Lokalisasi nama.\n'
+            '- Cocok buat karakter bijak, adegan tegang.\n'
+            '- Narasi: mengalir, deskriptif, atmosferik.\n'
+            '- Dialog: natural-formal, sesuai konteks.\n'
+            'Contoh narasi: "Angin malam berbisik, membawa firasat buruk."\n'
+            'Contoh dialog: "Aku tidak percaya ini terjadi."';
       default:
         return '';
     }
