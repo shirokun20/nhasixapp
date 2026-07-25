@@ -7,8 +7,6 @@ import '../../di/service_locator.dart';
 import '../native_pdf_reader_service.dart';
 import 'notification_constants.dart';
 
-/// Handles notification action responses
-///
 /// Extracted from NotificationService to improve code organization
 /// and testability.
 class NotificationActionHandler {
@@ -34,7 +32,6 @@ class NotificationActionHandler {
   void Function(String contentId)? onOpenDownload;
   void Function(String? contentId)? onNavigateToDownloads;
 
-  /// Set callbacks after initialization
   void setCallbacks({
     void Function(String contentId)? onDownloadPause,
     void Function(String contentId)? onDownloadResume,
@@ -55,10 +52,6 @@ class NotificationActionHandler {
     }
   }
 
-  /// Handle notification action based on action ID
-  ///
-  /// Returns true if the action was handled, false otherwise.
-  /// [onCancelNotification] callback is called when download is cancelled.
   bool handleAction({
     required String? actionId,
     required String? payload,
@@ -229,7 +222,6 @@ class NotificationActionHandler {
     return false;
   }
 
-  /// Open PDF file using native in-app reader
   Future<void> _openPdfFile(String? filePath) async {
     _logger.i('🔍 _openPdfFile called with: "$filePath"');
 
@@ -259,7 +251,6 @@ class NotificationActionHandler {
     }
   }
 
-  /// Share PDF file using system share sheet
   Future<void> _sharePdfFile(String? filePath) async {
     _logger.i('📤 _sharePdfFile called with: "$filePath"');
 

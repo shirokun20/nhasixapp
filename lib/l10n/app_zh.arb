@@ -1,6 +1,6 @@
 {
   "@@locale": "zh",
-  "errorNetwork": "网络连接错误，请检查您的网络设置。",
+  "errorNetwork": "网络连接错误，检查网络设置。",
   "errorServer": "服务器暂时无法响应，请稍后再试。",
   "errorCloudflare": "检测到 Cloudflare 验证，请稍后重试。",
   "errorParsing": "数据解析失败，内容可能已失效。",
@@ -37,7 +37,7 @@
   "sourceAuthUsername": "用户名",
   "sourceAuthPassword": "密码",
   "sourceAuthCaptchaVerified": "CAPTCHA 已验证并安全保存",
-  "sourceAuthCaptchaRequired": "请先完成 CAPTCHA 以继续",
+  "sourceAuthCaptchaRequired": "完成 CAPTCHA 以继续",
   "sourceAuthCaptchaSolved": "CAPTCHA 已完成",
   "sourceAuthSolveCaptcha": "完成 CAPTCHA",
   "sourceAuthLoginButton": "登录",
@@ -73,7 +73,7 @@
   "about": "关于",
   "supportDeveloper": "支持开发者",
   "supportDeveloperSubtitle": "请我喝杯咖啡",
-  "donateMessage": "如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕",
+  "donateMessage": "支持开发 via QRIS 捐赠。谢谢！☕",
   "thankYouMessage": "感谢您的支持！",
   "facebookPage": "Doujin Stash 3",
   "facebookPageSubtitle": "点赞关注以支持我们",
@@ -138,7 +138,7 @@
   "soleFemale": "单女主",
   "soleMale": "单男主",
   "fullColor": "全彩",
-  "pleaseSetStorageLocation": "请先在设置中设置下载存储位置。",
+  "pleaseSetStorageLocation": "先在设置中设置下载存储位置。",
   "@pleaseSetStorageLocation": {
     "description": "下载存储位置未设置时的错误消息"
   },
@@ -154,7 +154,7 @@
   "noResultsFound": "未找到结果",
   "tryAdjustingFilters": "尝试调整筛选条件或使用其他关键词。",
   "tryDifferentKeywords": "尝试使用不同的关键词。",
-  "networkError": "网络连接错误，请检查网络设置。",
+  "networkError": "网络连接错误，检查网络设置。",
   "serverError": "服务器错误",
   "accessBlocked": "访问被阻止。正在尝试绕过保护...",
   "tooManyRequests": "请求过多。请稍等片刻后重试。",
@@ -447,9 +447,9 @@
   "serverUnavailable": "服务器当前不可用，请稍后再试。",
   "useBroaderSearchTerms": "使用更宽泛的搜索词",
   "welcomeTitle": "欢迎使用 Kuron！",
-  "welcomeMessage": "感谢您安装我们的应用。在开始之前，请注意：",
+  "welcomeMessage": "在开始之前：",
   "ispBlockingInfo": "🚨 ISP 封锁通知",
-  "ispBlockingMessage": "如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。",
+  "ispBlockingMessage": "被 ISP 屏蔽？使用 VPN 如 Cloudflare WARP 1.1.1.1。",
   "downloadWarp": "下载 1.1.1.1 VPN",
   "permissionsRequired": "所需权限",
   "storagePermissionInfo": "📁 存储：下载和离线保存内容所需",
@@ -459,7 +459,7 @@
   "storageGranted": "✅ 存储权限已授予",
   "notificationGranted": "✅ 通知权限已授予",
   "getStarted": "开始使用",
-  "pleaseGrantAllPermissions": "请授予所有必需的权限以继续",
+  "pleaseGrantAllPermissions": "授予必需的权限以继续",
   "permissionDenied": "权限被拒绝。某些功能可能无法正常工作。",
   "loadingFavorites": "正在加载收藏...",
   "errorLoadingFavorites": "加载收藏失败",
@@ -768,7 +768,7 @@
   "platformNotSupportedBody": "Kuron 专为 Android 设备设计。",
   "platformNotSupportedInstall": "请在 Android 设备上安装并运行此应用。",
   "storagePermissionRequired": "下载功能需要存储权限，请在设置中授予权限。",
-  "storagePermissionExplanation": "应用需要存储权限才能将文件下载到您的设备（Downloads/nhasix 文件夹）。",
+  "storagePermissionExplanation": "需要存储权限以下载文件。文件保存在 Downloads/nhasix 文件夹。",
   "grantPermission": "授予权限",
   "permissionRequired": "权限受限",
   "storagePermissionSettingsPrompt": "文件下载需要存储权限。请在应用设置中开启存储权限。",
@@ -808,7 +808,7 @@
     }
   },
   "go": "前往",
-  "validPageNumberError": "请输入有效的页码 (1 - {totalPages})",
+  "validPageNumberError": "输入页码 (1 - {totalPages})",
   "@validPageNumberError": {
     "placeholders": {
       "totalPages": {
@@ -1012,10 +1012,10 @@
   "filterCategoriesTitle": "筛选分类",
   "searchTitle": "搜索",
   "advancedSearchTitle": "高级搜索",
-  "enterSearchQueryHint": "输入搜索关键词 (例如 \"big breasts english\")",
+  "enterSearchQueryHint": "搜索 (例如 \"big breasts english\")",
   "popularSearchesTitle": "热门搜索",
   "recentSearchesTitle": "最近搜索",
-  "pressSearchButtonMessage": "点击搜索按钮以应用当前筛选条件",
+  "pressSearchButtonMessage": "按当前筛选条件搜索",
   "searchingMessage": "搜索中...",
   "resultsCountFormat": "{count} 个结果",
   "@resultsCountFormat": {
@@ -2463,9 +2463,9 @@
       }
     }
   },
-  "themeDescription": "选择您偏好的应用界面颜色主题。",
-  "imageQualityDescription": "选择下载的图片质量。质量越高，占用的存储和数据越多。",
-  "gridColumnsDescription": "选择竖屏模式下的内容列数。列数越多，显示的内容越多但尺寸越小。",
+  "themeDescription": "应用界面颜色主题。",
+  "imageQualityDescription": "下载图片质量。",
+  "gridColumnsDescription": "竖屏网格列数。",
   "gridPreview": "网格预览",
   "autoCleanupDescription": "管理阅读历史的自动清理以释放存储空间。",
   "testCacheClearing": "测试应用更新缓存清理",
@@ -2474,7 +2474,7 @@
   "forceClearCacheDescription": "手动清除所有图片缓存。",
   "runTest": "运行测试",
   "clearCacheButton": "清除缓存",
-  "disguiseModeDescription": "选择应用在启动器中的显示方式以保护隐私。",
+  "disguiseModeDescription": "启动器显示方式以保护隐私。",
   "applyingDisguiseMode": "正在应用伪装模式更改...",
   "disguiseDefault": "默认",
   "disguiseCalculator": "计算器",
@@ -2579,7 +2579,7 @@
   "downloadDirectoryReset": "下载目录已重置为默认",
   "backupNotFound": "未找到备份",
   "backupNotFoundMessage": "在默认位置未找到'nhasix'备份文件夹。您想选择包含备份的自定义文件夹吗？",
-  "selectFolder": "选择文件夹",
+  "selectFolder": "文件夹",
   "premiumFeature": "高级功能",
   "commentsMaintenance": "评论正在维护中",
   "estimatedRecovery": "预计恢复时间",
@@ -2682,7 +2682,7 @@
       }
     }
   },
-  "sourceSelectorSelectSource": "选择来源",
+  "sourceSelectorSelectSource": "来源",
   "sourceSelectorDescription": "切换提供方以更改首页、详情、搜索和阅读数据来源。",
   "sourceSelectorNoSourceSelected": "未选择来源",
   "sourceSelectorActiveSource": "当前来源",
@@ -2949,7 +2949,7 @@
   "searchExampleHint": "浪漫, 画师:示例, 12345",
   "refreshOnline": "在线刷新",
   "addRules": "添加规则",
-  "pickFromTags": "从标签中选择",
+  "pickFromTags": "从标签",
   "done": "完成",
   "uninstallSource": "卸载来源",
   "uninstallSourceTitle": "卸载来源",
@@ -2965,8 +2965,8 @@
       }
     }
   },
-  "chooseOneSource": "选择一个来源进行安装。",
-  "chooseMultipleSources": "选择一个或多个来源进行安装。",
+  "chooseOneSource": "安装来源",
+  "chooseMultipleSources": "安装来源",
   "installSelectedCount": "安装所选 ({count})",
   "@installSelectedCount": {
     "placeholders": {
@@ -3262,7 +3262,7 @@
   "dnsProvider": "DNS 提供商",
   "customConfiguration": "自定义配置",
   "aboutDoh": "关于 DNS-over-HTTPS",
-  "dohDescription": "DNS-over-HTTPS (DoH) 加密您的 DNS 查询，防止 ISP 和网络管理员监控您访问的网站。它还有助于绕过基于 DNS 的审查和地理限制。",
+  "dohDescription": "DNS-over-HTTPS 加密 DNS 查询以防止监控和绕过审查。",
   "dnsQueriesEncrypted": "所有 DNS 查询通过 HTTPS 加密",
   "enhancedPrivacy": "增强的隐私和安全性",
   "resetDnsConfirmation": "这将把 DNS 设置重置为系统默认值。是否继续？",
@@ -3519,7 +3519,7 @@
   "today": "今天",
   "yesterday": "昨天",
   "failedToLoadOptionsTap": "加载选项失败。点击重试。",
-  "chooseField": "选择{field}",
+  "chooseField": "{field}",
   "tapToLoadOptions": "点击加载选项",
   "nSelectedItems": "已选 {count} 项",
   "tapToChooseTags": "点击选择包含/排除标签",

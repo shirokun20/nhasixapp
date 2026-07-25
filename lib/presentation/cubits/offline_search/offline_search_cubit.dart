@@ -20,7 +20,6 @@ import '../../../core/utils/title_parser_utils.dart';
 
 part 'offline_search_state.dart';
 
-/// Cubit for searching offline/downloaded content
 class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   OfflineSearchCubit({
     required OfflineContentManager offlineContentManager,
@@ -44,7 +43,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       'offline_selected_source_filter';
   static const String _keyIsListMode = 'offline_is_list_mode';
 
-  /// Helper to calculate directory size recursively
   Future<int> _getDirectorySize(Directory directory) async {
     int size = 0;
     try {
@@ -59,7 +57,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return size;
   }
 
-  /// Calculate sizes for all content directories
   Future<Map<String, String>> _calculateContentSizes(
       List<Content> contents) async {
     final sizes = <String, String>{};
@@ -77,7 +74,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           sizes[content.id] =
               OfflineContentManager.formatStorageSize(sizeInBytes);
         } else {
-          // Fallback: Try to get directory from first image path if available
           if (content.imageUrls.isNotEmpty) {
             final firstImagePath = content.imageUrls.first;
             final file = File(firstImagePath);
@@ -90,7 +86,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           }
         }
       } catch (e) {
-        // Skip if unable to calculate size
         logInfo('Unable to calculate size for content ${content.id}: $e');
       }
     }
@@ -98,18 +93,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return sizes;
   }
 
-  /// Apply source filter
   Future<void> filterBySource(String? sourceId) async {
     logInfo('Filtering offline content by source: $sourceId');
 
-    // Save selected source filter to preferences
     if (sourceId != null) {
       await _prefs.setString(_keySelectedSourceFilter, sourceId);
     } else {
       await _prefs.remove(_keySelectedSourceFilter);
     }
 
-    // Update state with new filter immediately
     final currentState = state;
     String currentQuery = '';
 
@@ -134,7 +126,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       currentQuery = currentState.query;
     }
 
-    // Refresh content with new filter
     if (currentQuery.isNotEmpty) {
       await searchOfflineContent(currentQuery, sourceId: sourceId);
     } else {
@@ -142,13 +133,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Change sorting method
   Future<void> changeSorting(
       {required String orderBy, required bool descending}) async {
     final currentState = state;
     if (currentState is! OfflineSearchLoaded) return;
 
-    // Emit updated state with new sorting
     emit(currentState.copyWith(
       orderBy: orderBy,
       descending: descending,
@@ -156,7 +145,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       results: [],
     ));
 
-    // Reload content
     if (currentState.query.isNotEmpty) {
       await searchOfflineContent(currentState.query);
     } else {
@@ -175,10 +163,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   }
 
   /// Search in offline content - DATABASE ONLY (optimized)
-  ///
-  /// [query] - Search query string
-  /// [loadMore] - If true, appends to existing search results (pagination)
-  /// [sourceId] - Optional source filter override (if null, uses state)
   Future<void> searchOfflineContent(
     String query, {
     bool loadMore = false,
@@ -198,7 +182,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       const pageSize = 20;
 
-      // Determine effective source ID
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
         effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
@@ -212,7 +195,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         currentDescending = (state as OfflineSearchLoaded).descending;
       }
 
-      // If loading more, check current state
       if (loadMore) {
         final currentState = state;
         if (currentState is! OfflineSearchLoaded) {
@@ -234,20 +216,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           return;
         }
 
-        // Show loading indicator
         emit(currentState.copyWith(isLoadingMore: true));
       } else {
-        // Initial search
         logInfo(
             'Searching offline content for: $query (source: $effectiveSourceId)');
         emit(const OfflineSearchLoading());
       }
 
-      // Calculate offset based on current page
       final offset = loadMore ? _searchDbOffset : 0;
       if (!loadMore) _searchDbOffset = 0;
 
-      // Load page from database
       final searchResults = await _userDataRepository.searchDownloads(
         query: query,
         state: DownloadState.completed,
@@ -260,14 +238,12 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (isClosed) return;
 
-      // Get total count for pagination
       final totalCount = await _userDataRepository.getSearchCount(
         query: query,
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
       );
 
-      // Convert database results to Content objects
       final newContents = <Content>[];
       final newOfflineSizes = <String, String>{};
       final newSizeBytes = <String, int>{};
@@ -292,13 +268,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           downloadPath: downloadPath,
         );
 
-        if (firstImagePath == null) continue; // Skip if no images found
+        if (firstImagePath == null) continue;
 
         newContents.add(Content(
           sourceId: sourceId,
           id: contentId,
           title: title,
-          coverUrl: firstImagePath, // Use local first image as cover
+          coverUrl: firstImagePath,
           tags: [],
           artists: [],
           characters: [],
@@ -321,7 +297,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (isClosed) return;
 
-      // Merge with existing results if loading more
       final List<Content> finalResultsFlat;
       final Map<String, String> finalSizes;
       final int finalStorageUsage;
@@ -350,13 +325,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         itemSizes: _sizeBytesByContentId,
       );
 
-      // Calculate pagination metadata
       final currentPage = (finalResultsFlat.length / pageSize).ceil();
       final totalPages = (totalCount / pageSize).ceil();
       final hasMore = finalResultsFlat.length < totalCount;
 
       if (groupedResults.isEmpty && offset == 0) {
-        // Keep sourceId in empty state if we want to show filtered empty state
         emit(OfflineSearchEmpty(query: query));
         return;
       }
@@ -386,7 +359,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (isClosed) return;
       handleError(e, stackTrace, 'search offline content');
 
-      // If we were loading more, restore previous state
       if (loadMore && state is OfflineSearchLoaded) {
         emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
       } else {
@@ -397,7 +369,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
     }
 
-    // Save to search history if query is not empty and we didn't error out
     if (query.isNotEmpty && !loadMore) {
       try {
         await _userDataRepository.addSearchHistory(query);
@@ -407,7 +378,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Helper to find nhasix backup folder
   Future<String?> findNhasixBackupFolder() async {
     try {
       final downloadsDir = await getApplicationDocumentsDirectory();
@@ -446,20 +416,14 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
   /// Get all offline content from DATABASE (primary source)
   /// Falls back to file scan only if no database entries exist
-  ///
-  /// [loadMore] - If true, appends to existing results (pagination)
-  /// [backupPath] - Optional custom backup path
-  /// [sourceId] - Optional source filter override (if null, uses state)
   Future<void> getAllOfflineContent({
     String? backupPath,
     bool loadMore = false,
     String? sourceId,
   }) async {
     try {
-      // Page size constant (20 items per page)
       const pageSize = 20;
 
-      // Determine effective source ID
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
         // If in loaded state, preserve current filter
@@ -476,7 +440,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         currentDescending = (state as OfflineSearchLoaded).descending;
       }
 
-      // If loading more, check current state
       if (loadMore) {
         final currentState = state;
         if (currentState is! OfflineSearchLoaded) {
@@ -492,20 +455,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           return;
         }
 
-        // Show loading indicator
         emit(currentState.copyWith(isLoadingMore: true));
       } else {
-        // Initial load
         logInfo(
             'Loading all offline content from database (page 1) source: $effectiveSourceId');
         emit(const OfflineSearchLoading());
       }
 
-      // Calculate offset based on current page
       final offset = loadMore ? _dbOffset : 0;
       if (!loadMore) _dbOffset = 0;
 
-      // Load page from database
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
@@ -517,7 +476,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (isClosed) return;
 
-      // Get total count for pagination
       final totalCount = await _userDataRepository.getDownloadsCount(
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
@@ -535,7 +493,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         }
       }
 
-      // Convert DownloadStatus to Content objects
       final newContents = <Content>[];
       final newOfflineSizes = <String, String>{};
       final newSizeBytes = <String, int>{};
@@ -552,13 +509,13 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           downloadPath: download.downloadPath,
         );
 
-        if (firstImagePath == null) continue; // Skip if no images found
+        if (firstImagePath == null) continue;
 
         newContents.add(Content(
-          sourceId: download.sourceId ?? 'nhentai', // Fallback to nhentai
+          sourceId: download.sourceId ?? 'nhentai',
           id: download.contentId,
           title: download.title ?? download.contentId,
-          coverUrl: firstImagePath, // Use local first image as cover
+          coverUrl: firstImagePath,
           tags: [],
           artists: [],
           characters: [],
@@ -573,7 +530,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           japaneseTitle: null,
         ));
 
-        // Use DB size (already available)
         newOfflineSizes[download.contentId] = download.formattedFileSize;
         newSizeBytes[download.contentId] = download.fileSize;
         newStorageUsage += download.fileSize;
@@ -581,7 +537,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       if (isClosed) return;
 
-      // Merge with existing results if loading more
       final List<Content> finalResultsFlat;
       final Map<String, String> finalSizes;
       final int finalStorageUsage;
@@ -610,7 +565,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         itemSizes: _sizeBytesByContentId,
       );
 
-      // Calculate pagination metadata
       final currentPage = (finalResultsFlat.length / pageSize).ceil();
       final totalPages = (totalCount / pageSize).ceil();
       final hasMore = finalResultsFlat.length < totalCount;
@@ -659,7 +613,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (isClosed) return;
       handleError(e, stackTrace, 'get all offline content');
 
-      // If we were loading more, restore previous state
       if (loadMore && state is OfflineSearchLoaded) {
         emit((state as OfflineSearchLoaded).copyWith(isLoadingMore: false));
       } else {
@@ -702,7 +655,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
     final offlineSizes = await _calculateContentSizes(contents);
 
-    // Calculate total storage usage
     int totalStorageUsage = 0;
     for (final content in contents) {
       if (content.imageUrls.isNotEmpty) {
@@ -732,8 +684,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     logInfo(
         'Loaded ${contents.length} offline content items from file system (fallback)');
 
-    // NEW: Auto-sync filesystem content to database for persistence
-    // This ensures DB is rebuilt after clear app data
+    // Auto-sync: rebuild DB after clear app data
     try {
       logInfo(
           'Auto-syncing ${contents.length} items from filesystem to database...');
@@ -758,10 +709,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   Future<void> loadMoreContent() async {
     final currentState = state;
     if (currentState is OfflineSearchLoaded && currentState.query.isNotEmpty) {
-      // If active search, load more search results
       await searchOfflineContent(currentState.query, loadMore: true);
     } else {
-      // If no active search, load more general content
       await getAllOfflineContent(loadMore: true);
     }
   }
@@ -772,18 +721,15 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     try {
       logInfo('Force refreshing offline content from database');
 
-      // Clear any cached data in the manager
       _offlineContentManager.clearCache();
       ContentDownloadCache.clearCache();
 
-      // Reload from database
       await getAllOfflineContent(backupPath: backupPath);
     } catch (e, stackTrace) {
       handleError(e, stackTrace, 'force refresh');
     }
   }
 
-  /// Clear search results
   void clearSearch() {
     emit(const OfflineSearchInitial());
   }
@@ -814,8 +760,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// - When Initial/Loading/Empty/Error: get from database
   Future<Map<String, dynamic>> getOfflineStats() async {
     try {
-      // If we have content loaded (whether filtered by search or all content),
-      // calculate stats from the loaded results for consistency
       int storageUsage = 0;
       int totalCount = 0;
       bool isSearchResult = false;
@@ -834,7 +778,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         }
       }
 
-      // If not a search result (or empty query), get total library stats
       if (!isSearchResult) {
         storageUsage = await _offlineContentManager.getOfflineStorageUsage();
         totalCount = await _userDataRepository.getDownloadsCount(
@@ -859,12 +802,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Cleanup orphaned offline files
   Future<void> cleanupOfflineFiles() async {
     try {
       logInfo('Starting cleanup of orphaned offline files');
       await _offlineContentManager.cleanupOrphanedFiles();
-      // Clear cache after cleanup
       _offlineContentManager.clearCache();
       logInfo('Cleanup completed successfully');
     } catch (e, stackTrace) {
@@ -873,7 +814,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Scan backup folder for offline content
   Future<void> scanBackupContent(String backupPath) async {
     try {
       logInfo('Scanning backup folder: $backupPath');
@@ -887,10 +827,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
-      // Calculate sizes for all content
       final offlineSizes = await _calculateContentSizes(backupContents);
 
-      // Calculate total storage usage
       int totalStorageUsage = 0;
       for (final content in backupContents) {
         if (content.imageUrls.isNotEmpty) {
@@ -928,7 +866,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Get search history
   Future<List<String>> getSearchHistory() async {
     try {
       return await _userDataRepository.getSearchHistory(limit: 10);
@@ -938,7 +875,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Delete a search history entry
   Future<void> deleteSearchHistory(String query) async {
     try {
       await _userDataRepository.deleteSearchHistory(query);
@@ -947,7 +883,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Delete offline content
   Future<void> deleteOfflineContent(String contentId) async {
     try {
       logInfo('Deleting offline content: $contentId');
@@ -959,9 +894,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       }
       _sizeBytesByContentId.remove(contentId);
 
-      // Refresh the list
-      // If we are searching, we might want to re-search?
-      // Or just refresh global list if query is empty
       if (state is OfflineSearchLoaded) {
         final query = (state as OfflineSearchLoaded).query;
         if (query.isNotEmpty) {
@@ -980,7 +912,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Bulk delete multiple offline contents
   Future<void> bulkDeleteOfflineContent(List<String> contentIds) async {
     try {
       for (final id in contentIds) {
@@ -1015,13 +946,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       groupedMap.putIfAbsent(groupKey, () => []).add(item);
     }
 
-    // Try to get ReaderPositionRepository if registered
     dynamic readerPosRepo;
     try {
       readerPosRepo = getIt<ReaderRepository>();
-    } catch (_) {
-      // Ignore if not found
-    }
+    } catch (_) {}
 
     final List<ContentGroup> groups = [];
     for (final entry in groupedMap.entries) {
@@ -1040,7 +968,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       bool isRead = false;
       bool isReading = false;
 
-      // Check progress for all items in the group and take the highest
       for (final item in items) {
         try {
           if (readerPosRepo != null) {
@@ -1057,7 +984,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
             }
           }
         } catch (e) {
-          // Ignore errors
+          logInfo('Error getting reader position for ${item.id}: $e');
         }
       }
 

@@ -15,7 +15,6 @@ import 'directory_utils.dart';
 import 'download_storage_utils.dart';
 import 'reader_image_repair_utils.dart';
 
-/// Manager for offline content detection and operations
 class OfflineContentManager {
   OfflineContentManager({
     required UserDataRepository userDataRepository,
@@ -51,7 +50,6 @@ class OfflineContentManager {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
-  /// Invalidate all caches for a specific content ID.
   /// Call this whenever a download is removed, cancelled, or deleted so the
   /// reader does not serve stale offline paths or image URL lists.
   void invalidateCacheFor(String contentId) {
@@ -68,7 +66,6 @@ class OfflineContentManager {
     _logger.d('🗑️ Invalidated offline cache for $contentId');
   }
 
-  /// Check if content is available offline
   Future<bool> isContentAvailableOffline(String contentId) async {
     // _logger.d("🔍 Checking offline availability for $contentId");
     try {
@@ -141,7 +138,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get offline content path for a specific content ID
   Future<String?> getOfflineContentPath(String contentId) async {
     // 🚀 OPTIMIZATION: Check cache first
     if (_pathCache.containsKey(contentId)) {
@@ -205,8 +201,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get all possible download paths for a content ID
-  /// Includes both new source-based paths and legacy paths for backward compatibility
   Future<List<String>> _getPossibleDownloadPaths(String contentId,
       {String? sourceId}) async {
     final paths = <String>[];
@@ -327,8 +321,6 @@ class OfflineContentManager {
     return paths;
   }
 
-  /// Find content directory in filesystem by scanning possible backup paths
-  /// Used as fallback when DB record doesn't exist
   Future<String?> _findContentInFilesystem(String contentId) async {
     try {
       final possiblePaths = await _getPossibleDownloadPaths(contentId);
@@ -350,8 +342,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Prefix used to mark a page that failed to download.
-  /// Format: `__failed__:{originalUrl}`
   static const String kFailedPagePrefix = '__failed__:';
 
   /// Returns true if [url] is a failed-page placeholder injected by
@@ -359,17 +349,11 @@ class OfflineContentManager {
   static bool isFailedPagePlaceholder(String url) =>
       url.startsWith(kFailedPagePrefix);
 
-  /// Extracts the original remote URL from a failed-page placeholder.
   static String? extractOriginalUrlFromPlaceholder(String url) {
     if (!isFailedPagePlaceholder(url)) return null;
     return url.substring(kFailedPagePrefix.length);
   }
 
-  /// Get offline image URLs for content.
-  ///
-  /// Pages that failed to download are represented as placeholder strings
-  /// with the prefix [kFailedPagePrefix] so the reader can show a retry card
-  /// at the correct position instead of silently dropping the page.
   Future<List<String>> getOfflineImageUrls(String contentId) async {
     try {
       // 🚀 OPTIMIZATION: Check cache first
@@ -438,9 +422,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Reads `failed_pages` from `metadata.json` and inserts placeholder entries
-  /// at the correct 1-based positions so the reader page count matches the
-  /// original download total.
   Future<List<String>> _injectFailedPagePlaceholders({
     required String contentPath,
     required List<String> diskUrls,
@@ -522,10 +503,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Removes a successfully repaired page from `failed_pages` in `metadata.json`.
-  ///
-  /// This now uses the shared chapter-scoped reconciliation contract so all
-  /// metadata writers apply the same merge rules.
   Future<void> removeFailedPageFromMetadata(String contentId, int pageNumber) {
     return reconcileChapterMetadataPage(
       contentId: contentId,
@@ -533,12 +510,6 @@ class OfflineContentManager {
     );
   }
 
-  /// Rewrites chapter metadata references after an in-place local conversion
-  /// (for example `page_026.avif` -> `page_026.webp`).
-  ///
-  /// This keeps offline reader metadata aligned with the file that was
-  /// actually written on disk so the next chapter load does not keep pointing
-  /// to the stale extension.
   Future<void> rewriteMetadataForConvertedLocalPage({
     required String contentId,
     required int pageNumber,
@@ -629,8 +600,6 @@ class OfflineContentManager {
     invalidateCacheFor(contentId);
   }
 
-  /// Reconciles metadata for a touched page using deterministic merge rules:
-  /// if a valid page file exists, stale failed marker is removed.
   Future<void> reconcileChapterMetadataPage({
     required String contentId,
     required int pageNumber,
@@ -655,8 +624,6 @@ class OfflineContentManager {
     invalidateCacheFor(contentId);
   }
 
-  /// Reconciles stale failed-page markers for the completed chapter only.
-  /// This is used after native/background download completion.
   Future<void> reconcileChapterMetadataForCompletedDownload({
     required String contentId,
     String? contentPath,
@@ -939,12 +906,6 @@ class OfflineContentManager {
     });
   }
 
-  /// Get offline first image path (fast, for cover display)
-  ///
-  /// This method constructs the path to the first image without scanning
-  /// the entire directory, making it much faster for grid/list displays.
-  ///
-  /// Tries common patterns: 001.jpg, 001.png, 001.webp, 1.jpg
   Future<String?> getOfflineFirstImagePath(String contentId,
       {String? downloadPath}) async {
     try {
@@ -998,7 +959,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Check if specific image is downloaded
   Future<bool> isImageDownloaded(String imageUrl) async {
     try {
       // If it's already a local file path, check directly
@@ -1042,7 +1002,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get all offline content IDs
   Future<List<String>> getOfflineContentIds() async {
     try {
       // Check cache first
@@ -1075,7 +1034,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Load all completed downloads in paginated batches to avoid fixed caps.
   Future<List<DownloadStatus>> _getAllCompletedDownloadsFromDb() async {
     const batchSize = 500;
     var offset = 0;
@@ -1102,9 +1060,6 @@ class OfflineContentManager {
     return allDownloads;
   }
 
-  /// Extract sourceId from folder path.
-  /// Path pattern: .../nhasix/{sourceId}/{contentId}/...
-  /// Returns extracted sourceId or defaultSourceId as fallback.
   String _extractSourceIdFromPath(String contentPath) {
     try {
       final segments = contentPath.split(path.separator);
@@ -1122,7 +1077,6 @@ class OfflineContentManager {
     return AppStorage.defaultSourceId;
   }
 
-  /// Extract sourceId from metadata or fall back to path extraction.
   String _extractSourceIdFromMetadataOrPath(
     Map<String, dynamic>? metadata,
     String contentPath,
@@ -1137,7 +1091,6 @@ class OfflineContentManager {
     return _extractSourceIdFromPath(contentPath);
   }
 
-  /// Search in offline content
   Future<List<String>> searchOfflineContent(String query) async {
     try {
       if (query.trim().isEmpty) return [];
@@ -1192,7 +1145,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get offline content metadata
   Future<Map<String, dynamic>?> getOfflineContentMetadata(
       String contentId) async {
     try {
@@ -1297,7 +1249,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get offline storage usage
   Future<int> getOfflineStorageUsage() async {
     try {
       // 1. Try to get total size from DB (fastest)
@@ -1339,13 +1290,11 @@ class OfflineContentManager {
     }
   }
 
-  /// Get all offline content from file system (used by offline search)
   Future<List<Content>> getAllOfflineContentFromFileSystem(
       String loadPath) async {
     return await scanBackupFolder(loadPath);
   }
 
-  /// Clean up orphaned offline files
   Future<void> cleanupOrphanedFiles() async {
     try {
       _logger.i(_getLocalized('cleanupOrphanedFilesStarted',
@@ -1381,7 +1330,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Create Content object from offline data for a specific content ID
   Future<Content?> createOfflineContent(String contentId) async {
     try {
       final contentPath = await getOfflineContentPath(contentId);
@@ -1491,10 +1439,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Search offline content from metadata.json files without database
-  /// Supports both:
-  /// - NEW: Source-based folders (nhasix/nhentai/{contentId}/, nhasix/crotpedia/{contentId}/)
-  /// - LEGACY: Direct folders (nhasix/{contentId}/)
   Future<List<Content>> searchOfflineContentFromFileSystem(
       String backupPath, String query) async {
     try {
@@ -1547,7 +1491,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Helper to search within a source folder (e.g., nhentai/)
   Future<List<MapEntry<Content, DateTime>>> _searchInFolder(
       String folderPath, String queryLower) async {
     final results = <MapEntry<Content, DateTime>>[];
@@ -1569,7 +1512,6 @@ class OfflineContentManager {
     return results;
   }
 
-  /// Helper to search a single content folder and return if it matches query
   Future<MapEntry<Content, DateTime>?> _searchContentFolder(
       FileSystemEntity entity, String contentId, String queryLower) async {
     try {
@@ -1675,10 +1617,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Scan backup folder for offline content without database dependency
-  /// Supports both:
-  /// - NEW: Source-based folders (nhasix/nhentai/{contentId}/, nhasix/crotpedia/{contentId}/)
-  /// - LEGACY: Direct folders (nhasix/{contentId}/)
   Future<List<Content>> scanBackupFolder(String backupPath) async {
     try {
       final backupDir = Directory(backupPath);
@@ -1728,7 +1666,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Helper to scan a specific source folder (e.g. nhentai/) for content
   Future<List<MapEntry<Content, DateTime>>> _scanContentFolder(
       String folderPath) async {
     final folderDir = Directory(folderPath);
@@ -1791,7 +1728,6 @@ class OfflineContentManager {
     return results;
   }
 
-  /// Helper to try parse a directory as a content folder
   Future<MapEntry<Content, DateTime>?> _tryParseContentFolder(
       FileSystemEntity entity, String contentId) async {
     try {
@@ -1928,21 +1864,18 @@ class OfflineContentManager {
     }
   }
 
-  /// Helper method to check if file is an image
   bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
     return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp']
         .contains(extension);
   }
 
-  /// Helper method to extract page number from filename
   int _extractPageNumber(String filePath) {
     final filename = path.basenameWithoutExtension(filePath);
     final match = RegExp(r'(\d+)').firstMatch(filename);
     return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
   }
 
-  /// Helper method to extract content ID from image URL
   String? _extractContentIdFromUrl(String imageUrl) {
     try {
       // Try different URL patterns to extract content ID
@@ -2002,7 +1935,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Format storage size for display
   static String formatStorageSize(int bytes) {
     if (bytes == 0) return '0 B';
 
@@ -2018,7 +1950,6 @@ class OfflineContentManager {
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
 
-  /// Clear all caches
   void clearCache() {
     _cachedOfflineIds = null;
     _offlineIdsCacheTime = null;
@@ -2030,7 +1961,6 @@ class OfflineContentManager {
     _logger.d('Offline content cache cleared');
   }
 
-  /// Clear cache for specific content ID
   void clearContentCache(String contentId) {
     _pathCache.remove(contentId);
     _pathMissCacheTime.remove(contentId);
@@ -2040,16 +1970,10 @@ class OfflineContentManager {
     _logger.d('Cache cleared for content: $contentId');
   }
 
-  /// Smart Downloads directory detection
-  /// Priority:
-  /// 1. Check custom storage root (from StorageSettings) first
-  /// 2. Fallback to Downloads folder detection for backward compatibility
-  /// Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
     return DirectoryUtils.getDownloadsDirectory();
   }
 
-  /// Sync backup folder content to database
   /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
   /// [onProgress] - Optional callback (processed, total)
   Future<Map<String, int>> syncBackupToDatabase(
@@ -2225,7 +2149,6 @@ class OfflineContentManager {
     return path.join(backupPath, sourceId);
   }
 
-  /// Delete offline content and free up storage
   /// [contentPath] - optional direct path to content directory (for backup items)
   /// Returns true if deletion was successful (idempotent - returns true if either DB or filesystem deleted)
   Future<bool> deleteOfflineContent(String contentId,
@@ -2291,7 +2214,6 @@ class OfflineContentManager {
     }
   }
 
-  /// Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {

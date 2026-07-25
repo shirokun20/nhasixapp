@@ -47,7 +47,6 @@ class NotificationService {
     this.onOpenDownload,
     this.onNavigateToDownloads,
   }) : _logger = logger ?? Logger() {
-    // Initialize action handler with callbacks
     _actionHandler = NotificationActionHandler(
       logger: _logger,
       onDownloadPause: onDownloadPause,
@@ -59,7 +58,6 @@ class NotificationService {
       onNavigateToDownloads: onNavigateToDownloads,
     );
 
-    // Initialize permission handler and ID manager
     _permissionHandler = NotificationPermissionHandler(logger: _logger);
     _idManager = NotificationIdManager();
   }
@@ -68,7 +66,6 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // Callback functions for handling notification actions
   void Function(String contentId)? onDownloadPause;
   void Function(String contentId)? onDownloadResume;
   void Function(String contentId)? onDownloadCancel;
@@ -77,32 +74,28 @@ class NotificationService {
   void Function(String contentId)? onOpenDownload;
   void Function(String? contentId)? onNavigateToDownloads;
 
-  // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
   bool _permissionGranted = false;
   bool _initialized = false;
   Completer<void>? _initCompleter;
 
-  // Action handler for notification actions
   late final NotificationActionHandler _actionHandler;
   late final NotificationPermissionHandler _permissionHandler;
   late final NotificationIdManager _idManager;
-
-  // Channel IDs imported from NotificationChannels in notification_constants.dart
 
   // ============================================================
   // PERMISSION MANAGEMENT
   // ============================================================
 
-  /// Request notification permission from user
+  /// Request notification permission
   Future<bool> requestNotificationPermission() async {
     final granted = await _permissionHandler.requestPermission();
 
     _permissionGranted = granted;
 
     if (granted && !_initialized) {
-      // Create fresh completer for late init (previous one may be done)
+      // Fresh completer for late init (previous one may be done)
       _initCompleter = Completer<void>();
       await _initializePlugin();
     }
@@ -114,7 +107,7 @@ class NotificationService {
   // PDF CONVERSION NOTIFICATIONS
   // ============================================================
 
-  /// Show PDF conversion started notification
+  /// Show PDF conversion started
   Future<void> showPdfConversionStarted({
     required String contentId,
     required String title,
@@ -141,8 +134,7 @@ class NotificationService {
     }
   }
 
-  /// Update PDF conversion progress notification
-  /// Updates the progress bar during PDF conversion
+  /// Update PDF conversion progress
   Future<void> updatePdfConversionProgress({
     required String contentId,
     required int progress,
@@ -176,8 +168,7 @@ class NotificationService {
     }
   }
 
-  /// Show PDF conversion completed notification
-  /// Displays success notification when PDF conversion is done
+  /// Show PDF conversion completed
   Future<void> showPdfConversionCompleted({
     required String contentId,
     required String title,
@@ -225,7 +216,6 @@ class NotificationService {
       _logger.i(
           '📋 Notification created with actions: [open_pdf, share_pdf] for PDF: ${pdfPaths.isNotEmpty ? pdfPaths.first : "unknown"}');
 
-      // Log the exact actions we're creating for debugging
       _logger
           .i('🔧 Action 1: open_pdf - "Open PDF" with icon @drawable/ic_open');
       _logger
@@ -239,8 +229,7 @@ class NotificationService {
     }
   }
 
-  /// Show PDF conversion error notification
-  /// Displays error notification when PDF conversion fails
+  /// Show PDF conversion error
   Future<void> showPdfConversionError({
     required String contentId,
     required String title,
@@ -292,7 +281,6 @@ class NotificationService {
   static const int _pdfQueueNotificationId = 777777;
 
   /// Show PDF conversion with queue position
-  /// Displays current position in queue and total items
   Future<void> showPdfConversionQueued({
     required String contentId,
     required String title,
@@ -327,7 +315,6 @@ class NotificationService {
   }
 
   /// Show queue status for waiting PDF conversions
-  /// Displays how many items are waiting in queue
   Future<void> showPdfQueueStatus({
     required int queuedCount,
     required String queuedTitles,
@@ -360,13 +347,12 @@ class NotificationService {
   Future<void> clearPdfQueueNotification() async {
     try {
       await _notificationsPlugin.cancel(id: _pdfQueueNotificationId);
-      _logger.d('PDF queue notification cleared');
     } catch (e) {
       _logger.e('Failed to clear PDF queue notification: $e');
     }
   }
 
-  /// Show batch completion summary for multiple PDFs
+  /// Show batch completion for multiple PDFs
   Future<void> showPdfBatchCompleted({required int count}) async {
     if (!isEnabled) return;
 
@@ -383,7 +369,6 @@ class NotificationService {
 
       _logger.i('PDF batch completion notification shown: $count items');
 
-      // Auto-dismiss after 5 seconds
       Future.delayed(const Duration(seconds: 5), () {
         clearPdfQueueNotification();
       });
@@ -392,13 +377,11 @@ class NotificationService {
     }
   }
 
-  /// Check if notifications are enabled
   bool get isEnabled => _permissionGranted && _initialized;
 
-  /// Get permission status
   bool get hasPermission => _permissionGranted;
 
-  /// Wait for notification service to be fully initialized
+  /// Wait for full initialization
   Future<bool> waitForInitialization(
       {Duration timeout = const Duration(seconds: 5)}) async {
     if (isEnabled) return true;
@@ -413,7 +396,6 @@ class NotificationService {
     }
   }
 
-  /// Debug method to log current notification service state
   void debugLogState([String? context]) {
     final contextStr = context != null ? ' ($context)' : '';
     _logger.i('NotificationService State$contextStr:');
@@ -423,8 +405,7 @@ class NotificationService {
     _logger.i('  - Platform: ${Platform.operatingSystem}');
   }
 
-  /// Initialize the notification plugin without checking permission
-  /// Used internally after permission is already granted
+  /// Initialize plugin (permission already granted)
   Future<void> _initializePlugin() async {
     if (_initialized) return;
     try {
@@ -452,7 +433,6 @@ class NotificationService {
     }
   }
 
-  /// Initialize notification service
   /// Idempotent — safe to call multiple times. Concurrent callers await same future.
   Future<void> initialize() async {
     if (_initCompleter != null) return _initCompleter!.future;
@@ -478,7 +458,6 @@ class NotificationService {
     }
   }
 
-  /// Create notification channels for Android
   Future<void> _createNotificationChannel() async {
     final implementation =
         _notificationsPlugin.resolvePlatformSpecificImplementation<
@@ -521,9 +500,7 @@ class NotificationService {
     }
   }
 
-  /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    // Delegate to action handler
     _actionHandler.handleAction(
       actionId: response.actionId,
       payload: response.payload,
@@ -535,7 +512,7 @@ class NotificationService {
   // DOWNLOAD NOTIFICATIONS
   // ============================================================
 
-  /// Show download started notification
+  /// Show download started
   Future<void> showDownloadStarted({
     required String contentId,
     required String title,
@@ -549,7 +526,6 @@ class NotificationService {
     try {
       final notificationId = _getNotificationId(contentId);
 
-      // Use high priority builder with sound and vibration for initial notification
       await _notificationsPlugin.show(
           id: notificationId,
           title: _getLocalized('downloadStarted', fallback: 'Download Started'),
@@ -558,9 +534,9 @@ class NotificationService {
               fallback: 'Downloading: ${_truncateTitle(title)}'),
           notificationDetails: NotificationDetailsBuilder.progress(
             progress: 0,
-            highPriority: true, // Enable high priority for initial notification
-            playSound: true, // Enable sound
-            enableVibration: true, // Enable vibration
+            highPriority: true,
+            playSound: true,
+            enableVibration: true,
           ),
           payload: contentId);
 
@@ -570,7 +546,7 @@ class NotificationService {
     }
   }
 
-  /// Update download progress notification
+  /// Update download progress
   Future<void> updateDownloadProgress({
     required String contentId,
     required int progress,
@@ -611,7 +587,6 @@ class NotificationService {
               progress: progress,
               actions: isPaused
                   ? [
-                      // Show resume action when paused
                       const AndroidNotificationAction(
                         'resume',
                         'Resume',
@@ -624,7 +599,6 @@ class NotificationService {
                       ),
                     ]
                   : [
-                      // Show pause action when downloading
                       const AndroidNotificationAction(
                         'pause',
                         'Pause',
@@ -640,7 +614,6 @@ class NotificationService {
           ),
           payload: contentId);
 
-      // Log progress every 10%
       if (progress % 10 == 0) {
         _logger.d('Download progress updated: $contentId - $progress%');
       }
@@ -649,7 +622,7 @@ class NotificationService {
     }
   }
 
-  /// Show download completed notification
+  /// Show download completed
   Future<void> showDownloadCompleted({
     required String contentId,
     required String title,
@@ -687,7 +660,7 @@ class NotificationService {
     }
   }
 
-  /// Show download error notification
+  /// Show download error
   Future<void> showDownloadError({
     required String contentId,
     required String title,
@@ -726,7 +699,7 @@ class NotificationService {
     }
   }
 
-  /// Show download paused notification
+  /// Show download paused
   Future<void> showDownloadPaused({
     required String contentId,
     required String title,
@@ -740,7 +713,7 @@ class NotificationService {
     );
   }
 
-  /// Cancel download notification
+  /// Cancel download
   Future<void> cancelDownloadNotification(String contentId) async {
     try {
       final notificationId = _getNotificationId(contentId);
@@ -752,7 +725,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel all download notifications
+  /// Cancel all download
   Future<void> cancelAllDownloadNotifications() async {
     try {
       await _notificationsPlugin.cancelAll();
@@ -766,8 +739,7 @@ class NotificationService {
 
   static const int _downloadGroupId = 777778;
 
-  /// Show or update the single grouped download progress notification.
-  /// Replaces individual per-content notifications with one aggregate.
+  /// Aggregate grouped download progress. Replaces individual per-content notifications.
   Future<void> updateDownloadGroupProgress({
     required int activeCount,
     required int totalProgress,
@@ -795,7 +767,7 @@ class NotificationService {
     }
   }
 
-  /// Show the grouped "all done" notification.
+  /// Grouped "all done" notification.
   Future<void> showDownloadGroupCompleted(int count) async {
     if (!isEnabled) return;
     try {
@@ -813,7 +785,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel the grouped download notification.
+  /// Cancel grouped download.
   Future<void> cancelDownloadGroup() async {
     try {
       await _notificationsPlugin.cancel(id: _downloadGroupId);
@@ -826,7 +798,7 @@ class NotificationService {
 
   static const int _pdfGroupId = 777776;
 
-  /// Show or update the single grouped PDF conversion progress notification.
+  /// Grouped PDF conversion progress.
   Future<void> updatePdfGroupProgress({
     required int currentIndex,
     required int totalCount,
@@ -851,7 +823,7 @@ class NotificationService {
     }
   }
 
-  /// Show PDF group completed notification.
+  /// PDF group completed.
   Future<void> showPdfGroupCompleted(int count) async {
     if (!isEnabled) return;
     try {
@@ -868,7 +840,7 @@ class NotificationService {
     }
   }
 
-  /// Show PDF group error notification (non-fatal, queue continues).
+  /// PDF group error (non-fatal, queue continues).
   Future<void> showPdfGroupError({
     required int currentIndex,
     required int totalCount,
@@ -894,7 +866,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel the grouped PDF notification.
+  /// Cancel grouped PDF.
   Future<void> cancelPdfGroup() async {
     try {
       await _notificationsPlugin.cancel(id: _pdfGroupId);
@@ -904,24 +876,22 @@ class NotificationService {
   }
 
   /// Get notification ID from content ID
-  /// Get notification ID from content ID
   int _getNotificationId(String contentId) {
     return _idManager.getNotificationId(contentId);
   }
 
-  /// Truncate title for notification display
+  /// Truncate title for display
   String _truncateTitle(String title, {int maxLength = 40}) {
     if (title.length <= maxLength) return title;
     return '${title.substring(0, maxLength - 3)}...';
   }
 
-  /// Truncate error message for notification display
+  /// Truncate error for display
   String _truncateError(String error, {int maxLength = 100}) {
     if (error.length <= maxLength) return error;
     return '${error.substring(0, maxLength - 3)}...';
   }
 
-  /// Check if notifications are enabled
   Future<bool> areNotificationsEnabled() async {
     try {
       final androidImplementation =
@@ -940,7 +910,6 @@ class NotificationService {
   }
 
   /// Factory constructor untuk setup NotificationService dengan DownloadBloc
-  /// Ini memudahkan integrasi dengan DownloadBloc tanpa tight coupling
   static NotificationService withCallbacks({
     required Logger logger,
     required void Function(String contentId) onDownloadPause,
@@ -963,7 +932,7 @@ class NotificationService {
     );
   }
 
-  /// Set callbacks after initialization (for dependency injection scenarios)
+  /// Set callbacks after initialization
   void setCallbacks({
     void Function(String contentId)? onDownloadPause,
     void Function(String contentId)? onDownloadResume,
@@ -983,7 +952,6 @@ class NotificationService {
       this.onNavigateToDownloads = onNavigateToDownloads;
     }
 
-    // Also update action handler callbacks
     _actionHandler.setCallbacks(
       onDownloadPause: onDownloadPause,
       onDownloadResume: onDownloadResume,
@@ -997,14 +965,13 @@ class NotificationService {
     _logger.i('NotificationService: Callbacks updated');
   }
 
-  /// Set localization callback for getting localized strings
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('NotificationService: Localization callback set');
   }
 
-  /// Get localized string with fallback
+  /// Get localized string (fallback to key or provided fallback)
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
@@ -1021,17 +988,14 @@ class NotificationService {
   // DOWNLOAD VERIFICATION NOTIFICATIONS
   // ============================================================
 
-  /// Fixed notification ID base for verification operations
-
-  /// Get verification notification ID from content ID
+  /// Get verification notification ID
   int _getVerificationNotificationId(String contentId) {
     // FIXED: Use a DIFFERENT ID for verification to separate it from active download
     // This allows us to clear the "Downloading" notification and show a distinct "Verifying" one
     return _idManager.getNotificationId('verify_$contentId');
   }
 
-  /// Show verification started notification
-  /// Called when download reaches 100%, before file verification begins
+  /// Show verification started. Called after download completes, before verification.
   Future<void> showVerificationStarted({
     required String contentId,
     required String title,
@@ -1057,9 +1021,9 @@ class NotificationService {
               fallback: 'Verifying ${_truncateTitle(title)}...'),
           notificationDetails: NotificationDetailsBuilder.progress(
             progress: 0,
-            highPriority: false, // Low priority - silent notification
-            playSound: false, // No sound for verification
-            enableVibration: false, // No vibration
+            highPriority: false,
+            playSound: false,
+            enableVibration: false,
           ),
           payload: contentId);
 
@@ -1069,8 +1033,7 @@ class NotificationService {
     }
   }
 
-  /// Update verification progress notification
-  /// Shows progress of file verification (0-100%)
+  /// Update verification progress
   Future<void> updateVerificationProgress({
     required String contentId,
     required int progress,
@@ -1107,8 +1070,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel verification notification
-  /// Called when verification is complete or cancelled
+  /// Cancel verification
   Future<void> cancelVerificationNotification(String contentId) async {
     try {
       final notificationId = _getVerificationNotificationId(contentId);
@@ -1124,19 +1086,17 @@ class NotificationService {
   // SYNC NOTIFICATIONS
   // ============================================================
 
-  /// Fixed notification ID for sync operations
   static const int _syncNotificationId = 888888;
 
   // ============================================================
   // ZIP EXTRACTION NOTIFICATIONS
   // ============================================================
 
-  /// Fixed notification ID for ZIP extraction operations
   static const int _zipExtractionNotificationId = 999999;
 
-  /// Show ZIP extraction started notification
+  /// Show ZIP extraction started
   Future<void> showZipExtractionStarted({String? message}) async {
-    // Wait for initialization if needed (handles race condition after permission grant)
+    // Wait for initialization (handles race condition after permission grant)
     if (!isEnabled) {
       _logger.i(
           'NotificationService: Not initialized, waiting for initialization...');
@@ -1170,12 +1130,12 @@ class NotificationService {
     }
   }
 
-  /// Update ZIP extraction progress notification
+  /// Update ZIP extraction progress
   Future<void> updateZipExtractionProgress({
     required int progress,
     required String message,
   }) async {
-    // Wait for initialization if needed
+    // Wait for initialization
     if (!isEnabled) {
       final ready = await waitForInitialization();
       if (!ready) return;
@@ -1206,9 +1166,9 @@ class NotificationService {
     }
   }
 
-  /// Show ZIP extraction completed notification
+  /// Show ZIP extraction completed
   Future<void> showZipExtractionCompleted({required int imageCount}) async {
-    // Wait for initialization if needed
+    // Wait for initialization
     if (!isEnabled) {
       final ready = await waitForInitialization();
       if (!ready) return;
@@ -1228,7 +1188,6 @@ class NotificationService {
       _logger
           .i('ZIP extraction completed notification shown: $imageCount images');
 
-      // Auto-dismiss after 3 seconds
       Future.delayed(const Duration(seconds: 3), () {
         cancelZipExtractionNotification();
       });
@@ -1237,9 +1196,9 @@ class NotificationService {
     }
   }
 
-  /// Show ZIP extraction error notification
+  /// Show ZIP extraction error
   Future<void> showZipExtractionError({required String error}) async {
-    // Wait for initialization if needed
+    // Wait for initialization
     if (!isEnabled) {
       final ready = await waitForInitialization();
       if (!ready) return;
@@ -1258,7 +1217,6 @@ class NotificationService {
 
       _logger.w('ZIP extraction error notification shown: $error');
 
-      // Auto-dismiss after 5 seconds
       Future.delayed(const Duration(seconds: 5), () {
         cancelZipExtractionNotification();
       });
@@ -1267,7 +1225,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel ZIP extraction notification
+  /// Cancel ZIP extraction
   Future<void> cancelZipExtractionNotification() async {
     try {
       await _notificationsPlugin.cancel(id: _zipExtractionNotificationId);
@@ -1277,9 +1235,9 @@ class NotificationService {
     }
   }
 
-  /// Show sync started notification
+  /// Show sync started
   Future<void> showSyncStarted({String? message}) async {
-    // Wait for initialization if needed (handles race condition after permission grant)
+    // Wait for initialization (handles race condition after permission grant)
     if (!isEnabled) {
       _logger.i(
           'NotificationService: Not initialized, waiting for initialization...');
@@ -1312,12 +1270,12 @@ class NotificationService {
     }
   }
 
-  /// Update sync progress notification
+  /// Update sync progress
   Future<void> updateSyncProgress({
     required int progress,
     required String message,
   }) async {
-    // Wait for initialization if needed
+    // Wait for initialization
     if (!isEnabled) {
       final ready = await waitForInitialization();
       if (!ready) return;
@@ -1344,9 +1302,9 @@ class NotificationService {
     }
   }
 
-  /// Show sync completed notification
+  /// Show sync completed
   Future<void> showSyncCompleted({required int itemCount}) async {
-    // Wait for initialization if needed
+    // Wait for initialization
     if (!isEnabled) {
       final ready = await waitForInitialization();
       if (!ready) return;
@@ -1364,7 +1322,6 @@ class NotificationService {
 
       _logger.i('Sync completed notification shown: $itemCount items');
 
-      // Auto-dismiss after 3 seconds
       Future.delayed(const Duration(seconds: 3), () {
         cancelSyncNotification();
       });
@@ -1373,7 +1330,7 @@ class NotificationService {
     }
   }
 
-  /// Cancel sync notification
+  /// Cancel sync
   Future<void> cancelSyncNotification() async {
     try {
       await _notificationsPlugin.cancel(id: _syncNotificationId);

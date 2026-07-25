@@ -1,5 +1,5 @@
 name: kuron_native
-description: "A new Flutter plugin project."
+description: "Kuron native bridge — ONNX bubble detection, AVIF conversion, custom tabs, PDF reader, DNS resolver, and system utilities."
 version: 0.0.1
 homepage:
 

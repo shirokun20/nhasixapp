@@ -1,7 +1,3 @@
-/// nhentai API Client
-///
-/// Dedicated client for interacting with nhentai JSON API.
-/// Handles all API requests with proper error handling and rate limiting.
 library;
 
 import 'package:dio/dio.dart';
@@ -16,7 +12,6 @@ import '../request_rate_manager.dart';
 import 'nhentai_api_models.dart';
 import 'nhentai_api_comments_model.dart';
 
-/// Exception thrown when nhentai API request fails
 class NhentaiApiException implements Exception {
   final String message;
   final int? statusCode;
@@ -31,23 +26,15 @@ class NhentaiApiException implements Exception {
   @override
   String toString() => 'NhentaiApiException: $message (status: $statusCode)';
 
-  /// Check if this is a rate limit error
   bool get isRateLimited => statusCode == 429;
 
-  /// Check if this is a not found error
   bool get isNotFound => statusCode == 404;
 
-  /// Check if this is a server error
   bool get isServerError => statusCode != null && statusCode! >= 500;
 
-  /// Check if this error should trigger a retry
   bool get shouldRetry => isServerError || isRateLimited;
 }
 
-/// nhentai API Client
-///
-/// Provides methods to interact with nhentai's JSON API endpoints.
-/// Includes automatic retry logic and rate limiting.
 class NhentaiApiClient {
   final Dio _dio;
   final Logger _logger = getIt<Logger>();
@@ -55,9 +42,6 @@ class NhentaiApiClient {
   final RemoteConfigService _remoteConfigService;
   final AntiDetection _antiDetection;
 
-  /// Create a new NhentaiApiClient
-  ///
-  /// [dio] - Optional custom Dio instance (useful for testing)
   NhentaiApiClient({
     Dio? dio,
     required RequestRateManager rateManager,
@@ -70,7 +54,6 @@ class NhentaiApiClient {
         _remoteConfigService = remoteConfigService,
         _antiDetection = AntiDetection();
 
-  /// Create default Dio instance with proper configuration
   static Dio _createDefaultDio({int? timeout}) {
     final antiDetection = AntiDetection();
     final dio = Dio(BaseOptions(
@@ -120,7 +103,6 @@ class NhentaiApiClient {
 
   String _getCommentsEndpoint(String id) => '$_apiBaseUrl/gallery/$id/comments';
 
-  /// Wait for rate limiting before making request
   Future<void> _waitForRateLimit() async {
     while (!_rateManager.canMakeRequest()) {
       if (_rateManager.isInCooldown) {
@@ -143,10 +125,6 @@ class NhentaiApiClient {
     await _antiDetection.applyRandomDelay();
   }
 
-  /// Get gallery detail by ID
-  ///
-  /// [id] - Gallery ID (numeric string)
-  /// Returns [NhentaiGalleryResponse] with full gallery details
   Future<NhentaiGalleryResponse> getGallery(String id) async {
     final url = _getGalleryEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching gallery $id');
@@ -164,10 +142,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Get all galleries (homepage content)
-  ///
-  /// [page] - Page number (1-indexed)
-  /// Returns [NhentaiListResponse] with list of galleries
   Future<NhentaiListResponse> getAllGalleries({int page = 1}) async {
     final url = _getAllGalleriesEndpoint(page: page);
     _logger
@@ -188,12 +162,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Search galleries
-  ///
-  /// [query] - Search query (supports nhentai search syntax)
-  /// [sort] - Sort option: 'date', 'popular', 'popular-week', 'popular-today'
-  /// [page] - Page number (1-indexed)
-  /// Returns [NhentaiListResponse] with search results
   Future<NhentaiListResponse> search(
     String query, {
     String sort = 'date',
@@ -222,10 +190,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Get related galleries
-  ///
-  /// [id] - Gallery ID to find related content for
-  /// Returns [NhentaiRelatedResponse] with related galleries
   Future<NhentaiRelatedResponse> getRelated(String id) async {
     final url = _getRelatedEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching related for gallery $id');
@@ -244,10 +208,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Get comments for a gallery
-  ///
-  /// [id] - Gallery ID
-  /// Returns List of [NhentaiComment]
   Future<List<NhentaiComment>> getComments(String id) async {
     final url = _getCommentsEndpoint(id);
     _logger.d('NhentaiApiClient: Fetching comments for gallery $id');
@@ -271,11 +231,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Get popular galleries
-  ///
-  /// [period] - Time period: 'all', 'week', 'today'
-  /// [page] - Page number (1-indexed)
-  /// Returns [NhentaiListResponse] with popular galleries
   Future<NhentaiListResponse> getPopular({
     String period = 'all',
     int page = 1,
@@ -302,7 +257,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Make HTTP request with retry logic
   Future<Response> _makeRequest(String url) async {
     int attempts = 0;
     NhentaiApiException? lastException;
@@ -357,7 +311,6 @@ class NhentaiApiClient {
         const NhentaiApiException('Max retry attempts exceeded');
   }
 
-  /// Handle Dio exceptions and convert to NhentaiApiException
   NhentaiApiException _handleDioException(DioException e, String url) {
     final statusCode = e.response?.statusCode;
 
@@ -388,7 +341,6 @@ class NhentaiApiClient {
     };
   }
 
-  /// Get user-friendly error message based on status code
   String _getErrorMessage(int? statusCode) {
     return switch (statusCode) {
       400 => 'Bad request',
@@ -402,7 +354,6 @@ class NhentaiApiClient {
     };
   }
 
-  /// Check if API is reachable
   Future<bool> checkHealth() async {
     try {
       await _waitForRateLimit();
@@ -419,7 +370,6 @@ class NhentaiApiClient {
     }
   }
 
-  /// Dispose resources
   void dispose() {
     _rateManager.dispose();
     _antiDetection.dispose();

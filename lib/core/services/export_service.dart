@@ -11,7 +11,6 @@ import '../../domain/repositories/user_data_repository.dart';
 import '../utils/offline_content_manager.dart';
 import '../constants/app_constants.dart';
 
-/// Service for exporting and importing offline library
 class ExportService {
   final UserDataRepository _userDataRepository;
   final Logger _logger;
@@ -23,10 +22,6 @@ class ExportService {
   })  : _userDataRepository = userDataRepository,
         _logger = logger;
 
-  /// Export library to a folder structure
-  /// Returns the path to the export folder
-  ///
-  /// [onProgress] callback provides progress (0.0-1.0) and status message
   Future<String> exportLibrary({
     void Function(double progress, String message)? onProgress,
   }) async {
@@ -112,7 +107,6 @@ class ExportService {
     }
   }
 
-  /// Share the exported library folder
   Future<void> shareExport(String exportPath) async {
     try {
       final exportDir = Directory(exportPath);
@@ -160,7 +154,6 @@ class ExportService {
     }
   }
 
-  /// Get total export size estimate
   Future<int> getExportSizeEstimate() async {
     int totalSize = 0;
 
@@ -176,9 +169,7 @@ class ExportService {
     return totalSize;
   }
 
-  /// Export database tables to JSON
   Future<Map<String, dynamic>> _exportDatabaseToJson() async {
-    // Get downloads
     final downloads = await _userDataRepository.getAllDownloads(
       state: DownloadState.completed,
       limit: AppLimits.maxBatchSize,
@@ -226,7 +217,6 @@ class ExportService {
     };
   }
 
-  /// Copy directory recursively
   Future<void> _copyDirectory(Directory source, Directory destination) async {
     if (!await destination.exists()) {
       await destination.create(recursive: true);
@@ -243,7 +233,6 @@ class ExportService {
     }
   }
 
-  /// Cleanup old export folders
   Future<void> cleanupOldExports() async {
     try {
       final tempDir = await getTemporaryDirectory();

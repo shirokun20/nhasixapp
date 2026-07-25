@@ -1,96 +1,46 @@
 import '../entities/entities.dart';
 import '../value_objects/value_objects.dart';
 
-/// Repository interface for content-related operations
 abstract class ContentRepository {
-  /// Get paginated list of content
-  ///
-  /// [page] - Page number (1-based)
-  /// [sortBy] - Sort option for content ordering
-  /// Returns list of content with pagination info
   Future<ContentListResult> getContentList({
     int page = 1,
     SortOption sortBy = SortOption.newest,
   });
 
-  /// Get content detail by ID
-  ///
-  /// [contentId] - Unique content identifier
-  /// Returns detailed content information
   Future<Content> getContentDetail(ContentId contentId, {String? sourceId});
 
-  /// Search content with advanced filters
-  ///
-  /// [filter] - Search filter with criteria
-  /// Returns filtered content list with pagination
   Future<ContentListResult> searchContent(SearchFilter filter);
 
-  /// Get popular content
-  ///
-  /// [timeframe] - Popularity timeframe (all-time, week, today)
-  /// [page] - Page number for pagination
-  /// Returns popular content list
   Future<ContentListResult> getPopularContent({
     PopularTimeframe timeframe = PopularTimeframe.allTime,
     int page = 1,
   });
 
-  /// Get content by specific tag
-  ///
-  /// [tag] - Tag to filter by
-  /// [page] - Page number for pagination
-  /// [sortBy] - Sort option
-  /// Returns content list filtered by tag
   Future<ContentListResult> getContentByTag({
     required Tag tag,
     int page = 1,
     SortOption sortBy = SortOption.newest,
   });
 
-  /// Get related content based on tags and artists
-  ///
-  /// [contentId] - Reference content ID
-  /// [limit] - Maximum number of related content (default: 10)
-  /// Returns list of related content
   Future<List<Content>> getRelatedContent({
     required ContentId contentId,
     int limit = 10,
   });
 
-  /// Get random content galleries
-  ///
-  /// [sourceId] - Source ID to fetch from (default: active source)
-  /// [count] - Number of random galleries to fetch (default: 1)
-  /// Returns list of random content
   Future<List<Content>> getRandomGalleries({
     String? sourceId,
     int count = 1,
   });
 
-  /// Get all available tags with counts
-  ///
-  /// [type] - Filter by tag type (optional)
-  /// [sortBy] - Sort tags by count or name
-  /// Returns list of tags with popularity counts
   Future<List<Tag>> getAllTags({
     String? type,
     TagSortOption sortBy = TagSortOption.count,
   });
 
-  /// Check if content exists and is accessible
-  ///
-  /// [contentId] - Content ID to verify
-  /// Returns true if content exists and accessible
   Future<bool> verifyContentExists(ContentId contentId);
 
-  /// Get chapter images and navigation
-  ///
-  /// [chapterId] - Chapter ID
-  /// [sourceId] - Optional source ID
-  /// Returns chapter data containing images and navigation
   Future<ChapterData> getChapterImages(ContentId chapterId, {String? sourceId});
 
-  /// Get chapters for a specific content detail or lane.
   Future<List<Chapter>> getContentChapters(
     ContentId contentId, {
     String? sourceId,
@@ -101,14 +51,9 @@ abstract class ContentRepository {
     int? limit,
   });
 
-  /// Get comments for a specific gallery
-  ///
-  /// [contentId] - The ID of the gallery
-  /// Returns a list of comments
   Future<List<Comment>> getComments(String contentId);
 }
 
-/// Result wrapper for paginated content lists
 class ContentListResult {
   const ContentListResult({
     required this.contents,
@@ -126,16 +71,12 @@ class ContentListResult {
   final bool hasNext;
   final bool hasPrevious;
 
-  /// Check if result is empty
   bool get isEmpty => contents.isEmpty;
 
-  /// Check if result has content
   bool get isNotEmpty => contents.isNotEmpty;
 
-  /// Get content count in current page
   int get count => contents.length;
 
-  /// Create empty result
   factory ContentListResult.empty() {
     return const ContentListResult(
       contents: [],
@@ -145,7 +86,6 @@ class ContentListResult {
     );
   }
 
-  /// Create single page result
   factory ContentListResult.single(List<Content> contents) {
     return ContentListResult(
       contents: contents,
@@ -156,21 +96,18 @@ class ContentListResult {
   }
 }
 
-/// Popular content timeframe options
 enum PopularTimeframe {
   allTime,
   week,
   today,
 }
 
-/// Tag sorting options
 enum TagSortOption {
   count,
   name,
   recent,
 }
 
-/// Content statistics
 class ContentStatistics {
   const ContentStatistics({
     required this.totalContent,
@@ -194,10 +131,8 @@ class ContentStatistics {
   final Map<String, int> categoryDistribution;
   final DateTime? lastUpdated;
 
-  /// Get total pages across all content
   int get totalPages => (totalContent * averagePages).round();
 
-  /// Get most popular language
   String? get mostPopularLanguage {
     if (languageDistribution.isEmpty) return null;
     return languageDistribution.entries
@@ -205,7 +140,6 @@ class ContentStatistics {
         .key;
   }
 
-  /// Get most popular category
   String? get mostPopularCategory {
     if (categoryDistribution.isEmpty) return null;
     return categoryDistribution.entries
@@ -214,7 +148,6 @@ class ContentStatistics {
   }
 }
 
-/// Extensions for PopularTimeframe
 extension PopularTimeframeExtension on PopularTimeframe {
   String get displayName {
     switch (this) {
@@ -239,7 +172,6 @@ extension PopularTimeframeExtension on PopularTimeframe {
   }
 }
 
-/// Extensions for TagSortOption
 extension TagSortOptionExtension on TagSortOption {
   String get displayName {
     switch (this) {

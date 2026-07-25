@@ -5,24 +5,20 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/directory_utils.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/utils/permission_helper.dart';
-import 'package:nhasixapp/core/utils/storage_settings.dart'; // NEW
+import 'package:nhasixapp/core/utils/storage_settings.dart';
 import 'package:nhasixapp/domain/usecases/imports/import_zip_usecase.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
-import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart'; // NEW: For download screen refresh
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/services/export_service.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Mixin providing common offline content management functionality
-/// Used by screens that need to import/export/refresh offline content
 mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
-  /// Import content from backup folder to database
   Future<void> importFromBackup(BuildContext context) async {
     final selectedSourceId = _currentOfflineSourceId(context);
 
-    // Check permission first
     final hasPermission = await PermissionHelper.hasStoragePermission();
     if (!hasPermission) {
       if (context.mounted) {
@@ -40,29 +36,22 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     }
 
-    // FIXED: Show loading state BEFORE starting sync operation
-    // This ensures users see loading shimmer immediately
     if (context.mounted) {
       context.read<OfflineSearchCubit>().setLoadingState();
     }
 
-    // Scan and sync backup folder
     if (context.mounted) {
       await _autoScanBackupFolder(context, sourceId: selectedSourceId);
     }
 
-    // Note: forceRefresh() inside _autoScanBackupFolder already reloads from database
   }
 
-  /// Export library with progress dialog
   Future<void> exportLibrary(BuildContext context) async {
     final exportService = getIt<ExportService>();
 
-    // Show progress dialog
     String progressMessage = AppLocalizations.of(context)!.preparingExport;
     double progressValue = 0.0;
 
-    // Use a reference to the dialog state setter to update progress
     StateSetter? dialogSetState;
 
     await showDialog(
@@ -91,7 +80,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         onProgress: (progress, message) {
           progressValue = progress;
           progressMessage = message;
-          // Update dialog if visible
           if (dialogSetState != null && context.mounted) {
             dialogSetState!(() {});
           }
@@ -99,9 +87,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       );
 
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close progress dialog
+      Navigator.of(context).pop();
 
-      // Show success dialog with share option
       if (context.mounted) {
         await showDialog(
           context: context,
@@ -144,7 +131,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       }
     } catch (e) {
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close progress dialog
+      Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -156,7 +143,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Internal method to auto scan backup folder
   Future<void> _autoScanBackupFolder(
     BuildContext context, {
     String? sourceId,
@@ -172,10 +158,8 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       Logger().i(
           'OFFLINE_AUTO_SCAN: Found backup path: $scanPath, starting sync...');
 
-      // Auto-sync backup content to database
       final offlineManager = getIt<OfflineContentManager>();
 
-      // SHOW SYNC NOTIFICATION
       final notificationService = getIt<NotificationService>();
       await notificationService.showSyncStarted();
 
@@ -194,7 +178,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       final synced = syncResult['synced'] ?? 0;
       final updated = syncResult['updated'] ?? 0;
 
-      // SYNC COMPLETED
       await notificationService.showSyncCompleted(itemCount: synced + updated);
 
       if (!context.mounted) return;
@@ -209,15 +192,11 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         );
       }
 
-      // Force refresh to reload from database AND clear loading state
-      // This must run unconditionally to stop the loading shimmer
+      // Must run unconditionally to stop loading shimmer
       await context.read<OfflineSearchCubit>().forceRefresh();
 
       if (!context.mounted) return;
 
-      // ✅ NEW: Refresh DownloadBloc to sync Downloads Screen with database
-      // This ensures Downloads Screen shows imported content immediately
-      // without requiring app restart
       try {
         context.read<DownloadBloc>().add(const DownloadRefreshEvent());
         Logger().i(
@@ -233,7 +212,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
       if (!context.mounted) return;
 
-      // Prompt user to pick manually
       final shouldPick = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -255,13 +233,12 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
       if (shouldPick == true && context.mounted) {
         final pickedPath = await StorageSettings.pickAndSaveCustomRoot(context);
         if (pickedPath != null && context.mounted) {
-          // Recursive call to try again with new path
           await _autoScanBackupFolder(context, sourceId: sourceId);
           return;
         }
       }
 
-      // Ensure we clear loading state if we didn't recurse
+      // Ensure loading state cleared if no recursion
       if (context.mounted) {
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
@@ -292,9 +269,7 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
     return path.join(backupPath, sourceId);
   }
 
-  /// Import content from a ZIP file to the local folder
   Future<void> importFromZip(BuildContext context) async {
-    // Check permission first
     final hasPermission = await PermissionHelper.hasStoragePermission();
     if (!hasPermission) {
       if (context.mounted) {
@@ -314,18 +289,13 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
 
     if (!context.mounted) return;
 
-    // Show loading state
     context.read<OfflineSearchCubit>().setLoadingState();
 
-    // Get notification service
     final notificationService = getIt<NotificationService>();
-
-    // Remove immediate notification, we will call it in onStarted
 
     try {
       final importZipUseCase = getIt<ImportZipUseCase>();
 
-      // Execute ZIP import with progress callback
       final result = await importZipUseCase(
         ImportZipParams(
           onStarted: (totalFiles) async {
@@ -333,11 +303,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
           },
           onProgress:
               (fileIndex, totalFiles, processed, total, imgCount, currentFile) {
-            // Calculate progress percentage
             final percentage =
                 total > 0 ? ((processed / total) * 100).toInt() : 0;
 
-            // Update notification with progress
             final String prefix =
                 totalFiles > 1 ? '[$fileIndex/$totalFiles] ' : '';
             notificationService.updateZipExtractionProgress(
@@ -357,7 +325,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         final imageCount = (result['imageCount'] as num?)?.toInt() ?? 0;
         final importedCount = (result['importedCount'] as num?)?.toInt() ?? 1;
 
-        // Show completion notification
         await notificationService.showZipExtractionCompleted(
           imageCount: imageCount,
         );
@@ -380,12 +347,10 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         // instead of preserving an unrelated source filter that would hide it.
         await context.read<OfflineSearchCubit>().filterBySource('local');
 
-        // Refresh download bloc if available
         if (context.mounted) {
           try {
             context.read<DownloadBloc>().add(const DownloadRefreshEvent());
           } catch (e) {
-            // DownloadBloc not available in this context
             Logger().i('Could not refresh DownloadBloc: $e');
           }
         }
@@ -393,7 +358,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         final error = result['error'] as String? ?? 'Unknown error';
 
         if (error != 'Cancelled') {
-          // Show error notification
           await notificationService.showZipExtractionError(error: error);
 
           if (!context.mounted) return;
@@ -408,11 +372,9 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
           );
         }
 
-        // Clear loading state even on error
         await context.read<OfflineSearchCubit>().forceRefresh();
       }
     } catch (e) {
-      // Show error notification
       await notificationService.showZipExtractionError(error: e.toString());
 
       if (!context.mounted) return;
@@ -425,7 +387,6 @@ mixin OfflineManagementMixin<T extends StatefulWidget> on State<T> {
         ),
       );
 
-      // Clear loading state on exception
       await context.read<OfflineSearchCubit>().forceRefresh();
     }
   }

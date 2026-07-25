@@ -2,18 +2,12 @@ import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 
-/// Service for opening PDFs using native Android PDF reader
-/// Now wraps KuronNative plugin for compatibility
 class NativePdfReaderService {
   final Logger _logger;
 
   NativePdfReaderService({Logger? logger}) : _logger = logger ?? Logger();
 
-  /// Open PDF file in native reader
-  ///
-  /// [filePath] - Absolute path to PDF file
-  /// [title] - Optional title for the reader
-  /// [startPage] - Optional starting page number (NOT SUPPORTED by current KuronNative but kept for API compatibility)
+  /// [startPage] is NOT SUPPORTED by current KuronNative but kept for API compatibility
   Future<void> openPdf(
     String filePath, {
     String? title,
@@ -37,8 +31,7 @@ class NativePdfReaderService {
     }
   }
 
-  /// Close PDF reader (if needed)
-  /// Note: PDF reader auto-closes when user presses back
+  /// PDF reader auto-closes when user presses back
   Future<void> closePdf() async {
     // Current native implementation doesn't expose closePdf
     // but the reader is managed by a separate Activity that closes on back press

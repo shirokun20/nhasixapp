@@ -5,8 +5,6 @@ import 'dart:convert';
 class UriComponentUtils {
   const UriComponentUtils._();
 
-  /// Decodes valid percent-encoded sequences while preserving malformed input.
-  ///
   /// This is intentionally tolerant because some route parameters can already
   /// arrive pre-decoded from GoRouter, which means a literal `%` would make
   /// [Uri.decodeComponent] throw even though the original content ID is valid.

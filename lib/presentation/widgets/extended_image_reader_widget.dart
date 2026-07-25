@@ -17,15 +17,6 @@ import '../../../domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Enhanced image viewer widget optimized for manga/comic reading
-/// with adaptive fitting and zoom-on-demand functionality.
-///
-/// Features:
-/// - Adaptive BoxFit based on reading mode (fitWidth/fitHeight)
-/// - Double-tap to zoom with smooth animation
-/// - Visual zoom indicator when zoomed in
-/// - No accidental zoom during page navigation
-/// - Memory-efficient caching with Extended Image
 class ExtendedImageReaderWidget extends StatefulWidget {
   const ExtendedImageReaderWidget({
     super.key,
@@ -59,11 +50,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   final Future<bool> Function()? onRepairBrokenImage;
   final Future<bool> Function()? onOpenSourcePageForRepair;
 
-  /// 🎯 PHASE 1: Callback when image loads with actual dimensions
   final Function(int pageNumber, Size imageSize)? onImageLoaded;
 
   /// If set, double-tap calls this instead of the built-in zoom animation.
-  /// Use to toggle reader UI from a parent (e.g. `_readerCubit.toggleUI()`).
   final VoidCallback? onDoubleTapGesture;
 
   /// Called once (per content ID) when this page is identified as a heavy
@@ -76,8 +65,6 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   /// Whether the image should be forced to grayscale (Note theme).
   final bool grayscale;
-
-  /// Callback when a heavy image (requires native rendering) is detected.;
 
   @override
   State<ExtendedImageReaderWidget> createState() =>
@@ -230,17 +217,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Set<String> _nonNativeAnimatedUrls = <String>{};
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
 
-  // Batch header inspection for isolate offload.
-  // Collects pending file paths; triggers `compute()` when count ≥ [_headerBatchThreshold].
   static final List<String> _pendingHeaderPaths = <String>[];
   static bool _headerBatchInProgress = false;
   static const int _headerBatchThreshold = 10;
   static Future<Map<String, FileHeaderResult>>? _headerBatchFuture;
 
   /// Enqueue a file path for header inspection.
-  /// Returns the result for [path] — from batch cache if available, or sync inspect.
   static Future<FileHeaderResult> _enqueueHeaderInspect(String path) async {
-    // Fast path: single file, inspect sync.
     if (_pendingHeaderPaths.isEmpty && _headerBatchFuture == null) {
       return inspectFileHeader(path);
     }
@@ -250,12 +233,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _flushHeaderBatch();
     }
 
-    // If batch in progress, wait for it and return cached result.
     if (_headerBatchFuture != null) {
       final results = await _headerBatchFuture!;
       if (results.containsKey(path)) return results[path]!;
     }
-    // Fallback: sync inspect (batch not ready or path not in batch).
     return inspectFileHeader(path);
   }
 
@@ -288,27 +269,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   Future<String?>? _ehentaiResolvedImageFuture;
   Future<Uint8List?>? _mangaFireResolvedImageFuture;
 
-  /// Whether this specific image URL has been identified as heavy/animated.
-  /// Mirrors the static [_heavyImageUrls] set but as instance flag so that
-  /// [wantKeepAlive], [clearMemoryCacheWhenDispose], and native-view routing
-  /// are always in sync.
   bool _isHeavyImage = false;
 
-  /// Whether this image was positively identified as animated WebP bytes,
-  /// even if the source URL or local filename uses a misleading extension.
+  /// Whether this image was positively identified as animated WebP bytes.
   bool _isConfirmedAnimatedWebP = false;
 
-  /// Path to the extended_image disk-cache file for this URL.
-  /// Populated after [LoadState.completed] via [getCachedImageFile].
-  /// When set, the native [AnimatedWebPView] reads from disk (no re-download).
   String? _cachedFilePath;
 
   /// Image dimensions parsed from the file header (e.g., `ispe` box for AVIF).
-  /// Used to set correct [AspectRatio] in webtoon/continuous-scroll mode so the
-  /// ListView item has the right height rather than collapsing to zero.
   Size? _nativeImageSize;
 
-  // 🔄 AUTO-RETRY: Track retry attempts for timeout/network errors
   int _imageLoadRetries = 0;
   static const int _maxImageLoadRetries = 3;
   int _ehentaiResolveRetries = 0;
@@ -323,13 +293,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// widget instance we give up and show the error widget instead of retrying.
   bool _avifDecodeRetried = false;
 
-  /// potentially-animated AVIF URL. Prevents ExtendedImage from attempting
-  /// to decode the file before we have a chance to route it to the native
-  /// view, which avoids the "getPixels failed with error invalid input" crash
-  /// from Android's ImageDecoder attempting to decode an avis sequence.
+  /// Prevents ExtendedImage from attempting to decode an avis sequence before
+  /// native view routing, avoiding "getPixels failed with error invalid input".
   bool _awaitingNativeCheck = false;
 
-  // 🎯 PHASE 2: Cache loaded image size for webtoon detection
   // Size? _loadedImageSize;
 
   // Keep widget state alive for heavy/native images, but let normal pages in
@@ -361,10 +328,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       duration: DesignTokens.durationPageTurn,
       vsync: this,
     );
-    // Initialize with dummy animation (will be replaced on double-tap)
     _zoomAnimation = _zoomController.drive(Tween<double>(begin: 1.0, end: 1.0));
 
-    // Brief pinch-to-zoom hint (shown once per page, only when double-tap-zoom is disabled)
     _pinchHintController = AnimationController(
       duration: const Duration(milliseconds: 1800),
       vsync: this,
@@ -376,9 +341,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       });
     }
 
-    // Restore heavy-image state from static maps so keep-alive and native-view
-    // routing are applied immediately on the first build — and the native view
-    // reads from disk instead of re-downloading on every scroll-back.
     _isHeavyImage = _heavyImageUrls.contains(widget.imageUrl);
     _isConfirmedAnimatedWebP =
         _confirmedAnimatedWebPUrls.contains(widget.imageUrl);
@@ -399,9 +361,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     // Pre-check: for .webp URLs not yet identified as heavy, query the disk
-    // cache BEFORE ExtendedImage gets a chance to decode. This catches images
-    // that were downloaded in a previous reading session — we skip Flutter's
-    // expensive raster-thread decode entirely and go straight to native view.
+    // cache BEFORE ExtendedImage decodes — skip Flutter's expensive
+    // raster-thread decode and go straight to native view.
     if (!_isHeavyImage &&
         AnimatedWebPView.isAvailable &&
         !_isLocalFilePath(widget.imageUrl) &&
@@ -420,8 +381,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
-  /// seed the static maps and trigger a rebuild to route straight to native.
-  /// Uses [_enqueueHeaderInspect] for batch-aware header inspection.
+  /// seed the static maps and rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
     getCachedImageFile(widget.imageUrl).then((file) async {
       if (file == null) return;
@@ -796,7 +756,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   /// Fire [widget.onHeavyImageDetected] at most once per content ID.
-  /// Relevant for continuous-scroll mode regardless of page index.
   void _maybeNotifyHeavyImageDetected() {
     if (!ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
       readingMode: widget.readingMode,
@@ -1002,10 +961,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     super.dispose();
   }
 
-  /// Adaptive BoxFit based on reading mode and image type for optimal reading comfort.
-  ///
-  /// 🎯 PHASE 2: Automatically detects webtoon images and applies BoxFit.fitWidth
-  /// for better vertical scrolling experience.
+  /// Adaptive BoxFit — uses fitWidth for all modes so the image always fills width.
   BoxFit _getAdaptiveBoxFit() {
     // Use fitWidth for all modes so the image always fills the screen width.
     // This ensures:
@@ -1017,27 +973,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return BoxFit.fitWidth;
   }
 
-  /// Handle double-tap zoom gesture with smooth animation
   void _handleDoubleTap(ExtendedImageGestureState state) {
     if (!widget.enableZoom) return;
 
     final pointerDownPosition = state.pointerDownPosition;
     final double begin = state.gestureDetails!.totalScale!;
-    final double end = begin > 1.5 ? 1.0 : 2.0; // Toggle between 1x and 2x
+    final double end = begin > 1.5 ? 1.0 : 2.0;
 
-    // Remove old animation listener
     _zoomAnimation.removeListener(() {});
-
-    // Stop and reset controller
     _zoomController.stop();
     _zoomController.reset();
-
-    // Create new animation
     _zoomAnimation = _zoomController.drive(
       Tween<double>(begin: begin, end: end),
     );
 
-    // Add listener for zoom animation
     void animationListener() {
       state.handleDoubleTap(
         scale: _zoomAnimation.value,
@@ -1046,8 +995,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     _zoomAnimation.addListener(animationListener);
-
-    // Start animation
     _zoomController.forward().then((_) {
       _zoomAnimation.removeListener(animationListener);
     });
@@ -1055,11 +1002,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   @override
   Widget build(BuildContext context) {
-    // 🚀 OPTIMIZATION: Call super.build for AutomaticKeepAliveClientMixin
     super.build(context);
 
-    // 🐛 FIX: Failed-page placeholder — page was skipped during download.
-    // Show the repair/redownload card immediately without attempting to load.
+    // 🐛 FIX: page skipped during download — show repair/redownload card.
     if (widget.imageUrl.startsWith('__failed__:')) {
       return _buildFailedPagePlaceholderWidget(context);
     }
@@ -1067,7 +1012,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final normalizedLocalPath = _normalizeLocalPath(widget.imageUrl);
     final effectiveLocalPath = normalizedLocalPath;
 
-    // Check if imageUrl is a local file path
     final isLocalFile = _isLocalFilePath(widget.imageUrl);
 
     if (isLocalFile) {
@@ -1095,8 +1039,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       // precacheImage already populated ImageCache at display resolution.
       // ExtendedImage.file reads from disk + decodes at cacheWidth → fast.
 
-      // Legacy: ExtendedImage.file for local files
-      // Without cacheWidth, offline images decode at full resolution (4000px+).
       return ExtendedImage.file(
         File(effectiveLocalPath),
         key:
@@ -1160,7 +1102,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 onRetry: _retryBrokenLocalImage,
               );
             case LoadState.completed:
-              // 🎯 PHASE 1: Report image dimensions when loaded
               if (widget.onImageLoaded != null &&
                   state.extendedImageInfo?.image != null) {
                 final image = state.extendedImageInfo!.image;
@@ -1322,9 +1263,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     String? fallbackUrl, {
     Map<String, String>? headers,
   }) {
-    // Only route to the native animated view after this URL has actually been
-    // identified as a heavy animated WebP. Small/normal .webp images should
-    // continue through ExtendedImage.network.
+    // Only route small/normal .webp through ExtendedImage.network.
     final isLikelyAnimatedUrl = _isLikelyAnimatedUrl(url);
     if (_shouldUseNativeAnimatedView(url)) {
       return _buildNativeAnimatedWebP(url, headers);
@@ -1425,7 +1364,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               return _buildNetworkImage(context, rawUrl,
                   headers: headers, forceUrl: fallbackUrl);
             }
-            // 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network error)
             if (_shouldAutoRetryImage(state) &&
                 _imageLoadRetries < _maxImageLoadRetries) {
               _scheduleAutoRetry(state);
@@ -1436,7 +1374,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               failedSource: url,
             );
           case LoadState.completed:
-            _imageLoadRetries = 0; // Reset retries on success
+            _imageLoadRetries = 0;
             _ehentaiResolveRetries = 0;
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
@@ -1450,24 +1388,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               });
             }
 
-            // 🎬 ANIMATED WebP DETECTION (at completion, no Content-Length needed):
-            //
-            // Many servers (nhentai, HitomiNexus, etc.) skip Content-Length, so
-            // expectedTotalBytes is always null and the pre-seed above never fires.
-            // At LoadState.completed the file IS on disk — check its actual size.
-            //
-            // Steps:
-            //   1. URL heuristic: ends with .webp or contains -wbp (H@H)
-            //   2. getCachedImageFile → stat file size ≥ 2 MB
-            //   3. setState → _isHeavyImage = true, _cachedFilePath = path
-            //   4. Next build routes straight to AnimatedWebPView (disk read, no re-download)
+            // Many servers skip Content-Length; check actual file on disk at complete.
             if (!_isConfirmedAnimatedWebP &&
                 AnimatedWebPView.isAvailable &&
                 _shouldInspectCachedFileForAnimatedWebP(url)) {
               getCachedImageFile(url).then((cacheFile) {
-                // Check file size BEFORE mounted check so the animated-WebP
-                // cache is seeded even if this widget instance is already
-                // unmounted (e.g. user switched reading mode mid-download).
+                // Seed cache even if unmounted (e.g. reading mode switched mid-download).
                 if (cacheFile == null) return;
                 final fileSize = cacheFile.lengthSync();
                 _logger.d(
@@ -1536,15 +1462,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Renders an animated WebP using Android's native [AnimatedImageDrawable].
-  ///
-  /// Wraps [AnimatedWebPView] in a [RepaintBoundary] so the continuously
-  /// animating native layer does not invalidate the surrounding Flutter tree.
-  ///
-  /// In continuous-scroll (webtoon) mode, the ListView item has no intrinsic
-  /// height because [SizedBox.expand] inside [AnimatedWebPView] has none.
-  /// When [_nativeImageSize] is known we wrap the view with [AspectRatio] so
-  /// the ListView gives it the correct proportional height.
+  /// Wraps [AnimatedWebPView] in [RepaintBoundary] so native animation
+  /// layers do not invalidate the surrounding Flutter tree.
   Widget _buildNativeAnimatedWebP(
     String url,
     Map<String, String>? headers, {
@@ -1727,12 +1646,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Returns `(format, width, height)` if the file is a native-renderable
-  /// animated image, or `(null, null, null)` if Flutter codec should be used.
-  ///
-  /// `width` and `height` are extracted from the `ispe` box for AVIF files so
-  /// the caller can compute the correct aspect ratio for webtoon/scroll layout.
-  /// For WebP, dimensions are not parsed (returns `null` for width/height).
+  /// Delegate to [inspectFileHeader] — parses format, width, height from header.
+  /// Width/height from `ispe` box for AVIF; null for WebP.
   static ({String? format, int? width, int? height})
       _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
     return inspectFileHeader(file.path);
@@ -1809,23 +1724,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     String? imageUrl,
     bool? isLikelyAnimatedUrl,
   }) {
-    // Apply decode downsampling for heavy sources and known heavy/animated images.
-    //
-    // Benefits:
-    // - Smaller GPU texture upload on each animation frame tick
-    // - Reduced memory footprint per decoded frame
-    // - On second open within session (_isHeavyImage=true from initState),
-    //   cacheWidth is applied from the very first decode request.
-    //
-    // Note: Android's MediaCodec does NOT hardware-decode animated WebP;
-    // libwebp (CPU) is always used. cacheWidth reduces the decode resolution
-    // so each frame is cheaper to decode AND cheaper to composite via GPU.
-    // ponytail: decode at display resolution for ALL modes — 25× less GPU
-    // texture upload. Non-CS pages change via swipe which is a full rebuild;
-    // decoding full-res 4000px images every swipe causes visible jank.
-    // Pinch-zoom: ExtendedImage reloads from disk/memory cache when needed.
+    // ponytail: decode at display resolution — 25× less GPU texture upload
+    // for non-CS pages. Pinch-zoom: ExtendedImage reloads from cache.
     if (!(_isHeavyReaderSource() || _isHeavyImage)) {
-      // Non-heavy, non-animated: decode at exact display width — no waste.
       final mediaQuery = MediaQuery.of(context);
       return (mediaQuery.size.width * mediaQuery.devicePixelRatio).round();
     }
@@ -1844,12 +1745,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         .round();
   }
 
-  /// Target decode width for the native [AnimatedWebPView] Kotlin renderer.
-  ///
-  /// Uses a viewport-relative width with caps so very large offline animated
-  /// WebP files do not decode close to full-resolution in the native player.
-  /// This keeps RenderThread work and transient heap spikes lower on 10-20 MB
-  /// files while preserving enough detail for reader usage.
+  /// Viewport-relative decode width with caps for very large offline animated WebP.
   int _nativeDecodeWidth(BuildContext context) {
     final mq = MediaQuery.of(context);
     return ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
@@ -2088,8 +1984,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Build a card for a page that was skipped during download (timeout/error).
-  /// Shows the page number and a "Download page" button that calls [onRepairBrokenImage].
+  /// Card for a page skipped during download, with repair/redownload buttons.
   Widget _buildFailedPagePlaceholderWidget(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
@@ -2226,16 +2121,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build loading indicator with download progress.
-  ///
-  /// Note: PNG/JPG progressive partial rendering is format/server dependent.
-  /// We provide byte-level progress to indicate how close the image is to display.
+  /// Loading indicator with download progress.
   Widget _buildLoadingIndicator(BuildContext context,
       {ExtendedImageState? state,
       int? loadedBytesOverride,
       int? totalBytesOverride}) {
     final l10n = AppLocalizations.of(context)!;
-    // Responsive sizing based on reading mode
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
 
@@ -2353,14 +2244,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build error widget with logo and retry option
+  /// Error widget with logo and retry option
   Widget _buildErrorWidget(
     BuildContext context, {
     ExtendedImageState? state,
     String? failedSource,
     VoidCallback? onRetry,
   }) {
-    // Responsive sizing based on reading mode
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
     final double cardSize = isContinuousScroll ? 250 : 200;
@@ -2395,7 +2285,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo with error overlay
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -2436,7 +2325,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 const SizedBox(height: 12),
 
-                // Error message or auto-retry indicator
                 Text(
                   isRepairing
                       ? l10n.readerRepairingImage
@@ -2452,7 +2340,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   textAlign: TextAlign.center,
                 ),
 
-                // Page number and retry count
                 Text(
                   isRetrying
                       ? l10n.pageAttempt(
@@ -2620,7 +2507,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   const SizedBox(height: 8),
                 ],
 
-                // Retry button (hidden if already retrying)
+                // Retry button
                 if (!isRetrying)
                   SizedBox(
                     width: double.infinity,
@@ -2675,12 +2562,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Build completed image with zoom indicator.
-  ///
-  /// Animated images are wrapped in a [RepaintBoundary] so each animation
-  /// tick only re-rasterizes the image's own composited layer instead of
-  /// invalidating the parent ListView cell and all its siblings.
-  /// This is the single most effective fix for animated-WebP frame drops.
+  /// Completed image with zoom indicator.
+  /// Animated images wrapped in [RepaintBoundary] so each animation tick
+  /// re-rasterizes only its own composited layer, not siblings.
   Widget _buildCompletedImage(
     BuildContext context,
     ExtendedImageState state, {
@@ -2688,30 +2572,22 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }) {
     final isLikelyAnimatedImage =
         _isLikelyAnimatedUrl(imageUrl ?? widget.imageUrl);
-    // For gesture mode, use completedWidget which includes gesture handling
-    // For non-gesture mode, use ExtendedRawImage directly
     final Widget imageWidget = widget.enableZoom
         ? state.completedWidget
         : ExtendedRawImage(
             image: state.extendedImageInfo?.image,
             fit: _getAdaptiveBoxFit(),
             alignment:
-                Alignment.center, // Center the image vertically & horizontally
+                Alignment.center,
           );
 
-    // Add zoom indicator overlay for gesture mode
     if (!widget.enableZoom) {
-      // Still wrap in RepaintBoundary for animated images displayed without zoom
-      // (e.g. continuousScroll mode).
       return isLikelyAnimatedImage
           ? RepaintBoundary(child: imageWidget)
           : imageWidget;
     }
 
-    // For gesture mode, wrap with listener to detect zoom level.
-    // RepaintBoundary around gesture mode is important for animated WebP:
-    // the zoom/scale AnimatedBuilder triggers rebuilds on every zoom tick;
-    // the boundary keeps those repaints isolated from the ListView.
+    // RepaintBoundary isolates AnimatedBuilder rebuilds from the ListView.
     final Widget gestureWidget = AnimatedBuilder(
       animation: Listenable.merge([_zoomController, _pinchHintController]),
       builder: (context, child) {
@@ -2761,7 +2637,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   ),
                 ),
               ),
-            // Pinch-to-zoom hint (shown briefly on page first open)
             if (showHint)
               Positioned(
                 bottom: 72,
@@ -2810,33 +2685,20 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         : gestureWidget;
   }
 
-  /// 🔄 AUTO-RETRY: Check if should auto-retry (timeout/network errors)
-  ///
-  /// HentaiNexus images often timeout on initial load due to:
-  /// - Large file sizes (20-40s download)
-  /// - Rate limiting (1 req/sec, 2 concurrent max)
-  /// - Global 30s timeout threshold
-  ///
-  /// Auto-retry with exponential backoff helps recover automatically
-  /// without requiring user to manually click retry button.
+  /// HentaiNexus images often timeout (large files, rate limiting, 30s threshold).
   bool _shouldAutoRetryImage(ExtendedImageState state) {
     if (widget.readingMode != ReadingMode.continuousScroll) {
-      return false; // Only auto-retry in continuous scroll (where it matters most)
+      return false;
     }
 
-    // Only auto-retry for HentaiNexus (heavy source known to timeout)
     return false;
   }
 
-  /// 🔄 AUTO-RETRY: Schedule retry with exponential backoff
-  ///
-  /// Delays increase: 2s, 4s, 8s for retries 1, 2, 3
-  /// This gives the network/server time to recover.
+  /// Schedule retry with exponential backoff — 2s, 4s, 8s.
   void _scheduleAutoRetry(ExtendedImageState state) {
     _imageLoadRetries++;
     _autoRetryTimer?.cancel();
 
-    // Exponential backoff: 2^retry * 1000ms (2s, 4s, 8s)
     final delayMs = (1000 * (1 << (_imageLoadRetries - 1))).toInt();
 
     _logger.i(

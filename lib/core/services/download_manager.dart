@@ -7,7 +7,6 @@ import '../../domain/entities/download_task.dart';
 import '../../domain/entities/download_status.dart';
 import 'native_download_service.dart';
 
-/// Represents a progress update for a download
 class DownloadProgressUpdate {
   const DownloadProgressUpdate({
     required this.contentId,
@@ -36,8 +35,6 @@ class DownloadProgressUpdate {
   }
 }
 
-/// Global download manager for stream-based progress updates
-/// Singleton service that coordinates real-time progress updates across the app
 class DownloadManager {
   static final DownloadManager _instance = DownloadManager._internal();
   factory DownloadManager() => _instance;
@@ -79,7 +76,6 @@ class DownloadManager {
       StreamController<DownloadProgressUpdate>.broadcast();
   final Map<String, DownloadTask> _tasks = {};
 
-  // NEW: Listen to Native Download Service
   StreamSubscription? _nativeSubscription;
 
   void _initializeNativeListener() {
@@ -120,8 +116,7 @@ class DownloadManager {
               downloadSpeed: speed,
             ));
 
-            // Small delay to ensure UI updates before completion
-            // This prevents race condition where notification disappears before 100% shown
+            // Prevents race condition where notification disappears before 100% shown
             Future.delayed(const Duration(milliseconds: 100), () {
               _logger.i('✅ Emitting COMPLETION for $contentId');
               emitCompletion(contentId, DownloadState.completed);
@@ -130,7 +125,6 @@ class DownloadManager {
             _logger.e('❌ FAILED EVENT received for $contentId');
             emitCompletion(contentId, DownloadState.failed);
           } else {
-            // Progress update
             emitProgress(DownloadProgressUpdate(
               contentId: contentId,
               downloadedPages: safeDownloaded,
@@ -150,93 +144,62 @@ class DownloadManager {
     }
   }
 
-  /// Stream for listening to download progress updates
   Stream<DownloadProgressUpdate> get progressStream =>
       _progressController.stream;
 
-  /// Register a download task
   void registerTask(DownloadTask task) {
     _tasks[task.contentId] = task;
     _logger.d('DownloadManager: Registered task: ${task.contentId}');
   }
 
-  /// Unregister a download task
   void unregisterTask(String contentId) {
     _tasks.remove(contentId);
     _logger.d('DownloadManager: Unregistered task: $contentId');
   }
 
-  /// Get a download task
   DownloadTask? getTask(String contentId) {
     return _tasks[contentId];
   }
 
-  /// Check if a download is paused
   bool isPaused(String contentId) {
     final task = _tasks[contentId];
     return task?.isPaused ?? false;
   }
 
-  /// Check if a download is cancelled
   bool isCancelled(String contentId) {
     final task = _tasks[contentId];
     return task?.isCancelled ?? false;
   }
 
-  /// Pause a download via Native Service
   Future<void> pauseDownload(String contentId) async {
     _logger.d('DownloadManager: Pausing $contentId');
     try {
-      // 1. Mark local task as paused
       final task = _tasks[contentId];
       task?.pause();
-
-      // 2. Call native service
       await NativeDownloadService().pauseDownload(contentId);
-
-      // 3. Emit update (status will be updated by stream mostly, but we can optimistically log)
     } catch (e) {
       _logger.e('DownloadManager: Failed to pause $contentId', error: e);
       rethrow;
     }
   }
 
-  /// Resume a download via Native Service (which uses start logic)
-  /// Note: Resume usually requires re-calling startDownload with params.
-  /// If NativeService supports simple resume, use it. NativeDownloadService.pause usually cancels.
-  /// To resume, we often need to restart.
-  /// HOWEVER, the native worker checks existing files.
-  /// So 'resume' is effectively 'start' again.
-  /// BUT `NativeDownloadService` does NOT have a parameterless `resume` method.
-  /// So verify: the Bloc handles resume by calling `_onStart` again with params.
-  /// So `DownloadManager.resume` might just be a state update or no-op if Bloc handles it.
-  /// Let's keep it simple: Bloc handles the restart strategy. DownloadManager just updates state.
   void resumeTaskState(String contentId) {
     final task = _tasks[contentId];
     task?.resume();
   }
 
-  /// Cancel a download via Native Service
   Future<void> cancelDownload(String contentId) async {
     _logger.d('DownloadManager: Cancelling $contentId');
     try {
       final task = _tasks[contentId];
       task?.cancel();
-
       await NativeDownloadService().cancelDownload(contentId);
-
-      // Emit completion/cancelled event?
-      // The native stream should send "CANCELLED" or we just remove it.
-      // NativeDownloadService doesn't seem to emit CANCELLED state in stream explicitly
-      // based on my read of NativeDownloadManager.kt (it maps CANCELLED, but does WorkManager emit it?)
-      // We'll rely on the stream or manual cleanup in Bloc.
     } catch (e) {
       _logger.e('DownloadManager: Failed to cancel $contentId', error: e);
       rethrow;
     }
   }
 
-  /// Emit a progress update to all listeners
   void emitProgress(DownloadProgressUpdate update) {
     if (!_progressController.isClosed) {
       _progressController.add(update);
@@ -246,7 +209,6 @@ class DownloadManager {
     }
   }
 
-  /// Emit a completion event to notify listeners of download completion
   void emitCompletion(String contentId, DownloadState state) {
     if (!_progressController.isClosed) {
       final int terminalCode = switch (state) {
@@ -256,7 +218,6 @@ class DownloadManager {
         _ => -9,
       };
 
-      // Create a completion update with special marker
       final completionUpdate = DownloadProgressUpdate(
         contentId: contentId,
         downloadedPages: -1, // Special marker for terminal state
@@ -274,10 +235,8 @@ class DownloadManager {
     }
   }
 
-  /// Check if the stream is still active
   bool get isActive => !_progressController.isClosed;
 
-  /// Close the stream controller
   void dispose() {
     try {
       getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive')

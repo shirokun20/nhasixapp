@@ -10,8 +10,6 @@ import '../constants/app_constants.dart';
 import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
 import 'directory_utils.dart';
 
-/// Utility class for download-related storage operations
-///
 /// Extracted from DownloadBloc to reduce complexity and promote reusability.
 /// Contains methods for directory detection, file management, and metadata reading.
 class DownloadStorageUtils {
@@ -19,14 +17,12 @@ class DownloadStorageUtils {
 
   static final Logger _logger = getIt<Logger>();
 
-  /// Smart Downloads directory detection
   /// Delegates to [DirectoryUtils.getDownloadsDirectory]
   /// Kept for backward compatibility; prefer DirectoryUtils directly.
   static Future<String> getDownloadsDirectory() async {
     return DirectoryUtils.getDownloadsDirectory();
   }
 
-  /// Calculate total size of a directory recursively
   static Future<int> getDirectorySize(Directory directory) async {
     int size = 0;
     try {
@@ -41,7 +37,6 @@ class DownloadStorageUtils {
     return size;
   }
 
-  /// Clean up temporary files in a directory
   /// Deletes files ending with .tmp, .temp, .part, or starting with .
   static Future<void> cleanupTempFiles(Directory directory) async {
     try {
@@ -68,9 +63,6 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Read local metadata.json for a content
-  /// Returns metadata map if file exists and is valid, null otherwise
-  /// [sourceId] - Source identifier (default: 'nhentai')
   static Future<Map<String, dynamic>?> readLocalMetadata(
     String contentId, {
     String? sourceId,
@@ -205,8 +197,6 @@ class DownloadStorageUtils {
     return null;
   }
 
-  /// Save metadata to file
-  ///
   /// This is CRITICAL for the Safe ID strategy.
   /// The metadata.json file acts as the "decoder key" to identify content
   /// when the folder name is a hashed "Safe ID".
@@ -251,9 +241,7 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Get downloaded image paths for a content
   /// Returns sorted list of image file paths from the download directory
-  /// [sourceId] - Source identifier (default: 'nhentai')
   static Future<List<String>> getDownloadedImagePaths(
     String contentId, {
     String? sourceId,
@@ -307,7 +295,6 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Get "Elegant" Content ID (Short & Deterministic)
   /// Uses SHA-1 hash converted to Base36 for short, filesystem-safe folder names.
   /// Example: "very-long-title..." -> "a1b2c3d4"
   static String getElegantId(String contentId) {
@@ -332,16 +319,12 @@ class DownloadStorageUtils {
     return bigInt.toRadixString(36);
   }
 
-  /// Get safe content ID for folder usage
-  ///
   /// UPDATE: Now uses "Elegant ID" strategy (Base36 Hash)
   /// Legacy strategy (Truncate + Hash) is deprecated but supported for readout.
   static String getSafeContentId(String contentId) {
     return getElegantId(contentId);
   }
 
-  /// Get content directory
-  ///
   /// This checks locations in the following order:
   /// 1. Elegant ID (New Standard)
   /// 2. Safe ID (Truncated - Migration Interim)
@@ -390,7 +373,6 @@ class DownloadStorageUtils {
     return elegantPath;
   }
 
-  /// Get NEW directory for content (always uses safe ID)
   static Future<String> getNewContentDirectory(String contentId,
       {String? sourceId}) async {
     final downloadsDir = await getDownloadsDirectory();
@@ -401,8 +383,6 @@ class DownloadStorageUtils {
         downloadsDir, AppStorage.backupFolderName, effectiveSourceId, safeId);
   }
 
-  /// Get the source directory path
-  /// [sourceId] - Source identifier (default: 'nhentai')
   static Future<String> getSourceDirectory({String? sourceId}) async {
     final downloadsPath = await getDownloadsDirectory();
     final effectiveSourceId = sourceId ?? AppStorage.defaultSourceId;
@@ -414,8 +394,6 @@ class DownloadStorageUtils {
     );
   }
 
-  /// Check if content is downloaded (has images folder with files)
-  /// [sourceId] - Source identifier (default: 'nhentai')
   static Future<bool> isContentDownloaded(
     String contentId, {
     String? sourceId,
@@ -425,8 +403,6 @@ class DownloadStorageUtils {
     return imagePaths.isNotEmpty;
   }
 
-  /// Migrate legacy content folder to new source-based structure
-  /// Returns true if migration was performed, false if not needed
   static Future<bool> migrateToSourceFolder(
     String contentId, {
     String sourceId = 'nhentai',
@@ -515,7 +491,6 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Format bytes to human-readable string
   static String formatBytes(int bytes) {
     if (bytes <= 0) return '0 B';
 

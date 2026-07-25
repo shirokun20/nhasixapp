@@ -29,7 +29,7 @@
   "sourceAuthUsername": "Username",
   "sourceAuthPassword": "Password",
   "sourceAuthCaptchaVerified": "CAPTCHA verified and stored securely",
-  "sourceAuthCaptchaRequired": "Please solve CAPTCHA to continue",
+  "sourceAuthCaptchaRequired": "Solve CAPTCHA to continue",
   "sourceAuthCaptchaSolved": "CAPTCHA Solved",
   "sourceAuthSolveCaptcha": "Solve CAPTCHA",
   "sourceAuthLoginButton": "Login",
@@ -65,7 +65,7 @@
   "about": "About",
   "supportDeveloper": "Support Developer",
   "supportDeveloperSubtitle": "Buy me a coffee",
-  "donateMessage": "If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕",
+  "donateMessage": "Support development via QRIS donation. Thank you! ☕",
   "thankYouMessage": "Thank you for your support!",
   "searchHint": "Search content...",
   "searchPlaceholder": "Enter search keywords",
@@ -125,7 +125,7 @@
   "bigBreasts": "big breasts",
   "soleFemale": "sole female",
   "soleMale": "sole male",
-  "pleaseSetStorageLocation": "Please set download storage location in settings first.",
+  "pleaseSetStorageLocation": "Set download storage location in settings first.",
   "@pleaseSetStorageLocation": {
     "description": "Error message when custom storage location is not set"
   },
@@ -140,7 +140,7 @@
   "excludeArtists": "Exclude Artists",
   "noResultsFound": "No Results Found",
   "tryAdjustingFilters": "Try adjusting your search filters or search terms.",
-  "networkError": "Network error. Please check your connection and try again.",
+  "networkError": "Network error. Check your connection and try again.",
   "accessBlocked": "Access blocked. Trying to bypass protection...",
   "tooManyRequests": "Too many requests. Please wait a moment and try again.",
   "errorProcessingResults": "Error processing search results. Please try again.",
@@ -149,7 +149,7 @@
   "retryBypass": "Retry Bypass",
   "retryConnection": "Retry Connection",
   "retrySearch": "Retry Search",
-  "errorNetwork": "Network error. Please check your connection and try again.",
+  "errorNetwork": "Network error. Check your connection and try again.",
   "errorServer": "Server error. Please try again later.",
   "errorCloudflare": "Content is temporarily blocked (Cloudflare). Please try again in a moment.",
   "errorParsing": "Failed to load content data. The content may be unavailable.",
@@ -293,7 +293,7 @@
   "downloadListExported": "Download list exported",
   "downloadAll": "Download All",
   "downloadRange": "Download Range",
-  "selectDownloadRange": "Select Download Range",
+  "selectDownloadRange": "Download Range",
   "useSliderToSelectRange": "Use slider to select range:",
   "orEnterManually": "Or enter manually:",
   "quickSelections": "Quick selections:",
@@ -420,9 +420,9 @@
   "checkSpelling": "Check spelling",
   "useBroaderSearchTerms": "Use broader search terms",
   "welcomeTitle": "Welcome to Kuron!",
-  "welcomeMessage": "Thank you for installing our app. Before you start, please note:",
+  "welcomeMessage": "Before you start:",
   "ispBlockingInfo": "🚨 ISP Blocking Notice",
-  "ispBlockingMessage": "If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.",
+  "ispBlockingMessage": "Blocked by ISP? Use a VPN like Cloudflare WARP 1.1.1.1.",
   "downloadWarp": "Download 1.1.1.1 VPN",
   "permissionsRequired": "Required Permissions",
   "storagePermissionInfo": "📁 Storage: Required to download and save content offline",
@@ -432,7 +432,7 @@
   "storageGranted": "✅ Storage permission granted",
   "notificationGranted": "✅ Notification permission granted",
   "getStarted": "Get Started",
-  "pleaseGrantAllPermissions": "Please grant all required permissions to continue",
+  "pleaseGrantAllPermissions": "Grant all required permissions to continue",
   "permissionDenied": "Permission denied. Some features may not work properly.",
   "loadingFavorites": "Loading favorites...",
   "errorLoadingFavorites": "Error Loading Favorites",
@@ -473,7 +473,7 @@
       }
     }
   },
-  "selectFavorites": "Select favorites",
+  "selectFavorites": "Favorites",
   "deleteSelected": "Delete selected",
   "searchFavorites": "Search favorites...",
   "selectAll": "Select All",
@@ -673,8 +673,8 @@
   "keepScreenOnDescription": "Prevent screen from turning off while reading",
   "platformNotSupported": "Platform Not Supported",
   "platformNotSupportedBody": "Kuron is designed exclusively for Android devices.",
-  "platformNotSupportedInstall": "Please install and run this app on an Android device.",
-  "storagePermissionExplanation": "This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.",
+  "platformNotSupportedInstall": "Install and run this app on an Android device.",
+  "storagePermissionExplanation": "Storage permission is needed to download files. Files saved to Downloads/nhasix folder.",
   "grantPermission": "Grant Permission",
   "permissionRequired": "Permission Required",
   "storagePermissionSettingsPrompt": "Storage permission is required to download files. Please grant storage permission in app settings.",
@@ -723,7 +723,7 @@
     }
   },
   "go": "Go",
-  "validPageNumberError": "Please enter a valid page number between 1 and {totalPages}",
+  "validPageNumberError": "Enter a page number between 1 and {totalPages}",
   "@validPageNumberError": {
     "placeholders": {
       "totalPages": {
@@ -925,10 +925,10 @@
   "filterCategoriesTitle": "Filter Categories",
   "searchTitle": "Search",
   "advancedSearchTitle": "Advanced Search",
-  "enterSearchQueryHint": "Enter search query (e.g. \"big breasts english\")",
+  "enterSearchQueryHint": "Search (e.g. \"big breasts english\")",
   "popularSearchesTitle": "Popular Searches",
   "clearAllAction": "Clear All",
-  "pressSearchButtonMessage": "Press the Search button to find content with your current filters",
+  "pressSearchButtonMessage": "Search with your current filters",
   "searchingMessage": "Searching...",
   "resultsCountFormat": "{count} results",
   "@resultsCountFormat": {
@@ -1155,7 +1155,7 @@
   "online": "ONLINE",
   "offlineMode": "Offline Mode",
   "applySearch": "Apply Search",
-  "addFiltersToSearch": "Add filters above to enable search",
+  "addFiltersToSearch": "Add filters to enable search",
   "startSearching": "Start searching",
   "enterKeywordsAdvancedHint": "Enter keywords, tags, or use advanced filters to find content",
   "filtersReady": "Filters Ready",
@@ -2456,9 +2456,9 @@
       }
     }
   },
-  "themeDescription": "Choose your preferred color theme for the app interface.",
-  "imageQualityDescription": "Choose image quality for downloads. Higher quality uses more storage and data.",
-  "gridColumnsDescription": "Choose how many columns to display content in portrait mode. More columns show more content but smaller items.",
+  "themeDescription": "Color theme for the app interface.",
+  "imageQualityDescription": "Image quality for downloads. Higher quality uses more storage.",
+  "gridColumnsDescription": "Grid columns in portrait mode.",
   "gridPreview": "Grid Preview",
   "autoCleanupDescription": "Manage automatic cleanup of reading history to free up storage space.",
   "testCacheClearing": "Test App Update Cache Clearing",
@@ -2467,7 +2467,7 @@
   "forceClearCacheDescription": "Manually clear all image caches.",
   "runTest": "Run Test",
   "clearCacheButton": "Clear Cache",
-  "disguiseModeDescription": "Choose how the app appears in your launcher for privacy.",
+  "disguiseModeDescription": "App launcher appearance for privacy.",
   "applyingDisguiseMode": "Applying disguise mode changes...",
   "disguiseDefault": "Default",
   "disguiseCalculator": "Calculator",
@@ -2585,7 +2585,7 @@
   "downloadDirectoryReset": "Download directory reset to default",
   "backupNotFound": "Backup Not Found",
   "backupNotFoundMessage": "No 'nhasix' backup folder was found in the default location. Would you like to select a custom folder containing your backup?",
-  "selectFolder": "Select Folder",
+  "selectFolder": "Folder",
   "premiumFeature": "Premium Feature",
   "commentsMaintenance": "Comments Under Maintenance",
   "estimatedRecovery": "Estimated Recovery",
@@ -2689,7 +2689,7 @@
       }
     }
   },
-  "sourceSelectorSelectSource": "Select Source",
+  "sourceSelectorSelectSource": "Source",
   "sourceSelectorDescription": "Switch provider for feed, detail, search, and reader data.",
   "sourceSelectorNoSourceSelected": "No source selected",
   "sourceSelectorActiveSource": "Active source",
@@ -2956,7 +2956,7 @@
   "searchExampleHint": "romance, artist:example, 12345",
   "refreshOnline": "Refresh online",
   "addRules": "Add rules",
-  "pickFromTags": "Pick from tags",
+  "pickFromTags": "From tags",
   "done": "Done",
   "uninstallSource": "Uninstall source",
   "uninstallSourceTitle": "Uninstall Source",
@@ -2972,8 +2972,8 @@
       }
     }
   },
-  "chooseOneSource": "Choose one source to install.",
-  "chooseMultipleSources": "Choose one or more sources to install.",
+  "chooseOneSource": "Install source",
+  "chooseMultipleSources": "Install sources",
   "installSelectedCount": "Install Selected ({count})",
   "@installSelectedCount": {
     "placeholders": {
@@ -3311,7 +3311,7 @@
   "dnsProvider": "DNS Provider",
   "customConfiguration": "Custom Configuration",
   "aboutDoh": "About DNS-over-HTTPS",
-  "dohDescription": "DNS-over-HTTPS (DoH) encrypts your DNS queries, preventing ISPs and network administrators from monitoring which websites you visit. It also helps bypass DNS-based censorship and geo-restrictions.",
+  "dohDescription": "DNS-over-HTTPS encrypts DNS queries to prevent monitoring and bypass censorship.",
   "dnsQueriesEncrypted": "All DNS queries encrypted via HTTPS",
   "enhancedPrivacy": "Enhanced privacy and security",
   "resetDnsConfirmation": "This will reset DNS settings to system defaults. Continue?",
@@ -3801,7 +3801,7 @@
     }
   },
 
-  "selectSourceFromManifest": "Select Source from Manifest",
+  "selectSourceFromManifest": "From Manifest",
   "pagesWithSize": "{pageCount} pages • {size}",
   "@pagesWithSize": {
     "placeholders": {
@@ -3886,7 +3886,7 @@
   "yesterday": "Yesterday",
 
   "failedToLoadOptionsTap": "Failed to load options. Tap to retry.",
-  "chooseField": "Choose {field}",
+  "chooseField": "{field}",
   "@chooseField": {
     "placeholders": {
       "field": {

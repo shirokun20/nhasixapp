@@ -1,20 +1,12 @@
-/// nhentai Image URL Builder
-///
-/// Utility class to construct image URLs from nhentai API response data.
-/// Handles different image types and server selection.
 library;
 
 import 'nhentai_api_models.dart';
 
-/// Builder class for constructing nhentai image URLs
 class NhentaiImageUrlBuilder {
-  /// Base URL for thumbnail/cover images
   static const String thumbnailBaseUrl = 'https://t.nhentai.net/galleries';
 
-  /// Base URL for full-size page images
   static const String imageBaseUrl = 'https://i.nhentai.net/galleries';
 
-  /// Alternative image servers (for fallback/load balancing)
   static const List<String> imageServers = [
     'https://i.nhentai.net/galleries',
     'https://i2.nhentai.net/galleries',
@@ -23,41 +15,22 @@ class NhentaiImageUrlBuilder {
     'https://i7.nhentai.net/galleries',
   ];
 
-  /// Build cover image URL
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [type] - Image type ('j', 'p', 'g', 'w')
   static String buildCoverUrl(String mediaId, String type) {
     final ext = getImageExtension(type);
     return '$thumbnailBaseUrl/$mediaId/cover.$ext';
   }
 
-  /// Build thumbnail image URL
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [type] - Image type ('j', 'p', 'g', 'w')
   static String buildThumbnailUrl(String mediaId, String type) {
     final ext = getImageExtension(type);
     return '$thumbnailBaseUrl/$mediaId/thumb.$ext';
   }
 
-  /// Build page thumbnail URL (for gallery view)
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [pageNumber] - 1-indexed page number
-  /// [type] - Image type ('j', 'p', 'g', 'w')
   static String buildPageThumbnailUrl(
       String mediaId, int pageNumber, String type) {
     final ext = getImageExtension(type);
     return '$thumbnailBaseUrl/$mediaId/${pageNumber}t.$ext';
   }
 
-  /// Build full-size page image URL
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [pageNumber] - 1-indexed page number
-  /// [type] - Image type ('j', 'p', 'g', 'w')
-  /// [serverIndex] - Optional server index (0-4) for load balancing
   static String buildPageUrl(
     String mediaId,
     int pageNumber,
@@ -69,11 +42,6 @@ class NhentaiImageUrlBuilder {
     return '$baseUrl/$mediaId/$pageNumber.$ext';
   }
 
-  /// Build all page URLs from API images data
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [pages] - List of page image info from API
-  /// [serverIndex] - Optional server index for load balancing
   static List<String> buildAllPageUrls(
     String mediaId,
     List<NhentaiImageInfo> pages, {
@@ -87,10 +55,6 @@ class NhentaiImageUrlBuilder {
     }).toList();
   }
 
-  /// Build all page thumbnail URLs from API images data
-  ///
-  /// [mediaId] - The media ID from API response
-  /// [pages] - List of page image info from API
   static List<String> buildAllPageThumbnailUrls(
     String mediaId,
     List<NhentaiImageInfo> pages,
@@ -102,9 +66,6 @@ class NhentaiImageUrlBuilder {
     }).toList();
   }
 
-  /// Get image dimensions from page info
-  ///
-  /// Returns a map with 'width' and 'height' keys
   static Map<String, int> getPageDimensions(NhentaiImageInfo pageInfo) {
     return {
       'width': pageInfo.width ?? 0,
@@ -112,9 +73,6 @@ class NhentaiImageUrlBuilder {
     };
   }
 
-  /// Calculate aspect ratio from page info
-  ///
-  /// Returns height/width ratio, defaults to 1.414 (A4) if dimensions unavailable
   static double calculateAspectRatio(NhentaiImageInfo pageInfo) {
     final width = pageInfo.width ?? 0;
     final height = pageInfo.height ?? 0;
@@ -126,10 +84,6 @@ class NhentaiImageUrlBuilder {
     return height / width;
   }
 
-  /// Try alternative server if primary fails
-  ///
-  /// [currentUrl] - The current failing URL
-  /// Returns URL with next server, or null if all servers exhausted
   static String? tryNextServer(String currentUrl) {
     for (int i = 0; i < imageServers.length - 1; i++) {
       if (currentUrl.startsWith(imageServers[i])) {

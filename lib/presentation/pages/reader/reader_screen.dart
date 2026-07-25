@@ -43,7 +43,6 @@ part 'reader_settings_widgets.dart';
 part 'reader_image_widgets.dart';
 part 'reader_mode_widgets.dart';
 
-/// Simple reader screen for reading manga/doujinshi content
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
     super.key,
@@ -54,8 +53,8 @@ class ReaderScreen extends StatefulWidget {
     this.imageMetadata,
     this.chapterData,
     this.parentContent, // Parent series for chapter mode
-    this.allChapters, // All chapters for navigation
-    this.currentChapter, // Current chapter being read
+    this.allChapters,
+    this.currentChapter,
     this.activeChapterLanguage,
   });
 
@@ -66,8 +65,8 @@ class ReaderScreen extends StatefulWidget {
   final List<ImageMetadata>? imageMetadata;
   final ChapterData? chapterData;
   final Content? parentContent; // Parent series
-  final List<Chapter>? allChapters; // All chapters
-  final Chapter? currentChapter; // Current chapter
+  final List<Chapter>? allChapters;
+  final Chapter? currentChapter;
   final String? activeChapterLanguage;
 
   @visibleForTesting
@@ -107,7 +106,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   // the original image height to keep the scroll offset stable.
   final Map<int, double> _cachedImageHeights = {};
 
-  // Prefetch control
   final Set<int> _prefetchedPages = <int>{};
   static const int _prefetchCount = 3;
   static const int _prefetchBackCount = 1;
@@ -141,7 +139,7 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   // 🚀 OPTIMIZATION: Throttle save to DB and UI toggle
   Timer? _saveDebounceTimer;
-  Timer? _pageUpdateTimer; // Separate timer for page updates
+  Timer? _pageUpdateTimer;
   Timer? _uiToggleDebounceTimer;
   DateTime _lastTapTime = DateTime.now();
   bool _lastUIVisibleState = true;
@@ -163,8 +161,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   List<ImageMetadata>? _preloadedImageMetadata;
   ChapterData? _preloadedChapterData;
   Content? _preloadedParentContent; // Parent series for chapters
-  List<Chapter>? _preloadedAllChapters; // All chapters for navigation
-  Chapter? _preloadedCurrentChapter; // Current chapter
+  List<Chapter>? _preloadedAllChapters;
+  Chapter? _preloadedCurrentChapter;
   String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
 
@@ -204,7 +202,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     final screenHeight = WidgetsBinding
             .instance.platformDispatcher.views.first.physicalSize.height /
         WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
-    final estimatedItemHeight = screenHeight * 0.9; // Approximate image height
+    final estimatedItemHeight = screenHeight * 0.9;
     final initialScrollOffset = (widget.initialPage - 1) * estimatedItemHeight;
 
     _scrollController = ScrollController(
@@ -218,7 +216,6 @@ class _ReaderScreenState extends State<ReaderScreen>
 
     // Defer GoRouterState access until after widget is mounted (for any additional processing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Start preloading after route extra is processed
       _startPreloading();
 
       // 🚀 FIX: Unlock flag after content settles (1.5s for images to load)
@@ -241,11 +238,9 @@ class _ReaderScreenState extends State<ReaderScreen>
     // _startPreloading();
   }
 
-  /// Initialize preloaded content from route extra (called from build or postFrameCallback)
   void _initializeFromRouteExtra() {
-    if (_preloadedContent != null) return; // Already initialized
+    if (_preloadedContent != null) return;
 
-    // Get preloaded content and metadata from route extra if available
     final rawRouteExtra = GoRouterState.of(context).extra;
     final routeExtra = asReaderRouteExtra(rawRouteExtra);
 
@@ -313,7 +308,6 @@ class _ReaderScreenState extends State<ReaderScreen>
         _preloadedActiveChapterLanguage = parsedActiveChapterLanguage;
       }
     } else if (widget.preloadedContent == null) {
-      // Fallback for direct Content object (backward compatibility)
       final parsedDirectContent = readReaderContent(rawRouteExtra);
       if (parsedDirectContent != null) {
         _preloadedContent = parsedDirectContent;
@@ -322,9 +316,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// 🚀 OPTIMIZATION: Preload content to reduce initial loading time
   Future<void> _startPreloading() async {
-    // If we already have preloaded content from route extra, skip preloading
     if (_preloadedContent != null) {
       return;
     }
@@ -333,13 +325,11 @@ class _ReaderScreenState extends State<ReaderScreen>
 
     _isPreloading = true;
     try {
-      // Quick offline check first
       final offlineManager = getIt<OfflineContentManager>();
       final isOfflineAvailable =
           await offlineManager.isContentAvailableOffline(widget.contentId);
 
       if (isOfflineAvailable) {
-        // Preload offline content
         _preloadedContent =
             await offlineManager.createOfflineContent(widget.contentId);
       }
@@ -351,7 +341,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// 🚀 NEW: Handle scroll notification with accurate metrics
   void _onScrollNotification(
       ScrollUpdateNotification notification, ReaderState state) {
     if (state.content == null) return;
@@ -456,8 +445,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     return totalPages;
   }
 
-  /// 🏎️ Ticker callback (vsync-aligned). Updates page indicator + animated pause
-  /// at display refresh rate, separate from heavy ops throttle.
   void _onPageTick(Duration elapsed) {
     if (_pendingEstimatedPage > 0 &&
         _pendingEstimatedPage != _lastReportedPage) {
@@ -469,7 +456,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       _visiblePageNotifier.value = _pendingEstimatedPage;
       _animatedPauseNotifier.value = _pendingEstimatedPage;
     }
-    // Stop ticker when pending consumed or scroll stopped
     if (_pendingEstimatedPage == _lastReportedPage ||
         _pendingEstimatedPage == 0) {
       _isTicking = false;
@@ -526,7 +512,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     return (screenHeight * 0.5).clamp(1.0, double.infinity).toDouble();
   }
 
-  /// 🚀 OPTIMIZATION: Debounce save to DB to prevent spam
   void _debounceSaveHistory(ReaderState state, int page) {
     _saveDebounceTimer?.cancel();
     _saveDebounceTimer = Timer(DesignTokens.durationSlow, () {
@@ -539,12 +524,11 @@ class _ReaderScreenState extends State<ReaderScreen>
     });
   }
 
-  /// 🚀 OPTIMIZATION: Debounce page updates to reduce DB spam
   void _debouncePageUpdate(int page, ReaderState state) {
     // 🐛 FIX: Only save if progress moves forward (user reads more)
     // Don't save when scrolling back up to re-read
     if (page <= _lastSavedPage) {
-      return; // Skip saving if scrolling backwards
+      return;
     }
 
     final isHeavySource = _isHeavyPrefetchSource(state.content?.sourceId);
@@ -559,7 +543,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       () {
         // Save page progress after user stops scrolling for 800ms
         // This prevents DB spam when user scrolls up/down repeatedly
-        _lastSavedPage = page; // Update last saved page
+        _lastSavedPage = page;
         if (state.readingMode == ReadingMode.continuousScroll) {
           _readerCubit.updateCurrentPageSilent(page);
         } else {
@@ -569,9 +553,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
   }
 
-  /// 🚀 OPTIMIZATION: Debounce UI toggle to prevent flickering
   void _debounceUIToggle(bool shouldShow, ReaderState state) {
-    // Only toggle if state actually changed
     if (_lastUIVisibleState == shouldShow) return;
 
     _uiToggleDebounceTimer?.cancel();
@@ -586,7 +568,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   /// Called when an [ExtendedImageReaderWidget] at an early page detects a
-  /// heavy animated WebP (\u2265 2 MB) while in continuous-scroll mode.
+  /// heavy animated WebP (≥ 2 MB) while in continuous-scroll mode.
   ///
   /// Automatically disables continuous-scroll and switches to single-page
   /// mode so only one animation is rendered at a time, eliminating
@@ -602,14 +584,12 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (_autoSwitchedContentIds.contains(contentId)) return;
     _autoSwitchedContentIds.add(contentId);
 
-    // Force to single-page mode.
     _readerCubit.changeReadingMode(
       ReadingMode.singlePage,
       persistPreference: false,
       resetWebtoonDetection: false,
     );
 
-    // Inform user that continuous mode is disabled for this content.
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -785,7 +765,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     _verticalPageController.dispose();
     _scrollController.dispose();
 
-    // 🚀 OPTIMIZATION: Cancel debounce timers
     _saveDebounceTimer?.cancel();
     _pageUpdateTimer?.cancel();
     _uiToggleDebounceTimer?.cancel();
@@ -826,7 +805,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// 🎬 Toggle immersive mode (hide/show status bar & navigation bar)
   void _toggleImmersiveMode(bool immersive) {
     if (immersive) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -838,8 +816,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// Process queued decode requests on the next frame tick.
-  /// Max [_maxDecodePerFrame] per tick — prevents main-isolate flood.
   void _scheduleFrameDecode() {
     if (_isDecodeTickScheduled) return;
     if (_decodeQueue.isEmpty) return;
@@ -857,7 +833,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     });
   }
 
-  /// Prefetch next few images in background for smoother reading experience
   void _prefetchImages(int currentPage, List<String> imageUrls,
       List<ImageMetadata>? imageMetadata,
       {String? sourceId}) {
@@ -886,7 +861,6 @@ class _ReaderScreenState extends State<ReaderScreen>
             MediaQuery.of(context).devicePixelRatio)
         .round();
 
-    // Queue adjacent page decodes — processed max 2 per frame tick.
     for (final int targetPage in <int>{currentPage + 1, currentPage - 1}) {
       if (targetPage >= 1 && targetPage <= imageUrls.length) {
         final rawUrl = imageUrls[targetPage - 1];
@@ -925,7 +899,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       return;
     }
 
-    // Backward prefetch: 1 page behind
     for (int i = 1; i <= _prefetchBackCount; i++) {
       final targetPage = currentPage - i;
       if (targetPage >= 1 && !_prefetchedPages.contains(targetPage)) {
@@ -945,16 +918,14 @@ class _ReaderScreenState extends State<ReaderScreen>
       }
     }
 
-    // Forward prefetch: _prefetchCount pages ahead
     for (int i = 1; i <= _prefetchCount; i++) {
       final targetPage = currentPage + i;
 
-      // Check bounds and avoid duplicate prefetching
       if (targetPage <= imageUrls.length &&
           !_prefetchedPages.contains(targetPage)) {
         _prefetchedPages.add(targetPage);
 
-        final imageUrl = imageUrls[targetPage - 1]; // Convert to 0-based index
+        final imageUrl = imageUrls[targetPage - 1];
 
         // EHentai uses /s/... reader pages that are resolved to real image
         // URLs lazily per visible page. Skip image prefetch on reader pages.
@@ -965,7 +936,6 @@ class _ReaderScreenState extends State<ReaderScreen>
         // 🚀 OPTIMIZATION: Use metadata lookup instead of URL validation for performance
         bool isValid = true;
         if (imageMetadata != null && imageMetadata.isNotEmpty) {
-          // Find metadata for this page
           final metadata = imageMetadata.where((m) {
             return m.pageNumber == targetPage;
           }).firstOrNull;
@@ -990,15 +960,12 @@ class _ReaderScreenState extends State<ReaderScreen>
         }
 
         if (!isValid) {
-          // Skip prefetch to prevent wrong caching
           _prefetchedPages.remove(targetPage); // Allow retry later
           return;
         }
 
-        // Skip prefetching if the URL is already a local file path
         if (!imageUrl.startsWith('http') &&
             (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
-          // Already local, no need to prefetch
           return;
         }
 
@@ -1029,7 +996,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     final coordinator = MemoryBudgetCoordinator();
     final budget = coordinator.readerDecodedBudgetBytes;
 
-    // Reset byte accumulator on each scroll tick.
     _heavyImageBudgetTimer?.cancel();
     _heavyImageBudgetTimer = Timer(_heavyImageBudgetResetMs, () {
       _estimatedDecodedBytes = 0;
@@ -1045,7 +1011,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     _estimatedDecodedBytes = 0;
   }
 
-  /// Estimate decoded bytes for a single page from cached image dimensions.
   int _estimatePageBytes(int page) {
     final h = _cachedImageHeights[page];
     if (h == null || h <= 0) return 0;
@@ -1056,14 +1021,12 @@ class _ReaderScreenState extends State<ReaderScreen>
     return pixelBytes;
   }
 
-  /// Evict farthest pages until total estimated bytes ≤ [targetBytes].
   void _evictFarthestBytes(
       int currentPage, List<String> imageUrls, int targetBytes) {
     const keepRadius = 4;
     final total = imageUrls.length;
     if (total <= keepRadius * 2 + 1) return;
 
-    // Build pages sorted by distance from current page (farthest first).
     final sorted = List.generate(total, (i) => i + 1);
     sorted.sort(
         (a, b) => (b - currentPage).abs().compareTo((a - currentPage).abs()));
@@ -1126,7 +1089,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     final currentPage = state.currentPage ?? 1;
     final targetPageIndex = currentPage - 1;
 
-    // Sync PageController for horizontal single page mode
     if (state.readingMode == ReadingMode.singlePage) {
       if (_pageController.hasClients) {
         final currentPageControllerIndex = _pageController.page?.round();
@@ -1175,7 +1137,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       }
     }
 
-    // Sync PageController for vertical page mode
     else if (state.readingMode == ReadingMode.verticalPage) {
       if (_verticalPageController.hasClients) {
         final currentVerticalIndex = _verticalPageController.page?.round();
@@ -1212,7 +1173,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       }
     }
 
-    // Sync ScrollController for continuous scroll mode
     else if (state.readingMode == ReadingMode.continuousScroll) {
       if (state.content == null) return;
       final targetPage = state.currentPage ?? 1;
@@ -1239,7 +1199,6 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Initialize preloaded content from route extra if not already done
     _initializeFromRouteExtra();
 
     return BlocProvider<ReaderCubit>(
@@ -1257,7 +1216,6 @@ class _ReaderScreenState extends State<ReaderScreen>
             _preloadedAllChapters ?? widget.allChapters;
         final effectiveCurrentChapter =
             _preloadedCurrentChapter ?? widget.currentChapter;
-        // Always call loadContent with preloaded content if available
         return _readerCubit
           ..loadContent(
             widget.contentId,
@@ -1266,9 +1224,9 @@ class _ReaderScreenState extends State<ReaderScreen>
             preloadedContent: effectivePreloadedContent,
             imageMetadata: effectiveImageMetadata,
             chapterData: effectiveChapterData,
-            parentContent: effectiveParentContent, // Parent series
-            allChapters: effectiveAllChapters, // All chapters
-            currentChapter: effectiveCurrentChapter, // Current chapter
+            parentContent: effectiveParentContent,
+            allChapters: effectiveAllChapters,
+            currentChapter: effectiveCurrentChapter,
           );
       },
       child: BlocListener<ReaderCubit, ReaderState>(
@@ -1298,7 +1256,6 @@ class _ReaderScreenState extends State<ReaderScreen>
 
           _syncControllersWithState(state);
 
-          // 🎬 Toggle immersive mode based on UI visibility
           _toggleImmersiveMode(!(state.showUI ?? false));
 
           // Prefetch only for continuous scroll — PageView handles its own
@@ -1393,9 +1350,9 @@ class _ReaderScreenState extends State<ReaderScreen>
             preloadedContent: widget.preloadedContent,
             imageMetadata: widget.imageMetadata,
             chapterData: widget.chapterData,
-            parentContent: widget.parentContent, // Parent series
-            allChapters: widget.allChapters, // All chapters
-            currentChapter: widget.currentChapter, // Current chapter
+            parentContent: widget.parentContent,
+            allChapters: widget.allChapters,
+            currentChapter: widget.currentChapter,
           ),
         ),
       );

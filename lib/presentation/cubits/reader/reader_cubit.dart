@@ -49,7 +49,6 @@ typedef ReaderManualRepairContext = ({
   String? initialCookie,
 });
 
-/// Simple cubit for managing reader functionality with offline support
 class ReaderCubit extends Cubit<ReaderState> {
   static const String _ehentaiPartPrefix = '__ehpart__';
   static const String _ehentaiChunkPrefix = '__ehchunk__';
@@ -112,10 +111,8 @@ class ReaderCubit extends Cubit<ReaderState> {
   int _lastTrackedPage =
       1; // Tracks current page for persistence even when state is silent
 
-  // Public getters for chapter navigation
   Content? get parentContent => _parentContent;
 
-  /// Create state with [newStatus], preserving all other current state fields.
   ReaderState _withStatus(ReaderStatus newStatus) {
     final s = state;
     return ReaderState(
@@ -138,7 +135,6 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   List<Chapter>? get allChapters => _allChapters;
 
-  /// Load content for reading with offline support - OPTIMIZED VERSION
   Future<void> loadContent(
     String contentId, {
     int initialPage = 1,
@@ -146,19 +142,18 @@ class ReaderCubit extends Cubit<ReaderState> {
     Content? preloadedContent,
     List<ImageMetadata>? imageMetadata,
     ChapterData? chapterData,
-    Content? parentContent, // Parent series for chapter mode
-    List<Chapter>? allChapters, // All chapters for navigation
-    Chapter? currentChapter, // Current chapter being read
+    Content? parentContent,
+    List<Chapter>? allChapters,
+    Chapter? currentChapter,
   }) async {
     try {
       _stopAutoHideTimer();
       emit(_withStatus(ReaderStatus.loading));
 
-      // Store chapter navigation context first
       _parentContent = parentContent;
       _allChapters = allChapters;
 
-      // 🔍 DEBUG LOGGING - What did ReaderCubit receive?
+      // 🔍 DEBUG LOGGING
       _logger.i('📥 ReaderCubit.loadContent - Received:');
       _logger.i('  contentId: $contentId');
       _logger.i('  preloadedContent: ${preloadedContent?.title ?? "NULL"}');
@@ -179,8 +174,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.i('  _parentContent: ${_parentContent?.title ?? "NULL"}');
       _logger.i('  _allChapters: ${_allChapters?.length ?? 0} chapters');
 
-      // Check network connectivity?.chapters;
-
       final isConnected = networkCubit.isConnected;
       final sourceHint = _resolveSourceHint(
         preloadedContent: preloadedContent,
@@ -189,12 +182,9 @@ class ReaderCubit extends Cubit<ReaderState> {
       final isCrotpediaChapter =
           _isCrotpediaChapterId(contentId, sourceId: sourceHint);
 
-      // 1. Check offline availability first (Fastest)
-      // This uses the new caching in OfflineContentManager so it's very fast
       final isOfflineAvailable =
           await offlineContentManager.isContentAvailableOffline(contentId);
 
-      // 2. Load settings and restore position in parallel (Fast local DB ops)
       final localResults = await Future.wait([
         _loadReaderSettingsEntityOptimized(),
         if (forceStartFromBeginning)
@@ -206,8 +196,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       final savedSettings = localResults[0] as ReaderSettingsEntity;
       final restoredPage = localResults[1] as int;
 
-      // Use initialPage if user explicitly requested a specific page (initialPage > 1)
-      // Otherwise use restored page if available, fallback to initialPage
       final startPage = initialPage > 1
           ? initialPage
           : (restoredPage > 1 ? restoredPage : initialPage);
@@ -217,10 +205,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       Content? content;
       bool isOfflineMode = false;
 
-      // 3. Determine Loading Strategy
-
-      // Strategy A: Preloaded Content (Navigation from specialized screens)
-      // If preloaded content has local paths (starting with /), use it directly - it's offline content
+      // Strategy A: Preloaded Content
       final hasPreloadedContent = preloadedContent != null;
       final shouldUseImagePreloaded =
           hasPreloadedContent && preloadedContent.imageUrls.isNotEmpty;
@@ -229,29 +214,24 @@ class ReaderCubit extends Cubit<ReaderState> {
           chapterData == null &&
           (allChapters == null || allChapters.isEmpty);
       if (shouldUseImagePreloaded) {
-        // Check if preloaded content has local paths (offline content)
         final hasLocalPaths =
             preloadedContent.imageUrls.any((url) => url.startsWith('/'));
         if (hasLocalPaths) {
-          // ✅ Preloaded content IS offline content - use it directly
           _logger
               .i('✅ Strategy A: Using preloaded OFFLINE content: $contentId');
           content = preloadedContent;
           isOfflineMode = true;
         } else {
-          // Has http URLs - check if offline is available first
           final hasRemoteUrls =
               preloadedContent.imageUrls.any((url) => url.startsWith('http'));
 
           if (isOfflineAvailable && hasRemoteUrls) {
-            // Prefer offline path if available, even if we have preloaded content with remote URLs
             _logger.i(
                 '💾 Strategy A2: Found offline available, loading from local storage');
             content =
                 await offlineContentManager.createOfflineContent(contentId);
             isOfflineMode = true;
           } else if (hasRemoteUrls) {
-            // Use preloaded content with remote URLs (will load from network)
             _logger.i(
                 '✅ Strategy A3: Using preloaded content with remote URLs: $contentId');
             content = preloadedContent;
@@ -277,20 +257,18 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Strategy B: Offline Content (Primary Performance Path) - only if content not set yet
+      // Strategy B: Offline Content
       if (content == null && isOfflineAvailable) {
         _logger.i(
             '💾 Strategy B: Loading content from offline storage: $contentId');
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
 
-        // 🚀 OPTIONAL: Trigger background online update if connected
-        // This updates metadata/details silently without blocking UI
-        if (isConnected && !isCrotpediaChapter) {
+          if (isConnected && !isCrotpediaChapter) {
           await _fetchOnlineDetailsInBackground(contentId);
         }
       }
-      // Strategy C: Online Content (Fallback) - only if content not set yet
+      // Strategy C: Online Content
       else if (content == null && isConnected && !isCrotpediaChapter) {
         _logger.i('🌐 Strategy C: Fetching online content: $contentId');
         try {
@@ -302,7 +280,7 @@ class ReaderCubit extends Cubit<ReaderState> {
           _logger.w('Online fetch failed: $e');
         }
       }
-      // Strategy D: Last Resort Fallback (Partial Preloaded or Offline Retry)
+      // Strategy D: Last Resort Fallback
       if (content == null) {
         _logger.i('🔍 READER_CUBIT all strategies failed, entering Strategy D');
         if (preloadedContent != null && preloadedContent.imageUrls.isNotEmpty) {
@@ -313,7 +291,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           content = preloadedContent;
           isOfflineMode = !isConnected;
         } else {
-          // Try offline creation one last time (maybe cache missed?)
           try {
             content =
                 await offlineContentManager.createOfflineContent(contentId);
@@ -332,8 +309,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         throw Exception('Content not available online or offline');
       }
 
-      // 3.5. Fetch ChapterData if missing (for navigation)
-      // If we loaded content but don't have chapterData (navigation links), try to fetch it
+      // Fetch ChapterData if missing (for navigation)
       if (chapterData == null && isConnected && isCrotpediaChapter) {
         try {
           _logger
@@ -350,9 +326,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // 3.6. Fallback for single-content readers (no chapter list):
-      // If detail payload has no image URLs, fetch them from chapter endpoint
-      // using the same contentId (e.g. HentaiFox /gallery/{id}/).
+      // Fallback: detail payload has no image URLs, fetch from chapter endpoint
       if (content.imageUrls.isEmpty &&
           (isConnected || shouldUseNoChapterPreloaded)) {
         try {
@@ -404,7 +378,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // 4. Emit Loaded State Immediately
+      // Emit Loaded State
       emit(ReaderState(
         status: ReaderStatus.loaded,
         content: content!,
@@ -423,7 +397,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logImageUrlMapping(content);
       emit(_withStatus(ReaderStatus.loaded));
 
-      // 5. Post-load setup (Async)
       await _handlePostLoadSetup(savedSettings);
     } catch (e, stackTrace) {
       _logger.e('Reader Cubit Error: $e', error: e, stackTrace: stackTrace);
@@ -435,7 +408,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Fire-and-forget online fetch to update metadata or cache
   Future<void> _fetchOnlineDetailsInBackground(String contentId) async {
     try {
       // For composite chapter IDs (e.g. "doctors-rebirth/234"), extract only
@@ -451,45 +423,38 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// 🚀 OPTIMIZATION: Simplified reader settings loading
   Future<ReaderSettingsEntity> _loadReaderSettingsEntityOptimized() async {
     try {
       return await getReaderSettingsUseCase();
     } catch (e) {
       _logger.w('Failed to load reader settings, using defaults: $e');
-      return const ReaderSettingsEntity(); // Use defaults
+      return const ReaderSettingsEntity();
     }
   }
 
-  /// 🚀 OPTIMIZATION: Handle post-load setup asynchronously
   Future<void> _handlePostLoadSetup(ReaderSettingsEntity savedSettings) async {
     try {
-      // Apply keep screen on setting
       if (savedSettings.keepScreenOn) {
         await WakelockPlus.enable();
       }
 
-      // Start reading timer
       _startReadingTimer();
 
-      // Save to history (don't await to avoid blocking)
       await _saveToHistory();
     } catch (e) {
       _logger.w('Post-load setup failed: $e');
     }
   }
 
-  /// Navigate to next page
   void nextPage() {
     if (!isClosed && state.content != null) {
       final currentPage = state.currentPage ?? 1;
       final pageCount = state.content!.pageCount;
 
-      // Check if navigation page should be shown
+      // Allow +1 for navigation page if exists
       final hasNavigationPage = !(state.isOfflineMode ?? false) &&
           state.content!.imageUrls.isNotEmpty;
 
-      // If we're at last page and navigation page exists, allow +1 to show navigation
       final maxPage = hasNavigationPage ? pageCount + 1 : pageCount;
 
       if (currentPage < maxPage) {
@@ -508,7 +473,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Navigate to previous page
   void previousPage() {
     if (!state.isFirstPage && !isClosed && state.content != null) {
       final currentPage = state.currentPage ?? 1;
@@ -524,7 +488,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Load next chapter
   Future<void> loadNextChapter() async {
     await _saveToHistory();
 
@@ -562,7 +525,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     await loadChapter(nextChapterId);
   }
 
-  /// Load previous chapter
   Future<void> loadPreviousChapter() async {
     await _saveToHistory();
 
@@ -666,14 +628,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   bool get hasPreviousChapter => _resolvePreviousChapterId() != null;
 
-  /// Fetch the next page of chapters and merge into [_allChapters].
   Future<void> loadMoreChapters() async {
     if (_allChapters == null || _allChapters!.isEmpty) return;
     final nextPage = _allChapters!.length ~/ _configuredPageLimit + 1;
     await _fetchAndMergePage(nextPage);
   }
 
-  /// Read the page size (limit) from the source config.
   int get _configuredPageLimit {
     final sourceId = _parentContent?.sourceId ?? state.content?.sourceId;
     if (sourceId == null) return 100;
@@ -685,8 +645,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     return match != null ? int.parse(match.group(1)!) : 100;
   }
 
-  /// Fetch a page of chapters from the source and merge into [_allChapters].
-  /// Returns the merged list length or 0 if nothing was added.
   Future<int> _fetchAndMergePage(int page) async {
     final sourceId = _parentContent?.sourceId ?? state.content?.sourceId;
     final currentChapter = state.currentChapter;
@@ -729,8 +687,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Ensure the current chapter is present in [_allChapters].
-  /// If missing, fetches surrounding pages until found or pages exhausted.
   Future<void> _ensureChapterInPool(String chapterId) async {
     if (_allChapters == null) return;
     final exists = _allChapters!.any((c) => c.id == chapterId);
@@ -966,7 +922,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _logger.i('Loading chapter: ${chapter.title} (${chapter.id})');
 
-      // 🚀 OFFLINE-FIRST: Check if chapter is available offline
+      // Check offline availability first
       final isOfflineAvailable =
           await offlineContentManager.isContentAvailableOffline(chapterId);
 
@@ -988,12 +944,12 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Fallback to online API if offline content not available or failed
+      // Fallback to online API
       ChapterData? chapterData;
       if (!loadedFromOffline) {
         _logger.i('📡 Fetching chapter from online API');
 
-        // Check connectivity before making online request
+        // Check connectivity before online request
         final hasConnection = networkCubit.isConnected;
 
         if (!hasConnection) {
@@ -1026,7 +982,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Extract the parent series title (before the ' - Chapter' part)
+      // Build combined title from parent series + chapter
       final parentTitle =
           _parentContent?.title ?? state.content?.title.split(' - ')[0] ?? '';
       final fullTitle = '$parentTitle - ${chapter.title}';
@@ -1036,7 +992,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         title: fullTitle,
         imageUrls: chapterImages,
         pageCount: chapterImages.length,
-        chapters: _allChapters ?? [], // Include all chapters for navigation
+        chapters: _allChapters ?? [],
       );
 
       _lastTrackedPage = 1;
@@ -1059,15 +1015,12 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Jump to specific page
   void jumpToPage(int page) {
     goToPage(page);
   }
 
-  /// Navigate to specific page
   void goToPage(int page) {
     if (!isClosed && state.content != null) {
-      // Validate page range
       final totalPages = state.content!.pageCount;
       final validPage = page.clamp(1, totalPages);
 
@@ -1089,10 +1042,8 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Update current page from user swipe (without triggering navigation sync)
   void updateCurrentPageFromSwipe(int page) {
     if (!isClosed && state.content != null) {
-      // Validate page range
       final totalPages = state.content!.pageCount;
 
       // Allow +1 for navigation page (if exists)
@@ -1107,21 +1058,16 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _lastTrackedPage = validPage;
 
-      // Only emit state change, don't trigger sync navigation
       emit(state.copyWithPage(validPage));
       _saveReaderPosition();
       _saveToHistory();
     }
   }
 
-  /// Throttle silent DB saves — skip if same page saved recently
   int _lastSilentSavedPage = -1;
   DateTime _lastSilentSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
   static const Duration _silentSaveThrottle = Duration(seconds: 2);
 
-  /// Update current page for continuous scroll (silent update without state emission)
-  /// This prevents re-rendering all ListView items when page changes
-  /// Saves to DB only when page changes AND at most once per 2s.
   void updateCurrentPageSilent(int page) async {
     if (!isClosed && state.content == null) return;
 
@@ -1130,7 +1076,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     _lastTrackedPage = validPage;
 
-    // Skip DB write if same page or too soon since last save
+    // Skip if same page or too soon
     final now = DateTime.now();
     if (validPage == _lastSilentSavedPage &&
         now.difference(_lastSilentSaveAt) < _silentSaveThrottle) {
@@ -1144,8 +1090,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     _logger.d(
         '📍 Silent page update for continuous scroll: $validPage (total: $totalPages)');
 
-    // DON'T emit state - this prevents BlocBuilder rebuilds
-    // But still save position and history for persistence
+    // Don't emit state — prevents BlocBuilder rebuilds, still save position + history
     try {
       final position = ReaderPosition.create(
         contentId: state.content!.id,
@@ -1166,11 +1111,9 @@ class ReaderCubit extends Cubit<ReaderState> {
             .indexWhere((c) => c.id == state.currentChapter!.id);
       }
 
-      // Determine chapter ID - fallback to content.id for chapter mode
       String? chapterId = state.currentChapter?.id;
       String? chapterTitle = state.currentChapter?.title;
 
-      // If currentChapter is null but content.id looks like a chapter ID, use it
       if (chapterId == null || chapterId.isEmpty) {
         final contentId = state.content!.id;
         if (_isCrotpediaChapterId(
@@ -1178,7 +1121,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           sourceId: state.content?.sourceId ?? _parentContent?.sourceId,
         )) {
           chapterId = contentId;
-          // Try to extract chapter title from content title
           final title = state.content!.title;
           if (title.contains(' - ')) {
             chapterTitle = title.split(' - ').last;
@@ -1188,8 +1130,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Additional fallback: if chapterId is still empty but we have chapterTitle
-      // that looks like a chapter ID (contains "-chapter-"), use it
       if ((chapterId == null || chapterId.isEmpty) &&
           chapterTitle != null &&
           chapterTitle.isNotEmpty &&
@@ -1197,20 +1137,14 @@ class ReaderCubit extends Cubit<ReaderState> {
         chapterId = chapterTitle;
       }
 
-      // NEW LOGIC:
-      // - If chapter mode: contentId = chapter.id, parentId = series.id
-      // - If non-chapter mode: contentId = content.id, parentId = null
       final bool isChapterMode = chapterId != null && chapterId.isNotEmpty;
       final String historyContentId;
       final String? historyParentId;
 
       if (isChapterMode) {
-        // Chapter mode: use chapter.id as contentId
         historyContentId = chapterId;
-        // parentId is the series ID
         historyParentId = _parentContent?.id;
       } else {
-        // Non-chapter mode: use content.id as contentId
         historyContentId = state.content!.id;
         historyParentId = null;
       }
@@ -1246,13 +1180,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Toggle UI visibility
   void toggleUI() {
     if (!isClosed) {
       final newShowUI = !(state.showUI ?? true);
       emit(state.copyWithUI(showUI: newShowUI));
 
-      // Save to preferences with error handling
       readerSettingsEntityRepository
           .saveShowUI(newShowUI)
           .catchError((e, stackTrace) {
@@ -1261,7 +1193,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         // Settings will still apply for current session
       });
 
-      // Start auto-hide timer if UI is shown
+      // Start auto-hide timer
       if (newShowUI) {
         _startAutoHideTimer();
       } else {
@@ -1270,7 +1202,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Show UI temporarily
   void showUI() {
     if (!isClosed) {
       emit(state.copyWithUI(showUI: true));
@@ -1278,7 +1209,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     _startAutoHideTimer();
   }
 
-  /// Hide UI
   void hideUI() {
     if (!isClosed) {
       emit(state.copyWithUI(showUI: false));
@@ -1286,8 +1216,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     _stopAutoHideTimer();
   }
 
-  /// Handle image loaded and detect webtoon/manhwa format
-  /// Auto-switches to continuous scroll for vertical images
+  /// Auto-switch to continuous scroll on tall-image detection
   void onImageLoaded(int pageNumber, Size imageSize) {
     // Only check first few images to avoid performance overhead
     if (pageNumber > 3 || _hasDetectedWebtoon) return;
@@ -1299,19 +1228,16 @@ class ReaderCubit extends Cubit<ReaderState> {
       _hasDetectedWebtoon = true;
       final currentMode = state.readingMode ?? ReadingMode.singlePage;
 
-      // Only auto-switch if not already in continuous scroll
       if (currentMode != ReadingMode.continuousScroll) {
         _logger.i('🎨 Webtoon/Manhwa detected on page $pageNumber! '
             'AR=${aspectRatio?.toStringAsFixed(2)} (${imageSize.width.toInt()}x${imageSize.height.toInt()}px) '
             '→ Auto-switching from ${currentMode.name} to continuousScroll');
 
-        // Switch to continuous scroll (best for vertical images)
         if (!isClosed) {
           emit(state.copyWithMode(readingMode: ReadingMode.continuousScroll));
         }
 
-        // Note: We don't save this to preferences to preserve user's choice
-        // The auto-switch only applies to current reading session
+        // Don't persist — session-only auto-switch preserves user preference
       }
     } else {
       // _logger.d('📖 Normal image detected on page $pageNumber: '
@@ -1319,7 +1245,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Change reading mode
   Future<void> changeReadingMode(
     ReadingMode mode, {
     bool persistPreference = true,
@@ -1330,7 +1255,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
 
     if (resetWebtoonDetection) {
-      // Reset webtoon detection for manual mode changes.
       _hasDetectedWebtoon = false;
     }
 
@@ -1338,7 +1262,6 @@ class ReaderCubit extends Cubit<ReaderState> {
       return;
     }
 
-    // Save to preferences with error handling
     try {
       await readerSettingsEntityRepository.saveReadingMode(mode);
       _logger.i('Successfully saved reading mode: ${mode.name}');
@@ -1349,7 +1272,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Toggle zoom setting and persist it
   Future<void> toggleEnableZoom() async {
     final newEnableZoom = !(state.enableZoom ?? true);
     if (!isClosed) {
@@ -1366,7 +1288,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Set tap direction (normal or inverted) and persist it
   Future<void> setTapDirection(TapDirection direction) async {
     if (!isClosed) {
       emit(state.copyWithMode(tapDirection: direction));
@@ -1380,7 +1301,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Toggle keep screen on
   Future<void> toggleKeepScreenOn() async {
     final newKeepScreenOn = !(state.keepScreenOn ?? false);
 
@@ -1395,7 +1315,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         emit(state.copyWithUI(keepScreenOn: newKeepScreenOn));
       }
 
-      // Save to preferences with error handling
       try {
         await readerSettingsEntityRepository.saveKeepScreenOn(newKeepScreenOn);
         _logger.i('Successfully saved keep screen on: $newKeepScreenOn');
@@ -1411,7 +1330,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Clear reader position for specific content (useful for debugging)
   Future<void> clearReaderPosition(String contentId) async {
     try {
       await readerRepository.deleteReaderPosition(contentId);
@@ -1421,7 +1339,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Clear all reader positions (useful for debugging)
   Future<void> clearAllReaderPositions() async {
     try {
       await clearAllReaderPositionsUseCase();
@@ -1431,7 +1348,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Clear image cache for specific content (useful for debugging)
   Future<void> clearImageCache(String contentId) async {
     try {
       await LocalImagePreloader.clearContentCache(contentId);
@@ -1585,7 +1501,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         imageUrls: updatedImageUrls,
       );
 
-      // Update metadata.json to remove the failed_pages entry so it doesn't inject placeholder again
+      // Remove failed_pages from metadata so placeholder isn't re-injected
       await offlineContentManager.removeFailedPageFromMetadata(
         currentContent.id,
         pageNumber,
@@ -2341,7 +2257,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     return null;
   }
 
-  /// Debug: Log image URL mapping for current content
   void _logImageUrlMapping(Content content) {
     if (content.imageUrls.isEmpty) {
       _logger.w('⚠️ No image URLs found for content: ${content.id}');
@@ -2378,7 +2293,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     _checkForDuplicateUrls(content);
   }
 
-  /// Validate individual image URL
   void _validateImageUrl(String url, int expectedPage, String contentId) {
     try {
       // Check if URL is accessible (basic validation)
@@ -2411,7 +2325,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Check for duplicate URLs in content
   void _checkForDuplicateUrls(Content content) {
     final urlSet = <String>{};
     final duplicates = <String>[];
@@ -2438,7 +2351,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Extract page number from image URL
   int? _extractPageNumberFromUrl(String url) {
     // Try to extract page number from patterns like:
     // https://i.nhentai.net/galleries/123456/1.jpg -> 1
@@ -2457,13 +2369,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     return null;
   }
 
-  /// Reset all reader settings to defaults
   Future<void> resetReaderSettings() async {
     try {
       await readerSettingsEntityRepository.resetToDefaults();
       _logger.i('Successfully reset reader settings to defaults');
 
-      // Apply default settings to current state
       if (!isClosed) {
         emit(state
             .copyWithUI(showUI: true, keepScreenOn: false)
@@ -2501,7 +2411,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Save current reading progress to history
   Future<void> _saveToHistory() async {
     if (state.isOfflineMode == true) return;
 
@@ -2513,15 +2422,12 @@ class ReaderCubit extends Cubit<ReaderState> {
           '   state.currentChapter.id: ${state.currentChapter?.id ?? "NULL"}');
       _logger.d('   state.content.id: ${state.content!.id}');
 
-      // Calculate chapter index if available
       int? chapterIndex;
       if (state.currentChapter != null && state.content?.chapters != null) {
         chapterIndex = state.content!.chapters!
             .indexWhere((c) => c.id == state.currentChapter!.id);
       }
 
-      // Determine chapter ID - fallback to content.id for chapter mode
-      // This ensures chapterId is set even when currentChapter is null
       String? chapterId = state.currentChapter?.id;
       String? chapterTitle = state.currentChapter?.title;
 
@@ -2536,8 +2442,6 @@ class ReaderCubit extends Cubit<ReaderState> {
           sourceId: state.content?.sourceId ?? _parentContent?.sourceId,
         )) {
           chapterId = contentId;
-          // Try to extract chapter title from content title
-          // Format: "Series Title - Chapter X" or just "Chapter X"
           final title = state.content!.title;
           if (title.contains(' - ')) {
             chapterTitle = title.split(' - ').last;
@@ -2548,8 +2452,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         }
       }
 
-      // Additional fallback: if chapterId is still empty but we have chapterTitle
-      // that looks like a chapter ID (contains "-chapter-"), use it
+      // chapterTitle may contain "-chapter-", use as fallback ID
       if ((chapterId == null || chapterId.isEmpty) &&
           chapterTitle != null &&
           chapterTitle.isNotEmpty &&
@@ -2561,22 +2464,14 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.d('   Final chapterId: $chapterId');
       _logger.d('   _parentContent.id: ${_parentContent?.id ?? "NULL"}');
 
-      // NEW LOGIC:
-      // - If chapter mode: contentId = chapter.id, parentId = series.id
-      // - If non-chapter mode: contentId = content.id, parentId = null
       final bool isChapterMode = chapterId != null && chapterId.isNotEmpty;
       final String historyContentId;
       final String? historyParentId;
 
       if (isChapterMode) {
-        // Chapter mode: use chapter.id as contentId
         historyContentId = chapterId;
-        // parentId is the series ID
         historyParentId = _parentContent?.id;
-        // _logger.d(
-        //     '📚 CHAPTER MODE: contentId=$historyContentId, parentId=$historyParentId');
       } else {
-        // Non-chapter mode: use content.id as contentId
         historyContentId = state.content!.id;
         historyParentId = null;
         _logger.d('📖 NON-CHAPTER MODE: contentId=$historyContentId');
@@ -2618,7 +2513,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Save reader position for persistence
   Future<void> _saveReaderPosition() async {
     if (state.content == null) return;
 
@@ -2642,7 +2536,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
   }
 
-  /// Restore reader position if exists
   Future<int> _restoreReaderPosition(String contentId) async {
     try {
       final position = await getReaderPositionUseCase(contentId);
@@ -2655,16 +2548,13 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logger.e('Failed to restore reader position: $e');
     }
 
-    // Return first page as default
     return 1;
   }
 
-  /// Start reading timer
   void _startReadingTimer() {
     _logger.i('start reading timer');
     _readingTimer?.cancel();
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Check if cubit is still active before emitting state
       if (!isClosed) {
         final currentTimer = state.readingTimer ?? Duration.zero;
         emit(state.copyWithTimer(currentTimer + const Duration(seconds: 1)));
@@ -2676,13 +2566,11 @@ class ReaderCubit extends Cubit<ReaderState> {
     _logger.i('end reading timer');
   }
 
-  /// Stop reading timer
   void _stopReadingTimer() {
     _readingTimer?.cancel();
     _readingTimer = null;
   }
 
-  /// Start auto-hide UI timer
   void _startAutoHideTimer() {
     _stopAutoHideTimer();
     _autoHideTimer = Timer(const Duration(seconds: 3), () {
@@ -2742,8 +2630,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     return null;
   }
 
-  /// Handle app lifecycle pause (lock screen, background).
-  /// Cancels reading timer and disables wakelock to prevent overheating.
   void handleLifecyclePause() {
     if (_isBackgrounded) return;
     _isBackgrounded = true;
@@ -2756,8 +2642,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     WakelockPlus.disable().catchError((_) {});
   }
 
-  /// Handle app lifecycle resume (unlock screen, foreground).
-  /// Restarts reading timer and re-enables wakelock if it was on before pause.
   void handleLifecycleResume() {
     if (!_isBackgrounded) return;
     _isBackgrounded = false;
@@ -2769,7 +2653,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     _startReadingTimer();
   }
 
-  /// Stop auto-hide UI timer
   void _stopAutoHideTimer() {
     _autoHideTimer?.cancel();
     _autoHideTimer = null;
