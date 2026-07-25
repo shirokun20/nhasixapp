@@ -98,10 +98,20 @@ class BubbleDetector(context: Context) : Closeable {
             // YOLO26 end-to-end outputs [x1, y1, x2, y2, conf, class_id]
             // x1,y1 = top-left, x2,y2 = bottom-right (in 1280 letterbox space)
             // Convert from 1280-letterbox space → original image coords
-            val left = ((x - padLeft) / letterScale).toInt().coerceIn(0, origWidth - 1)
-            val top = ((y - padTop) / letterScale).toInt().coerceIn(0, origHeight - 1)
-            val right = ((w - padLeft) / letterScale).toInt().coerceIn(0, origWidth - 1)
-            val bottom = ((h - padTop) / letterScale).toInt().coerceIn(0, origHeight - 1)
+            var left = ((x - padLeft) / letterScale).toInt()
+            var top = ((y - padTop) / letterScale).toInt()
+            var right = ((w - padLeft) / letterScale).toInt()
+            var bottom = ((h - padTop) / letterScale).toInt()
+
+            // Expand 40% (20% each side) to capture full speech bubble
+            val bw = (right - left).coerceAtLeast(1)
+            val bh = (bottom - top).coerceAtLeast(1)
+            val expX = (bw * 0.2).toInt().coerceAtLeast(10)
+            val expY = (bh * 0.2).toInt().coerceAtLeast(10)
+            left = (left - expX).coerceIn(0, origWidth - 1)
+            top = (top - expY).coerceIn(0, origHeight - 1)
+            right = (right + expX).coerceIn(0, origWidth - 1)
+            bottom = (bottom + expY).coerceIn(0, origHeight - 1)
             val rw = (right - left).coerceAtLeast(1)
             val rh = (bottom - top).coerceAtLeast(1)
 

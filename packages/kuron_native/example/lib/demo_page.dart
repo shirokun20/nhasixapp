@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
@@ -10,7 +11,6 @@ import 'package:kuron_native/kuron_native.dart';
 import 'models/ai_provider_config.dart';
 import 'models/bubble_box.dart';
 import 'models/page_translation.dart';
-// import 'services/mosaic_builder.dart';
 import 'widgets/translation_style_picker.dart';
 
 enum PipelineState {
@@ -34,26 +34,42 @@ class DemoPage extends StatefulWidget {
 class _DemoPageState extends State<DemoPage> {
   PipelineState _state = PipelineState.welcome;
   String? _error;
-  String _style = 'genz';
+  String _style = 'natural';
   String _targetLang = 'Indonesia';
   bool _overlayVisible = false;
   bool _showDetection = false;
   bool _isManualMode = false;
-  double _renderScaleX = 1.0, _renderScaleY = 1.0; // image→widget scale
+  bool _sfxSkip = true; // NEW: SFX toggle default on
+  double _renderScaleX = 1.0, _renderScaleY = 1.0;
 
-  // Image data
+  // Image
   Uint8List? _pageBytes;
   ui.Image? _pageImage;
   int _imgW = 0, _imgH = 0;
+  String? _currentImageUrl; // track loaded URL for cache key
 
-  // AI Provider config (bisa diset lewat Test Provider sheet)
+  // URL loading
+  final _urlCtrl = TextEditingController();
+
+  // AI Provider
   String _providerBaseUrl = '';
   String _providerModel = '';
   String _providerKey = '';
 
+  // Bubbles
   List<BubbleBox> _detectedBoxes = [];
   PageTranslation? _translation;
   final List<BubbleBox> _manualBoxes = [];
+
+  // Per-bubble loading state (how many parsed so far)
+  int _parsedBubbleCount = 0;
+  int _totalBubbles = 0;
+
+  // Edit state
+  final _editCtrl = TextEditingController();
+
+  // In-memory translation cache
+  final Map<String, PageTranslation> _translationCache = {};
 
   // Drawing
   bool _isDrawing = false;
@@ -62,8 +78,8 @@ class _DemoPageState extends State<DemoPage> {
   final List<String> _log = [];
   final _imageAreaKey = GlobalKey();
 
-  /// Build mosaic in a background isolate so UI doesn't freeze.
-  /// Accepts serializable data, returns JPEG bytes.
+  /// Build mosaic in background isolate.
+  /// Max mosaic width 800px — downscale if wider for faster AI upload.
   Future<Uint8List?> _buildMosaicIsolate(
     Uint8List pageBytes,
     List<Map<String, dynamic>> boxMaps,
@@ -84,18 +100,17 @@ class _DemoPageState extends State<DemoPage> {
         final cw = (bw + padX * 2).clamp(1, original.width - cx);
         final ch = (bh + padY * 2).clamp(1, original.height - cy);
         var crop = img.copyCrop(original, x: cx, y: cy, width: cw, height: ch);
-        crop = img.copyResize(crop, width: (cw * 2).clamp(1, 2000));
-        // Label
-        final font = img.arial24;
-        final lblW = '${boxMaps.indexOf(m) + 1}'.length * 14 + 8;
+        crop = img.copyResize(crop, width: (cw * 2).clamp(1, 1200));
+        // Label — use small font
+        final lblW = '${boxMaps.indexOf(m) + 1}'.length * 12 + 6;
         final lbl = img.Image(width: lblW, height: crop.height);
         img.fill(lbl, color: img.ColorRgba8(255, 255, 255, 255));
         img.drawString(
           lbl,
           '${boxMaps.indexOf(m) + 1}',
-          font: font,
-          x: 4,
-          y: (crop.height ~/ 2) - 12,
+          font: img.arial14,
+          x: 2,
+          y: (crop.height ~/ 2) - 7,
           color: img.ColorRgba8(255, 0, 0, 255),
         );
         final combined = img.Image(
@@ -107,7 +122,7 @@ class _DemoPageState extends State<DemoPage> {
         chips.add(combined);
       }
 
-      final gap = 10;
+      final gap = 8;
       final mw = chips.map((c) => c.width).reduce((a, b) => a > b ? a : b);
       final mh =
           chips.fold(0, (sum, c) => sum + c.height) + gap * (chips.length - 1);
@@ -118,194 +133,154 @@ class _DemoPageState extends State<DemoPage> {
         yo += c.height + gap;
       }
 
-      return img.encodeJpg(mosaic, quality: 85);
+      // Downscale if too wide (>800px) for faster upload
+      final finalMosaic = mosaic.width > 800
+          ? img.copyResize(mosaic, width: 800)
+          : mosaic;
+      return img.encodeJpg(finalMosaic, quality: 80);
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _log.add('App ready. Tap "Load Test Image" to start.');
+  // ── NMS + False Positive Filter ───────────────────────────
+
+  double _iou(BubbleBox a, BubbleBox b) {
+    final x1 = max(a.x, b.x).toDouble();
+    final y1 = max(a.y, b.y).toDouble();
+    final x2 = min(a.x + a.w, b.x + b.w).toDouble();
+    final y2 = min(a.y + a.h, b.y + b.h).toDouble();
+    final inter = max(0.0, x2 - x1) * max(0.0, y2 - y1);
+    if (inter <= 0) return 0;
+    final areaA = a.w * a.h;
+    final areaB = b.w * b.h;
+    return inter / (areaA + areaB - inter);
   }
 
-  @override
-  void dispose() {
-    _pageImage?.dispose();
-    super.dispose();
+  bool _contains(BubbleBox outer, BubbleBox inner) {
+    return outer.x <= inner.x &&
+        outer.y <= inner.y &&
+        outer.x + outer.w >= inner.x + inner.w &&
+        outer.y + outer.h >= inner.y + inner.h;
   }
 
-  void _logm(String msg) => setState(() => _log.add('[${_log.length}] $msg'));
-
-  // ── Load image ───────────────────────────────────────────
-
-  Future<void> _loadTestImage() async {
-    _logm('Loading test image...');
-    try {
-      final data = await rootBundle.load('assets/sample_manga.webp');
-      _pageBytes = data.buffer.asUint8List();
-      final codec = await ui.instantiateImageCodec(_pageBytes!);
-      final frame = await codec.getNextFrame();
-      _pageImage?.dispose();
-      _pageImage = frame.image;
-      _imgW = _pageImage!.width;
-      _imgH = _pageImage!.height;
-      codec.dispose();
-      _resetPipeline();
-      _logm('Image loaded: ${_imgW}x$_imgH px');
-      setState(() => _state = PipelineState.imageLoaded);
-    } catch (e) {
-      _logm('FAILED to load image: $e');
-      setState(() {
-        _state = PipelineState.error;
-        _error = 'Failed to load test image.';
-      });
+  List<BubbleBox> _applyNms(List<BubbleBox> boxes, double iouThreshold) {
+    if (boxes.isEmpty) return [];
+    final sorted = List<BubbleBox>.from(boxes)
+      ..sort((a, b) => b.confidence.compareTo(a.confidence));
+    final keep = <BubbleBox>[];
+    while (sorted.isNotEmpty) {
+      final best = sorted.removeAt(0);
+      keep.add(best);
+      sorted.removeWhere((b) => _iou(best, b) > iouThreshold);
     }
+    return keep;
   }
 
-  void _resetPipeline() {
-    _detectedBoxes = [];
-    _translation = null;
-    _manualBoxes.clear();
-    _overlayVisible = false;
-    _showDetection = false;
-
-    _isDrawing = false;
-    _error = null;
-  }
-
-  // ── Detection ────────────────────────────────────────────
-
-  Future<void> _runDetection() async {
-    if (_pageBytes == null) return;
-    _logm('Running bubble detection...');
-    setState(() => _state = PipelineState.detecting);
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _detectedBoxes = await _realDetect(_pageBytes!, _imgW, _imgH);
-    _manualBoxes.clear();
-    _showDetection = true;
-    _overlayVisible = false;
-    _logm('Detection done: ${_detectedBoxes.length} bubbles');
-    setState(() => _state = PipelineState.detected);
-  }
-
-  // ── Translate (REAL AI) ───────────────────────────────────
-
-  Future<void> _runTranslation() async {
-    _logm('runTranslation called, state=$_state');
-    final boxes = _activeBoxes;
-    _logm(
-      'boxes=${boxes.length}, pageBytes=${_pageBytes != null}, manual=$_isManualMode',
-    );
-    if (boxes.isEmpty || _pageBytes == null) {
-      _logm('SKIP: no boxes or no image');
-      return;
+  List<BubbleBox> _removeFalsePositives(List<BubbleBox> boxes) {
+    // Remove boxes that engulf >2.5× smaller boxes (false positive raksasa)
+    final toRemove = <int>{};
+    for (var i = 0; i < boxes.length; i++) {
+      for (var j = 0; j < boxes.length; j++) {
+        if (i == j) continue;
+        final areaI = boxes[i].w * boxes[i].h;
+        final areaJ = boxes[j].w * boxes[j].h;
+        if (areaJ * 2.5 < areaI && _contains(boxes[i], boxes[j])) {
+          toRemove.add(i);
+        }
+      }
     }
-    _logm('Building mosaic + sending to AI (style: $_style)...');
+    return [for (var i = 0; i < boxes.length; i++)
+      if (!toRemove.contains(i)) boxes[i]];
+  }
+
+  // ── Full-image fallback (0 bubbles detected) ──────────────
+
+  Future<void> _sendFullImageFallback() async {
+    _logm('0 bubbles detected. Sending full image as fallback...');
     setState(() => _state = PipelineState.translating);
 
     try {
-      // 1. Build mosaic in isolate biar gak blokir UI
-      _logm('Building mosaic...');
-      final t0 = DateTime.now();
-      final boxMaps = boxes.map((b) => b.toJson()).toList();
-      final jpeg = await _buildMosaicIsolate(
-        _pageBytes!,
-        boxMaps,
-        _imgW,
-        _imgH,
-      );
-      if (jpeg == null) {
-        _logm('FAILED: mosaic null');
-        setState(() {
-          _state = PipelineState.error;
-          _error = 'Translate gagal';
-        });
+      // Check cache
+      final key = _cacheKey();
+      if (_translationCache.containsKey(key)) {
+        _logm('Cache HIT for $key');
+        _translation = _translationCache[key]!;
+        _overlayVisible = true;
+        setState(() => _state = PipelineState.translated);
         return;
       }
-      _logm(
-        'Mosaic ready in ${DateTime.now().difference(t0).inMilliseconds}ms (${jpeg.length} bytes)',
-      );
-      final b64 = base64Encode(jpeg);
 
-      // 3. Build prompt with style
+      // Compress full image
+      final original = img.decodeImage(_pageBytes!);
+      if (original == null) throw Exception('Failed to decode image');
+      final resized = img.copyResize(original, width: min(original.width, 1280));
+      final jpeg = img.encodeJpg(resized, quality: 85);
+      final b64 = base64Encode(jpeg);
+      _logm('Full image compressed: ${jpeg.length} bytes');
+
       final styleInjection = _stylePrompt(_style);
       final prompt =
-          'Translate manga image to $_targetLang.\n\n'
-          'Each bubble has a RED NUMBER on its LEFT side.\n\n'
-          'Format: <|1|>translation\\n<|2|>translation\\n<|3|>SKIP\\n...\n\n'
+          'Translate this manga page to $_targetLang.\n\n'
+          'Read ALL text in the image and return translations.\n\n'
+          'Format: <|1|>translation\\n<|2|>translation\\n<|3|>translation\\n...\n\n'
           'Example:\n'
           '<|1|>Dunia ini indah\n'
-          '<|2|>Aku akan terus hidup\n'
-          '<|3|>SKIP\n\n'
+          '<|2|>Aku akan terus hidup\n\n'
           'RULES:\n'
-          '- SFX-only bubbles → SKIP\n'
+          '- Translate EVERY text you see (dialogue, narration, signs)\n'
           '- Lokalisasi honorifik (-san/-kun/-chan) sesuai target style\n'
-          '- Translate ALL visible bubbles\n'
+          '- Skip pure SFX (ドドド, バキ, etc.)\n'
           '$styleInjection\n'
           'Return ONLY the <|N|> lines. No markdown, no thinking.';
 
-      // 4. Call AI (openai-compatible or gemini)
       final isGemini = _providerModel.startsWith('gemini-');
-      _logm('Provider: $_providerModel @ $_providerBaseUrl (gemini=$isGemini)');
       final client = HttpClient();
       try {
         HttpClientRequest req;
         if (isGemini) {
-          // Gemini API
           final url =
               '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
           req = await client.postUrl(Uri.parse(url));
           req.headers.contentType = ContentType.json;
-          req.write(
-            jsonEncode({
-              'contents': [
-                {
-                  'parts': [
-                    {'text': prompt},
-                    {
-                      'inline_data': {'mime_type': 'image/jpeg', 'data': b64},
-                    },
-                  ],
-                },
-              ],
-            }),
-          );
+          req.write(jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': prompt},
+                  {'inline_data': {'mime_type': 'image/jpeg', 'data': b64}},
+                ],
+              },
+            ],
+          }));
         } else {
-          // OpenAI-compatible
           req = await client.postUrl(Uri.parse(_providerBaseUrl));
           req.headers.contentType = ContentType.json;
           if (_providerKey.isNotEmpty) {
             req.headers.set('Authorization', 'Bearer $_providerKey');
           }
-          req.write(
-            jsonEncode({
-              'model': _providerModel,
-              'stream': false,
-              'max_tokens': 1000,
-              'thinking': {'type': 'disabled'},
-              'messages': [
-                {
-                  'role': 'user',
-                  'content': [
-                    {'type': 'text', 'text': prompt},
-                    {
-                      'type': 'image_url',
-                      'image_url': {'url': 'data:image/jpeg;base64,$b64'},
-                    },
-                  ],
-                },
-              ],
-            }),
-          );
+          req.write(jsonEncode({
+            'model': _providerModel,
+            'stream': false,
+            'max_tokens': 1000,
+            'thinking': {'type': 'disabled'},
+            'messages': [
+              {
+                'role': 'user',
+                'content': [
+                  {'type': 'text', 'text': prompt},
+                  {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:image/jpeg;base64,$b64'},
+                  },
+                ],
+              },
+            ],
+          }));
         }
         final resp = await req.close();
         final body = await resp.transform(utf8.decoder).join();
 
         if (resp.statusCode != 200) {
-          _logm(
-            'AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}',
-          );
+          _logm('AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}');
           setState(() {
             _state = PipelineState.error;
             _error = 'Translate gagal';
@@ -328,7 +303,411 @@ class _DemoPageState extends State<DemoPage> {
           if (choices != null && choices.isNotEmpty) {
             final msg = choices[0]['message'] as Map?;
             content = msg?['content'] as String?;
-            // Reasoning models (kimi, glm, deepseek) put answer in reasoning_content
+            if ((content == null || content.trim().isEmpty) &&
+                msg?['reasoning_content'] != null) {
+              content = msg?['reasoning_content'] as String?;
+            }
+          }
+        }
+        if (content == null || content.isEmpty) {
+          _logm('Empty AI response on fallback');
+          setState(() {
+            _state = PipelineState.error;
+            _error = 'Translate gagal';
+          });
+          return;
+        }
+
+        _logm('Full-image AI raw: ${content.substring(0, content.length.clamp(0, 200))}');
+
+        // Parse <|N|> lines
+        final translations = <String, String>{};
+        final pipeRe = RegExp(r'<\|(\d+)\|>\s*(.+?)(?:\n|$)');
+        for (final m in pipeRe.allMatches(content)) {
+          translations[m.group(1)!] = m.group(2)!.trim();
+        }
+        if (translations.isEmpty) {
+          // Just wrap entire response as one bubble
+          translations['1'] = content.trim();
+        }
+
+        // Create page translation at position (0,0, imgW, imgH) — full page
+        final bubbleTranslations = <BubbleTranslation>[];
+        for (final entry in translations.entries) {
+          bubbleTranslations.add(BubbleTranslation(
+            id: int.tryParse(entry.key) ?? 1,
+            original: '',
+            translated: entry.value,
+            x: 0,
+            y: 0,
+            w: _imgW,
+            h: _imgH,
+          ));
+        }
+
+        _translation = PageTranslation(bubbles: bubbleTranslations);
+        _overlayVisible = true;
+        // Save fallback to cache
+        _translationCache[key] = _translation!;
+        _logm('Fallback done! ${bubbleTranslations.where((b) => !b.isSkipped).length} entries');
+        setState(() => _state = PipelineState.translated);
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      _logm('Fallback FAILED: $e');
+      setState(() {
+        _state = PipelineState.error;
+        _error = '$e';
+      });
+    }
+  }
+
+  // ── Bubble Edit ───────────────────────────────────────────
+
+  void _showEditDialog(int bubbleId, String currentText) {
+    _editCtrl.text = currentText;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Edit Bubble #$bubbleId'),
+        content: TextField(
+          controller: _editCtrl,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Translation',
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newText = _editCtrl.text.trim();
+              if (_translation != null && newText.isNotEmpty) {
+                setState(() {
+                  final idx = _translation!.bubbles.indexWhere(
+                    (b) => b.id == bubbleId,
+                  );
+                  if (idx >= 0) {
+                    _translation!.bubbles[idx] = BubbleTranslation(
+                      id: bubbleId,
+                      original: _translation!.bubbles[idx].original,
+                      translated: newText,
+                      x: _translation!.bubbles[idx].x,
+                      y: _translation!.bubbles[idx].y,
+                      w: _translation!.bubbles[idx].w,
+                      h: _translation!.bubbles[idx].h,
+                    );
+                  }
+                });
+                _logm('Bubble #$bubbleId edited');
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _urlCtrl.text = 'https://i.nhentai.net/galleries/123456/1.jpg';
+    _log.add('App ready. Paste image URL or load local image.');
+  }
+
+  @override
+  void dispose() {
+    _pageImage?.dispose();
+    _urlCtrl.dispose();
+    _editCtrl.dispose();
+    super.dispose();
+  }
+
+  void _logm(String msg) => setState(() => _log.add('[${_log.length}] $msg'));
+
+  // ── Load image ───────────────────────────────────────────
+
+  Future<void> _loadFromUrl() async {
+    final url = _urlCtrl.text.trim();
+    if (url.isEmpty) {
+      _logm('URL kosong');
+      return;
+    }
+    _logm('Downloading: $url');
+    setState(() => _state = PipelineState.detecting); // reuse as loading
+
+    try {
+      final client = HttpClient();
+      try {
+        final req = await client.getUrl(Uri.parse(url));
+        final resp = await req.close();
+        if (resp.statusCode != 200) {
+          _logm('HTTP ${resp.statusCode}: gagal download');
+          setState(() {
+            _state = PipelineState.error;
+            _error = 'Download gagal: HTTP ${resp.statusCode}';
+          });
+          return;
+        }
+        _pageBytes = await resp.fold<Uint8List>(
+          Uint8List(0),
+          (prev, chunk) => Uint8List.fromList([...prev, ...chunk]),
+        );
+      } finally {
+        client.close();
+      }
+
+      if (_pageBytes == null || _pageBytes!.isEmpty) {
+        _logm('Download kosong');
+        return;
+      }
+      _logm('Downloaded: ${_pageBytes!.length} bytes');
+
+      final codec = await ui.instantiateImageCodec(_pageBytes!);
+      final frame = await codec.getNextFrame();
+      _pageImage?.dispose();
+      _pageImage = frame.image;
+      _imgW = _pageImage!.width;
+      _imgH = _pageImage!.height;
+      codec.dispose();
+      _currentImageUrl = url;
+      _resetPipeline();
+      _logm('Image loaded: ${_imgW}x$_imgH px');
+      setState(() => _state = PipelineState.imageLoaded);
+    } catch (e) {
+      _logm('FAILED: $e');
+      setState(() {
+        _state = PipelineState.error;
+        _error = 'Gagal download: $e';
+      });
+    }
+  }
+
+  Future<void> _loadTestImage() async {
+    _logm('Loading local test image...');
+    try {
+      final data = await rootBundle.load('assets/sample_manga.webp');
+      _pageBytes = data.buffer.asUint8List();
+      final codec = await ui.instantiateImageCodec(_pageBytes!);
+      final frame = await codec.getNextFrame();
+      _pageImage?.dispose();
+      _pageImage = frame.image;
+      _imgW = _pageImage!.width;
+      _imgH = _pageImage!.height;
+      codec.dispose();
+      _currentImageUrl = null;
+      _resetPipeline();
+      _logm('Image loaded: ${_imgW}x$_imgH px');
+      setState(() => _state = PipelineState.imageLoaded);
+    } catch (e) {
+      _logm('FAILED: $e');
+      setState(() {
+        _state = PipelineState.error;
+        _error = 'Failed to load test image.';
+      });
+    }
+  }
+
+  void _resetPipeline() {
+    _detectedBoxes = [];
+    _translation = null;
+    _manualBoxes.clear();
+    _overlayVisible = false;
+    _showDetection = false;
+    _isDrawing = false;
+    _error = null;
+    _parsedBubbleCount = 0;
+    _totalBubbles = 0;
+  }
+
+  // ── Cache key ─────────────────────────────────────────────
+
+  String _cacheKey() {
+    final base = _currentImageUrl ?? 'local:${_imgW}x$_imgH';
+    return '$base::$_style::$_targetLang::$_sfxSkip';
+  }
+
+  // ── Detection ─────────────────────────────────────────────
+
+  Future<void> _runDetection() async {
+    if (_pageBytes == null) return;
+    _logm('Running bubble detection...');
+    setState(() => _state = PipelineState.detecting);
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    var raw = await _realDetect(_pageBytes!, _imgW, _imgH);
+    _logm('Raw ONNX: ${raw.length} bubbles');
+
+    // Apply NMS (IoU 0.45) + false positive filter
+    raw = _applyNms(raw, 0.45);
+    raw = _removeFalsePositives(raw);
+    _logm('After NMS+FP filter: ${raw.length} bubbles');
+
+    _detectedBoxes = raw;
+    _manualBoxes.clear();
+    _showDetection = true;
+    _overlayVisible = false;
+    setState(() => _state = PipelineState.detected);
+  }
+
+  // ── Translate ─────────────────────────────────────────────
+
+  Future<void> _runTranslation() async {
+    final boxes = _activeBoxes;
+    if (_pageBytes == null) {
+      _logm('SKIP: no image');
+      return;
+    }
+
+    // Check cache
+    final key = _cacheKey();
+    if (_translationCache.containsKey(key)) {
+      _logm('Cache HIT for $key');
+      _translation = _translationCache[key]!;
+      _overlayVisible = true;
+      setState(() => _state = PipelineState.translated);
+      return;
+    }
+
+    // If 0 bubbles, use fallback
+    if (boxes.isEmpty) {
+      _logm('0 bubbles — using full-image fallback');
+      await _sendFullImageFallback();
+      // Cache result
+      if (_translation != null) {
+        _translationCache[key] = _translation!;
+      }
+      return;
+    }
+
+    _logm('Building mosaic + sending to AI (style: $_style, sfxSkip: $_sfxSkip)...');
+    setState(() {
+      _state = PipelineState.translating;
+      _totalBubbles = boxes.length;
+      _parsedBubbleCount = 0;
+    });
+
+    try {
+      // Build mosaic
+      _logm('Building mosaic...');
+      final t0 = DateTime.now();
+      final boxMaps = boxes.map((b) => b.toJson()).toList();
+      final jpeg = await _buildMosaicIsolate(
+        _pageBytes!,
+        boxMaps,
+        _imgW,
+        _imgH,
+      );
+      if (jpeg == null) {
+        _logm('FAILED: mosaic null');
+        setState(() {
+          _state = PipelineState.error;
+          _error = 'Mosaic gagal';
+        });
+        return;
+      }
+      _logm('Mosaic ready in ${DateTime.now().difference(t0).inMilliseconds}ms (${jpeg.length} bytes)');
+      final b64 = base64Encode(jpeg);
+
+      // Build prompt
+      final styleInjection = _stylePrompt(_style);
+      final sfxRule = _sfxSkip
+          ? '- SFX-only bubbles → SKIP\n'
+          : '';
+      final prompt =
+          'Translate manga image to $_targetLang.\n\n'
+          'Each bubble has a RED NUMBER on its LEFT side.\n\n'
+          'Format: <|1|>translation\\n<|2|>translation\\n<|3|>SKIP\\n...\n\n'
+          'Example:\n'
+          '<|1|>Dunia ini indah\n'
+          '<|2|>Aku akan terus hidup\n'
+          '<|3|>SKIP\n\n'
+          'RULES:\n'
+          '$sfxRule'
+          '- Lokalisasi honorifik (-san/-kun/-chan) sesuai target style\n'
+          '- Translate ALL visible bubbles\n'
+          '$styleInjection\n'
+          'Return ONLY the <|N|> lines. No markdown, no thinking.';
+
+      // Call AI
+      final isGemini = _providerModel.startsWith('gemini-');
+      _logm('Provider: $_providerModel @ $_providerBaseUrl (gemini=$isGemini)');
+      final client = HttpClient();
+      try {
+        HttpClientRequest req;
+        if (isGemini) {
+          final url = '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
+          req = await client.postUrl(Uri.parse(url));
+          req.headers.contentType = ContentType.json;
+          req.write(jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': prompt},
+                  {'inline_data': {'mime_type': 'image/jpeg', 'data': b64}},
+                ],
+              },
+            ],
+          }));
+        } else {
+          req = await client.postUrl(Uri.parse(_providerBaseUrl));
+          req.headers.contentType = ContentType.json;
+          if (_providerKey.isNotEmpty) {
+            req.headers.set('Authorization', 'Bearer $_providerKey');
+          }
+          req.write(jsonEncode({
+            'model': _providerModel,
+            'stream': false,
+            'max_tokens': 1000,
+            'thinking': {'type': 'disabled'},
+            'messages': [
+              {
+                'role': 'user',
+                'content': [
+                  {'type': 'text', 'text': prompt},
+                  {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:image/jpeg;base64,$b64'},
+                  },
+                ],
+              },
+            ],
+          }));
+        }
+        final resp = await req.close();
+        final body = await resp.transform(utf8.decoder).join();
+
+        if (resp.statusCode != 200) {
+          _logm('AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}');
+          setState(() {
+            _state = PipelineState.error;
+            _error = 'Translate gagal';
+          });
+          return;
+        }
+
+        final json = jsonDecode(body) as Map<String, dynamic>;
+        String? content;
+        if (isGemini) {
+          final candidates = json['candidates'] as List?;
+          if (candidates != null && candidates.isNotEmpty) {
+            final parts = (candidates[0] as Map)['content']?['parts'] as List?;
+            if (parts != null && parts.isNotEmpty) {
+              content = parts[0]['text'] as String?;
+            }
+          }
+        } else {
+          final choices = json['choices'] as List?;
+          if (choices != null && choices.isNotEmpty) {
+            final msg = choices[0]['message'] as Map?;
+            content = msg?['content'] as String?;
             if ((content == null || content.trim().isEmpty) &&
                 msg?['reasoning_content'] != null) {
               content = msg?['reasoning_content'] as String?;
@@ -344,13 +723,12 @@ class _DemoPageState extends State<DemoPage> {
           return;
         }
 
-        _logm('AI raw: ${content.substring(0, content.length.clamp(0, 200))}');
+        _logm('AI raw: ${content.substring(0, min(content.length, 200))}');
 
-        // 5. Parse response — try JSON first, fallback to <|N|> format
+        // Parse response — try JSON first, fallback to <|N|> format
         final translations = <String, String>{};
         bool parsed = false;
 
-        // Try JSON
         final jsonStart = content.indexOf('{');
         final jsonEnd = content.lastIndexOf('}');
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
@@ -364,7 +742,6 @@ class _DemoPageState extends State<DemoPage> {
           } catch (_) {}
         }
 
-        // Fallback to <|N|> format
         if (!parsed) {
           final pipeRe = RegExp(r'<\|(\d+)\|>\s*(.+?)(?:\n|$)');
           for (final m in pipeRe.allMatches(content)) {
@@ -382,26 +759,29 @@ class _DemoPageState extends State<DemoPage> {
           return;
         }
 
-        // 6. Build PageTranslation
+        // Build PageTranslation with per-bubble progress simulation
         final bubbleTranslations = <BubbleTranslation>[];
         for (var i = 0; i < boxes.length; i++) {
           final idStr = '${i + 1}';
           final translated = translations[idStr] ?? '';
-          bubbleTranslations.add(
-            BubbleTranslation(
-              id: i + 1,
-              original: '',
-              translated: translated,
-              x: boxes[i].x,
-              y: boxes[i].y,
-              w: boxes[i].w,
-              h: boxes[i].h,
-            ),
-          );
+          bubbleTranslations.add(BubbleTranslation(
+            id: i + 1,
+            original: '',
+            translated: translated,
+            x: boxes[i].x,
+            y: boxes[i].y,
+            w: boxes[i].w,
+            h: boxes[i].h,
+          ));
+          // Simulate per-bubble progress by updating count as we parse
+          _parsedBubbleCount = i + 1;
         }
 
         _translation = PageTranslation(bubbles: bubbleTranslations);
         _overlayVisible = true;
+
+        // Save to cache
+        _translationCache[key] = _translation!;
 
         _logm(
           'Done! ${bubbleTranslations.where((b) => !b.isSkipped).length} bubbles translated',
@@ -421,6 +801,16 @@ class _DemoPageState extends State<DemoPage> {
 
   String _stylePrompt(String style) {
     switch (style) {
+      case 'natural':
+        return 'Gaya: bahasa Indonesia alami dan netral.\n'
+            '- Terjemahan mengalir alami, kayak bahasa sehari-hari.\n'
+            '- Tidak kaku, tidak terlalu santai. Seimbang.\n'
+            '- JANGAN pake honorifik (-san/-kun/-chan). Lokalisasi nama.\n'
+            '- Sesuaikan nada dengan konteks: serius, santai, sedih, marah.\n'
+            '- Tujuan: enak dibaca, tanpa terasa kayak terjemahan.\n'
+            'Contoh: "行こう" → "Ayo."\n'
+            '"ちょっと待って" → "Tunggu sebentar."\n'
+            '"知らないよ" → "Aku nggak tahu."';
       case 'genz':
         return 'Gaya: anak muda Jakarta ngobrol santai.\n'
             '- Gue/lo, bukan saya/kamu.\n'
@@ -461,6 +851,21 @@ class _DemoPageState extends State<DemoPage> {
             '- Dialog: natural-formal, sesuai konteks.\n'
             'Contoh narasi: "Angin malam berbisik, membawa firasat buruk."\n'
             'Contoh dialog: "Aku tidak percaya ini terjadi."';
+      case 'kasar':
+        return 'Gaya: blak-blakan, keras, pake kata kasar ringan.\n'
+            '- Kata: anjir, bangsat, kampret, goblok, brengsek.\n'
+            '- Langsung to the point, tanpa basa-basi.\n'
+            '- JANGAN pake honorifik. Lokalisasi total.\n'
+            '- Kayak orang lagi emosi atau bercanda kasar.\n'
+            'Contoh: "Awas ya" → "AWAS LO BANGSAT!"';
+      case 'literal':
+        return 'Gaya: terjemahan kata per kata yang akurat.\n'
+            '- Prioritas: akurasi literal di atas keindahan bahasa.\n'
+            '- Struktur kalimat sedekat mungkin dengan aslinya.\n'
+            '- Honorifik (-san/-kun/-chan) BOLEH dipertahankan.\n'
+            '- Cocok buat learning / cek makna asli.\n'
+            'Contoh: "人生は続く" → "Hidup terus berlanjut."\n'
+            '"彼女はクラスで一番可愛い" → "Dia (perempuan) di kelas yang paling imut."';
       default:
         return '';
     }
@@ -469,8 +874,11 @@ class _DemoPageState extends State<DemoPage> {
   // ── Manual bubbles ───────────────────────────────────────
 
   List<BubbleBox> get _activeBoxes {
-    if (_manualBoxes.isNotEmpty) return _manualBoxes;
-    return _detectedBoxes;
+    // Combine detected + manual, no duplicate (manual override detected by position)
+    if (_manualBoxes.isEmpty) return _detectedBoxes;
+    if (_detectedBoxes.isEmpty) return _manualBoxes;
+    // Keep both: detected + manual. Dedup by overlap later if needed.
+    return [..._detectedBoxes, ..._manualBoxes];
   }
 
   void _toggleManualMode() {
@@ -507,22 +915,19 @@ class _DemoPageState extends State<DemoPage> {
       _drawStart = _drawEnd = null;
       return;
     }
-    final renderBox =
-        _imageAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final renderBox = _imageAreaKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
     final rs = renderBox.size;
     if (rs.width <= 0 || rs.height <= 0) return;
     final sx = _imgW / rs.width, sy = _imgH / rs.height;
 
-    _manualBoxes.add(
-      BubbleBox(
-        x: (r.left * sx).round(),
-        y: (r.top * sy).round(),
-        w: (r.width * sx).round(),
-        h: (r.height * sy).round(),
-        confidence: 1.0,
-      ),
-    );
+    _manualBoxes.add(BubbleBox(
+      x: (r.left * sx).round(),
+      y: (r.top * sy).round(),
+      w: (r.width * sx).round(),
+      h: (r.height * sy).round(),
+      confidence: 1.0,
+    ));
     _logm('Manual bubble added');
     _drawStart = _drawEnd = null;
     setState(() {});
@@ -548,13 +953,9 @@ class _DemoPageState extends State<DemoPage> {
     setState(() => _state = PipelineState.imageLoaded);
   }
 
-  // ── Real ONNX detection ────────────────────────────────
+  // ── Real ONNX detection ───────────────────────────────────
 
-  Future<List<BubbleBox>> _realDetect(
-    Uint8List bytes,
-    int imgW,
-    int imgH,
-  ) async {
+  Future<List<BubbleBox>> _realDetect(Uint8List bytes, int imgW, int imgH) async {
     try {
       final result = await KuronNative.instance.detectBubbles(
         imageBytes: bytes,
@@ -565,17 +966,15 @@ class _DemoPageState extends State<DemoPage> {
         _logm('ONNX: no bubbles detected');
         return [];
       }
-      _logm('ONNX: ${result.length} bubbles detected');
+      _logm('ONNX: ${result.length} raw bubbles');
       return result
-          .map(
-            (m) => BubbleBox(
-              x: (m['x'] as num).toInt(),
-              y: (m['y'] as num).toInt(),
-              w: (m['w'] as num).toInt(),
-              h: (m['h'] as num).toInt(),
-              confidence: (m['confidence'] as num?)?.toDouble() ?? 0.0,
-            ),
-          )
+          .map((m) => BubbleBox(
+                x: (m['x'] as num).toInt(),
+                y: (m['y'] as num).toInt(),
+                w: (m['w'] as num).toInt(),
+                h: (m['h'] as num).toInt(),
+                confidence: (m['confidence'] as num?)?.toDouble() ?? 0.0,
+              ))
           .toList();
     } catch (e) {
       _logm('ONNX detect failed: $e');
@@ -603,22 +1002,28 @@ class _DemoPageState extends State<DemoPage> {
     );
   }
 
-  // ── Status ────────────────────────────────────────────────
+  // ── Status ─────────────────────────────────────────────────
 
   String _statusText() {
     switch (_state) {
       case PipelineState.welcome:
-        return 'Tap "Load Test Image"';
+        return 'Paste URL atau load lokal.';
       case PipelineState.imageLoaded:
         return 'Image loaded. Run detection.';
       case PipelineState.detecting:
         return 'Detecting bubbles...';
       case PipelineState.detected:
         final t = _detectedBoxes.length + _manualBoxes.length;
-        return '$t bubbles (${_detectedBoxes.length} ONNX + ${_manualBoxes.length} manual)';
+        final desc = _manualBoxes.isNotEmpty
+            ? '${_manualBoxes.length} manual'
+            : '${_detectedBoxes.length} ONNX';
+        return '$t bubbles ($desc${_sfxSkip ? ', SFX skip' : ''})';
       case PipelineState.buildingMosaic:
         return 'Building mosaic...';
       case PipelineState.translating:
+        if (_totalBubbles > 0) {
+          return 'Translating $_parsedBubbleCount/$_totalBubbles...';
+        }
         return 'Translating...';
       case PipelineState.translated:
         return 'Done! ${_translation?.bubbles.where((b) => !b.isSkipped).length} translated';
@@ -634,7 +1039,7 @@ class _DemoPageState extends State<DemoPage> {
     final t = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Translate Demo - Kuron'),
+        title: const Text('AI Translate - Kuron'),
         actions: _state == PipelineState.welcome
             ? null
             : [
@@ -645,47 +1050,77 @@ class _DemoPageState extends State<DemoPage> {
                 ),
               ],
       ),
-      body: _state == PipelineState.welcome ? _buildWelcome(t) : _buildMain(t),
+      body: _state == PipelineState.welcome
+          ? _buildWelcome(t)
+          : _buildMain(t),
     );
   }
 
-  Widget _buildWelcome(ThemeData t) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.auto_awesome, size: 64, color: t.colorScheme.primary),
-          const SizedBox(height: 16),
-          Text(
-            'AI Translation Pipeline',
-            style: t.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+  Widget _buildWelcome(ThemeData t) => SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_awesome, size: 64, color: t.colorScheme.primary),
+                const SizedBox(height: 16),
+                Text(
+                  'AI Translation Pipeline',
+                  style: t.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Detect → Mosaic → AI Translate → Overlay\n\n'
+                  '• ONNX bubble detection (real engine)\n'
+                  '• Mosaic builder with red labels\n'
+                  '• Multi-provider AI (Zen/Gemini/OpenAI)\n'
+                  '• 7 translation styles\n'
+                  '• Manual bubble add/remove/edit\n'
+                  '• SFX skip toggle\n'
+                  '• Image from URL (nhentai etc.)',
+                  textAlign: TextAlign.center,
+                  style: t.textTheme.bodyMedium?.copyWith(
+                    color: t.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // URL input
+                TextField(
+                  controller: _urlCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Image URL (nhentai, etc.)',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.link),
+                      onPressed: _loadFromUrl,
+                    ),
+                  ),
+                  onSubmitted: (_) => _loadFromUrl(),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _loadFromUrl,
+                    icon: const Icon(Icons.download),
+                    label: const Text('Load from URL'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _loadTestImage,
+                  icon: const Icon(Icons.folder_open),
+                  label: const Text('Load Local Sample'),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Detect → Mosaic → AI Translate → Overlay\n\n'
-            '• ONNX bubble detection (simulated)\n'
-            '• Mosaic builder with red labels\n'
-            '• Multi-provider AI (Zen/Gemini/OpenAI)\n'
-            '• 8 translation styles\n'
-            '• Manual bubble add/remove',
-            textAlign: TextAlign.center,
-            style: t.textTheme.bodyMedium?.copyWith(
-              color: t.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 32),
-          FilledButton.icon(
-            onPressed: _loadTestImage,
-            icon: const Icon(Icons.image),
-            label: const Text('Load Test Image'),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   Widget _buildMain(ThemeData t) {
     final boxes = _activeBoxes;
@@ -711,7 +1146,9 @@ class _DemoPageState extends State<DemoPage> {
               icon: const Icon(Icons.search, size: 18),
               label: const Text('Detect'),
             ),
-          if (_state == PipelineState.detected && boxes.isNotEmpty)
+          if ((_state == PipelineState.detected ||
+                  _state == PipelineState.translated) &&
+              boxes.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 4),
               child: FilledButton.icon(
@@ -725,7 +1162,9 @@ class _DemoPageState extends State<DemoPage> {
             child: TextButton(
               onPressed: () => _showProviderTestSheet(context),
               child: Text(
-                _providerModel.split('/').last,
+                _providerModel.isNotEmpty
+                    ? _providerModel.split('/').last
+                    : 'No provider',
                 style: const TextStyle(fontSize: 10),
               ),
             ),
@@ -734,11 +1173,10 @@ class _DemoPageState extends State<DemoPage> {
       ),
     );
 
-    // Image area — uses LayoutBuilder to capture rendered size for scale factors
+    // Image area
     Widget imgArea = Expanded(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Compute rendered image size (fitWidth)
           final availW = constraints.maxWidth;
           final availH = constraints.maxHeight;
           if (_pageImage == null || availW <= 0 || availH <= 0) {
@@ -747,7 +1185,6 @@ class _DemoPageState extends State<DemoPage> {
 
           final renderedW = availW;
           final renderedH = _imgH * (renderedW / _imgW);
-          // Store scale factors as instance fields
           _renderScaleX = renderedW / _imgW;
           _renderScaleY = renderedH / _imgH;
 
@@ -758,7 +1195,6 @@ class _DemoPageState extends State<DemoPage> {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: [
-                // Raw image
                 RawImage(
                   image: _pageImage,
                   width: renderedW,
@@ -766,7 +1202,7 @@ class _DemoPageState extends State<DemoPage> {
                   fit: BoxFit.fill,
                 ),
 
-                // Drawing layer pointer listener
+                // Drawing layer
                 if (_isManualMode)
                   Listener(
                     onPointerDown: (e) => _onDrawStart(e.localPosition),
@@ -857,57 +1293,60 @@ class _DemoPageState extends State<DemoPage> {
                     );
                   }),
 
-                // Translation overlay (amber) — text wrap ke bawah
+                // Translation overlay (amber) + per-bubble shimmer
+                // Koordinat sudah di-expand 40% dari BubbleDetector.kt
                 if (_overlayVisible && _translation != null)
-                  ..._translation!.bubbles.where((b) => !b.isSkipped).map((b) {
+                  ..._translation!.bubbles
+                      .where((b) => !b.isSkipped)
+                      .map((b) {
                     final boxW = b.w * _renderScaleX;
                     final boxH = b.h * _renderScaleY;
-                    final padding = 4.0;
-                    final textAreaW = (boxW - padding * 2).clamp(10.0, 600.0);
-                    final textAreaH = (boxH - padding * 2).clamp(10.0, 600.0);
-                    // Auto-fit: cari font size terbesar yg muat
+                    final pad = 3.0;
+                    final availW = (boxW - pad * 2).clamp(10.0, boxW);
+
+                    // Auto-fit font: turunkan hingga muat
                     final textLen = b.translated.length;
-                    var fontSize = 24.0;
+                    var fontSize = 16.0;
                     if (textLen > 0) {
-                      // Estimasi lebar teks: ~fontSize * 0.6 px per karakter
-                      final estWidth = fontSize * 0.58 * textLen;
-                      final estLines = (estWidth / textAreaW).ceil();
-                      final neededH = estLines * fontSize * 1.3;
-                      if (neededH > textAreaH || estWidth > textAreaW) {
-                        // Turunin font biar muat
-                        while (fontSize > 8) {
-                          final ew = fontSize * 0.58 * textLen;
-                          final el = (ew / textAreaW).ceil();
-                          final nh = el * fontSize * 1.3;
-                          if (nh <= textAreaH && ew <= textAreaW * 1.1) break;
-                          fontSize -= 1;
-                        }
+                      final estW = fontSize * 0.56 * textLen;
+                      if (estW > availW) {
+                        fontSize = (availW / (0.56 * textLen)).floorToDouble();
                       }
                     }
-                    fontSize = fontSize.clamp(10.0, 28.0);
+                    fontSize = fontSize.clamp(9.0, 20.0);
+
                     return Positioned(
                       left: b.x * _renderScaleX,
                       top: b.y * _renderScaleY,
                       width: boxW,
                       height: boxH,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.88),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.amber, width: 1.5),
-                        ),
-                        padding: EdgeInsets.all(padding),
-                        child: SingleChildScrollView(
-                          child: Text(
-                            b.translated,
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                              fontSize: fontSize,
-                              height: 1.3,
+                      child: GestureDetector(
+                        onTap: () => _showEditDialog(b.id, b.translated),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: b.translated.isEmpty
+                                  ? Colors.orange.shade200
+                                  : Colors.amber,
+                              width: b.translated.isEmpty ? 2 : 1.5,
                             ),
-                            textAlign: TextAlign.left,
                           ),
+                          padding: EdgeInsets.all(pad),
+                          child: b.translated.isEmpty
+                              ? _buildShimmer()
+                              : Text(
+                                  b.translated,
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: fontSize,
+                                    height: 1.3,
+                                  ),
+                                  softWrap: true,
+                                  overflow: TextOverflow.clip,
+                                ),
                         ),
                       ),
                     );
@@ -920,7 +1359,26 @@ class _DemoPageState extends State<DemoPage> {
                   Positioned.fill(
                     child: Container(
                       color: Colors.black26,
-                      child: const Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            if (_totalBubbles > 0 &&
+                                _state == PipelineState.translating)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '$_parsedBubbleCount/$_totalBubbles',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -930,7 +1388,7 @@ class _DemoPageState extends State<DemoPage> {
       ),
     );
 
-    // Bottom bar: style picker + controls + log
+    // Bottom bar
     final bottomBar = Container(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
       decoration: BoxDecoration(
@@ -968,15 +1426,10 @@ class _DemoPageState extends State<DemoPage> {
                             'Portuguese',
                             'French',
                           ]
-                          .map(
-                            (l) => DropdownMenuItem(
-                              value: l,
-                              child: Text(
-                                l,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          )
+                          .map((l) => DropdownMenuItem(
+                                value: l,
+                                child: Text(l, style: const TextStyle(fontSize: 12)),
+                              ))
                           .toList(),
                   onChanged: (v) {
                     if (v == null) return;
@@ -1018,6 +1471,27 @@ class _DemoPageState extends State<DemoPage> {
                     ),
                   ),
                 ),
+              // SFX Skip toggle
+              if (_state == PipelineState.detected ||
+                  _state == PipelineState.translated)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _sfxSkip = !_sfxSkip),
+                    icon: Icon(
+                      _sfxSkip ? Icons.volume_up : Icons.volume_off,
+                      size: 18,
+                      color: _sfxSkip ? Colors.blue : Colors.grey,
+                    ),
+                    label: Text(
+                      _sfxSkip ? 'SFX Skip' : 'SFX On',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: _sfxSkip ? Colors.blue : Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showProviderTestSheet(context),
@@ -1048,27 +1522,41 @@ class _DemoPageState extends State<DemoPage> {
         padding: const EdgeInsets.all(6),
         children: _log.reversed
             .take(20)
-            .map(
-              (m) => Text(
-                m,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontFamily: 'monospace',
-                  color: m.startsWith('FAIL')
-                      ? t.colorScheme.error
-                      : t.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
+            .map((m) => Text(
+                  m,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                    color: m.startsWith('FAIL') || m.startsWith('FAILED')
+                        ? t.colorScheme.error
+                        : t.colorScheme.onSurfaceVariant,
+                  ),
+                ))
             .toList(),
       ),
     );
 
     return Column(children: [topBar, imgArea, bottomBar, logPanel]);
   }
+
+  Widget _buildShimmer() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
 }
 
-// ── Drawing helper ──────────────────────────────────────
+// ── Drawing helper ──────────────────────────────────────────
 
 class _RectPainter extends CustomPainter {
   final Rect rect;
@@ -1091,7 +1579,7 @@ class _RectPainter extends CustomPainter {
   bool shouldRepaint(_RectPainter old) => rect != old.rect;
 }
 
-// ── Provider test sheet ─────────────────────────────────
+// ── Provider test sheet ─────────────────────────────────────
 
 class _ProviderTestSheet extends StatefulWidget {
   final void Function(String baseUrl, String model, String apiKey)? onSave;
@@ -1112,8 +1600,7 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
   void initState() {
     super.initState();
     _baseUrlCtrl.text = AiProviderConfig.defaultBaseUrl(_selectedType);
-    _modelCtrl.text =
-        AiProviderConfig.defaultModels[_selectedType] ?? 'ocg/minimax-m3';
+    _modelCtrl.text = AiProviderConfig.defaultModels[_selectedType] ?? 'ocg/minimax-m3';
   }
 
   @override
@@ -1144,28 +1631,19 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Test AI Provider',
-              style: t.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text('Test AI Provider',
+                style: t.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(
-              'Uji koneksi provider dengan teks sample. Zen gratis tanpa key.',
-              style: t.textTheme.bodySmall?.copyWith(
-                color: t.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            Text('Uji koneksi provider dengan teks sample. Zen gratis tanpa key.',
+                style: t.textTheme.bodySmall
+                    ?.copyWith(color: t.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 16),
 
-            // Provider type
             DropdownButtonFormField<AiProviderType>(
               initialValue: _selectedType,
               decoration: const InputDecoration(
-                labelText: 'Provider Type',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Provider Type', border: OutlineInputBorder()),
               items: AiProviderType.values
                   .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
                   .toList(),
@@ -1179,43 +1657,33 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
             ),
             const SizedBox(height: 12),
 
-            // API key (not needed for Zen)
             if (needsKey)
               TextField(
                 controller: _apiKeyCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'API Key',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'API Key', border: OutlineInputBorder()),
                 obscureText: true,
               ),
             if (needsKey) const SizedBox(height: 12),
 
-            // Base URL (custom only editable, others pre-filled)
             TextField(
               controller: _baseUrlCtrl..text = defaultBaseUrl,
               decoration: InputDecoration(
                 labelText: 'Base URL',
                 border: const OutlineInputBorder(),
                 enabled: isCustom,
-                helperText: isCustom
-                    ? ''
-                    : 'Pre-filled for ${_selectedType.name}',
+                helperText: isCustom ? '' : 'Pre-filled for ${_selectedType.name}',
               ),
             ),
             const SizedBox(height: 12),
 
-            // Model
             TextField(
               controller: _modelCtrl..text = defaultModel,
               decoration: const InputDecoration(
-                labelText: 'Model',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Model', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 16),
 
-            // Test text sample
             Text('Sample text to translate:', style: t.textTheme.bodySmall),
             Container(
               width: double.infinity,
@@ -1225,14 +1693,11 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                 color: t.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                '「この世界は美しい。だから私は生き続ける。」',
-                style: TextStyle(fontFamily: 'monospace', fontSize: 13),
-              ),
+              child: const Text('「この世界は美しい。だから私は生き続ける。」',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 13)),
             ),
             const SizedBox(height: 16),
 
-            // Test button
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -1241,15 +1706,13 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                        child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.wifi_tethering, size: 18),
                 label: Text(_loading ? 'Testing...' : 'Test Connection'),
               ),
             ),
             const SizedBox(height: 12),
 
-            // Result
             if (_result.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -1268,9 +1731,7 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        color: _result.startsWith('✓')
-                            ? Colors.green
-                            : Colors.red,
+                        color: _result.startsWith('✓') ? Colors.green : Colors.red,
                       ),
                     ),
                     if (_result.startsWith('✓'))
@@ -1315,11 +1776,7 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
         _result = await _testGemini(baseUrl, apiKey, model);
       } else {
         _result = await _testOpenAICompatible(
-          baseUrl,
-          apiKey,
-          model,
-          _selectedType,
-        );
+            baseUrl, apiKey, model, _selectedType);
       }
     } catch (e) {
       _result = '✗ Error: $e';
@@ -1327,7 +1784,6 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
 
     if (mounted) setState(() => _loading = false);
 
-    // Auto-save + close sheet on success
     if (_result.startsWith('✓') && widget.onSave != null) {
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
@@ -1348,11 +1804,10 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
         : baseUrl;
 
     final headers = <String, String>{'Content-Type': 'application/json'};
-
     if (type == AiProviderType.zen) {
-      // Zen: free, no auth needed
+      // no auth
     } else if (type == AiProviderType.custom && apiKey.isEmpty) {
-      // Custom without key: no auth
+      // no auth
     } else if (type == AiProviderType.openRouter) {
       headers['Authorization'] = 'Bearer $apiKey';
       headers['HTTP-Referer'] = 'https://github.com/nhasixapp';
@@ -1396,7 +1851,6 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
     }
 
     final requestBody = jsonEncode(body);
-
     final client = HttpClient();
     try {
       final req = await client.postUrl(Uri.parse(url));
@@ -1408,7 +1862,6 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
       final sc = resp.statusCode;
       var respBody = await resp.transform(utf8.decoder).join();
 
-      // Handle SSE streaming response — strip "data:" prefix lines
       if (respBody.trimLeft().startsWith('data:')) {
         final lines = respBody.split('\n');
         final jsonParts = <String>[];
@@ -1418,7 +1871,6 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
             jsonParts.add(trimmed.substring(5).trim());
           }
         }
-        // Merge all JSON chunks — last non-empty delta['content'] wins
         String? mergedContent;
         for (final part in jsonParts) {
           if (part.isEmpty || part == '[DONE]') continue;
@@ -1435,7 +1887,7 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
           } catch (_) {}
         }
         if (mergedContent != null) {
-          return '✓ Success! Terjemahan: $mergedContent\n(Model: ocg/minimax-m3)';
+          return '✓ Success! Terjemahan: $mergedContent\n(Model: $model)';
         }
         return '✗ Response streaming tapi kosong.';
       }
@@ -1478,11 +1930,7 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
     }
   }
 
-  Future<String> _testGemini(
-    String baseUrl,
-    String apiKey,
-    String model,
-  ) async {
+  Future<String> _testGemini(String baseUrl, String apiKey, String model) async {
     final url = '$baseUrl/v1beta/models/$model:generateContent?key=$apiKey';
     final headers = {'Content-Type': 'application/json'};
     final sampleText = 'この世界は美しい。だから私は生き続ける。';

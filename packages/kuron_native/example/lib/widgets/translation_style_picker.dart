@@ -17,28 +17,47 @@ class TranslationStyle {
 
   static const all = [
     TranslationStyle(
+      id: 'natural',
+      label: 'Natural 🌿',
+      description: 'Default. Bahasa Indonesia alami, netral, enak dibaca. Cocok buat genre apa pun.',
+      icon: Icons.translate,
+    ),
+    TranslationStyle(
       id: 'genz',
       label: 'Gen Z 🔥',
-      description: 'Gue/lo, sih/dong/nih, wkwk, banger, gas. Kayak anak tongkrongan ngobrol. Santai, akrab, gak kaku.',
+      description: 'Gue/lo, sih/dong/nih. Santai kayak anak tongkrongan. Buat komedi, slice-of-life, romance ringan.',
       icon: Icons.bolt,
     ),
     TranslationStyle(
       id: 'action',
       label: 'Action ⚡',
-      description: 'Petarungan. Kalimat tegas pendek-pendek. "Hah!", "Hajar!", "Mati lo!". Tanpa basa-basi, penuh tenaga.',
+      description: 'Petarungan. Kalimat tegas pendek. "Hah!", "Hajar!". Tanpa basa-basi.',
       icon: Icons.flash_on,
     ),
     TranslationStyle(
       id: 'romantis',
       label: 'Romantis 💕',
-      description: 'Lembut, puitis, baper. "Aku"/"Kamu". Metafora ringan. Kayak dialog drama romantis, bukan puisi lebay.',
+      description: 'Lembut, puitis, baper. "Aku"/"Kamu". Metafora ringan kayak drama romantis.',
       icon: Icons.favorite,
     ),
     TranslationStyle(
       id: 'formal',
       label: 'Formal 👔',
-      description: 'Bahasa Indonesia baku untuk narrator, misteri, horor. Rapi, atmosferik, gak kaku kayak koran.',
+      description: 'Bahasa Indonesia baku. Buat narrator, misteri, horor, karakter bijak.',
       icon: Icons.auto_stories,
+    ),
+    TranslationStyle(
+      id: 'kasar',
+      label: 'Kasar 🔥',
+      description: 'Blak-blakan. Anjir/bangsat/goblok. Tanpa filter. (18+)',
+      icon: Icons.whatshot,
+      requiresConfirm: true,
+    ),
+    TranslationStyle(
+      id: 'literal',
+      label: 'Literal 📖',
+      description: 'Kata per kata, kaku tapi akurat. Buat belajar bahasa atau cek terjemahan.',
+      icon: Icons.menu_book,
     ),
   ];
 }
