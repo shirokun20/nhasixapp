@@ -286,4 +286,14 @@ abstract class KuronNativePlatform extends PlatformInterface {
   Future<bool> openDnsSettings() {
     throw UnimplementedError('openDnsSettings() has not been implemented.');
   }
+
+  /// Detect manga speech bubbles using on-device ONNX model.
+  /// Returns list of {x, y, w, h, confidence} maps.
+  Future<List<Map<String, dynamic>>?> detectBubbles({
+    required Uint8List imageBytes,
+    required int imageWidth,
+    required int imageHeight,
+  }) {
+    throw UnimplementedError('detectBubbles() has not been implemented.');
+  }
 }

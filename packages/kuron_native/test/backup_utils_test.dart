@@ -202,6 +202,13 @@ class MockKuronNativePlatform
 
   @override
   Future<bool> openDnsSettings() async => true;
+
+  @override
+  Future<List<Map<String, dynamic>>?> detectBubbles({
+    required Uint8List imageBytes,
+    required int imageWidth,
+    required int imageHeight,
+  }) async => null;
 }
 
 void main() {

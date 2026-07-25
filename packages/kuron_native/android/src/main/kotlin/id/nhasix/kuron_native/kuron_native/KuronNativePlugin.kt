@@ -61,6 +61,7 @@ class KuronNativePlugin :
     private var zipImportHandler: ZipImportHandler? = null
     private lateinit var dnsResolver: id.nhasix.kuron_native.kuron_native.network.DnsResolver
     private val avifConverter = AvifConverter()
+    private var bubbleDetector: BubbleDetector? = null
 
     private val WEBVIEW_REQUEST_CODE = 1001
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
@@ -327,6 +328,9 @@ class KuronNativePlugin :
             }
             "openDnsSettings" -> {
                 handleOpenDnsSettings(result)
+            }
+            "detectBubbles" -> {
+                handleDetectBubbles(call, result)
             }
             else -> {
                 result.notImplemented()
@@ -1507,6 +1511,30 @@ class KuronNativePlugin :
                 context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 result.success(true)
             } catch (_: Exception) { result.success(false) }
+        }
+    }
+
+    private fun handleDetectBubbles(call: MethodCall, result: Result) {
+        val imageBytes = call.argument<ByteArray>("imageBytes")
+        val imageWidth = call.argument<Int>("imageWidth")
+        val imageHeight = call.argument<Int>("imageHeight")
+
+        if (imageBytes == null || imageWidth == null || imageHeight == null) {
+            result.error("INVALID_ARGS", "imageBytes, imageWidth, imageHeight required", null)
+            return
+        }
+
+        executor.execute {
+            try {
+                if (bubbleDetector == null) {
+                    bubbleDetector = BubbleDetector(context)
+                }
+                val detections = bubbleDetector!!.detect(imageBytes, imageWidth, imageHeight)
+                mainThread { result.success(detections) }
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "detectBubbles failed: ${e.message}")
+                mainThread { result.error("DETECTION_FAILED", e.message, null) }
+            }
         }
     }
 

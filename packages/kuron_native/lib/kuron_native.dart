@@ -322,4 +322,18 @@ class KuronNative {
   Future<void> cancelWebPThumbnail(String requestId) {
     return KuronNativePlatform.instance.cancelWebPThumbnail(requestId);
   }
+
+  /// Detect manga speech bubbles using on-device ONNX model.
+  /// Returns list of [BubbleBox]-compatible maps.
+  Future<List<Map<String, dynamic>>?> detectBubbles({
+    required Uint8List imageBytes,
+    required int imageWidth,
+    required int imageHeight,
+  }) {
+    return KuronNativePlatform.instance.detectBubbles(
+      imageBytes: imageBytes,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
+    );
+  }
 }

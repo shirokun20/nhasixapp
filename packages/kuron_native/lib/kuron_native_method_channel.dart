@@ -452,4 +452,23 @@ class MethodChannelKuronNative extends KuronNativePlatform {
     final result = await methodChannel.invokeMethod<bool>('openDnsSettings');
     return result ?? false;
   }
+
+  @override
+  Future<List<Map<String, dynamic>>?> detectBubbles({
+    required Uint8List imageBytes,
+    required int imageWidth,
+    required int imageHeight,
+  }) async {
+    final raw = await methodChannel.invokeMethod(
+      'detectBubbles',
+      {
+        'imageBytes': imageBytes,
+        'imageWidth': imageWidth,
+        'imageHeight': imageHeight,
+      },
+    );
+    if (raw == null) return null;
+    final list = raw as List<dynamic>;
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
 }
