@@ -22,20 +22,20 @@ class AiProviderConfig {
   });
 
   static const Map<AiProviderType, String> defaultModels = {
-    AiProviderType.zen: 'minimax-m3-free',
-    AiProviderType.openCodeGo: 'minimax-m3-free',
-    AiProviderType.gemini: 'gemini-2.5-flash',
+    AiProviderType.zen: 'gpt-5.4-mini',
+    AiProviderType.openCodeGo: 'kimi-k2.6',
+    AiProviderType.gemini: 'gemini-3.6-flash',
     AiProviderType.openAi: 'gpt-4o-mini',
     AiProviderType.openRouter: 'google/gemma-4-27b-it:free',
-    AiProviderType.custom: 'ocg/minimax-m3',
+    AiProviderType.custom: '',
   };
 
   static String defaultBaseUrl(AiProviderType type) {
     switch (type) {
       case AiProviderType.zen:
-        return 'https://api.opencode.ai/zen/v1/chat/completions';
+        return 'https://api.opencode.ai/zen/v1/responses';
       case AiProviderType.openCodeGo:
-        return 'https://api.opencode.ai/zen/go/v1/chat/completions';
+        return 'https://opencode.ai/zen/go/v1/chat/completions';
       case AiProviderType.gemini:
         return 'https://generativelanguage.googleapis.com';
       case AiProviderType.openAi:
@@ -43,7 +43,7 @@ class AiProviderConfig {
       case AiProviderType.openRouter:
         return 'https://openrouter.ai/api/v1/chat/completions';
       case AiProviderType.custom:
-        return 'http://192.168.0.6:20128/v1/chat/completions';
+        return '';
     }
   }
 
@@ -58,15 +58,15 @@ class AiProviderConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'displayName': displayName,
-        'type': type.name,
-        'apiKey': apiKey,
-        'baseUrl': baseUrl,
-        'model': model,
-        'isDefault': isDefault,
-        'isEnabled': isEnabled,
-      };
+    'id': id,
+    'displayName': displayName,
+    'type': type.name,
+    'apiKey': apiKey,
+    'baseUrl': baseUrl,
+    'model': model,
+    'isDefault': isDefault,
+    'isEnabled': isEnabled,
+  };
 
   factory AiProviderConfig.fromJson(Map<String, dynamic> json) =>
       AiProviderConfig(
@@ -90,15 +90,14 @@ class AiProviderConfig {
     String? model,
     bool? isDefault,
     bool? isEnabled,
-  }) =>
-      AiProviderConfig(
-        id: id,
-        displayName: displayName ?? this.displayName,
-        type: type,
-        apiKey: apiKey ?? this.apiKey,
-        baseUrl: baseUrl ?? this.baseUrl,
-        model: model ?? this.model,
-        isDefault: isDefault ?? this.isDefault,
-        isEnabled: isEnabled ?? this.isEnabled,
-      );
+  }) => AiProviderConfig(
+    id: id,
+    displayName: displayName ?? this.displayName,
+    type: type,
+    apiKey: apiKey ?? this.apiKey,
+    baseUrl: baseUrl ?? this.baseUrl,
+    model: model ?? this.model,
+    isDefault: isDefault ?? this.isDefault,
+    isEnabled: isEnabled ?? this.isEnabled,
+  );
 }

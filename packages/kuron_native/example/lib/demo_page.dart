@@ -197,39 +197,62 @@ Future<Uint8List?> _buildMosaicIsolate(
 
       // 3. Build prompt with style
       final styleInjection = _stylePrompt(_style);
-      final prompt = 'Translate manga image to $_targetLang. Each bubble has a red number ID on its left side.\n'
-          'Return ONLY a valid JSON object: {"1": "translation", "2": "SKIP", ...}\n\n'
-          'Rules:\n'
-          '- If bubble has ONLY sound effects (SFX) → "SKIP"\n'
+      final prompt = 'Translate manga image to $_targetLang.\n\n'
+          'Each bubble has a RED NUMBER on its LEFT side.\n\n'
+          'Format: <|1|>translation\\n<|2|>translation\\n<|3|>SKIP\\n...\n\n'
+          'Example:\n'
+          '<|1|>Dunia ini indah\n'
+          '<|2|>Aku akan terus hidup\n'
+          '<|3|>SKIP\n\n'
+          'RULES:\n'
+          '- SFX-only bubbles → SKIP\n'
           '- Keep honorifics (-san, -kun, -chan) as-is\n'
-          '- ALL bubble IDs must appear in the JSON\n'
-          '- Return ALL visible IDs\n'
-          '$styleInjection';
+          '- Translate ALL visible bubbles\n'
+          '$styleInjection\n'
+          'Return ONLY the <|N|> lines. No markdown, no thinking.';
 
-      // 4. Call AI
-      _logm('Provider: $_providerModel @ $_providerBaseUrl');
-      final uri = Uri.parse(_providerBaseUrl);
+      // 4. Call AI (openai-compatible or gemini)
+      final isGemini = _providerModel.startsWith('gemini-');
+      _logm('Provider: $_providerModel @ $_providerBaseUrl (gemini=$isGemini)');
       final client = HttpClient();
       try {
-        final req = await client.postUrl(uri);
-        req.headers.contentType = ContentType.json;
-        if (_providerKey.isNotEmpty) {
-          req.headers.set('Authorization', 'Bearer $_providerKey');
-        }
-        req.write(jsonEncode({
-          'model': _providerModel,
-          'stream': false,
-          'max_tokens': 1000,
-          'messages': [
-            {
-              'role': 'user',
-              'content': [
-                {'type': 'text', 'text': prompt},
-                {'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,$b64'}},
+        HttpClientRequest req;
+        if (isGemini) {
+          // Gemini API
+          final url = '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
+          req = await client.postUrl(Uri.parse(url));
+          req.headers.contentType = ContentType.json;
+          req.write(jsonEncode({
+            'contents': [{
+              'parts': [
+                {'text': prompt},
+                {'inline_data': {'mime_type': 'image/jpeg', 'data': b64}},
               ],
-            },
-          ],
-        }));
+            }],
+          }));
+        } else {
+          // OpenAI-compatible
+          req = await client.postUrl(Uri.parse(_providerBaseUrl));
+          req.headers.contentType = ContentType.json;
+          if (_providerKey.isNotEmpty) {
+            req.headers.set('Authorization', 'Bearer $_providerKey');
+          }
+          req.write(jsonEncode({
+            'model': _providerModel,
+            'stream': false,
+            'max_tokens': 1000,
+            'thinking': {'type': 'disabled'},
+            'messages': [
+              {
+                'role': 'user',
+                'content': [
+                  {'type': 'text', 'text': prompt},
+                  {'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,$b64'}},
+                ],
+              },
+            ],
+          }));
+        }
         final resp = await req.close();
         final body = await resp.transform(utf8.decoder).join();
 
@@ -240,40 +263,68 @@ Future<Uint8List?> _buildMosaicIsolate(
         }
 
         final json = jsonDecode(body) as Map<String, dynamic>;
-        final choices = json['choices'] as List?;
-        if (choices == null || choices.isEmpty) {
-          _logm('FAILED: no choices in response'); setState(() { _state = PipelineState.error; _error = 'Translate gagal'; }); return;
+        String? content;
+        if (isGemini) {
+          final candidates = json['candidates'] as List?;
+          if (candidates != null && candidates.isNotEmpty) {
+            final parts = (candidates[0] as Map)['content']?['parts'] as List?;
+            if (parts != null && parts.isNotEmpty) {
+              content = parts[0]['text'] as String?;
+            }
+          }
+        } else {
+          final choices = json['choices'] as List?;
+          if (choices != null && choices.isNotEmpty) {
+            final msg = choices[0]['message'] as Map?;
+            content = msg?['content'] as String?;
+            // Reasoning models (kimi, glm, deepseek) put answer in reasoning_content
+            if ((content == null || content.trim().isEmpty) && msg?['reasoning_content'] != null) {
+              content = msg?['reasoning_content'] as String?;
+            }
+          }
         }
-        final msg = choices[0]['message'] as Map?;
-        final content = msg?['content'] as String?;
         if (content == null || content.isEmpty) {
           _logm('FAILED: empty AI response'); setState(() { _state = PipelineState.error; _error = 'Translate gagal'; }); return;
         }
 
-        _logm('AI raw: $content');
+        _logm('AI raw: ${content.substring(0, content.length.clamp(0, 200))}');
 
-        // 5. Parse JSON from AI response (find {...} in the string)
+        // 5. Parse response — try JSON first, fallback to <|N|> format
+        final translations = <String, String>{};
+        bool parsed = false;
+
+        // Try JSON
         final jsonStart = content.indexOf('{');
         final jsonEnd = content.lastIndexOf('}');
-        String translationsJson;
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
-          translationsJson = content.substring(jsonStart, jsonEnd + 1);
-        } else {
-          _logm('FAILED: no JSON in AI response'); setState(() { _state = PipelineState.error; _error = 'Translate gagal'; }); return;
+          try {
+            final jsonStr = content.substring(jsonStart, jsonEnd + 1);
+            final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+            for (final e in map.entries) {
+              translations[e.key] = e.value?.toString() ?? '';
+            }
+            parsed = true;
+          } catch (_) {}
         }
 
-        final Map<String, dynamic> translations;
-        try {
-          translations = jsonDecode(translationsJson) as Map<String, dynamic>;
-        } catch (e) {
-          _logm('FAILED: JSON parse error: $e'); setState(() { _state = PipelineState.error; _error = 'Translate gagal'; }); return;
+        // Fallback to <|N|> format
+        if (!parsed) {
+          final pipeRe = RegExp(r'<\|(\d+)\|>\s*(.+?)(?:\n|$)');
+          for (final m in pipeRe.allMatches(content)) {
+            translations[m.group(1)!] = m.group(2)!.trim();
+          }
+          if (translations.isNotEmpty) parsed = true;
+        }
+
+        if (!parsed) {
+          _logm('FAILED: no translations in response'); setState(() { _state = PipelineState.error; _error = 'Translate gagal'; }); return;
         }
 
         // 6. Build PageTranslation
         final bubbleTranslations = <BubbleTranslation>[];
         for (var i = 0; i < boxes.length; i++) {
           final idStr = '${i + 1}';
-          final translated = translations[idStr] as String? ?? '';
+          final translated = translations[idStr] ?? '';
           bubbleTranslations.add(BubbleTranslation(
             id: i + 1,
             original: '',
