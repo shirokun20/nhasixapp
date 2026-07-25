@@ -71,7 +71,7 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-07-18
+> Tracked via `openspec/` — Last updated: 2026-07-25
 
 ### Archived (in `openspec/changes/archive/`)
 - `2026-02-11-nhentai-search-revamp`
@@ -150,11 +150,12 @@ lib/
 - `2026-07-18-notification-snackbar-audit-fix`
 - `2026-07-24-reader-download-overheat-fix`
 - `2026-07-24-add-mangafire-vrf-capture` — **REVERTED**: VRF capture via headless WebView menyebabkan jank/memory. Source di-set maintenance.
+- `2026-07-25-pin-biometric-app-lock`
+- `2026-07-25-download-bloc-refactor`
 
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
-- `pin-biometric-app-lock`
 - `reader-ai-learning-mode`
 
 ### Open Issues (in `openspec/changes/`)
