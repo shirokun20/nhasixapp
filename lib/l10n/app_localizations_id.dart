@@ -61,8 +61,7 @@ class AppLocalizationsId extends AppLocalizations {
       'CAPTCHA terverifikasi dan tersimpan aman';
 
   @override
-  String get sourceAuthCaptchaRequired =>
-      'Silakan selesaikan CAPTCHA untuk lanjut';
+  String get sourceAuthCaptchaRequired => 'Selesaikan CAPTCHA untuk lanjut';
 
   @override
   String get sourceAuthCaptchaSolved => 'CAPTCHA Selesai';
@@ -175,8 +174,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get supportDeveloperSubtitle => 'Traktir saya kopi';
 
   @override
-  String get donateMessage =>
-      'Jika aplikasi ini bermanfaat, kamu bisa mendukung pengembangannya dengan berdonasi via QRIS. Terima kasih! ☕';
+  String get donateMessage => 'Dukung pengembangan via QRIS. Terima kasih! ☕';
 
   @override
   String get thankYouMessage => 'Terima kasih atas dukunganmu!';
@@ -323,7 +321,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get pleaseSetStorageLocation =>
-      'Silakan atur lokasi penyimpanan unduhan di pengaturan terlebih dahulu.';
+      'Atur lokasi penyimpanan unduhan di pengaturan.';
 
   @override
   String get schoolgirlUniform => 'schoolgirl uniform';
@@ -361,7 +359,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get networkError =>
-      'Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.';
+      'Kesalahan jaringan. Periksa koneksi dan coba lagi.';
 
   @override
   String get accessBlocked => 'Akses diblokir. Mencoba melewati proteksi...';
@@ -393,7 +391,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get errorNetwork =>
-      'Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.';
+      'Kesalahan jaringan. Periksa koneksi dan coba lagi.';
 
   @override
   String get errorServer => 'Kesalahan server. Silakan coba lagi nanti.';
@@ -854,15 +852,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get welcomeTitle => 'Selamat Datang di Kuron!';
 
   @override
-  String get welcomeMessage =>
-      'Terima kasih telah menginstal aplikasi kami. Sebelum memulai, harap perhatikan:';
+  String get welcomeMessage => 'Sebelum memulai:';
 
   @override
   String get ispBlockingInfo => '🚨 Pemberitahuan Pemblokiran ISP';
 
   @override
   String get ispBlockingMessage =>
-      'Jika aplikasi ini diblokir oleh ISP (Penyedia Layanan Internet) Anda, silakan gunakan VPN seperti Cloudflare WARP (1.1.1.1) untuk mengakses konten.';
+      'Diblokir ISP? Gunakan VPN seperti Cloudflare WARP 1.1.1.1.';
 
   @override
   String get downloadWarp => 'Unduh VPN 1.1.1.1';
@@ -895,7 +892,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get pleaseGrantAllPermissions =>
-      'Harap berikan semua izin yang diperlukan untuk melanjutkan';
+      'Berikan izin yang diperlukan untuk melanjutkan';
 
   @override
   String get permissionDenied =>
@@ -946,7 +943,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get selectFavorites => 'Pilih favorit';
+  String get selectFavorites => 'Favorit';
 
   @override
   String get deleteSelected => 'Hapus yang dipilih';
@@ -1422,7 +1419,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get storagePermissionExplanation =>
-      'Aplikasi ini membutuhkan izin penyimpanan untuk mengunduh file ke perangkat Anda. File akan disimpan di folder Downloads/nhasix.';
+      'Izin penyimpanan diperlukan untuk mengunduh file. File disimpan di folder Downloads/nhasix.';
 
   @override
   String get grantPermission => 'Berikan Izin';
@@ -1517,7 +1514,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String validPageNumberError(int totalPages) {
-    return 'Silakan masukkan nomor halaman yang valid antara 1 dan $totalPages';
+    return 'Masukkan nomor halaman antara 1 dan $totalPages';
   }
 
   @override
@@ -1808,8 +1805,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get advancedSearchTitle => 'Pencarian Lanjutan';
 
   @override
-  String get enterSearchQueryHint =>
-      'Masukkan kata kunci pencarian (contoh: \"big breasts english\")';
+  String get enterSearchQueryHint => 'Cari (contoh: \"gunung berapi\")';
 
   @override
   String get popularSearchesTitle => 'Pencarian Populer';
@@ -1818,8 +1814,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get clearAllAction => 'Bersihkan Semua';
 
   @override
-  String get pressSearchButtonMessage =>
-      'Tekan tombol Cari untuk menemukan konten dengan filter saat ini';
+  String get pressSearchButtonMessage => 'Cari dengan filter saat ini';
 
   @override
   String get searchingMessage => 'Mencari...';
@@ -3309,16 +3304,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get themeDescription =>
-      'Pilih tema warna yang diinginkan untuk antarmuka aplikasi.';
+  String get themeDescription => 'Tema warna untuk antarmuka aplikasi.';
 
   @override
-  String get imageQualityDescription =>
-      'Pilih kualitas gambar untuk unduhan. Kualitas lebih tinggi menggunakan lebih banyak penyimpanan dan data.';
+  String get imageQualityDescription => 'Kualitas gambar untuk unduhan.';
 
   @override
-  String get gridColumnsDescription =>
-      'Pilih berapa banyak kolom untuk menampilkan konten dalam mode potret. Lebih banyak kolom menampilkan lebih banyak item tetapi lebih kecil.';
+  String get gridColumnsDescription => 'Jumlah kolom grid dalam mode potret.';
 
   @override
   String get gridPreview => 'Pratinjau Grid';
@@ -3349,7 +3341,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get disguiseModeDescription =>
-      'Pilih bagaimana aplikasi muncul di launcher Anda untuk privasi.';
+      'Tampilan aplikasi di launcher untuk privasi.';
 
   @override
   String get applyingDisguiseMode => 'Menerapkan perubahan mode penyamaran...';
@@ -3491,7 +3483,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Folder cadangan \'nhasix\' tidak ditemukan di lokasi default. Apakah Anda ingin memilih folder kustom yang berisi cadangan Anda?';
 
   @override
-  String get selectFolder => 'Pilih Folder';
+  String get selectFolder => 'Folder';
 
   @override
   String get premiumFeature => 'Fitur Premium';
@@ -3578,7 +3570,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get sourceSelectorSelectSource => 'Pilih Sumber';
+  String get sourceSelectorSelectSource => 'Sumber';
 
   @override
   String get sourceSelectorDescription =>
@@ -3818,6 +3810,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get noGenreListLoaded =>
+      'Daftar genre remote belum dimuat. Muat ulang untuk sinkronisasi.';
+
+  @override
   String get genreListTitle => 'Daftar Genre';
 
   @override
@@ -3982,7 +3978,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get addRules => 'Tambah aturan';
 
   @override
-  String get pickFromTags => 'Pilih dari tag';
+  String get pickFromTags => 'Dari tag';
 
   @override
   String get done => 'Selesai';
@@ -4002,11 +3998,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get chooseOneSource => 'Pilih satu sumber untuk diinstal.';
+  String get chooseOneSource => 'Instal sumber';
 
   @override
-  String get chooseMultipleSources =>
-      'Pilih satu atau lebih sumber untuk diinstal.';
+  String get chooseMultipleSources => 'Instal sumber';
 
   @override
   String installSelectedCount(int count) {
@@ -4395,7 +4390,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dohDescription =>
-      'DNS-over-HTTPS (DoH) mengenkripsi kueri DNS Anda, mencegah ISP dan administrator jaringan memantau situs yang Anda kunjungi. Ini juga membantu melewati sensor dan pembatasan geografis berbasis DNS.';
+      'DNS-over-HTTPS mengenkripsi kueri DNS untuk mencegah pemantauan dan menyensor.';
 
   @override
   String get dnsQueriesEncrypted => 'Semua kueri DNS dienkripsi melalui HTTPS';
@@ -4965,7 +4960,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String chooseField(String field) {
-    return 'Pilih $field';
+    return '$field';
   }
 
   @override

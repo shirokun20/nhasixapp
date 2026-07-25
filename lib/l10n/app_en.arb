@@ -2829,6 +2829,7 @@
     }
   },
   "errorParsingUrl": "Error parsing URL: {url}",
+  "noGenreListLoaded": "No remote genre list loaded. Reload to sync from source.",
   "@errorParsingUrl": {
     "placeholders": {
       "url": {

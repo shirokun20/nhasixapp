@@ -58,7 +58,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceAuthCaptchaVerified => 'CAPTCHA 已验证并安全保存';
 
   @override
-  String get sourceAuthCaptchaRequired => '请先完成 CAPTCHA 以继续';
+  String get sourceAuthCaptchaRequired => '完成 CAPTCHA 以继续';
 
   @override
   String get sourceAuthCaptchaSolved => 'CAPTCHA 已完成';
@@ -166,7 +166,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get supportDeveloperSubtitle => '请我喝杯咖啡';
 
   @override
-  String get donateMessage => '如果您觉得此应用有帮助，可以通过 QRIS 捐赠来支持开发。谢谢！☕';
+  String get donateMessage => '支持开发 via QRIS 捐赠。谢谢！☕';
 
   @override
   String get thankYouMessage => '感谢您的支持！';
@@ -308,7 +308,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get soleMale => '单男主';
 
   @override
-  String get pleaseSetStorageLocation => '请先在设置中设置下载存储位置。';
+  String get pleaseSetStorageLocation => '先在设置中设置下载存储位置。';
 
   @override
   String get schoolgirlUniform => '女学生制服';
@@ -344,7 +344,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tryAdjustingFilters => '尝试调整筛选条件或使用其他关键词。';
 
   @override
-  String get networkError => '网络连接错误，请检查网络设置。';
+  String get networkError => '网络连接错误，检查网络设置。';
 
   @override
   String get accessBlocked => '访问被阻止。正在尝试绕过保护...';
@@ -371,7 +371,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retrySearch => '重试搜索';
 
   @override
-  String get errorNetwork => '网络连接错误，请检查您的网络设置。';
+  String get errorNetwork => '网络连接错误，检查网络设置。';
 
   @override
   String get errorServer => '服务器暂时无法响应，请稍后再试。';
@@ -813,14 +813,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get welcomeTitle => '欢迎使用 Kuron！';
 
   @override
-  String get welcomeMessage => '感谢您安装我们的应用。在开始之前，请注意：';
+  String get welcomeMessage => '在开始之前：';
 
   @override
   String get ispBlockingInfo => '🚨 ISP 封锁通知';
 
   @override
-  String get ispBlockingMessage =>
-      '如果此应用被您的 ISP（互联网服务提供商）封锁，请使用 VPN（如 Cloudflare WARP 1.1.1.1）来访问内容。';
+  String get ispBlockingMessage => '被 ISP 屏蔽？使用 VPN 如 Cloudflare WARP 1.1.1.1。';
 
   @override
   String get downloadWarp => '下载 1.1.1.1 VPN';
@@ -850,7 +849,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get getStarted => '开始使用';
 
   @override
-  String get pleaseGrantAllPermissions => '请授予所有必需的权限以继续';
+  String get pleaseGrantAllPermissions => '授予必需的权限以继续';
 
   @override
   String get permissionDenied => '权限被拒绝。某些功能可能无法正常工作。';
@@ -1361,7 +1360,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get storagePermissionExplanation =>
-      '应用需要存储权限才能将文件下载到您的设备（Downloads/nhasix 文件夹）。';
+      '需要存储权限以下载文件。文件保存在 Downloads/nhasix 文件夹。';
 
   @override
   String get grantPermission => '授予权限';
@@ -1452,7 +1451,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String validPageNumberError(int totalPages) {
-    return '请输入有效的页码 (1 - $totalPages)';
+    return '输入页码 (1 - $totalPages)';
   }
 
   @override
@@ -1739,7 +1738,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSearchTitle => '高级搜索';
 
   @override
-  String get enterSearchQueryHint => '输入搜索关键词 (例如 \"big breasts english\")';
+  String get enterSearchQueryHint => '搜索 (例如 \"big breasts english\")';
 
   @override
   String get popularSearchesTitle => '热门搜索';
@@ -1748,7 +1747,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearAllAction => '清除全部';
 
   @override
-  String get pressSearchButtonMessage => '点击搜索按钮以应用当前筛选条件';
+  String get pressSearchButtonMessage => '按当前筛选条件搜索';
 
   @override
   String get searchingMessage => '搜索中...';
@@ -3199,13 +3198,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get themeDescription => '选择您偏好的应用界面颜色主题。';
+  String get themeDescription => '应用界面颜色主题。';
 
   @override
-  String get imageQualityDescription => '选择下载的图片质量。质量越高，占用的存储和数据越多。';
+  String get imageQualityDescription => '下载图片质量。';
 
   @override
-  String get gridColumnsDescription => '选择竖屏模式下的内容列数。列数越多，显示的内容越多但尺寸越小。';
+  String get gridColumnsDescription => '竖屏网格列数。';
 
   @override
   String get gridPreview => '网格预览';
@@ -3232,7 +3231,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearCacheButton => '清除缓存';
 
   @override
-  String get disguiseModeDescription => '选择应用在启动器中的显示方式以保护隐私。';
+  String get disguiseModeDescription => '启动器显示方式以保护隐私。';
 
   @override
   String get applyingDisguiseMode => '正在应用伪装模式更改...';
@@ -3371,7 +3370,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '在默认位置未找到\'nhasix\'备份文件夹。您想选择包含备份的自定义文件夹吗？';
 
   @override
-  String get selectFolder => '选择文件夹';
+  String get selectFolder => '文件夹';
 
   @override
   String get premiumFeature => '高级功能';
@@ -3457,7 +3456,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get sourceSelectorSelectSource => '选择来源';
+  String get sourceSelectorSelectSource => '来源';
 
   @override
   String get sourceSelectorDescription => '切换提供方以更改首页、详情、搜索和阅读数据来源。';
@@ -3690,6 +3689,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get noGenreListLoaded => '远程类型列表尚未加载。重新加载以从源同步。';
+
+  @override
   String get genreListTitle => '分类列表';
 
   @override
@@ -3851,7 +3853,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addRules => '添加规则';
 
   @override
-  String get pickFromTags => '从标签中选择';
+  String get pickFromTags => '从标签';
 
   @override
   String get done => '完成';
@@ -3871,10 +3873,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chooseOneSource => '选择一个来源进行安装。';
+  String get chooseOneSource => '安装来源';
 
   @override
-  String get chooseMultipleSources => '选择一个或多个来源进行安装。';
+  String get chooseMultipleSources => '安装来源';
 
   @override
   String installSelectedCount(int count) {
@@ -4255,8 +4257,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutDoh => '关于 DNS-over-HTTPS';
 
   @override
-  String get dohDescription =>
-      'DNS-over-HTTPS (DoH) 加密您的 DNS 查询，防止 ISP 和网络管理员监控您访问的网站。它还有助于绕过基于 DNS 的审查和地理限制。';
+  String get dohDescription => 'DNS-over-HTTPS 加密 DNS 查询以防止监控和绕过审查。';
 
   @override
   String get dnsQueriesEncrypted => '所有 DNS 查询通过 HTTPS 加密';
@@ -4807,7 +4808,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chooseField(String field) {
-    return '选择$field';
+    return '$field';
   }
 
   @override

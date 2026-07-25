@@ -2822,6 +2822,7 @@
     }
   },
   "errorParsingUrl": "解析 URL 出错：{url}",
+  "noGenreListLoaded": "远程类型列表尚未加载。重新加载以从源同步。",
   "@errorParsingUrl": {
     "placeholders": {
       "url": {

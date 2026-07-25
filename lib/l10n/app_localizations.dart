@@ -193,7 +193,7 @@ abstract class AppLocalizations {
   /// No description provided for @sourceAuthCaptchaRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please solve CAPTCHA to continue'**
+  /// **'Solve CAPTCHA to continue'**
   String get sourceAuthCaptchaRequired;
 
   /// No description provided for @sourceAuthCaptchaSolved.
@@ -409,7 +409,7 @@ abstract class AppLocalizations {
   /// No description provided for @donateMessage.
   ///
   /// In en, this message translates to:
-  /// **'If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕'**
+  /// **'Support development via QRIS donation. Thank you! ☕'**
   String get donateMessage;
 
   /// No description provided for @thankYouMessage.
@@ -685,7 +685,7 @@ abstract class AppLocalizations {
   /// Error message when custom storage location is not set
   ///
   /// In en, this message translates to:
-  /// **'Please set download storage location in settings first.'**
+  /// **'Set download storage location in settings first.'**
   String get pleaseSetStorageLocation;
 
   /// No description provided for @schoolgirlUniform.
@@ -757,7 +757,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkError.
   ///
   /// In en, this message translates to:
-  /// **'Network error. Please check your connection and try again.'**
+  /// **'Network error. Check your connection and try again.'**
   String get networkError;
 
   /// No description provided for @accessBlocked.
@@ -811,7 +811,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorNetwork.
   ///
   /// In en, this message translates to:
-  /// **'Network error. Please check your connection and try again.'**
+  /// **'Network error. Check your connection and try again.'**
   String get errorNetwork;
 
   /// No description provided for @errorServer.
@@ -1381,7 +1381,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectDownloadRange.
   ///
   /// In en, this message translates to:
-  /// **'Select Download Range'**
+  /// **'Download Range'**
   String get selectDownloadRange;
 
   /// No description provided for @useSliderToSelectRange.
@@ -1627,7 +1627,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeMessage.
   ///
   /// In en, this message translates to:
-  /// **'Thank you for installing our app. Before you start, please note:'**
+  /// **'Before you start:'**
   String get welcomeMessage;
 
   /// No description provided for @ispBlockingInfo.
@@ -1639,7 +1639,7 @@ abstract class AppLocalizations {
   /// No description provided for @ispBlockingMessage.
   ///
   /// In en, this message translates to:
-  /// **'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.'**
+  /// **'Blocked by ISP? Use a VPN like Cloudflare WARP 1.1.1.1.'**
   String get ispBlockingMessage;
 
   /// No description provided for @downloadWarp.
@@ -1699,7 +1699,7 @@ abstract class AppLocalizations {
   /// No description provided for @pleaseGrantAllPermissions.
   ///
   /// In en, this message translates to:
-  /// **'Please grant all required permissions to continue'**
+  /// **'Grant all required permissions to continue'**
   String get pleaseGrantAllPermissions;
 
   /// No description provided for @permissionDenied.
@@ -1783,7 +1783,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectFavorites.
   ///
   /// In en, this message translates to:
-  /// **'Select favorites'**
+  /// **'Favorites'**
   String get selectFavorites;
 
   /// No description provided for @deleteSelected.
@@ -2671,13 +2671,13 @@ abstract class AppLocalizations {
   /// No description provided for @platformNotSupportedInstall.
   ///
   /// In en, this message translates to:
-  /// **'Please install and run this app on an Android device.'**
+  /// **'Install and run this app on an Android device.'**
   String get platformNotSupportedInstall;
 
   /// No description provided for @storagePermissionExplanation.
   ///
   /// In en, this message translates to:
-  /// **'This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.'**
+  /// **'Storage permission is needed to download files. Files saved to Downloads/nhasix folder.'**
   String get storagePermissionExplanation;
 
   /// No description provided for @grantPermission.
@@ -2845,7 +2845,7 @@ abstract class AppLocalizations {
   /// No description provided for @validPageNumberError.
   ///
   /// In en, this message translates to:
-  /// **'Please enter a valid page number between 1 and {totalPages}'**
+  /// **'Enter a page number between 1 and {totalPages}'**
   String validPageNumberError(int totalPages);
 
   /// No description provided for @tapToJump.
@@ -3361,7 +3361,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterSearchQueryHint.
   ///
   /// In en, this message translates to:
-  /// **'Enter search query (e.g. \"big breasts english\")'**
+  /// **'Search (e.g. \"big breasts english\")'**
   String get enterSearchQueryHint;
 
   /// No description provided for @popularSearchesTitle.
@@ -3379,7 +3379,7 @@ abstract class AppLocalizations {
   /// No description provided for @pressSearchButtonMessage.
   ///
   /// In en, this message translates to:
-  /// **'Press the Search button to find content with your current filters'**
+  /// **'Search with your current filters'**
   String get pressSearchButtonMessage;
 
   /// No description provided for @searchingMessage.
@@ -4154,7 +4154,7 @@ abstract class AppLocalizations {
   /// No description provided for @addFiltersToSearch.
   ///
   /// In en, this message translates to:
-  /// **'Add filters above to enable search'**
+  /// **'Add filters to enable search'**
   String get addFiltersToSearch;
 
   /// No description provided for @startSearching.
@@ -5679,19 +5679,19 @@ abstract class AppLocalizations {
   /// No description provided for @themeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose your preferred color theme for the app interface.'**
+  /// **'Color theme for the app interface.'**
   String get themeDescription;
 
   /// No description provided for @imageQualityDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose image quality for downloads. Higher quality uses more storage and data.'**
+  /// **'Image quality for downloads. Higher quality uses more storage.'**
   String get imageQualityDescription;
 
   /// No description provided for @gridColumnsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.'**
+  /// **'Grid columns in portrait mode.'**
   String get gridColumnsDescription;
 
   /// No description provided for @gridPreview.
@@ -5745,7 +5745,7 @@ abstract class AppLocalizations {
   /// No description provided for @disguiseModeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Choose how the app appears in your launcher for privacy.'**
+  /// **'App launcher appearance for privacy.'**
   String get disguiseModeDescription;
 
   /// No description provided for @applyingDisguiseMode.
@@ -5985,7 +5985,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectFolder.
   ///
   /// In en, this message translates to:
-  /// **'Select Folder'**
+  /// **'Folder'**
   String get selectFolder;
 
   /// No description provided for @premiumFeature.
@@ -6105,7 +6105,7 @@ abstract class AppLocalizations {
   /// No description provided for @sourceSelectorSelectSource.
   ///
   /// In en, this message translates to:
-  /// **'Select Source'**
+  /// **'Source'**
   String get sourceSelectorSelectSource;
 
   /// No description provided for @sourceSelectorDescription.
@@ -6522,6 +6522,12 @@ abstract class AppLocalizations {
   /// **'Error parsing URL: {url}'**
   String errorParsingUrl(String url);
 
+  /// No description provided for @noGenreListLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No remote genre list loaded. Reload to sync from source.'**
+  String get noGenreListLoaded;
+
   /// No description provided for @genreListTitle.
   ///
   /// In en, this message translates to:
@@ -6807,7 +6813,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickFromTags.
   ///
   /// In en, this message translates to:
-  /// **'Pick from tags'**
+  /// **'From tags'**
   String get pickFromTags;
 
   /// No description provided for @done.
@@ -6843,13 +6849,13 @@ abstract class AppLocalizations {
   /// No description provided for @chooseOneSource.
   ///
   /// In en, this message translates to:
-  /// **'Choose one source to install.'**
+  /// **'Install source'**
   String get chooseOneSource;
 
   /// No description provided for @chooseMultipleSources.
   ///
   /// In en, this message translates to:
-  /// **'Choose one or more sources to install.'**
+  /// **'Install sources'**
   String get chooseMultipleSources;
 
   /// No description provided for @installSelectedCount.
@@ -7479,7 +7485,7 @@ abstract class AppLocalizations {
   /// No description provided for @dohDescription.
   ///
   /// In en, this message translates to:
-  /// **'DNS-over-HTTPS (DoH) encrypts your DNS queries, preventing ISPs and network administrators from monitoring which websites you visit. It also helps bypass DNS-based censorship and geo-restrictions.'**
+  /// **'DNS-over-HTTPS encrypts DNS queries to prevent monitoring and bypass censorship.'**
   String get dohDescription;
 
   /// No description provided for @dnsQueriesEncrypted.
@@ -8289,7 +8295,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectSourceFromManifest.
   ///
   /// In en, this message translates to:
-  /// **'Select Source from Manifest'**
+  /// **'From Manifest'**
   String get selectSourceFromManifest;
 
   /// No description provided for @pagesWithSize.
@@ -8403,7 +8409,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseField.
   ///
   /// In en, this message translates to:
-  /// **'Choose {field}'**
+  /// **'{field}'**
   String chooseField(String field);
 
   /// No description provided for @tapToLoadOptions.

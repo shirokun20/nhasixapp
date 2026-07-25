@@ -2226,6 +2226,7 @@
     }
   },
   "errorParsingUrl": "Kesalahan mengurai URL: {url}",
+  "noGenreListLoaded": "Daftar genre remote belum dimuat. Muat ulang untuk sinkronisasi.",
   "@errorParsingUrl": {
     "placeholders": {
       "url": {

@@ -61,7 +61,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'CAPTCHA verified and stored securely';
 
   @override
-  String get sourceAuthCaptchaRequired => 'Please solve CAPTCHA to continue';
+  String get sourceAuthCaptchaRequired => 'Solve CAPTCHA to continue';
 
   @override
   String get sourceAuthCaptchaSolved => 'CAPTCHA Solved';
@@ -173,7 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get donateMessage =>
-      'If you find this app helpful, you can support its development by donating via QRIS. Thank you! ☕';
+      'Support development via QRIS donation. Thank you! ☕';
 
   @override
   String get thankYouMessage => 'Thank you for your support!';
@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseSetStorageLocation =>
-      'Please set download storage location in settings first.';
+      'Set download storage location in settings first.';
 
   @override
   String get schoolgirlUniform => 'schoolgirl uniform';
@@ -358,7 +358,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networkError =>
-      'Network error. Please check your connection and try again.';
+      'Network error. Check your connection and try again.';
 
   @override
   String get accessBlocked => 'Access blocked. Trying to bypass protection...';
@@ -390,7 +390,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorNetwork =>
-      'Network error. Please check your connection and try again.';
+      'Network error. Check your connection and try again.';
 
   @override
   String get errorServer => 'Server error. Please try again later.';
@@ -701,7 +701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadRange => 'Download Range';
 
   @override
-  String get selectDownloadRange => 'Select Download Range';
+  String get selectDownloadRange => 'Download Range';
 
   @override
   String get useSliderToSelectRange => 'Use slider to select range:';
@@ -848,15 +848,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeTitle => 'Welcome to Kuron!';
 
   @override
-  String get welcomeMessage =>
-      'Thank you for installing our app. Before you start, please note:';
+  String get welcomeMessage => 'Before you start:';
 
   @override
   String get ispBlockingInfo => '🚨 ISP Blocking Notice';
 
   @override
   String get ispBlockingMessage =>
-      'If this app is blocked by your ISP (Internet Service Provider), please use a VPN like Cloudflare WARP (1.1.1.1) to access content.';
+      'Blocked by ISP? Use a VPN like Cloudflare WARP 1.1.1.1.';
 
   @override
   String get downloadWarp => 'Download 1.1.1.1 VPN';
@@ -889,7 +888,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseGrantAllPermissions =>
-      'Please grant all required permissions to continue';
+      'Grant all required permissions to continue';
 
   @override
   String get permissionDenied =>
@@ -940,7 +939,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get selectFavorites => 'Select favorites';
+  String get selectFavorites => 'Favorites';
 
   @override
   String get deleteSelected => 'Delete selected';
@@ -1414,11 +1413,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get platformNotSupportedInstall =>
-      'Please install and run this app on an Android device.';
+      'Install and run this app on an Android device.';
 
   @override
   String get storagePermissionExplanation =>
-      'This app needs storage permission to download files to your device. Files will be saved to the Downloads/nhasix folder.';
+      'Storage permission is needed to download files. Files saved to Downloads/nhasix folder.';
 
   @override
   String get grantPermission => 'Grant Permission';
@@ -1513,7 +1512,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String validPageNumberError(int totalPages) {
-    return 'Please enter a valid page number between 1 and $totalPages';
+    return 'Enter a page number between 1 and $totalPages';
   }
 
   @override
@@ -1802,8 +1801,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSearchTitle => 'Advanced Search';
 
   @override
-  String get enterSearchQueryHint =>
-      'Enter search query (e.g. \"big breasts english\")';
+  String get enterSearchQueryHint => 'Search (e.g. \"big breasts english\")';
 
   @override
   String get popularSearchesTitle => 'Popular Searches';
@@ -1812,8 +1810,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearAllAction => 'Clear All';
 
   @override
-  String get pressSearchButtonMessage =>
-      'Press the Search button to find content with your current filters';
+  String get pressSearchButtonMessage => 'Search with your current filters';
 
   @override
   String get searchingMessage => 'Searching...';
@@ -2237,7 +2234,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applySearch => 'Apply Search';
 
   @override
-  String get addFiltersToSearch => 'Add filters above to enable search';
+  String get addFiltersToSearch => 'Add filters to enable search';
 
   @override
   String get startSearching => 'Start searching';
@@ -3291,16 +3288,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get themeDescription =>
-      'Choose your preferred color theme for the app interface.';
+  String get themeDescription => 'Color theme for the app interface.';
 
   @override
   String get imageQualityDescription =>
-      'Choose image quality for downloads. Higher quality uses more storage and data.';
+      'Image quality for downloads. Higher quality uses more storage.';
 
   @override
-  String get gridColumnsDescription =>
-      'Choose how many columns to display content in portrait mode. More columns show more content but smaller items.';
+  String get gridColumnsDescription => 'Grid columns in portrait mode.';
 
   @override
   String get gridPreview => 'Grid Preview';
@@ -3329,8 +3324,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearCacheButton => 'Clear Cache';
 
   @override
-  String get disguiseModeDescription =>
-      'Choose how the app appears in your launcher for privacy.';
+  String get disguiseModeDescription => 'App launcher appearance for privacy.';
 
   @override
   String get applyingDisguiseMode => 'Applying disguise mode changes...';
@@ -3472,7 +3466,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No \'nhasix\' backup folder was found in the default location. Would you like to select a custom folder containing your backup?';
 
   @override
-  String get selectFolder => 'Select Folder';
+  String get selectFolder => 'Folder';
 
   @override
   String get premiumFeature => 'Premium Feature';
@@ -3559,7 +3553,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sourceSelectorSelectSource => 'Select Source';
+  String get sourceSelectorSelectSource => 'Source';
 
   @override
   String get sourceSelectorDescription =>
@@ -3797,6 +3791,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get noGenreListLoaded =>
+      'No remote genre list loaded. Reload to sync from source.';
+
+  @override
   String get genreListTitle => 'Genre List';
 
   @override
@@ -3962,7 +3960,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addRules => 'Add rules';
 
   @override
-  String get pickFromTags => 'Pick from tags';
+  String get pickFromTags => 'From tags';
 
   @override
   String get done => 'Done';
@@ -3982,10 +3980,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chooseOneSource => 'Choose one source to install.';
+  String get chooseOneSource => 'Install source';
 
   @override
-  String get chooseMultipleSources => 'Choose one or more sources to install.';
+  String get chooseMultipleSources => 'Install sources';
 
   @override
   String installSelectedCount(int count) {
@@ -4373,7 +4371,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dohDescription =>
-      'DNS-over-HTTPS (DoH) encrypts your DNS queries, preventing ISPs and network administrators from monitoring which websites you visit. It also helps bypass DNS-based censorship and geo-restrictions.';
+      'DNS-over-HTTPS encrypts DNS queries to prevent monitoring and bypass censorship.';
 
   @override
   String get dnsQueriesEncrypted => 'All DNS queries encrypted via HTTPS';
@@ -4872,7 +4870,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get selectSourceFromManifest => 'Select Source from Manifest';
+  String get selectSourceFromManifest => 'From Manifest';
 
   @override
   String pagesWithSize(int pageCount, String size) {
@@ -4942,7 +4940,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chooseField(String field) {
-    return 'Choose $field';
+    return '$field';
   }
 
   @override

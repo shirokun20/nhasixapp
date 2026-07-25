@@ -2832,7 +2832,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ),
             ] else ...[
               Text(
-                'No remote genre list is loaded yet. Reload to sync from source.',
+                AppLocalizations.of(context)!.noGenreListLoaded,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
