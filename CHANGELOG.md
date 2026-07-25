@@ -10,7 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
-- **Nicomanga genreSearch base64 URL**: Genre/tag pages now use `https://nicomanga.com/g/{base64}.html` format via `tagTransform: "base64"` in config. Field extraction `transform: "base64"` also supported di detail page untuk author, tags, artist (base64-encoded text).
+- **App Lock (PIN + Biometric)**: Full app-level lock with PIN setup/verify/change/remove and optional biometric (fingerprint/face) via `local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
+- **Content Source loading fix**: `ContentBloc` removed from `MultiBlocProviderConfig` — `ContentSourceRegistry` no longer created eagerly at startup with only nhentai. Now created from `MainScreen.getIt<ContentBloc>()` after splash completes + RemoteConfigService loads all sources.
+- **Session time-limit lock**: `AppLockCubit` starts 10-min session on unlock. Periodic 30s check — if expired, auto-lock. Short lifecycle pauses from biometric dialog (< 30s onPaused/resumed) ignored.
+- **MIUI biometric compatibility**: `MainActivity.kt` changed from `FlutterActivity` to `FlutterFragmentActivity`. Auth uses `sensitiveTransaction: false`, `useErrorDialogs: false`, `stickyAuth: false`. `canCheckBiometrics` removed — MIUI false negative bug.
+- **PIN/Biometric l10n**: Added 30+ ARB keys (en/id/zh) for PIN entry, setup, change, error strings, and settings toggles.
+
+### 🔧 Changed
+
+- **App architecture**: `AppLockGate` now `StatefulWidget` with `didChangeDependencies` (one-time init, gated by `_inited`). `MultiBlocProviderConfig` no longer provides `ContentBloc` eagerly.
+- **MainActivity.kt**: Extends `FlutterFragmentActivity` instead of `FlutterActivity` for `local_auth` FragmentActivity requirement.
+- **ContentBloc access pattern**: Two `context.read<ContentBloc>()` calls in `main_screen_scrollable.dart` changed to `getIt<ContentBloc>()` (DI singleton, no BlocProvider needed). Genre/tag pages now use `https://nicomanga.com/g/{base64}.html` format via `tagTransform: "base64"` in config. Field extraction `transform: "base64"` also supported di detail page untuk author, tags, artist (base64-encoded text).
 - **GenericScraperAdapter tagTransform: base64**: `_resolvePattern()` now supports `tagTransform: "base64"` in pattern config — base64-encodes tag value before URL substitution. Used by nicomanga genreSearch.
 - **CS Reader "Go to First Page" button**: Added `onGoToFirstPage` callback to `EndOfChapterOverlay` — when reaching chapter end in continuous scroll mode, tapping "Go to First Page" jumps back to page 0. Files: `end_of_chapter_overlay.dart`, `reader_screen.dart`.
 - **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator. Added `ponytail:` comments on intentional hardcode boundaries.
@@ -20,6 +30,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🐛 Fixed
 
+- **Fingerprint unlock → missing sources**: Root cause: `ContentSourceRegistry` initialized at `runApp()` with only nhentai (from DI) because `SplashBloc.smartInitialize()` hadn't run yet. Pin unlock "worked" only because PIN typing took enough time for splash to finish, but biometric instant unlock raced. Fix: removed `ContentBloc` from `MultiBlocProviderConfig` so `ContentSourceRegistry` is only created when home screen renders — after splash completes.
+- **AppLockGate blocking splash**: Moved `AppLockGate` from `MaterialApp.builder` to home/main route wrappers. Splash runs freely, gate only appears after navigation to home.
+- **AppLockGate re-init on rebuild**: `StatefulWidget` + `_inited` flag in `didChangeDependencies` prevents re-calling `cubit.init()` on rebuild.
+- **Settings PIN setup sheet not closing**: `showPinSetupSheet` now passes `onSetupComplete: () => Navigator.pop()` so sheet auto-closes on success.
+- **Gate showing PIN setup even when disabled**: Gate now checks `!lockState.hasPin && lockState.isPinEnabled` — only shows setup when PIN is explicitly enabled.
+- **Gate triggering when already unlocked**: `AppLockCubit.init()` checks `isSessionActive()` — skips lock if session still valid.
 - **HDoujin CDN headers**: `getImageDownloadHeaders()` in `generic_http_source.dart` now correctly restores Origin/Referer from config for hdoujin CDN requests (was using API URL instead of domain). Together with `schale-network`.
 - **HDoujin cache refresh**: `content_repository_impl.dart` now forces detail cache refresh for hdoujin source (same policy as schale-network).
 - **FlutterImageDecoder spam di log**: `FlutterError.onError` dan `PlatformDispatcher.instance.onError` skip `Failed to decode image` / `Invalid image data` dari Flutter engine native (`FlutterImageDecoderImplDefault`). Ini harmless — AVIF/WebP variant yang gak didukung engine dilewati dan ExtendedImage otomatis fallback. Tidak ada CPU hang atau crash.

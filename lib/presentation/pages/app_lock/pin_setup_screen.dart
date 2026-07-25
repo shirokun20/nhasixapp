@@ -212,8 +212,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   }
 
   Widget _buildBackspace(ThemeData theme) {
-    return SizedBox(
-      width: 64 + 12,
+    return Expanded(
       child: Padding(
         padding: const EdgeInsets.all(6),
         child: Material(

@@ -251,8 +251,7 @@ Widget _keypadRow(ThemeData theme, List<String> digits,
 }
 
 Widget _keypadBackspace(ThemeData theme, VoidCallback onDelete) {
-  return SizedBox(
-    width: 64 + 12,
+  return Expanded(
     child: Padding(
       padding: const EdgeInsets.all(6),
       child: Material(
