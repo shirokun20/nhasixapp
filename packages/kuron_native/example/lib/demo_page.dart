@@ -188,8 +188,10 @@ class _DemoPageState extends State<DemoPage> {
         }
       }
     }
-    return [for (var i = 0; i < boxes.length; i++)
-      if (!toRemove.contains(i)) boxes[i]];
+    return [
+      for (var i = 0; i < boxes.length; i++)
+        if (!toRemove.contains(i)) boxes[i],
+    ];
   }
 
   // ── Full-image fallback (0 bubbles detected) ──────────────
@@ -212,7 +214,10 @@ class _DemoPageState extends State<DemoPage> {
       // Compress full image
       final original = img.decodeImage(_pageBytes!);
       if (original == null) throw Exception('Failed to decode image');
-      final resized = img.copyResize(original, width: min(original.width, 1280));
+      final resized = img.copyResize(
+        original,
+        width: min(original.width, 1280),
+      );
       final jpeg = img.encodeJpg(resized, quality: 85);
       final b64 = base64Encode(jpeg);
       _logm('Full image compressed: ${jpeg.length} bytes');
@@ -241,46 +246,54 @@ class _DemoPageState extends State<DemoPage> {
               '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
           req = await client.postUrl(Uri.parse(url));
           req.headers.contentType = ContentType.json;
-          req.write(jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {'text': prompt},
-                  {'inline_data': {'mime_type': 'image/jpeg', 'data': b64}},
-                ],
-              },
-            ],
-          }));
+          req.write(
+            jsonEncode({
+              'contents': [
+                {
+                  'parts': [
+                    {'text': prompt},
+                    {
+                      'inline_data': {'mime_type': 'image/jpeg', 'data': b64},
+                    },
+                  ],
+                },
+              ],
+            }),
+          );
         } else {
           req = await client.postUrl(Uri.parse(_providerBaseUrl));
           req.headers.contentType = ContentType.json;
           if (_providerKey.isNotEmpty) {
             req.headers.set('Authorization', 'Bearer $_providerKey');
           }
-          req.write(jsonEncode({
-            'model': _providerModel,
-            'stream': false,
-            'max_tokens': 1000,
-            'thinking': {'type': 'disabled'},
-            'messages': [
-              {
-                'role': 'user',
-                'content': [
-                  {'type': 'text', 'text': prompt},
-                  {
-                    'type': 'image_url',
-                    'image_url': {'url': 'data:image/jpeg;base64,$b64'},
-                  },
-                ],
-              },
-            ],
-          }));
+          req.write(
+            jsonEncode({
+              'model': _providerModel,
+              'stream': false,
+              'max_tokens': 1000,
+              'thinking': {'type': 'disabled'},
+              'messages': [
+                {
+                  'role': 'user',
+                  'content': [
+                    {'type': 'text', 'text': prompt},
+                    {
+                      'type': 'image_url',
+                      'image_url': {'url': 'data:image/jpeg;base64,$b64'},
+                    },
+                  ],
+                },
+              ],
+            }),
+          );
         }
         final resp = await req.close();
         final body = await resp.transform(utf8.decoder).join();
 
         if (resp.statusCode != 200) {
-          _logm('AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}');
+          _logm(
+            'AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}',
+          );
           setState(() {
             _state = PipelineState.error;
             _error = 'Translate gagal';
@@ -318,7 +331,9 @@ class _DemoPageState extends State<DemoPage> {
           return;
         }
 
-        _logm('Full-image AI raw: ${content.substring(0, content.length.clamp(0, 200))}');
+        _logm(
+          'Full-image AI raw: ${content.substring(0, content.length.clamp(0, 200))}',
+        );
 
         // Parse <|N|> lines
         final translations = <String, String>{};
@@ -334,22 +349,26 @@ class _DemoPageState extends State<DemoPage> {
         // Create page translation at position (0,0, imgW, imgH) — full page
         final bubbleTranslations = <BubbleTranslation>[];
         for (final entry in translations.entries) {
-          bubbleTranslations.add(BubbleTranslation(
-            id: int.tryParse(entry.key) ?? 1,
-            original: '',
-            translated: entry.value,
-            x: 0,
-            y: 0,
-            w: _imgW,
-            h: _imgH,
-          ));
+          bubbleTranslations.add(
+            BubbleTranslation(
+              id: int.tryParse(entry.key) ?? 1,
+              original: '',
+              translated: entry.value,
+              x: 0,
+              y: 0,
+              w: _imgW,
+              h: _imgH,
+            ),
+          );
         }
 
         _translation = PageTranslation(bubbles: bubbleTranslations);
         _overlayVisible = true;
         // Save fallback to cache
         _translationCache[key] = _translation!;
-        _logm('Fallback done! ${bubbleTranslations.where((b) => !b.isSkipped).length} entries');
+        _logm(
+          'Fallback done! ${bubbleTranslations.where((b) => !b.isSkipped).length} entries',
+        );
         setState(() => _state = PipelineState.translated);
       } finally {
         client.close();
@@ -490,11 +509,18 @@ class _DemoPageState extends State<DemoPage> {
     }
   }
 
-  Future<void> _loadTestImage() async {
-    _logm('Loading local test image...');
+  Future<void> _pickImageFile() async {
+    _logm('Opening image picker...');
     try {
-      final data = await rootBundle.load('assets/sample_manga.webp');
-      _pageBytes = data.buffer.asUint8List();
+      final bytes = await KuronNative.instance.pickBinaryFile(
+        mimeType: 'image/*',
+      );
+      if (bytes == null || bytes.isEmpty) {
+        _logm('User cancelled picker');
+        return;
+      }
+      _logm('Picked: ${bytes.length} bytes');
+      _pageBytes = bytes;
       final codec = await ui.instantiateImageCodec(_pageBytes!);
       final frame = await codec.getNextFrame();
       _pageImage?.dispose();
@@ -502,7 +528,7 @@ class _DemoPageState extends State<DemoPage> {
       _imgW = _pageImage!.width;
       _imgH = _pageImage!.height;
       codec.dispose();
-      _currentImageUrl = null;
+      _currentImageUrl = 'picked:${_imgW}x$_imgH';
       _resetPipeline();
       _logm('Image loaded: ${_imgW}x$_imgH px');
       setState(() => _state = PipelineState.imageLoaded);
@@ -510,7 +536,7 @@ class _DemoPageState extends State<DemoPage> {
       _logm('FAILED: $e');
       setState(() {
         _state = PipelineState.error;
-        _error = 'Failed to load test image.';
+        _error = 'Gagal buka file: $e';
       });
     }
   }
@@ -587,7 +613,9 @@ class _DemoPageState extends State<DemoPage> {
       return;
     }
 
-    _logm('Building mosaic + sending to AI (style: $_style, sfxSkip: $_sfxSkip)...');
+    _logm(
+      'Building mosaic + sending to AI (style: $_style, sfxSkip: $_sfxSkip)...',
+    );
     setState(() {
       _state = PipelineState.translating;
       _totalBubbles = boxes.length;
@@ -613,14 +641,14 @@ class _DemoPageState extends State<DemoPage> {
         });
         return;
       }
-      _logm('Mosaic ready in ${DateTime.now().difference(t0).inMilliseconds}ms (${jpeg.length} bytes)');
+      _logm(
+        'Mosaic ready in ${DateTime.now().difference(t0).inMilliseconds}ms (${jpeg.length} bytes)',
+      );
       final b64 = base64Encode(jpeg);
 
       // Build prompt
       final styleInjection = _stylePrompt(_style);
-      final sfxRule = _sfxSkip
-          ? '- SFX-only bubbles → SKIP\n'
-          : '';
+      final sfxRule = _sfxSkip ? '- SFX-only bubbles → SKIP\n' : '';
       final prompt =
           'Translate manga image to $_targetLang.\n\n'
           'Each bubble has a RED NUMBER on its LEFT side.\n\n'
@@ -643,49 +671,58 @@ class _DemoPageState extends State<DemoPage> {
       try {
         HttpClientRequest req;
         if (isGemini) {
-          final url = '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
+          final url =
+              '$_providerBaseUrl/v1beta/models/$_providerModel:generateContent?key=$_providerKey';
           req = await client.postUrl(Uri.parse(url));
           req.headers.contentType = ContentType.json;
-          req.write(jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {'text': prompt},
-                  {'inline_data': {'mime_type': 'image/jpeg', 'data': b64}},
-                ],
-              },
-            ],
-          }));
+          req.write(
+            jsonEncode({
+              'contents': [
+                {
+                  'parts': [
+                    {'text': prompt},
+                    {
+                      'inline_data': {'mime_type': 'image/jpeg', 'data': b64},
+                    },
+                  ],
+                },
+              ],
+            }),
+          );
         } else {
           req = await client.postUrl(Uri.parse(_providerBaseUrl));
           req.headers.contentType = ContentType.json;
           if (_providerKey.isNotEmpty) {
             req.headers.set('Authorization', 'Bearer $_providerKey');
           }
-          req.write(jsonEncode({
-            'model': _providerModel,
-            'stream': false,
-            'max_tokens': 1000,
-            'thinking': {'type': 'disabled'},
-            'messages': [
-              {
-                'role': 'user',
-                'content': [
-                  {'type': 'text', 'text': prompt},
-                  {
-                    'type': 'image_url',
-                    'image_url': {'url': 'data:image/jpeg;base64,$b64'},
-                  },
-                ],
-              },
-            ],
-          }));
+          req.write(
+            jsonEncode({
+              'model': _providerModel,
+              'stream': false,
+              'max_tokens': 1000,
+              'thinking': {'type': 'disabled'},
+              'messages': [
+                {
+                  'role': 'user',
+                  'content': [
+                    {'type': 'text', 'text': prompt},
+                    {
+                      'type': 'image_url',
+                      'image_url': {'url': 'data:image/jpeg;base64,$b64'},
+                    },
+                  ],
+                },
+              ],
+            }),
+          );
         }
         final resp = await req.close();
         final body = await resp.transform(utf8.decoder).join();
 
         if (resp.statusCode != 200) {
-          _logm('AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}');
+          _logm(
+            'AI error HTTP ${resp.statusCode}: ${body.substring(0, body.length.clamp(0, 200))}',
+          );
           setState(() {
             _state = PipelineState.error;
             _error = 'Translate gagal';
@@ -764,15 +801,17 @@ class _DemoPageState extends State<DemoPage> {
         for (var i = 0; i < boxes.length; i++) {
           final idStr = '${i + 1}';
           final translated = translations[idStr] ?? '';
-          bubbleTranslations.add(BubbleTranslation(
-            id: i + 1,
-            original: '',
-            translated: translated,
-            x: boxes[i].x,
-            y: boxes[i].y,
-            w: boxes[i].w,
-            h: boxes[i].h,
-          ));
+          bubbleTranslations.add(
+            BubbleTranslation(
+              id: i + 1,
+              original: '',
+              translated: translated,
+              x: boxes[i].x,
+              y: boxes[i].y,
+              w: boxes[i].w,
+              h: boxes[i].h,
+            ),
+          );
           // Simulate per-bubble progress by updating count as we parse
           _parsedBubbleCount = i + 1;
         }
@@ -915,19 +954,22 @@ class _DemoPageState extends State<DemoPage> {
       _drawStart = _drawEnd = null;
       return;
     }
-    final renderBox = _imageAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final renderBox =
+        _imageAreaKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
     final rs = renderBox.size;
     if (rs.width <= 0 || rs.height <= 0) return;
     final sx = _imgW / rs.width, sy = _imgH / rs.height;
 
-    _manualBoxes.add(BubbleBox(
-      x: (r.left * sx).round(),
-      y: (r.top * sy).round(),
-      w: (r.width * sx).round(),
-      h: (r.height * sy).round(),
-      confidence: 1.0,
-    ));
+    _manualBoxes.add(
+      BubbleBox(
+        x: (r.left * sx).round(),
+        y: (r.top * sy).round(),
+        w: (r.width * sx).round(),
+        h: (r.height * sy).round(),
+        confidence: 1.0,
+      ),
+    );
     _logm('Manual bubble added');
     _drawStart = _drawEnd = null;
     setState(() {});
@@ -955,7 +997,11 @@ class _DemoPageState extends State<DemoPage> {
 
   // ── Real ONNX detection ───────────────────────────────────
 
-  Future<List<BubbleBox>> _realDetect(Uint8List bytes, int imgW, int imgH) async {
+  Future<List<BubbleBox>> _realDetect(
+    Uint8List bytes,
+    int imgW,
+    int imgH,
+  ) async {
     try {
       final result = await KuronNative.instance.detectBubbles(
         imageBytes: bytes,
@@ -968,13 +1014,15 @@ class _DemoPageState extends State<DemoPage> {
       }
       _logm('ONNX: ${result.length} raw bubbles');
       return result
-          .map((m) => BubbleBox(
-                x: (m['x'] as num).toInt(),
-                y: (m['y'] as num).toInt(),
-                w: (m['w'] as num).toInt(),
-                h: (m['h'] as num).toInt(),
-                confidence: (m['confidence'] as num?)?.toDouble() ?? 0.0,
-              ))
+          .map(
+            (m) => BubbleBox(
+              x: (m['x'] as num).toInt(),
+              y: (m['y'] as num).toInt(),
+              w: (m['w'] as num).toInt(),
+              h: (m['h'] as num).toInt(),
+              confidence: (m['confidence'] as num?)?.toDouble() ?? 0.0,
+            ),
+          )
           .toList();
     } catch (e) {
       _logm('ONNX detect failed: $e');
@@ -1050,77 +1098,75 @@ class _DemoPageState extends State<DemoPage> {
                 ),
               ],
       ),
-      body: _state == PipelineState.welcome
-          ? _buildWelcome(t)
-          : _buildMain(t),
+      body: _state == PipelineState.welcome ? _buildWelcome(t) : _buildMain(t),
     );
   }
 
   Widget _buildWelcome(ThemeData t) => SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.auto_awesome, size: 64, color: t.colorScheme.primary),
-                const SizedBox(height: 16),
-                Text(
-                  'AI Translation Pipeline',
-                  style: t.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Detect → Mosaic → AI Translate → Overlay\n\n'
-                  '• ONNX bubble detection (real engine)\n'
-                  '• Mosaic builder with red labels\n'
-                  '• Multi-provider AI (Zen/Gemini/OpenAI)\n'
-                  '• 7 translation styles\n'
-                  '• Manual bubble add/remove/edit\n'
-                  '• SFX skip toggle\n'
-                  '• Image from URL (nhentai etc.)',
-                  textAlign: TextAlign.center,
-                  style: t.textTheme.bodyMedium?.copyWith(
-                    color: t.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // URL input
-                TextField(
-                  controller: _urlCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Image URL (nhentai, etc.)',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.link),
-                      onPressed: _loadFromUrl,
-                    ),
-                  ),
-                  onSubmitted: (_) => _loadFromUrl(),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _loadFromUrl,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Load from URL'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: _loadTestImage,
-                  icon: const Icon(Icons.folder_open),
-                  label: const Text('Load Local Sample'),
-                ),
-              ],
+    child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_awesome, size: 64, color: t.colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              'AI Translation Pipeline',
+              style: t.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Detect → Mosaic → AI Translate → Overlay\n\n'
+              '• ONNX bubble detection (real engine)\n'
+              '• Mosaic builder with red labels\n'
+              '• Multi-provider AI (Zen/Gemini/OpenAI)\n'
+              '• 7 translation styles\n'
+              '• Manual bubble add/remove/edit\n'
+              '• SFX skip toggle\n'
+              '• Pick image from device gallery or files',
+              textAlign: TextAlign.center,
+              style: t.textTheme.bodyMedium?.copyWith(
+                color: t.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // URL input
+            TextField(
+              controller: _urlCtrl,
+              decoration: InputDecoration(
+                labelText: 'Image URL (nhentai, etc.)',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.link),
+                  onPressed: _loadFromUrl,
+                ),
+              ),
+              onSubmitted: (_) => _loadFromUrl(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _loadFromUrl,
+                icon: const Icon(Icons.download),
+                label: const Text('Load from URL'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _pickImageFile,
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Pick from Files'),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _buildMain(ThemeData t) {
     final boxes = _activeBoxes;
@@ -1296,9 +1342,7 @@ class _DemoPageState extends State<DemoPage> {
                 // Translation overlay (amber) + per-bubble shimmer
                 // Koordinat sudah di-expand 40% dari BubbleDetector.kt
                 if (_overlayVisible && _translation != null)
-                  ..._translation!.bubbles
-                      .where((b) => !b.isSkipped)
-                      .map((b) {
+                  ..._translation!.bubbles.where((b) => !b.isSkipped).map((b) {
                     final boxW = b.w * _renderScaleX;
                     final boxH = b.h * _renderScaleY;
                     final pad = 3.0;
@@ -1426,10 +1470,15 @@ class _DemoPageState extends State<DemoPage> {
                             'Portuguese',
                             'French',
                           ]
-                          .map((l) => DropdownMenuItem(
-                                value: l,
-                                child: Text(l, style: const TextStyle(fontSize: 12)),
-                              ))
+                          .map(
+                            (l) => DropdownMenuItem(
+                              value: l,
+                              child: Text(
+                                l,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          )
                           .toList(),
                   onChanged: (v) {
                     if (v == null) return;
@@ -1522,16 +1571,18 @@ class _DemoPageState extends State<DemoPage> {
         padding: const EdgeInsets.all(6),
         children: _log.reversed
             .take(20)
-            .map((m) => Text(
-                  m,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                    color: m.startsWith('FAIL') || m.startsWith('FAILED')
-                        ? t.colorScheme.error
-                        : t.colorScheme.onSurfaceVariant,
-                  ),
-                ))
+            .map(
+              (m) => Text(
+                m,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  color: m.startsWith('FAIL') || m.startsWith('FAILED')
+                      ? t.colorScheme.error
+                      : t.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
             .toList(),
       ),
     );
@@ -1600,7 +1651,8 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
   void initState() {
     super.initState();
     _baseUrlCtrl.text = AiProviderConfig.defaultBaseUrl(_selectedType);
-    _modelCtrl.text = AiProviderConfig.defaultModels[_selectedType] ?? 'ocg/minimax-m3';
+    _modelCtrl.text =
+        AiProviderConfig.defaultModels[_selectedType] ?? 'ocg/minimax-m3';
   }
 
   @override
@@ -1631,19 +1683,27 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Test AI Provider',
-                style: t.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Test AI Provider',
+              style: t.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Uji koneksi provider dengan teks sample. Zen gratis tanpa key.',
-                style: t.textTheme.bodySmall
-                    ?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+            Text(
+              'Uji koneksi provider dengan teks sample. Zen gratis tanpa key.',
+              style: t.textTheme.bodySmall?.copyWith(
+                color: t.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
 
             DropdownButtonFormField<AiProviderType>(
               initialValue: _selectedType,
               decoration: const InputDecoration(
-                  labelText: 'Provider Type', border: OutlineInputBorder()),
+                labelText: 'Provider Type',
+                border: OutlineInputBorder(),
+              ),
               items: AiProviderType.values
                   .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
                   .toList(),
@@ -1661,7 +1721,9 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
               TextField(
                 controller: _apiKeyCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'API Key', border: OutlineInputBorder()),
+                  labelText: 'API Key',
+                  border: OutlineInputBorder(),
+                ),
                 obscureText: true,
               ),
             if (needsKey) const SizedBox(height: 12),
@@ -1672,7 +1734,9 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                 labelText: 'Base URL',
                 border: const OutlineInputBorder(),
                 enabled: isCustom,
-                helperText: isCustom ? '' : 'Pre-filled for ${_selectedType.name}',
+                helperText: isCustom
+                    ? ''
+                    : 'Pre-filled for ${_selectedType.name}',
               ),
             ),
             const SizedBox(height: 12),
@@ -1680,7 +1744,9 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
             TextField(
               controller: _modelCtrl..text = defaultModel,
               decoration: const InputDecoration(
-                  labelText: 'Model', border: OutlineInputBorder()),
+                labelText: 'Model',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -1693,8 +1759,10 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                 color: t.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('「この世界は美しい。だから私は生き続ける。」',
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 13)),
+              child: const Text(
+                '「この世界は美しい。だから私は生き続ける。」',
+                style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -1706,7 +1774,8 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.wifi_tethering, size: 18),
                 label: Text(_loading ? 'Testing...' : 'Test Connection'),
               ),
@@ -1731,7 +1800,9 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',
-                        color: _result.startsWith('✓') ? Colors.green : Colors.red,
+                        color: _result.startsWith('✓')
+                            ? Colors.green
+                            : Colors.red,
                       ),
                     ),
                     if (_result.startsWith('✓'))
@@ -1776,7 +1847,11 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
         _result = await _testGemini(baseUrl, apiKey, model);
       } else {
         _result = await _testOpenAICompatible(
-            baseUrl, apiKey, model, _selectedType);
+          baseUrl,
+          apiKey,
+          model,
+          _selectedType,
+        );
       }
     } catch (e) {
       _result = '✗ Error: $e';
@@ -1930,7 +2005,11 @@ class _ProviderTestSheetState extends State<_ProviderTestSheet> {
     }
   }
 
-  Future<String> _testGemini(String baseUrl, String apiKey, String model) async {
+  Future<String> _testGemini(
+    String baseUrl,
+    String apiKey,
+    String model,
+  ) async {
     final url = '$baseUrl/v1beta/models/$model:generateContent?key=$apiKey';
     final headers = {'Content-Type': 'application/json'};
     final sampleText = 'この世界は美しい。だから私は生き続ける。';
