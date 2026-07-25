@@ -3036,5 +3036,50 @@
   "readerScreenSupporterDesc": "Jika kamu suka aplikasi ini, pertimbangkan untuk mendukung pengembangannya.",
   "readerScreenThanks": "Terima Kasih Sudah Membaca!",
   "readerScreenThanksDesc": "Semoga kamu menikmati chapter ini. Sampai jumpa di chapter berikutnya!",
-  "readerScreenGoToFirstPage": "Baca dari Awal"
+  "readerScreenGoToFirstPage": "Baca dari Awal",
+  "appLockSectionTitle": "KUNCI APLIKASI",
+  "pinLock": "Kunci PIN",
+  "pinLockActive": "PIN sudah diatur dan aktif",
+  "pinLockSet": "Atur PIN untuk mengunci aplikasi",
+  "changePin": "Ubah PIN",
+  "changePinDescription": "Atur PIN baru",
+  "biometricUnlock": "Buka dengan Biometrik",
+  "biometricAvailable": "Gunakan sidik jari atau wajah untuk membuka",
+  "biometricUnavailable": "Biometrik tidak tersedia di perangkat ini",
+  "enterPin": "Masukkan PIN",
+  "enterCurrentPin": "Masukkan PIN Saat Ini",
+  "enterCurrentPinSubtitle": "Verifikasi identitas Anda terlebih dahulu",
+  "enterNewPin": "Masukkan PIN Baru",
+  "enterNewPinSubtitle": "Pilih PIN {maxDigits} digit",
+  "@enterNewPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmNewPin": "Konfirmasi PIN Baru",
+  "confirmNewPinSubtitle": "Masukkan PIN lagi",
+  "setupPin": "Atur PIN",
+  "setupPinSubtitle": "Pilih PIN {maxDigits} digit",
+  "@setupPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmPin": "Konfirmasi PIN",
+  "confirmPinSubtitle": "Masukkan PIN lagi untuk konfirmasi",
+  "wrongPin": "PIN Salah",
+  "pinsDoNotMatch": "PIN tidak cocok",
+  "pinChangedSuccess": "PIN berhasil diubah",
+  "failedToSavePin": "Gagal menyimpan PIN. Coba lagi.",
+  "failedToChangePin": "Gagal mengubah PIN. Coba lagi.",
+  "disablePinLock": "Nonaktifkan Kunci PIN?",
+  "disablePinLockDescription": "Untuk menonaktifkan kunci PIN, masukkan PIN Anda saat ini.",
+  "enterPinToDisable": "Masukkan PIN untuk Menonaktifkan",
+  "enterPinToDisableSubtitle": "Ini akan menghapus PIN dan menonaktifkan kunci",
+  "unlockKuron": "Buka Kuron untuk melanjutkan",
+  "continue_": "Lanjutkan"
 }

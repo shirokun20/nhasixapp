@@ -47,16 +47,18 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
     // 2.2: Update DownloadBloc foreground flag (affects maxParallelImages)
     DownloadBloc.updateForeground(state == AppLifecycleState.resumed);
 
+    // Skip download state access until remote configs are ready.
+    // Guard BEFORE context.read<DownloadBloc>() because DownloadBloc
+    // factory triggers ContentSourceRegistry which needs nhentai config.
+    if (getIt<RemoteConfigService>().getRawConfig('nhentai') == null) {
+      return;
+    }
+
     // Lifecycle-aware pause/resume for background work
     if (state == AppLifecycleState.paused) {
       context.read<DownloadBloc>().pauseBackgroundWork();
     } else if (state == AppLifecycleState.resumed) {
       context.read<DownloadBloc>().resumeBackgroundWork();
-    }
-
-    // Skip download state access until remote configs are ready.
-    if (getIt<RemoteConfigService>().getRawConfig('nhentai') == null) {
-      return;
     }
 
     // Get current download state

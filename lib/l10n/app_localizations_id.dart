@@ -5239,4 +5239,106 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerScreenGoToFirstPage => 'Baca dari Awal';
+
+  @override
+  String get appLockSectionTitle => 'KUNCI APLIKASI';
+
+  @override
+  String get pinLock => 'Kunci PIN';
+
+  @override
+  String get pinLockActive => 'PIN sudah diatur dan aktif';
+
+  @override
+  String get pinLockSet => 'Atur PIN untuk mengunci aplikasi';
+
+  @override
+  String get changePin => 'Ubah PIN';
+
+  @override
+  String get changePinDescription => 'Atur PIN baru';
+
+  @override
+  String get biometricUnlock => 'Buka dengan Biometrik';
+
+  @override
+  String get biometricAvailable =>
+      'Gunakan sidik jari atau wajah untuk membuka';
+
+  @override
+  String get biometricUnavailable =>
+      'Biometrik tidak tersedia di perangkat ini';
+
+  @override
+  String get enterPin => 'Masukkan PIN';
+
+  @override
+  String get enterCurrentPin => 'Masukkan PIN Saat Ini';
+
+  @override
+  String get enterCurrentPinSubtitle =>
+      'Verifikasi identitas Anda terlebih dahulu';
+
+  @override
+  String get enterNewPin => 'Masukkan PIN Baru';
+
+  @override
+  String enterNewPinSubtitle(int maxDigits) {
+    return 'Pilih PIN $maxDigits digit';
+  }
+
+  @override
+  String get confirmNewPin => 'Konfirmasi PIN Baru';
+
+  @override
+  String get confirmNewPinSubtitle => 'Masukkan PIN lagi';
+
+  @override
+  String get setupPin => 'Atur PIN';
+
+  @override
+  String setupPinSubtitle(int maxDigits) {
+    return 'Pilih PIN $maxDigits digit';
+  }
+
+  @override
+  String get confirmPin => 'Konfirmasi PIN';
+
+  @override
+  String get confirmPinSubtitle => 'Masukkan PIN lagi untuk konfirmasi';
+
+  @override
+  String get wrongPin => 'PIN Salah';
+
+  @override
+  String get pinsDoNotMatch => 'PIN tidak cocok';
+
+  @override
+  String get pinChangedSuccess => 'PIN berhasil diubah';
+
+  @override
+  String get failedToSavePin => 'Gagal menyimpan PIN. Coba lagi.';
+
+  @override
+  String get failedToChangePin => 'Gagal mengubah PIN. Coba lagi.';
+
+  @override
+  String get disablePinLock => 'Nonaktifkan Kunci PIN?';
+
+  @override
+  String get disablePinLockDescription =>
+      'Untuk menonaktifkan kunci PIN, masukkan PIN Anda saat ini.';
+
+  @override
+  String get enterPinToDisable => 'Masukkan PIN untuk Menonaktifkan';
+
+  @override
+  String get enterPinToDisableSubtitle =>
+      'Ini akan menghapus PIN dan menonaktifkan kunci';
+
+  @override
+  String get unlockKuron => 'Buka Kuron untuk melanjutkan';
+
+  @override
+  String get continue_ => 'Lanjutkan';
 }

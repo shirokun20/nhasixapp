@@ -5067,4 +5067,101 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerScreenGoToFirstPage => '回到第一页';
+
+  @override
+  String get appLockSectionTitle => '应用锁';
+
+  @override
+  String get pinLock => 'PIN锁';
+
+  @override
+  String get pinLockActive => 'PIN已设置并激活';
+
+  @override
+  String get pinLockSet => '设置PIN以锁定应用';
+
+  @override
+  String get changePin => '更改PIN';
+
+  @override
+  String get changePinDescription => '设置新PIN';
+
+  @override
+  String get biometricUnlock => '生物识别解锁';
+
+  @override
+  String get biometricAvailable => '使用指纹或面部解锁';
+
+  @override
+  String get biometricUnavailable => '此设备不支持生物识别';
+
+  @override
+  String get enterPin => '输入PIN';
+
+  @override
+  String get enterCurrentPin => '输入当前PIN';
+
+  @override
+  String get enterCurrentPinSubtitle => '请先验证身份';
+
+  @override
+  String get enterNewPin => '输入新PIN';
+
+  @override
+  String enterNewPinSubtitle(int maxDigits) {
+    return '选择$maxDigits位PIN';
+  }
+
+  @override
+  String get confirmNewPin => '确认新PIN';
+
+  @override
+  String get confirmNewPinSubtitle => '再次输入PIN';
+
+  @override
+  String get setupPin => '设置PIN';
+
+  @override
+  String setupPinSubtitle(int maxDigits) {
+    return '选择$maxDigits位PIN';
+  }
+
+  @override
+  String get confirmPin => '确认PIN';
+
+  @override
+  String get confirmPinSubtitle => '再次输入PIN以确认';
+
+  @override
+  String get wrongPin => 'PIN错误';
+
+  @override
+  String get pinsDoNotMatch => 'PIN不匹配';
+
+  @override
+  String get pinChangedSuccess => 'PIN更改成功';
+
+  @override
+  String get failedToSavePin => '保存PIN失败。请重试。';
+
+  @override
+  String get failedToChangePin => '更改PIN失败。请重试。';
+
+  @override
+  String get disablePinLock => '禁用PIN锁？';
+
+  @override
+  String get disablePinLockDescription => '要禁用PIN锁，请输入当前PIN。';
+
+  @override
+  String get enterPinToDisable => '输入PIN以禁用';
+
+  @override
+  String get enterPinToDisableSubtitle => '这将删除PIN并禁用锁定';
+
+  @override
+  String get unlockKuron => '解锁Kuron以继续';
+
+  @override
+  String get continue_ => '继续';
 }

@@ -12,6 +12,7 @@ import 'package:nhasixapp/presentation/pages/reader/reader_pdf_screen.dart';
 import 'package:nhasixapp/presentation/pages/settings/settings_screen.dart';
 import 'package:nhasixapp/presentation/pages/splash/splash_screen.dart';
 import 'package:nhasixapp/presentation/pages/main/main_screen_scrollable.dart';
+import 'package:nhasixapp/presentation/widgets/app_lock_gate.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
@@ -60,7 +61,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
           context,
           state,
-          const MainScreenScrollable(),
+          const AppLockGate(child: MainScreenScrollable()),
           type: RouteTransitionType.fade,
         ),
       ),
@@ -398,7 +399,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
           context,
           state,
-          const MainScreenScrollable(),
+          const AppLockGate(child: MainScreenScrollable()),
           type: RouteTransitionType.fade,
         ),
       ),

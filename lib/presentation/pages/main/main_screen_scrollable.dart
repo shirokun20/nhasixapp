@@ -711,7 +711,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ElevatedButton(
               onPressed: () {
                 // Use smart retry to preserve context (page, filter, etc.)
-                context.read<ContentBloc>().add(const ContentRetryEvent());
+                getIt<ContentBloc>().add(const ContentRetryEvent());
               },
               child:
                   Text(AppLocalizations.of(context)?.tryAgain ?? 'Try Again'),
@@ -756,7 +756,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
             ElevatedButton(
               onPressed: () {
                 // Use smart retry to preserve context (page, filter, etc.)
-                context.read<ContentBloc>().add(const ContentRetryEvent());
+                getIt<ContentBloc>().add(const ContentRetryEvent());
               },
               child: Text(AppLocalizations.of(context)!.retry),
             ),

@@ -3632,5 +3632,50 @@
   "readerScreenSupporterDesc": "如果你喜欢这个应用，请考虑支持其开发。",
   "readerScreenThanks": "感谢阅读！",
   "readerScreenThanksDesc": "希望你享受这一章节。下一章再见！",
-  "readerScreenGoToFirstPage": "回到第一页"
+  "readerScreenGoToFirstPage": "回到第一页",
+  "appLockSectionTitle": "应用锁",
+  "pinLock": "PIN锁",
+  "pinLockActive": "PIN已设置并激活",
+  "pinLockSet": "设置PIN以锁定应用",
+  "changePin": "更改PIN",
+  "changePinDescription": "设置新PIN",
+  "biometricUnlock": "生物识别解锁",
+  "biometricAvailable": "使用指纹或面部解锁",
+  "biometricUnavailable": "此设备不支持生物识别",
+  "enterPin": "输入PIN",
+  "enterCurrentPin": "输入当前PIN",
+  "enterCurrentPinSubtitle": "请先验证身份",
+  "enterNewPin": "输入新PIN",
+  "enterNewPinSubtitle": "选择{maxDigits}位PIN",
+  "@enterNewPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmNewPin": "确认新PIN",
+  "confirmNewPinSubtitle": "再次输入PIN",
+  "setupPin": "设置PIN",
+  "setupPinSubtitle": "选择{maxDigits}位PIN",
+  "@setupPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmPin": "确认PIN",
+  "confirmPinSubtitle": "再次输入PIN以确认",
+  "wrongPin": "PIN错误",
+  "pinsDoNotMatch": "PIN不匹配",
+  "pinChangedSuccess": "PIN更改成功",
+  "failedToSavePin": "保存PIN失败。请重试。",
+  "failedToChangePin": "更改PIN失败。请重试。",
+  "disablePinLock": "禁用PIN锁？",
+  "disablePinLockDescription": "要禁用PIN锁，请输入当前PIN。",
+  "enterPinToDisable": "输入PIN以禁用",
+  "enterPinToDisableSubtitle": "这将删除PIN并禁用锁定",
+  "unlockKuron": "解锁Kuron以继续",
+  "continue_": "继续"
 }

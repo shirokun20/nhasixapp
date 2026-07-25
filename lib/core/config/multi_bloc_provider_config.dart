@@ -3,7 +3,6 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 // BLoCs (Complex State Management)
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/home/home_bloc.dart';
-import 'package:nhasixapp/presentation/blocs/content/content_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/search/search_bloc.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 
@@ -20,9 +19,6 @@ class MultiBlocProviderConfig {
     BlocProvider<HomeBloc>(
       create: (context) => getIt<HomeBloc>(),
     ),
-    BlocProvider<ContentBloc>(
-      create: (context) => getIt<ContentBloc>(),
-    ),
     BlocProvider<SearchBloc>(
       create: (context) => getIt<SearchBloc>(),
     ),
@@ -36,15 +32,15 @@ class MultiBlocProviderConfig {
     ),
     BlocProvider<SettingsCubit>(
       create: (context) => getIt<SettingsCubit>(),
-    ), // SettingsCubit for settings screen
+    ),
 
     BlocProvider<ThemeCubit>(
       create: (context) => getIt<ThemeCubit>(),
-    ), // ThemeCubit for reactive theme management
+    ),
 
     BlocProvider<SourceCubit>(
       create: (context) => getIt<SourceCubit>(),
-    ), // SourceCubit for multi-source management
+    ),
 
     BlocProvider<DetailCubit>(
       create: (context) => getIt<DetailCubit>(),
@@ -56,6 +52,11 @@ class MultiBlocProviderConfig {
 
     BlocProvider<CrotpediaAuthCubit>(
       create: (context) => getIt<CrotpediaAuthCubit>(),
+    ),
+
+    // AppLockCubit for app lock gate + settings
+    BlocProvider<AppLockCubit>(
+      create: (context) => getIt<AppLockCubit>(),
     ),
 
     // Note: DetailCubit, ReaderCubit, FavoriteCubit akan di-provide secara lokal

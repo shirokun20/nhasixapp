@@ -4088,5 +4088,50 @@
   "readerScreenSupporterDesc": "If you like this app, consider supporting its development.",
   "readerScreenThanks": "Thank You for Reading!",
   "readerScreenThanksDesc": "Hope you enjoyed this chapter. See you in the next one!",
-  "readerScreenGoToFirstPage": "Go to First Page"
+  "readerScreenGoToFirstPage": "Go to First Page",
+  "appLockSectionTitle": "APP LOCK",
+  "pinLock": "PIN Lock",
+  "pinLockActive": "PIN is set and active",
+  "pinLockSet": "Set a PIN to lock the app",
+  "changePin": "Change PIN",
+  "changePinDescription": "Set a new PIN",
+  "biometricUnlock": "Biometric Unlock",
+  "biometricAvailable": "Use fingerprint or face to unlock",
+  "biometricUnavailable": "Biometric not available on this device",
+  "enterPin": "Enter PIN",
+  "enterCurrentPin": "Enter Current PIN",
+  "enterCurrentPinSubtitle": "Verify your identity first",
+  "enterNewPin": "Enter New PIN",
+  "enterNewPinSubtitle": "Choose a {maxDigits}-digit PIN",
+  "@enterNewPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmNewPin": "Confirm New PIN",
+  "confirmNewPinSubtitle": "Enter the PIN again",
+  "setupPin": "Set Up PIN",
+  "setupPinSubtitle": "Choose a {maxDigits}-digit PIN",
+  "@setupPinSubtitle": {
+    "placeholders": {
+      "maxDigits": {
+        "type": "int"
+      }
+    }
+  },
+  "confirmPin": "Confirm PIN",
+  "confirmPinSubtitle": "Enter the PIN again to confirm",
+  "wrongPin": "Wrong PIN",
+  "pinsDoNotMatch": "PINs do not match",
+  "pinChangedSuccess": "PIN changed successfully",
+  "failedToSavePin": "Failed to save PIN. Try again.",
+  "failedToChangePin": "Failed to change PIN. Try again.",
+  "disablePinLock": "Disable PIN Lock?",
+  "disablePinLockDescription": "To disable PIN lock, please enter your current PIN.",
+  "enterPinToDisable": "Enter PIN to Disable",
+  "enterPinToDisableSubtitle": "This will remove PIN and disable lock",
+  "unlockKuron": "Unlock Kuron to continue",
+  "continue_": "Continue"
 }

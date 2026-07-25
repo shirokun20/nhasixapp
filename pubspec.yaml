@@ -80,6 +80,7 @@ dependencies:
   share_plus: ^13.2.1
   url_launcher: ^6.3.1
   flutter_secure_storage: ^10.3.0
+  local_auth: ^2.3.0
 
   # WebView for Cloudflare bypass
   webview_flutter: ^4.14.1

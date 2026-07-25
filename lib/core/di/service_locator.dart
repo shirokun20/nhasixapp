@@ -133,6 +133,8 @@ import 'package:nhasixapp/core/services/legal_content_service.dart';
 import 'package:nhasixapp/core/services/source_auth_service.dart';
 import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/data/repositories/app_lock_repository_impl.dart';
+import 'package:nhasixapp/domain/repositories/app_lock_repository.dart';
 import 'package:nhasixapp/core/services/cache/cache_manager.dart' as multi_cache;
 
 final getIt = GetIt.instance;
@@ -375,6 +377,11 @@ void _setupServices() {
         sourceAuthService: getIt<SourceAuthService>(),
         logger: getIt<Logger>(),
         prefs: getIt<SharedPreferences>(),
+      ));
+
+  // App Lock Repository
+  getIt.registerLazySingleton<AppLockRepository>(() => AppLockRepositoryImpl(
+        storage: const FlutterSecureStorage(),
       ));
 }
 
@@ -1164,6 +1171,12 @@ void _setupCubits() {
 
   // TagDetailCubit
   getIt.registerFactory<TagDetailCubit>(() => TagDetailCubit(
+        logger: getIt<Logger>(),
+      ));
+
+  // AppLockCubit — init() runs from AppLockGate after splash.
+  getIt.registerLazySingleton<AppLockCubit>(() => AppLockCubit(
+        appLockRepository: getIt<AppLockRepository>(),
         logger: getIt<Logger>(),
       ));
 }

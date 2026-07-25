@@ -36,6 +36,7 @@ import '../../widgets/app_main_drawer_widget.dart';
 import 'settings_theme_widgets.dart';
 import 'settings_download_widgets.dart';
 import 'settings_privacy_widgets.dart';
+import 'settings_app_lock_widgets.dart';
 
 part 'settings_source_install.dart';
 
@@ -380,6 +381,11 @@ class _SettingsScreenState extends State<SettingsScreen>
               ],
             ],
           ], theme),
+
+          const SizedBox(height: 24),
+
+          // App Lock Section
+          buildAppLockSection(context, theme),
 
           const SizedBox(height: 24),
 

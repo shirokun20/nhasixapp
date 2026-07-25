@@ -8873,6 +8873,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go to First Page'**
   String get readerScreenGoToFirstPage;
+
+  /// No description provided for @appLockSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'APP LOCK'**
+  String get appLockSectionTitle;
+
+  /// No description provided for @pinLock.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN Lock'**
+  String get pinLock;
+
+  /// No description provided for @pinLockActive.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN is set and active'**
+  String get pinLockActive;
+
+  /// No description provided for @pinLockSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a PIN to lock the app'**
+  String get pinLockSet;
+
+  /// No description provided for @changePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change PIN'**
+  String get changePin;
+
+  /// No description provided for @changePinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new PIN'**
+  String get changePinDescription;
+
+  /// No description provided for @biometricUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric Unlock'**
+  String get biometricUnlock;
+
+  /// No description provided for @biometricAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint or face to unlock'**
+  String get biometricAvailable;
+
+  /// No description provided for @biometricUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric not available on this device'**
+  String get biometricUnavailable;
+
+  /// No description provided for @enterPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get enterPin;
+
+  /// No description provided for @enterCurrentPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Current PIN'**
+  String get enterCurrentPin;
+
+  /// No description provided for @enterCurrentPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity first'**
+  String get enterCurrentPinSubtitle;
+
+  /// No description provided for @enterNewPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter New PIN'**
+  String get enterNewPin;
+
+  /// No description provided for @enterNewPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a {maxDigits}-digit PIN'**
+  String enterNewPinSubtitle(int maxDigits);
+
+  /// No description provided for @confirmNewPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New PIN'**
+  String get confirmNewPin;
+
+  /// No description provided for @confirmNewPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the PIN again'**
+  String get confirmNewPinSubtitle;
+
+  /// No description provided for @setupPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Up PIN'**
+  String get setupPin;
+
+  /// No description provided for @setupPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a {maxDigits}-digit PIN'**
+  String setupPinSubtitle(int maxDigits);
+
+  /// No description provided for @confirmPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get confirmPin;
+
+  /// No description provided for @confirmPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the PIN again to confirm'**
+  String get confirmPinSubtitle;
+
+  /// No description provided for @wrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong PIN'**
+  String get wrongPin;
+
+  /// No description provided for @pinsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs do not match'**
+  String get pinsDoNotMatch;
+
+  /// No description provided for @pinChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN changed successfully'**
+  String get pinChangedSuccess;
+
+  /// No description provided for @failedToSavePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save PIN. Try again.'**
+  String get failedToSavePin;
+
+  /// No description provided for @failedToChangePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change PIN. Try again.'**
+  String get failedToChangePin;
+
+  /// No description provided for @disablePinLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable PIN Lock?'**
+  String get disablePinLock;
+
+  /// No description provided for @disablePinLockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'To disable PIN lock, please enter your current PIN.'**
+  String get disablePinLockDescription;
+
+  /// No description provided for @enterPinToDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN to Disable'**
+  String get enterPinToDisable;
+
+  /// No description provided for @enterPinToDisableSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove PIN and disable lock'**
+  String get enterPinToDisableSubtitle;
+
+  /// No description provided for @unlockKuron.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Kuron to continue'**
+  String get unlockKuron;
+
+  /// No description provided for @continue_.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continue_;
 }
 
 class _AppLocalizationsDelegate

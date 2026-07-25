@@ -5214,4 +5214,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerScreenGoToFirstPage => 'Go to First Page';
+
+  @override
+  String get appLockSectionTitle => 'APP LOCK';
+
+  @override
+  String get pinLock => 'PIN Lock';
+
+  @override
+  String get pinLockActive => 'PIN is set and active';
+
+  @override
+  String get pinLockSet => 'Set a PIN to lock the app';
+
+  @override
+  String get changePin => 'Change PIN';
+
+  @override
+  String get changePinDescription => 'Set a new PIN';
+
+  @override
+  String get biometricUnlock => 'Biometric Unlock';
+
+  @override
+  String get biometricAvailable => 'Use fingerprint or face to unlock';
+
+  @override
+  String get biometricUnavailable => 'Biometric not available on this device';
+
+  @override
+  String get enterPin => 'Enter PIN';
+
+  @override
+  String get enterCurrentPin => 'Enter Current PIN';
+
+  @override
+  String get enterCurrentPinSubtitle => 'Verify your identity first';
+
+  @override
+  String get enterNewPin => 'Enter New PIN';
+
+  @override
+  String enterNewPinSubtitle(int maxDigits) {
+    return 'Choose a $maxDigits-digit PIN';
+  }
+
+  @override
+  String get confirmNewPin => 'Confirm New PIN';
+
+  @override
+  String get confirmNewPinSubtitle => 'Enter the PIN again';
+
+  @override
+  String get setupPin => 'Set Up PIN';
+
+  @override
+  String setupPinSubtitle(int maxDigits) {
+    return 'Choose a $maxDigits-digit PIN';
+  }
+
+  @override
+  String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get confirmPinSubtitle => 'Enter the PIN again to confirm';
+
+  @override
+  String get wrongPin => 'Wrong PIN';
+
+  @override
+  String get pinsDoNotMatch => 'PINs do not match';
+
+  @override
+  String get pinChangedSuccess => 'PIN changed successfully';
+
+  @override
+  String get failedToSavePin => 'Failed to save PIN. Try again.';
+
+  @override
+  String get failedToChangePin => 'Failed to change PIN. Try again.';
+
+  @override
+  String get disablePinLock => 'Disable PIN Lock?';
+
+  @override
+  String get disablePinLockDescription =>
+      'To disable PIN lock, please enter your current PIN.';
+
+  @override
+  String get enterPinToDisable => 'Enter PIN to Disable';
+
+  @override
+  String get enterPinToDisableSubtitle =>
+      'This will remove PIN and disable lock';
+
+  @override
+  String get unlockKuron => 'Unlock Kuron to continue';
+
+  @override
+  String get continue_ => 'Continue';
 }
