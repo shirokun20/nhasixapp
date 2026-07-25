@@ -156,7 +156,7 @@ lib/
 ### Active Changes (in `openspec/changes/`)
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
-- `reader-ai-learning-mode`
+- `reader-ai-learning-mode` — AI translate pipeline: ONNX bubble detection, mosaic, multi-provider, overlay. Example demo functional. 7 style. Skip prev 5 gimmick styles. Proposal updated: per-bubble loading, edit manual, SFX toggle. [[ai-translation-demo-feat]]
 
 ### Open Issues (in `openspec/changes/`)
 - *(none)*
