@@ -333,7 +333,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             ],
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: DesignTokens.spaceLg),
 
           // Language and Category
           Row(
@@ -350,7 +350,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
 
           // Recent searches (if available)
           if (widget.recentSearches.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
             _buildRecentSearches(),
           ],
         ],
@@ -375,7 +375,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
 
             Text(
               AppLocalizations.of(context)?.advancedFiltersTitle ??
@@ -386,24 +386,24 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
 
             // Include/Exclude tags
             _buildTagFilters(),
 
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
 
             // Artists, Characters, Parodies, Groups
             _buildMetadataFilters(),
 
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
 
             // Page count range
             _buildPageCountFilter(),
 
             // Popular tags suggestions
             if (widget.popularTags.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: DesignTokens.spaceLg),
               _buildPopularTags(),
             ],
           ],
@@ -537,7 +537,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               AppLocalizations.of(context)!.recentSearches,
           style: TextStyleConst.label,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: DesignTokens.spaceSm),
         Wrap(
           spacing: 8,
           runSpacing: 4,
@@ -578,7 +578,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           ),
           onChanged: (_) => _updateFilter(),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: DesignTokens.spaceMd),
         TextField(
           controller: _excludeTagsController,
           style: TextStyleConst.bodyMedium,
@@ -622,7 +622,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           ),
           onChanged: (_) => _updateFilter(),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: DesignTokens.spaceMd),
         Row(
           children: [
             Expanded(
@@ -664,7 +664,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: DesignTokens.spaceMd),
         TextField(
           controller: _groupsController,
           style: TextStyleConst.bodyMedium,
@@ -694,7 +694,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
               AppLocalizations.of(context)!.pageCountRange,
           style: TextStyleConst.label,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: DesignTokens.spaceSm),
         Row(
           children: [
             Expanded(
@@ -749,7 +749,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
           AppLocalizations.of(context)?.popularTagsTitle ?? 'Popular Tags',
           style: TextStyleConst.label,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: DesignTokens.spaceSm),
         Wrap(
           spacing: 8,
           runSpacing: 4,

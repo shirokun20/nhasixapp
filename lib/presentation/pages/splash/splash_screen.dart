@@ -137,7 +137,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: DesignTokens.spaceSm),
             Text(
               l10n.youAreOffline,
               style: TextStyleConst.bodySmall.copyWith(
@@ -392,7 +392,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: DesignTokens.spaceSm),
                 Text(
                   AppLocalizations.of(context)?.appSubtitle ??
                       AppLocalizations.of(context)!.enhancedReadingExperience,
@@ -453,7 +453,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: DesignTokens.space2xl),
 
                       // Loading status text with better styling
                       Container(
@@ -486,7 +486,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
 
                       // Detailed progress text
                       Text(
@@ -506,7 +506,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                       ),
 
                       if (state is SplashInitializing) ...[
-                        const SizedBox(height: 24),
+                        SizedBox(height: DesignTokens.spaceXl),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 48),
                           child: Column(
@@ -523,7 +523,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                                   minHeight: 6,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: DesignTokens.spaceSm),
                               Text(
                                 '${(state.progress * 100).toInt()}%',
                                 style: TextStyleConst.bodySmall.copyWith(
@@ -559,13 +559,13 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           strokeWidth: 4,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: DesignTokens.spaceXl),
                       Icon(
                         Icons.wifi_off,
                         size: 48,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -576,7 +576,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                       _buildProgressDots(),
                     ],
                   ),
@@ -607,7 +607,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: DesignTokens.spaceXl),
                       Text(
                         AppLocalizations.of(context)!
                             .offlineContentAvailableLabel,
@@ -616,7 +616,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: DesignTokens.spaceSm),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -631,7 +631,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                       _buildProgressDots(),
                     ],
                   ),
@@ -644,7 +644,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         size: 64,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: DesignTokens.spaceXl),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -655,7 +655,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: DesignTokens.spaceSm),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -667,7 +667,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: DesignTokens.space2xl),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -719,7 +719,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: DesignTokens.spaceXl),
                       Text(
                         AppLocalizations.of(context)!.offlineModeEnabled,
                         style: TextStyleConst.headingMedium.copyWith(
@@ -727,7 +727,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: DesignTokens.spaceSm),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -738,7 +738,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                       _buildProgressDots(),
                     ],
                   ),
@@ -752,7 +752,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                         size: 48,
                         color: Theme.of(context).colorScheme.error,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -764,7 +764,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: DesignTokens.spaceXl),
                       ElevatedButton.icon(
                         onPressed: () => context
                             .read<SplashBloc>()
@@ -827,7 +827,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: DesignTokens.spaceXl),
 
                 // Success title
                 Text(
@@ -837,7 +837,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: DesignTokens.spaceSm),
 
                 // Success message
                 Text(
@@ -847,7 +847,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: DesignTokens.spaceMd),
 
                 // Additional success info
                 Text(
@@ -860,7 +860,7 @@ class _SplashMainWidgetState extends State<SplashMainWidget>
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: DesignTokens.spaceLg),
 
                 // Success indicator dots
                 _buildSuccessDots(),

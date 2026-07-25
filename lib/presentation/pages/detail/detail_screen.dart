@@ -304,7 +304,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         AppLocalizations.of(context)!.loginRequiredForAction),
                 onTap: hasSession ? () => context.pop('both') : null,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spaceSm),
             ],
           ),
         );
@@ -679,17 +679,17 @@ class _DetailScreenState extends State<DetailScreen> {
       appBarActions: _buildDetailAppBarActions(content, isOfflineMode),
       sections: [
         DetailTitleSection(content: content),
-        const SizedBox(height: 12),
+        const SizedBox(height: DesignTokens.spaceMd),
         _buildBlacklistMatchBanner(content),
-        const SizedBox(height: 24),
+        const SizedBox(height: DesignTokens.spaceXl),
         _buildMetadataSection(content),
-        const SizedBox(height: 24),
+        const SizedBox(height: DesignTokens.spaceXl),
         _buildTagsSection(content),
-        const SizedBox(height: 24),
+        const SizedBox(height: DesignTokens.spaceXl),
         if (state.content.sourceId == 'mangafire')
           _buildMangaFireToggle(state.content),
         _buildActionButtons(state),
-        const SizedBox(height: 24),
+        const SizedBox(height: DesignTokens.spaceXl),
         if (state.relatedContent != null &&
             state.relatedContent!.isNotEmpty) ...[
           _buildRelatedContentSection(state),
@@ -699,7 +699,7 @@ class _DetailScreenState extends State<DetailScreen> {
           content,
           preloadedComments: state.comments ?? const [],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: DesignTokens.space2xl),
       ],
     );
   }
@@ -1158,7 +1158,7 @@ class _DetailScreenState extends State<DetailScreen> {
           // Read button - primary action
           Expanded(
             child: SizedBox(
-              height: 48,
+              height: DesignTokens.space3xl,
               child: ElevatedButton.icon(
                 onPressed: () =>
                     _readContent(content, forceStartFromBeginning: true),
@@ -1192,7 +1192,7 @@ class _DetailScreenState extends State<DetailScreen> {
             Expanded(
               flex: 1,
               child: SizedBox(
-                height: 48,
+                height: DesignTokens.space3xl,
                 child: DownloadButtonWidget(
                   content: content,
                   size: DownloadButtonSize.large,
@@ -1329,7 +1329,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   if (maintenance.reason != null &&
                       maintenance.reason!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: DesignTokens.spaceXs),
                     Text(
                       maintenance.reason!,
                       style: TextStyleConst.bodySmall.copyWith(
@@ -1929,7 +1929,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DesignTokens.spaceMd),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -2088,7 +2088,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spaceSm),
                   Flexible(
                     child: SingleChildScrollView(
                       child: Column(
@@ -2116,7 +2116,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spaceSm),
                   Row(
                     children: [
                       const Spacer(),

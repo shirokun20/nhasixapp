@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../cubits/reader/reader_cubit.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import '../../../core/constants/design_tokens.dart';
 
 /// End-of-Chapter Overlay Widget
 /// Shows at the last page of content with navigation options
@@ -53,7 +54,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: DesignTokens.spaceLg),
 
               // Title
               Text(
@@ -66,7 +67,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                     ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spaceSm),
 
               // Subtitle
               Text(
@@ -79,7 +80,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: DesignTokens.space2xl),
 
               // Buttons
               if (isChapterMode) ...[
@@ -98,7 +99,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                   ),
 
                 if (onPreviousChapter != null && onNextChapter != null)
-                  const SizedBox(height: 12),
+                  const SizedBox(height: DesignTokens.spaceMd),
 
                 // Next Chapter
                 if (onNextChapter != null)
@@ -116,7 +117,7 @@ class EndOfChapterOverlay extends StatelessWidget {
               ],
 
               // Back to Detail / Back to Previous Page — always show
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -133,7 +134,7 @@ class EndOfChapterOverlay extends StatelessWidget {
 
               // Go to First Page — CS mode only
               if (onGoToFirstPage != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: DesignTokens.spaceMd),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -148,7 +149,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                 ),
               ],
 
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spaceXl),
               _buildSupportSection(context),
             ],
           ),
@@ -189,7 +190,7 @@ class EndOfChapterOverlay extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.favorite, size: 24, color: cs.primary),
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spaceSm),
           Text(
             l10n?.readerScreenSupporter ?? 'Support Developer',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -197,7 +198,7 @@ class EndOfChapterOverlay extends StatelessWidget {
                   color: cs.onSurface,
                 ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: DesignTokens.spaceXs),
           Text(
             l10n?.readerScreenSupporterDesc ?? '',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(

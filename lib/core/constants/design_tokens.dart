@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Centralized design tokens for consistent spacing, elevation, and animation.
-///
-/// Use these constants instead of inline numeric values throughout the app.
 class DesignTokens {
   DesignTokens._();
 

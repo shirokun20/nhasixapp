@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
@@ -88,7 +89,7 @@ Widget buildDownloadSection(
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spaceSm),
               Slider(
                 value: settings.maxConcurrentDownloads.toDouble(),
                 min: 1,
@@ -282,7 +283,7 @@ Widget buildDownloadSection(
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spaceSm),
               Text(
                 '${settings.timeoutDuration.inMinutes} ${l10n.minutesUnit}',
                 style: TextStyleConst.bodyMedium.copyWith(

@@ -507,7 +507,7 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   ),
                   child: Icon(
                     Icons.menu_book,
-                    color: colorScheme.onPrimaryContainer,
+                    color: colorScheme.primary,
                     size: 22,
                   ),
                 ),
@@ -1326,7 +1326,7 @@ class DetailRelatedSection extends StatelessWidget {
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,
-                  color: colorScheme.onPrimaryContainer,
+                  color: colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 12),

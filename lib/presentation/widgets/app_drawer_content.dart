@@ -172,7 +172,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   children: [
                     const SourceSelector(),
-                    const SizedBox(height: 8),
+                    SizedBox(height: DesignTokens.spaceSm),
 
                     if (context.watch<SourceCubit>().state.activeSource !=
                             null &&
@@ -211,7 +211,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSectionLabel('ACCOUNT', theme),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: DesignTokens.spaceSm),
                                   _buildNavItem(
                                     context,
                                     icon: isLoggedIn
@@ -230,7 +230,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                           );
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: DesignTokens.spaceLg),
                     ],
 
                     // Crotpedia specific actions
@@ -250,7 +250,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionLabel('ACCOUNT', theme),
-                              const SizedBox(height: 8),
+                              SizedBox(height: DesignTokens.spaceSm),
                               _buildNavItem(
                                 context,
                                 icon: isLoggedIn
@@ -261,7 +261,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                                 isSelected: isSelected(AppRoute.crotpediaLogin),
                                 theme: theme,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: DesignTokens.spaceLg),
                             ],
                           );
                         },
@@ -372,9 +372,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildSectionLabel('MENU', theme),
-                                const SizedBox(height: 8),
+                                SizedBox(height: DesignTokens.spaceSm),
                                 ...menuItems,
-                                const SizedBox(height: 16),
+                                SizedBox(height: DesignTokens.spaceLg),
                               ],
                             );
                           }
@@ -384,7 +384,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                     ],
 
                     _buildSectionLabel(l10n.home.toUpperCase(), theme),
-                    const SizedBox(height: 8),
+                    SizedBox(height: DesignTokens.spaceSm),
                     _buildNavItem(
                       context,
                       icon: Icons.home_rounded,
@@ -437,9 +437,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
 
                             // EXPLORE section (only when online)
                             if (!isOffline) ...[
-                              const SizedBox(height: 16),
+                              SizedBox(height: DesignTokens.spaceLg),
                               _buildSectionLabel('EXPLORE', theme),
-                              const SizedBox(height: 8),
+                              SizedBox(height: DesignTokens.spaceSm),
 
                               // Favorite Galleries
                               if (config.isFeatureEnabled(
@@ -466,9 +466,9 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: DesignTokens.spaceLg),
                     _buildSectionLabel('MORE', theme),
-                    const SizedBox(height: 8),
+                    SizedBox(height: DesignTokens.spaceSm),
                     _buildNavItem(
                       context,
                       icon: Icons.settings_rounded,
@@ -572,7 +572,7 @@ class _AppDrawerContentState extends State<AppDrawerContent>
               );
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: DesignTokens.spaceLg),
 
           // App Name with gradient text effect
           ShaderMask(

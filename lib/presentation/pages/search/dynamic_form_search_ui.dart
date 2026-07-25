@@ -627,9 +627,9 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   for (final entry in primaryFields)
                     _buildField(entry.key, entry.value),
                   if (hasAdvanced) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: DesignTokens.spaceSm),
                     _buildAdvancedToggle(),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: DesignTokens.spaceSm),
                   ],
                   if (hasAdvanced)
                     AnimatedSize(
@@ -661,7 +661,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       ),
                     ),
                   _buildQueryPreviewCard(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: DesignTokens.spaceXl),
                   FilledButton.icon(
                     onPressed: _onSearch,
                     icon: const Icon(Icons.search),
@@ -670,7 +670,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spaceSm),
                   OutlinedButton(
                     onPressed: _onReset,
                     child: Text(AppLocalizations.of(context)!.reset),
@@ -908,7 +908,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ),
         ),
         if (chips.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spaceSm),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -957,7 +957,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 color: accentColor,
               ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DesignTokens.spaceSm),
         Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
@@ -1027,7 +1027,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           ),
         ),
         if (selected.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spaceSm),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -1090,7 +1090,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 color: Theme.of(context).colorScheme.primary,
               ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DesignTokens.spaceSm),
         Material(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
@@ -1156,7 +1156,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
           ),
         ),
         if (included.isNotEmpty || excluded.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spaceSm),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -1367,7 +1367,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: DesignTokens.spaceXs),
                       Row(
                         children: [
                           Icon(Icons.add_circle_outline,
@@ -1383,7 +1383,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                               .excludeCountLabel(excludeCount)),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
@@ -1497,13 +1497,13 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                         );
                                       }).toList(),
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: DesignTokens.spaceMd),
                                   ],
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: DesignTokens.spaceSm),
                                 ],
                               ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -1698,7 +1698,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       TextField(
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
@@ -1785,13 +1785,13 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                         },
                                       ).toList(),
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: DesignTokens.spaceMd),
                                   ],
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: DesignTokens.spaceSm),
                                 ],
                               ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -2440,7 +2440,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 color: Theme.of(context).colorScheme.primary,
               ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DesignTokens.spaceSm),
         Wrap(
           spacing: 8,
           runSpacing: 4,
@@ -2513,7 +2513,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                 color: Theme.of(context).colorScheme.primary,
               ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DesignTokens.spaceSm),
         if (options.isEmpty && isDynamic) ...[
           _buildCheckboxRemoteStateCard(
             fieldName: name,
@@ -2758,7 +2758,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                         ),
                       ),
                       if (sourceUrl != null && sourceUrl.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: DesignTokens.spaceSm),
                         Text(
                           sourceUrl,
                           maxLines: 1,
@@ -2783,14 +2783,14 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   backgroundColor: colorScheme.primary.withValues(alpha: 0.10),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
               Text(
                 'Loading remote genres from GitHub raw. This can take a moment.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -2814,7 +2814,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -2832,12 +2832,12 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
               ),
             ] else ...[
               Text(
-                AppLocalizations.of(context)!.noGenreListLoaded,
+                'No remote genre list is loaded yet. Reload to sync from source.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

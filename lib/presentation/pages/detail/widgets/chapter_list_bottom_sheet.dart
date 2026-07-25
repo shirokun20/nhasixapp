@@ -499,7 +499,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           if (subtitleParts.isNotEmpty) ...[
-                                            const SizedBox(height: 4),
+                                            const SizedBox(height: DesignTokens.spaceXs),
                                             Row(
                                               children: [
                                                 Icon(
@@ -585,7 +585,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                           icon: _isLoadingMore
                               ? const SizedBox(
                                   width: 16,
-                                  height: 16,
+                                  height: DesignTokens.spaceLg,
                                   child:
                                       CircularProgressIndicator(strokeWidth: 2),
                                 )

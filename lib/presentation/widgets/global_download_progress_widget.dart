@@ -177,7 +177,7 @@ class _GlobalDownloadProgressWidgetState
                           style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
-                                .onPrimaryContainer,
+                                .onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -272,7 +272,7 @@ class _GlobalDownloadProgressWidgetState
                           style: TextStyleConst.labelSmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
-                                .onPrimaryContainer,
+                                .onSurfaceVariant,
                           ),
                         ),
                       ],

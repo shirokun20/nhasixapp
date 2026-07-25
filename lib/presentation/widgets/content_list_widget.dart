@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 
+import '../../core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/download_storage_utils.dart';
@@ -619,7 +620,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       .onSurface
                       .withValues(alpha: 0.6),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DesignTokens.spaceLg),
                 Text(
                   getDisplayMessage(state.message),
                   textAlign: TextAlign.center,
@@ -627,7 +628,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 if (state.suggestions.isNotEmpty) ...[
                   Text(
                     l10n.suggestions,
@@ -635,7 +636,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: DesignTokens.spaceXs),
                   ...getSuggestions(state.suggestions).map((suggestion) => Text(
                         '• $suggestion',
                         style: TextStyleConst.bodyMedium.copyWith(
@@ -644,7 +645,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                       )),
                 ],
                 if (state.canRetry) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DesignTokens.spaceLg),
                   ElevatedButton(
                     onPressed: () {
                       context
@@ -670,19 +671,19 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: DesignTokens.spaceLg),
                 Text(
                   state.errorType.displayName,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 Text(
                   state.userFriendlyMessage,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 if (state.canRetry) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DesignTokens.spaceLg),
                   ElevatedButton(
                     onPressed: () {
                       context
@@ -693,7 +694,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
                   ),
                 ],
                 if (state.hasPreviousContent) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spaceSm),
                   TextButton(
                     onPressed: () {
                       // Show cached content
@@ -825,7 +826,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
 
         // Bottom padding
         const SliverToBoxAdapter(
-          child: SizedBox(height: 16),
+          child: SizedBox(height: DesignTokens.spaceLg),
         ),
       ],
     );

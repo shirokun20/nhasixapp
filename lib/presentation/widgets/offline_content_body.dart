@@ -176,7 +176,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               ),
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  const SizedBox(height: DesignTokens.spaceMd),
                   Container(
                     width: 48,
                     height: 5,
@@ -186,7 +186,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DesignTokens.spaceLg),
                   Text(
                     'Sort Options',
                     style: TextStyleConst.titleLarge.copyWith(
@@ -194,7 +194,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DesignTokens.spaceLg),
                   Expanded(
                     child: _buildSortTab(scrollController),
                   ),
@@ -612,7 +612,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   color: colorScheme.onPrimaryContainer,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spaceXl),
               Text(
                 state.query.isEmpty
                     ? AppLocalizations.of(context)!.noOfflineContent
@@ -624,7 +624,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 ),
               ),
               if (state.query.isEmpty) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: DesignTokens.spaceXl),
                 ElevatedButton.icon(
                   onPressed: () async {
                     // Explicit Import Action for Empty State
@@ -641,7 +641,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 ),
               ],
               if (state.query.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 Text(
                   AppLocalizations.of(context)!.noResultsFound,
                   style: TextStyleConst.bodyMedium.copyWith(
@@ -650,7 +650,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   textAlign: TextAlign.center,
                 ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: DesignTokens.space2xl),
               if (state.query.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -677,18 +677,18 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: DesignTokens.spaceMd),
                       _buildTipRow(colorScheme, '1. Browse comics you like'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       _buildTipRow(colorScheme, '2. Tap the download button'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.spaceSm),
                       _buildTipRow(colorScheme,
                           '3. Access them here anytime, even offline!'),
                     ],
                   ),
                 ),
               if (state.query.isEmpty) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: DesignTokens.spaceXl),
                 FilledButton.icon(
                   onPressed: () => context.go('/downloads'),
                   icon: const Icon(Icons.download_rounded),
@@ -786,7 +786,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                                 CircularProgressIndicator(
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: DesignTokens.spaceMd),
                                 Text(
                                   AppLocalizations.of(context)!.loadingMore,
                                   style: TextStyleConst.bodySmall.copyWith(
@@ -1036,7 +1036,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     itemCount: chapterPaths.length,
                     separatorBuilder: (context, index) =>
-                        const SizedBox(height: 8),
+                        const SizedBox(height: DesignTokens.spaceSm),
                     itemBuilder: (context, index) {
                       final entry = chapterPaths[index];
                       return Container(

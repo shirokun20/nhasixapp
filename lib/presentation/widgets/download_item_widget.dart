@@ -93,7 +93,7 @@ class DownloadItemWidget extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: DesignTokens.spaceXs),
                         // ID + Status
                         Row(
                           children: [
@@ -130,7 +130,7 @@ class DownloadItemWidget extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spaceMd),
 
               // Progress bar
               if (download.totalPages > 0) ...[
@@ -155,7 +155,7 @@ class DownloadItemWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
               ],
 
               // Details row
@@ -223,7 +223,7 @@ class DownloadItemWidget extends StatelessWidget {
 
               // Error message if failed
               if (download.error != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -260,7 +260,7 @@ class DownloadItemWidget extends StatelessWidget {
               // ETA if downloading
               if (download.isInProgress &&
                   download.estimatedTimeRemaining != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 Row(
                   children: [
                     Icon(
@@ -364,7 +364,7 @@ class DownloadItemWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
 
             // Title
             Text(
@@ -373,7 +373,7 @@ class DownloadItemWidget extends StatelessWidget {
                 color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
 
             // Actions
             if (download.canPause)
@@ -435,7 +435,7 @@ class DownloadItemWidget extends StatelessWidget {
               isDestructive: true,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
           ],
         ),
       ),

@@ -216,7 +216,7 @@ class FeaturedContentCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: DesignTokens.spaceSm),
 
                             if (content.artists.isNotEmpty)
                               Row(
@@ -270,7 +270,7 @@ class FeaturedContentCard extends StatelessWidget {
                                   );
                                 }).toList(),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: DesignTokens.spaceSm),
                             ],
 
                             // Bottom row with language and arrow

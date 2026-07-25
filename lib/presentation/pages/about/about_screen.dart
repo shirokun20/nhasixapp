@@ -158,7 +158,7 @@ class _AboutContentState extends State<_AboutContent>
                     },
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: DesignTokens.spaceXl),
 
                 Text(
                   l10n.appTitle,
@@ -168,7 +168,7 @@ class _AboutContentState extends State<_AboutContent>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 Center(
                   child: Container(
                     padding:
@@ -188,18 +188,18 @@ class _AboutContentState extends State<_AboutContent>
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: DesignTokens.space3xl),
 
                 // Update Card
                 _buildSectionTitle(l10n.updatesSection),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 _buildUpdateCard(theme),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: DesignTokens.space2xl),
 
                 // Links Section
                 _buildSectionTitle(l10n.communityAndInfo),
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spaceSm),
                 _buildMenuCard([
                   _buildMenuItem(
                     context,
@@ -273,11 +273,11 @@ class _AboutContentState extends State<_AboutContent>
                   ),
                 ], theme),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: DesignTokens.space2xl),
 
                 // Tech Stack
                 _buildSectionTitle(l10n.builtWith),
-                const SizedBox(height: 16),
+                const SizedBox(height: DesignTokens.spaceLg),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -294,7 +294,7 @@ class _AboutContentState extends State<_AboutContent>
                   ],
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: DesignTokens.space3xl),
 
                 // Footer
                 Text(
@@ -536,7 +536,7 @@ class _AboutContentState extends State<_AboutContent>
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
             ClipRRect(
               borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               child: Image.asset(
@@ -545,7 +545,7 @@ class _AboutContentState extends State<_AboutContent>
                 fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
             FilledButton.icon(
               onPressed: () =>
                   _launchURL('https://github.com/sponsors/shirokun20'),
@@ -556,7 +556,7 @@ class _AboutContentState extends State<_AboutContent>
                 foregroundColor: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceLg),
             Text(
               l10n.thankYouMessage,
               style: TextStyleConst.bodyMedium.copyWith(

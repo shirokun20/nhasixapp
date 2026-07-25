@@ -610,7 +610,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 );
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
             ValueListenableBuilder<String>(
               valueListenable: progressTextNotifier,
               builder: (context, text, _) => Text(
@@ -742,7 +742,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             CircularProgressIndicator(
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
             Text(
               AppLocalizations.of(context)!.importingFavoritesData,
               style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
@@ -1235,7 +1235,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: DesignTokens.spaceSm),
                   Flexible(
                     child: SingleChildScrollView(
                       child: Column(
@@ -1263,7 +1263,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: DesignTokens.spaceSm),
                   Row(
                     children: [
                       TextButton.icon(
@@ -1339,14 +1339,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 size: 56,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: DesignTokens.spaceMd),
               Text(
                 AppLocalizations.of(context)!.loginRequiredForAction,
                 textAlign: TextAlign.center,
                 style: TextStyleConst.withColor(TextStyleConst.bodyMedium,
                     Theme.of(context).colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: DesignTokens.spaceLg),
               ElevatedButton.icon(
                 onPressed: _openOnlineSourceLogin,
                 icon: const Icon(Icons.login),
@@ -1618,7 +1618,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               size: 64,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: DesignTokens.spaceLg),
             Text(
               state.getEmptyMessage(AppLocalizations.of(context)),
               style: TextStyleConst.withColor(TextStyleConst.headingSmall,
@@ -1626,7 +1626,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               textAlign: TextAlign.center,
             ),
             if (state.isSearching) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: DesignTokens.spaceLg),
               ElevatedButton(
                 onPressed: () {
                   _searchController.clear();

@@ -176,11 +176,11 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const SizedBox(height: 16),
+          SizedBox(height: DesignTokens.spaceLg),
 
           // Display Settings Card
           buildSettingsSectionHeader(Icons.palette_outlined, 'DISPLAY', theme),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsCard([
             buildSettingsDropdownTile(
               context: context,
@@ -245,59 +245,59 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ], theme),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           buildSettingsSectionHeader(
             Icons.visibility_off_outlined,
             AppLocalizations.of(context)!.contentFilters,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsInfoBanner(
             AppLocalizations.of(context)!.blurCoversDescription,
             Icons.shield_moon_outlined,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildTagBlacklistSection(context, prefs, theme, tagBlacklistService: _tagBlacklistService),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Storage Settings Card
           buildSettingsSectionHeader(Icons.folder_outlined, 'STORAGE', theme),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsInfoBanner(
             l10n.storageDescription,
             Icons.info_outline,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildStorageSection(context, theme, l10n, onRefresh: () => setState(() {})),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Download Settings Card
           buildSettingsSectionHeader(Icons.download_outlined, 'DOWNLOAD', theme),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsInfoBanner(
             l10n.imageQualityDescription,
             Icons.info_outline,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildDownloadSection(context, theme, l10n),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Reader Settings Card
           buildSettingsSectionHeader(Icons.auto_stories_outlined, 'READER', theme),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsInfoBanner(
             l10n.autoCleanupDescription,
             Icons.info_outline,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsCard([
             buildSettingsSwitchTile(
               title: l10n.autoCleanupHistory,
@@ -382,12 +382,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             ],
           ], theme),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // App Lock Section
           buildAppLockSection(context, theme),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // App Disguise Card
           buildSettingsSectionHeader(
@@ -395,12 +395,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             AppLocalizations.of(context)!.appDisguise,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsCard([
             buildDisguiseModeTile(prefs, theme, l10n),
           ], theme),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // DNS Status Section
           buildSettingsSectionHeader(
@@ -408,15 +408,15 @@ class _SettingsScreenState extends State<SettingsScreen>
             'DNS',
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildDnsStatusCard(context, theme, l10n, deviceDnsState: _deviceDnsState),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Available Sources Section
           _buildAvailableSourcesSection(this, theme, l10n),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Developer Tools Card
           buildSettingsSectionHeader(
@@ -424,7 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             AppLocalizations.of(context)!.developerTools,
             theme,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: DesignTokens.spaceMd),
           buildSettingsCard([
             if (kDebugMode) ...[
               ListTile(
@@ -457,12 +457,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ], theme),
 
-          const SizedBox(height: 24),
+          SizedBox(height: DesignTokens.spaceXl),
 
           // Reset Button
           buildResetButton(context, theme, l10n),
 
-          const SizedBox(height: 32),
+          SizedBox(height: DesignTokens.space2xl),
         ],
       ),
     );
