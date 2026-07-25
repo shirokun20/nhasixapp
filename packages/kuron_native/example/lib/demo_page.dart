@@ -39,14 +39,14 @@ class _DemoPageState extends State<DemoPage> {
   bool _overlayVisible = false;
   bool _showDetection = false;
   bool _isManualMode = false;
-  bool _sfxSkip = true; // NEW: SFX toggle default on
+  bool _sfxSkip = true;
   double _renderScaleX = 1.0, _renderScaleY = 1.0;
 
   // Image
   Uint8List? _pageBytes;
   ui.Image? _pageImage;
   int _imgW = 0, _imgH = 0;
-  String? _currentImageUrl; // track loaded URL for cache key
+  String? _currentImageUrl; // cache key
 
   // URL loading
   final _urlCtrl = TextEditingController();
@@ -61,7 +61,7 @@ class _DemoPageState extends State<DemoPage> {
   PageTranslation? _translation;
   final List<BubbleBox> _manualBoxes = [];
 
-  // Per-bubble loading state (how many parsed so far)
+  // Loading progress
   int _parsedBubbleCount = 0;
   int _totalBubbles = 0;
 
@@ -78,8 +78,7 @@ class _DemoPageState extends State<DemoPage> {
   final List<String> _log = [];
   final _imageAreaKey = GlobalKey();
 
-  /// Build mosaic in background isolate.
-  /// Max mosaic width 800px — downscale if wider for faster AI upload.
+  /// Build mosaic in isolate. Max 800px wide.
   Future<Uint8List?> _buildMosaicIsolate(
     Uint8List pageBytes,
     List<Map<String, dynamic>> boxMaps,
@@ -141,7 +140,7 @@ class _DemoPageState extends State<DemoPage> {
     });
   }
 
-  // ── NMS + False Positive Filter ───────────────────────────
+  // ── NMS + FP Filter ───────────────────────────────────────
 
   double _iou(BubbleBox a, BubbleBox b) {
     final x1 = max(a.x, b.x).toDouble();
@@ -176,7 +175,7 @@ class _DemoPageState extends State<DemoPage> {
   }
 
   List<BubbleBox> _removeFalsePositives(List<BubbleBox> boxes) {
-    // Remove boxes that engulf >2.5× smaller boxes (false positive raksasa)
+    // Hapus kotak palsu yg menelan >2.5× kotak kecil
     final toRemove = <int>{};
     for (var i = 0; i < boxes.length; i++) {
       for (var j = 0; j < boxes.length; j++) {
@@ -194,7 +193,7 @@ class _DemoPageState extends State<DemoPage> {
     ];
   }
 
-  // ── Full-image fallback (0 bubbles detected) ──────────────
+  // ── Fallback (0 bubbles) ──────────────────────────────────
 
   Future<void> _sendFullImageFallback() async {
     _logm('0 bubbles detected. Sending full image as fallback...');
@@ -796,7 +795,7 @@ class _DemoPageState extends State<DemoPage> {
           return;
         }
 
-        // Build PageTranslation with per-bubble progress simulation
+        // Build PageTranslation
         final bubbleTranslations = <BubbleTranslation>[];
         for (var i = 0; i < boxes.length; i++) {
           final idStr = '${i + 1}';
@@ -812,7 +811,7 @@ class _DemoPageState extends State<DemoPage> {
               h: boxes[i].h,
             ),
           );
-          // Simulate per-bubble progress by updating count as we parse
+          // Update progress
           _parsedBubbleCount = i + 1;
         }
 
@@ -910,7 +909,7 @@ class _DemoPageState extends State<DemoPage> {
     }
   }
 
-  // ── Manual bubbles ───────────────────────────────────────
+  // ── Manual ───────────────────────────────────────────────
 
   List<BubbleBox> get _activeBoxes {
     // Combine detected + manual, no duplicate (manual override detected by position)
@@ -1119,14 +1118,13 @@ class _DemoPageState extends State<DemoPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Detect → Mosaic → AI Translate → Overlay\n\n'
-              '• ONNX bubble detection (real engine)\n'
-              '• Mosaic builder with red labels\n'
-              '• Multi-provider AI (Zen/Gemini/OpenAI)\n'
+              'Detect → Mosaic → Translate → Overlay\n\n'
+              '• ONNX bubble detection (real)\n'
+              '• Mosaic builder\n'
+              '• Multi-provider AI\n'
               '• 7 translation styles\n'
-              '• Manual bubble add/remove/edit\n'
-              '• SFX skip toggle\n'
-              '• Pick image from device gallery or files',
+              '• Manual bubbles + SFX skip\n'
+              '• Pick image from file / URL',
               textAlign: TextAlign.center,
               style: t.textTheme.bodyMedium?.copyWith(
                 color: t.colorScheme.onSurfaceVariant,
