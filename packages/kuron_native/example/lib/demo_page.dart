@@ -717,8 +717,9 @@ class _DemoPageState extends State<DemoPage> {
           // Compute rendered image size (fitWidth)
           final availW = constraints.maxWidth;
           final availH = constraints.maxHeight;
-          if (_pageImage == null || availW <= 0 || availH <= 0)
+          if (_pageImage == null || availW <= 0 || availH <= 0) {
             return const SizedBox();
+          }
 
           final renderedW = availW;
           final renderedH = _imgH * (renderedW / _imgW);
