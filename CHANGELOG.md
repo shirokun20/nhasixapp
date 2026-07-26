@@ -10,7 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
-- **App Lock (PIN + Biometric)**: Full app-level lock with PIN setup/verify/change/remove and optional biometric (fingerprint/face) via `local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
+- **Image download cancellation on reader dispose**: Cancel all in-flight image network requests when reader screen is disposed — CancellationToken for ExtendedImage.network, Dio CancelToken for prefetch downloads, native HttpURLConnection.disconnect() in AnimatedWebPView.kt. Prevents orphaned requests causing UI lag on home screen.
+- **Native-first heavy image routing**: Heavy images (E-Hentai 10MB+ AVIF/WebP) prefer native AnimatedWebPView where supported (static/animated), with Flutter ExtendedImage as fallback. Configurable via static URL sets in `extended_image_reader_widget.dart`.
+- **Android CPU thermal management**: Prefetch throttle (back=1, forward=3) for heavy sources in continuous scroll. GPU memory budget eviction (heavy count tracking, evict farthest 25% only when exceeded). Repeated prefetch to same URL skipped.
+- **CancellationToken post-completion lifecycle**: After heavy image detection fires in post-completion, CancellationToken is cancelled and recreated (with mounted guard) — prevents stale token from blocking future retries.
+`local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
 - **Content Source loading fix**: `ContentBloc` removed from `MultiBlocProviderConfig` — `ContentSourceRegistry` no longer created eagerly at startup with only nhentai. Now created from `MainScreen.getIt<ContentBloc>()` after splash completes + RemoteConfigService loads all sources.
 - **Session time-limit lock**: `AppLockCubit` starts 10-min session on unlock. Periodic 30s check — if expired, auto-lock. Short lifecycle pauses from biometric dialog (< 30s onPaused/resumed) ignored.
 - **MIUI biometric compatibility**: `MainActivity.kt` changed from `FlutterActivity` to `FlutterFragmentActivity`. Auth uses `sensitiveTransaction: false`, `useErrorDialogs: false`, `stickyAuth: false`. `canCheckBiometrics` removed — MIUI false negative bug.
@@ -18,6 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🔧 Changed
 
+- **ExtendedImageReaderWidget**: Added `_cancelToken` field (init → dispose), passed to `ExtendedImage.network` as `cancelToken`. Dead retry code removed (`_imageLoadRetries`, `_maxImageLoadRetries`, `_autoRetryTimer`, `_shouldAutoRetryImage`/`_scheduleAutoRetry`, `isRetrying`). Post-completion heavy detect now cancels + recreates token only when still mounted.
+- **ReaderScreen dispose**: `_prefetchCancelTokens` map (`Map<int, CancelToken>`) tracks prefetch download tokens. On dispose: cancel all pending, clear map, clear `_decodeQueue`, reset `_isDecodeTickScheduled`, call `ExtendedImageReaderWidget.clearNativeAnimatedCache()`.
+- **LocalImagePreloader**: Refactored `downloadAndCacheImage()` from raw dart:io HttpClient → Dio with optional `CancelToken` param. Removed ~28 lines of HttpClient boilerplate.
+- **AnimatedWebPView.kt**: Added `@Volatile var activeConnection: HttpURLConnection?` — set in `fetchBytes()`, cleared in finally. Disconnected in `dispose()`. Added disposed guard in `fetchBytes()` (early throw on connection if already disposed).
+- **pubspec.yaml**: Added `http_client_helper: ^3.0.0` dependency for CancellationToken.
 - **App architecture**: `AppLockGate` now `StatefulWidget` with `didChangeDependencies` (one-time init, gated by `_inited`). `MultiBlocProviderConfig` no longer provides `ContentBloc` eagerly.
 - **MainActivity.kt**: Extends `FlutterFragmentActivity` instead of `FlutterActivity` for `local_auth` FragmentActivity requirement.
 - **ContentBloc access pattern**: Two `context.read<ContentBloc>()` calls in `main_screen_scrollable.dart` changed to `getIt<ContentBloc>()` (DI singleton, no BlocProvider needed). Genre/tag pages now use `https://nicomanga.com/g/{base64}.html` format via `tagTransform: "base64"` in config. Field extraction `transform: "base64"` also supported di detail page untuk author, tags, artist (base64-encoded text).
@@ -30,6 +39,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🐛 Fixed
 
+- **CancellationToken leak after dispose**: Post-completion code ran `_cancelToken?.cancel(); _cancelToken = CancellationToken()` before `if (!mounted) return;`. If dispose fired between these, new token leaked. Fix: moved mounted guard before token creation.
+- **TOCTOU race in AnimatedWebPView.kt**: `fetchBytes()` sets `activeConnection = conn`, but `dispose()` could read it as null before assignment — missed abort, 90s HTTP drain. Fix: disposed guard after setting activeConnection.
+- **Orphaned prefetch downloads on reader close**: Prefetch using raw HttpClient had no cancellation mechanism. Fix: refactored to Dio + CancelToken tracked in `_prefetchCancelTokens`, all cancelled on dispose.
+- **App Lock (PIN + Biometric)**: Full app-level lock with PIN setup/verify/change/remove and optional biometric (fingerprint/face) via `local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
+- **Content Source loading fix**: `ContentBloc` removed from `MultiBlocProviderConfig` — `ContentSourceRegistry` no longer created eagerly at startup with only nhentai. Now created from `MainScreen.getIt<ContentBloc>()` after splash completes + RemoteConfigService loads all sources.
+- **Session time-limit lock**: `AppLockCubit` starts 10-min session on unlock. Periodic 30s check — if expired, auto-lock. Short lifecycle pauses from biometric dialog (< 30s onPaused/resumed) ignored.
+- **MIUI biometric compatibility**: `MainActivity.kt` changed from `FlutterActivity` to `FlutterFragmentActivity`. Auth uses `sensitiveTransaction: false`, `useErrorDialogs: false`, `stickyAuth: false`. `canCheckBiometrics` removed — MIUI false negative bug.
+- **PIN/Biometric l10n**: Added 30+ ARB keys (en/id/zh) for PIN entry, setup, change, error strings, and settings toggles.
 - **Fingerprint unlock → missing sources**: Root cause: `ContentSourceRegistry` initialized at `runApp()` with only nhentai (from DI) because `SplashBloc.smartInitialize()` hadn't run yet. Pin unlock "worked" only because PIN typing took enough time for splash to finish, but biometric instant unlock raced. Fix: removed `ContentBloc` from `MultiBlocProviderConfig` so `ContentSourceRegistry` is only created when home screen renders — after splash completes.
 - **AppLockGate blocking splash**: Moved `AppLockGate` from `MaterialApp.builder` to home/main route wrappers. Splash runs freely, gate only appears after navigation to home.
 - **AppLockGate re-init on rebuild**: `StatefulWidget` + `_inited` flag in `didChangeDependencies` prevents re-calling `cubit.init()` on rebuild.

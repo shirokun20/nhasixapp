@@ -71,89 +71,91 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-07-25
+> Tracked via `openspec/` — Last updated: 2026-07-26
 
-### Archived (in `openspec/changes/archive/`)
-- `2026-02-11-nhentai-search-revamp`
-- `2026-02-14-favorites-bug-fix`
-- `2026-02-15-chapter-reading-history`
-- `2026-02-15-download-metadata-revamp`
-- `2026-02-15-fix-download-metadata-parentid`
-- `2026-02-17-fix-download-range-page-bounds`
-- `2026-02-22-app-audit-hardcode-ui`
-- `2026-02-xx-doujin-search-highlight`
-- `2026-02-xx-offline-search-highlight`
-- `2026-02-xx-reader-header-auto-show`
-- `2026-03-03-komiktap-migration`
-- `2026-03-07-fix-source-switch-shimmer`
-- `2026-03-12-builtin-dns-resolver`
-- `2026-03-14-app-config-externalization`
-- `2026-03-15-cross-source-search-ui`
-- `2026-03-15-mangadex-detail-pagination-bug`
-- `2026-03-31-fix-import-zip-metadata`
-- `2026-03-xx-crotpedia-ui-modernization`
-- `2026-03-xx-fix-app-drawer-transparency`
-- `2026-03-xx-multi-provider-integration`
-- `2026-03-xx-smart-caching-and-fixes`
-- `2026-03-xx-unity-ads-fix`
-- `2026-03-xx-view-comments`
-- `2026-04-12-local-collection-categories`
-- `2026-04-19-blur-recent-apps-privacy`
-- `2026-04-20-ehentai-download-reader-stability`
-- `2026-04-xx-komiktap-navigation-lists`
-- `2026-04-xx-qol-enhancements`
-- `2026-05-19-fix-url-special-chars`
-- `2026-05-24-avif-to-webp-conversion`
-- `2026-05-24-ehentai-part-mode-metadata-sync`
-- `2026-05-28-fix-generic-rest-adapter-schema-support`
-- `2026-06-01-doujindesuv2-scraper`
-- `2026-06-01-reader-ux-revamp`
-- `2026-06-16-offline-library-sorting-source-buckets`
-- `2026-06-16-offline-library-v2`
-- `2026-06-16-tachiyomi-extensions-integration`
-- `2026-06-21-search-runtime-autowiring`
-- `2026-06-21-tabbed-multilang-chapters`
-- `2026-06-23-ehentai-download-strategy`
-- `2026-06-23-lazy-load-chapters`
-- `2026-06-23-mangafire-integration`
-- `2026-06-25-refine-card-surface-a11y`
-- `2026-06-26-bloc-pattern-modernization`
-- `2026-06-26-purge-ui-packages`
-- `2026-06-26-upgrade-core-packages`
-- `2026-06-27-update-manhwaread-config`
-- `2026-06-28-home-scroll-reader-optimization`
-- `2026-06-28-native-dns-rollout`
-- `2026-07-03-migrate-legacy-search-configs`
-- `2026-07-03-search-form-ui-parity`
-- `2026-07-03-smart-config-generator`
-- `2026-07-05-add-kuron-config-generator`
-- `2026-07-05-config-generator-validation-loop`
-- `2026-07-05-revamp-kuron-config-runtime`
-- `2026-07-05-upgrade-android-deps-july-2026`
-- `2026-07-06-deprecate-legacy-search-ui`
-- `2026-07-06-migrate-legacy-search-configs`
-- `2026-07-06-smart-query-parser`
-- `2026-07-06-source-health-monitor`
-- `2026-07-10-add-vihentai-source`
-- `2026-07-10-revamp-mangafire-to-json-api`
-- `2026-07-12-reader-120fps-optimization`
-- `2026-07-13-download-jank-reduction`
-- `2026-07-13-rawdevart-config`
-- `2026-07-13-sync-native-theme`
-- `2026-07-14-note-mode`
-- `2026-07-14-schale-network-source`
-- `2026-07-16-fix-overheat-lock-screen`
-- `2026-07-17-code-quality-refactor-phase-1`
-- `2026-07-18-code-quality-refactor-phase-2`
-- `2026-07-18-fix-performance-overheat`
-- `2026-07-18-hdoujin-source-integration`
-- `2026-07-18-notification-snackbar-audit-fix`
-- `2026-07-24-reader-download-overheat-fix`
-- `2026-07-24-add-mangafire-vrf-capture` — **REVERTED**: VRF capture via headless WebView menyebabkan jank/memory. Source di-set maintenance.
+### Archived (in `openspec/changes/archive/`) — Newest first
+- `2026-07-26-cancel-image-download-on-dispose` — Cancel in-flight image downloads/fetches when reader screen is disposed. CancellationToken for ExtendedImage, Dio CancelToken for prefetch, native HTTP disconnect in AnimatedWebPView.kt. Dead retry code removed.
 - `2026-07-25-pin-biometric-app-lock`
 - `2026-07-25-download-bloc-refactor`
+- `2026-07-24-reader-download-overheat-fix`
+- `2026-07-24-add-mangafire-vrf-capture` — **REVERTED**: VRF capture via headless WebView menyebabkan jank/memory. Source di-set maintenance.
+- `2026-07-18-notification-snackbar-audit-fix`
+- `2026-07-18-hdoujin-source-integration`
+- `2026-07-18-fix-performance-overheat`
+- `2026-07-18-code-quality-refactor-phase-2`
+- `2026-07-17-code-quality-refactor-phase-1`
+- `2026-07-16-fix-overheat-lock-screen`
+- `2026-07-14-schale-network-source`
+- `2026-07-14-note-mode`
+- `2026-07-13-sync-native-theme`
+- `2026-07-13-rawdevart-config`
+- `2026-07-13-download-jank-reduction`
+- `2026-07-12-reader-120fps-optimization`
+- `2026-07-10-revamp-mangafire-to-json-api`
+- `2026-07-10-add-vihentai-source`
+- `2026-07-06-source-health-monitor`
+- `2026-07-06-smart-query-parser`
+- `2026-07-06-migrate-legacy-search-configs`
+- `2026-07-06-deprecate-legacy-search-ui`
+- `2026-07-05-upgrade-android-deps-july-2026`
+- `2026-07-05-revamp-kuron-config-runtime`
+- `2026-07-05-config-generator-validation-loop`
+- `2026-07-05-add-kuron-config-generator`
+- `2026-07-03-smart-config-generator`
+- `2026-07-03-search-form-ui-parity`
+- `2026-07-03-migrate-legacy-search-configs`
+- `2026-06-28-native-dns-rollout`
+- `2026-06-28-home-scroll-reader-optimization`
+- `2026-06-27-update-manhwaread-config`
+- `2026-06-26-upgrade-core-packages`
+- `2026-06-26-purge-ui-packages`
+- `2026-06-26-bloc-pattern-modernization`
+- `2026-06-25-refine-card-surface-a11y`
+- `2026-06-23-mangafire-integration`
+- `2026-06-23-lazy-load-chapters`
+- `2026-06-23-ehentai-download-strategy`
+- `2026-06-21-tabbed-multilang-chapters`
+- `2026-06-21-search-runtime-autowiring`
+- `2026-06-16-tachiyomi-extensions-integration`
+- `2026-06-16-offline-library-v2`
+- `2026-06-16-offline-library-sorting-source-buckets`
+- `2026-06-01-reader-ux-revamp`
+- `2026-06-01-doujindesuv2-scraper`
+- `2026-05-28-fix-generic-rest-adapter-schema-support`
+- `2026-05-24-ehentai-part-mode-metadata-sync`
+- `2026-05-24-avif-to-webp-conversion`
+- `2026-05-19-fix-url-special-chars`
+- `2026-04-xx-qol-enhancements`
+- `2026-04-xx-komiktap-navigation-lists`
+- `2026-04-20-ehentai-download-reader-stability`
+- `2026-04-19-blur-recent-apps-privacy`
+- `2026-04-12-local-collection-categories`
+- `2026-03-xx-view-comments`
+- `2026-03-xx-unity-ads-fix`
+- `2026-03-xx-smart-caching-and-fixes`
+- `2026-03-xx-multi-provider-integration`
+- `2026-03-xx-fix-app-drawer-transparency`
+- `2026-03-xx-crotpedia-ui-modernization`
+- `2026-03-31-fix-import-zip-metadata`
+- `2026-03-15-mangadex-detail-pagination-bug`
+- `2026-03-15-cross-source-search-ui`
+- `2026-03-14-app-config-externalization`
+- `2026-03-12-builtin-dns-resolver`
+- `2026-03-07-fix-source-switch-shimmer`
+- `2026-03-03-komiktap-migration`
+- `2026-02-xx-reader-header-auto-show`
+- `2026-02-xx-offline-search-highlight`
+- `2026-02-xx-doujin-search-highlight`
+- `2026-02-22-app-audit-hardcode-ui`
+- `2026-02-17-fix-download-range-page-bounds`
+- `2026-02-15-fix-download-metadata-parentid`
+- `2026-02-15-download-metadata-revamp`
+- `2026-02-15-chapter-reading-history`
+- `2026-02-14-favorites-bug-fix`
+- `2026-02-11-nhentai-search-revamp`
 
 ### Active Changes (in `openspec/changes/`)
+- `komiktap-ssl-websocket-bypass`
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
 - `reader-ai-learning-mode` — AI translate pipeline: ONNX bubble detection, mosaic, multi-provider, overlay. Example demo functional. 7 style. Skip prev 5 gimmick styles. Proposal updated: per-bubble loading, edit manual, SFX toggle. [[ai-translation-demo-feat]]
@@ -197,6 +199,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-26 | Claude Code | Cancel image download on reader dispose (openspec: cancel-image-download-on-dispose) | Done | Cancel in-flight image network requests when reader screen disposed — CancellationToken untuk ExtendedImage, Dio CancelToken untuk prefetch, native HttpURLConnection.disconnect() di AnimatedWebPView.kt. Dead retry code removed (_imageLoadRetries, _maxImageLoadRetries, _autoRetryTimer, _scheduleAutoRetry, isRetrying). **Key changes**: (1) _cancelToken lifecycle di ExtendedImageReaderWidget — init/dispose, cancel+recreate di post-completion dgn mounted guard. (2) _prefetchCancelTokens map di ReaderScreen dispose — cancel semua + clear decode queue. (3) LocalImagePreloader refactor raw HttpClient -> Dio + CancelToken. (4) AnimatedWebPView.kt activeConnection + disconnect di dispose + disposed guard. (5) http_client_helper dep di pubspec.yaml. **Review fixes**: CancellationToken leak (mounted guard before new token), TOCTOU race (disposed guard after activeConnection assign). Files: 7 files (+93/-89): extended_image_reader_widget.dart, reader_screen.dart, local_image_preloader.dart, AnimatedWebPView.kt, pubspec.yaml, pubspec.lock, extended_image_reader_widget_test.dart. |
 | 2026-07-25 | Claude Code | App Lock (PIN + Biometric) implementation | Done | Implemented full app lock feature: PIN setup/verify/change/remove flow, optional biometric (fingerprint/face) via `local_auth`, `AppLockGate` as widget wrapper in home route (after splash — not blocking root). Lock config stored in `flutter_secure_storage` (separate from SharedPreferences). **Session-based**: unlock starts a 10-minute session (persisted). Timer checks every 30s — if expired, re-lock. Short lifecycle pauses from biometric dialog (< 30s) ignored. **Key fixes**: (1) `ContentBloc` removed from `MultiBlobProviderConfig` — `ContentSourceRegistry` only created after splash loads all configs (fixes source loading order). (2) `AppLockGate` moved from `MaterialApp.builder` to home route so splash runs first. (3) MIUI biometric compatibility: `FlutterFragmentActivity` (not `FlutterActivity`), `sensitiveTransaction: false`, `useErrorDialogs: false`. (4) All strings via l10n (en/id/zh). (5) Lifecycle lock moved to `LifecycleWatcher`, gate is pure render. Files: `+lib/presentation/cubits/app_lock/`, `+lib/presentation/pages/app_lock/`, `+lib/presentation/pages/settings/settings_app_lock_widgets.dart`, `+lib/presentation/widgets/app_lock_gate.dart`, `+lib/domain/repositories/app_lock_repository.dart`, `+lib/data/repositories/app_lock_repository_impl.dart`, `lib/main.dart`, `lib/core/routing/app_router.dart`, `lib/core/config/multi_bloc_provider_config.dart`, `lib/core/di/service_locator.dart`, `lib/presentation/widgets/lifecycle_watcher.dart`, `android/.../MainActivity.kt`. |
 | 2026-07-25 | Claude Code | Revert MangaFire VRF + SearchScreen reset fix | Done | Revert `137a6c8c` (VRF capture -> jank/memory). Set mangafire maintenance. Archived `add-mangafire-vrf-capture` + `reader-download-overheat-fix`. Fix: SearchScreen reset now clears saved filter + pops to Home to trigger `_loadDefaultContent()`. |
 | 2026-07-20 | Claude Code | Reader fixes: chapter selector crash, CS scroll reset, prev/next 404, manhwaread double prefix | Done | **4 bug fixes**: (1) `_ReaderChapterSelector` crash — `Navigator.of(context).pop()` pake context stale dari BlocBuilder yg udah di-pop. Fix: ganti ke `ctx` builder. (2) CS scroll gak reset pas ganti chapter — `_syncControllersWithState` pake `_lastSyncedContentId` + post-frame callback. (3) Prev/next 404 — prioritas `chapterData.nextChapterId` yg isi raw URL. Balik ke pool `_allChapters` dulu. (4) ManhwaRead side-story double `/manhwa/` — 3 lapis: config regex, slug extraction, normalize template. Files: `reader_settings_widgets.dart`, `reader_screen.dart`, `reader_cubit.dart`, `manhwaread-config.json`, `generic_scraper_adapter.dart`. |
