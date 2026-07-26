@@ -16,6 +16,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import io.flutter.plugin.platform.PlatformView
 import java.io.File
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
