@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
@@ -107,6 +108,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   final Map<int, double> _cachedImageHeights = {};
 
   final Set<int> _prefetchedPages = <int>{};
+  final Map<int, CancelToken> _prefetchCancelTokens = <int, CancelToken>{};
   static const int _prefetchCount = 3;
   static const int _prefetchBackCount = 1;
 
@@ -759,6 +761,19 @@ class _ReaderScreenState extends State<ReaderScreen>
     WidgetsBinding.instance.removeObserver(this);
     _flushReaderProgressBeforeDispose();
 
+    // Cancel all in-flight prefetch downloads
+    for (final token in _prefetchCancelTokens.values) {
+      if (!token.isCancelled) token.cancel();
+    }
+    _prefetchCancelTokens.clear();
+
+    // Clear pending decode queue so orphan precacheImage tasks stop
+    _decodeQueue.clear();
+    _isDecodeTickScheduled = false;
+
+    // Flush static cache maps to prevent unbounded growth across sessions
+    ExtendedImageReaderWidget.clearNativeAnimatedCache();
+
     // 🚀 REMOVED: Old scroll listener (now using NotificationListener)
     // _scrollController.removeListener(_onScrollChanged);
     _pageController.dispose();
@@ -905,12 +920,17 @@ class _ReaderScreenState extends State<ReaderScreen>
         _prefetchedPages.add(targetPage);
         final imageUrl = imageUrls[targetPage - 1];
         if (imageUrl.startsWith('http')) {
+          final cancelToken = CancelToken();
+          _prefetchCancelTokens[targetPage] = cancelToken;
           LocalImagePreloader.downloadAndCacheImage(
             imageUrl,
             widget.contentId,
             targetPage,
             headers: prefetchHeaders,
-          ).catchError((_) {
+            cancelToken: cancelToken,
+          ).whenComplete(() {
+            _prefetchCancelTokens.remove(targetPage);
+          }).catchError((_) {
             _prefetchedPages.remove(targetPage);
             return '';
           });

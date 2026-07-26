@@ -262,6 +262,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       10 * 1024 * 1024; // 10 MB
   static const int _maxNativeAvifHeight = 4096;
 
+  CancellationToken? _cancelToken;
+
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
   late AnimationController _pinchHintController;
@@ -279,11 +281,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// Image dimensions parsed from the file header (e.g., `ispe` box for AVIF).
   Size? _nativeImageSize;
 
-  int _imageLoadRetries = 0;
-  static const int _maxImageLoadRetries = 3;
   int _ehentaiResolveRetries = 0;
   static const int _maxEhentaiResolveRetries = 2;
-  Timer? _autoRetryTimer;
   bool _isRepairingBrokenImage = false;
   bool _isOpeningSourcePage = false;
   bool _shouldBypassLocalDecode = false;
@@ -324,6 +323,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   @override
   void initState() {
     super.initState();
+    _cancelToken = CancellationToken();
     _zoomController = AnimationController(
       duration: DesignTokens.durationPageTurn,
       vsync: this,
@@ -951,13 +951,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _pinchHintController.dispose();
     _zoomController.dispose();
-    _autoRetryTimer?.cancel();
-    _isHeavyImage = false;
-    _isConfirmedAnimatedWebP = false;
-    _cachedFilePath = null;
-    _awaitingNativeCheck = false;
     super.dispose();
   }
 
@@ -1306,6 +1302,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       ),
       cache: true,
       cacheWidth: decodeWidth,
+      cancelToken: _cancelToken,
       enableLoadState: true,
       extendedImageGestureKey: _gestureKey,
       initGestureConfigHandler: (state) {
@@ -1364,17 +1361,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               return _buildNetworkImage(context, rawUrl,
                   headers: headers, forceUrl: fallbackUrl);
             }
-            if (_shouldAutoRetryImage(state) &&
-                _imageLoadRetries < _maxImageLoadRetries) {
-              _scheduleAutoRetry(state);
-            }
             return _buildErrorWidget(
               context,
               state: state,
               failedSource: url,
             );
           case LoadState.completed:
-            _imageLoadRetries = 0;
             _ehentaiResolveRetries = 0;
             if (widget.onImageLoaded != null &&
                 state.extendedImageInfo?.image != null) {
@@ -1414,7 +1406,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   // frames on the raster thread. The native view takes over.
                   clearMemoryImageCache(url);
 
+                  // Cancel in-flight ExtendedImage fetch + raster decode.
+                  // Guard mounted FIRST to avoid leaking a new token after dispose.
+                  _cancelToken?.cancel();
                   if (!mounted) return;
+
+                  // A new CancellationToken is created so the native-animated
+                  // view (which reads from disk) is not affected.
+                  _cancelToken = CancellationToken();
                   final nativeSize = (width != null && height != null)
                       ? Size(width.toDouble(), height.toDouble())
                       : null;
@@ -2257,7 +2256,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final double logoSize = isContinuousScroll ? 100 : 100;
     final double iconSize = isContinuousScroll ? 24 : 32;
     final l10n = AppLocalizations.of(context)!;
-    final isRetrying = _autoRetryTimer?.isActive ?? false;
     final isRepairing = _isRepairingBrokenImage;
     final isOpeningSourcePage = _isOpeningSourcePage;
     final isActionBusy = isRepairing || isOpeningSourcePage;
@@ -2330,9 +2328,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       ? l10n.readerRepairingImage
                       : isOpeningSourcePage
                           ? l10n.readerOpeningSourcePage
-                          : (isRetrying ? l10n.retrying : l10n.failedToLoad),
+                          : l10n.failedToLoad,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: (isRetrying || isActionBusy)
+                        color: isActionBusy
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
@@ -2341,13 +2339,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ),
 
                 Text(
-                  isRetrying
-                      ? l10n.pageAttempt(
-                          widget.pageNumber,
-                          _imageLoadRetries,
-                          _maxImageLoadRetries,
-                        )
-                      : l10n.pageNumber(widget.pageNumber),
+                  l10n.pageNumber(widget.pageNumber),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -2356,7 +2348,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
                 const SizedBox(height: 12),
 
-                if (!isRetrying && widget.onOpenSourcePageForRepair != null)
+                if (widget.onOpenSourcePageForRepair != null)
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -2416,10 +2408,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     ),
                   ),
 
-                if (!isRetrying && widget.onOpenSourcePageForRepair != null)
+                if (widget.onOpenSourcePageForRepair != null)
                   const SizedBox(height: 8),
 
-                if (!isRetrying && widget.onRepairBrokenImage != null)
+                if (widget.onRepairBrokenImage != null)
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -2479,10 +2471,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     ),
                   ),
 
-                if (!isRetrying && widget.onRepairBrokenImage != null)
+                if (widget.onRepairBrokenImage != null)
                   const SizedBox(height: 8),
 
-                if (!isRetrying && canOpenLocalAvif) ...[
+                if (canOpenLocalAvif) ...[
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -2508,9 +2500,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ],
 
                 // Retry button
-                if (!isRetrying)
-                  SizedBox(
-                    width: double.infinity,
+                SizedBox(
+                  width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: isActionBusy ? null : retryAction,
                       icon: const Icon(Icons.refresh, size: 16),
@@ -2530,7 +2521,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     ),
                   ),
 
-                if (!isRetrying && canOpenRemoteAvif) ...[
+                if (canOpenRemoteAvif) ...[
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
@@ -2685,31 +2676,4 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         : gestureWidget;
   }
 
-  /// HentaiNexus images often timeout (large files, rate limiting, 30s threshold).
-  bool _shouldAutoRetryImage(ExtendedImageState state) {
-    if (widget.readingMode != ReadingMode.continuousScroll) {
-      return false;
-    }
-
-    return false;
-  }
-
-  /// Schedule retry with exponential backoff — 2s, 4s, 8s.
-  void _scheduleAutoRetry(ExtendedImageState state) {
-    _imageLoadRetries++;
-    _autoRetryTimer?.cancel();
-
-    final delayMs = (1000 * (1 << (_imageLoadRetries - 1))).toInt();
-
-    _logger.i(
-      '🔄 Auto-retrying HentaiNexus image (page ${widget.pageNumber}): '
-      'Attempt $_imageLoadRetries/$_maxImageLoadRetries after ${delayMs}ms',
-    );
-
-    _autoRetryTimer = Timer(Duration(milliseconds: delayMs), () {
-      if (mounted) {
-        state.reLoadImage();
-      }
-    });
-  }
 }

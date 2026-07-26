@@ -704,7 +704,7 @@ packages:
     source: hosted
     version: "1.6.0"
   http_client_helper:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http_client_helper
       sha256: "8a9127650734da86b5c73760de2b404494c968a3fd55602045ffec789dac3cb1"

@@ -85,6 +85,8 @@ class AnimatedWebPView(
 
     @Volatile
     private var disposed = false
+    @Volatile
+    private var activeConnection: HttpURLConnection? = null
     private var animatedDrawable: AnimatedImageDrawable? = null
 
     /** Cache key: prefer URL (unique per image) over file path. */
@@ -380,6 +382,16 @@ class AnimatedWebPView(
     @Throws(Exception::class)
     private fun fetchBytes(url: String, headers: Map<String, String>): ByteArray {
         val conn = URL(url).openConnection() as HttpURLConnection
+        activeConnection = conn
+        // TOCTOU guard: dispose may have set disposed=true between openConnection
+        // and activeConnection assignment. Check and abort early to avoid
+        // downloading the full payload (potentially 25+ MB, 90s read timeout)
+        // after the view has already been disposed.
+        if (disposed) {
+            conn.disconnect()
+            activeConnection = null
+            throw IOException("disposed before fetch started")
+        }
         return try {
             conn.connectTimeout = 15_000
             conn.readTimeout = 90_000
@@ -387,6 +399,7 @@ class AnimatedWebPView(
             headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
             conn.inputStream.use { it.readBytes() }
         } finally {
+            activeConnection = null
             conn.disconnect()
         }
     }
@@ -462,6 +475,10 @@ class AnimatedWebPView(
 
     override fun dispose() {
         disposed = true
+        // Abort in-flight HTTP fetch so the worker thread exits promptly.
+        // disconnect() causes InputStream.read() to throw, caught by loadAsync.
+        activeConnection?.disconnect()
+        activeConnection = null
         // Stop animation but do NOT destroy the drawable — it stays in LruCache
         // for instant reuse on scroll-back.
         animatedDrawable?.stop()

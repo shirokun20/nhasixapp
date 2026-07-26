@@ -651,6 +651,19 @@ void main() {
     });
   });
 
+  group('clearNativeAnimatedCache', () {
+    test('clears all static URL sets', () {
+      const url1 = 'https://example.com/heavy.webp';
+
+      ExtendedImageReaderWidget.addHeavyUrlForTesting(url1);
+      expect(ExtendedImageReaderWidget.isHeavyUrlForTesting(url1), isTrue);
+
+      ExtendedImageReaderWidget.clearNativeAnimatedCache();
+
+      expect(ExtendedImageReaderWidget.isHeavyUrlForTesting(url1), isFalse);
+    });
+  });
+
   group('AnimatedWebPView.isAvailable', () {
     test('is false on non-Android test host', () {
       // Tests run on macOS/Linux CI, not Android.

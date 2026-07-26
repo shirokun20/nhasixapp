@@ -62,6 +62,7 @@ dependencies:
   cached_network_image: ^3.3.1
   extended_image: ^10.1.0  # Enhanced image viewer with gesture control
   # extended_image_library: ^5.0.1  # Disk-cache utilities (getCachedImageFile)
+  http_client_helper: ^3.0.0  # CancellationToken for ExtendedImage cancellation
   image: ^4.5.4
   flutter_cache_manager: ^3.4.1
 

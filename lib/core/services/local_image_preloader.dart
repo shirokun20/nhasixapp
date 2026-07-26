@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -510,6 +511,7 @@ class LocalImagePreloader {
     String contentId,
     int pageNumber, {
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
     try {
       // First check if already exists in cache to avoid duplicate downloads
@@ -530,40 +532,27 @@ class LocalImagePreloader {
         }
       }
 
-      // Download from network (this is a simplified version - in real app use proper HTTP client)
-      final httpClient = HttpClient();
-      final request = await httpClient.getUrl(Uri.parse(networkUrl));
-      final effectiveHeaders = headers ?? const <String, String>{};
-      request.headers.set(
-        'User-Agent',
-        effectiveHeaders['User-Agent'] ?? 'AppleWebKit/537.36',
+      // Download from network using Dio (supports cancellation)
+      final dio = getIt<Dio>();
+      final response = await dio.get<List<int>>(
+        networkUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'User-Agent': 'AppleWebKit/537.36',
+            'Referer': 'https://nhentai.net/',
+            ...?headers,
+          },
+        ),
+        cancelToken: cancelToken,
       );
-      request.headers.set(
-        'Referer',
-        effectiveHeaders['Referer'] ?? 'https://nhentai.net/',
-      );
-      for (final entry in effectiveHeaders.entries) {
-        if (entry.key == 'User-Agent' || entry.key == 'Referer') {
-          continue;
-        }
-        request.headers.set(entry.key, entry.value);
-      }
 
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        final bytes = <int>[];
-        await for (var chunk in response) {
-          bytes.addAll(chunk);
-        }
-
+      if (response.statusCode == 200 && response.data != null) {
         // Save to internal cache
         final cachedPath =
-            await _saveToInternalCache(contentId, pageNumber, bytes);
-        httpClient.close();
-
+            await _saveToInternalCache(contentId, pageNumber, response.data!);
         return cachedPath;
       } else {
-        httpClient.close();
         _logger.w('🐛 Failed to download image: HTTP ${response.statusCode}');
         return null;
       }
