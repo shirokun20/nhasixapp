@@ -74,3 +74,4 @@ projects/*
 skills-lock.json
 /memory/*
 /output/*
+/prompts/*
