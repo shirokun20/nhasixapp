@@ -293,8 +293,7 @@
         "supportsTagExclusion": true,
         "supportsAdvancedSearch": true,
         "generatePdf": true,
-        "offlineMode": true,
-        "maintenanceFeatures": {}
+        "offlineMode": true
     },
     "ui": {
         "displayName": "NHentai",
