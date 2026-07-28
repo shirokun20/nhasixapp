@@ -664,6 +664,53 @@ void main() {
     });
   });
 
+  group('bounded static caches', () {
+    test('heavyImageUrls respects max bound', () {
+      ExtendedImageReaderWidget.clearNativeAnimatedCache();
+
+      final maxSize = ExtendedImageReaderWidget.maxHeavyImageUrls;
+      for (var i = 0; i < maxSize + 50; i++) {
+        ExtendedImageReaderWidget.addHeavyUrlForTesting(
+          'https://example.com/heavy_$i.webp',
+        );
+      }
+
+      expect(
+        ExtendedImageReaderWidget.isHeavyUrlForTesting(
+          'https://example.com/heavy_0.webp',
+        ),
+        isFalse,
+        reason: 'Oldest entries should be evicted when exceeding max bound',
+      );
+      expect(
+        ExtendedImageReaderWidget.isHeavyUrlForTesting(
+          'https://example.com/heavy_499.webp',
+        ),
+        isTrue,
+        reason: 'Most recent entries should be retained',
+      );
+
+      ExtendedImageReaderWidget.clearNativeAnimatedCache();
+    });
+
+    test('bounded set clears correctly', () {
+      ExtendedImageReaderWidget.clearNativeAnimatedCache();
+
+      const url = 'https://example.com/test_bounded_clear.webp';
+      ExtendedImageReaderWidget.addHeavyUrlForTesting(url);
+      expect(
+        ExtendedImageReaderWidget.isHeavyUrlForTesting(url),
+        isTrue,
+      );
+
+      ExtendedImageReaderWidget.clearNativeAnimatedCache();
+      expect(
+        ExtendedImageReaderWidget.isHeavyUrlForTesting(url),
+        isFalse,
+      );
+    });
+  });
+
   group('AnimatedWebPView.isAvailable', () {
     test('is false on non-Android test host', () {
       // Tests run on macOS/Linux CI, not Android.

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:logger/logger.dart';
 import '../di/service_locator.dart';
 import 'dns_resolver.dart';
@@ -38,7 +39,8 @@ class HttpClientManager {
 
     _logger?.i('Initializing HTTP client singleton...');
 
-    _httpClient = Dio();
+    _httpClient = Dio()
+      ..httpClientAdapter = NativeAdapter();
 
     // Configure default options
     _httpClient!.options.headers = {

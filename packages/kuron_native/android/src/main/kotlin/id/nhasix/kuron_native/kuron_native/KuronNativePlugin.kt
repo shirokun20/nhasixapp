@@ -38,6 +38,8 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.core.content.FileProvider
 import android.webkit.CookieManager
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.ConnectionPool
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import kotlin.math.min
@@ -67,6 +69,9 @@ class KuronNativePlugin :
     private val PICK_DIRECTORY_REQUEST_CODE = 1002
     private val PICK_FILE_REQUEST_CODE = 1003
     private val CAPTCHA_WEBVIEW_REQUEST_CODE = 1004
+    private val CCT_FALLBACK_REQUEST_CODE = 1005
+
+    private var pendingWebViewResultData: Map<String, Any?>? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun handleHeadlessGetClearance(call: MethodCall, result: Result) {
@@ -153,6 +158,12 @@ class KuronNativePlugin :
             "kuron_animated_webp_view",
             AnimatedWebPViewFactory(),
         )
+
+        AnimatedWebPView.httpClient = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+            .build()
     }
 
     override fun onMethodCall(
@@ -257,6 +268,10 @@ class KuronNativePlugin :
             }
             "clearCookies" -> {
                 handleClearCookies(result)
+            }
+            "clearAnimatedWebPCache" -> {
+                AnimatedWebPView.clearCaches()
+                result.success(true)
             }
             "getSystemInfo" -> {
                 handleGetSystemInfo(call, result)
@@ -1095,6 +1110,7 @@ class KuronNativePlugin :
                     val pageHtml = data.getStringExtra(WebViewActivity.RESULT_PAGE_HTML)
                     val capturedImageUrls = data.getStringArrayListExtra(WebViewActivity.RESULT_CAPTURED_IMAGE_URLS)
                     val pageFinishedScriptResult = data.getStringExtra("pageFinishedScriptResult")
+                    val usedSslFallback = data.getBooleanExtra(WebViewActivity.RESULT_USED_SSL_FALLBACK, false)
 
                     val resultMap = HashMap<String, Any?>()
                     resultMap["cookies"] = cookies
@@ -1105,15 +1121,65 @@ class KuronNativePlugin :
                     resultMap["pageHtml"] = pageHtml
                     resultMap["capturedImageUrls"] = capturedImageUrls
                     resultMap["pageFinishedScriptResult"] = pageFinishedScriptResult
+                    resultMap["usedSslFallback"] = usedSslFallback
                     resultMap["success"] = true
-                    
-                    pendingResult?.success(resultMap)
+
+                    if (usedSslFallback && currentUrl != null) {
+                        android.util.Log.w(TAG, "WebView used SSL fallback. Launching Chrome Custom Tab for: $currentUrl")
+                        pendingWebViewResultData = resultMap
+                        val activity = activityBinding?.activity
+                        if (activity != null) {
+                            try {
+                                val cctIntent = CustomTabFallbackActivity.createIntent(context, currentUrl)
+                                activity.startActivityForResult(cctIntent, CCT_FALLBACK_REQUEST_CODE)
+                            } catch (e: Exception) {
+                                android.util.Log.e(TAG, "Failed to launch CCT fallback: ${e.message}")
+                                pendingWebViewResultData = null
+                                pendingResult?.success(resultMap)
+                                pendingResult = null
+                            }
+                        } else {
+                            pendingWebViewResultData = null
+                            pendingResult?.success(resultMap)
+                            pendingResult = null
+                        }
+                    } else {
+                        pendingResult?.success(resultMap)
+                        pendingResult = null
+                    }
                 } else {
-                    // User cancelled or failed
-                     val resultMap = HashMap<String, Any?>()
+                    val resultMap = HashMap<String, Any?>()
                     resultMap["success"] = false
                     pendingResult?.success(resultMap)
+                    pendingResult = null
                 }
+            }
+            return true
+        }
+
+        if (requestCode == CCT_FALLBACK_REQUEST_CODE) {
+            if (pendingResult != null) {
+                val resultMap = if (pendingWebViewResultData != null) {
+                    val map = HashMap(pendingWebViewResultData!!)
+                    pendingWebViewResultData = null
+
+                    if (resultCode == Activity.RESULT_OK && data != null) {
+                        val cctCookies = data.getStringArrayListExtra(CustomTabFallbackActivity.RESULT_COOKIES)
+                        if (cctCookies != null && cctCookies.isNotEmpty()) {
+                            map["cookies"] = cctCookies
+                            android.util.Log.i(TAG, "CCT fallback: replaced cookies with ${cctCookies.size} CCT cookie(s)")
+                        }
+                    } else {
+                        android.util.Log.w(TAG, "CCT fallback returned non-OK: $resultCode, keeping WebView cookies")
+                    }
+                    map
+                } else {
+                    android.util.Log.w(TAG, "CCT fallback triggered without pending WebView data — returning empty result")
+                    HashMap<String, Any?>().apply {
+                        put("success", false)
+                    }
+                }
+                pendingResult?.success(resultMap)
                 pendingResult = null
             }
             return true

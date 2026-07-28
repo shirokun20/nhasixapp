@@ -370,6 +370,11 @@ class WebViewSessionAdapter {
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
         final userAgent = result['userAgent'] as String?;
         final pageHtml = result['pageHtml'] as String?;
+        final usedSslFallback = result['usedSslFallback'] as bool? ?? false;
+
+        if (usedSslFallback) {
+          _logger.w('⚠️ WebView SSL fallback used — server certificate was not trusted.');
+        }
 
         if (userAgent != null && userAgent.isNotEmpty) {
           _dio.options.headers['User-Agent'] = userAgent;

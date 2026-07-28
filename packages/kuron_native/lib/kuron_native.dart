@@ -135,6 +135,10 @@ class KuronNative {
     return KuronNativePlatform.instance.clearCookies();
   }
 
+  Future<void> clearAnimatedWebPCache() {
+    return KuronNativePlatform.instance.clearAnimatedWebPCache();
+  }
+
   Future<Object?> getThumbnailForWebP({
     required String url,
     String? filePath,

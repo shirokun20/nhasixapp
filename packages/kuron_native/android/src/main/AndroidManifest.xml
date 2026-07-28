@@ -10,6 +10,10 @@
           android:theme="@style/Theme.AppCompat.Light.NoActionBar"
           android:windowSoftInputMode="adjustResize"/>
       <activity
+          android:name=".CustomTabFallbackActivity"
+          android:theme="@android:style/Theme.Translucent.NoTitleBar"
+          android:excludeFromRecents="true"/>
+      <activity
           android:name=".pdf.PdfReaderActivity"
           android:theme="@style/Theme.AppCompat.NoActionBar"
           android:screenOrientation="portrait"

@@ -72,11 +72,18 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   @visibleForTesting
   static void addHeavyUrlForTesting(String url) =>
-      _ExtendedImageReaderWidgetState._heavyImageUrls.add(url);
+      _ExtendedImageReaderWidgetState._boundedSetAdd(
+          _ExtendedImageReaderWidgetState._heavyImageUrls,
+          url,
+          _ExtendedImageReaderWidgetState._maxHeavyImageUrls);
 
   @visibleForTesting
   static bool isHeavyUrlForTesting(String url) =>
       _ExtendedImageReaderWidgetState._heavyImageUrls.contains(url);
+
+  @visibleForTesting
+  static int get maxHeavyImageUrls =>
+      _ExtendedImageReaderWidgetState._maxHeavyImageUrls;
 
   static Future<void> clearNativeAnimatedCache() async {
     _ExtendedImageReaderWidgetState._heavyImageUrls.clear();
@@ -85,6 +92,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     _ExtendedImageReaderWidgetState._cachedFilePathByUrl.clear();
     _ExtendedImageReaderWidgetState._knownBrokenLocalAvifPaths.clear();
     await clearDiskCachedImages();
+    try {
+      await KuronNative.instance.clearAnimatedWebPCache();
+    } catch (_) {}
   }
 
   @visibleForTesting
@@ -216,6 +226,26 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static final Set<String> _confirmedAnimatedWebPUrls = <String>{};
   static final Set<String> _nonNativeAnimatedUrls = <String>{};
   static const int _heavyImageThresholdBytes = 2 * 1024 * 1024; // 2 MB
+
+  static const int _maxHeavyImageUrls = 500;
+  static const int _maxCachedFilePathByUrl = 200;
+  static const int _maxConfirmedAnimatedWebPUrls = 300;
+  static const int _maxNotifiedHeavyContentIds = 100;
+
+  static void _boundedSetAdd(Set<String> set, String item, int maxSize) {
+    set.add(item);
+    if (set.length > maxSize) {
+      set.remove(set.first);
+    }
+  }
+
+  static void _boundedMapPut(
+      Map<String, String> map, String key, String value, int maxSize) {
+    map[key] = value;
+    if (map.length > maxSize) {
+      map.remove(map.keys.first);
+    }
+  }
 
   static final List<String> _pendingHeaderPaths = <String>[];
   static bool _headerBatchInProgress = false;
@@ -350,7 +380,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     if (_isLocalFilePath(widget.imageUrl)) {
       final localPath = _normalizeLocalPath(widget.imageUrl);
       _cachedFilePath = localPath;
-      _cachedFilePathByUrl[widget.imageUrl] = localPath;
+      _boundedMapPut(
+          _cachedFilePathByUrl, widget.imageUrl, localPath, _maxCachedFilePathByUrl);
       final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
           _knownBrokenLocalAvifPaths.contains(localPath);
       _shouldBypassLocalDecode =
@@ -766,7 +797,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     )) {
       return;
     }
-    _notifiedHeavyContentIds.add(widget.contentId);
+    _boundedSetAdd(
+        _notifiedHeavyContentIds, widget.contentId, _maxNotifiedHeavyContentIds);
     // postFrameCallback so we never call this during a build/layout phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.onHeavyImageDetected?.call();
@@ -776,7 +808,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// Pre-seed the static set WITHOUT setState so an in-flight ExtendedImage
   /// download is never interrupted mid-way.
   void _preSeedHeavyImageUrl() {
-    _heavyImageUrls.add(widget.imageUrl);
+    _boundedSetAdd(_heavyImageUrls, widget.imageUrl, _maxHeavyImageUrls);
   }
 
   bool _isAvifSource(String source) {
@@ -896,7 +928,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       if (_isLocalFilePath(widget.imageUrl)) {
         final localPath = _normalizeLocalPath(widget.imageUrl);
         _cachedFilePath = localPath;
-        _cachedFilePathByUrl[widget.imageUrl] = localPath;
+        _boundedMapPut(
+            _cachedFilePathByUrl, widget.imageUrl, localPath, _maxCachedFilePathByUrl);
         final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
             _knownBrokenLocalAvifPaths.contains(localPath);
         _shouldBypassLocalDecode =
@@ -1302,8 +1335,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         isHeavyReaderSource: _isHeavyReaderSource(),
       ),
       cache: true,
+      cacheMaxAge: const Duration(days: 14),
       cacheWidth: decodeWidth,
       cancelToken: _cancelToken,
+      handleLoadingProgress: true,
       enableLoadState: true,
       extendedImageGestureKey: _gestureKey,
       initGestureConfigHandler: (state) {
@@ -1496,15 +1531,24 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     // In webtoon/continuous-scroll mode, ListView items have no intrinsic
     // height so SizedBox.expand inside AnimatedWebPView collapses to zero.
-    // Apply AspectRatio so the list item gets the correct proportional height.
-    if (widget.readingMode == ReadingMode.continuousScroll &&
-        _nativeImageSize != null &&
-        _nativeImageSize!.width > 0 &&
-        _nativeImageSize!.height > 0) {
-      nativeView = AspectRatio(
-        aspectRatio: _nativeImageSize!.width / _nativeImageSize!.height,
-        child: nativeView,
-      );
+    // Apply AspectRatio when image dimensions are known.
+    if (widget.readingMode == ReadingMode.continuousScroll) {
+      if (_nativeImageSize != null &&
+          _nativeImageSize!.width > 0 &&
+          _nativeImageSize!.height > 0) {
+        nativeView = AspectRatio(
+          aspectRatio: _nativeImageSize!.width / _nativeImageSize!.height,
+          child: nativeView,
+        );
+      } else {
+        nativeView = ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.width * 0.5,
+            maxHeight: MediaQuery.of(context).size.width * 3.0,
+          ),
+          child: nativeView,
+        );
+      }
     }
 
     return nativeView;
@@ -1576,10 +1620,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     required String cachedFilePath,
     required bool confirmedAnimatedWebP,
   }) {
-    _heavyImageUrls.add(cacheKey);
-    _cachedFilePathByUrl[cacheKey] = cachedFilePath;
+    _boundedSetAdd(_heavyImageUrls, cacheKey, _maxHeavyImageUrls);
+    _boundedMapPut(
+        _cachedFilePathByUrl, cacheKey, cachedFilePath, _maxCachedFilePathByUrl);
     if (confirmedAnimatedWebP) {
-      _confirmedAnimatedWebPUrls.add(cacheKey);
+      _boundedSetAdd(
+          _confirmedAnimatedWebPUrls, cacheKey, _maxConfirmedAnimatedWebPUrls);
     }
   }
 

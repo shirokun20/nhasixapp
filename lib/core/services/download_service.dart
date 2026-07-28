@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 
@@ -342,6 +343,9 @@ class DownloadService {
             sendTimeout: timeoutDuration,
           ))
         : _httpClient;
+    if (timeoutDuration != null) {
+      dio.httpClientAdapter = NativeAdapter();
+    }
 
     // Build headers with cookies if provided
     final headers = _getHeadersForSource(sourceId, imageUrl, cookies: cookies);

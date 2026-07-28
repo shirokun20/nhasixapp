@@ -151,6 +151,9 @@ class MockKuronNativePlatform
   Future<void> clearCookies() async {}
 
   @override
+  Future<void> clearAnimatedWebPCache() async {}
+
+  @override
   Future<Object?> getThumbnailForWebP({
     required String url,
     String? filePath,

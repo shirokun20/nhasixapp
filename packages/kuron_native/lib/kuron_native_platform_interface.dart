@@ -120,6 +120,11 @@ abstract class KuronNativePlatform extends PlatformInterface {
     throw UnimplementedError('clearCookies() has not been implemented.');
   }
 
+  Future<void> clearAnimatedWebPCache() {
+    throw UnimplementedError(
+        'clearAnimatedWebPCache() has not been implemented.');
+  }
+
   /// Prepare/generate a thumbnail for an animated WebP while optionally
   /// reporting byte-level download progress from the native side.
   ///

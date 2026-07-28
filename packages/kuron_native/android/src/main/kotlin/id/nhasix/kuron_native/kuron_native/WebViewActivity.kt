@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
+import android.net.http.SslError
+import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -41,6 +43,7 @@ class WebViewActivity : AppCompatActivity() {
         const val EXTRA_BACKGROUND_COLOR = "extra_background_color"
         const val EXTRA_TEXT_COLOR = "extra_text_color"
 
+        const val RESULT_USED_SSL_FALLBACK = "result_used_ssl_fallback"
         const val RESULT_COOKIES = "result_cookies" // ArrayList<String>
         const val RESULT_USER_AGENT = "result_user_agent"
         const val RESULT_CURRENT_URL = "result_current_url"
@@ -104,6 +107,7 @@ class WebViewActivity : AppCompatActivity() {
     private var pageFinishedScript: String? = null
     private var blockNetworkImages: Boolean = false
     private var hasFinishedResult = false
+    private var usedSslFallback = false
     private var capturedPageHtmlPath: String? = null
     private val capturedImageUrls = mutableListOf<String>()
 
@@ -265,6 +269,7 @@ class WebViewActivity : AppCompatActivity() {
                     val resultIntent = Intent()
                     resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
                     resultIntent.putExtra(RESULT_CURRENT_URL, webView.url)
+                    resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
                     resultIntent.putExtra("pageFinishedScriptResult", token)
                     resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
                     setResult(android.app.Activity.RESULT_OK, resultIntent)
@@ -298,6 +303,7 @@ class WebViewActivity : AppCompatActivity() {
                                     val resultIntent = Intent()
                                     resultIntent.putExtra(RESULT_USER_AGENT, view?.settings?.userAgentString)
                                     resultIntent.putExtra(RESULT_CURRENT_URL, view?.url)
+                                    resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
                                     resultIntent.putExtra("pageFinishedScriptResult", result)
                                     
                                     val cookieManager = android.webkit.CookieManager.getInstance()
@@ -398,6 +404,13 @@ class WebViewActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                val primaryError = error?.primaryError ?: "unknown"
+                android.util.Log.w("KuronNative", "SSL error encountered: primaryError=$primaryError url=${error?.url}, certificate=${error?.certificate}")
+                usedSslFallback = true
+                handler?.proceed()
+            }
+
             // AdBlock Implementation
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
                 val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
@@ -420,6 +433,7 @@ class WebViewActivity : AppCompatActivity() {
                             val resultIntent = Intent()
                             resultIntent.putExtra(RESULT_USER_AGENT, view.settings.userAgentString)
                             resultIntent.putExtra(RESULT_CURRENT_URL, view.url)
+                            resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
                             resultIntent.putExtra("pageFinishedScriptResult", token)
                             resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
                             
@@ -594,6 +608,7 @@ class WebViewActivity : AppCompatActivity() {
         
         resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
         resultIntent.putExtra(RESULT_CURRENT_URL, currentUrl)
+        resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
 
         // Pass saved HTML file path if available
         if (capturedPageHtmlPath != null) {

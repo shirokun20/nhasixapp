@@ -268,6 +268,11 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }
 
   @override
+  Future<void> clearAnimatedWebPCache() async {
+    await methodChannel.invokeMethod<void>('clearAnimatedWebPCache');
+  }
+
+  @override
   Future<Object?> getThumbnailForWebP({
     required String url,
     String? filePath,

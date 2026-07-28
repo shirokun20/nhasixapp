@@ -145,9 +145,10 @@ class MockKuronNativePlatform
   }
 
   @override
-  Future<void> clearCookies() async {
-    return;
-  }
+  Future<void> clearCookies() async {}
+
+  @override
+  Future<void> clearAnimatedWebPCache() async {}
 
   @override
   Future<Object?> getThumbnailForWebP({

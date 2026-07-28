@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -21,7 +22,7 @@ class BackgroundDownloadUtils {
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 60),
     sendTimeout: const Duration(seconds: 30),
-  ));
+  ))..httpClientAdapter = NativeAdapter();
 
   /// Download a single image from URL to file path
   ///

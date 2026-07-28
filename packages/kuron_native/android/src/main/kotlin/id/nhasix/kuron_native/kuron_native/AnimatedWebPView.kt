@@ -17,10 +17,11 @@ import android.widget.ImageView
 import io.flutter.plugin.platform.PlatformView
 import java.io.File
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.nio.ByteBuffer
 import kotlin.concurrent.thread
+import okhttp3.Call
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 private const val TAG = "KuronNativeWebP"
 
@@ -55,18 +56,18 @@ class AnimatedWebPView(
 ) : PlatformView {
 
     companion object {
-        /**
-         * LRU cache for decoded [AnimatedImageDrawable] instances.
-         * Max 3 entries — keeps the last 3 heavy animated WebPs decoded in memory
-         * so scroll-back is instant (no re-decode of 10+ MB files).
-         */
+        @Volatile
+        var httpClient: OkHttpClient? = null
+
         private val drawableCache = LruCache<String, AnimatedImageDrawable>(3)
 
-        /**
-         * URLs/paths that failed animated decode on this runtime/device.
-         * Subsequent renders skip animated decode and go directly to static frame.
-         */
         private val failedAnimatedDecodeKeys = mutableSetOf<String>()
+
+        fun clearCaches() {
+            drawableCache.evictAll()
+            failedAnimatedDecodeKeys.clear()
+            Log.i(TAG, "Cleared native animated WebP caches")
+        }
     }
 
     private val container = FrameLayout(context).also {
@@ -87,7 +88,7 @@ class AnimatedWebPView(
     @Volatile
     private var disposed = false
     @Volatile
-    private var activeConnection: HttpURLConnection? = null
+    private var activeCall: Call? = null
     private var animatedDrawable: AnimatedImageDrawable? = null
 
     /** Cache key: prefer URL (unique per image) over file path. */
@@ -117,7 +118,11 @@ class AnimatedWebPView(
             ?.associate { (k, v) -> k.toString() to v.toString() }
             ?: emptyMap()
 
-        cacheKey = url ?: filePath
+        cacheKey = buildCacheKey(
+            url = url,
+            filePath = filePath,
+            pageNumber = (params?.get("pageNumber") as? Number)?.toInt(),
+        )
 
         val shouldSkipAnimatedDecode = cacheKey?.let { failedAnimatedDecodeKeys.contains(it) } == true
 
@@ -211,6 +216,15 @@ class AnimatedWebPView(
         if (url.isNullOrBlank()) return false
         return url.startsWith("http://", ignoreCase = true) ||
             url.startsWith("https://", ignoreCase = true)
+    }
+
+    private fun buildCacheKey(
+        url: String?,
+        filePath: String?,
+        pageNumber: Int?,
+    ): String? {
+        val base = url ?: filePath ?: return null
+        return if (pageNumber != null) "${base}_${pageNumber}" else base
     }
 
     private fun isLikelyAvifSource(source: String): Boolean {
@@ -382,26 +396,38 @@ class AnimatedWebPView(
     /** Downloads raw bytes from [url] respecting optional [headers]. */
     @Throws(Exception::class)
     private fun fetchBytes(url: String, headers: Map<String, String>): ByteArray {
-        val conn = URL(url).openConnection() as HttpURLConnection
-        activeConnection = conn
-        // TOCTOU guard: dispose may have set disposed=true between openConnection
-        // and activeConnection assignment. Check and abort early to avoid
-        // downloading the full payload (potentially 25+ MB, 90s read timeout)
-        // after the view has already been disposed.
+        val client = httpClient
+            ?: throw IOException("OkHttpClient not initialized")
+        val requestBuilder = Request.Builder().url(url)
+        headers.forEach { (k, v) -> requestBuilder.header(k, v) }
+
+        if (disposed) throw IOException("disposed before fetch started")
+
+        val call = client.newCall(requestBuilder.build())
+        activeCall = call
         if (disposed) {
-            conn.disconnect()
-            activeConnection = null
+            call.cancel()
+            activeCall = null
             throw IOException("disposed before fetch started")
         }
         return try {
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 90_000
-            conn.requestMethod = "GET"
-            headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
-            conn.inputStream.use { it.readBytes() }
+            val response = call.execute()
+            if (!response.isSuccessful) {
+                response.close()
+                throw IOException("HTTP ${response.code}")
+            }
+            val body = response.body
+            if (body == null) {
+                response.close()
+                throw IOException("Empty response body")
+            }
+            try {
+                return body.bytes()
+            } finally {
+                response.close()
+            }
         } finally {
-            activeConnection = null
-            conn.disconnect()
+            activeCall = null
         }
     }
 
@@ -476,12 +502,8 @@ class AnimatedWebPView(
 
     override fun dispose() {
         disposed = true
-        // Abort in-flight HTTP fetch so the worker thread exits promptly.
-        // disconnect() causes InputStream.read() to throw, caught by loadAsync.
-        activeConnection?.disconnect()
-        activeConnection = null
-        // Stop animation but do NOT destroy the drawable — it stays in LruCache
-        // for instant reuse on scroll-back.
+        activeCall?.cancel()
+        activeCall = null
         animatedDrawable?.stop()
         imageView.setImageDrawable(null)
         animatedDrawable = null

@@ -447,6 +447,8 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
               layoutDirection: TextDirection.ltr,
               creationParams: <String, Object>{
                 'url': widget.url,
+                if (widget.pageNumber != null)
+                  'pageNumber': widget.pageNumber!,
                 if (_webpCachePath != null)
                   'filePath': _webpCachePath!
                 else if (widget.filePath != null)
