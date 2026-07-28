@@ -132,7 +132,7 @@ class AnimatedWebPView(
         } else {
             // 2️⃣ Disk / network path
             when {
-                // ponytail: staticOnly → native BitmapFactory, no animated decode
+                //  staticOnly → native BitmapFactory, no animated decode
                 staticOnly && !filePath.isNullOrEmpty() -> {
                     Log.i(TAG, "Static native render: $filePath")
                     renderStaticBitmapFromFile(File(filePath))

@@ -71,15 +71,17 @@ class MosaicBuilder {
         final chipWidth = sw + labelWidth;
         if (chipWidth > maxWidth) maxWidth = chipWidth;
 
-        chips.add(_Chip(
-          image: chip,
-          label: '${i + 1}',
-          labelWidth: labelWidth,
-          chipWidth: sw,
-          chipHeight: sh,
-          totalWidth: chipWidth,
-          totalHeight: sh,
-        ));
+        chips.add(
+          _Chip(
+            image: chip,
+            label: '${i + 1}',
+            labelWidth: labelWidth,
+            chipWidth: sw,
+            chipHeight: sh,
+            totalWidth: chipWidth,
+            totalHeight: sh,
+          ),
+        );
         totalHeight += sh;
       }
 
@@ -92,7 +94,12 @@ class MosaicBuilder {
         // Label background
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, yOff, chip.labelWidth.toDouble(), chip.chipHeight.toDouble()),
+            Rect.fromLTWH(
+              0,
+              yOff,
+              chip.labelWidth.toDouble(),
+              chip.chipHeight.toDouble(),
+            ),
             const Radius.circular(4),
           ),
           Paint()..color = Colors.white,
@@ -122,8 +129,18 @@ class MosaicBuilder {
         // Chip image
         canvas.drawImageRect(
           chip.image,
-          Rect.fromLTWH(0, 0, chip.image.width.toDouble(), chip.image.height.toDouble()),
-          Rect.fromLTWH(chip.labelWidth.toDouble(), yOff, chip.chipWidth.toDouble(), chip.chipHeight.toDouble()),
+          Rect.fromLTWH(
+            0,
+            0,
+            chip.image.width.toDouble(),
+            chip.image.height.toDouble(),
+          ),
+          Rect.fromLTWH(
+            chip.labelWidth.toDouble(),
+            yOff,
+            chip.chipWidth.toDouble(),
+            chip.chipHeight.toDouble(),
+          ),
           Paint(),
         );
 
@@ -131,8 +148,13 @@ class MosaicBuilder {
       }
 
       final picture = recorder.endRecording();
-      final mosaicImage = await picture.toImage(maxWidth, totalHeight - _chipGap);
-      final byteData = await mosaicImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final mosaicImage = await picture.toImage(
+        maxWidth,
+        totalHeight - _chipGap,
+      );
+      final byteData = await mosaicImage.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
       if (byteData == null) return null;
 
       // Encode to JPEG
@@ -143,7 +165,7 @@ class MosaicBuilder {
       // For now we just return raw + compress if over limit
       var result = pngBytes;
       if (result.length > _maxSize) {
-        // ponytail: proper JPEG compression with package:image skipped for demo
+        //  proper JPEG compression with package:image skipped for demo
         // scale down proportionally
         final scaleDown = (_maxSize / result.length).clamp(0.3, 1.0);
         if (scaleDown < 0.8) {
@@ -175,7 +197,12 @@ class MosaicBuilder {
 
     canvas.drawImageRect(
       pageImage,
-      Rect.fromLTWH(srcX.toDouble(), srcY.toDouble(), srcW.toDouble(), srcH.toDouble()),
+      Rect.fromLTWH(
+        srcX.toDouble(),
+        srcY.toDouble(),
+        srcW.toDouble(),
+        srcH.toDouble(),
+      ),
       Rect.fromLTWH(0, 0, dstW.toDouble(), dstH.toDouble()),
       Paint()..filterQuality = FilterQuality.high,
     );

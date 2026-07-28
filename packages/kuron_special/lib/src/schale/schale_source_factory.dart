@@ -31,13 +31,15 @@ class SchaleSourceFactory implements SourceFactory {
   ContentSource create(Map<String, dynamic> config) {
     final schaleDio = Dio(_dio.options);
     for (final interceptor in _dio.interceptors) {
-      try { schaleDio.interceptors.add(interceptor); } catch (_) {}
+      try {
+        schaleDio.interceptors.add(interceptor);
+      } catch (_) {}
     }
     final domainUrl = switch (_sourceId) {
       'hdoujin' => 'https://hdoujin.org/',
       _ => 'https://niyaniya.moe/',
     };
-    // ponytail: switch catch-all masks typos in sourceId. Add a map/registry
+    //  switch catch-all masks typos in sourceId. Add a map/registry
     // when mapping grows beyond 2 sources so unknown IDs fail loudly at
     // construction instead of silently routing to schale.
     final clearance = SchaleClearanceService(
@@ -48,6 +50,7 @@ class SchaleSourceFactory implements SourceFactory {
     );
     schaleDio.interceptors.add(clearance.createInterceptor());
     unawaited(clearance.init());
-    return GenericHttpSource(rawConfig: config, dio: schaleDio, logger: _logger);
+    return GenericHttpSource(
+        rawConfig: config, dio: schaleDio, logger: _logger);
   }
 }

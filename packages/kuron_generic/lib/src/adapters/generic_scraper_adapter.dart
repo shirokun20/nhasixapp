@@ -1518,7 +1518,8 @@ class GenericScraperAdapter implements GenericAdapter {
     // prefix (e.g. "/manhwa/queen-bee/side-story-3"), causing double prefix when
     // buildDetailUrl prepends it again. Strip leading /baseUrl/path segments
     // that match the template's static part.
-    final normalizedId = _normalizeChapterIdForTemplate(chapterId, chapterTemplate);
+    final normalizedId =
+        _normalizeChapterIdForTemplate(chapterId, chapterTemplate);
     final url = _urlBuilder.buildDetailUrl(chapterTemplate, normalizedId);
     _logger.d('$_sourceId scraper chapter: $url');
     final chapterRequestHeaders =
@@ -2039,11 +2040,11 @@ class GenericScraperAdapter implements GenericAdapter {
     final tagTransform = (patternMap?['tagTransform'] as String? ?? '').trim();
     final tagValue = switch (tagTransform) {
       'urlEncode' => Uri.encodeComponent(rawTagValue),
-      'base64'    => base64Encode(utf8.encode(rawTagValue)),
-      _           => rawTagValue
-            .toLowerCase()
-            .replaceAll(RegExp(r'\s+'), '-')
-            .replaceAll(RegExp(r'^-|-$'), ''),
+      'base64' => base64Encode(utf8.encode(rawTagValue)),
+      _ => rawTagValue
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '-')
+          .replaceAll(RegExp(r'^-|-$'), ''),
     };
     final params = <String, String>{
       'page': filter.page.toString(),
@@ -2532,12 +2533,13 @@ class GenericScraperAdapter implements GenericAdapter {
   /// `/manhwa//manhwa/queen-bee/...`. Strip the template's static prefix from
   /// the ID so substitution is clean.
   ///
-  /// ponytail: simple path-based stripping — works for all current configs.
+  ///  simple path-based stripping — works for all current configs.
   /// Upgrade to template-aware AST parsing if exotic configs collide.
   String _normalizeChapterIdForTemplate(String chapterId, String template) {
     if (chapterId.isEmpty) return chapterId;
 
-    final placeholder = template.contains('{contentId}') ? '{contentId}' : '{id}';
+    final placeholder =
+        template.contains('{contentId}') ? '{contentId}' : '{id}';
     if (!template.contains(placeholder)) return chapterId;
 
     final prefix = template.split(placeholder).first;
@@ -3119,7 +3121,7 @@ class GenericScraperAdapter implements GenericAdapter {
         .replaceAll('\r', '')
         .trim();
 
-    // ponytail: fix broken hostname in HTML (missing dot). Known cases:
+    //  fix broken hostname in HTML (missing dot). Known cases:
     // "images2/imgbox.com" -> "images2.imgbox.com"
     cleaned = cleaned.replaceAllMapped(
       RegExp(r'//([^./]+)/((?:imgbox|imgbb|pixhost|ibucket|imagebam)\.com/)'),
@@ -3214,7 +3216,7 @@ class GenericScraperAdapter implements GenericAdapter {
   /// Tries to prime cursor pagination for [page] > 1 and returns the cached
   /// URL. Returns null if cursor pagination doesn't apply or the cache wasn't
   /// populated.
-  // ponytail: maxPrimePages — add threshold if sources need deep pagination
+  //  maxPrimePages — add threshold if sources need deep pagination
   static const _maxPrimePages = 10;
 
   Future<String?> _tryPrimeCursorPagination({
@@ -3236,7 +3238,7 @@ class GenericScraperAdapter implements GenericAdapter {
         (pagination['next'] as String?)?.trim().isNotEmpty == true ||
             (pagination['alt'] as String?)?.trim().isNotEmpty == true;
     if (!hasCursor) return null;
-    // ponytail: serial N-1 requests — parallelise if source latency is high
+    //  serial N-1 requests — parallelise if source latency is high
     var currentUrl = initialUrl;
     final limit = math.min(page, _maxPrimePages);
     for (var currentPage = 1; currentPage < limit; currentPage++) {

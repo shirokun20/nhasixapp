@@ -96,7 +96,7 @@ ApiInference inferApi(String url, dynamic json) {
     }
     // Generic map with some keys (could be list wrapper or detail)
     if (json.keys.length > 2) {
-      // ponytail: assume detail for rich maps
+      //  assume detail for rich maps
       return ApiInference(
         baseUrl: base,
         hasList: false,

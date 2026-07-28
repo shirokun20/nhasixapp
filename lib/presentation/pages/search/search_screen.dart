@@ -62,7 +62,7 @@ class _SearchScreenState extends State<SearchScreen> {
               remoteConfig.getCanonicalSearchForm(sourceId);
           final searchForm = remoteConfig.getSearchFormConfig(sourceId);
 
-          // ponytail: all sources migrated to searchForm. Priority:
+          //  all sources migrated to searchForm. Priority:
           // 1) Canonical package-side contract → DynamicFormSearchUI
           // 2) Legacy searchForm → DynamicFormSearchUI
           // 3) Fallback

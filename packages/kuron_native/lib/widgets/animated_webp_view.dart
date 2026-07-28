@@ -132,7 +132,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   /// When true, the [AndroidView] is mounted and animation plays.
   bool _isPlaying = false;
 
-  /// ponytail: guards against _onVisiblePageChanged cascade (called from 2
+  ///  guards against _onVisiblePageChanged cascade (called from 2
   /// sources: visiblePageNotifier, didUpdateWidget).
   /// null = uninitialized — first call always proceeds.
   bool? _lastShouldAutoPlay;
@@ -216,7 +216,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
 
   /// Auto-pause when this page is no longer the visible page.
   void _onVisiblePageChanged() {
-    // ponytail: guard against cascade — visiblePageNotifier + didUpdateWidget
+    //  guard against cascade — visiblePageNotifier + didUpdateWidget
     // both fire, triggering redundant play/pause toggles.
     final nowAutoPlay = _shouldAutoPlay;
     if (nowAutoPlay == _lastShouldAutoPlay) return;
@@ -452,12 +452,14 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
                 else if (widget.filePath != null)
                   'filePath': widget.filePath!,
                 'headers': widget.headers,
-                if (widget.targetWidth != null) 'targetWidth': widget.targetWidth!,
+                if (widget.targetWidth != null)
+                  'targetWidth': widget.targetWidth!,
                 'staticOnly': widget.staticOnly,
                 'grayscale': widget.grayscale,
               },
               creationParamsCodec: const StandardMessageCodec(),
-              gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+              gestureRecognizers: const <Factory<
+                  OneSequenceGestureRecognizer>>{},
             ),
           ),
         ],

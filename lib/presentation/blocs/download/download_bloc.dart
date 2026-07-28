@@ -173,7 +173,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       );
     }
 
-    return ''; 
+    return '';
   }
 
   String _normalizeDetailContentId({
@@ -503,9 +503,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
     try {
       final queuedDownloads = currentState.downloads
-          .where((d) => d.state == DownloadState.queued).toList();
+          .where((d) => d.state == DownloadState.queued)
+          .toList();
       final activeDownloads = currentState.downloads
-          .where((d) => d.state == DownloadState.downloading).toList();
+          .where((d) => d.state == DownloadState.downloading)
+          .toList();
 
       if (queuedDownloads.isEmpty) {
         _logger.d('DownloadBloc: No queued downloads to process');
@@ -858,7 +860,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
 
         content = Content(
           id: event.contentId,
-          title: event.contentId, 
+          title: event.contentId,
           coverUrl: '',
           pageCount: 0,
           imageUrls: const [],
@@ -868,7 +870,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           parodies: const [],
           groups: const [],
           language: '',
-          url: fallbackUrl, 
+          url: fallbackUrl,
           uploadDate: DateTime.now(),
           favorites: 0,
           sourceId: updatedDownload.sourceId ?? '',
@@ -1036,8 +1038,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _logger.e('❌ Download blocked: No custom storage root selected.');
 
           _activeTasks.remove(event.contentId);
-          DownloadManager()
-              .unregisterTask(event.contentId); 
+          DownloadManager().unregisterTask(event.contentId);
 
           emit(DownloadError(
             message:
@@ -1197,7 +1198,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             event.contentId, result.error ?? 'Unknown error', null, emit);
         return;
       }
-
 
       _activeTasks.remove(event.contentId);
       _downloadManager.unregisterTask(event.contentId);
@@ -1734,8 +1734,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     if (idx == -1) return;
 
     final cur = dl[idx];
-    if (event.downloadedPages < cur.downloadedPages && event.downloadedPages >= 0) {
-      _logger.w('DownloadBloc: Ignoring regressive progress for ${event.contentId}');
+    if (event.downloadedPages < cur.downloadedPages &&
+        event.downloadedPages >= 0) {
+      _logger.w(
+          'DownloadBloc: Ignoring regressive progress for ${event.contentId}');
       return;
     }
 
@@ -1759,7 +1761,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     final newDownloads = [...dl]..[idx] = updated;
     emit(DownloadLoaded(
       downloads: newDownloads,
-      settings: cs is DownloadLoaded ? cs.settings : (cs as DownloadProcessing).settings,
+      settings: cs is DownloadLoaded
+          ? cs.settings
+          : (cs as DownloadProcessing).settings,
       lastUpdated: DateTime.now(),
     ));
 
@@ -1797,7 +1801,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     final cs = state;
     if (cs is! DownloadLoaded) return;
     final active = cs.downloads
-        .where((d) => d.state == DownloadState.downloading).toList();
+        .where((d) => d.state == DownloadState.downloading)
+        .toList();
     if (active.isEmpty) return;
     final total = active.fold<int>(0, (s, d) => s + d.totalPages);
     final done = active.fold<int>(0, (s, d) => s + d.downloadedPages);
@@ -1816,7 +1821,10 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
     var v = speed;
     var i = 0;
-    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
     return '${v.toStringAsFixed(1)} ${units[i]}';
   }
 
@@ -1824,7 +1832,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     final cs = state;
     if (cs is! DownloadLoaded) return;
     final active = cs.downloads
-        .where((d) => d.state == DownloadState.downloading).toList();
+        .where((d) => d.state == DownloadState.downloading)
+        .toList();
     if (active.isEmpty && _sessionCompletedCount > 0) {
       _notificationService.showDownloadGroupCompleted(_sessionCompletedCount);
       _sessionCompletedCount = 0;
@@ -2111,7 +2120,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
-
   void _cancelDownloadTask(String contentId) {
     final task = _activeTasks[contentId];
     if (task != null && !task.isCancelled) {
@@ -2192,7 +2200,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             await _userDataRepository.deleteDownloadStatus(d.contentId);
           }
           add(const DownloadRefreshEvent());
-          _logger.i('DownloadBloc: Cleared ${targets.length} completed downloads');
+          _logger
+              .i('DownloadBloc: Cleared ${targets.length} completed downloads');
           return;
       }
 
@@ -2208,7 +2217,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
             newState == DownloadState.cancelled) {
           _cancelDownloadTask(download.contentId);
         }
-        final updated = download.copyWith(state: newState, endTime: newState == DownloadState.queued ? null : DateTime.now());
+        final updated = download.copyWith(
+            state: newState,
+            endTime: newState == DownloadState.queued ? null : DateTime.now());
         await _userDataRepository.saveDownloadStatus(updated);
       }
 
@@ -2398,7 +2409,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       );
 
       _logger.i('DownloadBloc: PDF conversion queued for ${event.contentId}');
-
     } catch (e, stackTrace) {
       _logger.e(
           'DownloadBloc: Error during PDF conversion for ${event.contentId}',
@@ -2766,7 +2776,6 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         lastUpdated: DateTime.now(),
       ));
 
-
       _logger.i(
           'DownloadBloc: Bulk delete completed. Success: $successCount, Failures: $failureCount');
 
@@ -2799,7 +2808,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     _logger.i('DownloadBloc: Progress stream subscription cancelled');
 
     _dbFlushTimer?.cancel();
-    // ponytail: fire-and-forget — may not complete if event loop shutting down
+    //  fire-and-forget — may not complete if event loop shutting down
     _flushPendingDbSaves();
     _logger.i('DownloadBloc: DB flush timer cancelled, pending saves flushed');
 

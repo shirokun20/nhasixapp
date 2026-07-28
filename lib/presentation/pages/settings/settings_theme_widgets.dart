@@ -16,7 +16,8 @@ import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 // Shared Builder Helpers
 // ======================================================================
 
-Widget buildSettingsSectionHeader(IconData icon, String title, ThemeData theme) {
+Widget buildSettingsSectionHeader(
+    IconData icon, String title, ThemeData theme) {
   return Padding(
     padding: const EdgeInsets.only(left: 4),
     child: Row(
@@ -176,9 +177,8 @@ Widget buildSettingsActionTile({
     trailing: FilledButton(
       onPressed: onTap,
       style: FilledButton.styleFrom(
-        backgroundColor: isDestructive
-            ? theme.colorScheme.error
-            : theme.colorScheme.primary,
+        backgroundColor:
+            isDestructive ? theme.colorScheme.error : theme.colorScheme.primary,
         foregroundColor: isDestructive
             ? theme.colorScheme.onError
             : theme.colorScheme.onPrimary,
@@ -276,8 +276,7 @@ Widget buildDisguiseModeTile(
 ) {
   return BlocBuilder<SettingsCubit, SettingsState>(
     builder: (context, state) {
-      final isLoading =
-          state is SettingsLoaded && state.isUpdatingDisguiseMode;
+      final isLoading = state is SettingsLoaded && state.isUpdatingDisguiseMode;
       return ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -291,9 +290,7 @@ Widget buildDisguiseModeTile(
           ),
         ),
         subtitle: Text(
-          isLoading
-              ? l10n.applyingDisguiseMode
-              : l10n.disguiseModeDescription,
+          isLoading ? l10n.applyingDisguiseMode : l10n.disguiseModeDescription,
           style: TextStyleConst.bodySmall.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -373,12 +370,11 @@ Widget buildDnsStatusCard(
   final deviceReason = deviceDnsState?['reason'] as String?;
 
   return buildSettingsCard([
-    // ponytail: App DNS status hidden — no user changer yet
+    //  App DNS status hidden — no user changer yet
     // Device Private DNS status
     ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading:
-          Icon(Icons.security_outlined, color: theme.colorScheme.primary),
+      leading: Icon(Icons.security_outlined, color: theme.colorScheme.primary),
       title: Text(
         l10n.devicePrivateDns,
         style: TextStyleConst.bodyLarge.copyWith(

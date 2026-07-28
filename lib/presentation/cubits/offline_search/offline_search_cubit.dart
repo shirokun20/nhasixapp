@@ -37,7 +37,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
   final Map<String, int> _sizeBytesByContentId = {};
-  int _dbOffset = 0; // ponytail: raw DB offset, immune to skip-on-null-image
+  int _dbOffset = 0; //  raw DB offset, immune to skip-on-null-image
   int _searchDbOffset = 0;
   static const String _keySelectedSourceFilter =
       'offline_selected_source_filter';

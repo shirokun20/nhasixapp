@@ -216,7 +216,7 @@ class GenerateCommand extends Command<void> {
 
     // Fill selectors from CMS detection where available
     if (cms.isKnown) {
-      // ponytail: merge CMS selectors into wizard answer slots
+      //  merge CMS selectors into wizard answer slots
       // Using the first matched selector category for each slot
       final cats = <String, String>{
         'listSelector':

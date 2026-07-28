@@ -552,7 +552,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      cacheWidth: widget.memCacheWidth,  // ponytail: downsample for grid thumbs
+      cacheWidth: widget.memCacheWidth, //  downsample for grid thumbs
       errorBuilder: (context, error, stackTrace) =>
           widget.errorWidget ?? _buildErrorWidget(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
@@ -643,7 +643,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         if (kDebugMode) {
           _logger.w('Network image load failed for $url: $error');
         }
-        
+
         // If primary fails and we have a fallback URL, retry with fallback
         if (fallbackUrl != null) {
           if (kDebugMode) {
@@ -829,8 +829,7 @@ class _ProgressiveReaderImageWidgetState
     final primaryUrl = urlParts[0];
 
     // Priority 1: Check ImageCacheService (memory + disk cache with TTL)
-    final cachedImage =
-        await _imageCacheService.getCachedImage(primaryUrl);
+    final cachedImage = await _imageCacheService.getCachedImage(primaryUrl);
     if (cachedImage != null) {
       if (kDebugMode) {
         _logger.d(
@@ -963,7 +962,8 @@ class _ProgressiveReaderImageWidgetState
   }
 
   /// Build network image with dynamic sizing
-  Widget _buildNetworkImageWithDynamicSize(BuildContext context, {String? forceUrl}) {
+  Widget _buildNetworkImageWithDynamicSize(BuildContext context,
+      {String? forceUrl}) {
     final targetUrl = forceUrl ?? widget.networkUrl;
     final urlParts = targetUrl.split('|');
     final primaryUrl = urlParts[0];
@@ -991,9 +991,11 @@ class _ProgressiveReaderImageWidgetState
       errorWidget: (context, url, error) {
         if (fallbackUrl != null) {
           if (kDebugMode) {
-            _logger.w('🔄 Reader falling back to secondary network URL: $fallbackUrl');
+            _logger.w(
+                '🔄 Reader falling back to secondary network URL: $fallbackUrl');
           }
-          return _buildNetworkImageWithDynamicSize(context, forceUrl: fallbackUrl);
+          return _buildNetworkImageWithDynamicSize(context,
+              forceUrl: fallbackUrl);
         }
         return _buildReaderErrorWidget(context);
       },

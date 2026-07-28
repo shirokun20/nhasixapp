@@ -229,7 +229,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
 
     _pendingHeaderPaths.add(path);
-    if (_pendingHeaderPaths.length >= _headerBatchThreshold && !_headerBatchInProgress) {
+    if (_pendingHeaderPaths.length >= _headerBatchThreshold &&
+        !_headerBatchInProgress) {
       _flushHeaderBatch();
     }
 
@@ -1031,7 +1032,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         );
       }
 
-      // ponytail: ExtendedImage.file with cacheWidth — pre-decode via
+      //  ExtendedImage.file with cacheWidth — pre-decode via
       // precacheImage already populated ImageCache at display resolution.
       // ExtendedImage.file reads from disk + decodes at cacheWidth → fast.
 
@@ -1168,7 +1169,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             ? _buildHentainexusImageHeaders(effectiveImageUrl)
             : widget.httpHeaders;
 
-        // ponytail: ExtendedImage.network handles caching + cacheWidth.
+        //  ExtendedImage.network handles caching + cacheWidth.
         // Pre-decode via precacheImage already populated ImageCache → instant.
         return _buildNetworkImage(
           context,
@@ -1283,7 +1284,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       key: ValueKey('extended_image_${widget.contentId}_${widget.pageNumber}'),
       headers: headers,
       fit: _getAdaptiveBoxFit(),
-      // ponytail: ALL static images use FilterQuality.low (bilinear) —
+      //  ALL static images use FilterQuality.low (bilinear) —
       // cacheWidth at display size makes nearest-neighbor (none) acceptable.
       // Animated WebP uses FilterQuality.none (fastest per-frame).
       filterQuality:
@@ -1723,7 +1724,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     String? imageUrl,
     bool? isLikelyAnimatedUrl,
   }) {
-    // ponytail: decode at display resolution — 25× less GPU texture upload
+    //  decode at display resolution — 25× less GPU texture upload
     // for non-CS pages. Pinch-zoom: ExtendedImage reloads from cache.
     if (!(_isHeavyReaderSource() || _isHeavyImage)) {
       final mediaQuery = MediaQuery.of(context);
@@ -2502,24 +2503,23 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 // Retry button
                 SizedBox(
                   width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: isActionBusy ? null : retryAction,
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: Text(l10n.retry),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimary,
-                        elevation: DesignTokens.elevationMd,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(DesignTokens.radiusLg),
-                        ),
+                  child: ElevatedButton.icon(
+                    onPressed: isActionBusy ? null : retryAction,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: Text(l10n.retry),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      elevation: DesignTokens.elevationMd,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                   ),
+                ),
 
                 if (canOpenRemoteAvif) ...[
                   const SizedBox(height: 8),
@@ -2568,8 +2568,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         : ExtendedRawImage(
             image: state.extendedImageInfo?.image,
             fit: _getAdaptiveBoxFit(),
-            alignment:
-                Alignment.center,
+            alignment: Alignment.center,
           );
 
     if (!widget.enableZoom) {
@@ -2675,5 +2674,4 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         ? RepaintBoundary(child: gestureWidget)
         : gestureWidget;
   }
-
 }

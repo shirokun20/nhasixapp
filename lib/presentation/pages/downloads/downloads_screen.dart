@@ -213,9 +213,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
               leading: IconButton(
                 icon: const Icon(Icons.close),
-                onPressed: () => context
-                    .read<DownloadBloc>()
-                    .add(const DownloadSelectionActionEvent(SelectionAction.toggleSelectionMode)),
+                onPressed: () => context.read<DownloadBloc>().add(
+                    const DownloadSelectionActionEvent(
+                        SelectionAction.toggleSelectionMode)),
               ),
               title: Text(
                 AppLocalizations.of(context)!
@@ -228,16 +228,16 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                 if (state.selectedItems.isNotEmpty) ...[
                   IconButton(
                     icon: const Icon(Icons.select_all),
-                    onPressed: () => context
-                        .read<DownloadBloc>()
-                        .add(const DownloadSelectionActionEvent(SelectionAction.selectAll)),
+                    onPressed: () => context.read<DownloadBloc>().add(
+                        const DownloadSelectionActionEvent(
+                            SelectionAction.selectAll)),
                     tooltip: AppLocalizations.of(context)!.selectAll,
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear),
-                    onPressed: () => context
-                        .read<DownloadBloc>()
-                        .add(const DownloadSelectionActionEvent(SelectionAction.clearSelection)),
+                    onPressed: () => context.read<DownloadBloc>().add(
+                        const DownloadSelectionActionEvent(
+                            SelectionAction.clearSelection)),
                     tooltip: AppLocalizations.of(context)!.clearSelection,
                   ),
                   IconButton(
@@ -280,9 +280,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
               ),
               IconButton(
                 icon: const Icon(Icons.checklist),
-                onPressed: () => context
-                    .read<DownloadBloc>()
-                    .add(const DownloadSelectionActionEvent(SelectionAction.toggleSelectionMode)),
+                onPressed: () => context.read<DownloadBloc>().add(
+                    const DownloadSelectionActionEvent(
+                        SelectionAction.toggleSelectionMode)),
                 tooltip: AppLocalizations.of(context)!.selectMode,
               ),
               PopupMenuButton<String>(
@@ -349,7 +349,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
                   PopupMenuItem(
                     value: 'clear_completed',
                     enabled: state.downloads
-                            .any((d) => d.state == DownloadState.completed),
+                        .any((d) => d.state == DownloadState.completed),
                     child: Row(
                       children: [
                         Icon(Icons.clear_all,
@@ -434,17 +434,25 @@ class _DownloadsScreenState extends State<DownloadsScreen>
             children: [
               _buildDownloadsList(state.downloads,
                   AppLocalizations.of(context)!.noDownloadsYet),
-              _buildDownloadsList(state.downloads
-                  .where((d) => d.state == DownloadState.downloading).toList(),
+              _buildDownloadsList(
+                  state.downloads
+                      .where((d) => d.state == DownloadState.downloading)
+                      .toList(),
                   AppLocalizations.of(context)!.noActiveDownloads),
-              _buildDownloadsList(state.downloads
-                  .where((d) => d.state == DownloadState.queued).toList(),
+              _buildDownloadsList(
+                  state.downloads
+                      .where((d) => d.state == DownloadState.queued)
+                      .toList(),
                   AppLocalizations.of(context)!.noQueuedDownloads),
-              _buildDownloadsList(state.downloads
-                  .where((d) => d.state == DownloadState.completed).toList(),
+              _buildDownloadsList(
+                  state.downloads
+                      .where((d) => d.state == DownloadState.completed)
+                      .toList(),
                   AppLocalizations.of(context)!.noCompletedDownloads),
-              _buildDownloadsList(state.downloads
-                  .where((d) => d.state == DownloadState.failed).toList(),
+              _buildDownloadsList(
+                  state.downloads
+                      .where((d) => d.state == DownloadState.failed)
+                      .toList(),
                   AppLocalizations.of(context)!.noFailedDownloads),
             ],
           ),
@@ -525,7 +533,8 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         _showCancelAllDialog();
         break;
       case 'clear_completed':
-        downloadBloc.add(const DownloadBulkActionEvent(BulkAction.clearCompleted));
+        downloadBloc
+            .add(const DownloadBulkActionEvent(BulkAction.clearCompleted));
         break;
       case 'cleanup_storage':
         _showCleanupDialog();
@@ -594,7 +603,7 @@ class _DownloadsScreenState extends State<DownloadsScreen>
         return;
       }
     } catch (e) {
-      // ponytail: assert-only debug logging — intentional, class has no _logger
+      //  assert-only debug logging — intentional, class has no _logger
     }
 
     // Fallback: Build a minimal Content so ReaderCubit can handle loading
@@ -759,7 +768,9 @@ class _DownloadsScreenState extends State<DownloadsScreen>
           TextButton(
             onPressed: () {
               context.pop();
-              context.read<DownloadBloc>().add(const DownloadBulkActionEvent(BulkAction.cancelAll));
+              context
+                  .read<DownloadBloc>()
+                  .add(const DownloadBulkActionEvent(BulkAction.cancelAll));
             },
             child: Text(
               AppLocalizations.of(context)!.cancelAll,

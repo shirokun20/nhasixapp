@@ -25,14 +25,14 @@ class ContentGroup {
     final seen = <String>{};
     return [
       for (final item in items)
-        // ponytail: title+sourceId is the semantic identity of a chapter;
+        //  title+sourceId is the semantic identity of a chapter;
         // id alone misses DB dups, coverPath was too aggressive (dropped valid chapters)
         if (seen.add('${item.sourceId}::${item.title.trim().toLowerCase()}'))
           item,
     ];
   }
 
-  // ponytail: items already deduped in constructor
+  //  items already deduped in constructor
   List<Content> get uniqueItems => items;
 
   /// Get the representative content (usually the first chapter)

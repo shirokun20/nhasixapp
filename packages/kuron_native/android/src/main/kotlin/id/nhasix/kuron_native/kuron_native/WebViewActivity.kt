@@ -431,7 +431,7 @@ class WebViewActivity : AppCompatActivity() {
                 }
 
                 if (captureRequestPatterns.any { requestUrl.contains(it) }) {
-                    // ponytail: MangaFire captures one AJAX URL and exits; HentaiRead
+                    //  MangaFire captures one AJAX URL and exits; HentaiRead
                     // collects many image URLs, so keep the old list behavior unless
                     // the caller explicitly enabled blockNetworkImages capture mode.
                     if (blockNetworkImages) {

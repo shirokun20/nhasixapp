@@ -176,7 +176,7 @@ class ZipImportHandler(private val activity: Activity) {
                     try {
                         if (!entry.isDirectory) {
                             val relativePath = entry.name.replace('\\', '/').trimStart('/')
-                            // ponytail: flatten ZIP image paths; page archives are expected to use unique filenames.
+                            //  flatten ZIP image paths; page archives are expected to use unique filenames.
                             val fileName = File(relativePath).name
                             val extension = fileName.substringAfterLast('.', "").lowercase()
 

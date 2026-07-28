@@ -644,7 +644,7 @@ class GenericHttpSource implements ContentSource {
       final referer = _defaultHeaders['Referer'];
       if (origin != null) headers['Origin'] = origin;
       if (referer != null) headers['Referer'] = referer;
-      // ponytail: fallback omitted intentionally — if config lacks these headers
+      //  fallback omitted intentionally — if config lacks these headers
       // the CDN request would fail, which is safer than silently sending wrong domain.
     }
 

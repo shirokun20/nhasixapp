@@ -1,4 +1,3 @@
-
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kuron_native/kuron_native.dart';
@@ -45,8 +44,12 @@ class SchaleClearanceService {
       final storedCookies = await _secureStorage.read(key: _cookiesKey);
       if (storedToken != null && storedToken.isNotEmpty) {
         _cachedToken = storedToken;
-        if (storedUa != null && storedUa.isNotEmpty) _cachedUserAgent = storedUa;
-        if (storedCookies != null && storedCookies.isNotEmpty) _cachedCookies = storedCookies;
+        if (storedUa != null && storedUa.isNotEmpty) {
+          _cachedUserAgent = storedUa;
+        }
+        if (storedCookies != null && storedCookies.isNotEmpty) {
+          _cachedCookies = storedCookies;
+        }
         _logger.i('$_logTag: loaded cached clearance token');
       }
     } catch (e) {
@@ -74,9 +77,11 @@ class SchaleClearanceService {
       if (crt != null && crt.isNotEmpty) {
         _logger.i('$_logTag: acquired clearance token crt (headless)');
         _logger.i('$_logTag: cookies extracted: $cookies');
-        
+
         _cachedToken = crt;
-        if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
+        if (userAgent != null && userAgent.isNotEmpty) {
+          _cachedUserAgent = userAgent;
+        }
         if (cookies != null && cookies.isNotEmpty) _cachedCookies = cookies;
 
         await _secureStorage.write(key: _storageKey, value: crt);
@@ -90,17 +95,19 @@ class SchaleClearanceService {
         return crt;
       }
     }
-    
-    _logger.w('$_logTag: failed to acquire clearance via Headless WebView, falling back to visible WebView');
+
+    _logger.w(
+        '$_logTag: failed to acquire clearance via Headless WebView, falling back to visible WebView');
     final fallbackResult = await KuronNative.instance.showLoginWebView(
       url: _domainUrl,
       pageFinishedScript: "window.localStorage.getItem('clearance')",
     );
 
     if (fallbackResult != null) {
-      final scriptResult = fallbackResult['pageFinishedScriptResult'] as String?;
+      final scriptResult =
+          fallbackResult['pageFinishedScriptResult'] as String?;
       final userAgent = fallbackResult['userAgent'] as String?;
-      
+
       String? cookies;
       final cookiesData = fallbackResult['cookies'];
       if (cookiesData is List) {
@@ -114,9 +121,11 @@ class SchaleClearanceService {
       if (crt != null && crt != 'null' && crt.isNotEmpty) {
         _logger.i('$_logTag: acquired clearance token crt (visible)');
         _logger.i('$_logTag: cookies extracted: $cookies');
-        
+
         _cachedToken = crt;
-        if (userAgent != null && userAgent.isNotEmpty) _cachedUserAgent = userAgent;
+        if (userAgent != null && userAgent.isNotEmpty) {
+          _cachedUserAgent = userAgent;
+        }
         if (cookies != null && cookies.isNotEmpty) _cachedCookies = cookies;
 
         await _secureStorage.write(key: _storageKey, value: crt);
@@ -161,13 +170,16 @@ class _SchaleInterceptor extends Interceptor {
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
     final url = options.uri.toString();
-    final isSchaleEndpoint = (options.method == 'POST' && url.contains('/books/detail/')) ||
-        url.contains('/books/data/');
-        
-    if (!isSchaleEndpoint && !url.contains(_service._domainHost) && !url.contains('erocdn.net')) {
+    final isSchaleEndpoint =
+        (options.method == 'POST' && url.contains('/books/detail/')) ||
+            url.contains('/books/data/');
+
+    if (!isSchaleEndpoint &&
+        !url.contains(_service._domainHost) &&
+        !url.contains('erocdn.net')) {
       return handler.next(options);
     }
-    // ponytail: erocdn.net hardcoded — both sources share the same CDN.
+    //  erocdn.net hardcoded — both sources share the same CDN.
     // Extract to config-level CDN domain list when a 3rd source diverges.
     var crt = _service._cachedToken;
     if (crt == null) {
@@ -199,7 +211,8 @@ class _SchaleInterceptor extends Interceptor {
     if (err.response?.statusCode == 403 &&
         (err.requestOptions.uri.toString().contains('/books/detail/') ||
             err.requestOptions.uri.toString().contains('/books/data/'))) {
-      _service._logger.w('${_service._logTag}: clearance token expired, clearing cache');
+      _service._logger
+          .w('${_service._logTag}: clearance token expired, clearing cache');
       await _service.clearToken();
     }
     handler.next(err);

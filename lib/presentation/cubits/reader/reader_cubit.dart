@@ -241,7 +241,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
       // Strategy A4: Fast metadata-only shell (no images yet).
       // Upgrade to offline content with imageUrls if available.
-      // ponytail: single fallback path, add multi-source retry if needed.
+      //  single fallback path, add multi-source retry if needed.
       if (content == null && shouldUseNoChapterPreloaded) {
         _logger.i(
             '✅ Strategy A4: Using preloaded no-chapters content shell: $contentId');
@@ -264,7 +264,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         content = await offlineContentManager.createOfflineContent(contentId);
         isOfflineMode = true;
 
-          if (isConnected && !isCrotpediaChapter) {
+        if (isConnected && !isCrotpediaChapter) {
           await _fetchOnlineDetailsInBackground(contentId);
         }
       }

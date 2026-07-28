@@ -2120,7 +2120,7 @@ void main() {
     });
   });
 
-  // ponytail: doujindesu sedang maintenance — enable when site recovers
+  //  doujindesu sedang maintenance — enable when site recovers
   // ignore: unused_element
   void doujindesuTests() {
     group('DoujinDesu v2 fixtures — scraper config integration', () {

@@ -152,7 +152,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   final ValueNotifier<bool> _scrollingNotifier = ValueNotifier<bool>(false);
   Timer? _scrollIndicatorTimer;
 
-  // ponytail: separate notifier for AnimatedWebPView pause, so _visiblePageNotifier
+  //  separate notifier for AnimatedWebPView pause, so _visiblePageNotifier
   // (used by page indicator) never flickers to 0.
   final ValueNotifier<int> _animatedPauseNotifier = ValueNotifier<int>(1);
 
@@ -168,7 +168,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
 
-  // ponytail: batch height updates during initial image load stampede.
+  //  batch height updates during initial image load stampede.
   // Multiple images loading simultaneously each trigger setState({}),
   // rebuilding the full tree N times. Debounce to once per frame.
   final Set<int> _pendingHeightUpdates = {};
@@ -434,7 +434,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       screenHeight: screenHeight,
     );
 
-    // ponytail: O(n) scan that stops as soon as viewportCenter is reached.
+    //  O(n) scan that stops as soon as viewportCenter is reached.
     // Each page uses cached height (if available) or average fallback.
     // Bounded by totalPages but in practice exits after 20-50 pages.
     // ~50μs for 200 pages — negligible even at 120 FPS.
@@ -451,7 +451,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (_pendingEstimatedPage > 0 &&
         _pendingEstimatedPage != _lastReportedPage) {
       _lastReportedPage = _pendingEstimatedPage;
-      // ponytail: page indicator (O(1) average) is approximate — good enough
+      //  page indicator (O(1) average) is approximate — good enough
       // for the UI counter. Animated pause notifier needs accurate page
       // detection so the correct AnimatedWebPView plays. Compute a windowed
       // scan from cached heights when available.
@@ -796,7 +796,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       overlays: SystemUiOverlay.values,
     );
 
-    getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive').value = false;
+    getIt<ValueNotifier<bool>>(instanceName: 'globalReaderActive').value =
+        false;
     MemoryBudgetCoordinator().onReaderActiveChanged(false);
     super.dispose();
   }
@@ -853,7 +854,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
-    // ponytail: detect fast scroll by page jump, not timer. If user moved
+    //  detect fast scroll by page jump, not timer. If user moved
     // >3 pages since last tick, they're flying through — skip prefetch.
     final pageJump = (currentPage - _lastReportedPage).abs();
     if (pageJump > 3) return;
@@ -867,7 +868,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                   imageUrls[(currentPage - 1).clamp(0, imageUrls.length - 1)],
             );
 
-    // ponytail: pre-decode adjacent pages into ImageCache at display width.
+    //  pre-decode adjacent pages into ImageCache at display width.
     // Online → ExtendedNetworkImageProvider (HTTP → ExtendedImage disk cache).
     // Offline → ExtendedFileImageProvider from LocalImagePreloader's file.
     // Both wrapped in ExtendedResizeImage — same wrapper ExtendedImage
@@ -1003,7 +1004,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   /// Uses byte budget from [MemoryBudgetCoordinator] — estimates decoded size
   /// per page (width × height × 4) and evicts farthest pages until under budget.
   /// Eviction is skipped for offline content (pages are on disk).
-  // ponytail: page-count heuristic replaced by byte-aware budget from coordinator.
+  //  page-count heuristic replaced by byte-aware budget from coordinator.
   // Budget resets [_heavyImageBudgetResetMs] after last scroll tick.
   static const Duration _heavyImageBudgetResetMs = Duration(seconds: 5);
   int _estimatedDecodedBytes = 0;
@@ -1034,7 +1035,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   int _estimatePageBytes(int page) {
     final h = _cachedImageHeights[page];
     if (h == null || h <= 0) return 0;
-    // ponytail: assumes screen-width image. Actual decode width is viewport-based.
+    //  assumes screen-width image. Actual decode width is viewport-based.
     // Estimate screen width from first non-null height's aspect ratio, or fallback 1080.
     final w = 1080; // typical phone width in logical px
     final pixelBytes = (w * h * 4).round(); // RGBA
@@ -1133,7 +1134,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           _logger.d(
               '🔄 SYNC: Animating PageController from $currentPageControllerIndex to $targetPageIndex (distance: $distance)');
           _isProgrammaticAnimation = true;
-          // ponytail: skip animation for rapid consecutive taps. User tapping
+          //  skip animation for rapid consecutive taps. User tapping
           // faster than animation duration expects instant response — queuing
           // animations makes offline images feel delayed.
           final timeSinceTap = DateTime.now().difference(_lastTapTime);
@@ -1155,9 +1156,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           }
         }
       }
-    }
-
-    else if (state.readingMode == ReadingMode.verticalPage) {
+    } else if (state.readingMode == ReadingMode.verticalPage) {
       if (_verticalPageController.hasClients) {
         final currentVerticalIndex = _verticalPageController.page?.round();
 
@@ -1191,9 +1190,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           });
         }
       }
-    }
-
-    else if (state.readingMode == ReadingMode.continuousScroll) {
+    } else if (state.readingMode == ReadingMode.continuousScroll) {
       if (state.content == null) return;
       final targetPage = state.currentPage ?? 1;
       final targetScrollOffset = (targetPage - 1) * 0.0; // page 1 → top
@@ -1203,10 +1200,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       // change emit, or the old client's offset is stale.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_scrollController.hasClients) return;
-        final threshold =
-            MediaQuery.of(context).size.height * 0.5;
-        if ((_scrollController.offset - targetScrollOffset).abs() >
-            threshold) {
+        final threshold = MediaQuery.of(context).size.height * 0.5;
+        if ((_scrollController.offset - targetScrollOffset).abs() > threshold) {
           _scrollController.animateTo(
             targetScrollOffset,
             duration: DesignTokens.durationNormal,

@@ -494,7 +494,7 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
   Future<void> _onSearch() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // ponytail: numeric-only query --> redirect langsung ke halaman detail
+    //  numeric-only query --> redirect langsung ke halaman detail
     final queryValue = _textControllers['query']?.text.trim() ?? '';
     if (queryValue.isNotEmpty && RegExp(r'^\d+$').hasMatch(queryValue)) {
       if (!mounted) return;
@@ -1497,7 +1497,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                         );
                                       }).toList(),
                                     ),
-                                    const SizedBox(height: DesignTokens.spaceMd),
+                                    const SizedBox(
+                                        height: DesignTokens.spaceMd),
                                   ],
                                   const SizedBox(height: DesignTokens.spaceSm),
                                 ],
@@ -1785,7 +1786,8 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                                         },
                                       ).toList(),
                                     ),
-                                    const SizedBox(height: DesignTokens.spaceMd),
+                                    const SizedBox(
+                                        height: DesignTokens.spaceMd),
                                   ],
                                   const SizedBox(height: DesignTokens.spaceSm),
                                 ],
@@ -2724,8 +2726,10 @@ class _DynamicFormSearchUIState extends State<DynamicFormSearchUI> {
                           Expanded(
                             child: Text(
                               isError
-                                  ? AppLocalizations.of(context)!.genreOptionsFailed
-                                  : AppLocalizations.of(context)!.loadingGenreOptions,
+                                  ? AppLocalizations.of(context)!
+                                      .genreOptionsFailed
+                                  : AppLocalizations.of(context)!
+                                      .loadingGenreOptions,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
