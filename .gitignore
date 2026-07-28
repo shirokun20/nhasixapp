@@ -75,3 +75,4 @@ skills-lock.json
 /memory/*
 /output/*
 /prompts/*
+/.playwright-mcp/*
