@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:test/test.dart';
 import 'package:html/parser.dart' as p;
 
@@ -13,7 +14,8 @@ void main() {
       final kids = el.children;
       final mangaLinks = el.querySelectorAll('a[href^="/manga/"]');
       if (mangaLinks.isNotEmpty) {
-        print('"$cls" -> ${kids.length} children, ${mangaLinks.length} manga links');
+        debugPrint(
+            '"$cls" -> ${kids.length} children, ${mangaLinks.length} manga links');
       }
     }
   });
