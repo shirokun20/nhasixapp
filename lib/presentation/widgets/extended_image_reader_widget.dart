@@ -194,7 +194,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   @visibleForTesting
   static bool isAnimatedWebPHeaderForTesting(Uint8List bytes) =>
-      _ExtendedImageReaderWidgetState._looksLikeAnimatedWebPHeader(bytes);
+      looksLikeAnimatedWebPHeader(bytes);
 
   @visibleForTesting
   static bool isSupportedImageHeaderForTesting(Uint8List bytes) =>
@@ -291,7 +291,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // offline reader otherwise pays twice: thumbnail prep + animated playback.
   static const int _ultraHeavyAnimatedImageThresholdBytes =
       10 * 1024 * 1024; // 10 MB
-  static const int _maxNativeAvifHeight = 4096;
 
   CancellationToken? _cancelToken;
 
@@ -416,13 +415,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // seed the static maps and rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
     getCachedImageFile(widget.imageUrl).then((file) async {
+      if (!mounted) return;
       if (file == null) return;
       _enqueueHeaderInspect(file.path); // seed batch collector
       final size = file.lengthSync();
-      final avifInfo = _inspectAvifHeaderForRouting(file);
+      final avifInfo = inspectAvifHeaderForRouting(file);
       final shouldConvertTallAvis = avifInfo.isAvif &&
           avifInfo.isAvisBrand &&
-          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+          (avifInfo.height ?? 0) > maxNativeAvifHeight;
 
       if (shouldConvertTallAvis) {
         _logger.i(
@@ -546,10 +546,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return false;
       }
 
-      final avifInfo = _inspectAvifHeaderForRouting(file);
+      final avifInfo = inspectAvifHeaderForRouting(file);
       return avifInfo.isAvif &&
           avifInfo.isAvisBrand &&
-          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+          (avifInfo.height ?? 0) > maxNativeAvifHeight;
     } catch (_) {
       return false;
     }
@@ -573,10 +573,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       }
 
       final fileSize = file.lengthSync();
-      final avifInfo = _inspectAvifHeaderForRouting(file);
+      final avifInfo = inspectAvifHeaderForRouting(file);
       final shouldConvertTallAvis = avifInfo.isAvif &&
           avifInfo.isAvisBrand &&
-          (avifInfo.height ?? 0) > _maxNativeAvifHeight;
+          (avifInfo.height ?? 0) > maxNativeAvifHeight;
 
       if (shouldConvertTallAvis) {
         _logger.i(
@@ -1629,119 +1629,11 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  static ({bool isAvif, bool isAvisBrand, int? width, int? height})
-      _inspectAvifHeaderForRouting(File file) {
-    const empty = (
-      isAvif: false,
-      isAvisBrand: false,
-      width: null,
-      height: null,
-    );
-    RandomAccessFile? raf;
-    try {
-      raf = file.openSync(mode: FileMode.read);
-      final length = raf.lengthSync();
-      if (length < 16) {
-        return empty;
-      }
-
-      final sampleLength = length < 4096 ? length : 4096;
-      final bytes = raf.readSync(sampleLength);
-      if (inferImageExtension(bytes: bytes) != 'avif') {
-        return empty;
-      }
-
-      var isAvisBrand = false;
-      if (bytes.length >= 12) {
-        const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
-        isAvisBrand = bytes[8] == kAvis0 &&
-            bytes[9] == kAvis1 &&
-            bytes[10] == kAvis2 &&
-            bytes[11] == kAvis3;
-      }
-
-      int? parsedWidth;
-      int? parsedHeight;
-      const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
-      for (int i = 0; i <= bytes.length - 16; i++) {
-        if (_matchesBytes(bytes, i, kIspe)) {
-          final width = ((bytes[i + 8] & 0xFF) << 24) |
-              ((bytes[i + 9] & 0xFF) << 16) |
-              ((bytes[i + 10] & 0xFF) << 8) |
-              (bytes[i + 11] & 0xFF);
-          final height = ((bytes[i + 12] & 0xFF) << 24) |
-              ((bytes[i + 13] & 0xFF) << 16) |
-              ((bytes[i + 14] & 0xFF) << 8) |
-              (bytes[i + 15] & 0xFF);
-          parsedWidth = width > 0 ? width : null;
-          parsedHeight = height > 0 ? height : null;
-          break;
-        }
-      }
-
-      return (
-        isAvif: true,
-        isAvisBrand: isAvisBrand,
-        width: parsedWidth,
-        height: parsedHeight,
-      );
-    } catch (_) {
-      return empty;
-    } finally {
-      raf?.closeSync();
-    }
-  }
-
   // Delegate to [inspectFileHeader] — parses format, width, height from header.
   // Width/height from `ispe` box for AVIF; null for WebP.
   static ({String? format, int? width, int? height})
       _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
     return inspectFileHeader(file.path);
-  }
-
-  static bool _looksLikeAnimatedWebPHeader(Uint8List bytes) {
-    const riff = <int>[0x52, 0x49, 0x46, 0x46];
-    const webp = <int>[0x57, 0x45, 0x42, 0x50];
-    const vp8x = <int>[0x56, 0x50, 0x38, 0x58];
-    const anim = <int>[0x41, 0x4E, 0x49, 0x4D];
-
-    if (!_matchesBytes(bytes, 0, riff) || !_matchesBytes(bytes, 8, webp)) {
-      return false;
-    }
-
-    if (_matchesBytes(bytes, 12, vp8x) &&
-        bytes.length > 20 &&
-        (bytes[20] & 0x02) != 0) {
-      return true;
-    }
-
-    return _containsBytes(bytes, anim);
-  }
-
-  static bool _matchesBytes(Uint8List bytes, int offset, List<int> expected) {
-    if (bytes.length < offset + expected.length) {
-      return false;
-    }
-
-    for (var i = 0; i < expected.length; i++) {
-      if (bytes[offset + i] != expected[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  static bool _containsBytes(Uint8List bytes, List<int> needle) {
-    if (needle.isEmpty || bytes.length < needle.length) {
-      return false;
-    }
-
-    for (var start = 0; start <= bytes.length - needle.length; start++) {
-      if (_matchesBytes(bytes, start, needle)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   bool _hasInvalidLocalImagePayloadSync(String localPath) {

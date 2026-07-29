@@ -10,13 +10,14 @@ typedef FileHeaderResult = ({
   int? height,
 });
 
+const int maxNativeAvifHeight = 4096;
+
 // Inspect a single file's header for animated WebP/AVIF routing.
 ///
 // Reads up to 4KB of the file header to determine format and dimensions.
 // Designed to be `compute()`-eligible — top-level function, no closures.
 FileHeaderResult inspectFileHeader(String path) {
   const empty = (format: null, width: null, height: null) as FileHeaderResult;
-  const int maxNativeAvifHeight = 4096;
 
   File file;
   RandomAccessFile? raf;
@@ -143,4 +144,63 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
     if (matchesBytes(bytes, start, needle)) return true;
   }
   return false;
+}
+
+({bool isAvif, bool isAvisBrand, int? width, int? height})
+    inspectAvifHeaderForRouting(File file) {
+  const empty = (
+    isAvif: false,
+    isAvisBrand: false,
+    width: null,
+    height: null,
+  );
+  RandomAccessFile? raf;
+  try {
+    raf = file.openSync(mode: FileMode.read);
+    final length = raf.lengthSync();
+    if (length < 16) return empty;
+
+    final sampleLength = length < 4096 ? length : 4096;
+    final bytes = raf.readSync(sampleLength);
+    if (inferImageExtension(bytes: bytes) != 'avif') return empty;
+
+    var isAvisBrand = false;
+    if (bytes.length >= 12) {
+      const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
+      isAvisBrand = bytes[8] == kAvis0 &&
+          bytes[9] == kAvis1 &&
+          bytes[10] == kAvis2 &&
+          bytes[11] == kAvis3;
+    }
+
+    int? parsedWidth;
+    int? parsedHeight;
+    const kIspe = <int>[0x69, 0x73, 0x70, 0x65];
+    for (int i = 0; i <= bytes.length - 16; i++) {
+      if (matchesBytes(bytes, i, kIspe)) {
+        final width = ((bytes[i + 8] & 0xFF) << 24) |
+            ((bytes[i + 9] & 0xFF) << 16) |
+            ((bytes[i + 10] & 0xFF) << 8) |
+            (bytes[i + 11] & 0xFF);
+        final height = ((bytes[i + 12] & 0xFF) << 24) |
+            ((bytes[i + 13] & 0xFF) << 16) |
+            ((bytes[i + 14] & 0xFF) << 8) |
+            (bytes[i + 15] & 0xFF);
+        parsedWidth = width > 0 ? width : null;
+        parsedHeight = height > 0 ? height : null;
+        break;
+      }
+    }
+
+    return (
+      isAvif: true,
+      isAvisBrand: isAvisBrand,
+      width: parsedWidth,
+      height: parsedHeight,
+    );
+  } catch (_) {
+    return empty;
+  } finally {
+    raf?.closeSync();
+  }
 }

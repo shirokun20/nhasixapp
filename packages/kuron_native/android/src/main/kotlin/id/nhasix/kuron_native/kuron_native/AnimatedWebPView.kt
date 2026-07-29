@@ -59,7 +59,7 @@ class AnimatedWebPView(
         @Volatile
         var httpClient: OkHttpClient? = null
 
-        private val drawableCache = LruCache<String, AnimatedImageDrawable>(3)
+        private val drawableCache = LruCache<String, AnimatedImageDrawable>(6)
 
         private val failedAnimatedDecodeKeys = mutableSetOf<String>()
 

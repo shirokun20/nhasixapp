@@ -964,6 +964,7 @@ class KuronNativePlugin :
         channel.setMethodCallHandler(null)
         downloadHandler.dispose()
         dnsResolver.clearCache()
+        cancelledThumbnailRequests.clear()
         executor.shutdownNow()
     }
 

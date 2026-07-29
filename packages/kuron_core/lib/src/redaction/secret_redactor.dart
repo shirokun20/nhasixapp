@@ -1,11 +1,13 @@
 // Utilities to redact secrets from header maps, URLs, and JSON payloads
 // before they are written into a [ValidationReport],
 // [ValidationDiagnostic], or persisted compatibility log.
-///
+//
 // All redaction is conservative: when in doubt, redact. Redaction is
 // length-preserving (replaces value with `***`) so consumers can still
 // tell that a value was present.
 ///
+library;
+
 // This class is intentionally not configurable; the set of sensitive
 // names is treated as a runtime constant so different reports always
 // redact the same fields.
