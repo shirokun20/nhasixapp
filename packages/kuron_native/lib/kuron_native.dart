@@ -6,6 +6,7 @@ export 'widgets/kuron_widgets.dart'; // Export Widgets
 export 'widgets/animated_webp_view.dart'; // Export native animated-WebP viewer
 export 'src/doh_provider.dart'; // Export DoH provider constants
 export 'src/native_download_payload.dart'; // v2 download payload model (§7)
+export 'src/rust_bridge.dart'; // Export Rust FFI bridge
 
 class KuronNative {
   // Singleton instance

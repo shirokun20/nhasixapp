@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
+import 'package:kuron_native/kuron_native.dart';
 
 import 'pdf_isolate_worker.dart';
 import '../utils/image_splitter.dart';
@@ -87,6 +89,12 @@ class PdfService {
     required int maxWidth,
     required int quality,
   }) async {
+    // This runs inside compute() isolate — Rust bridge may be null here
+    // because RustBridge is lazily loaded per isolate. For now, fall through
+    // to the Dart implementation. The heavy webtoon split via IRust is already
+    // handled in ImageSplitter.splitImage().
+    // ponytail: add per-isolate Rust bridge init if benchmark shows need
+
     try {
       final image = img.decodeImage(imageBytes);
 
@@ -328,6 +336,18 @@ class PdfService {
   // Process single image (resize, compress, optimize)
   Future<Uint8List?> _processImage(String imagePath,
       {required int maxWidth, required int quality}) async {
+    // Try Rust path (fast native decode → resize → encode JPEG)
+    try {
+      final rust = RustBridge.instance;
+      if (rust != null) {
+        final result = rust.imageProcessSingle(imagePath,
+            maxWidth: maxWidth, quality: quality);
+        if (result != null) return result;
+      }
+    } catch (_) {
+      // Fall through to Dart implementation
+    }
+
     try {
       final file = File(imagePath);
       if (!await file.exists()) {

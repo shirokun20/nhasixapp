@@ -14,60 +14,55 @@ class PermissionHelper {
     try {
       _logger.i('Requesting storage permission...');
 
-      // Check current permission status
-      final storageStatus = await Permission.storage.status;
-      final manageStatus = await Permission.manageExternalStorage.status;
-
-      _logger.i('Storage permission status: $storageStatus');
-      _logger.i('Manage external storage status: $manageStatus');
-
-      // If already granted, return true
-      if (storageStatus.isGranted || manageStatus.isGranted) {
-        _logger.i('Storage permission already granted');
-        return true;
-      }
-
-      // Show explanation dialog if context is available
-      if (context != null && context.mounted) {
-        final shouldRequest = await _showPermissionDialog(context);
-        if (!shouldRequest) {
-          _logger.i('User declined permission request');
-          return false;
-        }
-      }
-
-      // Request storage permission first
-      if (!storageStatus.isGranted) {
-        _logger.i('Requesting storage permission...');
-        final result = await Permission.storage.request();
-
-        if (result.isGranted) {
-          _logger.i('Storage permission granted');
-          return true;
-        }
-
-        _logger.w('Storage permission denied: $result');
-      }
-
-      // For Android 11+ (API 30+), try manage external storage
       if (Platform.isAndroid) {
-        _logger.i('Requesting manage external storage permission...');
-        final manageResult = await Permission.manageExternalStorage.request();
+        // Android 11+ (API 30+): only MANAGE_EXTERNAL_STORAGE matters for
+        // accessing resolved SAF paths. Permission.storage is deprecated and
+        // can be "granted" without actual write access to user-selected paths.
+        final manageStatus = await Permission.manageExternalStorage.status;
+        _logger.i('Manage external storage status: $manageStatus');
 
-        if (manageResult.isGranted) {
-          _logger.i('Manage external storage permission granted');
+        if (manageStatus.isGranted) {
+          _logger.i('Manage external storage already granted');
           return true;
         }
 
-        _logger.w('Manage external storage permission denied: $manageResult');
+        // Show explanation dialog if context available
+        if (context != null && context.mounted) {
+          final shouldRequest = await _showPermissionDialog(context);
+          if (!shouldRequest) {
+            _logger.i('User declined permission request');
+            return false;
+          }
+        }
+
+        // Open system settings for MANAGE_EXTERNAL_STORAGE
+        await Permission.manageExternalStorage.request();
+
+        // Re-check after returning from settings
+        await Future.delayed(const Duration(milliseconds: 500));
+        final recheckStatus = await Permission.manageExternalStorage.status;
+        _logger.i('Manage external storage re-check status: $recheckStatus');
+
+        if (recheckStatus.isGranted) {
+          _logger.i('Manage external storage granted (post-settings)');
+          return true;
+        }
+
+        _logger.w('Manage external storage still denied: $recheckStatus');
+
+        // Show settings dialog if still denied
+        if (context != null && context.mounted) {
+          await _showSettingsDialog(context);
+        }
+        return false;
       }
 
-      // If all failed, show settings dialog
-      if (context != null && context.mounted) {
-        await _showSettingsDialog(context);
-      }
+      // Non-Android: use standard storage permission
+      final storageStatus = await Permission.storage.status;
+      if (storageStatus.isGranted) return true;
 
-      return false;
+      final result = await Permission.storage.request();
+      return result.isGranted;
     } catch (e) {
       _logger.e('Error requesting storage permission: $e');
       return false;

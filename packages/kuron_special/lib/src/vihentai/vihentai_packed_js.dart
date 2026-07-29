@@ -7,6 +7,8 @@
 // Decoded output: KuroReader('#chapter-content', ["url1","url2",...], 0)
 library;
 
+import 'package:kuron_native/kuron_native.dart';
+
 // Thrown when packed JS parameters are inconsistent or extraction fails.
 class ViHentaiPackedJsException implements Exception {
   final String message;
@@ -61,6 +63,17 @@ class ViHentaiPackedJs {
 
   // Decode packed JS: extract params, un-obfuscate, return plain text.
   static String _unpack(String script) {
+    // Try Rust path (fast native unpack)
+    try {
+      final rust = RustBridge.instance;
+      if (rust != null) {
+        final result = rust.vihentaiUnpack(script);
+        if (result != null) return result;
+      }
+    } catch (_) {
+      // Fall through to Dart implementation
+    }
+
     final argsMatch = _packedArgsRegex.firstMatch(script);
     if (argsMatch == null) {
       throw ViHentaiPackedJsException(

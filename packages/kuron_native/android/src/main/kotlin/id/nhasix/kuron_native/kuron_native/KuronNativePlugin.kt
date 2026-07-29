@@ -1216,26 +1216,8 @@ class KuronNativePlugin :
                             // Ignore
                         }
 
-                        // Extract Absolute Path if possible (since we have MANAGE_EXTERNAL_STORAGE)
-                        var path = uri.path
-                        if (path != null && path.contains("primary:")) {
-                            path = "/storage/emulated/0/" + path.substringAfter("primary:")
-                        } else if (path != null && path.contains("tree/")) {
-                             // Fallback attempts
-                             if (path.contains("primary%3A")) {
-                                  path = "/storage/emulated/0/" + path.substringAfter("primary%3A")
-                             }
-                        }
-                        
-                        // Clean up path if needed
-                        if (path != null && path.startsWith("/tree/")) {
-                             // Some devices return /tree/primary:Folder
-                             if (path.contains("primary:")) {
-                                  path = "/storage/emulated/0/" + path.substringAfter("primary:")
-                             }
-                        }
-
-                        pendingResult?.success(path ?: uri.toString())
+                        // Return content URI string — Dart side uses it via DocumentFile
+                        pendingResult?.success(uri.toString())
                     } else {
                          pendingResult?.error("NO_URI", "No directory selected", null)
                     }
@@ -1328,6 +1310,17 @@ class KuronNativePlugin :
     }
 
     private fun handlePickDirectory(result: Result) {
+        // If MANAGE_EXTERNAL_STORAGE is granted, skip SAF entirely.
+        // SAF on Android 15 blocks many folders with "Can't use this folder".
+        // Use in-app directory picker via Flutter that lists subdirectories.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            android.os.Environment.isExternalStorageManager()
+        ) {
+            result.success("__HSH_PICKER__")
+            return
+        }
+
+        // Without full permission, fall back to SAF picker.
         val activity = activityBinding?.activity
         if (activity == null) {
              result.error("NO_ACTIVITY", "Activity is not available", null)
@@ -1774,4 +1767,5 @@ class KuronNativePlugin :
     private fun ceilDiv(value: Int, divisor: Int): Int {
         return (value + (divisor - 1)) / divisor
     }
+
 }

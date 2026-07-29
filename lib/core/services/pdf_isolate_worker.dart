@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
+import 'package:kuron_native/kuron_native.dart';
 
 // Isolate worker untuk PDF processing
 // Isolate worker for PDF processing
@@ -83,6 +84,18 @@ class PdfIsolateWorker {
     required int maxWidth,
     required int quality,
   }) async {
+    // Try Rust path (fast native image processing)
+    try {
+      final rust = RustBridge.instance;
+      if (rust != null) {
+        final result = rust.imageProcessSingle(imagePath,
+            maxWidth: maxWidth, quality: quality);
+        if (result != null) return result;
+      }
+    } catch (_) {
+      // Fall through to Dart implementation
+    }
+
     try {
       final file = File(imagePath);
       if (!await file.exists()) {

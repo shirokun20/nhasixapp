@@ -44,22 +44,23 @@ class _DownloadsScreenState extends State<DownloadsScreen>
   Future<void> _checkPermissionsAndInitialize() async {
     if (!mounted || _permissionsChecked) return;
 
+    // Always request storage + notification permissions first
+    final hasPermissions = await showPermissionRequestSheet(
+      context,
+      requireStorage: true,
+      requireNotification: true,
+    );
+    if (!mounted) return;
+
+    if (!hasPermissions) {
+      _showSnackBar(AppLocalizations.of(context)!.permissionDenied);
+    }
+
+    // Warn if storage root not set
     final hasCustomRoot = await StorageSettings.hasCustomRoot();
     if (!mounted) return;
 
-    if (hasCustomRoot) {
-      final hasPermissions = await showPermissionRequestSheet(
-        context,
-        requireStorage: false,
-        requireNotification: true,
-      );
-
-      if (!mounted) return;
-
-      if (!hasPermissions) {
-        _showSnackBar(AppLocalizations.of(context)!.permissionDenied);
-      }
-    } else {
+    if (!hasCustomRoot) {
       _showStorageLocationRequiredSnackBar();
     }
 
@@ -707,12 +708,11 @@ class _DownloadsScreenState extends State<DownloadsScreen>
     final hasCustomRoot = await _ensureCustomStorageRoot();
     if (!hasCustomRoot || !mounted) return;
 
-    // Check runtime permissions before starting PDF conversion. Storage is
-    // intentionally skipped here because user-selected SAF directory is the
-    // download root.
+    // Check runtime permissions before starting PDF conversion.
+    // Requires MANAGE_EXTERNAL_STORAGE to write to user-selected SAF directory.
     final hasPermissions = await showPermissionRequestSheet(
       context,
-      requireStorage: false,
+      requireStorage: true,
       requireNotification: true,
     );
 

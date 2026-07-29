@@ -1,0 +1,11 @@
+[package]
+name = "kuron_rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "kuron_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }

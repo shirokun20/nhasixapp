@@ -2,6 +2,49 @@ plugins {
     id "com.android.library"
 }
 
+// ── Rust FFI: cargo-ndk build (optional, graceful fallback) ──
+def rustProjectDir = file("${projectDir}/../rust")
+def jniLibsDir = file("${projectDir}/src/main/jniLibs")
+
+task buildRustLibs {
+    description = "Build Rust native libraries for Android via cargo-ndk"
+    group = "rust"
+
+    // Only attempt Rust build if cargo is available
+    doLast {
+        def cargoPath = "cargo"
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            cargoPath = "cargo.exe"
+        }
+
+        try {
+            def result = exec {
+                workingDir rustProjectDir
+                commandLine cargoPath, 'ndk',
+                    '-o', jniLibsDir,
+                    '-t', 'arm64-v8a',
+                    '-t', 'armeabi-v7a',
+                    '-t', 'x86_64',
+                    'build', '--release'
+                environment 'ANDROID_NDK_HOME', System.getenv('ANDROID_NDK_HOME') ?: "${android.ndkDirectory}"
+                ignoreExitValue = true
+            }
+            if (result.exitValue != 0) {
+                logger.warn("Rust build skipped or failed. Dart fallback will be used at runtime.")
+            }
+        } catch (Exception e) {
+            logger.warn("cargo-ndk not available. Rust native libraries will not be built. Dart fallback will be used at runtime.")
+        }
+    }
+}
+
+// Hook Rust build into the Android build pipeline
+tasks.whenTaskAdded { task ->
+    if (task.name == 'preReleaseBuild' || task.name == 'preDebugBuild') {
+        task.dependsOn buildRustLibs
+    }
+}
+
 group = "id.nhasix.kuron_native.kuron_native"
 version = "1.0-SNAPSHOT"
 

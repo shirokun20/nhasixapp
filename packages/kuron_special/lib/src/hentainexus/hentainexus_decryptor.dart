@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:kuron_native/kuron_native.dart';
 
 class HentaiNexusDecryptor {
   static const List<int> _primeNumbers = <int>[2, 3, 5, 7, 11, 13, 17, 19];
@@ -36,6 +37,17 @@ class HentaiNexusDecryptor {
     final data = base64Decode(encrypted);
     if (data.length <= 64) {
       throw const FormatException('HentaiNexus seed payload is too short');
+    }
+
+    // Try Rust path (fast native decrypt)
+    try {
+      final rust = RustBridge.instance;
+      if (rust != null) {
+        final result = rust.hentaiNexusDecrypt(data, hostname);
+        if (result != null) return result;
+      }
+    } catch (_) {
+      // Fall through to Dart implementation
     }
 
     final hostCodes = hostname.codeUnits;
