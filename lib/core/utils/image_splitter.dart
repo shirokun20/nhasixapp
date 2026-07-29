@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:image/image.dart' as img;
-import 'package:kuron_native/kuron_native.dart';
+// import 'package:kuron_native/kuron_native.dart'; // Rust
 
 import 'webtoon_detector.dart';
 
@@ -68,17 +68,15 @@ class ImageSplitter {
   // assert(webtoonChunks.length > 1);
   // ```
   static Future<List<Uint8List>> splitImage(String imagePath) async {
-    // Try Rust path (fast native webtoon split)
-    try {
-      final rust = RustBridge.instance;
-      if (rust != null) {
-        final result = rust.imageSplit(imagePath,
-            maxWidth: maxWidth, maxHeightPerChunk: maxHeightPerChunk, quality: jpegQuality);
-        if (result != null) return result;
-      }
-    } catch (_) {
-      // Fall through to Dart implementation
-    }
+    // // Rust: native webtoon split — uncomment with kuron_native Rust bridge
+    // try {
+    //   final rust = RustBridge.instance;
+    //   if (rust != null) {
+    //     final result = rust.imageSplit(imagePath,
+    //         maxWidth: maxWidth, maxHeightPerChunk: maxHeightPerChunk, quality: jpegQuality);
+    //     if (result != null) return result;
+    //   }
+    // } catch (_) {}
 
     try {
       // Load image bytes

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
@@ -89,12 +88,6 @@ class PdfService {
     required int maxWidth,
     required int quality,
   }) async {
-    // This runs inside compute() isolate — Rust bridge may be null here
-    // because RustBridge is lazily loaded per isolate. For now, fall through
-    // to the Dart implementation. The heavy webtoon split via IRust is already
-    // handled in ImageSplitter.splitImage().
-    // ponytail: add per-isolate Rust bridge init if benchmark shows need
-
     try {
       final image = img.decodeImage(imageBytes);
 
