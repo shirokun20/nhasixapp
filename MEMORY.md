@@ -71,9 +71,16 @@ lib/
 
 ## Current Progress Dashboard
 
-> Tracked via `openspec/` — Last updated: 2026-07-26
+> Tracked via `openspec/` — Last updated: 2026-07-30
 
 ### Archived (in `openspec/changes/archive/`) — Newest first
+- `2026-07-30-fix-ehentai-cs-restart-on-scroll` — Animated WebP re-mount in continuous scroll skip thumbnail generation when file already local (`filePath != null`). Fix `"image loading lagi"` visual glitch on rapid scroll re-mount. Files: `packages/kuron_native/lib/widgets/animated_webp_view.dart` (`shouldSkipThumbnailForTesting` + getter), `packages/kuron_native/test/animated_webp_view_test.dart` (+2 tests).
+- `2026-07-30-fix-ehentai-animated-loading-card` — Loading container di animated WebP tidak lagi blow up ke `maxH: 3*W` (1170px) — tightened ke `1.6*W` (624px) di `_buildNativeAnimatedWebP`. Plus immediate `setState` di `_onContinuousImageLoaded` (hapus 16ms `_heightBatchTimer` debounce + `_pendingHeightUpdates` field). Container height predictable, no more "image kecil" perception. Files: `lib/presentation/widgets/extended_image_reader_widget.dart`, `lib/presentation/pages/reader/reader_screen.dart`.
+- `2026-07-30-ehentai-cache-key-consistency` — **HOTFIX (no openspec)**: Line `extended_image_reader_widget.dart:1434` `cacheKey: url` (resolved image URL) → `cacheKey: widget.imageUrl` (page URL). Untuk E-Hentai, page URL ≠ resolved URL → static set lookup miss → `_isHeavyImage = false` → fallback network path → "loading lagi" pada rapid scroll. Sekarang konsisten dengan 11 caller lain.
+- `2026-07-29-rust-image-processing-engine`
+- `2026-07-29-rust-content-decryptors`
+- `2026-07-29-reader-engine-performance-boost`
+- `2026-07-27-add-mangapill-mangahere-sources` — MangaPill (pure HTML, Backblaze B2 CDN) integration. MangaHere dropped (dead site). Config-driven scraper: home `/mangas/new`, search `/search?q={query}`, genre search `/search?genre={tag}`. Dynamic search form: text + type/status select + 46-genre checkboxes.
 - `2026-07-26-cancel-image-download-on-dispose` — Cancel in-flight image downloads/fetches when reader screen is disposed. CancellationToken for ExtendedImage, Dio CancelToken for prefetch, native HTTP disconnect in AnimatedWebPView.kt. Dead retry code removed.
 - `2026-07-25-pin-biometric-app-lock`
 - `2026-07-25-download-bloc-refactor`
@@ -155,11 +162,16 @@ lib/
 - `2026-02-11-nhentai-search-revamp`
 
 ### Active Changes (in `openspec/changes/`)
-- `add-mangapill-mangahere-sources` — MangaPill config done (v1.0.0). Config-driven scraper. Home `/mangas/new`, search `/search?q={query}`, genre search `/search?genre={tag}`, pagination via `a.btn.btn-sm`. Dynamic search form: text query + type/status select + 46-genre checkbox filter. MangaHere dropped (dead site, all chapter pages 302 redirect). User must reinstall config to apply: uninstall → Add Link → paste raw URL → install.
+- `fix-ehentai-animated-loading-card` — In progress (9/13). 3 tasks deferred to user for manual E-Hentai device test. Ready for archive after manual verification.
 - `komiktap-ssl-websocket-bypass`
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
 - `reader-ai-learning-mode` — AI translate pipeline: ONNX bubble detection, mosaic, multi-provider, overlay. Example demo functional. 7 style. Skip prev 5 gimmick styles. Proposal updated: per-bubble loading, edit manual, SFX toggle. [[ai-translation-demo-feat]]
+- `rust-hotspot-acceleration`
+- `local-recommendation-engine`
+- `text-only-mode-export`
+- `ai-image-upscaling`
+- `add-comix-webview-proxy-source`
 
 ### Open Issues (in `openspec/changes/`)
 - *(none)*
@@ -200,6 +212,7 @@ Project requires **RTK** for AI token optimization (60-90% savings):
 
 | Date | Tool | Topic | Status | Detail |
 |---|---|---|---|---|
+| 2026-07-30 | OpenCode | E-Hentai CS loading card + restart-on-scroll fix | Done | 3 fixes: (1) `_buildNativeAnimatedWebP` ConstrainedBox maxH `3*W` → `1.6*W` (no more 1170px blow-up). (2) `_onContinuousImageLoaded` immediate setState, hapus 16ms `_heightBatchTimer` debounce + `_pendingHeightUpdates`. (3) `AnimatedWebPView.shouldSkipThumbnailForTesting` skip thumbnail when `filePath != null` — re-mount plays instantly. (4) **HOTFIX no-openspec**: `extended_image_reader_widget.dart:1434` `cacheKey: url` → `widget.imageUrl` (page URL consistent dengan 11 caller lain, fixes E-Hentai static set lookup miss). Openspec: `fix-ehentai-animated-loading-card` (9/13 in-progress, 3 manual test deferred), `fix-ehentai-cs-restart-on-scroll` (11/11 complete). 46/46 widget tests pass. |
 | 2026-07-27 | Claude Code | MangaPill config build + dynamic search form | Done | Built `mangapill-config.json` (v1.0.0). Config-driven scraper: home `/mangas/new`, search `/search?q={query}`, genre search `/search?genre={tag}`, pagination `a.btn.btn-sm`. Dynamic search form: text query + type/status select + 46-genre checkboxes. MangaHere dropped (dead site, all chapter pages 302 redirect). [[mangapill-config]] |
 | 2026-06-01 | Codex | Rate-limit hardening + config baseline sync | Done | Hardened rate-limit flow end-to-end: `RequestRateManager` now source-config aware (`enabled`, `cooldownDurationMs`), 429 cooldown now uses manager timing (removed hardcoded 5-minute cooldown in remote datasource), nhentai cooldown wait now explicit and loop-based, generic runtime pipeline (`GenericSourceFactory` -> `GenericHttpSource` -> REST/Scraper adapters) now applies config-driven `RateLimiter` (`requestsPerSecond`/`requestsPerMinute`, `maxConcurrentRequests`, `minDelayMs`). Fixed `flutter_secure_storage` test override compatibility by switching to `AppleOptions`. Added baseline `network.rateLimit` blocks for multiple source configs under `informations/configs` (not tracked in git because directory ignored). Verified with targeted analyze/tests in app, `kuron_generic`, and `kuron_special`.
 | 2026-07-26 | Codex | MangaPill + MangaHere.cc source exploration + MangaFire VRF analysis | Done | Explored 10+ manga sites for source candidates. **MangaPill** (mangapill.com): pure HTML scrape, zero CF/VRF/JS — home 48 trending, search, detail, reader, Backblaze B2 CDN (Referer). **MangaHere.cc**: pure HTML + simple packer decode — home/latest, search, detail + comicid, chapter list via `/template-{comicid}-s2/`, images via `chapterfun.ashx` → Dean Edward's packer → `zjcdn.mangahere.org` CDN (CORS *). **MangaFire**: documented VRF analysis in `prompts/mangafire-vrf-analysis.md` — custom bytecode VM (35 opcodes), 187-byte VRF, archived. **Mangakakalot.gg**: CF managed challenge on all pages except home. **MangaBat**: domain hijacked. **Mangakakalot.com**: 522 origin down. Created `add-mangapill-mangahere-sources` change (4/4 artifacts, 25 tasks). Archived old `add-mangapill-source`. |

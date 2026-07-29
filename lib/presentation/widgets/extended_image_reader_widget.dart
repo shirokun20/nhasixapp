@@ -1139,7 +1139,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                   image.width.toDouble(),
                   image.height.toDouble(),
                 );
-                // Call callback on next frame to avoid calling during build
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   widget.onImageLoaded?.call(widget.pageNumber, imageSize);
                 });
@@ -1432,7 +1431,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     _inferNativeAnimatedCapableExtensionFromFileSync(cacheFile);
                 if (format != null) {
                   _markHeavyNativeAnimatedImage(
-                    cacheKey: url,
+                    cacheKey: widget.imageUrl,
                     cachedFilePath: cacheFile.path,
                     confirmedAnimatedWebP: true,
                   );
@@ -1544,7 +1543,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         nativeView = ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.width * 0.5,
-            maxHeight: MediaQuery.of(context).size.width * 3.0,
+            maxHeight: MediaQuery.of(context).size.width * 1.6,
           ),
           child: nativeView,
         );
@@ -2068,9 +2067,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final bool isContinuousScroll =
         widget.readingMode == ReadingMode.continuousScroll;
 
-    final double cardWidth = isContinuousScroll ? 280 : 240;
-    // final double previewHeight = isContinuousScroll ? 150 : 170;
-
     double? progressValue;
     int? progressPercent;
     int loadedBytes = loadedBytesOverride ?? 0;
@@ -2116,6 +2112,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     final double? indicatorValue = progressValue;
     final bool showIndeterminateFromRealBytes =
         hasRealByteCount && !hasKnownTotal;
+
+    final double cardWidth = isContinuousScroll ? 280 : 240;
 
     return Container(
       color: Theme.of(context).colorScheme.surface,

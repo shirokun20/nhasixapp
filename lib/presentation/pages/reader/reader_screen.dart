@@ -169,11 +169,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _isPreloading = false;
 
   //  batch height updates during initial image load stampede.
-  // Multiple images loading simultaneously each trigger setState({}),
-  // rebuilding the full tree N times. Debounce to once per frame.
-  final Set<int> _pendingHeightUpdates = {};
-  Timer? _heightBatchTimer;
-
   // 🏎️ Ticker for 120 FPS page indicator (vsync-aligned, not Timer)
   Ticker? _pageTicker;
   int _pendingEstimatedPage = 0;
@@ -609,16 +604,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       final totalHeight = renderedHeight + 8.0;
       if (_cachedImageHeights[page] != totalHeight) {
         _cachedImageHeights[page] = totalHeight;
-        _pendingHeightUpdates.add(page);
-        _heightBatchTimer?.cancel();
-        _heightBatchTimer = Timer(
-          const Duration(milliseconds: 16),
-          () {
-            if (!mounted) return;
-            _pendingHeightUpdates.clear();
-            setState(() {});
-          },
-        );
+        setState(() {});
       }
     }
     _readerCubit.onImageLoaded(page, imageSize);
@@ -784,7 +770,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     _pageUpdateTimer?.cancel();
     _uiToggleDebounceTimer?.cancel();
     _scrollIndicatorTimer?.cancel();
-    _heightBatchTimer?.cancel();
     _animatedPauseNotifier.dispose();
     _visiblePageNotifier.dispose();
     _pageTicker?.dispose();

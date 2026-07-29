@@ -107,9 +107,14 @@ class AnimatedWebPView extends StatefulWidget {
   static bool shouldSkipThumbnailForTesting({
     required bool shouldAutoPlay,
     int? fileBytes,
+    String? filePath,
   }) {
     if (!shouldAutoPlay) {
       return false;
+    }
+
+    if (filePath != null && filePath.isNotEmpty) {
+      return true;
     }
 
     return fileBytes != null &&
@@ -190,6 +195,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
       AnimatedWebPView.shouldSkipThumbnailForTesting(
         shouldAutoPlay: _shouldAutoPlay,
         fileBytes: _resolveExistingFileBytes(),
+        filePath: widget.filePath,
       );
 
   @override

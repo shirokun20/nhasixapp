@@ -80,5 +80,28 @@ void main() {
         isTrue,
       );
     });
+
+    test('returns true when filePath is provided, even for small files', () {
+      expect(
+        AnimatedWebPView.shouldSkipThumbnailForTesting(
+          shouldAutoPlay: true,
+          fileBytes: 1024 * 1024,
+          filePath: '/tmp/small.webp',
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false when filePath is provided but autoplay is disabled',
+        () {
+      expect(
+        AnimatedWebPView.shouldSkipThumbnailForTesting(
+          shouldAutoPlay: false,
+          fileBytes: 1024 * 1024,
+          filePath: '/tmp/small.webp',
+        ),
+        isFalse,
+      );
+    });
   });
 }
