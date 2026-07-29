@@ -1,4 +1,4 @@
-/// Question types for the interactive config wizard.
+// Question types for the interactive config wizard.
 enum QuestionType {
   text,
   choice,
@@ -6,7 +6,7 @@ enum QuestionType {
   yesNo,
 }
 
-/// A single question in the wizard flow.
+// A single question in the wizard flow.
 class WizardQuestion {
   WizardQuestion({
     required this.id,
@@ -26,11 +26,11 @@ class WizardQuestion {
   final String? Function(String?)? validator;
   final bool isRequired;
 
-  /// Answer storage.
+  // Answer storage.
   String? answer;
 }
 
-/// Collection of wizard questions organized by section.
+// Collection of wizard questions organized by section.
 class WizardFlow {
   WizardFlow({
     required this.sections,
@@ -38,11 +38,11 @@ class WizardFlow {
 
   final Map<String, List<WizardQuestion>> sections;
 
-  /// Get all questions across all sections.
+  // Get all questions across all sections.
   List<WizardQuestion> get allQuestions =>
       sections.values.expand((q) => q).toList();
 
-  /// Get answers as a map.
+  // Get answers as a map.
   Map<String, String?> get answers =>
       {for (final q in allQuestions) q.id: q.answer};
 }

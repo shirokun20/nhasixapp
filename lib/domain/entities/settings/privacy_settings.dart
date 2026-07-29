@@ -1,8 +1,8 @@
-/// Privacy settings entities
-/// Extracted from settings_repository.dart
+// Privacy settings entities
+// Extracted from settings_repository.dart
 library;
 
-/// Privacy settings configuration
+// Privacy settings configuration
 class PrivacySettings {
   const PrivacySettings({
     required this.hideFromRecents,
@@ -19,7 +19,7 @@ class PrivacySettings {
   final int authenticationTimeout;
 }
 
-/// Content filter settings
+// Content filter settings
 class ContentFilterSettings {
   const ContentFilterSettings({
     required this.showNsfwContent,

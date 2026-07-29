@@ -4,9 +4,9 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'cache_service.dart';
 
-/// In-memory LRU cache implementation
-/// Uses LinkedHashMap to maintain insertion order
-/// Automatically evicts least recently used entries when size limit is reached
+// In-memory LRU cache implementation
+// Uses LinkedHashMap to maintain insertion order
+// Automatically evicts least recently used entries when size limit is reached
 class MemoryCacheService<T> implements CacheService<T> {
   final int maxEntries;
   final Duration defaultTTL;
@@ -116,7 +116,7 @@ class MemoryCacheService<T> implements CacheService<T> {
     );
   }
 
-  /// Remove expired entries
+  // Remove expired entries
   Future<int> removeExpired() async {
     final expiredKeys = <String>[];
 

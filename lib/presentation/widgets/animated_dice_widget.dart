@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Animated dice SVG widget that spins on demand
+// Animated dice SVG widget that spins on demand
 class AnimatedDiceWidget extends StatefulWidget {
   final Duration duration;
   final VoidCallback? onSpinComplete;

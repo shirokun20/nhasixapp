@@ -1,8 +1,8 @@
-/// Theme-related settings entities
-/// Extracted from settings_repository.dart
+// Theme-related settings entities
+// Extracted from settings_repository.dart
 library;
 
-/// Theme settings configuration
+// Theme settings configuration
 class ThemeSettings {
   const ThemeSettings({
     required this.currentTheme,
@@ -35,7 +35,7 @@ class ThemeSettings {
   }
 }
 
-/// Theme option
+// Theme option
 class ThemeOption {
   const ThemeOption({
     required this.id,
@@ -52,7 +52,7 @@ class ThemeOption {
   final bool isCustom;
 }
 
-/// Custom theme configuration
+// Custom theme configuration
 class CustomTheme {
   const CustomTheme({
     required this.id,

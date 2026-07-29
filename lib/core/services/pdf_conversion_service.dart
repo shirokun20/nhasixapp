@@ -9,8 +9,8 @@ import '../utils/download_storage_utils.dart';
 import 'notification_service.dart';
 import 'native_pdf_service.dart';
 
-/// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
-/// Handles background PDF conversion with splitting, progress tracking, and notifications
+// Service yang menangani konversi PDF di background dengan fitur splitting dan notifikasi
+// Handles background PDF conversion with splitting, progress tracking, and notifications
 class PdfConversionService {
   PdfConversionService({
     required NotificationService notificationService,
@@ -27,8 +27,8 @@ class PdfConversionService {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
-  /// Test method untuk verify apakah notification service bisa menampilkan notification
-  /// Test method to verify if notification service can display notifications
+  // Test method untuk verify apakah notification service bisa menampilkan notification
+  // Test method to verify if notification service can display notifications
   Future<bool> testPdfNotification({
     String testContentId = 'test-pdf-123',
     String testTitle = 'PDF Notification Test',
@@ -77,15 +77,15 @@ class PdfConversionService {
     }
   }
 
-  /// Mengkonversi images download menjadi PDF di background menggunakan native generator
-  /// Converts downloaded images to PDF in background using native generator
+  // Mengkonversi images download menjadi PDF di background menggunakan native generator
+  // Converts downloaded images to PDF in background using native generator
   ///
-  /// Parameters:
-  /// - contentId: ID konten yang akan dikonversi
-  /// - title: Judul konten untuk nama file PDF
-  /// - imagePaths: List path gambar yang sudah di-download
-  /// - outputDir: Direktori output (optional, default: nhasix-generate/pdf/)
-  /// - maxPagesPerFile: Deprecated - native handles all pages in single file
+  // Parameters:
+  // - contentId: ID konten yang akan dikonversi
+  // - title: Judul konten untuk nama file PDF
+  // - imagePaths: List path gambar yang sudah di-download
+  // - outputDir: Direktori output (optional, default: nhasix-generate/pdf/)
+  // - maxPagesPerFile: Deprecated - native handles all pages in single file
   Future<void> convertToPdfInBackground({
     required String contentId,
     required String title,
@@ -93,7 +93,8 @@ class PdfConversionService {
     String? sourceId,
     String? outputDir,
     int maxPagesPerFile = 50,
-    void Function(int progress, String message)? onProgress, // NEW: group notification callback
+    void Function(int progress, String message)?
+        onProgress, // NEW: group notification callback
   }) async {
     try {
       _logger.i(
@@ -167,10 +168,10 @@ class PdfConversionService {
     }
   }
 
-  /// Generate PDF using native high-performance implementation
+  // Generate PDF using native high-performance implementation
   ///
-  /// Uses Android native PDF generator for ~5x speedup on large webtoon sets.
-  /// This method handles progress updates and notification management.
+  // Uses Android native PDF generator for ~5x speedup on large webtoon sets.
+  // This method handles progress updates and notification management.
   Future<void> _generatePdfNative({
     required String contentId,
     required String title,
@@ -251,10 +252,10 @@ class PdfConversionService {
     }
   }
 
-  /// Membuat direktori output untuk file PDF
-  /// Creates output directory for PDF files
+  // Membuat direktori output untuk file PDF
+  // Creates output directory for PDF files
   ///
-  /// Returns: Directory object untuk menyimpan PDF
+  // Returns: Directory object untuk menyimpan PDF
   Future<Directory> _createPdfOutputDirectory(
     String? customOutputDir, [
     String? contentId,
@@ -332,10 +333,10 @@ class PdfConversionService {
     }
   }
 
-  /// Cek apakah PDF sudah pernah dibuat untuk konten tertentu
-  /// Check if PDF has been created for specific content
+  // Cek apakah PDF sudah pernah dibuat untuk konten tertentu
+  // Check if PDF has been created for specific content
   ///
-  /// Returns: true jika PDF sudah ada, false jika belum
+  // Returns: true jika PDF sudah ada, false jika belum
   Future<bool> isPdfExistForContent(String contentId,
       {String? outputDir, String? sourceId}) async {
     try {
@@ -379,7 +380,7 @@ class PdfConversionService {
     }
   }
 
-  /// Helper untuk cek existensi PDF dalam direktori
+  // Helper untuk cek existensi PDF dalam direktori
   Future<bool> _hasPdfInDirectory(Directory dir, String contentId) async {
     try {
       if (!await dir.exists()) return false;
@@ -396,10 +397,10 @@ class PdfConversionService {
     }
   }
 
-  /// Dapatkan daftar file PDF untuk konten tertentu
-  /// Get list of PDF files for specific content
+  // Dapatkan daftar file PDF untuk konten tertentu
+  // Get list of PDF files for specific content
   ///
-  /// Returns: List path file PDF yang ditemukan
+  // Returns: List path file PDF yang ditemukan
   Future<List<String>> getPdfPathsForContent(String contentId,
       {String? outputDir}) async {
     try {
@@ -440,7 +441,7 @@ class PdfConversionService {
     }
   }
 
-  /// Helper untuk mendapatkan list PDF dalam direktori
+  // Helper untuk mendapatkan list PDF dalam direktori
   Future<List<String>> _getPdfsInDirectory(
       Directory dir, String contentId) async {
     final pdfPaths = <String>[];
@@ -457,9 +458,9 @@ class PdfConversionService {
     return pdfPaths;
   }
 
-  /// Delete all PDF files for specific content
+  // Delete all PDF files for specific content
   ///
-  /// Returns: true jika berhasil dihapus, false jika gagal
+  // Returns: true jika berhasil dihapus, false jika gagal
   Future<bool> deletePdfsForContent(String contentId,
       {String? outputDir}) async {
     try {
@@ -494,10 +495,10 @@ class PdfConversionService {
     }
   }
 
-  /// Dapatkan total ukuran file PDF untuk konten tertentu
-  /// Get total file size of PDF files for specific content
+  // Dapatkan total ukuran file PDF untuk konten tertentu
+  // Get total file size of PDF files for specific content
   ///
-  /// Returns: Total ukuran dalam bytes
+  // Returns: Total ukuran dalam bytes
   Future<int> getTotalPdfSizeForContent(String contentId,
       {String? outputDir}) async {
     try {
@@ -527,13 +528,13 @@ class PdfConversionService {
     }
   }
 
-  /// Format ukuran file untuk display ke user
-  /// Format file size for user display
+  // Format ukuran file untuk display ke user
+  // Format file size for user display
   ///
-  /// Parameters:
-  /// - bytes: Ukuran dalam bytes
+  // Parameters:
+  // - bytes: Ukuran dalam bytes
   ///
-  /// Returns: String format yang user-friendly (e.g., "2.5 MB")
+  // Returns: String format yang user-friendly (e.g., "2.5 MB")
   String formatFileSize(int bytes) {
     if (bytes < 1024) {
       return '$bytes B';
@@ -546,14 +547,14 @@ class PdfConversionService {
     }
   }
 
-  /// Cleanup file PDF lama berdasarkan umur atau kriteria tertentu
-  /// Cleanup old PDF files based on age or specific criteria
+  // Cleanup file PDF lama berdasarkan umur atau kriteria tertentu
+  // Cleanup old PDF files based on age or specific criteria
   ///
-  /// Parameters:
-  /// - maxAge: Umur maksimal file dalam hari (default: 30 hari)
-  /// - outputDir: Direktori yang akan dibersihkan (optional)
+  // Parameters:
+  // - maxAge: Umur maksimal file dalam hari (default: 30 hari)
+  // - outputDir: Direktori yang akan dibersihkan (optional)
   ///
-  /// Returns: Jumlah file yang berhasil dihapus
+  // Returns: Jumlah file yang berhasil dihapus
   Future<int> cleanupOldPdfs({int maxAge = 30, String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir);
@@ -595,10 +596,10 @@ class PdfConversionService {
     }
   }
 
-  /// Dapatkan statistik PDF di direktori output
-  /// Get PDF statistics in output directory
+  // Dapatkan statistik PDF di direktori output
+  // Get PDF statistics in output directory
   ///
-  /// Returns: Map dengan informasi statistik
+  // Returns: Map dengan informasi statistik
   Future<Map<String, dynamic>> getPdfStatistics({String? outputDir}) async {
     try {
       final pdfDir = await _createPdfOutputDirectory(outputDir);
@@ -654,14 +655,14 @@ class PdfConversionService {
     }
   }
 
-  /// Set localization callback for getting localized strings
+  // Set localization callback for getting localized strings
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('PdfConversionService: Localization callback set');
   }
 
-  /// Get localized string with fallback
+  // Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
@@ -673,8 +674,8 @@ class PdfConversionService {
   }
 }
 
-/// Result object untuk tracking hasil konversi PDF dengan multiple parts
-/// Result object for tracking PDF conversion result with multiple parts
+// Result object untuk tracking hasil konversi PDF dengan multiple parts
+// Result object for tracking PDF conversion result with multiple parts
 class PdfConversionResult {
   const PdfConversionResult({
     required this.success,
@@ -685,35 +686,35 @@ class PdfConversionResult {
     this.error,
   });
 
-  /// Apakah konversi berhasil
-  /// Whether conversion was successful
+  // Apakah konversi berhasil
+  // Whether conversion was successful
   final bool success;
 
-  /// List path file PDF yang dibuat (bisa multiple jika di-split)
-  /// List of PDF file paths created (can be multiple if split)
+  // List path file PDF yang dibuat (bisa multiple jika di-split)
+  // List of PDF file paths created (can be multiple if split)
   final List<String> pdfPaths;
 
-  /// Total jumlah halaman dari semua PDF
-  /// Total number of pages across all PDFs
+  // Total jumlah halaman dari semua PDF
+  // Total number of pages across all PDFs
   final int pageCount;
 
-  /// Jumlah file PDF yang dibuat (1 untuk single file, >1 untuk split)
-  /// Number of PDF files created (1 for single file, >1 for split)
+  // Jumlah file PDF yang dibuat (1 untuk single file, >1 untuk split)
+  // Number of PDF files created (1 for single file, >1 for split)
   final int partsCount;
 
-  /// Total ukuran file semua PDF dalam bytes
-  /// Total file size of all PDFs in bytes
+  // Total ukuran file semua PDF dalam bytes
+  // Total file size of all PDFs in bytes
   final int fileSize;
 
-  /// Error message jika konversi gagal
-  /// Error message if conversion failed
+  // Error message jika konversi gagal
+  // Error message if conversion failed
   final String? error;
 
-  /// Convenience getter untuk mendapatkan path PDF pertama
-  /// Convenience getter to get first PDF path
+  // Convenience getter untuk mendapatkan path PDF pertama
+  // Convenience getter to get first PDF path
   String? get pdfPath => pdfPaths.isNotEmpty ? pdfPaths.first : null;
 
-  /// Apakah PDF di-split menjadi multiple files
-  /// Whether PDF was split into multiple files
+  // Apakah PDF di-split menjadi multiple files
+  // Whether PDF was split into multiple files
   bool get isSplit => partsCount > 1;
 }

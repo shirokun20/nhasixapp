@@ -6,7 +6,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../cubits/network/network_cubit.dart';
 
-/// Widget that shows offline/online status indicator
+// Widget that shows offline/online status indicator
 class OfflineIndicatorWidget extends StatelessWidget {
   const OfflineIndicatorWidget({
     super.key,
@@ -134,7 +134,7 @@ class OfflineIndicatorWidget extends StatelessWidget {
   }
 }
 
-/// Compact offline indicator for app bars and small spaces
+// Compact offline indicator for app bars and small spaces
 class CompactOfflineIndicator extends StatelessWidget {
   const CompactOfflineIndicator({super.key});
 
@@ -144,7 +144,7 @@ class CompactOfflineIndicator extends StatelessWidget {
   }
 }
 
-/// Full offline indicator with text
+// Full offline indicator with text
 class FullOfflineIndicator extends StatelessWidget {
   const FullOfflineIndicator({
     super.key,
@@ -162,7 +162,7 @@ class FullOfflineIndicator extends StatelessWidget {
   }
 }
 
-/// Offline banner that appears at the top when offline
+// Offline banner that appears at the top when offline
 class OfflineBanner extends StatelessWidget {
   const OfflineBanner({super.key});
 
@@ -223,7 +223,7 @@ class OfflineBanner extends StatelessWidget {
   }
 }
 
-/// Offline mode toggle for settings
+// Offline mode toggle for settings
 class OfflineModeToggle extends StatelessWidget {
   const OfflineModeToggle({
     super.key,

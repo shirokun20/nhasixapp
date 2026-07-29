@@ -103,7 +103,7 @@ class _KuronShimmerState extends State<KuronShimmer>
   }
 }
 
-/// Base shimmer widget providing consistent styling across the app
+// Base shimmer widget providing consistent styling across the app
 class BaseShimmer extends StatelessWidget {
   final Widget child;
   final bool enabled;
@@ -123,7 +123,7 @@ class BaseShimmer extends StatelessWidget {
   }
 }
 
-/// Generic shimmer loading widget with customizable dimensions
+// Generic shimmer loading widget with customizable dimensions
 class ShimmerBox extends StatelessWidget {
   final double? height;
   final double? width;
@@ -153,7 +153,7 @@ class ShimmerBox extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for content card
+// Shimmer placeholder for content card
 class ContentCardShimmer extends StatelessWidget {
   const ContentCardShimmer({super.key});
 
@@ -243,7 +243,7 @@ class ContentCardShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for grid content card
+// Shimmer placeholder for grid content card
 class ContentGridCardShimmer extends StatelessWidget {
   const ContentGridCardShimmer({super.key});
 
@@ -312,7 +312,7 @@ class ContentGridCardShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for detail screen
+// Shimmer placeholder for detail screen
 class DetailScreenShimmer extends StatelessWidget {
   const DetailScreenShimmer({super.key});
 
@@ -394,7 +394,7 @@ class DetailScreenShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for list view
+// Shimmer placeholder for list view
 class ListShimmer extends StatelessWidget {
   final int itemCount;
 
@@ -414,7 +414,7 @@ class ListShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for grid view
+// Shimmer placeholder for grid view
 class GridShimmer extends StatelessWidget {
   final int itemCount;
   final int crossAxisCount;
@@ -444,7 +444,7 @@ class GridShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for reader page thumbnail
+// Shimmer placeholder for reader page thumbnail
 class ReaderThumbnailShimmer extends StatelessWidget {
   const ReaderThumbnailShimmer({super.key});
 
@@ -469,7 +469,7 @@ class ReaderThumbnailShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for Genre List
+// Shimmer placeholder for Genre List
 class GenreListShimmer extends StatelessWidget {
   const GenreListShimmer({super.key});
 
@@ -567,7 +567,7 @@ class GenreListShimmer extends StatelessWidget {
   }
 }
 
-/// Simple List Shimmer for text-only lists (like Doujin List)
+// Simple List Shimmer for text-only lists (like Doujin List)
 class SimpleListShimmer extends StatelessWidget {
   const SimpleListShimmer({super.key});
 

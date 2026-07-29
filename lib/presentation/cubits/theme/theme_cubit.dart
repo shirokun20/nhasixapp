@@ -10,8 +10,8 @@ import '../settings/settings_cubit.dart';
 
 part 'theme_state.dart';
 
-/// Cubit for managing app theme changes
-/// Listens to SettingsCubit and provides reactive ThemeData
+// Cubit for managing app theme changes
+// Listens to SettingsCubit and provides reactive ThemeData
 class ThemeCubit extends Cubit<ThemeState> {
   ThemeCubit({
     required SettingsCubit settingsCubit,
@@ -30,12 +30,12 @@ class ThemeCubit extends Cubit<ThemeState> {
   final Logger _logger;
   late final StreamSubscription _settingsSubscription;
 
-  /// Update theme when settings change
+  // Update theme when settings change
   void _onSettingsChanged(SettingsState settingsState) {
     _updateThemeFromSettings(settingsState);
   }
 
-  /// Update theme data based on settings
+  // Update theme data based on settings
   void _updateThemeFromSettings(SettingsState settingsState) {
     if (settingsState is SettingsLoaded) {
       final preferences = settingsState.preferences;
@@ -52,7 +52,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Create ThemeData based on theme setting
+  // Create ThemeData based on theme setting
   ThemeData _createThemeData(String theme) {
     switch (theme) {
       case 'light':
@@ -70,7 +70,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Get ThemeMode for MaterialApp
+  // Get ThemeMode for MaterialApp
   ThemeMode _getThemeMode(String theme) {
     switch (theme) {
       case 'light':
@@ -84,7 +84,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Text theme using Playfair Display (headings) + Inter (body)
+  // Text theme using Playfair Display (headings) + Inter (body)
   TextTheme _googleFontsTextTheme([TextTheme? base]) {
     final b = base ?? ThemeData.light().textTheme;
     return GoogleFonts.playfairDisplayTextTheme(b).copyWith(
@@ -100,7 +100,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create light theme — warm cream, aged paper feel
+  // Create light theme — warm cream, aged paper feel
   ThemeData _createLightTheme() {
     return ThemeData(
       brightness: Brightness.light,
@@ -209,7 +209,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create dark theme — warm library night feel
+  // Create dark theme — warm library night feel
   ThemeData _createDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
@@ -318,7 +318,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create AMOLED theme — pure black, warm off-white text
+  // Create AMOLED theme — pure black, warm off-white text
   ThemeData _createAmoledTheme() {
     return ThemeData(
       brightness: Brightness.dark,
@@ -427,7 +427,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create Dark Note theme — pure monochrome B&W inverted
+  // Create Dark Note theme — pure monochrome B&W inverted
   ThemeData _createNoteDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
@@ -535,7 +535,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Create Note theme — pure monochrome B&W
+  // Create Note theme — pure monochrome B&W
   ThemeData _createNoteTheme() {
     return ThemeData(
       brightness: Brightness.light,
@@ -644,24 +644,24 @@ class ThemeCubit extends Cubit<ThemeState> {
     );
   }
 
-  /// Force theme update
+  // Force theme update
   void updateTheme() {
     _updateThemeFromSettings(_settingsCubit.state);
   }
 
-  /// Get current theme name
+  // Get current theme name
   String? get currentTheme {
     final currentState = state;
     return currentState.currentTheme;
   }
 
-  /// Check if current theme is dark
+  // Check if current theme is dark
   bool get isDark {
     final theme = currentTheme;
     return theme == 'dark' || theme == 'amoled';
   }
 
-  /// Check if current theme is AMOLED
+  // Check if current theme is AMOLED
   bool get isAmoled {
     return currentTheme == 'amoled';
   }

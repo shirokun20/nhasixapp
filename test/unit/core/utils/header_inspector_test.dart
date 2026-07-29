@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nhasixapp/core/utils/header_inspector.dart';
 
-/// Minimal RIFF+WEBP+VP8X header for animated WebP.
-/// 1x1 VP8X frame with animation flag.
+// Minimal RIFF+WEBP+VP8X header for animated WebP.
+// 1x1 VP8X frame with animation flag.
 final _minimalAnimatedWebP = _buildMinimalAnimatedWebP();
 
 Uint8List _buildMinimalAnimatedWebP() {
@@ -51,7 +51,7 @@ Uint8List _buildMinimalAnimatedWebP() {
   return result;
 }
 
-/// Minimal static JPEG (SOI + APP0 + SOS)
+// Minimal static JPEG (SOI + APP0 + SOS)
 final _minimalJpeg = Uint8List.fromList([
   0xFF, 0xD8, // SOI
   0xFF, 0xE0, // APP0 marker
@@ -64,7 +64,7 @@ final _minimalJpeg = Uint8List.fromList([
   0xFF, 0xD9, // EOI
 ]);
 
-/// Minimal PNG header
+// Minimal PNG header
 final _minimalPng = Uint8List.fromList([
   0x89, 0x50, 0x4E, 0x47, // PNG signature
   0x0D, 0x0A, 0x1A, 0x0A, // CR+LF+EOF+LF
@@ -80,7 +80,7 @@ final _minimalPng = Uint8List.fromList([
   0x00, 0x00, 0x00, 0x00, // CRC
 ]);
 
-/// Minimal static WebP (lossy, VP8 key frame) — NOT animated.
+// Minimal static WebP (lossy, VP8 key frame) — NOT animated.
 final _minimalStaticWebP = Uint8List.fromList([
   0x52, 0x49, 0x46, 0x46, // RIFF
   0x2E, 0x00, 0x00, 0x00, // file size (46)

@@ -1,8 +1,8 @@
-/// Backup settings entities
-/// Extracted from settings_repository.dart
+// Backup settings entities
+// Extracted from settings_repository.dart
 library;
 
-/// Backup frequency options
+// Backup frequency options
 enum BackupFrequency {
   daily,
   weekly,
@@ -10,14 +10,14 @@ enum BackupFrequency {
   manual,
 }
 
-/// Backup types
+// Backup types
 enum BackupType {
   manual,
   automatic,
   cloud,
 }
 
-/// Backup settings configuration
+// Backup settings configuration
 class BackupSettings {
   const BackupSettings({
     required this.autoBackup,
@@ -34,7 +34,7 @@ class BackupSettings {
   final int maxBackups;
 }
 
-/// Backup information
+// Backup information
 class BackupInfo {
   const BackupInfo({
     required this.id,
@@ -51,7 +51,7 @@ class BackupInfo {
   final String? description;
 }
 
-/// Backup result
+// Backup result
 class BackupResult {
   const BackupResult({
     required this.success,
@@ -66,7 +66,7 @@ class BackupResult {
   final String? error;
 }
 
-/// Restore result
+// Restore result
 class RestoreResult {
   const RestoreResult({
     required this.success,

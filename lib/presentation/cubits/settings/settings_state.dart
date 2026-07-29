@@ -1,11 +1,11 @@
 part of 'settings_cubit.dart';
 
-/// Base state for SettingsCubit
+// Base state for SettingsCubit
 abstract class SettingsState extends BaseCubitState {
   const SettingsState();
 }
 
-/// Initial state before loading settings
+// Initial state before loading settings
 class SettingsInitial extends SettingsState {
   const SettingsInitial();
 
@@ -13,7 +13,7 @@ class SettingsInitial extends SettingsState {
   List<Object?> get props => [];
 }
 
-/// State when settings are loaded successfully
+// State when settings are loaded successfully
 class SettingsLoaded extends SettingsState {
   const SettingsLoaded({
     required this.preferences,
@@ -28,7 +28,7 @@ class SettingsLoaded extends SettingsState {
   @override
   List<Object?> get props => [preferences, lastUpdated, isUpdatingDisguiseMode];
 
-  /// Create a copy with updated properties
+  // Create a copy with updated properties
   SettingsLoaded copyWith({
     UserPreferences? preferences,
     DateTime? lastUpdated,
@@ -42,7 +42,7 @@ class SettingsLoaded extends SettingsState {
     );
   }
 
-  /// Get theme display name
+  // Get theme display name
   String getThemeDisplayName(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackThemeDisplayName();
@@ -73,7 +73,7 @@ class SettingsLoaded extends SettingsState {
     }
   }
 
-  /// Get image quality display name
+  // Get image quality display name
   String getImageQualityDisplayName(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackImageQualityDisplayName();
@@ -108,7 +108,7 @@ class SettingsLoaded extends SettingsState {
     }
   }
 
-  /// Get reading direction display name
+  // Get reading direction display name
   String getReadingDirectionDisplayName(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackReadingDirectionDisplayName();
@@ -135,7 +135,7 @@ class SettingsLoaded extends SettingsState {
     }
   }
 
-  /// Get default language display name
+  // Get default language display name
   String getDefaultLanguageDisplayName(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackDefaultLanguageDisplayName();
@@ -174,20 +174,20 @@ class SettingsLoaded extends SettingsState {
     }
   }
 
-  /// Check if settings have been modified recently
+  // Check if settings have been modified recently
   bool get isRecentlyUpdated {
     final now = DateTime.now();
     final difference = now.difference(lastUpdated);
     return difference.inSeconds < 5;
   }
 
-  /// Get grid layout summary
+  // Get grid layout summary
   String get gridLayoutSummary {
     return '${preferences.columnsPortrait} columns (Portrait), '
         '${preferences.columnsLandscape} columns (Landscape)';
   }
 
-  /// Get reader settings summary
+  // Get reader settings summary
   String get readerSettingsEntitySummary {
     final features = <String>[];
 
@@ -204,7 +204,7 @@ class SettingsLoaded extends SettingsState {
     return features.isEmpty ? 'Default settings' : features.join(', ');
   }
 
-  /// Get display settings summary
+  // Get display settings summary
   String get displaySettingsSummary {
     final features = <String>[];
 
@@ -224,7 +224,7 @@ class SettingsLoaded extends SettingsState {
   }
 }
 
-/// State when there's an error with settings
+// State when there's an error with settings
 class SettingsError extends SettingsState {
   const SettingsError({
     required this.message,
@@ -237,7 +237,7 @@ class SettingsError extends SettingsState {
   @override
   List<Object?> get props => [message, errorType];
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String getUserFriendlyMessage(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackUserFriendlyMessage();
@@ -264,6 +264,6 @@ class SettingsError extends SettingsState {
     }
   }
 
-  /// Check if error is recoverable
+  // Check if error is recoverable
   bool get isRecoverable => errorType != 'storage';
 }

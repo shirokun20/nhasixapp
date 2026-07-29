@@ -13,7 +13,7 @@ import 'package:nhasixapp/presentation/widgets/extended_image_reader_widget.dart
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Minimal app wrapper providing localizations and direction.
+// Minimal app wrapper providing localizations and direction.
 Widget _wrap(Widget child) => MaterialApp(
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -24,7 +24,7 @@ Widget _wrap(Widget child) => MaterialApp(
       home: Scaffold(body: child),
     );
 
-/// Build a [ExtendedImageReaderWidget] with sensible defaults.
+// Build a [ExtendedImageReaderWidget] with sensible defaults.
 Widget _buildWidget({
   required String url,
   ReadingMode mode = ReadingMode.continuousScroll,
@@ -46,7 +46,7 @@ Widget _buildWidget({
       ),
     );
 
-/// Force a URL into the heavy-image static set to simulate a second visit.
+// Force a URL into the heavy-image static set to simulate a second visit.
 void _markHeavy(String url) {
   // Access the private static via reflection is not possible in Dart, so we
   // inject via the threshold-bytes detection path by pumping a widget and
@@ -70,11 +70,11 @@ extension _ExposeHeavySet on ExtendedImageReaderWidget {
   }
 }
 
-/// Thin shim that exposes the private static set for testing.
-/// Since Dart doesn't allow cross-library access to private members, we expose
-/// a @visibleForTesting hook in the production widget below.
+// Thin shim that exposes the private static set for testing.
+// Since Dart doesn't allow cross-library access to private members, we expose
+// a @visibleForTesting hook in the production widget below.
 ///
-/// For now the tests that need pre-seeding use [ExtendedImageReaderWidget.addHeavyUrlForTesting].
+// For now the tests that need pre-seeding use [ExtendedImageReaderWidget.addHeavyUrlForTesting].
 class _InjectHeavyUrl {
   _InjectHeavyUrl._();
   static void inject(String url) {

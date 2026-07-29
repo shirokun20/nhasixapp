@@ -6,7 +6,7 @@ import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Horizontal scrollable widget for displaying selected filters
+// Horizontal scrollable widget for displaying selected filters
 class SelectedFiltersWidget extends StatelessWidget {
   const SelectedFiltersWidget({
     super.key,
@@ -46,7 +46,7 @@ class SelectedFiltersWidget extends StatelessWidget {
   }
 }
 
-/// Individual chip for selected filter item
+// Individual chip for selected filter item
 class SelectedFilterChip extends StatelessWidget {
   const SelectedFilterChip({
     super.key,
@@ -139,7 +139,7 @@ class SelectedFilterChip extends StatelessWidget {
   }
 }
 
-/// Compact version for smaller spaces
+// Compact version for smaller spaces
 class SelectedFiltersWidgetCompact extends StatelessWidget {
   const SelectedFiltersWidgetCompact({
     super.key,
@@ -191,7 +191,7 @@ class SelectedFiltersWidgetCompact extends StatelessWidget {
   }
 }
 
-/// Compact chip for selected filter item
+// Compact chip for selected filter item
 class SelectedFilterChipCompact extends StatelessWidget {
   const SelectedFilterChipCompact({
     super.key,

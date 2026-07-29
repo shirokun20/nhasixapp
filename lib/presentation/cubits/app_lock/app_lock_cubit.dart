@@ -27,8 +27,8 @@ class AppLockCubit extends BaseCubit<AppLockState> {
   static const _sessionDuration = Duration(minutes: 10);
   static const _sessionCheckInterval = Duration(seconds: 30);
 
-  /// Call after splash completes. Checks session first — if session active,
-  /// gate is unlocked. Otherwise shows PIN/biometric unlock.
+  // Call after splash completes. Checks session first — if session active,
+  // gate is unlocked. Otherwise shows PIN/biometric unlock.
   Future<void> init() async {
     if (_inited) return;
     _inited = true;
@@ -161,13 +161,14 @@ class AppLockCubit extends BaseCubit<AppLockState> {
     }
   }
 
-  /// Start a new session — after this, [isSessionActive] returns true
-  /// for [_sessionDuration]. Gate skips lock during active session.
+  // Start a new session — after this, [isSessionActive] returns true
+  // for [_sessionDuration]. Gate skips lock during active session.
   Future<void> _startSession() async {
     final expiry = DateTime.now().add(_sessionDuration);
     await _repository.saveSessionExpiry(expiry);
     _sessionTimer?.cancel();
-    _sessionTimer = Timer.periodic(_sessionCheckInterval, (_) => _checkSession());
+    _sessionTimer =
+        Timer.periodic(_sessionCheckInterval, (_) => _checkSession());
     logInfo('Session started until $expiry');
   }
 
@@ -178,7 +179,9 @@ class AppLockCubit extends BaseCubit<AppLockState> {
       return;
     }
     _repository.isSessionActive().then((active) {
-      if (!active && state is AppLockReady && !(state as AppLockReady).isLocked) {
+      if (!active &&
+          state is AppLockReady &&
+          !(state as AppLockReady).isLocked) {
         _sessionTimer?.cancel();
         _emitWith(isLocked: true);
         logInfo('Session expired — locked');

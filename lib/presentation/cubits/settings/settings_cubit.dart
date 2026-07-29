@@ -7,8 +7,8 @@ import '../base/base_cubit.dart';
 
 part 'settings_state.dart';
 
-/// Cubit for managing application settings and user preferences
-/// Simple state management for settings operations
+// Cubit for managing application settings and user preferences
+// Simple state management for settings operations
 class SettingsCubit extends BaseCubit<SettingsState> {
   SettingsCubit({
     required PreferencesService preferencesService,
@@ -24,7 +24,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
   final PreferencesService _preferencesService;
   final AppLocalizations? localizations;
 
-  /// Load settings from PreferencesService
+  // Load settings from PreferencesService
   Future<void> _loadSettings() async {
     try {
       logInfo('Loading user preferences');
@@ -94,39 +94,39 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Force reload settings from SharedPreferences
-  /// Use this when returning to Settings screen after hot reload or external changes
+  // Force reload settings from SharedPreferences
+  // Use this when returning to Settings screen after hot reload or external changes
   Future<void> reloadSettings() async {
     logInfo('Force reloading settings from SharedPreferences');
     await _loadSettings();
   }
 
-  /// Update theme setting
+  // Update theme setting
   Future<void> updateTheme(String theme) async {
     await _updateSetting((prefs) => prefs.copyWith(theme: theme));
   }
 
-  /// Update default language setting
+  // Update default language setting
   Future<void> updateDefaultLanguage(String language) async {
     await _updateSetting((prefs) => prefs.copyWith(defaultLanguage: language));
   }
 
-  /// Update image quality setting
+  // Update image quality setting
   Future<void> updateImageQuality(String quality) async {
     await _updateSetting((prefs) => prefs.copyWith(imageQuality: quality));
   }
 
-  /// Update auto download setting
+  // Update auto download setting
   Future<void> updateAutoDownload(bool autoDownload) async {
     await _updateSetting((prefs) => prefs.copyWith(autoDownload: autoDownload));
   }
 
-  /// Update show titles setting
+  // Update show titles setting
   Future<void> updateShowTitles(bool showTitles) async {
     await _updateSetting((prefs) => prefs.copyWith(showTitles: showTitles));
   }
 
-  /// Update blur thumbnails setting
+  // Update blur thumbnails setting
   Future<void> updateBlurThumbnails(bool blurThumbnails) async {
     logInfo('updateBlurThumbnails called: $blurThumbnails');
     await _updateSetting(
@@ -177,13 +177,13 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     );
   }
 
-  /// Update pagination setting
+  // Update pagination setting
   Future<void> updateUsePagination(bool usePagination) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(usePagination: usePagination));
   }
 
-  /// Update columns portrait setting
+  // Update columns portrait setting
   Future<void> updateColumnsPortrait(int columns) async {
     if (columns < 1 || columns > 5) {
       logWarning('Invalid columns portrait value: $columns');
@@ -192,7 +192,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     await _updateSetting((prefs) => prefs.copyWith(columnsPortrait: columns));
   }
 
-  /// Update columns landscape setting
+  // Update columns landscape setting
   Future<void> updateColumnsLandscape(int columns) async {
     if (columns < 1 || columns > 7) {
       logWarning('Invalid columns landscape value: $columns');
@@ -201,58 +201,58 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     await _updateSetting((prefs) => prefs.copyWith(columnsLandscape: columns));
   }
 
-  /// Update use volume keys setting
+  // Update use volume keys setting
   Future<void> updateUseVolumeKeys(bool useVolumeKeys) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(useVolumeKeys: useVolumeKeys));
   }
 
-  /// Update reading direction setting
+  // Update reading direction setting
   Future<void> updateReadingDirection(ReadingDirection direction) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(readingDirection: direction));
   }
 
-  /// Update keep screen on setting
+  // Update keep screen on setting
   Future<void> updateKeepScreenOn(bool keepScreenOn) async {
     await _updateSetting((prefs) => prefs.copyWith(keepScreenOn: keepScreenOn));
   }
 
-  /// Update show system UI setting
+  // Update show system UI setting
   Future<void> updateShowSystemUI(bool showSystemUI) async {
     await _updateSetting((prefs) => prefs.copyWith(showSystemUI: showSystemUI));
   }
 
-  /// Update auto cleanup history setting
+  // Update auto cleanup history setting
   Future<void> updateAutoCleanupHistory(bool autoCleanupHistory) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(autoCleanupHistory: autoCleanupHistory));
   }
 
-  /// Update history cleanup interval setting
+  // Update history cleanup interval setting
   Future<void> updateHistoryCleanupInterval(int intervalHours) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(historyCleanupIntervalHours: intervalHours));
   }
 
-  /// Update max history days setting
+  // Update max history days setting
   Future<void> updateMaxHistoryDays(int maxDays) async {
     await _updateSetting((prefs) => prefs.copyWith(maxHistoryDays: maxDays));
   }
 
-  /// Update cleanup on inactivity setting
+  // Update cleanup on inactivity setting
   Future<void> updateCleanupOnInactivity(bool cleanupOnInactivity) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(cleanupOnInactivity: cleanupOnInactivity));
   }
 
-  /// Update inactivity cleanup days setting
+  // Update inactivity cleanup days setting
   Future<void> updateInactivityCleanupDays(int inactivityDays) async {
     await _updateSetting(
         (prefs) => prefs.copyWith(inactivityCleanupDays: inactivityDays));
   }
 
-  /// Update disguise mode setting with loading
+  // Update disguise mode setting with loading
   Future<void> updateDisguiseMode(String disguiseMode) async {
     try {
       // Emit loading state
@@ -291,7 +291,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Generic method to update a setting
+  // Generic method to update a setting
   Future<void> _updateSetting(
     UserPreferences Function(UserPreferences) updateFunction,
   ) async {
@@ -330,7 +330,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Reset all settings to default
+  // Reset all settings to default
   Future<void> resetToDefaults() async {
     try {
       logInfo('Resetting all settings to defaults');
@@ -353,7 +353,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Export settings as JSON string
+  // Export settings as JSON string
   Future<String> exportSettings() async {
     try {
       final currentState = state;
@@ -394,7 +394,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Import settings from JSON string
+  // Import settings from JSON string
   Future<void> importSettings(String jsonString) async {
     try {
       logInfo('Importing settings');
@@ -415,7 +415,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     }
   }
 
-  /// Get default preferences
+  // Get default preferences
   UserPreferences _getDefaultPreferences() {
     return const UserPreferences(
       theme: 'dark',
@@ -440,7 +440,7 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     );
   }
 
-  /// Get current preferences
+  // Get current preferences
   UserPreferences? get currentPreferences {
     final currentState = state;
     if (currentState is SettingsLoaded) {
@@ -449,19 +449,19 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     return null;
   }
 
-  /// Check if dark theme is enabled
+  // Check if dark theme is enabled
   bool get isDarkTheme {
     final prefs = currentPreferences;
     return prefs?.theme == 'dark' || prefs?.theme == 'amoled';
   }
 
-  /// Check if AMOLED theme is enabled
+  // Check if AMOLED theme is enabled
   bool get isAmoledTheme {
     final prefs = currentPreferences;
     return prefs?.theme == 'amoled';
   }
 
-  /// Get current grid columns for orientation
+  // Get current grid columns for orientation
   int getColumnsForOrientation(bool isPortrait) {
     final prefs = currentPreferences;
     if (prefs == null) return isPortrait ? 2 : 3;

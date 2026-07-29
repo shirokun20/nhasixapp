@@ -1,18 +1,18 @@
-/// Shared config validation test harness (task 4.7 + 4.8).
+// Shared config validation test harness (task 4.7 + 4.8).
 ///
-/// Usage — in any test file, call [runConfigContractTests]:
-/// ```dart
-/// runConfigContractTests(
-///   configName: 'mangadex-config.json',
-///   expectedOverallStatus: CompatibilityStatus.compatible,
-///   expectedFeatures: {FeatureKind.search: FeatureStatus.inferred},
-///   expectedDiagCodes: {'schemaVersionMissing'},
-/// );
-/// ```
+// Usage — in any test file, call [runConfigContractTests]:
+// ```dart
+// runConfigContractTests(
+//   configName: 'mangadex-config.json',
+//   expectedOverallStatus: CompatibilityStatus.compatible,
+//   expectedFeatures: {FeatureKind.search: FeatureStatus.inferred},
+//   expectedDiagCodes: {'schemaVersionMissing'},
+// );
+// ```
 ///
-/// The harness locates configs via a standard search path relative to the
-/// Dart working directory (works from both workspace root and from
-/// `packages/kuron_generic/`).
+// The harness locates configs via a standard search path relative to the
+// Dart working directory (works from both workspace root and from
+// `packages/kuron_generic/`).
 library;
 
 import 'dart:convert';
@@ -23,11 +23,11 @@ import 'package:test/test.dart';
 
 import 'package:kuron_generic/src/config/source_config_parser.dart';
 
-/// Locate a config file by [name] in the standard search paths.
+// Locate a config file by [name] in the standard search paths.
 ///
-/// Searches (in order):
-///   - `../../informations/configs/<name>` (from packages/kuron_generic/)
-///   - `informations/configs/<name>` (from workspace root)
+// Searches (in order):
+//   - `../../informations/configs/<name>` (from packages/kuron_generic/)
+//   - `informations/configs/<name>` (from workspace root)
 Map<String, Object?> loadConfig(String name) {
   final List<String> candidates = <String>[
     '../../informations/configs/$name',
@@ -45,7 +45,7 @@ Map<String, Object?> loadConfig(String name) {
   );
 }
 
-/// Metadata describing the expected outcome for one source config.
+// Metadata describing the expected outcome for one source config.
 class ConfigContractCase {
   const ConfigContractCase({
     required this.configName,
@@ -56,32 +56,32 @@ class ConfigContractCase {
     this.registeredPlugins = const <String>{},
   });
 
-  /// File name inside `informations/configs/`.
+  // File name inside `informations/configs/`.
   final String configName;
 
-  /// If set, the overall [CompatibilityStatus] must match exactly.
+  // If set, the overall [CompatibilityStatus] must match exactly.
   final CompatibilityStatus? expectedOverallStatus;
 
-  /// Per-feature expectations. Only listed features are verified.
+  // Per-feature expectations. Only listed features are verified.
   final Map<FeatureKind, FeatureStatus> expectedFeatures;
 
-  /// Diagnostic codes that MUST appear in the report.
+  // Diagnostic codes that MUST appear in the report.
   final Set<String> expectedDiagCodes;
 
-  /// Diagnostic codes that MUST NOT appear.
+  // Diagnostic codes that MUST NOT appear.
   final Set<String> forbiddenDiagCodes;
 
-  /// Plugins to register for this test run.
+  // Plugins to register for this test run.
   final Set<String> registeredPlugins;
 }
 
-/// Registers a `group` of tests from [cases] using the shared harness.
+// Registers a `group` of tests from [cases] using the shared harness.
 ///
-/// Each [ConfigContractCase] becomes a `group` with individual `test` entries
-/// for overall status, per-feature status, and diagnostics.
+// Each [ConfigContractCase] becomes a `group` with individual `test` entries
+// for overall status, per-feature status, and diagnostics.
 ///
-/// Pass [parserFactory] to use a custom [SourceConfigParser]; otherwise the
-/// default (no registered primitives / plugins) is used.
+// Pass [parserFactory] to use a custom [SourceConfigParser]; otherwise the
+// default (no registered primitives / plugins) is used.
 void runConfigContractTests(
   List<ConfigContractCase> cases, {
   SourceConfigParser Function(ConfigContractCase)? parserFactory,

@@ -1,4 +1,4 @@
-/// Sort options for content lists
+// Sort options for content lists
 enum SortOption {
   newest('Newest', 'recent'),
   popular('Popular', 'popular'),

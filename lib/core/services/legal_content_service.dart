@@ -4,14 +4,14 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Types of legal content available
+// Types of legal content available
 enum LegalContentType {
   termsAndConditions,
   privacyPolicy,
   faq,
 }
 
-/// Service to fetch legal content from GitHub with local fallback
+// Service to fetch legal content from GitHub with local fallback
 class LegalContentService {
   LegalContentService({
     required Dio dio,
@@ -23,14 +23,14 @@ class LegalContentService {
   final SharedPreferences _prefs;
   final _logger = getIt<Logger>();
 
-  /// GitHub raw content base URL
+  // GitHub raw content base URL
   static const _githubBaseUrl =
       'https://raw.githubusercontent.com/shirokun20/nhasixapp/master/docs';
 
-  /// Cache key prefix
+  // Cache key prefix
   static const _cacheKeyPrefix = 'legal_content_cache_';
 
-  /// Get file name for content type
+  // Get file name for content type
   String _getFileName(LegalContentType type) {
     switch (type) {
       case LegalContentType.termsAndConditions:
@@ -42,7 +42,7 @@ class LegalContentService {
     }
   }
 
-  /// Get GitHub file name for content type
+  // Get GitHub file name for content type
   String _getGitHubFileName(LegalContentType type) {
     switch (type) {
       case LegalContentType.termsAndConditions:
@@ -54,7 +54,7 @@ class LegalContentService {
     }
   }
 
-  /// Get title for content type
+  // Get title for content type
   String getTitle(LegalContentType type, String locale) {
     if (locale == 'id') {
       switch (type) {
@@ -76,10 +76,10 @@ class LegalContentService {
     }
   }
 
-  /// Fetch content with hybrid approach:
-  /// 1. Try GitHub first
-  /// 2. If fail, use cached version
-  /// 3. If no cache, use local asset
+  // Fetch content with hybrid approach:
+  // 1. Try GitHub first
+  // 2. If fail, use cached version
+  // 3. If no cache, use local asset
   Future<String> fetchContent(LegalContentType type, String locale) async {
     final cacheKey = '$_cacheKeyPrefix${type.name}_$locale';
 
@@ -109,7 +109,7 @@ class LegalContentService {
     }
   }
 
-  /// Fetch from GitHub raw content
+  // Fetch from GitHub raw content
   Future<String> _fetchFromGitHub(LegalContentType type, String locale) async {
     final fileName = _getGitHubFileName(type);
     final url = '$_githubBaseUrl/$locale/$fileName';
@@ -129,7 +129,7 @@ class LegalContentService {
     throw Exception('Failed to fetch from GitHub: ${response.statusCode}');
   }
 
-  /// Load from local assets
+  // Load from local assets
   Future<String> _loadLocalAsset(LegalContentType type, String locale) async {
     final fileName = _getFileName(type);
     final assetPath = 'assets/legal/$locale/$fileName';
@@ -146,7 +146,7 @@ class LegalContentService {
     }
   }
 
-  /// Clear cached content
+  // Clear cached content
   Future<void> clearCache() async {
     for (final type in LegalContentType.values) {
       for (final locale in ['en', 'id']) {

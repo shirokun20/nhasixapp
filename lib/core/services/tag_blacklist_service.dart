@@ -191,7 +191,7 @@ class TagBlacklistService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Load cached online blacklists from SharedPreferences
+  // Load cached online blacklists from SharedPreferences
   void _loadCachedBlacklists() {
     try {
       // Load online entries cache
@@ -257,7 +257,7 @@ class TagBlacklistService extends ChangeNotifier {
     }
   }
 
-  /// Save online entries to SharedPreferences
+  // Save online entries to SharedPreferences
   Future<void> _saveCachedOnlineEntries() async {
     try {
       final data = <String, dynamic>{};
@@ -272,7 +272,7 @@ class TagBlacklistService extends ChangeNotifier {
     }
   }
 
-  /// Save online rules to SharedPreferences
+  // Save online rules to SharedPreferences
   Future<void> _saveCachedOnlineRules() async {
     try {
       final data = <String, dynamic>{};

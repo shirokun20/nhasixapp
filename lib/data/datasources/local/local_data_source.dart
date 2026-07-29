@@ -12,14 +12,14 @@ import '../../../domain/entities/user_preferences.dart';
 import '../../../domain/entities/download_status.dart';
 import 'database_helper.dart';
 
-/// Local data source for database operations (simplified)
+// Local data source for database operations (simplified)
 class LocalDataSource {
   final DatabaseHelper _databaseHelper;
   final Logger _logger = getIt<Logger>();
 
   LocalDataSource(this._databaseHelper);
 
-  /// Handle database errors and attempt recovery
+  // Handle database errors and attempt recovery
   Future<Database?> _getSafeDatabase() async {
     try {
       return await _databaseHelper.database;
@@ -40,7 +40,7 @@ class LocalDataSource {
 
   // ==================== FAVORITES OPERATIONS ====================
 
-  /// Add content to favorites with full metadata
+  // Add content to favorites with full metadata
   Future<void> addToFavorites({
     required String id,
     required String sourceId,
@@ -73,7 +73,7 @@ class LocalDataSource {
     }
   }
 
-  /// Remove content from favorites
+  // Remove content from favorites
   Future<void> removeFromFavorites(String id, {String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
@@ -98,7 +98,7 @@ class LocalDataSource {
     }
   }
 
-  /// Remove all favorites for a specific source
+  // Remove all favorites for a specific source
   Future<void> deleteFavoritesBySourceId(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
@@ -116,7 +116,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get favorite content with title from favorites table (fallback to history/downloads)
+  // Get favorite content with title from favorites table (fallback to history/downloads)
   Future<List<Map<String, dynamic>>> getFavorites({
     int page = 1,
     int limit = 20,
@@ -175,7 +175,7 @@ class LocalDataSource {
     }
   }
 
-  /// Check if content is favorited
+  // Check if content is favorited
   Future<bool> isFavorited(String id, {String? sourceId}) async {
     try {
       final db = await _getSafeDatabase();
@@ -196,7 +196,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get favorites count
+  // Get favorites count
   Future<int> getFavoritesCount({String? collectionId}) async {
     try {
       final db = await _getSafeDatabase();
@@ -219,7 +219,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get all favorites at once (for export - no pagination)
+  // Get all favorites at once (for export - no pagination)
   Future<List<Map<String, dynamic>>> getAllFavorites() async {
     try {
       final db = await _getSafeDatabase();
@@ -437,7 +437,7 @@ class LocalDataSource {
 
   // ==================== DOWNLOAD OPERATIONS ====================
 
-  /// Save download status (with title and cover_url)
+  // Save download status (with title and cover_url)
   Future<void> saveDownloadStatus(DownloadStatusModel status) async {
     try {
       final db = await _getSafeDatabase();
@@ -459,7 +459,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get download status
+  // Get download status
   Future<DownloadStatusModel?> getDownloadStatus(String id) async {
     try {
       final db = await _getSafeDatabase();
@@ -483,7 +483,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get all downloads with optional state and source filtering
+  // Get all downloads with optional state and source filtering
   Future<List<DownloadStatusModel>> getAllDownloads({
     DownloadState? state,
     String? sourceId,
@@ -558,7 +558,7 @@ class LocalDataSource {
     }
   }
 
-  /// Map orderBy field to actual database column
+  // Map orderBy field to actual database column
   String _mapOrderByField(String orderBy) {
     switch (orderBy) {
       case 'created_at':
@@ -576,7 +576,7 @@ class LocalDataSource {
     }
   }
 
-  /// Delete download status
+  // Delete download status
   Future<void> deleteDownloadStatus(String id) async {
     try {
       final db = await _getSafeDatabase();
@@ -597,7 +597,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get downloads count by state and source
+  // Get downloads count by state and source
   Future<int> getDownloadsCount(
       {DownloadState? state, String? sourceId}) async {
     try {
@@ -629,7 +629,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get total download size
+  // Get total download size
   Future<int> getTotalDownloadSize(
       {DownloadState? state, String? sourceId}) async {
     try {
@@ -665,7 +665,7 @@ class LocalDataSource {
     }
   }
 
-  /// Search downloads by query (id, title, or source_id) with pagination
+  // Search downloads by query (id, title, or source_id) with pagination
   Future<List<Map<String, dynamic>>> searchDownloads({
     required String query,
     DownloadState? state,
@@ -747,7 +747,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get total size of search results
+  // Get total size of search results
   Future<int> getSearchDownloadSize({
     required String query,
     DownloadState? state,
@@ -793,7 +793,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get search results count
+  // Get search results count
   Future<int> getSearchCount({
     required String query,
     DownloadState? state,
@@ -836,8 +836,8 @@ class LocalDataSource {
 
   // ==================== HISTORY OPERATIONS ====================
 
-  /// Save history entry (with title and cover_url)
-  /// For chapter mode content, chapterId is included in the primary key
+  // Save history entry (with title and cover_url)
+  // For chapter mode content, chapterId is included in the primary key
   Future<void> saveHistory(HistoryModel history) async {
     try {
       final db = await _getSafeDatabase();
@@ -864,8 +864,8 @@ class LocalDataSource {
     }
   }
 
-  /// Get history entry by content ID
-  /// For chapter mode, returns the most recent chapter entry for this content
+  // Get history entry by content ID
+  // For chapter mode, returns the most recent chapter entry for this content
   Future<HistoryModel?> getHistory(String id) async {
     try {
       final db = await _getSafeDatabase();
@@ -889,7 +889,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get specific chapter history
+  // Get specific chapter history
   Future<HistoryModel?> getChapterHistory(String id, String chapterId) async {
     try {
       final db = await _getSafeDatabase();
@@ -910,8 +910,8 @@ class LocalDataSource {
     }
   }
 
-  /// Get all chapter history for a content (series)
-  /// Now queries by parent_id since chapter entries use chapter.id as primary key
+  // Get all chapter history for a content (series)
+  // Now queries by parent_id since chapter entries use chapter.id as primary key
   Future<List<HistoryModel>> getContentChaptersHistory(String seriesId) async {
     try {
       final db = await _getSafeDatabase();
@@ -935,8 +935,8 @@ class LocalDataSource {
     }
   }
 
-  /// Get all history entries
-  /// Returns all entries (both chapter and non-chapter) ordered by last viewed
+  // Get all history entries
+  // Returns all entries (both chapter and non-chapter) ordered by last viewed
   Future<List<HistoryModel>> getAllHistory({
     int page = 1,
     int limit = 50,
@@ -966,7 +966,7 @@ class LocalDataSource {
     }
   }
 
-  /// Clear all history
+  // Clear all history
   Future<void> clearHistory() async {
     try {
       final db = await _getSafeDatabase();
@@ -982,8 +982,8 @@ class LocalDataSource {
     }
   }
 
-  /// Delete history entry
-  /// Deletes all entries (both main and chapters) for this content
+  // Delete history entry
+  // Deletes all entries (both main and chapters) for this content
   Future<void> deleteHistory(String id) async {
     try {
       final db = await _getSafeDatabase();
@@ -1004,7 +1004,7 @@ class LocalDataSource {
     }
   }
 
-  /// Delete all history entries for a specific source
+  // Delete all history entries for a specific source
   Future<void> deleteHistoryBySourceId(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
@@ -1025,7 +1025,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get history count
+  // Get history count
   Future<int> getHistoryCount() async {
     try {
       final db = await _getSafeDatabase();
@@ -1041,7 +1041,7 @@ class LocalDataSource {
 
   // ==================== PREFERENCES OPERATIONS ====================
 
-  /// Save user preferences
+  // Save user preferences
   Future<void> saveUserPreferences(UserPreferences preferences) async {
     try {
       final db = await _getSafeDatabase();
@@ -1082,7 +1082,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get user preferences
+  // Get user preferences
   Future<UserPreferences> getUserPreferences() async {
     try {
       final db = await _getSafeDatabase();
@@ -1124,7 +1124,7 @@ class LocalDataSource {
     }
   }
 
-  /// Check if field should be boolean
+  // Check if field should be boolean
   bool _isBooleanField(String key) {
     const boolFields = {
       'autoDownload',
@@ -1146,7 +1146,7 @@ class LocalDataSource {
     return boolFields.contains(key);
   }
 
-  /// Check if field should be integer
+  // Check if field should be integer
   bool _isIntField(String key) {
     const intFields = {
       'columnsPortrait',
@@ -1157,7 +1157,7 @@ class LocalDataSource {
     return intFields.contains(key);
   }
 
-  /// Check if field should be double
+  // Check if field should be double
   bool _isDoubleField(String key) {
     const doubleFields = {
       'readerBrightness',
@@ -1165,7 +1165,7 @@ class LocalDataSource {
     return doubleFields.contains(key);
   }
 
-  /// Get default integer value for field
+  // Get default integer value for field
   int _getDefaultIntValue(String key) {
     switch (key) {
       case 'columnsPortrait':
@@ -1181,7 +1181,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get default double value for field
+  // Get default double value for field
   double _getDefaultDoubleValue(String key) {
     switch (key) {
       case 'readerBrightness':
@@ -1191,7 +1191,7 @@ class LocalDataSource {
     }
   }
 
-  /// Save single preference
+  // Save single preference
   Future<void> savePreference(String key, String value) async {
     try {
       final db = await _getSafeDatabase();
@@ -1216,7 +1216,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get single preference
+  // Get single preference
   Future<String?> getPreference(String key) async {
     try {
       final db = await _getSafeDatabase();
@@ -1242,7 +1242,7 @@ class LocalDataSource {
 
   // ==================== SEARCH HISTORY OPERATIONS ====================
 
-  /// Add search query to history
+  // Add search query to history
   Future<void> addSearchHistory(String query) async {
     try {
       final db = await _getSafeDatabase();
@@ -1280,7 +1280,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get search history
+  // Get search history
   Future<List<String>> getSearchHistory({int? limit}) async {
     final effectiveLimit = limit ?? AppLimits.searchHistoryLimit;
     try {
@@ -1304,7 +1304,7 @@ class LocalDataSource {
     }
   }
 
-  /// Clear search history
+  // Clear search history
   Future<void> clearSearchHistory() async {
     try {
       final db = await _getSafeDatabase();
@@ -1320,7 +1320,7 @@ class LocalDataSource {
     }
   }
 
-  /// Delete specific search history entry
+  // Delete specific search history entry
   Future<void> deleteSearchHistory(String query) async {
     try {
       final db = await _getSafeDatabase();
@@ -1343,7 +1343,7 @@ class LocalDataSource {
 
   // ==================== SEARCH FILTER STATE PERSISTENCE ====================
 
-  /// Save search filter state for persistence with sourceId
+  // Save search filter state for persistence with sourceId
   Future<void> saveSearchFilter(
       String sourceId, Map<String, dynamic> filterData) async {
     try {
@@ -1370,7 +1370,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get last search filter state for a specific source
+  // Get last search filter state for a specific source
   Future<Map<String, dynamic>?> getLastSearchFilter(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
@@ -1397,7 +1397,7 @@ class LocalDataSource {
     }
   }
 
-  /// Clear search filter state for a specific source
+  // Clear search filter state for a specific source
   Future<void> removeLastSearchFilter(String sourceId) async {
     try {
       final db = await _getSafeDatabase();
@@ -1419,7 +1419,7 @@ class LocalDataSource {
 
   // ==================== UTILITY OPERATIONS ====================
 
-  /// Get database statistics
+  // Get database statistics
   Future<Map<String, int>> getDatabaseStats() async {
     try {
       final db = await _getSafeDatabase();
@@ -1452,7 +1452,7 @@ class LocalDataSource {
     }
   }
 
-  /// Cleanup old data
+  // Cleanup old data
   Future<void> cleanupOldData() async {
     try {
       final db = await _getSafeDatabase();
@@ -1485,7 +1485,7 @@ class LocalDataSource {
     }
   }
 
-  /// Clear all data except preferences
+  // Clear all data except preferences
   Future<void> clearAllData() async {
     try {
       final db = await _getSafeDatabase();
@@ -1514,7 +1514,7 @@ class LocalDataSource {
 
   // ==================== READER POSITION OPERATIONS ====================
 
-  /// Save reader position
+  // Save reader position
   Future<void> saveReaderPosition(ReaderPositionModel position) async {
     try {
       final db = await _getSafeDatabase();
@@ -1536,7 +1536,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get reader position by content ID
+  // Get reader position by content ID
   Future<ReaderPositionModel?> getReaderPosition(String contentId) async {
     try {
       final db = await _getSafeDatabase();
@@ -1560,7 +1560,7 @@ class LocalDataSource {
     }
   }
 
-  /// Get all reader positions
+  // Get all reader positions
   Future<List<ReaderPositionModel>> getAllReaderPositions({
     int page = 1,
     int limit = 50,
@@ -1588,7 +1588,7 @@ class LocalDataSource {
     }
   }
 
-  /// Delete reader position
+  // Delete reader position
   Future<void> deleteReaderPosition(String contentId) async {
     try {
       final db = await _getSafeDatabase();
@@ -1609,7 +1609,7 @@ class LocalDataSource {
     }
   }
 
-  /// Clear all reader positions
+  // Clear all reader positions
   Future<void> clearAllReaderPositions() async {
     try {
       final db = await _getSafeDatabase();

@@ -1,29 +1,29 @@
 import '../entities/entities.dart' hide ThemeOption;
 import '../entities/settings/settings.dart';
 
-/// Repository interface for app settings and preferences
+// Repository interface for app settings and preferences
 abstract class SettingsRepository {
   // ==================== USER PREFERENCES ====================
 
-  /// Get current user preferences
+  // Get current user preferences
   Future<UserPreferences> getUserPreferences();
 
-  /// Update user preferences
+  // Update user preferences
   Future<void> updateUserPreferences(UserPreferences preferences);
 
-  /// Reset preferences to default values
+  // Reset preferences to default values
   Future<UserPreferences> resetToDefaults();
 
-  /// Get specific preference value
+  // Get specific preference value
   Future<T> getPreference<T>(String key, T defaultValue);
 
-  /// Set specific preference value
+  // Set specific preference value
   Future<void> setPreference<T>(String key, T value);
 
-  /// Remove specific preference
+  // Remove specific preference
   Future<void> removePreference(String key);
 
-  /// Check if preference exists
+  // Check if preference exists
   Future<bool> hasPreference(String key);
 
   // ==================== THEME SETTINGS ====================

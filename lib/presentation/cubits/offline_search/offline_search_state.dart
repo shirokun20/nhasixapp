@@ -1,11 +1,11 @@
 part of 'offline_search_cubit.dart';
 
-/// Base state for offline search
+// Base state for offline search
 abstract class OfflineSearchState extends BaseCubitState {
   const OfflineSearchState();
 }
 
-/// Initial state before any search
+// Initial state before any search
 class OfflineSearchInitial extends OfflineSearchState {
   const OfflineSearchInitial();
 
@@ -13,7 +13,7 @@ class OfflineSearchInitial extends OfflineSearchState {
   List<Object?> get props => [];
 }
 
-/// State when searching offline content
+// State when searching offline content
 class OfflineSearchLoading extends OfflineSearchState {
   const OfflineSearchLoading();
 
@@ -21,7 +21,7 @@ class OfflineSearchLoading extends OfflineSearchState {
   List<Object?> get props => [];
 }
 
-/// State when offline search results are loaded
+// State when offline search results are loaded
 class OfflineSearchLoaded extends OfflineSearchState {
   const OfflineSearchLoaded({
     required this.query,
@@ -82,10 +82,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
         isListMode,
       ];
 
-  /// Check if this is a search result or all content
+  // Check if this is a search result or all content
   bool get isSearchResult => query.isNotEmpty;
 
-  /// Get display title for the results
+  // Get display title for the results
   String get displayTitle {
     if (isSearchResult) {
       if (selectedSourceId != null) {
@@ -100,7 +100,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     }
   }
 
-  /// Get results summary
+  // Get results summary
   String get resultsSummary {
     if (totalResults == 0) {
       return 'No content found';
@@ -111,7 +111,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     }
   }
 
-  /// Create a copy with updated fields
+  // Create a copy with updated fields
   OfflineSearchLoaded copyWith({
     String? query,
     List<ContentGroup>? results,
@@ -150,7 +150,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
   }
 }
 
-/// State when no offline content found
+// State when no offline content found
 class OfflineSearchEmpty extends OfflineSearchState {
   const OfflineSearchEmpty({
     required this.query,
@@ -161,7 +161,7 @@ class OfflineSearchEmpty extends OfflineSearchState {
   @override
   List<Object?> get props => [query];
 
-  /// Get empty message based on query
+  // Get empty message based on query
   String get emptyMessage {
     if (query.isEmpty) {
       return 'No offline content available.\nDownload some content to read offline.';
@@ -171,7 +171,7 @@ class OfflineSearchEmpty extends OfflineSearchState {
   }
 }
 
-/// State when there's an error with offline search
+// State when there's an error with offline search
 class OfflineSearchError extends OfflineSearchState {
   const OfflineSearchError({
     required this.message,

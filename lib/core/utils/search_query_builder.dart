@@ -1,10 +1,10 @@
 import 'package:nhasixapp/domain/entities/search_filter.dart';
 
-/// Utility class for building search queries compatible with API v2
-/// Supports advanced query syntax including page filters
+// Utility class for building search queries compatible with API v2
+// Supports advanced query syntax including page filters
 class SearchQueryBuilder {
-  /// Build query string from SearchFilter
-  /// Supports: keywords, tag filters, numeric filters (pages, favorites), date filters
+  // Build query string from SearchFilter
+  // Supports: keywords, tag filters, numeric filters (pages, favorites), date filters
   static String buildQueryFromFilter(SearchFilter filter) {
     final parts = <String>[];
 
@@ -92,8 +92,8 @@ class SearchQueryBuilder {
     return parts.join(' ');
   }
 
-  /// Escape special characters in filter values
-  /// Wraps multi-word values in quotes
+  // Escape special characters in filter values
+  // Wraps multi-word values in quotes
   static String _escapeValue(String value) {
     // If value contains spaces or special characters, wrap in quotes
     if (value.contains(' ') ||
@@ -107,8 +107,8 @@ class SearchQueryBuilder {
     return value;
   }
 
-  /// Parse query string back to individual components
-  /// Useful for analyzing existing queries
+  // Parse query string back to individual components
+  // Useful for analyzing existing queries
   static Map<String, dynamic> parseQueryString(String query) {
     final result = <String, dynamic>{
       'keywords': <String>[],
@@ -162,7 +162,7 @@ class SearchQueryBuilder {
     return result;
   }
 
-  /// Tokenize query string respecting quoted strings
+  // Tokenize query string respecting quoted strings
   static List<String> _tokenizeQuery(String query) {
     final tokens = <String>[];
     final buffer = StringBuffer();

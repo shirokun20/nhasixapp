@@ -1,10 +1,10 @@
 import 'dart:io';
 
 class ValidatorRunner {
-  /// Run the validator CLI via `dart run kuron_generic:kuron_config_validate`.
-  /// Returns stdout content on success, null if validator unavailable or crashes.
+  // Run the validator CLI via `dart run kuron_generic:kuron_config_validate`.
+  // Returns stdout content on success, null if validator unavailable or crashes.
   ///
-  /// [processRunner] is injected for testing — defaults to [Process.run].
+  // [processRunner] is injected for testing — defaults to [Process.run].
   static Future<String?> run(
     String configPath, {
     Future<ProcessResult> Function(String executable, List<String> arguments)?

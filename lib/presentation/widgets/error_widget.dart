@@ -4,7 +4,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Custom error widget with black theme and contextual information
+// Custom error widget with black theme and contextual information
 class AppErrorWidget extends StatelessWidget {
   const AppErrorWidget({
     super.key,
@@ -228,7 +228,7 @@ class AppErrorWidget extends StatelessWidget {
   }
 }
 
-/// Network error widget
+// Network error widget
 class NetworkErrorWidget extends StatelessWidget {
   const NetworkErrorWidget({
     super.key,
@@ -260,7 +260,7 @@ class NetworkErrorWidget extends StatelessWidget {
   }
 }
 
-/// Server error widget
+// Server error widget
 class ServerErrorWidget extends StatelessWidget {
   const ServerErrorWidget({
     super.key,
@@ -290,7 +290,7 @@ class ServerErrorWidget extends StatelessWidget {
   }
 }
 
-/// Cloudflare error widget
+// Cloudflare error widget
 class CloudflareErrorWidget extends StatelessWidget {
   const CloudflareErrorWidget({
     super.key,
@@ -321,7 +321,7 @@ class CloudflareErrorWidget extends StatelessWidget {
   }
 }
 
-/// Parse error widget
+// Parse error widget
 class ParseErrorWidget extends StatelessWidget {
   const ParseErrorWidget({
     super.key,
@@ -352,7 +352,7 @@ class ParseErrorWidget extends StatelessWidget {
   }
 }
 
-/// Empty state widget
+// Empty state widget
 class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
     super.key,
@@ -441,7 +441,7 @@ class EmptyStateWidget extends StatelessWidget {
   }
 }
 
-/// No search results widget
+// No search results widget
 class NoSearchResultsWidget extends StatelessWidget {
   const NoSearchResultsWidget({
     super.key,
@@ -474,7 +474,7 @@ class NoSearchResultsWidget extends StatelessWidget {
   }
 }
 
-/// Maintenance mode widget
+// Maintenance mode widget
 class MaintenanceWidget extends StatelessWidget {
   const MaintenanceWidget({
     super.key,

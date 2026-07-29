@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart';
 
-/// Configuration for the WebView session (parsed from JSON)
+// Configuration for the WebView session (parsed from JSON)
 class WebViewSessionConfig {
   final bool bypassEnabled;
   final bool authEnabled;
@@ -99,7 +99,7 @@ WebViewBypassOptions _defaultBypassOptionsBuilder(
   );
 }
 
-/// Result of an authentication attempt
+// Result of an authentication attempt
 class WebViewAuthResult {
   final bool success;
   final String? errorMessage;
@@ -122,7 +122,7 @@ class WebViewAuthResult {
       );
 }
 
-/// State of authentication
+// State of authentication
 enum WebViewAuthState {
   notLoggedIn,
   loggingIn,
@@ -130,8 +130,8 @@ enum WebViewAuthState {
   error,
 }
 
-/// An adapter that orchestrates Cloudflare bypass and authentication
-/// through a shared Dio instance and CookieJar.
+// An adapter that orchestrates Cloudflare bypass and authentication
+// through a shared Dio instance and CookieJar.
 class WebViewSessionAdapter {
   final Dio _dio;
   final PersistCookieJar _cookieJar;
@@ -204,7 +204,7 @@ class WebViewSessionAdapter {
 
   // ============ Cloudflare Bypass ============
 
-  /// Returns true if the HTML response looks like a Cloudflare challenge.
+  // Returns true if the HTML response looks like a Cloudflare challenge.
   bool isCloudflareChallenge(String html) {
     final indicators = [
       'Checking your browser',
@@ -249,7 +249,7 @@ class WebViewSessionAdapter {
         (response.headers.value('x-sucuri-id')?.isNotEmpty ?? false);
   }
 
-  /// Execute a GET request, automatically handling Cloudflare bypass if encountered.
+  // Execute a GET request, automatically handling Cloudflare bypass if encountered.
   Future<Response<T>> requestWithBypass<T>(
     String url, {
     Options? options,
@@ -373,7 +373,8 @@ class WebViewSessionAdapter {
         final usedSslFallback = result['usedSslFallback'] as bool? ?? false;
 
         if (usedSslFallback) {
-          _logger.w('⚠️ WebView SSL fallback used — server certificate was not trusted.');
+          _logger.w(
+              '⚠️ WebView SSL fallback used — server certificate was not trusted.');
         }
 
         if (userAgent != null && userAgent.isNotEmpty) {
@@ -494,7 +495,7 @@ class WebViewSessionAdapter {
 
   // ============ Authentication Focus ============
 
-  /// Login programmatically by fetching nonce and POSTing credentials
+  // Login programmatically by fetching nonce and POSTing credentials
   Future<WebViewAuthResult> login({
     required String email,
     required String password,
@@ -561,7 +562,7 @@ class WebViewSessionAdapter {
     }
   }
 
-  /// Used to check if we have a valid login session (usually by accessing bookmark endpoint)
+  // Used to check if we have a valid login session (usually by accessing bookmark endpoint)
   Future<bool> _verifyLoginSession() async {
     if (_config.bookmarkVerifyUrl.isNotEmpty) {
       try {
@@ -612,9 +613,9 @@ class WebViewSessionAdapter {
     }
   }
 
-  /// Set session from external WebView login (e.g. native browser login flow).
-  /// [username] is the detected username from cookies.
-  /// [rawCookies] is a list of "key=value" strings from the WebView.
+  // Set session from external WebView login (e.g. native browser login flow).
+  // [username] is the detected username from cookies.
+  // [rawCookies] is a list of "key=value" strings from the WebView.
   Future<void> setExternalLogin({
     required String username,
     required List<String> rawCookies,

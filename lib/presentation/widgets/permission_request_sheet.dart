@@ -4,8 +4,8 @@ import 'package:nhasixapp/core/utils/permission_helper.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
 
-/// Permission request bottom sheet for storage and notification permissions
-/// Shown when user tries to download or generate PDF
+// Permission request bottom sheet for storage and notification permissions
+// Shown when user tries to download or generate PDF
 class PermissionRequestSheet extends StatefulWidget {
   final VoidCallback? onComplete;
   final bool requireStorage;
@@ -261,7 +261,7 @@ class _PermissionRequestSheetState extends State<PermissionRequestSheet> {
   }
 }
 
-/// Helper function to show permission request sheet and check if granted
+// Helper function to show permission request sheet and check if granted
 Future<bool> showPermissionRequestSheet(
   BuildContext context, {
   bool requireStorage = true,

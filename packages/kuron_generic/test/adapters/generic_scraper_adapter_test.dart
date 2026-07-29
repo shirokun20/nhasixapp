@@ -1,22 +1,22 @@
-/// Integration tests for [GenericScraperAdapter].
+// Integration tests for [GenericScraperAdapter].
 ///
-/// Dio is mocked using [DioAdapter] so no real HTTP calls are made.
-/// The tests validate the full adapter pipeline:
-///   raw config + mocked HTML → typed Content / Chapter entities.
+// Dio is mocked using [DioAdapter] so no real HTTP calls are made.
+// The tests validate the full adapter pipeline:
+//   raw config + mocked HTML → typed Content / Chapter entities.
 ///
-/// Key areas covered:
-///   1. Home listing: CSS selectors in `list.fields` correctly
-///      address CHILD elements of the container (the bug fixed in
-///      `GenericHtmlParser.extractFromElement`).
-///   2. `transform:"slug"` strips URL path to the content slug.
-///   3. `inherits` correctly merges parent list config.
-///   4. Pagination detection via `alt` or `next` CSS selector.
-///   5. Detail extraction: title, coverUrl, tags (multi), chapters.
-///   6. Chapter reader: ts_reader JSON → image list + prev/next slug.
-///   7. Missing config blocks return safe empty results.
+// Key areas covered:
+//   1. Home listing: CSS selectors in `list.fields` correctly
+//      address CHILD elements of the container (the bug fixed in
+//      `GenericHtmlParser.extractFromElement`).
+//   2. `transform:"slug"` strips URL path to the content slug.
+//   3. `inherits` correctly merges parent list config.
+//   4. Pagination detection via `alt` or `next` CSS selector.
+//   5. Detail extraction: title, coverUrl, tags (multi), chapters.
+//   6. Chapter reader: ts_reader JSON → image list + prev/next slug.
+//   7. Missing config blocks return safe empty results.
 ///
-/// Run with:
-///   dart test packages/kuron_generic/test/adapters/generic_scraper_adapter_test.dart
+// Run with:
+//   dart test packages/kuron_generic/test/adapters/generic_scraper_adapter_test.dart
 library;
 
 import 'dart:convert';
@@ -37,7 +37,7 @@ import 'package:test/test.dart';
 
 const _baseUrl = 'https://komiktap.info';
 
-/// Minimal komiktap scraper config for tests — mirrors the real config schema.
+// Minimal komiktap scraper config for tests — mirrors the real config schema.
 const _config = {
   'source': 'komiktap',
   'baseUrl': _baseUrl,
@@ -698,7 +698,7 @@ Dio _buildCrotpediaDio() => Dio(BaseOptions(baseUrl: 'https://crotpedia.net'));
 
 // ── Fake HTML pages ───────────────────────────────────────────────────────────
 
-/// Home page with 2 content items + a next-page link.
+// Home page with 2 content items + a next-page link.
 const _homeHtml = '''
 <html><body>
 <div class="utao">
@@ -719,7 +719,7 @@ const _homeHtml = '''
 </body></html>
 ''';
 
-/// Same structure as home but without the next-page link.
+// Same structure as home but without the next-page link.
 const _homeHtmlNoNext = '''
 <html><body>
 <div class="utao">
@@ -732,7 +732,7 @@ const _homeHtmlNoNext = '''
 </body></html>
 ''';
 
-/// Search result page using `.bsx` containers.
+// Search result page using `.bsx` containers.
 const _searchHtml = '''
 <html><body>
 <div class="bsx">
@@ -751,7 +751,7 @@ const _searchHtml = '''
 </body></html>
 ''';
 
-/// Detail page for "manga-slug-one".
+// Detail page for "manga-slug-one".
 const _detailHtml = '''
 <html><body>
 <h1 class="entry-title">The Full Title</h1>
@@ -807,7 +807,7 @@ const _detailHtmlWithUnrelatedImages = '''
 </body></html>
 ''';
 
-/// Chapter page for "manga-slug-one-chapter-5" — uses ts_reader JSON.
+// Chapter page for "manga-slug-one-chapter-5" — uses ts_reader JSON.
 const _chapterHtml = '''
 <html><body>
 <script>
@@ -817,7 +817,7 @@ ts_reader.run({"sources":[{"server":"s1","images":["https://img.example.com/1.jp
 </body></html>
 ''';
 
-/// Chapter page with NO ts_reader JSON — DOM fallback should be used.
+// Chapter page with NO ts_reader JSON — DOM fallback should be used.
 const _chapterHtmlNoTsReader = '''
 <html><body>
 <div id="readerarea">

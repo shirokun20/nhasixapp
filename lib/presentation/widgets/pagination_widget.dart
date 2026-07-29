@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Advanced pagination widget with page navigation and progress indicator
+// Advanced pagination widget with page navigation and progress indicator
 class PaginationWidget extends StatefulWidget {
   const PaginationWidget({
     super.key,
@@ -305,7 +305,7 @@ class _PaginationWidgetState extends State<PaginationWidget> {
   }
 }
 
-/// Simple pagination widget for basic use cases
+// Simple pagination widget for basic use cases
 class SimplePaginationWidget extends StatelessWidget {
   const SimplePaginationWidget({
     super.key,

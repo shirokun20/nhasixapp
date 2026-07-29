@@ -2,12 +2,12 @@ import 'dart:developer';
 import 'content_source.dart';
 import 'source_factory.dart';
 
-/// Resolves the raw JSON configuration to the appropriate [SourceFactory]
-/// and instantiates the [ContentSource].
+// Resolves the raw JSON configuration to the appropriate [SourceFactory]
+// and instantiates the [ContentSource].
 ///
-/// This is used internally by [ContentSourceRegistry] and [SettingsScreen]
-/// to ensure that sources like `crotpedia` correctly use their custom adapters
-/// instead of falling back to the default `GenericSourceFactory`.
+// This is used internally by [ContentSourceRegistry] and [SettingsScreen]
+// to ensure that sources like `crotpedia` correctly use their custom adapters
+// instead of falling back to the default `GenericSourceFactory`.
 class SourceFactoryResolver {
   final List<SourceFactory> _factories;
   final SourceFactory _defaultFactory;
@@ -18,7 +18,7 @@ class SourceFactoryResolver {
   })  : _factories = factories,
         _defaultFactory = defaultFactory;
 
-  /// Returns the appropriate [SourceFactory] for the given raw config.
+  // Returns the appropriate [SourceFactory] for the given raw config.
   SourceFactory resolve(Map<String, dynamic> rawConfig) {
     final String sourceId = rawConfig['source'] as String? ?? '';
 
@@ -33,7 +33,7 @@ class SourceFactoryResolver {
     return _defaultFactory;
   }
 
-  /// Instantiates a [ContentSource] directly using the resolved factory.
+  // Instantiates a [ContentSource] directly using the resolved factory.
   ContentSource createSource(Map<String, dynamic> rawConfig) {
     final factory = resolve(rawConfig);
     return factory.create(rawConfig);

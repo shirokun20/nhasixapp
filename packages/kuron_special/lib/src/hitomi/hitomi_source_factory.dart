@@ -5,11 +5,11 @@ import 'package:logger/logger.dart';
 
 import 'hitomi_adapter.dart';
 
-/// Gate-B fallback factory.
+// Gate-B fallback factory.
 ///
-/// Hitomi remains high-volatility because live `gg.js` is obfuscated and can
-/// change frequently. This factory keeps source wiring operational while the
-/// full binary/gg adapter is finalized.
+// Hitomi remains high-volatility because live `gg.js` is obfuscated and can
+// change frequently. This factory keeps source wiring operational while the
+// full binary/gg adapter is finalized.
 class HitomiSourceFactory implements SourceFactory {
   final Dio _dio;
   final Logger _logger;

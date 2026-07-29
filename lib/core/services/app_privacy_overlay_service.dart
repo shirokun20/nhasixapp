@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-/// Controls a lightweight UI-only privacy overlay used to obscure
-/// recent-apps snapshots without interrupting background work.
+// Controls a lightweight UI-only privacy overlay used to obscure
+// recent-apps snapshots without interrupting background work.
 class AppPrivacyOverlayService extends ChangeNotifier {
   bool _isObscured = false;
   AppLifecycleState? _lastLifecycleState;

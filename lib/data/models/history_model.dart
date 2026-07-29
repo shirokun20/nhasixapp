@@ -1,6 +1,6 @@
 import '../../domain/entities/history.dart';
 
-/// Data model for History entity with database serialization
+// Data model for History entity with database serialization
 class HistoryModel extends History {
   const HistoryModel({
     required super.contentId,
@@ -18,7 +18,7 @@ class HistoryModel extends History {
     super.chapterTitle,
   });
 
-  /// Create HistoryModel from History entity
+  // Create HistoryModel from History entity
   factory HistoryModel.fromEntity(
     History history, {
     String? title,
@@ -42,7 +42,7 @@ class HistoryModel extends History {
     );
   }
 
-  /// Convert to History entity
+  // Convert to History entity
   History toEntity() {
     return History(
       contentId: contentId,
@@ -61,7 +61,7 @@ class HistoryModel extends History {
     );
   }
 
-  /// Create from database map
+  // Create from database map
   factory HistoryModel.fromMap(Map<String, dynamic> map) {
     return HistoryModel(
       contentId: map['id'], // Changed from content_id to id
@@ -80,7 +80,7 @@ class HistoryModel extends History {
     );
   }
 
-  /// Convert to database map
+  // Convert to database map
   Map<String, dynamic> toMap() {
     return {
       'id': contentId, // Changed from content_id to id

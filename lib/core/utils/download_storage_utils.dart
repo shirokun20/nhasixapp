@@ -10,15 +10,15 @@ import '../constants/app_constants.dart';
 import 'package:kuron_core/kuron_core.dart'; // Import ContentMetadata
 import 'directory_utils.dart';
 
-/// Extracted from DownloadBloc to reduce complexity and promote reusability.
-/// Contains methods for directory detection, file management, and metadata reading.
+// Extracted from DownloadBloc to reduce complexity and promote reusability.
+// Contains methods for directory detection, file management, and metadata reading.
 class DownloadStorageUtils {
   DownloadStorageUtils._();
 
   static final Logger _logger = getIt<Logger>();
 
-  /// Delegates to [DirectoryUtils.getDownloadsDirectory]
-  /// Kept for backward compatibility; prefer DirectoryUtils directly.
+  // Delegates to [DirectoryUtils.getDownloadsDirectory]
+  // Kept for backward compatibility; prefer DirectoryUtils directly.
   static Future<String> getDownloadsDirectory() async {
     return DirectoryUtils.getDownloadsDirectory();
   }
@@ -37,7 +37,7 @@ class DownloadStorageUtils {
     return size;
   }
 
-  /// Deletes files ending with .tmp, .temp, .part, or starting with .
+  // Deletes files ending with .tmp, .temp, .part, or starting with .
   static Future<void> cleanupTempFiles(Directory directory) async {
     try {
       await for (final entity in directory.list(recursive: true)) {
@@ -127,7 +127,7 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Critical for metadata sync operations where title field might be missing or corrupt (e.g. KomikTap ciphertext bug).
+  // Critical for metadata sync operations where title field might be missing or corrupt (e.g. KomikTap ciphertext bug).
   static String getSafeTitleFromMetadata(
     Map<String, dynamic>? metadata,
     String contentId,
@@ -197,9 +197,9 @@ class DownloadStorageUtils {
     return null;
   }
 
-  /// This is CRITICAL for the Safe ID strategy.
-  /// The metadata.json file acts as the "decoder key" to identify content
-  /// when the folder name is a hashed "Safe ID".
+  // This is CRITICAL for the Safe ID strategy.
+  // The metadata.json file acts as the "decoder key" to identify content
+  // when the folder name is a hashed "Safe ID".
   static Future<void> saveLocalMetadata({
     required String contentId,
     required String sourceId,
@@ -241,7 +241,7 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Returns sorted list of image file paths from the download directory
+  // Returns sorted list of image file paths from the download directory
   static Future<List<String>> getDownloadedImagePaths(
     String contentId, {
     String? sourceId,
@@ -295,8 +295,8 @@ class DownloadStorageUtils {
     }
   }
 
-  /// Uses SHA-1 hash converted to Base36 for short, filesystem-safe folder names.
-  /// Example: "very-long-title..." -> "a1b2c3d4"
+  // Uses SHA-1 hash converted to Base36 for short, filesystem-safe folder names.
+  // Example: "very-long-title..." -> "a1b2c3d4"
   static String getElegantId(String contentId) {
     if (contentId.length <= 20 &&
         RegExp(r'^[a-zA-Z0-9.\-_]+$').hasMatch(contentId)) {
@@ -319,16 +319,16 @@ class DownloadStorageUtils {
     return bigInt.toRadixString(36);
   }
 
-  /// UPDATE: Now uses "Elegant ID" strategy (Base36 Hash)
-  /// Legacy strategy (Truncate + Hash) is deprecated but supported for readout.
+  // UPDATE: Now uses "Elegant ID" strategy (Base36 Hash)
+  // Legacy strategy (Truncate + Hash) is deprecated but supported for readout.
   static String getSafeContentId(String contentId) {
     return getElegantId(contentId);
   }
 
-  /// This checks locations in the following order:
-  /// 1. Elegant ID (New Standard)
-  /// 2. Safe ID (Truncated - Migration Interim)
-  /// 3. Original ID (Legacy)
+  // This checks locations in the following order:
+  // 1. Elegant ID (New Standard)
+  // 2. Safe ID (Truncated - Migration Interim)
+  // 3. Original ID (Legacy)
   static Future<String> getContentDirectory(String contentId,
       {String? sourceId}) async {
     final downloadsDir = await getDownloadsDirectory();

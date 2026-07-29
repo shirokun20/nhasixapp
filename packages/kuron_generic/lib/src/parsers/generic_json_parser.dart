@@ -1,8 +1,8 @@
-/// JSONPath-based parser for JSON API responses.
+// JSONPath-based parser for JSON API responses.
 ///
-/// Uses the `json_path` package to evaluate JSONPath expressions against
-/// parsed JSON objects, extracting field values based on selectors defined
-/// in the source config.
+// Uses the `json_path` package to evaluate JSONPath expressions against
+// parsed JSON objects, extracting field values based on selectors defined
+// in the source config.
 library;
 
 import 'package:json_path/json_path.dart';
@@ -15,7 +15,7 @@ class GenericJsonParser {
 
   GenericJsonParser({required Logger logger}) : _logger = logger;
 
-  /// Extract a single string value from [data] using [selector].
+  // Extract a single string value from [data] using [selector].
   String? extractString(dynamic data, FieldSelector selector) {
     try {
       final value = _evaluate(data, selector);
@@ -56,7 +56,7 @@ class GenericJsonParser {
     }
   }
 
-  /// Extract a raw dynamic value from [data] using [selector].
+  // Extract a raw dynamic value from [data] using [selector].
   dynamic extractRaw(dynamic data, FieldSelector selector) {
     try {
       dynamic value = _evaluate(data, selector);
@@ -81,7 +81,7 @@ class GenericJsonParser {
     }
   }
 
-  /// Extract a list of values from [data] using [selector].
+  // Extract a list of values from [data] using [selector].
   List<String> extractList(dynamic data, FieldSelector selector) {
     try {
       if (selector.type == 'jsonpath') {
@@ -100,7 +100,7 @@ class GenericJsonParser {
     return const [];
   }
 
-  /// Extract a list of maps (items list) from [data] using [selector].
+  // Extract a list of maps (items list) from [data] using [selector].
   List<Map<String, dynamic>> extractItems(
       dynamic data, FieldSelector selector) {
     try {

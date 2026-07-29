@@ -2,8 +2,9 @@ import '../../repositories/content_repository.dart';
 import '../../entities/entities.dart';
 import '../base_usecase.dart';
 
-/// Use case for fetching content by tag
-class GetContentByTagUseCase extends UseCase<ContentListResult, GetContentByTagParams> {
+// Use case for fetching content by tag
+class GetContentByTagUseCase
+    extends UseCase<ContentListResult, GetContentByTagParams> {
   GetContentByTagUseCase({required ContentRepository contentRepository})
       : _contentRepository = contentRepository;
 

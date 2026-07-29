@@ -4,12 +4,12 @@ import 'package:path_provider/path_provider.dart';
 import '../kuron_native.dart'; // Access KuronNative singleton
 
 class BackupUtils {
-  /// Save JSON string to a file in the specified directory or user's Downloads.
-  /// Returns the path if successful, null otherwise.
+  // Save JSON string to a file in the specified directory or user's Downloads.
+  // Returns the path if successful, null otherwise.
   ///
-  /// [jsonContent] - The JSON string to save
-  /// [fileName] - Name of the file to create
-  /// [customDirectory] - Optional custom directory path. If null, uses default Downloads folder
+  // [jsonContent] - The JSON string to save
+  // [fileName] - Name of the file to create
+  // [customDirectory] - Optional custom directory path. If null, uses default Downloads folder
   static Future<String?> exportJson(
     String jsonContent,
     String fileName, {
@@ -38,10 +38,10 @@ class BackupUtils {
     }
   }
 
-  /// Pick a JSON file using native picker and read its content.
-  /// Returns the JSON content as string if successful, null otherwise.
+  // Pick a JSON file using native picker and read its content.
+  // Returns the JSON content as string if successful, null otherwise.
   ///
-  /// [fileName] is kept for backward compatibility and logging only.
+  // [fileName] is kept for backward compatibility and logging only.
   static Future<String?> importJson({String fileName = 'backup.json'}) async {
     try {
       // Use native file picker (Android SAF compatible)

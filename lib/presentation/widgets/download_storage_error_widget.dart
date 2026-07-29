@@ -4,7 +4,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../core/routing/app_router.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// A dedicated widget to show when a download error occurs due to missing storage path.
+// A dedicated widget to show when a download error occurs due to missing storage path.
 class DownloadStorageErrorWidget extends StatelessWidget {
   final bool isFullScreen;
   final VoidCallback? onDismiss;

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Download status entity for tracking download progress
+// Download status entity for tracking download progress
 class DownloadStatus extends Equatable {
   const DownloadStatus({
     required this.contentId,
@@ -38,16 +38,16 @@ class DownloadStatus extends Equatable {
   final String? sourceId; // Source (from SourceType enum)
   final String? coverUrl; // Cover image URL
 
-  /// Check if this is a range download
+  // Check if this is a range download
   bool get isRangeDownload => startPage != null && endPage != null;
 
-  /// Get effective start page (1 if not specified)
+  // Get effective start page (1 if not specified)
   int get effectiveStartPage => startPage ?? 1;
 
-  /// Get effective end page (total pages if not specified)
+  // Get effective end page (total pages if not specified)
   int get effectiveEndPage => endPage ?? totalPages;
 
-  /// Get actual number of pages being downloaded
+  // Get actual number of pages being downloaded
   int get pagesToDownload {
     if (isRangeDownload && startPage != null && endPage != null) {
       return endPage! - startPage! + 1;
@@ -55,7 +55,7 @@ class DownloadStatus extends Equatable {
     return totalPages;
   }
 
-  /// Get range display text
+  // Get range display text
   String get rangeDisplayText {
     if (isRangeDownload) {
       return 'Pages $startPage-$endPage of $totalPages';
@@ -121,7 +121,7 @@ class DownloadStatus extends Equatable {
     );
   }
 
-  /// Get download progress as percentage (0.0 to 1.0)
+  // Get download progress as percentage (0.0 to 1.0)
   double get progress {
     if (totalPages == 0) return 0.0;
 
@@ -134,42 +134,42 @@ class DownloadStatus extends Equatable {
     return rawProgress > 1.0 ? 1.0 : rawProgress;
   }
 
-  /// Get download progress as percentage (0 to 100)
+  // Get download progress as percentage (0 to 100)
   int get progressPercentage {
     return (progress * 100).round();
   }
 
-  /// Check if download is in progress
+  // Check if download is in progress
   bool get isInProgress => state == DownloadState.downloading;
 
-  /// Check if download is completed
+  // Check if download is completed
   bool get isCompleted => state == DownloadState.completed;
 
-  /// Check if download is failed
+  // Check if download is failed
   bool get isFailed => state == DownloadState.failed;
 
-  /// Check if download is paused
+  // Check if download is paused
   bool get isPaused => state == DownloadState.paused;
 
-  /// Check if download is queued
+  // Check if download is queued
   bool get isQueued => state == DownloadState.queued;
 
-  /// Check if download is cancelled
+  // Check if download is cancelled
   bool get isCancelled => state == DownloadState.cancelled;
 
-  /// Check if download can be resumed
+  // Check if download can be resumed
   bool get canResume => isPaused || isFailed;
 
-  /// Check if download can be paused
+  // Check if download can be paused
   bool get canPause => isInProgress || isQueued;
 
-  /// Check if download can be cancelled
+  // Check if download can be cancelled
   bool get canCancel => !isCompleted && !isCancelled;
 
-  /// Check if download can be retried
+  // Check if download can be retried
   bool get canRetry => isFailed || isCancelled;
 
-  /// Get estimated time remaining
+  // Get estimated time remaining
   Duration? get estimatedTimeRemaining {
     if (!isInProgress || speed <= 0 || totalPages == 0) return null;
 
@@ -185,14 +185,14 @@ class DownloadStatus extends Equatable {
     return Duration(seconds: secondsRemaining.round());
   }
 
-  /// Get download duration
+  // Get download duration
   Duration? get downloadDuration {
     if (startTime == null) return null;
     final endTimeToUse = endTime ?? DateTime.now();
     return endTimeToUse.difference(startTime!);
   }
 
-  /// Get formatted file size
+  // Get formatted file size
   String get formattedFileSize {
     if (fileSize == 0) return '0 B';
 
@@ -208,7 +208,7 @@ class DownloadStatus extends Equatable {
     return '${size.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
 
-  /// Get formatted download speed
+  // Get formatted download speed
   String get formattedSpeed {
     if (speed <= 0) return '0 B/s';
 
@@ -224,7 +224,7 @@ class DownloadStatus extends Equatable {
     return '${currentSpeed.toStringAsFixed(1)} ${suffixes[suffixIndex]}';
   }
 
-  /// Get status display text
+  // Get status display text
   String get statusText {
     switch (state) {
       case DownloadState.queued:
@@ -242,7 +242,7 @@ class DownloadStatus extends Equatable {
     }
   }
 
-  /// Create initial download status with content metadata
+  // Create initial download status with content metadata
   factory DownloadStatus.initial(
     String contentId,
     int totalPages, {
@@ -265,7 +265,7 @@ class DownloadStatus extends Equatable {
     );
   }
 
-  /// Create completed download status with metadata
+  // Create completed download status with metadata
   factory DownloadStatus.completed(
     String contentId,
     int totalPages,
@@ -289,7 +289,7 @@ class DownloadStatus extends Equatable {
     );
   }
 
-  /// Create failed download status
+  // Create failed download status
   factory DownloadStatus.failed(String contentId, String error) {
     return DownloadStatus(
       contentId: contentId,
@@ -300,7 +300,7 @@ class DownloadStatus extends Equatable {
   }
 }
 
-/// Download states
+// Download states
 enum DownloadState {
   queued,
   downloading,
@@ -310,7 +310,7 @@ enum DownloadState {
   cancelled,
 }
 
-/// Extension for DownloadState display names
+// Extension for DownloadState display names
 extension DownloadStateExtension on DownloadState {
   String get displayName {
     switch (this) {
@@ -329,19 +329,19 @@ extension DownloadStateExtension on DownloadState {
     }
   }
 
-  /// Check if state is active (in progress)
+  // Check if state is active (in progress)
   bool get isActive {
     return this == DownloadState.downloading || this == DownloadState.queued;
   }
 
-  /// Check if state is terminal (finished)
+  // Check if state is terminal (finished)
   bool get isTerminal {
     return this == DownloadState.completed ||
         this == DownloadState.failed ||
         this == DownloadState.cancelled;
   }
 
-  /// Check if state can be retried
+  // Check if state can be retried
   bool get canRetry {
     return this == DownloadState.failed || this == DownloadState.cancelled;
   }

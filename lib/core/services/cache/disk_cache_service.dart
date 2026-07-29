@@ -7,8 +7,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 import 'cache_service.dart';
 
-/// Disk-based cache implementation using SQLite for metadata and files for content
-/// Provides persistent caching across app restarts
+// Disk-based cache implementation using SQLite for metadata and files for content
+// Provides persistent caching across app restarts
 class DiskCacheService<T> implements CacheService<T> {
   static const String _cacheTableName = 'cache_metadata';
   static const int _databaseVersion = 1;
@@ -31,7 +31,7 @@ class DiskCacheService<T> implements CacheService<T> {
     this.defaultTTL = const Duration(days: 1),
   });
 
-  /// Initialize database and cache directory
+  // Initialize database and cache directory
   Future<void> initialize() async {
     if (_database != null && _cacheDir != null) return;
 
@@ -266,7 +266,7 @@ class DiskCacheService<T> implements CacheService<T> {
     );
   }
 
-  /// Remove expired entries from cache
+  // Remove expired entries from cache
   Future<int> removeExpired() async {
     await initialize();
 
@@ -307,7 +307,7 @@ class DiskCacheService<T> implements CacheService<T> {
     }
   }
 
-  /// Cleanup old entries if cache size exceeds limit
+  // Cleanup old entries if cache size exceeds limit
   Future<void> _cleanupIfNeeded() async {
     final stats = await getStats();
     final maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -342,12 +342,12 @@ class DiskCacheService<T> implements CacheService<T> {
     }
   }
 
-  /// Sanitize key for use as filename
+  // Sanitize key for use as filename
   String _sanitizeKey(String key) {
     return key.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
   }
 
-  /// Close database connection
+  // Close database connection
   Future<void> close() async {
     await _database?.close();
     _database = null;

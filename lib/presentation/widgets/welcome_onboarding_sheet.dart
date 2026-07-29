@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Welcome onboarding bottom sheet shown on first app launch
-/// Shows VPN info for ISP blocking
+// Welcome onboarding bottom sheet shown on first app launch
+// Shows VPN info for ISP blocking
 class WelcomeOnboardingSheet extends StatelessWidget {
   final VoidCallback onComplete;
 

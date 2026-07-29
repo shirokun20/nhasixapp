@@ -1,14 +1,14 @@
-/// nhentai API Response Models
+// nhentai API Response Models
 ///
-/// JSON models for parsing nhentai API responses.
-/// These models provide type-safe access to API data.
+// JSON models for parsing nhentai API responses.
+// These models provide type-safe access to API data.
 library;
 
-/// Image type extension mapping from API response
-/// Handles:
-/// - Single letter codes: 'j' = jpg, 'p' = png, 'g' = gif, 'w' = webp
-/// - Full extensions: 'jpg', 'jpeg', 'png', 'gif', 'webp'
-/// - Mixed cases: 'JPG', 'Webp', etc.
+// Image type extension mapping from API response
+// Handles:
+// - Single letter codes: 'j' = jpg, 'p' = png, 'g' = gif, 'w' = webp
+// - Full extensions: 'jpg', 'jpeg', 'png', 'gif', 'webp'
+// - Mixed cases: 'JPG', 'Webp', etc.
 String getImageExtension(String type) {
   // Normalize to lowercase and trim
   final normalized = type.toLowerCase().trim();
@@ -29,7 +29,7 @@ String getImageExtension(String type) {
   };
 }
 
-/// Helper to safely parse int from dynamic (handles String or int)
+// Helper to safely parse int from dynamic (handles String or int)
 int? _parseInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -37,7 +37,7 @@ int? _parseInt(dynamic value) {
   return null;
 }
 
-/// nhentai Gallery Title
+// nhentai Gallery Title
 class NhentaiTitle {
   final String? english;
   final String? japanese;
@@ -64,15 +64,15 @@ class NhentaiTitle {
       };
 }
 
-/// nhentai Image Info (for pages, cover, thumbnail)
+// nhentai Image Info (for pages, cover, thumbnail)
 class NhentaiImageInfo {
-  /// Image type: 'j'=jpg, 'p'=png, 'g'=gif, 'w'=webp
+  // Image type: 'j'=jpg, 'p'=png, 'g'=gif, 'w'=webp
   final String type;
 
-  /// Width in pixels
+  // Width in pixels
   final int? width;
 
-  /// Height in pixels
+  // Height in pixels
   final int? height;
 
   const NhentaiImageInfo({
@@ -96,7 +96,7 @@ class NhentaiImageInfo {
       };
 }
 
-/// nhentai Images Container
+// nhentai Images Container
 class NhentaiImages {
   final List<NhentaiImageInfo> pages;
   final NhentaiImageInfo cover;
@@ -132,7 +132,7 @@ class NhentaiImages {
       };
 }
 
-/// nhentai Tag Info
+// nhentai Tag Info
 class NhentaiTagInfo {
   final int id;
   final String type;
@@ -167,7 +167,7 @@ class NhentaiTagInfo {
       };
 }
 
-/// nhentai Gallery Response (single gallery detail)
+// nhentai Gallery Response (single gallery detail)
 class NhentaiGalleryResponse {
   final int id;
   final String mediaId;
@@ -195,14 +195,12 @@ class NhentaiGalleryResponse {
     return NhentaiGalleryResponse(
       id: _parseInt(json['id']) ?? 0,
       mediaId: json['media_id'] as String? ?? '',
-      title:
-          json['title'] is Map<String, dynamic>
-              ? NhentaiTitle.fromJson(json['title'] as Map<String, dynamic>)
-              : NhentaiTitle.fromJson({}),
-      images:
-          json['images'] is Map<String, dynamic>
-              ? NhentaiImages.fromJson(json['images'] as Map<String, dynamic>)
-              : NhentaiImages.fromJson({}),
+      title: json['title'] is Map<String, dynamic>
+          ? NhentaiTitle.fromJson(json['title'] as Map<String, dynamic>)
+          : NhentaiTitle.fromJson({}),
+      images: json['images'] is Map<String, dynamic>
+          ? NhentaiImages.fromJson(json['images'] as Map<String, dynamic>)
+          : NhentaiImages.fromJson({}),
       scanlator: json['scanlator'] as String?,
       uploadDate: _parseInt(json['upload_date']),
       tags: (json['tags'] as List<dynamic>?)
@@ -229,7 +227,7 @@ class NhentaiGalleryResponse {
       };
 }
 
-/// nhentai List Response (for search, homepage, popular)
+// nhentai List Response (for search, homepage, popular)
 class NhentaiListResponse {
   final List<NhentaiGalleryResponse> result;
   final int? numPages;
@@ -261,7 +259,7 @@ class NhentaiListResponse {
       };
 }
 
-/// nhentai Related Response
+// nhentai Related Response
 class NhentaiRelatedResponse {
   final List<NhentaiGalleryResponse> result;
 

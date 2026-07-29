@@ -1,5 +1,5 @@
-/// Canonical config generator — produces configs matching existing
-/// `informations/configs/` format exactly. Not inventing new structures.
+// Canonical config generator — produces configs matching existing
+// `informations/configs/` format exactly. Not inventing new structures.
 class ConfigGenerator {
   static Map<String, Object?> generateConfig(Map<String, String?> answers) {
     final mode = answers['mode'] ?? 'scraper';

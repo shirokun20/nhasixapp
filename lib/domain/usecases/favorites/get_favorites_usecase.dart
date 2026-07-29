@@ -3,7 +3,7 @@ import 'package:kuron_core/kuron_core.dart';
 import '../base_usecase.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting user's favorite content (simplified)
+// Use case for getting user's favorite content (simplified)
 class GetFavoritesUseCase
     extends UseCase<List<Map<String, dynamic>>, GetFavoritesParams> {
   GetFavoritesUseCase(
@@ -49,7 +49,7 @@ class GetFavoritesUseCase
   }
 }
 
-/// Parameters for GetFavoritesUseCase (simplified)
+// Parameters for GetFavoritesUseCase (simplified)
 class GetFavoritesParams extends UseCaseParams {
   const GetFavoritesParams({
     this.page = 1,
@@ -76,13 +76,13 @@ class GetFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params for first page
+  // Create params for first page
   factory GetFavoritesParams.firstPage({int limit = 20, String? collectionId}) {
     return GetFavoritesParams(
         page: 1, limit: limit, collectionId: collectionId);
   }
 
-  /// Create params for specific page
+  // Create params for specific page
   factory GetFavoritesParams.page(int page,
       {int limit = 20, String? collectionId}) {
     return GetFavoritesParams(
@@ -92,12 +92,12 @@ class GetFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params for next page
+  // Create params for next page
   GetFavoritesParams nextPage() {
     return copyWith(page: page + 1);
   }
 
-  /// Create params for previous page
+  // Create params for previous page
   GetFavoritesParams previousPage() {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }

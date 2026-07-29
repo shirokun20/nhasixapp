@@ -1,46 +1,46 @@
 import 'package:equatable/equatable.dart';
 
-/// DNS Provider options for DNS-over-HTTPS
+// DNS Provider options for DNS-over-HTTPS
 enum DnsProvider {
-  /// Use system default DNS resolver
+  // Use system default DNS resolver
   system('System Default', [], ''),
 
-  /// Cloudflare DNS (1.1.1.1)
+  // Cloudflare DNS (1.1.1.1)
   cloudflare(
     'Cloudflare (1.1.1.1)',
     ['1.1.1.1', '1.0.0.1'],
     'https://cloudflare-dns.com/dns-query',
   ),
 
-  /// Google Public DNS (8.8.8.8)
+  // Google Public DNS (8.8.8.8)
   google(
     'Google (8.8.8.8)',
     ['8.8.8.8', '8.8.4.4'],
     'https://dns.google/dns-query',
   ),
 
-  /// Quad9 DNS (9.9.9.9)
+  // Quad9 DNS (9.9.9.9)
   quad9(
     'Quad9 (9.9.9.9)',
     ['9.9.9.9', '149.112.112.112'],
     'https://dns.quad9.net/dns-query',
   ),
 
-  /// Custom DNS server
+  // Custom DNS server
   custom('Custom DNS', [], '');
 
-  /// Human-readable display name
+  // Human-readable display name
   final String displayName;
 
-  /// DNS server IP addresses (for bootstrap)
+  // DNS server IP addresses (for bootstrap)
   final List<String> dnsServers;
 
-  /// DNS-over-HTTPS URL endpoint
+  // DNS-over-HTTPS URL endpoint
   final String dohUrl;
 
   const DnsProvider(this.displayName, this.dnsServers, this.dohUrl);
 
-  /// Get provider from name string (for deserialization)
+  // Get provider from name string (for deserialization)
   static DnsProvider fromName(String name) {
     return DnsProvider.values.firstWhere(
       (provider) => provider.name == name,
@@ -49,18 +49,18 @@ enum DnsProvider {
   }
 }
 
-/// DNS configuration settings
+// DNS configuration settings
 class DnsSettings extends Equatable {
-  /// Selected DNS provider
+  // Selected DNS provider
   final DnsProvider provider;
 
-  /// Custom DNS server address (only used when provider is custom)
+  // Custom DNS server address (only used when provider is custom)
   final String? customDnsServer;
 
-  /// Custom DoH URL (only used when provider is custom)
+  // Custom DoH URL (only used when provider is custom)
   final String? customDohUrl;
 
-  /// Whether DNS-over-HTTPS is enabled
+  // Whether DNS-over-HTTPS is enabled
   final bool enabled;
 
   const DnsSettings({
@@ -70,14 +70,14 @@ class DnsSettings extends Equatable {
     this.enabled = true,
   });
 
-  /// Default settings (system DNS)
+  // Default settings (system DNS)
   const DnsSettings.defaultSettings()
       : provider = DnsProvider.system,
         customDnsServer = null,
         customDohUrl = null,
         enabled = false;
 
-  /// Get effective DoH URL based on provider
+  // Get effective DoH URL based on provider
   String get effectiveDohUrl {
     if (provider == DnsProvider.custom && customDohUrl != null) {
       return customDohUrl!;
@@ -85,7 +85,7 @@ class DnsSettings extends Equatable {
     return provider.dohUrl;
   }
 
-  /// Get effective DNS servers based on provider
+  // Get effective DNS servers based on provider
   List<String> get effectiveDnsServers {
     if (provider == DnsProvider.custom && customDnsServer != null) {
       return [customDnsServer!];
@@ -93,7 +93,7 @@ class DnsSettings extends Equatable {
     return provider.dnsServers;
   }
 
-  /// Serialize to JSON for persistence
+  // Serialize to JSON for persistence
   Map<String, dynamic> toJson() => {
         'provider': provider.name,
         'customDnsServer': customDnsServer,
@@ -101,7 +101,7 @@ class DnsSettings extends Equatable {
         'enabled': enabled,
       };
 
-  /// Deserialize from JSON
+  // Deserialize from JSON
   factory DnsSettings.fromJson(Map<String, dynamic> json) {
     return DnsSettings(
       provider: DnsProvider.fromName(json['provider'] as String? ?? 'system'),
@@ -111,7 +111,7 @@ class DnsSettings extends Equatable {
     );
   }
 
-  /// Create copy with updated fields
+  // Create copy with updated fields
   DnsSettings copyWith({
     DnsProvider? provider,
     String? customDnsServer,

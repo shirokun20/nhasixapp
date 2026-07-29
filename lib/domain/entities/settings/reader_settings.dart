@@ -1,9 +1,9 @@
 import '../user_preferences.dart';
 
-/// Reader settings entities
-/// Extracted from settings_repository.dart
+// Reader settings entities
+// Extracted from settings_repository.dart
 
-/// Page transition types
+// Page transition types
 enum PageTransition {
   slide,
   fade,
@@ -11,7 +11,7 @@ enum PageTransition {
   none,
 }
 
-/// Image fit modes
+// Image fit modes
 enum FitMode {
   fitWidth,
   fitHeight,
@@ -20,7 +20,7 @@ enum FitMode {
   smartFit,
 }
 
-/// Tap zones configuration
+// Tap zones configuration
 class TapZones {
   const TapZones({
     required this.leftZone,
@@ -33,7 +33,7 @@ class TapZones {
   final bool centerZone;
 }
 
-/// Reader settings configuration
+// Reader settings configuration
 class ReaderSettingsEntity {
   const ReaderSettingsEntity({
     required this.readingDirection,

@@ -4,8 +4,8 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Modern simplified pagination widget with tap-to-jump functionality
-/// Keeps essential functionality but with cleaner, smaller design
+// Modern simplified pagination widget with tap-to-jump functionality
+// Keeps essential functionality but with cleaner, smaller design
 class ModernPaginationWidget extends StatefulWidget {
   const ModernPaginationWidget({
     super.key,

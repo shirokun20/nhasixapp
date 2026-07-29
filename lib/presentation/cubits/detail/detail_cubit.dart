@@ -35,8 +35,8 @@ List<Chapter> mergeChaptersById(
   return merged;
 }
 
-/// Cubit for managing content detail view and favorite toggle
-/// Simple state management for detail screen operations
+// Cubit for managing content detail view and favorite toggle
+// Simple state management for detail screen operations
 class DetailCubit extends BaseCubit<DetailState> {
   DetailCubit({
     required GetContentDetailUseCase getContentDetailUseCase,
@@ -72,18 +72,18 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ContentSourceRegistry _contentSourceRegistry;
   final OfflineContentManager _offlineContentManager;
 
-  /// Per-language expanded chapter lists kept outside state so they survive
-  /// cubit rebuilds and language switches without cross-pollution.
+  // Per-language expanded chapter lists kept outside state so they survive
+  // cubit rebuilds and language switches without cross-pollution.
   final Map<String, List<Chapter>> _allChaptersByLang = {};
 
-  /// Save expanded chapter list from bottom sheet, keyed by language.
+  // Save expanded chapter list from bottom sheet, keyed by language.
   void setAllChapters(List<Chapter> chapters,
       {String? sourceId, String? language, String? scanGroup}) {
     final lang = language ?? 'default';
     _allChaptersByLang[lang] = chapters;
   }
 
-  /// Get chapters for a given language. Returns null for unknown language.
+  // Get chapters for a given language. Returns null for unknown language.
   List<Chapter>? chaptersByLang(String? language) {
     if (language != null && _allChaptersByLang.containsKey(language)) {
       return _allChaptersByLang[language];
@@ -91,7 +91,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     return null;
   }
 
-  /// Load content detail by ID
+  // Load content detail by ID
   Future<void> loadContentDetail(String contentId, {String? sourceId}) async {
     _allChaptersByLang.clear();
     try {
@@ -248,8 +248,8 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Load related content separately (independent API call)
-  /// Should be called after loadContentDetail completes successfully
+  // Load related content separately (independent API call)
+  // Should be called after loadContentDetail completes successfully
   Future<void> loadRelatedContent() async {
     final currentState = state;
     if (currentState is! DetailLoaded) {
@@ -396,7 +396,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     ));
   }
 
-  /// Toggle favorite status of current content
+  // Toggle favorite status of current content
   Future<void> toggleFavorite() async {
     final currentState = state;
     if (currentState is! DetailLoaded) {
@@ -449,7 +449,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Refresh content detail
+  // Refresh content detail
   Future<void> refreshContent() async {
     final currentState = state;
     if (currentState is DetailLoaded) {
@@ -458,7 +458,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Retry loading content after error
+  // Retry loading content after error
   Future<void> retryLoading() async {
     final currentState = state;
     if (currentState is DetailError && currentState.contentId != null) {
@@ -467,7 +467,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Update content in current state (for external updates)
+  // Update content in current state (for external updates)
   void updateContent(Content updatedContent) {
     final currentState = state;
     if (currentState is DetailLoaded &&
@@ -480,7 +480,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Check if content is favorited
+  // Check if content is favorited
   Future<bool> _checkIfFavorited(String contentId, {String? sourceId}) async {
     try {
       return await _userDataRepository.isFavorite(
@@ -493,7 +493,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Add content to favorites
+  // Add content to favorites
   Future<void> _addToFavorites(Content content) async {
     try {
       final params = AddToFavoritesParams.create(content);
@@ -504,7 +504,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Remove content from favorites
+  // Remove content from favorites
   Future<void> _removeFromFavorites(String contentId,
       {String? sourceId}) async {
     try {
@@ -519,7 +519,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Get current content
+  // Get current content
   Content? get currentContent {
     final currentState = state;
     if (currentState is DetailLoaded) {
@@ -528,7 +528,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     return null;
   }
 
-  /// Check if current content is favorited
+  // Check if current content is favorited
   bool get isFavorited {
     final currentState = state;
     if (currentState is DetailLoaded) {
@@ -537,8 +537,8 @@ class DetailCubit extends BaseCubit<DetailState> {
     return false;
   }
 
-  /// Generate image metadata for content
-  /// Returns null if generation fails (with timeout and error handling)
+  // Generate image metadata for content
+  // Returns null if generation fails (with timeout and error handling)
   Future<List<ImageMetadata>?> generateImageMetadata(
       String contentId, List<String> imageUrls) async {
     try {
@@ -570,7 +570,7 @@ class DetailCubit extends BaseCubit<DetailState> {
     }
   }
 
-  /// Open a specific chapter
+  // Open a specific chapter
   Future<void> openChapter(Chapter chapter) async {
     final currentState = state;
     if (currentState is! DetailLoaded) return;
@@ -586,7 +586,6 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
-
       ));
 
       final source =
@@ -647,7 +646,6 @@ class DetailCubit extends BaseCubit<DetailState> {
           lastUpdated: currentState.lastUpdated,
           imageMetadata: currentState.imageMetadata,
           chapterHistory: currentState.chapterHistory,
-  
           needsLogin: needsLogin,
         ));
 
@@ -689,13 +687,12 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
-
         error: e,
       ));
     }
   }
 
-  /// Reset state after navigation
+  // Reset state after navigation
   void resetToLoaded() {
     final currentState = state;
     if (currentState is DetailReaderReady) {
@@ -705,7 +702,6 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
-
       ));
     } else if (currentState is DetailActionFailure) {
       emit(DetailLoaded(
@@ -714,13 +710,12 @@ class DetailCubit extends BaseCubit<DetailState> {
         lastUpdated: currentState.lastUpdated,
         imageMetadata: currentState.imageMetadata,
         chapterHistory: currentState.chapterHistory,
-
       ));
     }
   }
 
-  /// Refresh chapter history from database
-  /// Call this when returning from reader to update read indicators
+  // Refresh chapter history from database
+  // Call this when returning from reader to update read indicators
   Future<void> refreshChapterHistory() async {
     final currentState = state;
     if (currentState is! DetailLoaded) {

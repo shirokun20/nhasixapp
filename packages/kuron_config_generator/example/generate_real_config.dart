@@ -1,4 +1,4 @@
-/// Generate real manhwaread.com config from probe data
+// Generate real manhwaread.com config from probe data
 // ignore_for_file: avoid_print
 library;
 

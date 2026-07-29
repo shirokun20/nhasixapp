@@ -1,4 +1,4 @@
-/// Tests for SourcePluginRegistry (task 6.5).
+// Tests for SourcePluginRegistry (task 6.5).
 library;
 
 import 'package:kuron_core/kuron_core.dart';

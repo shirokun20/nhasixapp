@@ -10,14 +10,14 @@ import 'package:path/path.dart' as path;
 
 import '../utils/storage_settings.dart';
 
-/// Enhanced Local Image Preloader Service
+// Enhanced Local Image Preloader Service
 ///
-/// Provides progressive image loading with priority:
-/// 1. Downloaded content (`nhasix/[id]/images/`)
-/// 2. Local cache
-/// 3. Network fallback
+// Provides progressive image loading with priority:
+// 1. Downloaded content (`nhasix/[id]/images/`)
+// 2. Local cache
+// 3. Network fallback
 ///
-/// Supports metadata.json validation for downloaded content
+// Supports metadata.json validation for downloaded content
 class LocalImagePreloader {
   static const String _baseLocalPath = 'nhasix';
   static const String _cacheSubPath = 'cache';
@@ -26,8 +26,8 @@ class LocalImagePreloader {
   static final Logger _logger = getIt<Logger>();
   static bool _didLogDownloadDirectorySelection = false;
 
-  /// Get all possible base paths where images might be stored
-  /// Priority: External Download -> Internal Cache (with expiry) -> Internal App Documents
+  // Get all possible base paths where images might be stored
+  // Priority: External Download -> Internal Cache (with expiry) -> Internal App Documents
   static Future<List<String>> _getPossibleBasePaths() async {
     final List<String> basePaths = [];
 
@@ -68,8 +68,8 @@ class LocalImagePreloader {
     return basePaths;
   }
 
-  /// Get Downloads directories using smart detection similar to download_service.dart
-  /// Reference implementation from download_service.dart _getDownloadsDirectory()
+  // Get Downloads directories using smart detection similar to download_service.dart
+  // Reference implementation from download_service.dart _getDownloadsDirectory()
   static Future<List<String>> _getDownloadDirectories() async {
     final List<String> downloadPaths = [];
     final bool shouldLog = !_didLogDownloadDirectorySelection;
@@ -128,8 +128,8 @@ class LocalImagePreloader {
     return downloadPaths;
   }
 
-  /// Get internal cache directory for temporary image storage
-  /// Files here expire after _cacheExpiryDuration and can be auto-cleaned
+  // Get internal cache directory for temporary image storage
+  // Files here expire after _cacheExpiryDuration and can be auto-cleaned
   static Future<String?> _getInternalCacheDirectory() async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
@@ -148,7 +148,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Clean up expired cache files in background
+  // Clean up expired cache files in background
   static Future<void> _cleanupExpiredCache() async {
     try {
       final cacheDir = await _getInternalCacheDirectory();
@@ -238,7 +238,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Save image to internal cache with metadata
+  // Save image to internal cache with metadata
   static Future<String?> _saveToInternalCache(
       String contentId, int pageNumber, List<int> imageBytes) async {
     try {
@@ -275,7 +275,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get only external download paths (excluding cache)
+  // Get only external download paths (excluding cache)
   static Future<List<String>> _getExternalDownloadPaths() async {
     final List<String> externalPaths = [];
 
@@ -297,8 +297,8 @@ class LocalImagePreloader {
     return externalPaths;
   }
 
-  /// Check if content is downloaded with metadata validation
-  /// Only checks external download folders, not cache
+  // Check if content is downloaded with metadata validation
+  // Only checks external download folders, not cache
   static Future<bool> isContentDownloaded(String contentId) async {
     try {
       final basePaths = await _getExternalDownloadPaths();
@@ -334,7 +334,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get local image path with priority: downloaded > internal cache > network cache > null
+  // Get local image path with priority: downloaded > internal cache > network cache > null
   static Future<String?> getLocalImagePath(
       String contentId, int pageNumber) async {
     try {
@@ -389,7 +389,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get local thumbnail/cover path with priority: downloads > internal cache > legacy cache
+  // Get local thumbnail/cover path with priority: downloads > internal cache > legacy cache
   static Future<String?> getLocalThumbnailPath(String contentId) async {
     try {
       final basePaths = await _getPossibleBasePaths();
@@ -461,7 +461,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Read metadata for validation
+  // Read metadata for validation
   static Future<Map<String, dynamic>?> getDownloadedMetadata(
       String contentId) async {
     try {
@@ -490,8 +490,8 @@ class LocalImagePreloader {
     }
   }
 
-  /// Progressive loading: downloaded > internal cache > network
-  /// Also saves network images to internal cache for future use
+  // Progressive loading: downloaded > internal cache > network
+  // Also saves network images to internal cache for future use
   static ImageProvider getProgressiveImageProvider(
       String networkUrl, String? localPath) {
     if (localPath != null && File(localPath).existsSync()) {
@@ -504,8 +504,8 @@ class LocalImagePreloader {
     return CachedNetworkImageProvider(networkUrl);
   }
 
-  /// Download and cache image from network to internal cache
-  /// This method can be called when loading network images to cache them locally
+  // Download and cache image from network to internal cache
+  // This method can be called when loading network images to cache them locally
   static Future<String?> downloadAndCacheImage(
     String networkUrl,
     String contentId,
@@ -562,7 +562,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get all downloaded content IDs
+  // Get all downloaded content IDs
   static Future<List<String>> getDownloadedContentIds() async {
     try {
       final basePaths = await _getPossibleBasePaths();
@@ -595,7 +595,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get image count for downloaded content
+  // Get image count for downloaded content
   static Future<int> getDownloadedImageCount(String contentId) async {
     try {
       final basePaths = await _getPossibleBasePaths();
@@ -624,7 +624,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Validate downloaded content integrity
+  // Validate downloaded content integrity
   static Future<bool> validateDownloadedContent(String contentId) async {
     try {
       final metadata = await getDownloadedMetadata(contentId);
@@ -648,7 +648,7 @@ class LocalImagePreloader {
 
   // Private helper methods
 
-  /// Get cached image path (simulate cache directory)
+  // Get cached image path (simulate cache directory)
   static Future<String?> _getCachedImagePath(
       String contentId, int pageNumber) async {
     try {
@@ -670,7 +670,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Get cached thumbnail path
+  // Get cached thumbnail path
   static Future<String?> _getCachedThumbnailPath(String contentId) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
@@ -688,7 +688,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Clear image cache for specific content (useful for debugging)
+  // Clear image cache for specific content (useful for debugging)
   static Future<void> clearContentCache(String contentId) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
@@ -714,7 +714,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Clear all internal image cache (emergency reset)
+  // Clear all internal image cache (emergency reset)
   static Future<void> clearAllImageCache() async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
@@ -730,7 +730,7 @@ class LocalImagePreloader {
     }
   }
 
-  /// Helper method to check if file is an image
+  // Helper method to check if file is an image
   static bool _isImageFile(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
     return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp']
@@ -753,26 +753,26 @@ class LocalImagePreloader {
     return patterns.toSet().toList();
   }
 
-  /// Helper method to extract page number from filename
+  // Helper method to extract page number from filename
   static int _extractPageNumber(String filePath) {
     final filename = path.basenameWithoutExtension(filePath);
     final match = RegExp(r'(\d+)').firstMatch(filename);
     return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
   }
 
-  /// Get base local path for content
+  // Get base local path for content
   static Future<String> getBaseLocalPath() async {
     final appDir = await getApplicationDocumentsDirectory();
     return path.join(appDir.path, _baseLocalPath);
   }
 
-  /// Get content folder path
+  // Get content folder path
   static Future<String> getContentFolderPath(String contentId) async {
     final appDir = await getApplicationDocumentsDirectory();
     return path.join(appDir.path, _baseLocalPath, contentId);
   }
 
-  /// Get images folder path
+  // Get images folder path
   static Future<String> getImagesFolderPath(String contentId) async {
     final appDir = await getApplicationDocumentsDirectory();
     return path.join(appDir.path, _baseLocalPath, contentId, 'images');

@@ -21,10 +21,10 @@ class SplashInitializeBypassEvent extends SplashEvent {}
 
 class SplashOfflineModeEvent extends SplashEvent {}
 
-/// Event to force continue in offline mode even without content
-/// Allows user to access limited app features when no offline content exists
+// Event to force continue in offline mode even without content
+// Allows user to access limited app features when no offline content exists
 class SplashForceOfflineModeEvent extends SplashEvent {}
 
-/// Event to manually check for offline content availability
-/// Triggered when user wants to refresh offline content status
+// Event to manually check for offline content availability
+// Triggered when user wants to refresh offline content status
 class SplashCheckOfflineContentEvent extends SplashEvent {}

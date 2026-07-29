@@ -19,8 +19,8 @@ import 'request_rate_manager.dart';
 import 'exceptions.dart';
 import '../../../../core/config/remote_config_service.dart';
 
-/// Remote data source for nhentai.net
-/// Supports both API and HTML scraping with automatic fallback
+// Remote data source for nhentai.net
+// Supports both API and HTML scraping with automatic fallback
 class RemoteDataSource implements AppInitializer {
   RemoteDataSource({
     required this.httpClient,
@@ -44,7 +44,7 @@ class RemoteDataSource implements AppInitializer {
   final RequestRateManager _rateManager;
   final RemoteConfigService _remoteConfigService;
 
-  /// Whether to prefer API over scraping
+  // Whether to prefer API over scraping
   bool _useApi = true;
 
   String get baseUrl =>
@@ -54,15 +54,15 @@ class RemoteDataSource implements AppInitializer {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
 
-  /// Public method to fetch HTML content from a specific path
-  /// Used by feature-specific repositories (e.g., Crotpedia)
+  // Public method to fetch HTML content from a specific path
+  // Used by feature-specific repositories (e.g., Crotpedia)
   Future<String> fetchHtml(String path) async {
     // Construct full URL if path is relative
     final url = path.startsWith('http') ? path : '$baseUrl$path';
     return _getPageHtml(url);
   }
 
-  /// Initialize the remote data source
+  // Initialize the remote data source
   @override
   Future<bool> initialize() async {
     try {
@@ -89,7 +89,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content list from homepage or specific page (with tag resolution)
+  // Get content list from homepage or specific page (with tag resolution)
   Future<List<ContentModel>> getContentList({int page = 1}) async {
     try {
       _logger.i('Fetching content list for page $page');
@@ -113,7 +113,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content list with pagination information (with tag resolution)
+  // Get content list with pagination information (with tag resolution)
   Future<Map<String, dynamic>> getContentListWithPagination(
       {int page = 1}) async {
     try {
@@ -144,8 +144,8 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content list from homepage or specific page (sync version without tag resolution)
-  /// Use this for better performance when tag resolution is not needed
+  // Get content list from homepage or specific page (sync version without tag resolution)
+  // Use this for better performance when tag resolution is not needed
   Future<List<ContentModel>> getContentListSync({int page = 1}) async {
     try {
       _logger.i('Fetching content list (sync) for page $page');
@@ -169,7 +169,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get homepage content separated by sections (with tag resolution)
+  // Get homepage content separated by sections (with tag resolution)
   Future<Map<String, List<ContentModel>>> getHomepageContent() async {
     try {
       _logger.i('Fetching homepage content with sections');
@@ -188,8 +188,8 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get homepage content separated by sections (sync version without tag resolution)
-  /// Use this for better performance when tag resolution is not needed
+  // Get homepage content separated by sections (sync version without tag resolution)
+  // Use this for better performance when tag resolution is not needed
   Future<Map<String, List<ContentModel>>> getHomepageContentSync() async {
     try {
       _logger.i('Fetching homepage content with sections (sync)');
@@ -208,7 +208,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get detailed content information
+  // Get detailed content information
   Future<ContentModel> getContentDetail(String contentId) async {
     try {
       _logger.i('Fetching content detail for ID: $contentId');
@@ -227,7 +227,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Search content with filters (with tag resolution)
+  // Search content with filters (with tag resolution)
   Future<List<ContentModel>> searchContent(SearchFilter filter) async {
     try {
       _logger.i('Searching content with filter: ${filter.toQueryString()}');
@@ -245,7 +245,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Search content with filters and pagination info (with tag resolution)
+  // Search content with filters and pagination info (with tag resolution)
   Future<Map<String, dynamic>> searchContentWithPagination(
       SearchFilter filter) async {
     try {
@@ -279,8 +279,8 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Search content with filters (sync version without tag resolution)
-  /// Use this for better performance when tag resolution is not needed
+  // Search content with filters (sync version without tag resolution)
+  // Use this for better performance when tag resolution is not needed
   Future<List<ContentModel>> searchContentSync(SearchFilter filter) async {
     try {
       _logger
@@ -300,7 +300,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get random content
+  // Get random content
   Future<ContentModel> getRandomContent() async {
     try {
       _logger.i('Fetching random content ID (scraping /random/)');
@@ -329,7 +329,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get popular content (with tag resolution)
+  // Get popular content (with tag resolution)
   Future<List<ContentModel>> getPopularContent({
     String period = 'all', // all, week, today
     int page = 1,
@@ -353,7 +353,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get popular content with pagination info (with tag resolution)
+  // Get popular content with pagination info (with tag resolution)
   Future<Map<String, dynamic>> getPopularContentWithPagination({
     String period = 'all', // all, week, today
     int page = 1,
@@ -387,8 +387,8 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get popular content (sync version without tag resolution)
-  /// Use this for better performance when tag resolution is not needed
+  // Get popular content (sync version without tag resolution)
+  // Use this for better performance when tag resolution is not needed
   Future<List<ContentModel>> getPopularContentSync({
     String period = 'all', // all, week, today
     int page = 1,
@@ -414,7 +414,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get all available tags
+  // Get all available tags
   Future<List<TagModel>> getAllTags() async {
     try {
       _logger.i('Fetching all tags');
@@ -432,7 +432,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get tags by type (artist, character, etc.)
+  // Get tags by type (artist, character, etc.)
   Future<List<TagModel>> getTagsByType(String type) async {
     try {
       _logger.i('Fetching tags for type: $type');
@@ -451,7 +451,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Check if Cloudflare bypass is needed
+  // Check if Cloudflare bypass is needed
   @override
   Future<bool> checkCloudflareStatus() async {
     _logger.i('Checking Cloudflare status... from $baseUrl');
@@ -468,7 +468,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Attempt to bypass Cloudflare protection
+  // Attempt to bypass Cloudflare protection
   @override
   Future<bool> bypassCloudflare() async {
     try {
@@ -480,7 +480,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get HTML content from URL with retry logic
+  // Get HTML content from URL with retry logic
   Future<String> _getPageHtml(String url) async {
     RemoteDataSourceException? lastException;
 
@@ -612,7 +612,7 @@ class RemoteDataSource implements AppInitializer {
             'Failed to fetch HTML after $maxRetries attempts');
   }
 
-  /// Handle Dio exceptions and convert to appropriate exception types
+  // Handle Dio exceptions and convert to appropriate exception types
   RemoteDataSourceException _handleDioException(DioException e, String url) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
@@ -651,7 +651,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Check if exception should trigger a retry
+  // Check if exception should trigger a retry
   bool _shouldRetry(RemoteDataSourceException exception) {
     return exception is NetworkException ||
         exception is TimeoutException ||
@@ -659,7 +659,7 @@ class RemoteDataSource implements AppInitializer {
         exception is CloudflareException;
   }
 
-  /// Configure HTTP client with default settings and enhanced error handling
+  // Configure HTTP client with default settings and enhanced error handling
   void _configureHttpClient() {
     httpClient.options.baseUrl = baseUrl;
 
@@ -719,7 +719,7 @@ class RemoteDataSource implements AppInitializer {
     );
   }
 
-  /// Build search URL from filter
+  // Build search URL from filter
   String _buildSearchUrl(SearchFilter filter) {
     final buffer = StringBuffer('$baseUrl/search/?');
 
@@ -739,7 +739,7 @@ class RemoteDataSource implements AppInitializer {
     return buffer.toString();
   }
 
-  /// Check HTTP client health and connection status
+  // Check HTTP client health and connection status
   Future<bool> checkConnectionHealth() async {
     try {
       _logger.d('Checking HTTP client connection health...');
@@ -764,7 +764,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get HTTP client statistics for monitoring
+  // Get HTTP client statistics for monitoring
   Map<String, dynamic> getHttpClientStats() {
     return {
       'base_url': httpClient.options.baseUrl,
@@ -776,22 +776,22 @@ class RemoteDataSource implements AppInitializer {
     };
   }
 
-  /// IMPORTANT: RemoteDataSource should NEVER dispose the HTTP client
-  /// The HTTP client is managed as a singleton and should persist throughout
-  /// the application lifecycle to prevent connection errors
+  // IMPORTANT: RemoteDataSource should NEVER dispose the HTTP client
+  // The HTTP client is managed as a singleton and should persist throughout
+  // the application lifecycle to prevent connection errors
   ///
-  /// This method is intentionally removed to prevent accidental disposal
-  /// If cleanup is needed, it should be handled at the application level
+  // This method is intentionally removed to prevent accidental disposal
+  // If cleanup is needed, it should be handled at the application level
 
   // ============ API Methods with Fallback ============
 
-  /// Toggle API mode on/off
+  // Toggle API mode on/off
   void setApiMode(bool enabled) {
     _useApi = enabled && apiClient != null;
     _logger.i('API mode ${_useApi ? 'enabled' : 'disabled'}');
   }
 
-  /// Check if API client is available and healthy
+  // Check if API client is available and healthy
   Future<bool> isApiAvailable() async {
     if (apiClient == null) return false;
     try {
@@ -802,7 +802,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content list via API with fallback to scraping
+  // Get content list via API with fallback to scraping
   Future<List<ContentModel>> getContentListViaApi({
     int page = 1,
     SortOption sortBy = SortOption.newest,
@@ -853,7 +853,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content list with pagination via API with fallback
+  // Get content list with pagination via API with fallback
   Future<Map<String, dynamic>> getContentListWithPaginationViaApi({
     int page = 1,
     SortOption sortBy = SortOption.newest,
@@ -924,7 +924,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get content detail via API with fallback
+  // Get content detail via API with fallback
   Future<ContentModel> getContentDetailViaApi(String contentId) async {
     if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
       try {
@@ -946,7 +946,7 @@ class RemoteDataSource implements AppInitializer {
     return getContentDetail(contentId);
   }
 
-  /// Search content via API with fallback
+  // Search content via API with fallback
   Future<List<ContentModel>> searchContentViaApi(SearchFilter filter) async {
     if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
       try {
@@ -980,7 +980,7 @@ class RemoteDataSource implements AppInitializer {
     return searchContent(filter);
   }
 
-  /// Search content with pagination via API with fallback
+  // Search content with pagination via API with fallback
   Future<Map<String, dynamic>> searchContentWithPaginationViaApi(
       SearchFilter filter) async {
     if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {
@@ -1033,7 +1033,7 @@ class RemoteDataSource implements AppInitializer {
     return searchContentWithPagination(filter);
   }
 
-  /// Get popular content via API with fallback
+  // Get popular content via API with fallback
   Future<List<ContentModel>> getPopularContentViaApi({
     String period = 'all',
     int page = 1,
@@ -1062,7 +1062,7 @@ class RemoteDataSource implements AppInitializer {
     return getPopularContent(period: period, page: page);
   }
 
-  /// Get related content via API (API only, no scraping equivalent)
+  // Get related content via API (API only, no scraping equivalent)
   Future<List<ContentModel>> getRelatedContentViaApi(String contentId) async {
     if (apiClient == null) {
       _logger.w('API client not available for related content');
@@ -1085,7 +1085,7 @@ class RemoteDataSource implements AppInitializer {
     }
   }
 
-  /// Get comments for a gallery (API preferred, fallback to Scraping)
+  // Get comments for a gallery (API preferred, fallback to Scraping)
   Future<List<CommentModel>> getComments(String contentId) async {
     // 1. Try API first
     if (_useApi && apiClient != null && ApiConfig.enableApiFallback) {

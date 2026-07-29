@@ -5,8 +5,8 @@ import '../di/service_locator.dart';
 import 'dns_resolver.dart';
 import 'dns_interceptor.dart';
 
-/// Singleton HTTP client manager to ensure proper lifecycle management
-/// and prevent disposal issues across the application
+// Singleton HTTP client manager to ensure proper lifecycle management
+// and prevent disposal issues across the application
 class HttpClientManager {
   static HttpClientManager? _instance;
   static Dio? _httpClient;
@@ -14,22 +14,29 @@ class HttpClientManager {
 
   HttpClientManager._internal();
 
-  /// Get the singleton instance
+  // Get the singleton instance
   static HttpClientManager get instance {
     _instance ??= HttpClientManager._internal();
     return _instance!;
   }
 
-  /// Initialize the HTTP client with proper configuration
-  /// Optional dnsResolver enables DNS-over-HTTPS for all requests via interceptor
-  /// Optional timeout parameter (defaults to 30 seconds if not specified)
+  // Initialize the HTTP client with proper configuration
+  // Optional dnsResolver enables DNS-over-HTTPS for all requests via interceptor
+  // Optional timeout parameter (defaults to 30 seconds if not specified)
   static Dio initializeHttpClient({
     Logger? logger,
     DnsResolver? dnsResolver,
     Duration? timeout,
     String? userAgent,
   }) {
-    _logger = logger ?? (() { try { return getIt<Logger>(); } catch (_) { return Logger(); } })();
+    _logger = logger ??
+        (() {
+          try {
+            return getIt<Logger>();
+          } catch (_) {
+            return Logger();
+          }
+        })();
 
     if (_httpClient != null) {
       _logger
@@ -39,8 +46,7 @@ class HttpClientManager {
 
     _logger?.i('Initializing HTTP client singleton...');
 
-    _httpClient = Dio()
-      ..httpClientAdapter = NativeAdapter();
+    _httpClient = Dio()..httpClientAdapter = NativeAdapter();
 
     // Configure default options
     _httpClient!.options.headers = {
@@ -119,8 +125,8 @@ class HttpClientManager {
     return _httpClient!;
   }
 
-  /// Get the HTTP client instance
-  /// Throws an exception if not initialized
+  // Get the HTTP client instance
+  // Throws an exception if not initialized
   static Dio get httpClient {
     if (_httpClient == null) {
       throw StateError(
@@ -130,10 +136,10 @@ class HttpClientManager {
     return _httpClient!;
   }
 
-  /// Check if HTTP client is initialized
+  // Check if HTTP client is initialized
   static bool get isInitialized => _httpClient != null;
 
-  /// Update HTTP client configuration
+  // Update HTTP client configuration
   static void updateConfiguration({
     Duration? connectTimeout,
     Duration? receiveTimeout,
@@ -163,7 +169,7 @@ class HttpClientManager {
     _logger?.d('HTTP client configuration updated');
   }
 
-  /// Add an interceptor to the HTTP client
+  // Add an interceptor to the HTTP client
   static void addInterceptor(Interceptor interceptor) {
     if (_httpClient == null) {
       _logger?.w('Cannot add interceptor: HTTP client not initialized');
@@ -174,7 +180,7 @@ class HttpClientManager {
     _logger?.d('Interceptor added to HTTP client');
   }
 
-  /// Remove an interceptor from the HTTP client
+  // Remove an interceptor from the HTTP client
   static void removeInterceptor(Interceptor interceptor) {
     if (_httpClient == null) {
       _logger?.w('Cannot remove interceptor: HTTP client not initialized');
@@ -185,7 +191,7 @@ class HttpClientManager {
     _logger?.d('Interceptor removed from HTTP client');
   }
 
-  /// Clear all interceptors except the default ones
+  // Clear all interceptors except the default ones
   static void clearInterceptors() {
     if (_httpClient == null) {
       _logger?.w('Cannot clear interceptors: HTTP client not initialized');
@@ -196,7 +202,7 @@ class HttpClientManager {
     _logger?.d('All interceptors cleared from HTTP client');
   }
 
-  /// Get HTTP client statistics
+  // Get HTTP client statistics
   static Map<String, dynamic> getStatistics() {
     if (_httpClient == null) {
       return {'initialized': false};
@@ -213,8 +219,8 @@ class HttpClientManager {
     };
   }
 
-  /// Reset the HTTP client (for testing purposes only)
-  /// WARNING: This should only be used in tests
+  // Reset the HTTP client (for testing purposes only)
+  // WARNING: This should only be used in tests
   static void resetForTesting() {
     _logger?.w(
         'Resetting HTTP client for testing - this should only be used in tests!');

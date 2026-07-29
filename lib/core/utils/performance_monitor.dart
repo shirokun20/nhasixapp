@@ -4,15 +4,15 @@ import 'package:logger/logger.dart';
 import '../di/service_locator.dart';
 import '../../core/services/analytics_service.dart';
 
-/// Performance Monitoring Utilities for App Optimization
+// Performance Monitoring Utilities for App Optimization
 ///
-/// Provides easy-to-use wrappers for tracking performance metrics
-/// and identifying bottlenecks in the application.
+// Provides easy-to-use wrappers for tracking performance metrics
+// and identifying bottlenecks in the application.
 class PerformanceMonitor {
   static final Logger _logger = getIt<Logger>();
   static AnalyticsService? _analytics;
 
-  /// Initialize performance monitoring (called during app startup)
+  // Initialize performance monitoring (called during app startup)
   static Future<void> initialize() async {
     try {
       _analytics = getIt<AnalyticsService>();
@@ -23,7 +23,7 @@ class PerformanceMonitor {
     }
   }
 
-  /// Time an operation and track its performance
+  // Time an operation and track its performance
   static Future<T> timeOperation<T>(
     String operationName,
     Future<T> Function() operation, {
@@ -65,7 +65,7 @@ class PerformanceMonitor {
     }
   }
 
-  /// Time a synchronous operation
+  // Time a synchronous operation
   static T timeSync<T>(
     String operationName,
     T Function() operation, {
@@ -106,7 +106,7 @@ class PerformanceMonitor {
     }
   }
 
-  /// Monitor image loading performance
+  // Monitor image loading performance
   static Future<void> trackImageLoad(String imageUrl, Duration loadTime,
       {bool success = true}) async {
     await _analytics?.trackPerformance(
@@ -120,7 +120,7 @@ class PerformanceMonitor {
     );
   }
 
-  /// Monitor database operation performance
+  // Monitor database operation performance
   static Future<void> trackDatabaseOperation(
       String operation, Duration duration,
       {int? resultCount}) async {
@@ -134,7 +134,7 @@ class PerformanceMonitor {
     );
   }
 
-  /// Monitor network request performance
+  // Monitor network request performance
   static Future<void> trackNetworkRequest(String endpoint, Duration duration,
       {int? statusCode, int? responseSize}) async {
     await _analytics?.trackPerformance(
@@ -149,7 +149,7 @@ class PerformanceMonitor {
     );
   }
 
-  /// Monitor screen rendering performance
+  // Monitor screen rendering performance
   static Future<void> trackScreenRender(
       String screenName, Duration renderTime) async {
     await _analytics?.trackPerformance(
@@ -161,7 +161,7 @@ class PerformanceMonitor {
     );
   }
 
-  /// Monitor memory usage (when available)
+  // Monitor memory usage (when available)
   static Future<void> trackMemoryUsage(String context,
       {int? memoryUsageBytes}) async {
     await _analytics?.trackPerformance(
@@ -175,14 +175,14 @@ class PerformanceMonitor {
     );
   }
 
-  /// Start a performance timer (for manual timing)
+  // Start a performance timer (for manual timing)
   static PerformanceTimer startTimer(String operationName,
       {Map<String, dynamic>? metadata}) {
     return PerformanceTimer._(operationName, metadata);
   }
 }
 
-/// Manual performance timer for complex operations
+// Manual performance timer for complex operations
 class PerformanceTimer {
   final String operationName;
   final Map<String, dynamic>? metadata;
@@ -191,7 +191,7 @@ class PerformanceTimer {
   PerformanceTimer._(this.operationName, this.metadata)
       : _stopwatch = Stopwatch()..start();
 
-  /// Stop the timer and record the result
+  // Stop the timer and record the result
   Future<void> stop({Map<String, dynamic>? additionalMetadata}) async {
     _stopwatch.stop();
     final duration = Duration(milliseconds: _stopwatch.elapsedMilliseconds);
@@ -213,11 +213,11 @@ class PerformanceTimer {
     }
   }
 
-  /// Get elapsed time without stopping
+  // Get elapsed time without stopping
   Duration get elapsed =>
       Duration(milliseconds: _stopwatch.elapsedMilliseconds);
 
-  /// Stop timer and mark as failed
+  // Stop timer and mark as failed
   Future<void> stopWithError(dynamic error) async {
     _stopwatch.stop();
     final duration = Duration(milliseconds: _stopwatch.elapsedMilliseconds);
@@ -238,9 +238,9 @@ class PerformanceTimer {
   }
 }
 
-/// Extension methods for easy performance monitoring
+// Extension methods for easy performance monitoring
 extension PerformanceExtensions on Future {
-  /// Monitor this future's performance
+  // Monitor this future's performance
   Future<T> withPerformanceTracking<T>(
     String operationName, {
     Map<String, dynamic>? metadata,
@@ -255,23 +255,23 @@ extension PerformanceExtensions on Future {
   }
 }
 
-/// Widget performance monitoring mixin
+// Widget performance monitoring mixin
 mixin PerformanceMonitoringMixin {
   PerformanceTimer? _buildTimer;
 
-  /// Start monitoring widget build performance
+  // Start monitoring widget build performance
   void startBuildTimer(String widgetName) {
     _buildTimer = PerformanceMonitor.startTimer('widget_build',
         metadata: {'widget_name': widgetName});
   }
 
-  /// Stop monitoring widget build performance
+  // Stop monitoring widget build performance
   Future<void> stopBuildTimer() async {
     await _buildTimer?.stop();
     _buildTimer = null;
   }
 
-  /// Monitor a widget operation
+  // Monitor a widget operation
   Future<T> monitorWidgetOperation<T>(
     String operationName,
     Future<T> Function() operation, {

@@ -1,15 +1,15 @@
-/// Typed network/header/referer rules for a Source Config.
+// Typed network/header/referer rules for a Source Config.
 ///
-/// Parsed from the `network` block of a raw config JSON by
-/// `SourceConfigParser`. Handles both the canonical `requiresBypass` field
-/// and the legacy `cloudflare.bypassEnabled` field, emitting diagnostics
-/// when both are present or when the fields are inconsistent.
+// Parsed from the `network` block of a raw config JSON by
+// `SourceConfigParser`. Handles both the canonical `requiresBypass` field
+// and the legacy `cloudflare.bypassEnabled` field, emitting diagnostics
+// when both are present or when the fields are inconsistent.
 library;
 
 import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 
-/// Rate-limiting declaration inside a Source Config `network.rateLimit` block.
+// Rate-limiting declaration inside a Source Config `network.rateLimit` block.
 class RateLimitRules extends Equatable {
   const RateLimitRules({
     this.requestsPerSecond,
@@ -44,7 +44,7 @@ class RateLimitRules extends Equatable {
       <Object?>[requestsPerSecond, maxConcurrentRequests];
 }
 
-/// Typed representation of the `network` block in a Source Config.
+// Typed representation of the `network` block in a Source Config.
 class NetworkRules extends Equatable {
   NetworkRules({
     required this.requiresBypass,
@@ -56,34 +56,34 @@ class NetworkRules extends Equatable {
   }) : staticHeaders = Map<String, String>.unmodifiable(
             staticHeaders ?? const <String, String>{});
 
-  /// Merged bypass flag — true when either `network.requiresBypass` or
-  /// `network.cloudflare.bypassEnabled` is true in the config.
+  // Merged bypass flag — true when either `network.requiresBypass` or
+  // `network.cloudflare.bypassEnabled` is true in the config.
   final bool requiresBypass;
 
-  /// Whether the config explicitly declared a `cloudflare` bypass block.
+  // Whether the config explicitly declared a `cloudflare` bypass block.
   final bool cloudflareBypass;
 
-  /// Static headers declared under `network.headers`.
+  // Static headers declared under `network.headers`.
   final Map<String, String> staticHeaders;
 
-  /// Rate-limit rules if `network.rateLimit` is declared.
+  // Rate-limit rules if `network.rateLimit` is declared.
   final RateLimitRules? rateLimit;
 
-  /// Secondary base URL (e.g. `auth.preferExhentai` exBaseUrl). Optional.
+  // Secondary base URL (e.g. `auth.preferExhentai` exBaseUrl). Optional.
   final String? exBaseUrl;
 
-  /// Diagnostics produced while parsing the `network` block.
+  // Diagnostics produced while parsing the `network` block.
   final List<ValidationDiagnostic> diagnostics;
 
-  /// Required engine primitives implied by these network rules.
+  // Required engine primitives implied by these network rules.
   Set<String> get impliedPrimitives => <String>{
         if (requiresBypass) EnginePrimitive.networkRequiresBypass,
         if (rateLimit != null) EnginePrimitive.networkRateLimit,
         if (staticHeaders.isNotEmpty) EnginePrimitive.headersStatic,
       };
 
-  /// Parses a raw `network` block and the optional top-level `auth` block
-  /// (for `exBaseUrl`), returning a [NetworkRules] with any diagnostics.
+  // Parses a raw `network` block and the optional top-level `auth` block
+  // (for `exBaseUrl`), returning a [NetworkRules] with any diagnostics.
   factory NetworkRules.fromConfig(Map<String, Object?> rawConfig) {
     final Object? networkRaw = rawConfig['network'];
     final Map<String, Object?> network = networkRaw is Map

@@ -1,6 +1,6 @@
 import 'package:html/dom.dart';
 
-/// CMS signatures and matched selector candidates.
+// CMS signatures and matched selector candidates.
 class CmsSignature {
   CmsSignature({
     required this.id,
@@ -490,7 +490,7 @@ class CmsSignature {
   }
 }
 
-/// Result from CMS detection.
+// Result from CMS detection.
 class CmsResult {
   CmsResult({
     required this.cmsId,
@@ -519,7 +519,7 @@ class CmsResult {
       'CmsResult($cmsId/$themeType, ${(confidence * 100).round()}%)';
 }
 
-/// Detect CMS from HTML and return suggested selectors + defaults.
+// Detect CMS from HTML and return suggested selectors + defaults.
 CmsResult detectCms(String html) {
   CmsSignature? best;
   var bestScore = 0;
@@ -553,7 +553,7 @@ CmsResult detectCms(String html) {
   );
 }
 
-/// Return alternative selectors for CMS variant detection fallback.
+// Return alternative selectors for CMS variant detection fallback.
 Map<String, String>? _fallbackFor(String cmsId, String themeType) {
   if (cmsId == 'madara' && themeType == 'madara-classic') {
     return {
@@ -621,7 +621,7 @@ Map<String, String>? _fallbackFor(String cmsId, String themeType) {
   return null;
 }
 
-/// Detects the search form in the given HTML document.
+// Detects the search form in the given HTML document.
 Map<String, String>? detectSearchForm(Document document) {
   final forms = document.querySelectorAll('form');
   Element? bestForm;

@@ -6,8 +6,8 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:logger/logger.dart';
 
-/// E-Hentai adapter that delegates generic scraping and adds per-page image
-/// extraction from reader links (`/s/{hash}/{gid}-{page}`).
+// E-Hentai adapter that delegates generic scraping and adds per-page image
+// extraction from reader links (`/s/{hash}/{gid}-{page}`).
 class EHentaiScraperAdapter implements GenericAdapter {
   static const String _partPrefix = '__ehpart__';
   static const String _chunkPrefix = '__ehchunk__';
@@ -997,8 +997,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   DateTime? _extractUploadDate(String html) {
-    /// E-Hentai detail page date format:
-    /// <td class="gdt2">2026-03-24 03:00</td>
+    // E-Hentai detail page date format:
+    // <td class="gdt2">2026-03-24 03:00</td>
     final dateMatch = RegExp(
       r'<td[^>]*class="gdt2"[^>]*>(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})',
     ).firstMatch(html);
@@ -1071,11 +1071,11 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   List<Tag> _extractTags(String html) {
-    /// E-Hentai detail page tag structure:
-    /// <div id="td_language:korean" class="gt" ...>
-    ///   <a id="ta_language:korean" href="..." class="">korean</a>
-    /// </div>
-    /// Parse tags from div ID attribute: "td_TYPE:VALUE"
+    // E-Hentai detail page tag structure:
+    // <div id="td_language:korean" class="gt" ...>
+    //   <a id="ta_language:korean" href="..." class="">korean</a>
+    // </div>
+    // Parse tags from div ID attribute: "td_TYPE:VALUE"
     final tags = <Tag>[];
     final tagMatches = RegExp(
       r'<div[^>]*id="td_([^"]+)"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)</a>',
@@ -1244,8 +1244,8 @@ class EHentaiScraperAdapter implements GenericAdapter {
     _lastRequestAt = DateTime.now();
   }
 
-  /// Extract both covers and languages in a single HTTP request
-  /// Returns `Map<String, String>` where key is ID and value contains 'cover' and 'language'
+  // Extract both covers and languages in a single HTTP request
+  // Returns `Map<String, String>` where key is ID and value contains 'cover' and 'language'
   Future<Map<String, Map<String, dynamic>>> _extractListCoversAndLanguages({
     required SearchFilter filter,
     required Map<String, dynamic> rawConfig,
@@ -1340,11 +1340,11 @@ class EHentaiScraperAdapter implements GenericAdapter {
     }
   }
 
-  /// Extract language tags from home page HTML
-  /// Returns `Map<String, String>` where key is content ID and value is language
-  /// Example: "english", "chinese", "japanese", etc.
-  /// Extract language tag from a single row element
-  /// Looks for <div class="gt" title="language:xxx"> tags
+  // Extract language tags from home page HTML
+  // Returns `Map<String, String>` where key is content ID and value is language
+  // Example: "english", "chinese", "japanese", etc.
+  // Extract language tag from a single row element
+  // Looks for <div class="gt" title="language:xxx"> tags
   String _extractLanguageFromRow(dom.Element row) {
     final tags = row.querySelectorAll('.gt[title]');
     for (final tag in tags) {

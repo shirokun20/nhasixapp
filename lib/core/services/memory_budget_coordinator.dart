@@ -3,13 +3,13 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:kuron_native/kuron_native.dart';
 
-/// Device-aware soft budget coordinator.
+// Device-aware soft budget coordinator.
 ///
-/// Reads device total RAM, derives app heap estimate, calculates soft budget
-/// per subsystem. Rebalances dynamically when reader active state changes.
+// Reads device total RAM, derives app heap estimate, calculates soft budget
+// per subsystem. Rebalances dynamically when reader active state changes.
 ///
-///  app heap = total RAM heuristic, not ActivityManager.getMemoryClass().
-/// Add native MethodChannel for accurate per-app heap if tight-budget tuning needed.
+//  app heap = total RAM heuristic, not ActivityManager.getMemoryClass().
+// Add native MethodChannel for accurate per-app heap if tight-budget tuning needed.
 class MemoryBudgetCoordinator {
   static final MemoryBudgetCoordinator _instance = MemoryBudgetCoordinator._();
   factory MemoryBudgetCoordinator() => _instance;

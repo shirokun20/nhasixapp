@@ -16,7 +16,7 @@ import '../../../core/services/download_manager.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/download_storage_utils.dart';
 
-/// Use case for downloading content for offline reading
+// Use case for downloading content for offline reading
 class DownloadContentUseCase
     extends UseCase<DownloadStatus, DownloadContentParams> {
   DownloadContentUseCase(
@@ -142,11 +142,11 @@ class DownloadContentUseCase
     }
   }
 
-  /// Perform the actual download process using NativeDownloadService
+  // Perform the actual download process using NativeDownloadService
   ///
-  /// REVAMP: This method is now "Fire-and-Forget".
-  /// It starts the native download and returns immediately.
-  /// Progress and completion are handled globally by DownloadManager listening to NativeDownloadService.
+  // REVAMP: This method is now "Fire-and-Forget".
+  // It starts the native download and returns immediately.
+  // Progress and completion are handled globally by DownloadManager listening to NativeDownloadService.
   Future<DownloadStatus> _performActualDownload(
     Content content,
     DownloadStatus initialStatus,
@@ -236,8 +236,11 @@ class DownloadContentUseCase
 
       // Use the cleaned/resolved URLs from the pipeline (strips fallback '|' tokens).
       // Fallback to rangeImageUrls if pipeline returns empty (should not happen for valid sources).
-      final resolvedDownloadUrls = const PageResolutionPipeline().toDownloadUrls(pipelineResult.pages);
-      final finalImageUrls = resolvedDownloadUrls.isNotEmpty ? resolvedDownloadUrls : rangeImageUrls;
+      final resolvedDownloadUrls =
+          const PageResolutionPipeline().toDownloadUrls(pipelineResult.pages);
+      final finalImageUrls = resolvedDownloadUrls.isNotEmpty
+          ? resolvedDownloadUrls
+          : rangeImageUrls;
 
       // Start Native Download (Fire and Forget)
       // Pass only the range-filtered URLs so native layer downloads the correct subset
@@ -288,8 +291,8 @@ class DownloadContentUseCase
     }
   }
 
-  /// Convert downloaded images to PDF if requested
-  /// Enhanced with progress reporting via DownloadManager
+  // Convert downloaded images to PDF if requested
+  // Enhanced with progress reporting via DownloadManager
   Future<void> convertToPdfIfRequested(Content content) async {
     try {
       _logger.i('Starting PDF conversion for content: ${content.id}');
@@ -347,7 +350,7 @@ class DownloadContentUseCase
     }
   }
 
-  /// Create PDF output path in nhasix/{source}/{contentId}/pdf/ folder
+  // Create PDF output path in nhasix/{source}/{contentId}/pdf/ folder
   Future<String> _getOrCreatePdfOutputPath(String contentId) async {
     try {
       // Get content download path (nhasix/{source}/{contentId})
@@ -374,7 +377,7 @@ class DownloadContentUseCase
   }
 }
 
-/// Parameters for DownloadContentUseCase
+// Parameters for DownloadContentUseCase
 class DownloadContentParams extends UseCaseParams {
   // 2.2: foreground-aware maxParallelImages
   final int maxParallelImages;
@@ -412,13 +415,13 @@ class DownloadContentParams extends UseCaseParams {
   final String? savePath; // NEW: Custom save path
   final bool enableNotifications; // NEW
 
-  /// Check if this is a range download
+  // Check if this is a range download
   bool get isRangeDownload => startPage != null || endPage != null;
 
-  /// Get effective start page (1 if not specified)
+  // Get effective start page (1 if not specified)
   int get effectiveStartPage => startPage ?? 1;
 
-  /// Get effective end page (total pages if not specified)
+  // Get effective end page (total pages if not specified)
   int get effectiveEndPage => endPage ?? content.pageCount;
 
   @override
@@ -471,29 +474,27 @@ class DownloadContentParams extends UseCaseParams {
       cookies: cookies ?? this.cookies,
       headers: headers ?? this.headers,
       savePath: savePath ?? this.savePath,
-      enableNotifications:
-          enableNotifications ?? this.enableNotifications,
-      maxParallelImages:
-          maxParallelImages ?? this.maxParallelImages,
+      enableNotifications: enableNotifications ?? this.enableNotifications,
+      maxParallelImages: maxParallelImages ?? this.maxParallelImages,
     );
   }
 
-  /// Create params with normal priority
+  // Create params with normal priority
   factory DownloadContentParams.normal(Content content) {
     return DownloadContentParams(content: content, priority: 0);
   }
 
-  /// Create params with high priority
+  // Create params with high priority
   factory DownloadContentParams.highPriority(Content content) {
     return DownloadContentParams(content: content, priority: 5);
   }
 
-  /// Create params with maximum priority
+  // Create params with maximum priority
   factory DownloadContentParams.urgent(Content content) {
     return DownloadContentParams(content: content, priority: 10);
   }
 
-  /// Create params with existing check disabled
+  // Create params with existing check disabled
   factory DownloadContentParams.force(Content content, {int priority = 0}) {
     return DownloadContentParams(
       content: content,
@@ -502,7 +503,7 @@ class DownloadContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params for batch download
+  // Create params for batch download
   factory DownloadContentParams.batch(Content content, int batchPriority) {
     return DownloadContentParams(
       content: content,
@@ -512,7 +513,7 @@ class DownloadContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params for immediate download with images
+  // Create params for immediate download with images
   factory DownloadContentParams.immediate(
     Content content, {
     bool convertToPdf = false,
@@ -543,7 +544,7 @@ class DownloadContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params for PDF download
+  // Create params for PDF download
   factory DownloadContentParams.pdf(Content content) {
     return DownloadContentParams(
       content: content,

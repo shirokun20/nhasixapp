@@ -11,11 +11,11 @@ class StorageSettings {
   // and ensure persistence even if SharedPreferences has issues
   static String? _cachedCustomRoot;
 
-  /// Pick a custom folder and save it.
-  /// Returns the path if successful, null otherwise.
+  // Pick a custom folder and save it.
+  // Returns the path if successful, null otherwise.
   ///
-  /// Note: Uses SAF (Storage Access Framework) which doesn't require storage permissions.
-  /// The native picker handles all security and access control.
+  // Note: Uses SAF (Storage Access Framework) which doesn't require storage permissions.
+  // The native picker handles all security and access control.
   static Future<String?> pickAndSaveCustomRoot(BuildContext context) async {
     // Pick Directory using Native Plugin (SAF)
     // SAF (Storage Access Framework) handles its own security and doesn't need runtime permissions
@@ -56,7 +56,7 @@ class StorageSettings {
     return selectedDirectory;
   }
 
-  /// Get the currently saved custom root path.
+  // Get the currently saved custom root path.
   static Future<String?> getCustomRootPath() async {
     // Return cache if available
     if (_cachedCustomRoot != null) {
@@ -81,7 +81,7 @@ class StorageSettings {
     return path;
   }
 
-  /// Check if a custom root is set.
+  // Check if a custom root is set.
   static Future<bool> hasCustomRoot() async {
     final path = await getCustomRootPath();
     final result = path != null && path.isNotEmpty;
@@ -89,7 +89,7 @@ class StorageSettings {
     return result;
   }
 
-  /// Clear the custom root setting.
+  // Clear the custom root setting.
   static Future<void> clearCustomRoot() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefKey);

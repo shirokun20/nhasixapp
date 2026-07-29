@@ -5,7 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../core/constants/design_tokens.dart';
 import '../blocs/download/download_bloc.dart';
 
-/// Widget for configuring download settings
+// Widget for configuring download settings
 class DownloadSettingsWidget extends StatefulWidget {
   const DownloadSettingsWidget({
     super.key,

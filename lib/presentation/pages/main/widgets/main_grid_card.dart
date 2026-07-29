@@ -14,7 +14,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 
-/// Grid card widget for 2-column layout with ripple effect
+// Grid card widget for 2-column layout with ripple effect
 class MainGridCard extends StatelessWidget {
   const MainGridCard({
     super.key,
@@ -231,7 +231,8 @@ class MainGridCard extends StatelessWidget {
                                   const SizedBox(width: 8),
                                 ],
                                 if (content.language.isNotEmpty) ...[
-                                  _LanguageFlag(language: content.language, theme: theme),
+                                  _LanguageFlag(
+                                      language: content.language, theme: theme),
                                 ],
                               ],
                             ),
@@ -314,7 +315,7 @@ class MainGridCard extends StatelessWidget {
     );
   }
 
-  /// Build image with optional blur effect
+  // Build image with optional blur effect
   Widget _buildImageWithBlur({
     required BuildContext context,
     required String coverUrl,
@@ -339,7 +340,7 @@ class MainGridCard extends StatelessWidget {
     return image;
   }
 
-  /// Build cached image with fallback to first page if cover fails
+  // Build cached image with fallback to first page if cover fails
   Widget _buildCachedImage({
     required BuildContext context,
     required String coverUrl,
@@ -454,7 +455,7 @@ class MainGridCard extends StatelessWidget {
   }
 }
 
-/// Language flag widget — emoji + display name
+// Language flag widget — emoji + display name
 class _LanguageFlag extends StatelessWidget {
   const _LanguageFlag({required this.language, required this.theme});
   final String language;

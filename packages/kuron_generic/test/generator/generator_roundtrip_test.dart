@@ -1,12 +1,12 @@
-/// Integration fixture: generator → validator round-trip (Section 11.4).
+// Integration fixture: generator → validator round-trip (Section 11.4).
 ///
-/// Simulates what a config generator would produce for a minimal REST source
-/// and asserts the validator accepts it as `compatible` without errors.
+// Simulates what a config generator would produce for a minimal REST source
+// and asserts the validator accepts it as `compatible` without errors.
 ///
-/// This fixture ensures that:
-/// 1. A generator using [EnginePrimitive.all] produces valid primitive names.
-/// 2. The generated config round-trips through [SourceConfigParser] cleanly.
-/// 3. Feature status names match the [compatibilityStatusNames] list.
+// This fixture ensures that:
+// 1. A generator using [EnginePrimitive.all] produces valid primitive names.
+// 2. The generated config round-trips through [SourceConfigParser] cleanly.
+// 3. Feature status names match the [compatibilityStatusNames] list.
 library;
 
 import 'package:kuron_core/kuron_core.dart';

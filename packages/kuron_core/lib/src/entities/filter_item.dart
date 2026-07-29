@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// A filter item used in search filters.
+// A filter item used in search filters.
 class FilterItem extends Equatable {
   const FilterItem({
     required this.id,
@@ -10,19 +10,19 @@ class FilterItem extends Equatable {
     this.isExcluded = false,
   });
 
-  /// Filter item ID
+  // Filter item ID
   final int id;
 
-  /// Filter item name
+  // Filter item name
   final String name;
 
-  /// Filter type (tag, artist, character, etc.)
+  // Filter type (tag, artist, character, etc.)
   final String type;
 
-  /// Usage count
+  // Usage count
   final int count;
 
-  /// Whether this filter is an exclusion
+  // Whether this filter is an exclusion
   final bool isExcluded;
 
   @override
@@ -44,9 +44,9 @@ class FilterItem extends Equatable {
     );
   }
 
-  /// Toggle exclusion status
+  // Toggle exclusion status
   FilterItem toggleExclusion() => copyWith(isExcluded: !isExcluded);
 
-  /// Get display string
+  // Get display string
   String get displayName => isExcluded ? '-$name' : name;
 }

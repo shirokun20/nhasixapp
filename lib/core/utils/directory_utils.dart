@@ -5,14 +5,14 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/storage_settings.dart';
 
-/// Utility class for smart directory detection across different Android devices
-/// Handles various Download folder names and storage configurations
+// Utility class for smart directory detection across different Android devices
+// Handles various Download folder names and storage configurations
 class DirectoryUtils {
   static final Logger _logger = getIt<Logger>();
 
-  /// Smart Downloads directory detection
-  /// Tries multiple possible Downloads folder names and locations
-  /// Handles different Android device configurations and languages
+  // Smart Downloads directory detection
+  // Tries multiple possible Downloads folder names and locations
+  // Handles different Android device configurations and languages
   static Future<String> getDownloadsDirectory() async {
     try {
       // PRIORITY 1: Check custom storage root first
@@ -124,8 +124,8 @@ class DirectoryUtils {
       return documentsDownloadsDir.path;
       */
       _logger.e('DirectoryUtils: No custom storage root found!');
-      _logger.i(
-          '📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
+      _logger
+          .i('📁 DIRECTORY_UTILS: CRITICAL - No custom storage root selected');
       _logger.i(
           '📁 DIRECTORY_UTILS: This should not happen if user previously set storage location');
       throw Exception(
@@ -148,11 +148,11 @@ class DirectoryUtils {
     }
   }
 
-  /// Find nhasix backup folder automatically
-  /// Priority:
-  /// 1. Check custom storage root (from StorageSettings) first
-  /// 2. Fallback to Downloads/nhasix for backward compatibility
-  /// Used by offline content screen for automatic backup detection
+  // Find nhasix backup folder automatically
+  // Priority:
+  // 1. Check custom storage root (from StorageSettings) first
+  // 2. Fallback to Downloads/nhasix for backward compatibility
+  // Used by offline content screen for automatic backup detection
   static Future<String?> findNhasixBackupFolder() async {
     try {
       _logger.i('DIRECTORY_UTILS: Starting findNhasixBackupFolder...');

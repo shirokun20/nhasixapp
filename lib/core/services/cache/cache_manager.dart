@@ -4,13 +4,13 @@ import 'cache_service.dart';
 import 'memory_cache_service.dart';
 import 'disk_cache_service.dart';
 
-/// Multi-layer cache manager implementing cache-aside pattern
-/// Orchestrates memory and disk caches for optimal performance
+// Multi-layer cache manager implementing cache-aside pattern
+// Orchestrates memory and disk caches for optimal performance
 ///
-/// Cache flow:
-/// 1. Check memory cache (fastest)
-/// 2. Check disk cache (slower but persistent)
-/// 3. If not found, load from source and populate caches
+// Cache flow:
+// 1. Check memory cache (fastest)
+// 2. Check disk cache (slower but persistent)
+// 3. If not found, load from source and populate caches
 class CacheManager<T> implements CacheService<T> {
   final MemoryCacheService<T> memoryCache;
   final DiskCacheService<T> diskCache;
@@ -25,7 +25,7 @@ class CacheManager<T> implements CacheService<T> {
     required this.diskCache,
   });
 
-  /// Factory constructor for common use cases
+  // Factory constructor for common use cases
   factory CacheManager.standard({
     required String namespace,
     int memoryMaxEntries = 100,
@@ -46,7 +46,7 @@ class CacheManager<T> implements CacheService<T> {
     );
   }
 
-  /// Initialize disk cache (memory cache doesn't need initialization)
+  // Initialize disk cache (memory cache doesn't need initialization)
   Future<void> initialize() async {
     await diskCache.initialize();
   }
@@ -138,7 +138,7 @@ class CacheManager<T> implements CacheService<T> {
     );
   }
 
-  /// Get detailed stats for each cache layer
+  // Get detailed stats for each cache layer
   Future<Map<String, CacheStats>> getDetailedStats() async {
     return {
       'memory': await memoryCache.getStats(),
@@ -147,7 +147,7 @@ class CacheManager<T> implements CacheService<T> {
     };
   }
 
-  /// Remove expired entries from all caches
+  // Remove expired entries from all caches
   Future<void> removeExpired() async {
     final results = await Future.wait([
       memoryCache.removeExpired(),
@@ -161,8 +161,8 @@ class CacheManager<T> implements CacheService<T> {
     }
   }
 
-  /// Warm up cache with frequently accessed data
-  /// Useful for preloading data on app startup
+  // Warm up cache with frequently accessed data
+  // Useful for preloading data on app startup
   Future<void> warmUp(Map<String, T> data, {Duration? ttl}) async {
     for (final entry in data.entries) {
       await set(entry.key, entry.value, ttl: ttl);
@@ -170,12 +170,12 @@ class CacheManager<T> implements CacheService<T> {
     _logger.i('Warmed up cache with ${data.length} entries');
   }
 
-  /// Close disk cache connection
+  // Close disk cache connection
   Future<void> close() async {
     await diskCache.close();
   }
 
-  /// Log cache statistics periodically for monitoring
+  // Log cache statistics periodically for monitoring
   void _logCacheStats() {
     final total = _totalHits + _totalMisses;
     if (total > 0 && total % 10 == 0) {

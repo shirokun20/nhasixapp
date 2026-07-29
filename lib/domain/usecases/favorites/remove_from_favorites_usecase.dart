@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for removing content from favorites
+// Use case for removing content from favorites
 class RemoveFromFavoritesUseCase
     extends UseCase<void, RemoveFromFavoritesParams> {
   RemoveFromFavoritesUseCase(this._userDataRepository);
@@ -48,7 +48,7 @@ class RemoveFromFavoritesUseCase
   }
 }
 
-/// Parameters for RemoveFromFavoritesUseCase (simplified)
+// Parameters for RemoveFromFavoritesUseCase (simplified)
 class RemoveFromFavoritesParams extends UseCaseParams {
   const RemoveFromFavoritesParams({
     required this.contentId,
@@ -84,7 +84,7 @@ class RemoveFromFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params from string ID
+  // Create params from string ID
   factory RemoveFromFavoritesParams.fromString(
     String contentId, {
     String? sourceId,
@@ -99,7 +99,7 @@ class RemoveFromFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params from int ID
+  // Create params from int ID
   factory RemoveFromFavoritesParams.fromInt(
     int contentId, {
     String? sourceId,
@@ -114,7 +114,7 @@ class RemoveFromFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params with existence check disabled
+  // Create params with existence check disabled
   factory RemoveFromFavoritesParams.force(ContentId contentId) {
     return RemoveFromFavoritesParams(
       contentId: contentId,

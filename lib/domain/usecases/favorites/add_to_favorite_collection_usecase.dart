@@ -1,6 +1,6 @@
 import '../../repositories/user_data_repository.dart';
 
-/// Use case for adding content to a favorite collection
+// Use case for adding content to a favorite collection
 class AddToFavoriteCollectionUseCase {
   AddToFavoriteCollectionUseCase(this._repository);
 

@@ -1,6 +1,6 @@
 import '../../repositories/user_data_repository.dart';
 
-/// Use case for deleting a favorite collection
+// Use case for deleting a favorite collection
 class DeleteFavoriteCollectionUseCase {
   DeleteFavoriteCollectionUseCase(this._repository);
 

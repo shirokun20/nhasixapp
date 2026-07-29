@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting paginated content list
+// Use case for getting paginated content list
 class GetContentListUseCase
     extends UseCase<ContentListResult, GetContentListParams> {
   GetContentListUseCase(this._contentRepository);
@@ -32,7 +32,7 @@ class GetContentListUseCase
   }
 }
 
-/// Parameters for GetContentListUseCase
+// Parameters for GetContentListUseCase
 class GetContentListParams extends UseCaseParams {
   const GetContentListParams({
     this.page = 1,
@@ -55,17 +55,17 @@ class GetContentListParams extends UseCaseParams {
     );
   }
 
-  /// Create params for next page
+  // Create params for next page
   GetContentListParams nextPage() {
     return copyWith(page: page + 1);
   }
 
-  /// Create params for previous page
+  // Create params for previous page
   GetContentListParams previousPage() {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }
 
-  /// Create params for first page
+  // Create params for first page
   GetContentListParams firstPage() {
     return copyWith(page: 1);
   }

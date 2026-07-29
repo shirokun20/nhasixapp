@@ -5,8 +5,8 @@ import '../../domain/repositories/reader_repository.dart';
 import '../datasources/local/local_data_source.dart';
 import '../models/reader_position_model.dart';
 
-/// Implementation of ReaderRepository for local storage
-/// Handles reader position persistence using SQLite database
+// Implementation of ReaderRepository for local storage
+// Handles reader position persistence using SQLite database
 class ReaderRepositoryImpl implements ReaderRepository {
   final LocalDataSource _localDataSource;
   final Logger _logger = getIt<Logger>();

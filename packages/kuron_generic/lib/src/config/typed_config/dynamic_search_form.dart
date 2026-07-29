@@ -1,50 +1,50 @@
-/// Typed dynamic search form contract.
+// Typed dynamic search form contract.
 ///
-/// Parses the `searchForm` block of a Source Config into strongly-typed
-/// models so the validator and the UI filter system can work without
-/// inspecting raw maps.
+// Parses the `searchForm` block of a Source Config into strongly-typed
+// models so the validator and the UI filter system can work without
+// inspecting raw maps.
 ///
-/// Supported dialects:
-///   - HentaiNexus-style: `searchForm.params.*` with valuePrefix, operators,
-///     quoteIfContainsSpace, joinMode, multiInput, ui.selector.
-///   - KomikCast-style: `searchConfig.sortingConfig` separate from
-///     `searchForm`.
+// Supported dialects:
+//   - HentaiNexus-style: `searchForm.params.*` with valuePrefix, operators,
+//     quoteIfContainsSpace, joinMode, multiInput, ui.selector.
+//   - KomikCast-style: `searchConfig.sortingConfig` separate from
+//     `searchForm`.
 library;
 
 import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 
-/// Kind of a single search form field.
+// Kind of a single search form field.
 enum SearchFormFieldType {
-  /// Free-text input.
+  // Free-text input.
   text,
 
-  /// Single-value radio group.
+  // Single-value radio group.
   radio,
 
-  /// Tag chips input (multiInput true by default).
+  // Tag chips input (multiInput true by default).
   tag,
 
-  /// Single-value dropdown.
+  // Single-value dropdown.
   select,
 
-  /// Boolean checkbox.
+  // Boolean checkbox.
   checkbox,
 
-  /// Sort order selector. Serialized as `sort`.
+  // Sort order selector. Serialized as `sort`.
   sort,
 
-  /// Hidden transport field such as pagination.
+  // Hidden transport field such as pagination.
   hidden,
 
-  /// Visual separator — no value.
+  // Visual separator — no value.
   separator,
 
-  /// Unknown type preserved verbatim.
+  // Unknown type preserved verbatim.
   unknown,
 }
 
-/// A selectable option in a `select`, `checkbox`, or `sort` field.
+// A selectable option in a `select`, `checkbox`, or `sort` field.
 class SearchFormFieldOption extends Equatable {
   const SearchFormFieldOption({required this.value, this.label});
 
@@ -79,7 +79,7 @@ class SearchFormFieldOption extends Equatable {
   List<Object?> get props => <Object?>[value, label];
 }
 
-/// Contract for a single field in a dynamic search form.
+// Contract for a single field in a dynamic search form.
 class SearchFormFieldContract extends Equatable {
   const SearchFormFieldContract({
     required this.id,
@@ -101,10 +101,10 @@ class SearchFormFieldContract extends Equatable {
     this.options = const <SearchFormFieldOption>[],
   });
 
-  /// Field identifier (key in `searchForm.params` map).
+  // Field identifier (key in `searchForm.params` map).
   final String id;
 
-  /// Query parameter name the value is appended to.
+  // Query parameter name the value is appended to.
   final String queryParam;
 
   final SearchFormFieldType type;
@@ -112,37 +112,37 @@ class SearchFormFieldContract extends Equatable {
   final String? label;
   final String? placeholder;
 
-  /// Prefix prepended to the value before appending to [queryParam].
-  /// Example: `"artist:"` for HentaiNexus artist search.
+  // Prefix prepended to the value before appending to [queryParam].
+  // Example: `"artist:"` for HentaiNexus artist search.
   final String? valuePrefix;
 
-  /// Suffix appended after the value.
+  // Suffix appended after the value.
   final String? valueSuffix;
 
-  /// When true, the value is quoted if it contains whitespace.
+  // When true, the value is quoted if it contains whitespace.
   final bool quoteIfContainsSpace;
 
-  /// When true, multiple values can be submitted for this field.
+  // When true, multiple values can be submitted for this field.
   final bool multiInput;
 
-  /// How multiple values are joined. Common: `"space"`, `"comma"`, `"+"`.
+  // How multiple values are joined. Common: `"space"`, `"comma"`, `"+"`.
   final String? joinMode;
 
-  /// UI control hint from `ui.selector` (e.g. `"chips"`, `"dropdown"`).
+  // UI control hint from `ui.selector` (e.g. `"chips"`, `"dropdown"`).
   final String? uiSelector;
 
-  /// Optional option source key from `searchForm.dataSources`.
+  // Optional option source key from `searchForm.dataSources`.
   final String? uiDataSource;
 
-  /// Legacy checkbox metadata for sources that source options from tags.
+  // Legacy checkbox metadata for sources that source options from tags.
   final bool loadFromTags;
   final String? tagType;
   final String? tagSourceUrl;
 
-  /// Operator list for range/comparison fields (e.g. `[">=", "<="]`).
+  // Operator list for range/comparison fields (e.g. `[">=", "<="]`).
   final List<String> operators;
 
-  /// Selectable options for `select`, `checkbox`, or `sort` fields.
+  // Selectable options for `select`, `checkbox`, or `sort` fields.
   final List<SearchFormFieldOption> options;
 
   factory SearchFormFieldContract.fromEntry(
@@ -253,7 +253,7 @@ class SearchFormFieldContract extends Equatable {
       ];
 }
 
-/// Aggregated dynamic search form contract for a source.
+// Aggregated dynamic search form contract for a source.
 class DynamicSearchFormContract extends Equatable {
   DynamicSearchFormContract({
     required this.urlPattern,
@@ -263,38 +263,38 @@ class DynamicSearchFormContract extends Equatable {
     this.diagnostics = const <ValidationDiagnostic>[],
   }) : fields = List<SearchFormFieldContract>.unmodifiable(fields);
 
-  /// URL pattern identifier this form maps to (e.g. `"search"`).
+  // URL pattern identifier this form maps to (e.g. `"search"`).
   final String urlPattern;
 
   final List<SearchFormFieldContract> fields;
 
-  /// Optional picker or LOV data source declarations keyed by field UI hints.
+  // Optional picker or LOV data source declarations keyed by field UI hints.
   final Map<String, Object?> dataSources;
 
-  /// Default sort option when none is selected.
+  // Default sort option when none is selected.
   final String? defaultSort;
 
   final List<ValidationDiagnostic> diagnostics;
 
-  /// Whether any field uses operators (e.g. `>=`, `<=`).
+  // Whether any field uses operators (e.g. `>=`, `<=`).
   bool get hasOperators =>
       fields.any((SearchFormFieldContract f) => f.operators.isNotEmpty);
 
-  /// Whether any field uses quoteIfContainsSpace.
+  // Whether any field uses quoteIfContainsSpace.
   bool get hasQuoteWhitespace =>
       fields.any((SearchFormFieldContract f) => f.quoteIfContainsSpace);
 
-  /// Required engine primitives implied by this form contract.
+  // Required engine primitives implied by this form contract.
   Set<String> get impliedPrimitives => <String>{
         EnginePrimitive.dynamicFormBasic,
         if (hasOperators) EnginePrimitive.dynamicFormOperators,
         if (hasQuoteWhitespace) EnginePrimitive.dynamicFormQuoteWhitespace,
       };
 
-  /// Parses a `searchForm` block from the raw config.
+  // Parses a `searchForm` block from the raw config.
   ///
-  /// Handles both the HentaiNexus-style `searchForm.params` block and the
-  /// KomikCast-style `searchConfig.sortingConfig` block.
+  // Handles both the HentaiNexus-style `searchForm.params` block and the
+  // KomikCast-style `searchConfig.sortingConfig` block.
   factory DynamicSearchFormContract.fromConfig(
     Map<String, Object?> rawConfig,
   ) {

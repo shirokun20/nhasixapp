@@ -14,7 +14,7 @@ import 'ehentai_download_strategy.dart';
 import 'download_range_selector.dart';
 import 'download_settings_widget.dart';
 
-/// Widget untuk tombol download dengan status dan progress
+// Widget untuk tombol download dengan status dan progress
 class DownloadButtonWidget extends StatelessWidget {
   const DownloadButtonWidget({
     super.key,
@@ -740,7 +740,7 @@ class DownloadButtonWidget extends StatelessWidget {
   }
 }
 
-/// Size options for download button
+// Size options for download button
 enum DownloadButtonSize {
   small,
   medium,

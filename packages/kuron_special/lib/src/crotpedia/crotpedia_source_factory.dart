@@ -5,11 +5,11 @@ import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../webview_session/webview_session_adapter.dart';
 
-/// Factory to construct a CF-protected generic source with a fully wired
-/// WebViewSessionAdapter for Cloudflare bypass and auto-login capabilities.
+// Factory to construct a CF-protected generic source with a fully wired
+// WebViewSessionAdapter for Cloudflare bypass and auto-login capabilities.
 ///
-/// Designed for multi-source: any Cloudflare-protected provider can use this
-/// factory by providing its own [WebViewSessionAdapter] instance.
+// Designed for multi-source: any Cloudflare-protected provider can use this
+// factory by providing its own [WebViewSessionAdapter] instance.
 class CrotpediaSourceFactory implements SourceFactory {
   final Dio _dio;
   final WebViewSessionAdapter _sessionAdapter;
@@ -53,9 +53,9 @@ class CrotpediaSourceFactory implements SourceFactory {
   }
 }
 
-/// A wrapper around Dio that delegates GET requests to WebViewSessionAdapter's
-/// `requestWithBypass` method. This allows `GenericScraperAdapter` to
-/// seamlessly benefit from Cloudflare bypass and Auth without modifying its code.
+// A wrapper around Dio that delegates GET requests to WebViewSessionAdapter's
+// `requestWithBypass` method. This allows `GenericScraperAdapter` to
+// seamlessly benefit from Cloudflare bypass and Auth without modifying its code.
 class _CrotpediaDioInterceptor with DioMixin implements Dio {
   final Dio _baseDio;
   final WebViewSessionAdapter _sessionAdapter;

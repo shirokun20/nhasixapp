@@ -9,7 +9,7 @@ import 'package:logger/logger.dart';
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// DNS Settings configuration screen
+// DNS Settings configuration screen
 class DnsSettingsScreen extends StatelessWidget {
   const DnsSettingsScreen({super.key});
 

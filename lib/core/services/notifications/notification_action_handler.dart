@@ -7,8 +7,8 @@ import '../../di/service_locator.dart';
 import '../native_pdf_reader_service.dart';
 import 'notification_constants.dart';
 
-/// Extracted from NotificationService to improve code organization
-/// and testability.
+// Extracted from NotificationService to improve code organization
+// and testability.
 class NotificationActionHandler {
   NotificationActionHandler({
     required Logger logger,

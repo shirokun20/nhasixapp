@@ -6,9 +6,9 @@ import 'package:nhasixapp/presentation/cubits/app_lock/app_lock_state.dart';
 import 'package:nhasixapp/presentation/pages/app_lock/pin_entry_screen.dart';
 import 'package:nhasixapp/presentation/pages/app_lock/pin_setup_screen.dart';
 
-/// Renders PIN/biometric gate when locked. Passes through when unlocked
-/// or session active. Session lasts 10 min after unlock (persisted),
-/// so background/foreground within session does not re-lock.
+// Renders PIN/biometric gate when locked. Passes through when unlocked
+// or session active. Session lasts 10 min after unlock (persisted),
+// so background/foreground within session does not re-lock.
 class AppLockGate extends StatefulWidget {
   const AppLockGate({required this.child, super.key});
   final Widget child;
@@ -52,8 +52,8 @@ class _AppLockGateState extends State<AppLockGate> {
               subtitle: l10n.unlockKuron,
               showBiometric: lockState.isBiometricEnabled &&
                   lockState.isBiometricAvailable,
-              onPinEntered:
-                  (pin) => context.read<AppLockCubit>().verifyPin(pin),
+              onPinEntered: (pin) =>
+                  context.read<AppLockCubit>().verifyPin(pin),
               onBiometricTap: () async =>
                   context.read<AppLockCubit>().authenticateBiometric(),
             );

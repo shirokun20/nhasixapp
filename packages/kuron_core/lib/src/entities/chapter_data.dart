@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Data class to hold chapter images and navigation info
+// Data class to hold chapter images and navigation info
 class ChapterData extends Equatable {
   const ChapterData({
     required this.images,

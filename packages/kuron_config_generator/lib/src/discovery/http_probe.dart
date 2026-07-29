@@ -1,14 +1,14 @@
-/// Minimal HTTP probe for source discovery.
+// Minimal HTTP probe for source discovery.
 library;
 
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-/// Content type detected.
+// Content type detected.
 enum ProbeContentType { html, json, unknown }
 
-/// Result of an HTTP probe.
+// Result of an HTTP probe.
 class ProbeResult {
   ProbeResult({
     required this.url,
@@ -30,7 +30,7 @@ class ProbeResult {
       statusCode == 503 ||
       _looksLikeCloudflareChallenge(body);
 
-  /// Parse body as JSON when applicable.
+  // Parse body as JSON when applicable.
   dynamic get jsonBody {
     if (contentType == ProbeContentType.json) {
       try {
@@ -51,7 +51,7 @@ bool _looksLikeCloudflareChallenge(String body) {
           body.contains('_cf_chl_opt'));
 }
 
-/// Infer content type from response headers and body.
+// Infer content type from response headers and body.
 ProbeContentType _inferContentType(
     int statusCode, Map<String, String> headers, String body) {
   if (statusCode != 200) return ProbeContentType.unknown;
@@ -72,7 +72,7 @@ ProbeContentType _inferContentType(
   return ProbeContentType.unknown;
 }
 
-/// Probe a URL with browser-like headers.
+// Probe a URL with browser-like headers.
 Future<ProbeResult> probeUrl(String url) async {
   try {
     final client = http.Client();

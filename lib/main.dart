@@ -26,8 +26,8 @@ import 'package:nhasixapp/core/utils/notification_localizer.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'package:logger/logger.dart';
 
-/// Stored cold-start notification payload, read from
-/// NotificationAppLaunchDetails before runApp().
+// Stored cold-start notification payload, read from
+// NotificationAppLaunchDetails before runApp().
 String? _pendingNotifPayload;
 
 void main() async {
@@ -142,7 +142,7 @@ void main() async {
   runApp(MyApp(launchPayload: _pendingNotifPayload));
 }
 
-/// Navigates to content on cold-start notification tap.
+// Navigates to content on cold-start notification tap.
 class _LaunchPayloadNavigator extends StatefulWidget {
   final String? payload;
   const _LaunchPayloadNavigator({this.payload});
@@ -266,7 +266,7 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  /// Convert settings language to Locale
+  // Convert settings language to Locale
   Locale _getLocaleFromSettings(SettingsState settingsState) {
     if (settingsState is SettingsLoaded) {
       switch (settingsState.preferences.defaultLanguage) {

@@ -12,7 +12,7 @@ import '../discovery/api_detector.dart';
 import '../validation/validation_orchestrator.dart';
 import 'package:html/parser.dart' show parse;
 
-/// Generate a Kuron source config through interactive questions or URL-assisted discovery.
+// Generate a Kuron source config through interactive questions or URL-assisted discovery.
 class GenerateCommand extends Command<void> {
   GenerateCommand() {
     argParser
@@ -352,7 +352,7 @@ class GenerateCommand extends Command<void> {
     await _maybeRunValidation(configFile.path);
   }
 
-  /// If --validate flag is set, run the validation loop on [configPath].
+  // If --validate flag is set, run the validation loop on [configPath].
   Future<void> _maybeRunValidation(String configPath) async {
     final validate = argResults?['validate'] as bool? ?? false;
     if (!validate) return; // R1.4: preserve existing behavior

@@ -448,7 +448,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Auto-scroll to specific chapter in the list
+  // Auto-scroll to specific chapter in the list
   void _scrollToChapter(String chapterId) {
     final state = _detailCubit.state;
     if (state is! DetailLoaded) return;
@@ -475,7 +475,7 @@ class _DetailScreenState extends State<DetailScreen> {
     Logger().i('Auto-scrolled to chapter ${chapterIndex + 1}');
   }
 
-  /// Load content detail and related content as separate API calls
+  // Load content detail and related content as separate API calls
   Future<void> _loadContentAndRelated() async {
     // First call: Load main content detail
     await _detailCubit.loadContentDetail(widget.contentId);
@@ -514,8 +514,8 @@ class _DetailScreenState extends State<DetailScreen> {
     super.dispose();
   }
 
-  /// Navigate to tag browsing mode (SIMPLIFIED routing)
-  /// Navigate to tag browsing mode (SIMPLIFIED routing)
+  // Navigate to tag browsing mode (SIMPLIFIED routing)
+  // Navigate to tag browsing mode (SIMPLIFIED routing)
   void _searchByTag(String tagName,
       {String? tagId, String? tagType, String? sourceId}) async {
     // Prevent multiple simultaneous navigation attempts
@@ -1276,12 +1276,12 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  /// Gate widget for the comments section.
+  // Gate widget for the comments section.
   ///
-  /// Behaviour:
-  /// - Feature disabled in config → hidden (`SizedBox.shrink`)
-  /// - Feature enabled but under maintenance → shows maintenance banner
-  /// - Feature enabled and available → shows [CommentsSectionWidget]
+  // Behaviour:
+  // - Feature disabled in config → hidden (`SizedBox.shrink`)
+  // - Feature enabled but under maintenance → shows maintenance banner
+  // - Feature enabled and available → shows [CommentsSectionWidget]
   Widget _buildCommentsGate(
     Content content, {
     List<Comment>? preloadedComments,
@@ -1446,7 +1446,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Get theme-aware tag color based on tag type.
+  // Get theme-aware tag color based on tag type.
   Color _getTagColor(BuildContext context, String tagType) {
     return TagColorPalette.resolve(
       tagType,
@@ -1528,13 +1528,13 @@ class _DetailScreenState extends State<DetailScreen> {
     await _refreshChapterHistoryAfterReaderReturn();
   }
 
-  /// Get base URL for active source
+  // Get base URL for active source
   String _getSourceBaseUrl() {
     final sourceState = context.read<SourceCubit>().state;
     return sourceState.activeSource?.baseUrl ?? 'https://nhentai.net';
   }
 
-  /// Build source-aware content URL
+  // Build source-aware content URL
   String _buildContentUrl(Content content) {
     // Prefer config-driven canonical web URL for sharing when available.
     // This prevents sharing API detail endpoints for sources like MangaDex.
@@ -1638,7 +1638,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Build share message with content details
+  // Build share message with content details
   String _buildShareMessage(Content content, String url) {
     final List<String> messageParts = [];
 
@@ -1693,7 +1693,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Start download for the content
+  // Start download for the content
   Future<void> _startDownload(Content content) async {
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
@@ -1832,7 +1832,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  /// Copy content link to clipboard
+  // Copy content link to clipboard
   void _copyContentLink(Content content) {
     try {
       // Generate shareable link - source-aware URL
@@ -1908,7 +1908,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Show dialog with copied link for verification
+  // Show dialog with copied link for verification
   void _showCopiedLinkDialog(String link) {
     showDialog(
       context: context,
@@ -2032,7 +2032,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  /// Show manage collections sheet for a favorite item
+  // Show manage collections sheet for a favorite item
   Future<void> _showManageCollectionsSheet(Content content) async {
     final favoriteCubit = getIt<FavoriteCubit>();
     if (favoriteCubit.state is! FavoriteLoaded) {

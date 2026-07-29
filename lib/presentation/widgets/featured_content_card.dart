@@ -15,8 +15,8 @@ import '../../l10n/app_localizations.dart';
 import 'progressive_image_widget.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Featured content card widget - Full-width horizontal layout
-/// Designed to highlight the first/featured item at the top of content lists
+// Featured content card widget - Full-width horizontal layout
+// Designed to highlight the first/featured item at the top of content lists
 class FeaturedContentCard extends StatelessWidget {
   const FeaturedContentCard({
     super.key,

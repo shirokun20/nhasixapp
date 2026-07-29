@@ -63,7 +63,7 @@ class PlatformNotSupportedDialog extends StatelessWidget {
     );
   }
 
-  /// Show platform not supported dialog
+  // Show platform not supported dialog
   static void show(BuildContext context) {
     if (kIsWeb || (!kIsWeb && !Platform.isAndroid && !Platform.isMacOS)) {
       showDialog(

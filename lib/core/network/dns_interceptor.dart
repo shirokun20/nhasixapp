@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'dns_resolver.dart';
 
-/// DNS-over-HTTPS Interceptor
-/// Resolves DNS before making requests, replacing hostname with IP
-/// while preserving original hostname in Host header for SNI
+// DNS-over-HTTPS Interceptor
+// Resolves DNS before making requests, replacing hostname with IP
+// while preserving original hostname in Host header for SNI
 class DnsInterceptor extends Interceptor {
   final DnsResolver _dnsResolver;
   final Logger _logger;
@@ -63,7 +63,7 @@ class DnsInterceptor extends Interceptor {
     }
   }
 
-  /// Check if string is an IP address
+  // Check if string is an IP address
   bool _isIpAddress(String host) {
     try {
       InternetAddress(host);

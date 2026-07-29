@@ -1,7 +1,7 @@
-/// Probe JSON API endpoints and infer REST structure.
+// Probe JSON API endpoints and infer REST structure.
 library;
 
-/// Inferred REST API structure from probing.
+// Inferred REST API structure from probing.
 class ApiInference {
   ApiInference({
     required this.baseUrl,
@@ -28,7 +28,7 @@ class ApiInference {
   final double confidence;
 }
 
-/// Try to infer REST structure from probed JSON data.
+// Try to infer REST structure from probed JSON data.
 ApiInference inferApi(String url, dynamic json) {
   final uri = Uri.tryParse(url);
   final base =

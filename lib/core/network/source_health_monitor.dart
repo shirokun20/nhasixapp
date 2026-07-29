@@ -4,13 +4,13 @@ import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 
-/// Health status for a single content source.
+// Health status for a single content source.
 enum SourceHealthStatus { unknown, reachable, unreachable }
 
-/// Lightweight HTTP health check for each registered content source.
+// Lightweight HTTP health check for each registered content source.
 ///
-/// Pings each source's baseUrl with HEAD request (fallback GET on 405).
-/// Informational only — never disables or removes sources.
+// Pings each source's baseUrl with HEAD request (fallback GET on 405).
+// Informational only — never disables or removes sources.
 class SourceHealthMonitor {
   final ContentSourceRegistry _registry;
   final Dio _dio;
@@ -27,19 +27,19 @@ class SourceHealthMonitor {
   final StreamController<Map<String, SourceHealthStatus>> _controller =
       StreamController<Map<String, SourceHealthStatus>>.broadcast();
 
-  /// Stream of health status maps keyed by source ID.
+  // Stream of health status maps keyed by source ID.
   Stream<Map<String, SourceHealthStatus>> get healthStream =>
       _controller.stream;
 
   Map<String, SourceHealthStatus> _statuses = {};
 
-  /// Snapshot of last health check results.
+  // Snapshot of last health check results.
   Map<String, SourceHealthStatus> get currentStatuses =>
       Map.unmodifiable(_statuses);
 
-  /// Check all registered sources concurrently (200ms staggered start).
+  // Check all registered sources concurrently (200ms staggered start).
   ///
-  /// Returns health map; also emits on [healthStream] upon completion.
+  // Returns health map; also emits on [healthStream] upon completion.
   Future<Map<String, SourceHealthStatus>> checkAll() async {
     final sources = _registry.allSources;
     if (sources.isEmpty) return {};

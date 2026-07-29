@@ -16,7 +16,7 @@ import '../utils/storage_settings.dart';
 import '../constants/app_constants.dart' as app_constants;
 import '../utils/directory_utils.dart';
 
-/// Service untuk handle actual file download
+// Service untuk handle actual file download
 class DownloadService {
   DownloadService({
     required Dio httpClient,
@@ -36,7 +36,7 @@ class DownloadService {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
-  /// Download content dengan progress tracking dan notification
+  // Download content dengan progress tracking dan notification
   Future<DownloadResult> downloadContent({
     required Content content,
     required Function(DownloadProgress) onProgress,
@@ -326,7 +326,7 @@ class DownloadService {
     }
   }
 
-  /// Download single image file
+  // Download single image file
   Future<void> _downloadSingleImage({
     required String sourceId, // NEW: Source ID for header lookup
     required String imageUrl,
@@ -369,9 +369,9 @@ class DownloadService {
     }
   }
 
-  /// Get headers for source based on source ID
+  // Get headers for source based on source ID
   ///
-  /// NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
+  // NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
   Map<String, dynamic> _getHeadersForSource(
     String sourceId,
     String imageUrl, {
@@ -405,7 +405,7 @@ class DownloadService {
     }
   }
 
-  /// ✅ NEW: Get existing downloaded files for proper resume
+  // ✅ NEW: Get existing downloaded files for proper resume
   Future<List<String>> _getExistingDownloadedFiles(
       Directory downloadDir) async {
     try {
@@ -439,7 +439,7 @@ class DownloadService {
     }
   }
 
-  /// Create download directory structure
+  // Create download directory structure
   Future<Directory> _createDownloadDirectory(
       String contentId, String sourceId) async {
     // Use smart Downloads directory detection
@@ -465,8 +465,8 @@ class DownloadService {
     return imagesDir;
   }
 
-  /// Create .nomedia file to prevent media scanning
-  /// This hides images from Android Gallery/Photos apps for privacy
+  // Create .nomedia file to prevent media scanning
+  // This hides images from Android Gallery/Photos apps for privacy
   Future<void> _createNoMediaFile(Directory directory) async {
     try {
       final nomediaFile = File(path.join(directory.path, '.nomedia'));
@@ -487,8 +487,8 @@ class DownloadService {
     }
   }
 
-  /// 🔒 UTILITY: Add .nomedia file to existing downloads for privacy protection
-  /// Call this to retrofit existing downloads that don't have .nomedia file
+  // 🔒 UTILITY: Add .nomedia file to existing downloads for privacy protection
+  // Call this to retrofit existing downloads that don't have .nomedia file
   Future<void> ensurePrivacyProtection() async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
@@ -505,8 +505,8 @@ class DownloadService {
     }
   }
 
-  /// Smart Downloads directory detection
-  /// Tries multiple possible Downloads folder names and locations
+  // Smart Downloads directory detection
+  // Tries multiple possible Downloads folder names and locations
   Future<String> _getDownloadsDirectory() async {
     try {
       // 0. Check for custom storage root first
@@ -525,7 +525,7 @@ class DownloadService {
     }
   }
 
-  /// Save download metadata
+  // Save download metadata
   Future<void> _saveDownloadMetadata(
     Content content,
     Directory downloadDir,
@@ -560,7 +560,7 @@ class DownloadService {
     );
   }
 
-  /// Check and request necessary permissions
+  // Check and request necessary permissions
   Future<void> _checkPermissions() async {
     final hasPermission = await PermissionHelper.hasStoragePermission();
     if (!hasPermission) {
@@ -570,7 +570,7 @@ class DownloadService {
     }
   }
 
-  /// Get download directory path for content
+  // Get download directory path for content
   Future<String?> getDownloadPath(String contentId) async {
     try {
       final downloadsPath = await _getDownloadsDirectory();
@@ -607,7 +607,7 @@ class DownloadService {
     }
   }
 
-  /// Delete downloaded by content id tapi hanya delete isi dari folder contentid
+  // Delete downloaded by content id tapi hanya delete isi dari folder contentid
   Future<void> deleteDownloadedContent(String contentId) async {
     try {
       final downloadPath = await getDownloadPath(contentId);
@@ -623,7 +623,7 @@ class DownloadService {
     }
   }
 
-  /// Check if content is already downloaded
+  // Check if content is already downloaded
   Future<bool> isContentDownloaded(String contentId) async {
     final downloadPath = await getDownloadPath(contentId);
     if (downloadPath == null) return false;
@@ -636,7 +636,7 @@ class DownloadService {
     return files.isNotEmpty;
   }
 
-  /// Get downloaded files for content
+  // Get downloaded files for content
   Future<List<String>> getDownloadedFiles(String contentId) async {
     try {
       final downloadPath = await getDownloadPath(contentId);
@@ -663,14 +663,14 @@ class DownloadService {
     }
   }
 
-  /// Set localization callback for getting localized strings
+  // Set localization callback for getting localized strings
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('DownloadService: Localization callback set');
   }
 
-  /// Get localized string with fallback
+  // Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
@@ -681,7 +681,7 @@ class DownloadService {
     }
   }
 
-  /// Get optimized image URL based on quality setting
+  // Get optimized image URL based on quality setting
   String _getOptimizedImageUrl(String originalUrl, String imageQuality) {
     // Convert string quality to ImageQuality enum
     img.ImageQuality quality;
@@ -709,7 +709,7 @@ class DownloadService {
     return optimizedUrl.value;
   }
 
-  /// Count actual downloaded files in the folder
+  // Count actual downloaded files in the folder
   Future<int> countDownloadedFiles(String contentId) async {
     try {
       final downloadPath = await getDownloadPath(contentId);
@@ -755,7 +755,7 @@ class DownloadService {
     }
   }
 
-  /// Verify and update download status based on actual files
+  // Verify and update download status based on actual files
   Future<Map<String, dynamic>> verifyDownloadStatus(String contentId) async {
     try {
       final actualCount = await countDownloadedFiles(contentId);
@@ -832,7 +832,7 @@ class DownloadService {
   }
 }
 
-/// Result of download operation
+// Result of download operation
 class DownloadResult {
   const DownloadResult({
     required this.success,
@@ -849,7 +849,7 @@ class DownloadResult {
   final String? error;
 }
 
-/// Progress information for download
+// Progress information for download
 class DownloadProgress {
   const DownloadProgress({
     required this.contentId,

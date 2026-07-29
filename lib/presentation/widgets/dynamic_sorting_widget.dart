@@ -3,25 +3,25 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// A dynamic sorting widget that adapts based on [SortingConfig].
+// A dynamic sorting widget that adapts based on [SortingConfig].
 ///
-/// Supports:
-/// - [SortWidgetType.dropdown]: Interactive dropdown for immediate re-sorting (nhentai style)
-/// - [SortWidgetType.readonly]: Read-only display of current sort (crotpedia style)
-/// - [SortWidgetType.chips]: Interactive chips (alternative style)
+// Supports:
+// - [SortWidgetType.dropdown]: Interactive dropdown for immediate re-sorting (nhentai style)
+// - [SortWidgetType.readonly]: Read-only display of current sort (crotpedia style)
+// - [SortWidgetType.chips]: Interactive chips (alternative style)
 class DynamicSortingWidget extends StatelessWidget {
   final String currentSortValue;
   final SortingConfig config;
   final Function(String)? onSortChanged;
   final VoidCallback? onNavigateToSearch;
 
-  /// Optional info text to display
+  // Optional info text to display
   final String? infoText;
 
-  /// Number of results (optional)
+  // Number of results (optional)
   final int? resultCount;
 
-  /// Whether to use full width layout
+  // Whether to use full width layout
   final bool fullWidth;
 
   const DynamicSortingWidget({
@@ -140,7 +140,8 @@ class DynamicSortingWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  config.messages.dropdownLabel ?? AppLocalizations.of(context)!.sortBy,
+                  config.messages.dropdownLabel ??
+                      AppLocalizations.of(context)!.sortBy,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

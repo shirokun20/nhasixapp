@@ -1,6 +1,6 @@
 part of 'tag_autocomplete_bloc.dart';
 
-/// States for TagAutocompleteBloc
+// States for TagAutocompleteBloc
 abstract class TagAutocompleteState extends Equatable {
   const TagAutocompleteState();
 
@@ -8,17 +8,17 @@ abstract class TagAutocompleteState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Initial state
+// Initial state
 class TagAutocompleteInitial extends TagAutocompleteState {
   const TagAutocompleteInitial();
 }
 
-/// Loading state
+// Loading state
 class TagAutocompleteLoading extends TagAutocompleteState {
   const TagAutocompleteLoading();
 }
 
-/// Loaded state with suggestions
+// Loaded state with suggestions
 class TagAutocompleteLoaded extends TagAutocompleteState {
   final List<TagEntity> suggestions;
   final String query;
@@ -34,7 +34,7 @@ class TagAutocompleteLoaded extends TagAutocompleteState {
   List<Object?> get props => [suggestions, query, totalResults];
 }
 
-/// Error state
+// Error state
 class TagAutocompleteError extends TagAutocompleteState {
   final String message;
 

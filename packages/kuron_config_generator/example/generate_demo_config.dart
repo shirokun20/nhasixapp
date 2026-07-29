@@ -1,4 +1,4 @@
-/// Demo script: Generate a sample config without interactive input
+// Demo script: Generate a sample config without interactive input
 library;
 
 import 'dart:io';

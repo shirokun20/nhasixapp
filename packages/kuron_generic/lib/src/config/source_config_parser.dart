@@ -1,24 +1,24 @@
-/// Source Config v2 Parser.
+// Source Config v2 Parser.
 ///
-/// Parses a raw source config JSON map into a [SourceConfigParseResult]
-/// containing:
-///   - [SourceCapabilityDeclaration] — typed feature contracts with required
-///     primitives and plugin capabilities.
-///   - [ValidationReport] — static diagnostics (no network access).
-///   - [NetworkRules] — typed network/header/referer rules.
-///   - [DynamicSearchFormContract]? — typed dynamic search form, if declared.
+// Parses a raw source config JSON map into a [SourceConfigParseResult]
+// containing:
+//   - [SourceCapabilityDeclaration] — typed feature contracts with required
+//     primitives and plugin capabilities.
+//   - [ValidationReport] — static diagnostics (no network access).
+//   - [NetworkRules] — typed network/header/referer rules.
+//   - [DynamicSearchFormContract]? — typed dynamic search form, if declared.
 ///
-/// ## v1 → v2 Compatibility (task 3.2)
+// ## v1 → v2 Compatibility (task 3.2)
 ///
-/// v1 configs (no `schemaVersion` field) are accepted. Missing declarations
-/// are inferred from config block presence and each inference emits a
-/// [DiagnosticSeverity.warning] with code `featureInferred`.
+// v1 configs (no `schemaVersion` field) are accepted. Missing declarations
+// are inferred from config block presence and each inference emits a
+// [DiagnosticSeverity.warning] with code `featureInferred`.
 ///
-/// ## Required-Primitive Inference (task 3.1)
+// ## Required-Primitive Inference (task 3.1)
 ///
-/// For every feature the parser identifies, it infers the set of
-/// [EnginePrimitive] identifiers and [PluginCapability] identifiers that
-/// the runtime must support.
+// For every feature the parser identifies, it infers the set of
+// [EnginePrimitive] identifiers and [PluginCapability] identifiers that
+// the runtime must support.
 library;
 
 import 'package:kuron_core/kuron_core.dart';
@@ -26,7 +26,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'typed_config/dynamic_search_form.dart';
 import 'typed_config/network_rules.dart';
 
-/// Return type of [SourceConfigParser.parse].
+// Return type of [SourceConfigParser.parse].
 class SourceConfigParseResult {
   const SourceConfigParseResult({
     required this.declaration,
@@ -41,8 +41,8 @@ class SourceConfigParseResult {
   final DynamicSearchFormContract? searchForm;
 }
 
-/// Parses a raw source config map into typed contracts and a static
-/// validation report.
+// Parses a raw source config map into typed contracts and a static
+// validation report.
 class SourceConfigParser {
   const SourceConfigParser({
     String engineVersion = '1.0.0',
@@ -54,17 +54,17 @@ class SourceConfigParser {
 
   final String _engineVersion;
 
-  /// Engine primitives the current runtime supports. Used to compute
-  /// `missingPrimitives` → `needsEngineSupport` status.
+  // Engine primitives the current runtime supports. Used to compute
+  // `missingPrimitives` → `needsEngineSupport` status.
   final Set<String> _registeredPrimitives;
 
-  /// Plugin capabilities registered by the host app. Used to compute
-  /// `missingPlugins` → `requiresPlugin` feature status.
+  // Plugin capabilities registered by the host app. Used to compute
+  // `missingPlugins` → `requiresPlugin` feature status.
   final Set<String> _registeredPlugins;
 
-  /// Parse [rawConfig] and return a [SourceConfigParseResult].
+  // Parse [rawConfig] and return a [SourceConfigParseResult].
   ///
-  /// Never throws. All anomalies are captured as [ValidationDiagnostic]s.
+  // Never throws. All anomalies are captured as [ValidationDiagnostic]s.
   SourceConfigParseResult parse(Map<String, Object?> rawConfig) {
     final List<ValidationDiagnostic> diags = <ValidationDiagnostic>[];
 
@@ -613,7 +613,7 @@ class SourceConfigParser {
     return statuses;
   }
 
-  /// Extract non-standard escape-hatch fields from the config.
+  // Extract non-standard escape-hatch fields from the config.
   Map<String, Object?> _extractVendorExtensions(
       Map<String, Object?> rawConfig) {
     const Set<String> knownKeys = <String>{
@@ -648,7 +648,7 @@ class SourceConfigParser {
     );
   }
 
-  /// Infer the pagination primitive from config.
+  // Infer the pagination primitive from config.
   String _paginationPrimitive(
     Map<String, Object?> rawConfig, {
     required bool hasScraper,
@@ -670,7 +670,7 @@ class SourceConfigParser {
     return EnginePrimitive.paginationPage;
   }
 
-  /// Simple semver "greater-or-equal" check (major.minor.patch only).
+  // Simple semver "greater-or-equal" check (major.minor.patch only).
   bool _isEngineVersionCompatible(String required, String current) {
     try {
       final List<int> req = required

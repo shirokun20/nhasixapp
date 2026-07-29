@@ -5,7 +5,7 @@ import '../../domain/entities/entities.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Modern card widget for filter items with include/exclude toggle
+// Modern card widget for filter items with include/exclude toggle
 class FilterItemCard extends StatelessWidget {
   const FilterItemCard({
     super.key,
@@ -294,7 +294,7 @@ class FilterItemCard extends StatelessWidget {
   }
 }
 
-/// Compact version of filter item card for smaller spaces
+// Compact version of filter item card for smaller spaces
 class FilterItemCardCompact extends StatelessWidget {
   const FilterItemCardCompact({
     super.key,

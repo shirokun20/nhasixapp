@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:logger/logger.dart';
 
-/// Anti-detection measures for web scraping
+// Anti-detection measures for web scraping
 class AntiDetection {
   AntiDetection({Logger? logger}) : _logger = logger ?? Logger();
 
@@ -56,7 +56,7 @@ class AntiDetection {
     'ja,en-US;q=0.9,en;q=0.8',
   ];
 
-  /// Initialize anti-detection measures
+  // Initialize anti-detection measures
   Future<void> initialize() async {
     try {
       _logger.i('Initializing anti-detection measures...');
@@ -72,7 +72,7 @@ class AntiDetection {
     }
   }
 
-  /// Apply random delay between requests
+  // Apply random delay between requests
   Future<void> applyRandomDelay() async {
     final now = DateTime.now();
 
@@ -94,7 +94,7 @@ class AntiDetection {
     _requestCount++;
   }
 
-  /// Get random headers for request
+  // Get random headers for request
   Map<String, String> getRandomHeaders({String? referer}) {
     // Rotate user agent occasionally
 
@@ -139,7 +139,7 @@ class AntiDetection {
     return headers;
   }
 
-  /// Calculate minimum delay based on request frequency
+  // Calculate minimum delay based on request frequency
   Duration _calculateMinDelay() {
     // Reduced base delay from 2000ms to 1000ms for better performance
     const baseDelay = 1000; // 1 second base (reduced from 2 seconds)
@@ -152,35 +152,35 @@ class AntiDetection {
     );
   }
 
-  /// Get random user agent
+  // Get random user agent
   String _getRandomUserAgent() {
     return _userAgents[_random.nextInt(_userAgents.length)];
   }
 
-  /// Get random accept header
+  // Get random accept header
   String _getRandomAcceptHeader() {
     return _acceptHeaders[_random.nextInt(_acceptHeaders.length)];
   }
 
-  /// Get random accept-language header
+  // Get random accept-language header
   String _getRandomAcceptLanguageHeader() {
     return _acceptLanguageHeaders[
         _random.nextInt(_acceptLanguageHeaders.length)];
   }
 
-  /// Generate Sec-CH-UA header
+  // Generate Sec-CH-UA header
   String _generateSecChUa() {
     final chromeVersion = 120 - _random.nextInt(3); // Recent Chrome versions
     return '"Not_A Brand";v="8", "Chromium";v="$chromeVersion", "Google Chrome";v="$chromeVersion"';
   }
 
-  /// Get random platform for Sec-CH-UA-Platform
+  // Get random platform for Sec-CH-UA-Platform
   String _getRandomPlatform() {
     final platforms = ['"Windows"', '"macOS"', '"Linux"'];
     return platforms[_random.nextInt(platforms.length)];
   }
 
-  /// Simulate human-like browsing patterns
+  // Simulate human-like browsing patterns
   Future<void> simulateHumanBehavior() async {
     // More frequent reading simulation (30% chance instead of 10%)
     if (_random.nextDouble() < 0.3) {
@@ -203,7 +203,7 @@ class AntiDetection {
     }
   }
 
-  /// Check if we should throttle requests
+  // Check if we should throttle requests
   bool shouldThrottleRequests() {
     // Increased rate limiting: 25 requests per minute (from 15)
     const maxRequestsPerMinute = 25;
@@ -231,14 +231,14 @@ class AntiDetection {
     return false;
   }
 
-  /// Reset request counters (call periodically)
+  // Reset request counters (call periodically)
   void resetCounters() {
     _requestCount = 0;
     _lastRequestTime = null;
     _logger.d('Reset anti-detection counters');
   }
 
-  /// Get current request statistics
+  // Get current request statistics
   Map<String, dynamic> getStatistics() {
     return {
       'requestCount': _requestCount,
@@ -248,7 +248,7 @@ class AntiDetection {
     };
   }
 
-  /// Dispose resources
+  // Dispose resources
   void dispose() {
     _logger.i('Anti-detection disposed');
   }

@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-/// Internal class for memory cache data
+// Internal class for memory cache data
 class _CachedImageData {
   final File file;
   final DateTime cachedAt;
@@ -22,8 +22,8 @@ class _CachedImageData {
   });
 }
 
-/// Service for caching images to improve loading performance and reduce network usage
-/// Provides memory and disk caching with TTL (Time To Live) support
+// Service for caching images to improve loading performance and reduce network usage
+// Provides memory and disk caching with TTL (Time To Live) support
 class ImageCacheService {
   static const String _cacheMetadataKey = 'image_cache_metadata';
   static const String _cacheVersion = '1.0.0';
@@ -36,8 +36,8 @@ class ImageCacheService {
   // In-memory cache for fast access with LRU eviction
   final Map<String, _CachedImageData> _memoryCache = {};
 
-  /// Get cached image data by URL
-  /// If [isStaticGif] is true, it looks for the processed static version of the GIF
+  // Get cached image data by URL
+  // If [isStaticGif] is true, it looks for the processed static version of the GIF
   Future<File?> getCachedImage(String imageUrl,
       {bool isStaticGif = false}) async {
     try {
@@ -86,17 +86,17 @@ class ImageCacheService {
     }
   }
 
-  /// Get or process a static image from a GIF URL
-  /// Returns a cached File of the static JPG
+  // Get or process a static image from a GIF URL
+  // Returns a cached File of the static JPG
   Future<File?> getOrProcessStaticGif(
       String url, Map<String, String>? headers) async {
     return getOrProcessStaticImage(url, headers: headers);
   }
 
-  /// Get or process a static first-frame preview for a remote or local image.
+  // Get or process a static first-frame preview for a remote or local image.
   ///
-  /// This is primarily used for thumbnail surfaces where animated payloads
-  /// should stay lightweight and deterministic.
+  // This is primarily used for thumbnail surfaces where animated payloads
+  // should stay lightweight and deterministic.
   Future<File?> getOrProcessStaticImage(
     String source, {
     Map<String, String>? headers,
@@ -129,7 +129,7 @@ class ImageCacheService {
     }
   }
 
-  /// Static function for isolate processing
+  // Static function for isolate processing
   static Future<Uint8List?> _decodeImageToStaticImage(Uint8List bytes) async {
     try {
       // Decode the image (GIF/WebP/AVIF/etc.) and keep only the first frame.
@@ -145,7 +145,7 @@ class ImageCacheService {
     }
   }
 
-  /// Cache image data
+  // Cache image data
   Future<void> cacheImage(String imageUrl, List<int> imageData,
       {bool isStaticGif = false}) async {
     try {
@@ -179,13 +179,13 @@ class ImageCacheService {
     }
   }
 
-  /// Check if image is cached
+  // Check if image is cached
   Future<bool> isImageCached(String imageUrl) async {
     final cachedFile = await getCachedImage(imageUrl);
     return cachedFile != null;
   }
 
-  /// Clear cache for specific content ID
+  // Clear cache for specific content ID
   Future<void> clearContentCache(String contentId) async {
     try {
       final metadata = await _getCacheMetadata();
@@ -217,7 +217,7 @@ class ImageCacheService {
     }
   }
 
-  /// Clear all cached images
+  // Clear all cached images
   Future<void> clearAllCache() async {
     try {
       final cacheDir = await _getCacheDirectory();
@@ -241,7 +241,7 @@ class ImageCacheService {
     }
   }
 
-  /// Get cache statistics
+  // Get cache statistics
   Future<Map<String, dynamic>> getCacheStats() async {
     try {
       final metadata = await _getCacheMetadata();
@@ -265,7 +265,7 @@ class ImageCacheService {
     }
   }
 
-  /// Generate cache key from URL
+  // Generate cache key from URL
   String _generateCacheKey(String url, {bool isStaticGif = false}) {
     // Use SHA-256 hash of URL as cache key
     final bytes = utf8.encode(url);
@@ -273,7 +273,7 @@ class ImageCacheService {
     return isStaticGif ? '${hash}_static' : hash.toString();
   }
 
-  /// Get cache directory
+  // Get cache directory
   Future<Directory> _getCacheDirectory() async {
     final cacheDir = await getApplicationCacheDirectory();
     final imageCacheDir = Directory('${cacheDir.path}/images');
@@ -285,7 +285,7 @@ class ImageCacheService {
     return imageCacheDir;
   }
 
-  /// Check if cache entry is expired
+  // Check if cache entry is expired
   bool _isExpired(dynamic cachedAt) {
     if (cachedAt is String) {
       final date = DateTime.parse(cachedAt);
@@ -296,7 +296,7 @@ class ImageCacheService {
     return true; // Consider expired if format is unknown
   }
 
-  /// Get cache metadata from SharedPreferences
+  // Get cache metadata from SharedPreferences
   Future<Map<String, dynamic>> _getCacheMetadata() async {
     final prefs = await SharedPreferences.getInstance();
     final metadataJson = prefs.getString(_cacheMetadataKey);
@@ -311,7 +311,7 @@ class ImageCacheService {
     }
   }
 
-  /// Add entry to metadata
+  // Add entry to metadata
   Future<void> _addToMetadata(
       String cacheKey, DateTime cachedAt, int size) async {
     final metadata = await _getCacheMetadata();
@@ -325,7 +325,7 @@ class ImageCacheService {
     await prefs.setString(_cacheMetadataKey, json.encode(metadata));
   }
 
-  /// Remove entry from metadata
+  // Remove entry from metadata
   Future<void> _removeFromMetadata(String cacheKey) async {
     final metadata = await _getCacheMetadata();
     metadata.remove(cacheKey);
@@ -334,7 +334,7 @@ class ImageCacheService {
     await prefs.setString(_cacheMetadataKey, json.encode(metadata));
   }
 
-  /// Clean up old entries if cache size exceeds limit
+  // Clean up old entries if cache size exceeds limit
   Future<void> _cleanupIfNeeded() async {
     try {
       final metadata = await _getCacheMetadata();
@@ -387,7 +387,7 @@ class ImageCacheService {
     }
   }
 
-  /// Evict oldest entries from memory cache when over limit
+  // Evict oldest entries from memory cache when over limit
   void _evictMemoryCacheIfNeeded() {
     while (_memoryCache.length > _maxMemoryEntries) {
       final oldestKey = _memoryCache.keys.first;
@@ -396,7 +396,7 @@ class ImageCacheService {
     }
   }
 
-  /// Format bytes to human readable format
+  // Format bytes to human readable format
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';

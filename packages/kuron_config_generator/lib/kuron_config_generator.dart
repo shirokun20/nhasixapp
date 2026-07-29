@@ -1,4 +1,4 @@
-/// Config generator tooling for Kuron source configs.
+// Config generator tooling for Kuron source configs.
 library;
 
 export 'src/commands/generate_command.dart';

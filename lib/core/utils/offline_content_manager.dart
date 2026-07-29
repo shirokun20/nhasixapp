@@ -50,8 +50,8 @@ class OfflineContentManager {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
-  /// Call this whenever a download is removed, cancelled, or deleted so the
-  /// reader does not serve stale offline paths or image URL lists.
+  // Call this whenever a download is removed, cancelled, or deleted so the
+  // reader does not serve stale offline paths or image URL lists.
   void invalidateCacheFor(String contentId) {
     _pathCache.remove(contentId);
     _pathMissCacheTime.remove(contentId);
@@ -344,8 +344,8 @@ class OfflineContentManager {
 
   static const String kFailedPagePrefix = '__failed__:';
 
-  /// Returns true if [url] is a failed-page placeholder injected by
-  /// [getOfflineImageUrls] for a page that was skipped during download.
+  // Returns true if [url] is a failed-page placeholder injected by
+  // [getOfflineImageUrls] for a page that was skipped during download.
   static bool isFailedPagePlaceholder(String url) =>
       url.startsWith(kFailedPagePrefix);
 
@@ -448,7 +448,8 @@ class OfflineContentManager {
       if (expectedVisiblePages == null ||
           expectedVisiblePages <= diskUrls.length ||
           failedPagesRaw == null ||
-          diskUrls.isEmpty) { // all-failed: no images to show
+          diskUrls.isEmpty) {
+        // all-failed: no images to show
         return diskUrls;
       }
 
@@ -1974,8 +1975,8 @@ class OfflineContentManager {
     return DirectoryUtils.getDownloadsDirectory();
   }
 
-  /// Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
-  /// [onProgress] - Optional callback (processed, total)
+  // Returns map with 'synced' (new items) and 'updated' (fixed paths) counts
+  // [onProgress] - Optional callback (processed, total)
   Future<Map<String, int>> syncBackupToDatabase(
     String backupPath, {
     String? sourceId,
@@ -2149,8 +2150,8 @@ class OfflineContentManager {
     return path.join(backupPath, sourceId);
   }
 
-  /// [contentPath] - optional direct path to content directory (for backup items)
-  /// Returns true if deletion was successful (idempotent - returns true if either DB or filesystem deleted)
+  // [contentPath] - optional direct path to content directory (for backup items)
+  // Returns true if deletion was successful (idempotent - returns true if either DB or filesystem deleted)
   Future<bool> deleteOfflineContent(String contentId,
       {String? contentPath}) async {
     try {

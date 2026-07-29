@@ -1,8 +1,8 @@
-/// Config-driven [ContentSource] implementation.
+// Config-driven [ContentSource] implementation.
 ///
-/// [GenericHttpSource] delegates all HTTP operations to either a
-/// [GenericRestAdapter] (JSON API) or a [GenericScraperAdapter] (HTML scraping)
-/// based on which block is present in the raw config JSON.
+// [GenericHttpSource] delegates all HTTP operations to either a
+// [GenericRestAdapter] (JSON API) or a [GenericScraperAdapter] (HTML scraping)
+// based on which block is present in the raw config JSON.
 library;
 
 import 'package:dio/dio.dart';
@@ -17,11 +17,11 @@ import 'parsers/generic_html_parser.dart';
 import 'parsers/generic_json_parser.dart';
 import 'url_builder/generic_url_builder.dart';
 
-/// A [ContentSource] that is entirely driven by a JSON config map.
+// A [ContentSource] that is entirely driven by a JSON config map.
 ///
-/// No Dart code changes are required to add a new provider — only a new JSON
-/// config file is needed. The config must contain either an `api` block
-/// (REST/JSON) or a `scraper` block (HTML scraping).
+// No Dart code changes are required to add a new provider — only a new JSON
+// config file is needed. The config must contain either an `api` block
+// (REST/JSON) or a `scraper` block (HTML scraping).
 class GenericHttpSource implements ContentSource {
   final Map<String, dynamic> _rawConfig;
   final Dio _dio;
@@ -278,7 +278,7 @@ class GenericHttpSource implements ContentSource {
     return merged;
   }
 
-  /// Extract content ID from a random API response.
+  // Extract content ID from a random API response.
   String? _extractRandomContentId(dynamic data, Response<dynamic> response) {
     try {
       final candidateUrls = <String>{
@@ -378,9 +378,9 @@ class GenericHttpSource implements ContentSource {
     );
   }
 
-  /// Build the web-facing content URL from the `contentUrl` endpoint
-  /// template in config (e.g. `"/g/{id}/"`). Returns empty string if
-  /// the template is not defined in the config.
+  // Build the web-facing content URL from the `contentUrl` endpoint
+  // template in config (e.g. `"/g/{id}/"`). Returns empty string if
+  // the template is not defined in the config.
   String buildContentUrl(String contentId) {
     final api = _rawConfig['api'] as Map<String, dynamic>?;
     final endpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};

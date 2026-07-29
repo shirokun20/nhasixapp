@@ -3,14 +3,14 @@ import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
-/// Handler for notification permissions
+// Handler for notification permissions
 class NotificationPermissionHandler {
   final Logger _logger;
 
   NotificationPermissionHandler({Logger? logger})
       : _logger = logger ?? Logger();
 
-  /// Check if notification permission is already granted without requesting
+  // Check if notification permission is already granted without requesting
   Future<bool> checkPermission() async {
     try {
       // For Android, handle version-specific permission logic
@@ -42,8 +42,8 @@ class NotificationPermissionHandler {
     }
   }
 
-  /// Request notification permission from user
-  /// Enhanced for Android 13+ and release mode compatibility
+  // Request notification permission from user
+  // Enhanced for Android 13+ and release mode compatibility
   Future<bool> requestPermission() async {
     try {
       // For Android, handle version-specific permission logic

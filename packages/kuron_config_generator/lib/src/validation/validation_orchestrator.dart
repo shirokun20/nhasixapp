@@ -8,12 +8,12 @@ import 'report_parser.dart';
 import 'report_printer.dart';
 import 'validator_runner.dart';
 
-/// Orchestrates the validation lifecycle: run validator, parse report,
-/// display results, and manage the interactive revalidation loop.
+// Orchestrates the validation lifecycle: run validator, parse report,
+// display results, and manage the interactive revalidation loop.
 class ValidationOrchestrator {
-  /// Run a single validation cycle on [configPath].
-  /// Returns parsed report on success, null if validator unavailable or
-  /// report cannot be parsed.
+  // Run a single validation cycle on [configPath].
+  // Returns parsed report on success, null if validator unavailable or
+  // report cannot be parsed.
   Future<ParsedReport?> runValidator(String configPath) async {
     final jsonString = await ValidatorRunner.run(configPath);
     if (jsonString == null) return null;
@@ -26,13 +26,13 @@ class ValidationOrchestrator {
     }
   }
 
-  /// Run the full interactive validation loop.
+  // Run the full interactive validation loop.
   ///
-  /// Creates a backup of the config, then iterates up to 20 times,
-  /// prompting the user to edit and revalidate after each run.
+  // Creates a backup of the config, then iterates up to 20 times,
+  // prompting the user to edit and revalidate after each run.
   ///
-  /// [reportFormat] controls display format (text/json/markdown).
-  /// [showAllSuggestions] shows fix suggestions even when compatible.
+  // [reportFormat] controls display format (text/json/markdown).
+  // [showAllSuggestions] shows fix suggestions even when compatible.
   Future<void> runValidationLoop({
     required String configPath,
     String reportFormat = 'text',

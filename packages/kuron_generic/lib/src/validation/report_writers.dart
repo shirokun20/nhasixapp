@@ -1,6 +1,6 @@
-/// Report writers: JSON and Markdown output for [ValidationReport].
+// Report writers: JSON and Markdown output for [ValidationReport].
 ///
-/// Used by the CLI validator and by the test harness.
+// Used by the CLI validator and by the test harness.
 library;
 
 import 'dart:convert';
@@ -9,7 +9,7 @@ import 'package:kuron_core/kuron_core.dart';
 
 // ── JSON report (4.5) ────────────────────────────────────────────────────────
 
-/// Serialize a [ValidationReport] to pretty-printed JSON.
+// Serialize a [ValidationReport] to pretty-printed JSON.
 String reportToJson(ValidationReport report) {
   return const JsonEncoder.withIndent('  ').convert(_reportToMap(report));
 }
@@ -49,7 +49,7 @@ Map<String, Object?> _reportToMap(ValidationReport report) {
 
 // ── Markdown report (4.5) ────────────────────────────────────────────────────
 
-/// Serialize a [ValidationReport] to a Markdown document.
+// Serialize a [ValidationReport] to a Markdown document.
 String reportToMarkdown(ValidationReport report) {
   final StringBuffer sb = StringBuffer();
   final String statusBadge = _statusBadge(report.overallStatus);

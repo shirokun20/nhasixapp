@@ -4,15 +4,15 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Comprehensive Analytics Service for Local User Behavior Tracking
+// Comprehensive Analytics Service for Local User Behavior Tracking
 ///
-/// Features:
-/// - Privacy-first: All data stored locally, no external tracking
-/// - User consent based: Only tracks with explicit user permission
-/// - Performance monitoring: App performance and user experience metrics
-/// - Feature usage: Track which features are used most
-/// - Error analytics: Track and categorize application errors
-/// - Reading patterns: Anonymous reading behavior analysis
+// Features:
+// - Privacy-first: All data stored locally, no external tracking
+// - User consent based: Only tracks with explicit user permission
+// - Performance monitoring: App performance and user experience metrics
+// - Feature usage: Track which features are used most
+// - Error analytics: Track and categorize application errors
+// - Reading patterns: Anonymous reading behavior analysis
 class AnalyticsService {
   static final Logger _logger = getIt<Logger>();
   static const String _analyticsEnabledKey = 'analytics_enabled';
@@ -27,7 +27,7 @@ class AnalyticsService {
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
 
-  /// Initialize analytics service
+  // Initialize analytics service
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -52,7 +52,7 @@ class AnalyticsService {
     }
   }
 
-  /// Enable or disable analytics tracking with user consent
+  // Enable or disable analytics tracking with user consent
   Future<void> setAnalyticsEnabled(bool enabled) async {
     if (!_isInitialized) await initialize();
 
@@ -71,10 +71,10 @@ class AnalyticsService {
     }
   }
 
-  /// Check if analytics is enabled
+  // Check if analytics is enabled
   bool get isAnalyticsEnabled => _analyticsEnabled;
 
-  /// Track a custom event
+  // Track a custom event
   Future<void> trackEvent(AnalyticsEvent event) async {
     if (!_isInitialized) await initialize();
     if (!_analyticsEnabled) return;
@@ -82,47 +82,47 @@ class AnalyticsService {
     await _trackEvent(event);
   }
 
-  /// Track screen view
+  // Track screen view
   Future<void> trackScreenView(String screenName,
       {Map<String, dynamic>? parameters}) async {
     await trackEvent(
         AnalyticsEvent.screenView(screenName, parameters: parameters));
   }
 
-  /// Track user action (button tap, menu item selected, etc.)
+  // Track user action (button tap, menu item selected, etc.)
   Future<void> trackAction(String action,
       {Map<String, dynamic>? parameters}) async {
     await trackEvent(AnalyticsEvent.userAction(action, parameters: parameters));
   }
 
-  /// Track performance metrics
+  // Track performance metrics
   Future<void> trackPerformance(String operation, Duration duration,
       {Map<String, dynamic>? metadata}) async {
     await trackEvent(
         AnalyticsEvent.performance(operation, duration, metadata: metadata));
   }
 
-  /// Track application errors
+  // Track application errors
   Future<void> trackError(String errorType, String errorMessage,
       {StackTrace? stackTrace}) async {
     await trackEvent(
         AnalyticsEvent.error(errorType, errorMessage, stackTrace: stackTrace));
   }
 
-  /// Track feature usage
+  // Track feature usage
   Future<void> trackFeatureUsage(String feature,
       {Map<String, dynamic>? context}) async {
     await trackEvent(AnalyticsEvent.featureUsage(feature, context: context));
   }
 
-  /// Track reading session metrics
+  // Track reading session metrics
   Future<void> trackReadingSession(
       String contentId, Duration readingTime, int pagesRead) async {
     await trackEvent(
         AnalyticsEvent.readingSession(contentId, readingTime, pagesRead));
   }
 
-  /// Get analytics summary for display in settings/debug
+  // Get analytics summary for display in settings/debug
   Future<Map<String, dynamic>> getAnalyticsSummary() async {
     if (!_isInitialized) await initialize();
     if (!_analyticsEnabled) return {'enabled': false};
@@ -167,7 +167,7 @@ class AnalyticsService {
     }
   }
 
-  /// Export analytics data (for debugging or user data export)
+  // Export analytics data (for debugging or user data export)
   Future<String?> exportAnalyticsData() async {
     if (!_isInitialized) await initialize();
     if (!_analyticsEnabled) return null;
@@ -181,7 +181,7 @@ class AnalyticsService {
     }
   }
 
-  /// Clear all analytics data
+  // Clear all analytics data
   Future<void> clearAnalyticsData() async {
     if (!_isInitialized) await initialize();
     await _clearAnalyticsData();
@@ -189,7 +189,7 @@ class AnalyticsService {
         fallback: 'Analytics data cleared by user request'));
   }
 
-  /// Internal method to track events
+  // Internal method to track events
   Future<void> _trackEvent(AnalyticsEvent event) async {
     try {
       final eventData = event.toJson();
@@ -224,7 +224,7 @@ class AnalyticsService {
     }
   }
 
-  /// Clear analytics data from storage
+  // Clear analytics data from storage
   Future<void> _clearAnalyticsData() async {
     try {
       await _prefs.remove(_analyticsDataKey);
@@ -234,7 +234,7 @@ class AnalyticsService {
     }
   }
 
-  /// Dispose resources and track session end
+  // Dispose resources and track session end
   Future<void> dispose() async {
     if (_analyticsEnabled && _sessionStartTime != null) {
       final sessionDuration = DateTime.now().difference(_sessionStartTime!);
@@ -244,14 +244,14 @@ class AnalyticsService {
         fallback: 'Analytics service disposed'));
   }
 
-  /// Set localization callback for getting localized strings
+  // Set localization callback for getting localized strings
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('AnalyticsService: Localization callback set');
   }
 
-  /// Get localized string with fallback
+  // Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
@@ -263,7 +263,7 @@ class AnalyticsService {
   }
 }
 
-/// Analytics Event Model
+// Analytics Event Model
 class AnalyticsEvent {
   final String eventType;
   final String eventName;

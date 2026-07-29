@@ -5,7 +5,7 @@ import '../../domain/entities/entities.dart';
 import '../../domain/usecases/usecases.dart';
 import 'preferences_service.dart';
 
-/// Service for automatic history cleanup based on user preferences
+// Service for automatic history cleanup based on user preferences
 class HistoryCleanupService {
   HistoryCleanupService({
     required this.preferencesService,
@@ -25,7 +25,7 @@ class HistoryCleanupService {
   Timer? _cleanupTimer;
   bool _isInitialized = false;
 
-  /// Initialize the cleanup service
+  // Initialize the cleanup service
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -48,7 +48,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Start the automatic cleanup service
+  // Start the automatic cleanup service
   Future<void> _startCleanupService() async {
     try {
       final prefs = await preferencesService.getUserPreferences();
@@ -75,7 +75,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Schedule periodic cleanup
+  // Schedule periodic cleanup
   void _schedulePeriodicCleanup(int intervalHours) {
     _cleanupTimer?.cancel();
 
@@ -87,7 +87,7 @@ class HistoryCleanupService {
     _logger.d('Scheduled cleanup every ${intervalHours}h');
   }
 
-  /// Perform cleanup if needed based on user preferences
+  // Perform cleanup if needed based on user preferences
   Future<void> _performCleanupIfNeeded() async {
     try {
       final prefs = await preferencesService.getUserPreferences();
@@ -148,7 +148,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Check if we should cleanup old history based on max days
+  // Check if we should cleanup old history based on max days
   Future<bool> _shouldCleanupOldHistory(int maxDays) async {
     try {
       final count = await getHistoryCountUseCase(const NoParams());
@@ -167,7 +167,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Perform the actual cleanup
+  // Perform the actual cleanup
   Future<void> _performCleanup(String reason) async {
     try {
       _logger.i(_getLocalized('performingHistoryCleanup',
@@ -195,7 +195,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Update last app access time
+  // Update last app access time
   Future<void> _updateLastAppAccess() async {
     try {
       final prefs = await preferencesService.getUserPreferences();
@@ -210,7 +210,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Update last cleanup time
+  // Update last cleanup time
   Future<void> _updateLastCleanupTime() async {
     try {
       final prefs = await preferencesService.getUserPreferences();
@@ -225,7 +225,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Manual cleanup trigger
+  // Manual cleanup trigger
   Future<void> performManualCleanup() async {
     try {
       _logger.i(_getLocalized('manualHistoryCleanup',
@@ -239,7 +239,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Update cleanup settings and restart service if needed
+  // Update cleanup settings and restart service if needed
   Future<void> updateCleanupSettings(UserPreferences newPrefs) async {
     try {
       _logger.i('Updating cleanup settings');
@@ -260,7 +260,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Get cleanup status
+  // Get cleanup status
   Future<HistoryCleanupStatus> getCleanupStatus() async {
     try {
       final prefs = await preferencesService.getUserPreferences();
@@ -283,7 +283,7 @@ class HistoryCleanupService {
     }
   }
 
-  /// Dispose the service
+  // Dispose the service
   void dispose() {
     _cleanupTimer?.cancel();
     _isInitialized = false;
@@ -291,14 +291,14 @@ class HistoryCleanupService {
         fallback: 'History Cleanup Service disposed'));
   }
 
-  /// Set localization callback for getting localized strings
+  // Set localization callback for getting localized strings
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {
     _localize = localize;
     _logger.i('HistoryCleanupService: Localization callback set');
   }
 
-  /// Get localized string with fallback
+  // Get localized string with fallback
   String _getLocalized(String key,
       {Map<String, dynamic>? args, String? fallback}) {
     try {
@@ -310,7 +310,7 @@ class HistoryCleanupService {
   }
 }
 
-/// Status information for history cleanup
+// Status information for history cleanup
 class HistoryCleanupStatus {
   const HistoryCleanupStatus({
     this.isEnabled = false,
@@ -332,13 +332,13 @@ class HistoryCleanupStatus {
   final bool inactivityCleanupEnabled;
   final int inactivityThresholdDays;
 
-  /// Get next cleanup time estimate
+  // Get next cleanup time estimate
   DateTime? get nextCleanupEstimate {
     if (!isEnabled || lastCleanup == null) return null;
     return lastCleanup!.add(Duration(hours: intervalHours));
   }
 
-  /// Get time until next cleanup
+  // Get time until next cleanup
   Duration? get timeUntilNextCleanup {
     final next = nextCleanupEstimate;
     if (next == null) return null;
@@ -348,7 +348,7 @@ class HistoryCleanupStatus {
     return duration.isNegative ? Duration.zero : duration;
   }
 
-  /// Check if inactivity cleanup is due
+  // Check if inactivity cleanup is due
   bool get isInactivityCleanupDue {
     if (!inactivityCleanupEnabled || lastAppAccess == null) return false;
 
@@ -357,7 +357,7 @@ class HistoryCleanupStatus {
     return inactivityDuration.inDays >= inactivityThresholdDays;
   }
 
-  /// Get human readable status
+  // Get human readable status
   String get statusDescription {
     if (!isEnabled) return 'Disabled';
 
@@ -378,7 +378,7 @@ class HistoryCleanupStatus {
   }
 }
 
-/// Set localization callback for getting localized strings
+// Set localization callback for getting localized strings
 extension HistoryCleanupServiceLocalization on HistoryCleanupService {
   void setLocalizationCallback(
       String Function(String key, {Map<String, dynamic>? args}) localize) {

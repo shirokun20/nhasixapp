@@ -1,21 +1,21 @@
-/// Central mapping layer: extracted field maps → kuron_core domain entities.
+// Central mapping layer: extracted field maps → kuron_core domain entities.
 ///
-/// Both [GenericScraperAdapter] and [GenericRestAdapter] extract raw field
-/// values from HTML / JSON according to the source config and store them in a
-/// plain `Map<String, dynamic>`.  This class converts those maps into typed
-/// [Content] and [Chapter] objects **without knowing anything about the
-/// extraction mechanism or the source-specific config keys**.
+// Both [GenericScraperAdapter] and [GenericRestAdapter] extract raw field
+// values from HTML / JSON according to the source config and store them in a
+// plain `Map<String, dynamic>`.  This class converts those maps into typed
+// [Content] and [Chapter] objects **without knowing anything about the
+// extraction mechanism or the source-specific config keys**.
 ///
-/// ### Supported field names (keys in the extracted map)
-/// Scalar strings: `id`, `title`, `coverUrl`, `language`, `pageCount`,
-/// `uploadDate`, `mediaId`, `englishTitle`, `japaneseTitle`, `favorites`.
+// ### Supported field names (keys in the extracted map)
+// Scalar strings: `id`, `title`, `coverUrl`, `language`, `pageCount`,
+// `uploadDate`, `mediaId`, `englishTitle`, `japaneseTitle`, `favorites`.
 ///
-/// String lists: `artists`, `characters`, `parodies`, `groups`.
+// String lists: `artists`, `characters`, `parodies`, `groups`.
 ///
-/// Tag variants:
-/// - `tags`       — `List<String>` of tag names → typed as `type: "tag"`.
-/// - `tagObjects` — `List<Map<String, dynamic>>` of full nhentai tag objects
-///                  `{id, name, type, count}`.  Processed by [splitTagObjects].
+// Tag variants:
+// - `tags`       — `List<String>` of tag names → typed as `type: "tag"`.
+// - `tagObjects` — `List<Map<String, dynamic>>` of full nhentai tag objects
+//                  `{id, name, type, count}`.  Processed by [splitTagObjects].
 library;
 
 import 'package:kuron_core/kuron_core.dart';
@@ -25,10 +25,10 @@ class GenericContentMapper {
 
   // ── Public factory methods ─────────────────────────────────────────────────
 
-  /// Build a [Content] entity for **list / search result** items.
+  // Build a [Content] entity for **list / search result** items.
   ///
-  /// [fields] keys should use the canonical field names documented in the
-  /// library-level doc-comment above.
+  // [fields] keys should use the canonical field names documented in the
+  // library-level doc-comment above.
   static Content toListItem(
     Map<String, dynamic> fields, {
     required String sourceId,
@@ -66,10 +66,10 @@ class GenericContentMapper {
     );
   }
 
-  /// Build a [Content] entity for **detail pages** (superset of list fields).
+  // Build a [Content] entity for **detail pages** (superset of list fields).
   ///
-  /// [imageUrls] and [chapters] are passed in separately because they are
-  /// resolved after the main fields are extracted.
+  // [imageUrls] and [chapters] are passed in separately because they are
+  // resolved after the main fields are extracted.
   static Content toDetail(
     String contentId,
     Map<String, dynamic> fields, {
@@ -206,9 +206,9 @@ class GenericContentMapper {
     );
   }
 
-  /// Build a [Chapter] entity from extracted fields.
+  // Build a [Chapter] entity from extracted fields.
   ///
-  /// Supported keys: `id`, `title`, `url`, `date`.
+  // Supported keys: `id`, `title`, `url`, `date`.
   static Chapter toChapter(Map<String, dynamic> fields) {
     final id = _str(fields, 'id');
     final url = _str(fields, 'url');
@@ -231,8 +231,8 @@ class GenericContentMapper {
 
   // ── Tag processing ─────────────────────────────────────────────────────────
 
-  /// Split nhentai-style `tagObjects` (unified array with `type` field) into
-  /// typed lists.  Used by REST sources that return a single `tags[]` array.
+  // Split nhentai-style `tagObjects` (unified array with `type` field) into
+  // typed lists.  Used by REST sources that return a single `tags[]` array.
   static TagSplit splitTagObjects(List<Map<String, dynamic>> objects) {
     final tags = <Tag>[];
     final artists = <String>[];
@@ -651,7 +651,7 @@ class GenericContentMapper {
 
 // ── Internal DTOs ─────────────────────────────────────────────────────────────
 
-/// Result of splitting a unified nhentai-style tag array by type.
+// Result of splitting a unified nhentai-style tag array by type.
 class TagSplit {
   const TagSplit({
     required this.tags,
@@ -671,6 +671,6 @@ class TagSplit {
 }
 
 extension _StringX on String {
-  /// Apply [fn] to this string and return its result.
+  // Apply [fn] to this string and return its result.
   T let<T>(T Function(String) fn) => fn(this);
 }

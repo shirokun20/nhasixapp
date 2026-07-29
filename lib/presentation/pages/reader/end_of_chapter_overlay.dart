@@ -5,8 +5,8 @@ import '../../cubits/reader/reader_cubit.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/design_tokens.dart';
 
-/// End-of-Chapter Overlay Widget
-/// Shows at the last page of content with navigation options
+// End-of-Chapter Overlay Widget
+// Shows at the last page of content with navigation options
 class EndOfChapterOverlay extends StatelessWidget {
   final ReaderState state;
   final VoidCallback onBackToDetail;

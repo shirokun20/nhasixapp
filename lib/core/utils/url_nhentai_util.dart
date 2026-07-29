@@ -1,14 +1,14 @@
 import 'package:nhasixapp/domain/entities/entities.dart';
 
-/// @deprecated Use SearchFilter.toQueryString() instead
-/// This utility is kept for backward compatibility but SearchFilter
-/// provides more comprehensive URL building capabilities.
+// @deprecated Use SearchFilter.toQueryString() instead
+// This utility is kept for backward compatibility but SearchFilter
+// provides more comprehensive URL building capabilities.
 ///
-/// SearchFilter already includes:
-/// - Complete query building with toQueryString()
-/// - Built-in validation with isEmpty property
-/// - Proper encoding and parameter handling
-/// - Support for all filter types (tags, artists, characters, etc.)
+// SearchFilter already includes:
+// - Complete query building with toQueryString()
+// - Built-in validation with isEmpty property
+// - Proper encoding and parameter handling
+// - Support for all filter types (tags, artists, characters, etc.)
 @Deprecated('Use SearchFilter.toQueryString() instead')
 class UrlNhentaiUtil {
   final String baseUrl;
@@ -37,7 +37,7 @@ class UrlNhentaiUtil {
     this.page = 1,
   });
 
-  /// Create UrlNhentaiUtil from SearchFilter
+  // Create UrlNhentaiUtil from SearchFilter
   factory UrlNhentaiUtil.fromSearchFilter(String baseUrl, SearchFilter filter) {
     return UrlNhentaiUtil(
       baseUrl,

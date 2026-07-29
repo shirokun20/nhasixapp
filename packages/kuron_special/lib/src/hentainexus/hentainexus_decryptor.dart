@@ -28,7 +28,7 @@ class HentaiNexusDecryptor {
     return primes;
   }
 
-  /// Mirrors the site reader algorithm from `reader.min.js` initReader().
+  // Mirrors the site reader algorithm from `reader.min.js` initReader().
   static String decrypt({
     required String encrypted,
     String hostname = 'hentainexus.com',

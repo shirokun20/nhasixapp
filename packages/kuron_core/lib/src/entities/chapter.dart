@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Entity representing a chapter in a manga/doujinshi
+// Entity representing a chapter in a manga/doujinshi
 class Chapter extends Equatable {
   const Chapter({
     required this.id,
@@ -11,22 +11,22 @@ class Chapter extends Equatable {
     this.language,
   });
 
-  /// Unique identifier (usually slug or ID)
+  // Unique identifier (usually slug or ID)
   final String id;
 
-  /// Chapter title (e.g. "Chapter 1")
+  // Chapter title (e.g. "Chapter 1")
   final String title;
 
-  /// Chapter URL or Slug for fetching
+  // Chapter URL or Slug for fetching
   final String url;
 
-  /// Upload date
+  // Upload date
   final DateTime? uploadDate;
 
-  /// Scanlation group (optional)
+  // Scanlation group (optional)
   final String? scanGroup;
 
-  /// Chapter translation language code (optional, e.g. "en", "id", "ja")
+  // Chapter translation language code (optional, e.g. "en", "id", "ja")
   final String? language;
 
   @override

@@ -4,8 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// A brief overlay shown when a chapter is first opened.
-/// Auto-dismisses after [autoDismissDuration].
+// A brief overlay shown when a chapter is first opened.
+// Auto-dismisses after [autoDismissDuration].
 class ChapterOpenOverlay extends StatefulWidget {
   final String title;
   final int totalPages;

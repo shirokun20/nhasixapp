@@ -1,28 +1,28 @@
 #!/usr/bin/env dart
 
-/// kuron_config_validate — CLI entry point for source config validation.
+// kuron_config_validate — CLI entry point for source config validation.
 ///
-/// Usage:
-///   `dart run kuron_generic:kuron_config_validate [options] <config.json>...`
-///   `dart run kuron_generic:kuron_config_validate [options] --dir <configs/>`
+// Usage:
+//   `dart run kuron_generic:kuron_config_validate [options] <config.json>...`
+//   `dart run kuron_generic:kuron_config_validate [options] --dir <configs/>`
 ///
-/// Options:
-///   `--format json|markdown|text`   Output format (default: text)
-///   `--output <path>`               Write report to file instead of stdout
-///   `--dir <directory>`             Validate all *.json files in directory
-///   `--engine <version>`            Override engine version (default: 2.0.0)
-///   `--fail-on <status,...>`        Exit non-zero when any source matches status
-///                                 (default: configError,needsEngineSupport)
-///   --help                        Show this help
+// Options:
+//   `--format json|markdown|text`   Output format (default: text)
+//   `--output <path>`               Write report to file instead of stdout
+//   `--dir <directory>`             Validate all *.json files in directory
+//   `--engine <version>`            Override engine version (default: 2.0.0)
+//   `--fail-on <status,...>`        Exit non-zero when any source matches status
+//                                 (default: configError,needsEngineSupport)
+//   --help                        Show this help
 ///
-/// Exit codes (task 4.6):
-///   0  All sources compatible
-///   1  One or more sources partially compatible (optional features missing)
-///   2  One or more config errors
-///   3  One or more sources need engine support
-///   4  One or more sources need auth support
-///   5  One or more sources blocked by site protection
-///   64 Usage error
+// Exit codes (task 4.6):
+//   0  All sources compatible
+//   1  One or more sources partially compatible (optional features missing)
+//   2  One or more config errors
+//   3  One or more sources need engine support
+//   4  One or more sources need auth support
+//   5  One or more sources blocked by site protection
+//   64 Usage error
 library;
 
 import 'dart:convert';

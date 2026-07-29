@@ -4,12 +4,12 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'local_image_preloader.dart';
 
-/// Service to detect app updates and clear cache when needed
+// Service to detect app updates and clear cache when needed
 class AppUpdateService {
   static const String _lastAppVersionKey = 'last_app_version';
   static final Logger _logger = getIt<Logger>();
 
-  /// Initialize the service and check for app updates
+  // Initialize the service and check for app updates
   static Future<void> initialize() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -39,7 +39,7 @@ class AppUpdateService {
     }
   }
 
-  /// Handle app update by clearing caches
+  // Handle app update by clearing caches
   static Future<void> _handleAppUpdate(
       String oldVersion, String newVersion) async {
     try {
@@ -59,7 +59,7 @@ class AppUpdateService {
     }
   }
 
-  /// Force clear all caches (useful for debugging or manual cache clearing)
+  // Force clear all caches (useful for debugging or manual cache clearing)
   static Future<void> forceClearAllCaches() async {
     try {
       _logger.i('🧹 Force clearing all caches');
@@ -72,7 +72,7 @@ class AppUpdateService {
     }
   }
 
-  /// Simulate app update for testing (changes stored version to trigger cache clearing)
+  // Simulate app update for testing (changes stored version to trigger cache clearing)
   static Future<void> simulateAppUpdate() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -84,7 +84,7 @@ class AppUpdateService {
     }
   }
 
-  /// Get current app version
+  // Get current app version
   static Future<String> getCurrentAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -95,7 +95,7 @@ class AppUpdateService {
     }
   }
 
-  /// Get last saved app version
+  // Get last saved app version
   static Future<String?> getLastAppVersion() async {
     try {
       final prefs = await SharedPreferences.getInstance();

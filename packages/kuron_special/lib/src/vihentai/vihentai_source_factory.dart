@@ -1,4 +1,4 @@
-/// ViHentai source factory — creates [GenericHttpSource] with ViHentaiAdapter.
+// ViHentai source factory — creates [GenericHttpSource] with ViHentaiAdapter.
 library;
 
 import 'package:cookie_jar/cookie_jar.dart';
@@ -52,7 +52,9 @@ class ViHentaiSourceFactory implements SourceFactory {
 
     // Copy global interceptors (logging, etc.)
     for (final interceptor in _dio.interceptors) {
-      try { vihentaiDio.interceptors.add(interceptor); } catch (_) {}
+      try {
+        vihentaiDio.interceptors.add(interceptor);
+      } catch (_) {}
     }
 
     // Bypass interceptor — routes GET through WebViewSessionAdapter for CF
@@ -90,7 +92,7 @@ class ViHentaiSourceFactory implements SourceFactory {
   }
 }
 
-/// Dio interceptor that routes GET through WebViewSessionAdapter bypass.
+// Dio interceptor that routes GET through WebViewSessionAdapter bypass.
 class _BypassDioInterceptor with DioMixin implements Dio {
   final Dio _baseDio;
   final WebViewSessionAdapter _sessionAdapter;

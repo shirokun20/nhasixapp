@@ -12,8 +12,8 @@ import 'package:nhasixapp/presentation/widgets/app_drawer_content.dart';
 import 'package:nhasixapp/presentation/widgets/global_download_progress_widget.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
-/// This widget wraps around any page content to provide consistent offline mode UI
+// Reusable scaffold widget that shows offline indicators and "Go Online" functionality
+// This widget wraps around any page content to provide consistent offline mode UI
 class AppScaffoldWithOffline extends StatefulWidget {
   const AppScaffoldWithOffline({
     super.key,
@@ -220,8 +220,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
         ));
   }
 
-  /// Build app bar with offline indicator badge
-  /// Shows orange badge when offline, normal appearance when online
+  // Build app bar with offline indicator badge
+  // Shows orange badge when offline, normal appearance when online
   AppBar _buildAppBarWithOfflineIndicator(
       BuildContext context, bool isOfflineMode) {
     return AppBar(
@@ -236,8 +236,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
     );
   }
 
-  /// Build compact offline badge for app bar
-  /// Small badge that clearly indicates offline status
+  // Build compact offline badge for app bar
+  // Small badge that clearly indicates offline status
   Widget _buildOfflineBadge(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -268,8 +268,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
     );
   }
 
-  /// Build prominent offline banner below app bar
-  /// Provides information and "Go Online" action button
+  // Build prominent offline banner below app bar
+  // Provides information and "Go Online" action button
   Widget _buildOfflineBanner(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -346,8 +346,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
     );
   }
 
-  /// Check internet connection and switch to online mode if available
-  /// Provides feedback to user about connection status
+  // Check internet connection and switch to online mode if available
+  // Provides feedback to user about connection status
   void _checkConnectionAndGoOnline(BuildContext context) async {
     try {
       // Show loading indicator
@@ -437,8 +437,8 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
   }
 }
 
-/// Simplified version for pages that don't need custom app bars
-/// Provides quick offline-aware scaffold for simple pages
+// Simplified version for pages that don't need custom app bars
+// Provides quick offline-aware scaffold for simple pages
 class SimpleOfflineScaffold extends StatelessWidget {
   const SimpleOfflineScaffold({
     super.key,
@@ -464,8 +464,8 @@ class SimpleOfflineScaffold extends StatelessWidget {
   }
 }
 
-/// Mixin to add offline awareness to any StatefulWidget
-/// Provides convenient methods for checking offline status
+// Mixin to add offline awareness to any StatefulWidget
+// Provides convenient methods for checking offline status
 mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
   late StreamSubscription<bool>? _offlineSubscription;
 
@@ -486,19 +486,19 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
     super.dispose();
   }
 
-  /// Override this method to handle offline mode changes
-  /// Called whenever the app switches between online/offline mode
+  // Override this method to handle offline mode changes
+  // Called whenever the app switches between online/offline mode
   void onOfflineModeChanged(bool isOffline) {
     // Default implementation - can be overridden by widgets
   }
 
-  /// Check if app is currently in offline mode
+  // Check if app is currently in offline mode
   bool get isOffline => AppStateManager().isOfflineMode;
 
-  /// Check if app is currently in online mode
+  // Check if app is currently in online mode
   bool get isOnline => !AppStateManager().isOfflineMode;
 
-  /// Show offline-specific message to user
+  // Show offline-specific message to user
   void showOfflineMessage(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -518,7 +518,7 @@ mixin OfflineAwareMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Show online-specific message to user
+  // Show online-specific message to user
   void showOnlineMessage(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -8,10 +8,10 @@ import 'package:logger/logger.dart';
 
 import 'config_driven_api_auth_models.dart';
 
-/// Config-driven auth client for token-based providers (e.g. NHentai API v2).
+// Config-driven auth client for token-based providers (e.g. NHentai API v2).
 ///
-/// Reads endpoint and payload field names from source config, so no source
-/// identifiers are hardcoded in app main lib.
+// Reads endpoint and payload field names from source config, so no source
+// identifiers are hardcoded in app main lib.
 class ConfigDrivenApiAuthClient {
   final Dio _dio;
   final ApiAuthConfig _config;
@@ -130,8 +130,8 @@ class ConfigDrivenApiAuthClient {
     );
   }
 
-  /// Solves PoW using the same formula as the frontend worker:
-  /// sha256(challenge + nonce).
+  // Solves PoW using the same formula as the frontend worker:
+  // sha256(challenge + nonce).
   Future<String> solvePowNonceInIsolate({
     required String challenge,
     required int difficulty,

@@ -1,7 +1,7 @@
 import 'package:args/command_runner.dart';
 import 'package:logger/logger.dart';
 
-/// Discover source structure from a URL without generating a config.
+// Discover source structure from a URL without generating a config.
 class DiscoverCommand extends Command<void> {
   DiscoverCommand() {
     argParser

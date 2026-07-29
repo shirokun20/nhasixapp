@@ -1,8 +1,8 @@
-/// Network settings entities
-/// Extracted from settings_repository.dart
+// Network settings entities
+// Extracted from settings_repository.dart
 library;
 
-/// Network settings configuration
+// Network settings configuration
 class NetworkSettings {
   const NetworkSettings({
     required this.connectionTimeout,
@@ -19,7 +19,7 @@ class NetworkSettings {
   final String? userAgent;
 }
 
-/// Network status information
+// Network status information
 class NetworkStatus {
   const NetworkStatus({
     required this.isConnected,
@@ -34,7 +34,7 @@ class NetworkStatus {
   final String? error;
 }
 
-/// Proxy settings configuration
+// Proxy settings configuration
 class ProxySettings {
   const ProxySettings({
     required this.enabled,

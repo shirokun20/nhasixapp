@@ -8,64 +8,64 @@ export 'src/doh_provider.dart'; // Export DoH provider constants
 export 'src/native_download_payload.dart'; // v2 download payload model (§7)
 
 class KuronNative {
-  /// Singleton instance
+  // Singleton instance
   static final KuronNative instance = KuronNative();
 
   Future<String?> getPlatformVersion() {
     return KuronNativePlatform.instance.getPlatformVersion();
   }
 
-  /// Get System Info. Types: 'ram', 'storage', 'battery'
+  // Get System Info. Types: 'ram', 'storage', 'battery'
   Future<Map<Object?, Object?>?> getSystemInfo(String type) {
     return KuronNativePlatform.instance.getSystemInfo(type);
   }
 
-  /// Pick a directory using the native system picker.
-  /// Returns the path if selected, or null if cancelled.
+  // Pick a directory using the native system picker.
+  // Returns the path if selected, or null if cancelled.
   Future<String?> pickDirectory() {
     return KuronNativePlatform.instance.pickDirectory();
   }
 
-  /// Pick a text file using native file picker and return file content.
+  // Pick a text file using native file picker and return file content.
   Future<String?> pickTextFile({String? mimeType}) {
     return KuronNativePlatform.instance.pickTextFile(mimeType: mimeType);
   }
 
-  /// Pick a binary file using native file picker and return raw bytes.
+  // Pick a binary file using native file picker and return raw bytes.
   Future<Uint8List?> pickBinaryFile({String? mimeType}) {
     return KuronNativePlatform.instance.pickBinaryFile(mimeType: mimeType);
   }
 
-  /// Pick a ZIP file using native file picker and return content URI.
-  /// Returns the content URI of the selected ZIP file, or null if cancelled.
+  // Pick a ZIP file using native file picker and return content URI.
+  // Returns the content URI of the selected ZIP file, or null if cancelled.
   Future<String?> pickZipFile() {
     return KuronNativePlatform.instance.pickZipFile();
   }
 
-  /// Pick multiple ZIP files using native file picker and return content URIs.
+  // Pick multiple ZIP files using native file picker and return content URIs.
   Future<List<String>?> pickZipFiles() {
     return KuronNativePlatform.instance.pickZipFiles();
   }
 
-  /// Read ZIP file bytes from content URI.
-  /// Returns the bytes of the ZIP file.
+  // Read ZIP file bytes from content URI.
+  // Returns the bytes of the ZIP file.
   Future<Uint8List?> readZipBytes(String contentUri) {
     return KuronNativePlatform.instance.readZipBytes(contentUri);
   }
 
-  /// Resolve ZIP display name from content URI.
+  // Resolve ZIP display name from content URI.
   Future<String?> getZipDisplayName(String contentUri) {
     return KuronNativePlatform.instance.getZipDisplayName(contentUri);
   }
 
-  /// Extract ZIP file natively to destination directory with progress notifications.
+  // Extract ZIP file natively to destination directory with progress notifications.
   ///
-  /// This is a native Android implementation that:
-  /// - Streams ZIP data directly to disk (no memory loading)
-  /// - Shows system notifications with progress
-  /// - Calls onProgress callback for real-time updates
+  // This is a native Android implementation that:
+  // - Streams ZIP data directly to disk (no memory loading)
+  // - Shows system notifications with progress
+  // - Calls onProgress callback for real-time updates
   ///
-  /// Returns a map with 'success', 'imageCount', and 'destinationPath'.
+  // Returns a map with 'success', 'imageCount', and 'destinationPath'.
   Future<Map<String, dynamic>?> extractZipFile({
     required String contentUri,
     required String destinationPath,
@@ -129,8 +129,8 @@ class KuronNative {
     );
   }
 
-  /// Clears all cookies from the native WebView storage.
-  /// Useful for logout.
+  // Clears all cookies from the native WebView storage.
+  // Useful for logout.
   Future<void> clearCookies() {
     return KuronNativePlatform.instance.clearCookies();
   }
@@ -195,7 +195,7 @@ class KuronNative {
     );
   }
 
-  /// Gets the clearance token headlessly
+  // Gets the clearance token headlessly
   Future<Map<String, dynamic>?> getHeadlessClearance({
     required String url,
   }) {
@@ -246,13 +246,13 @@ class KuronNative {
     );
   }
 
-  /// Open a local AVIF image in an external gallery/photo app.
+  // Open a local AVIF image in an external gallery/photo app.
   Future<void> openAvif({required String filePath}) {
     return KuronNativePlatform.instance.openAvif(filePath: filePath);
   }
 
-  /// Convert local AVIF file to WebP using native FFmpeg.
-  /// Returns converted file path or null when conversion fails.
+  // Convert local AVIF file to WebP using native FFmpeg.
+  // Returns converted file path or null when conversion fails.
   Future<String?> convertAvifToWebP({
     required String inputPath,
     int quality = 45,
@@ -265,20 +265,20 @@ class KuronNative {
     );
   }
 
-  /// Set DNS over HTTPS provider.
-  /// Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  // Set DNS over HTTPS provider.
+  // Provider values: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
   Future<bool> setDohProvider(int provider) {
     return KuronNativePlatform.instance.setDohProvider(provider);
   }
 
-  /// Get current DNS over HTTPS provider.
-  /// Returns: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
+  // Get current DNS over HTTPS provider.
+  // Returns: -1 (disabled), 1 (Cloudflare), 2 (Google), 3 (AdGuard), 4 (Quad9)
   Future<int> getDohProvider() {
     return KuronNativePlatform.instance.getDohProvider();
   }
 
-  /// Make HTTP request using native OkHttp with DoH support.
-  /// Returns map with 'statusCode', 'body', and 'headers'.
+  // Make HTTP request using native OkHttp with DoH support.
+  // Returns map with 'statusCode', 'body', and 'headers'.
   Future<Map<String, dynamic>> makeHttpRequest({
     required String url,
     String method = 'GET',
@@ -293,8 +293,8 @@ class KuronNative {
     );
   }
 
-  /// Download binary data (images, files) using native OkHttp with DoH support.
-  /// Returns raw bytes.
+  // Download binary data (images, files) using native OkHttp with DoH support.
+  // Returns raw bytes.
   Future<Uint8List> downloadBinary({
     required String url,
     Map<String, String>? headers,
@@ -305,30 +305,30 @@ class KuronNative {
     );
   }
 
-  /// Get app DNS provider state with richer details.
+  // Get app DNS provider state with richer details.
   Future<Map<String, dynamic>> getDnsProviderState() {
     return KuronNativePlatform.instance.getDnsProviderState();
   }
 
-  /// Get device-level Android Private DNS diagnostics.
-  /// Returns map with 'isActive', 'serverName', optional 'reason'.
+  // Get device-level Android Private DNS diagnostics.
+  // Returns map with 'isActive', 'serverName', optional 'reason'.
   Future<Map<String, dynamic>?> getPrivateDnsDiagnostics() {
     return KuronNativePlatform.instance.getPrivateDnsDiagnostics();
   }
 
-  /// Open Android DNS-related system settings with fallback.
+  // Open Android DNS-related system settings with fallback.
   Future<bool> openDnsSettings() {
     return KuronNativePlatform.instance.openDnsSettings();
   }
 
-  /// Cancel an in-flight [getThumbnailForWebP] request by [requestId].
-  /// Called from widget [dispose] so the native HTTP download stops early.
+  // Cancel an in-flight [getThumbnailForWebP] request by [requestId].
+  // Called from widget [dispose] so the native HTTP download stops early.
   Future<void> cancelWebPThumbnail(String requestId) {
     return KuronNativePlatform.instance.cancelWebPThumbnail(requestId);
   }
 
-  /// Detect manga speech bubbles using on-device ONNX model.
-  /// Returns list of [BubbleBox]-compatible maps.
+  // Detect manga speech bubbles using on-device ONNX model.
+  // Returns list of [BubbleBox]-compatible maps.
   Future<List<Map<String, dynamic>>?> detectBubbles({
     required Uint8List imageBytes,
     required int imageWidth,

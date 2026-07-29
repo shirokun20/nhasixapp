@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// History entity for tracking reading history
+// History entity for tracking reading history
 class History extends Equatable {
   const History({
     required this.contentId,
@@ -34,12 +34,12 @@ class History extends Equatable {
   final int? chapterIndex;
   final String? chapterTitle;
 
-  /// Check if this is chapter-based content
-  /// Chapter mode is detected if:
-  /// 1. chapterId is set and not empty, OR
-  /// 2. chapterIndex is not null, OR
-  /// 3. chapterTitle is set and not empty, OR
-  /// 4. contentId contains chapter pattern (e.g., "manga-name-chapter-1")
+  // Check if this is chapter-based content
+  // Chapter mode is detected if:
+  // 1. chapterId is set and not empty, OR
+  // 2. chapterIndex is not null, OR
+  // 3. chapterTitle is set and not empty, OR
+  // 4. contentId contains chapter pattern (e.g., "manga-name-chapter-1")
   bool get isChapterMode {
     // Direct chapter metadata check
     if (chapterId != null && chapterId!.isNotEmpty) return true;
@@ -109,33 +109,33 @@ class History extends Equatable {
     );
   }
 
-  /// Get reading progress as percentage (0.0 to 1.0)
+  // Get reading progress as percentage (0.0 to 1.0)
   double get progress {
     if (totalPages == 0) return 0.0;
     return lastPage / totalPages;
   }
 
-  /// Get reading progress as percentage (0 to 100)
+  // Get reading progress as percentage (0 to 100)
   int get progressPercentage {
     return (progress * 100).round();
   }
 
-  /// Check if content was just started
+  // Check if content was just started
   bool get isJustStarted => lastPage <= 1;
 
-  /// Check if content is in progress
+  // Check if content is in progress
   bool get isInProgress => lastPage > 1 && !isCompleted;
 
-  /// Get remaining pages
+  // Get remaining pages
   int get remainingPages {
     if (totalPages == 0) return 0;
     return totalPages - lastPage + 1;
   }
 
-  /// Get pages read
+  // Get pages read
   int get pagesRead => lastPage;
 
-  /// Get formatted time spent
+  // Get formatted time spent
   String get formattedTimeSpent {
     final hours = timeSpent.inHours;
     final minutes = timeSpent.inMinutes.remainder(60);
@@ -150,7 +150,7 @@ class History extends Equatable {
     }
   }
 
-  /// Get reading status text
+  // Get reading status text
   String get statusText {
     if (isCompleted) return 'Completed';
     if (isInProgress) return 'Reading ($progressPercentage%)';
@@ -158,7 +158,7 @@ class History extends Equatable {
     return 'Not started';
   }
 
-  /// Get time since last viewed
+  // Get time since last viewed
   String get timeSinceLastViewed {
     final now = DateTime.now();
     final difference = now.difference(lastViewed);
@@ -174,7 +174,7 @@ class History extends Equatable {
     }
   }
 
-  /// Update reading progress
+  // Update reading progress
   History updateProgress(int newPage, {Duration? additionalTime}) {
     final newTimeSpent =
         additionalTime != null ? timeSpent + additionalTime : timeSpent;
@@ -189,7 +189,7 @@ class History extends Equatable {
     );
   }
 
-  /// Mark as completed
+  // Mark as completed
   History markCompleted() {
     return copyWith(
       isCompleted: true,
@@ -198,7 +198,7 @@ class History extends Equatable {
     );
   }
 
-  /// Reset progress
+  // Reset progress
   History reset() {
     return copyWith(
       lastPage: 1,
@@ -208,7 +208,7 @@ class History extends Equatable {
     );
   }
 
-  /// Create initial history entry
+  // Create initial history entry
   factory History.initial(String contentId, int totalPages,
       {String? title, String? coverUrl, String sourceId = 'nhentai'}) {
     return History(
@@ -220,5 +220,4 @@ class History extends Equatable {
       coverUrl: coverUrl,
     );
   }
-
 }

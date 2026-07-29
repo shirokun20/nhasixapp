@@ -11,7 +11,7 @@ import '../../../domain/repositories/repositories.dart';
 part 'content_event.dart';
 part 'content_state.dart';
 
-/// BLoC for managing content list with pagination, search, and infinite scrolling
+// BLoC for managing content list with pagination, search, and infinite scrolling
 class ContentBloc extends Bloc<ContentEvent, ContentState> {
   ContentBloc({
     required GetContentListUseCase getContentListUseCase,
@@ -51,7 +51,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
   SortOption _currentSortBy = SortOption.newest;
   DateTime? _lastFetchTime; // Track when data was actually fetched from server
 
-  /// Load initial content list
+  // Load initial content list
   Future<void> _onContentLoad(
     ContentLoadEvent event,
     Emitter<ContentState> emit,
@@ -154,7 +154,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Load more content for infinite scrolling
+  // Load more content for infinite scrolling
   Future<void> _onContentLoadMore(
     ContentLoadMoreEvent event,
     Emitter<ContentState> emit,
@@ -235,7 +235,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Refresh content (pull-to-refresh)
+  // Refresh content (pull-to-refresh)
   Future<void> _onContentRefresh(
     ContentRefreshEvent event,
     Emitter<ContentState> emit,
@@ -373,7 +373,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Handle sort option change
+  // Handle sort option change
   Future<void> _onContentSortChanged(
     ContentSortChangedEvent event,
     Emitter<ContentState> emit,
@@ -416,7 +416,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Retry loading content after error
+  // Retry loading content after error
   Future<void> _onContentRetry(
     ContentRetryEvent event,
     Emitter<ContentState> emit,
@@ -522,7 +522,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Clear content list
+  // Clear content list
   Future<void> _onContentClear(
     ContentClearEvent event,
     Emitter<ContentState> emit,
@@ -532,7 +532,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     emit(const ContentInitial());
   }
 
-  /// Clear search results and return to normal content
+  // Clear search results and return to normal content
   Future<void> _onContentClearSearch(
     ContentClearSearchEvent event,
     Emitter<ContentState> emit,
@@ -606,7 +606,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Search content with filters
+  // Search content with filters
   Future<void> _onContentSearch(
     ContentSearchEvent event,
     Emitter<ContentState> emit,
@@ -677,7 +677,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Load popular content
+  // Load popular content
   Future<void> _onContentLoadPopular(
     ContentLoadPopularEvent event,
     Emitter<ContentState> emit,
@@ -751,7 +751,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Load content by tag
+  // Load content by tag
   Future<void> _onContentLoadByTag(
     ContentLoadByTagEvent event,
     Emitter<ContentState> emit,
@@ -828,7 +828,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Determine error type from exception
+  // Determine error type from exception
   ContentErrorType _determineErrorType(dynamic error) {
     final errorString = error.toString().toLowerCase();
 
@@ -853,7 +853,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     }
   }
 
-  /// Navigate to next page
+  // Navigate to next page
   Future<void> _onContentNextPage(
     ContentNextPageEvent event,
     Emitter<ContentState> emit,
@@ -871,7 +871,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     await _loadSpecificPage(nextPage, currentState, emit);
   }
 
-  /// Navigate to previous page
+  // Navigate to previous page
   Future<void> _onContentPreviousPage(
     ContentPreviousPageEvent event,
     Emitter<ContentState> emit,
@@ -887,7 +887,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     await _loadSpecificPage(previousPage, currentState, emit);
   }
 
-  /// Navigate to specific page
+  // Navigate to specific page
   Future<void> _onContentGoToPage(
     ContentGoToPageEvent event,
     Emitter<ContentState> emit,
@@ -913,7 +913,7 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     await _loadSpecificPage(event.page, currentState, emit);
   }
 
-  /// Load specific page based on current context
+  // Load specific page based on current context
   Future<void> _loadSpecificPage(
     int page,
     ContentLoaded currentState,

@@ -1,6 +1,6 @@
 import '../../domain/entities/download_status.dart';
 
-/// Data model for DownloadStatus entity with database serialization
+// Data model for DownloadStatus entity with database serialization
 class DownloadStatusModel extends DownloadStatus {
   const DownloadStatusModel({
     required super.contentId,
@@ -21,7 +21,7 @@ class DownloadStatusModel extends DownloadStatus {
     super.sourceId,
   });
 
-  /// Create DownloadStatusModel from DownloadStatus entity
+  // Create DownloadStatusModel from DownloadStatus entity
   factory DownloadStatusModel.fromEntity(
     DownloadStatus status, {
     String? title,
@@ -48,7 +48,7 @@ class DownloadStatusModel extends DownloadStatus {
     );
   }
 
-  /// Convert to DownloadStatus entity
+  // Convert to DownloadStatus entity
   DownloadStatus toEntity() {
     return DownloadStatus(
       contentId: contentId,
@@ -70,7 +70,7 @@ class DownloadStatusModel extends DownloadStatus {
     );
   }
 
-  /// Create from database map
+  // Create from database map
   factory DownloadStatusModel.fromMap(Map<String, dynamic> map) {
     return DownloadStatusModel(
       contentId: map['id'], // Changed from content_id to id
@@ -98,7 +98,7 @@ class DownloadStatusModel extends DownloadStatus {
     );
   }
 
-  /// Convert to database map
+  // Convert to database map
   Map<String, dynamic> toMap() {
     return {
       'id': contentId, // Changed from content_id to id

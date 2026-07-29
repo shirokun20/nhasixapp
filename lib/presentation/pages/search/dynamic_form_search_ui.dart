@@ -20,17 +20,17 @@ import 'package:nhasixapp/presentation/pages/search/search_form_contract_adapter
 
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Generic search form UI driven entirely by [SearchFormConfig].
+// Generic search form UI driven entirely by [SearchFormConfig].
 ///
-/// Renders form fields based on the `searchForm.params` block in the source
-/// config JSON. Supports field types:
-///   - `text`   → [TextFormField]
-///   - `select` → segmented choice chips
-///   - `tag`    → text field (genre slug)
-///   - `page`   → hidden (managed internally)
+// Renders form fields based on the `searchForm.params` block in the source
+// config JSON. Supports field types:
+//   - `text`   → [TextFormField]
+//   - `select` → segmented choice chips
+//   - `tag`    → text field (genre slug)
+//   - `page`   → hidden (managed internally)
 ///
-/// On submit it saves a `SearchFilter` with `query = "raw:<params>"` which
-/// is consumed by [GenericScraperAdapter.search] to build the search URL.
+// On submit it saves a `SearchFilter` with `query = "raw:<params>"` which
+// is consumed by [GenericScraperAdapter.search] to build the search URL.
 class DynamicFormSearchUI extends StatefulWidget {
   final SearchFormConfig config;
   final String sourceId;

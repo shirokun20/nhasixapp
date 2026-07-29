@@ -21,19 +21,19 @@ enum _LocalThumbnailPreviewMode {
   heavyPlaceholder,
 }
 
-/// Progressive Image Widget with enhanced local file priority
+// Progressive Image Widget with enhanced local file priority
 ///
-/// Loading priority:
-/// 1. Downloaded content (nhasix/[id]/images/)
-/// 2. Local cache
-/// 3. Network with placeholder/error handling
+// Loading priority:
+// 1. Downloaded content (nhasix/[id]/images/)
+// 2. Local cache
+// 3. Network with placeholder/error handling
 ///
-/// Features:
-/// - Fast local file detection
-/// - Shimmer placeholder
-/// - Error state handling
-/// - Memory optimization
-/// - Support for both page images and thumbnails
+// Features:
+// - Fast local file detection
+// - Shimmer placeholder
+// - Error state handling
+// - Memory optimization
+// - Support for both page images and thumbnails
 class ProgressiveImageWidget extends StatefulWidget {
   const ProgressiveImageWidget({
     super.key,
@@ -307,7 +307,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     }
   }
 
-  /// Get local image path based on type (thumbnail or page)
+  // Get local image path based on type (thumbnail or page)
   Future<String?> _getLocalImagePath() async {
     if (widget.contentId == null) return null;
 
@@ -331,7 +331,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return localPath;
   }
 
-  /// Build local file image
+  // Build local file image
   Widget _buildLocalImage(String localPath) {
     if (kDebugMode) {
       _logger.d('📸 Using local image: $localPath');
@@ -573,7 +573,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     return imageWidget;
   }
 
-  /// Build network image with caching
+  // Build network image with caching
   Widget _buildNetworkImage({String? forceUrl}) {
     // Check for fallback URLs separated by pipe
     final targetUrl = forceUrl ?? widget.networkUrl;
@@ -709,7 +709,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     );
   }
 
-  /// Build shimmer placeholder
+  // Build shimmer placeholder
   Widget _buildPlaceholder() {
     return KuronShimmer(
       baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -728,7 +728,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     );
   }
 
-  /// Build error widget
+  // Build error widget
   Widget _buildErrorWidget() {
     return Container(
       width: widget.width,
@@ -762,8 +762,8 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   }
 }
 
-/// Specialized Progressive Image Widget for Reader Screen
-/// Optimized for full-screen reading with enhanced local file support
+// Specialized Progressive Image Widget for Reader Screen
+// Optimized for full-screen reading with enhanced local file support
 class ProgressiveReaderImageWidget extends StatefulWidget {
   const ProgressiveReaderImageWidget({
     super.key,
@@ -961,7 +961,7 @@ class _ProgressiveReaderImageWidgetState
     return _buildNetworkImageWithDynamicSize(context);
   }
 
-  /// Build network image with dynamic sizing
+  // Build network image with dynamic sizing
   Widget _buildNetworkImageWithDynamicSize(BuildContext context,
       {String? forceUrl}) {
     final targetUrl = forceUrl ?? widget.networkUrl;
@@ -1018,7 +1018,7 @@ class _ProgressiveReaderImageWidgetState
     );
   }
 
-  /// Build local image with dynamic sizing
+  // Build local image with dynamic sizing
   Widget _buildLocalImageWithDynamicSize(String localPath) {
     final imageProvider = FileImage(File(localPath));
 
@@ -1042,7 +1042,7 @@ class _ProgressiveReaderImageWidgetState
     );
   }
 
-  /// Cache network image in ImageCacheService for future fast access
+  // Cache network image in ImageCacheService for future fast access
   Future<void> _cacheNetworkImage(String url) async {
     try {
       // Only cache if not already cached
@@ -1076,7 +1076,7 @@ class _ProgressiveReaderImageWidgetState
     }
   }
 
-  /// Calculate dynamic size for the image based on its dimensions
+  // Calculate dynamic size for the image based on its dimensions
   void _calculateImageSize(ImageInfo imageInfo, bool synchronousCall) {
     final imageSize = Size(
       imageInfo.image.width.toDouble(),
@@ -1097,7 +1097,7 @@ class _ProgressiveReaderImageWidgetState
     }
   }
 
-  /// Get the display size for the image
+  // Get the display size for the image
   Size _getDisplaySize() {
     if (_imageSize == null) {
       // Fallback to screen size if dimensions not available
@@ -1166,8 +1166,8 @@ class _ProgressiveReaderImageWidgetState
   }
 }
 
-/// Specialized Progressive Image Widget for Thumbnails/Cards
-/// Optimized for grid view with enhanced caching
+// Specialized Progressive Image Widget for Thumbnails/Cards
+// Optimized for grid view with enhanced caching
 class ProgressiveThumbnailWidget extends StatelessWidget {
   const ProgressiveThumbnailWidget({
     super.key,

@@ -13,8 +13,8 @@ import '../../../domain/repositories/tag_repository.dart';
 part 'search_event.dart';
 part 'search_state.dart';
 
-/// BLoC for managing search functionality with advanced filters,
-/// search history, debounced search, and tag suggestions
+// BLoC for managing search functionality with advanced filters,
+// search history, debounced search, and tag suggestions
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
     required SearchContentUseCase searchContentUseCase,
@@ -72,14 +72,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   static const int _maxHistoryItems = 50;
   static const int _maxSuggestions = 10;
 
-  /// Debounce transformer for search events
+  // Debounce transformer for search events
   EventTransformer<T> _debounceTransformer<T>() {
     return (events, mapper) {
       return events.debounceTime(_debounceDelay).asyncExpand(mapper);
     };
   }
 
-  /// Initialize search with history and presets
+  // Initialize search with history and presets
   Future<void> _onSearchInitialize(
     SearchInitializeEvent event,
     Emitter<SearchState> emit,
@@ -159,7 +159,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Handle search query with debouncing
+  // Handle search query with debouncing
   Future<void> _onSearchQuery(
     SearchQueryEvent event,
     Emitter<SearchState> emit,
@@ -223,7 +223,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Handle search with filters
+  // Handle search with filters
   Future<void> _onSearchWithFilters(
     SearchWithFiltersEvent event,
     Emitter<SearchState> emit,
@@ -281,7 +281,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Update search filter without performing search (new flow)
+  // Update search filter without performing search (new flow)
   Future<void> _onSearchUpdateFilter(
     SearchUpdateFilterEvent event,
     Emitter<SearchState> emit,
@@ -320,7 +320,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     ));
   }
 
-  /// Submit search with current filter (new flow - triggers API call)
+  // Submit search with current filter (new flow - triggers API call)
   Future<void> _onSearchSubmitted(
     SearchSubmittedEvent event,
     Emitter<SearchState> emit,
@@ -411,7 +411,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Clear search results and filters
+  // Clear search results and filters
   Future<void> _onSearchClear(
     SearchClearEvent event,
     Emitter<SearchState> emit,
@@ -436,7 +436,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     ));
   }
 
-  /// Load more search results
+  // Load more search results
   Future<void> _onSearchLoadMore(
     SearchLoadMoreEvent event,
     Emitter<SearchState> emit,
@@ -493,7 +493,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Refresh search results
+  // Refresh search results
   Future<void> _onSearchRefresh(
     SearchRefreshEvent event,
     Emitter<SearchState> emit,
@@ -560,7 +560,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Retry search after error
+  // Retry search after error
   Future<void> _onSearchRetry(
     SearchRetryEvent event,
     Emitter<SearchState> emit,
@@ -578,7 +578,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Get search suggestions
+  // Get search suggestions
   Future<void> _onSearchGetSuggestions(
     SearchGetSuggestionsEvent event,
     Emitter<SearchState> emit,
@@ -601,7 +601,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Get tag suggestions
+  // Get tag suggestions
   Future<void> _onSearchGetTagSuggestions(
     SearchGetTagSuggestionsEvent event,
     Emitter<SearchState> emit,
@@ -622,7 +622,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Add query to search history
+  // Add query to search history
   Future<void> _onSearchAddToHistory(
     SearchAddToHistoryEvent event,
     Emitter<SearchState> emit,
@@ -655,7 +655,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Load search history
+  // Load search history
   Future<void> _onSearchLoadHistory(
     SearchLoadHistoryEvent event,
     Emitter<SearchState> emit,
@@ -681,7 +681,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Clear search history
+  // Clear search history
   Future<void> _onSearchClearHistory(
     SearchClearHistoryEvent event,
     Emitter<SearchState> emit,
@@ -703,7 +703,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Remove item from search history
+  // Remove item from search history
   Future<void> _onSearchRemoveFromHistory(
     SearchRemoveFromHistoryEvent event,
     Emitter<SearchState> emit,
@@ -728,7 +728,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Apply quick filter
+  // Apply quick filter
   Future<void> _onSearchApplyQuickFilter(
     SearchApplyQuickFilterEvent event,
     Emitter<SearchState> emit,
@@ -768,7 +768,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     add(SearchUpdateFilterEvent(newFilter));
   }
 
-  /// Toggle advanced search mode
+  // Toggle advanced search mode
   Future<void> _onSearchToggleAdvancedMode(
     SearchToggleAdvancedModeEvent event,
     Emitter<SearchState> emit,
@@ -783,7 +783,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Save search filter as preset
+  // Save search filter as preset
   Future<void> _onSearchSavePreset(
     SearchSavePresetEvent event,
     Emitter<SearchState> emit,
@@ -798,7 +798,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Load search preset
+  // Load search preset
   Future<void> _onSearchLoadPreset(
     SearchLoadPresetEvent event,
     Emitter<SearchState> emit,
@@ -810,7 +810,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Delete search preset
+  // Delete search preset
   Future<void> _onSearchDeletePreset(
     SearchDeletePresetEvent event,
     Emitter<SearchState> emit,
@@ -825,7 +825,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Get popular searches
+  // Get popular searches
   Future<void> _onSearchGetPopular(
     SearchGetPopularEvent event,
     Emitter<SearchState> emit,
@@ -837,7 +837,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     ));
   }
 
-  /// Update search sort option
+  // Update search sort option
   Future<void> _onSearchUpdateSort(
     SearchUpdateSortEvent event,
     Emitter<SearchState> emit,
@@ -856,7 +856,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Generate search suggestions based on query
+  // Generate search suggestions based on query
   Future<List<String>> _generateSearchSuggestions(String query) async {
     try {
       final suggestions = <String>[];
@@ -886,7 +886,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Generate tag suggestions based on query from assets/json/tags.json
+  // Generate tag suggestions based on query from assets/json/tags.json
   Future<List<Tag>> _generateTagSuggestions(String query) async {
     try {
       if (query.length < 2) return [];
@@ -917,7 +917,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Load search presets from storage
+  // Load search presets from storage
   Future<void> _loadSearchPresets() async {
     try {
       // Implement loading presets from preferences
@@ -929,7 +929,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Save search presets to storage
+  // Save search presets to storage
   Future<void> _saveSearchPresets() async {
     try {
       // Implement saving presets to preferences
@@ -939,7 +939,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Determine error type from exception
+  // Determine error type from exception
   SearchErrorType _determineErrorType(dynamic error) {
     final errorString = error.toString().toLowerCase();
 
@@ -966,20 +966,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// Get current filter
+  // Get current filter
   SearchFilter get currentFilter => _currentFilter;
 
-  /// Check if in advanced mode
+  // Check if in advanced mode
   bool get isAdvancedMode => _isAdvancedMode;
 
-  /// Get search presets
+  // Get search presets
   Map<String, SearchFilter> get searchPresets =>
       Map.unmodifiable(_searchPresets);
 
-  /// Get search history
+  // Get search history
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
 
-  /// Get last search filter from local datasource
+  // Get last search filter from local datasource
   Future<SearchFilter?> getLastSearchFilter() async {
     try {
       if (_currentSourceId == null) {
@@ -1004,7 +1004,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 }
 
-/// Extension to add debounce functionality to streams
+// Extension to add debounce functionality to streams
 extension StreamDebounce<T> on Stream<T> {
   Stream<T> debounceTime(Duration duration) {
     Timer? debounceTimer;

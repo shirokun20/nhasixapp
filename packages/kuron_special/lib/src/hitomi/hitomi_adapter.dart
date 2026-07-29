@@ -848,15 +848,15 @@ class HitomiAdapter implements GenericAdapter {
     return tags;
   }
 
-  /// Normalize query for Hitomi nozomi protocol.
+  // Normalize query for Hitomi nozomi protocol.
   ///
-  /// DynamicFormSearchUI produces queries in "raw:" format when using multi-field
-  /// forms. This method extracts the bare query string that nozomi protocol expects.
+  // DynamicFormSearchUI produces queries in "raw:" format when using multi-field
+  // forms. This method extracts the bare query string that nozomi protocol expects.
   ///
-  /// Examples:
-  ///   - "female:anal" → "female:anal" (no change, plain query)
-  ///   - "raw:q=female%3Aanal" → "female:anal" (extract & decode q param)
-  ///   - "" → ""
+  // Examples:
+  //   - "female:anal" → "female:anal" (no change, plain query)
+  //   - "raw:q=female%3Aanal" → "female:anal" (extract & decode q param)
+  //   - "" → ""
   String _normalizeQuery(String input) {
     if (input.isEmpty) return '';
 

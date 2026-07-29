@@ -3,17 +3,17 @@ import 'dart:typed_data';
 
 import 'reader_image_repair_utils.dart';
 
-/// Result from a single file header inspection.
+// Result from a single file header inspection.
 typedef FileHeaderResult = ({
   String? format, // 'webp', 'avif', or null
   int? width,
   int? height,
 });
 
-/// Inspect a single file's header for animated WebP/AVIF routing.
+// Inspect a single file's header for animated WebP/AVIF routing.
 ///
-/// Reads up to 4KB of the file header to determine format and dimensions.
-/// Designed to be `compute()`-eligible — top-level function, no closures.
+// Reads up to 4KB of the file header to determine format and dimensions.
+// Designed to be `compute()`-eligible — top-level function, no closures.
 FileHeaderResult inspectFileHeader(String path) {
   const empty = (format: null, width: null, height: null) as FileHeaderResult;
   const int maxNativeAvifHeight = 4096;
@@ -64,10 +64,14 @@ FileHeaderResult inspectFileHeader(String path) {
 
     if (ext == 'avif') {
       if (bytes.length < 12) return empty;
-      const kAvis0 = 0x61; const kAvis1 = 0x76;
-      const kAvis2 = 0x69; const kAvis3 = 0x73;
-      if (bytes[8] != kAvis0 || bytes[9] != kAvis1 ||
-          bytes[10] != kAvis2 || bytes[11] != kAvis3) {
+      const kAvis0 = 0x61;
+      const kAvis1 = 0x76;
+      const kAvis2 = 0x69;
+      const kAvis3 = 0x73;
+      if (bytes[8] != kAvis0 ||
+          bytes[9] != kAvis1 ||
+          bytes[10] != kAvis2 ||
+          bytes[11] != kAvis3) {
         return empty;
       }
       const kIspe = <int>[0x69, 0x73, 0x70, 0x65];
@@ -82,7 +86,11 @@ FileHeaderResult inspectFileHeader(String path) {
               ((bytes[i + 14] & 0xFF) << 8) |
               (bytes[i + 15] & 0xFF);
           if (h > maxNativeAvifHeight) return empty;
-          return (format: 'avif', width: w > 0 ? w : null, height: h > 0 ? h : null);
+          return (
+            format: 'avif',
+            width: w > 0 ? w : null,
+            height: h > 0 ? h : null
+          );
         }
       }
       return empty;
@@ -95,8 +103,8 @@ FileHeaderResult inspectFileHeader(String path) {
   }
 }
 
-/// Batch inspect file headers via [compute] or sync loop.
-/// Used when >10 files need inspection.
+// Batch inspect file headers via [compute] or sync loop.
+// Used when >10 files need inspection.
 List<FileHeaderResult> batchInspectHeaders(List<String> paths) {
   return [for (final p in paths) inspectFileHeader(p)];
 }

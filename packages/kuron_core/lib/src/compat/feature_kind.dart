@@ -1,8 +1,8 @@
-/// Feature kinds that a Source Config can declare or support.
+// Feature kinds that a Source Config can declare or support.
 ///
-/// Used by [FeatureContract], [ValidationReport], and runtime page/download
-/// pipelines to identify which capability a status, diagnostic, or
-/// resolved request belongs to.
+// Used by [FeatureContract], [ValidationReport], and runtime page/download
+// pipelines to identify which capability a status, diagnostic, or
+// resolved request belongs to.
 enum FeatureKind {
   home,
   search,

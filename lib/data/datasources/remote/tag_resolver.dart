@@ -6,8 +6,8 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
-/// Simple tag resolver that uses local assets only
-/// Loads tag mapping from configured asset path via RemoteConfigService
+// Simple tag resolver that uses local assets only
+// Loads tag mapping from configured asset path via RemoteConfigService
 class TagResolver {
   TagResolver({Logger? logger}) : _logger = logger ?? Logger();
 
@@ -17,7 +17,7 @@ class TagResolver {
   Map<String, Map<String, dynamic>>? _tagMapping;
   DateTime? _lastCacheUpdate;
 
-  /// Get tag mapping (from memory or local asset)
+  // Get tag mapping (from memory or local asset)
   Future<Map<String, Map<String, dynamic>>> getTagMapping() async {
     // Return from memory if available
     if (_tagMapping != null) {
@@ -45,7 +45,7 @@ class TagResolver {
     }
   }
 
-  /// Resolve tag IDs to Tag objects
+  // Resolve tag IDs to Tag objects
   Future<List<Tag>> resolveTagIds(List<String> tagIds) async {
     if (tagIds.isEmpty) return [];
 
@@ -76,7 +76,7 @@ class TagResolver {
     return tags;
   }
 
-  /// Get tag by ID
+  // Get tag by ID
   Future<Tag?> getTagById(String tagId) async {
     try {
       final tagMapping = await getTagMapping();
@@ -102,7 +102,7 @@ class TagResolver {
     }
   }
 
-  /// Get tag statistics by type
+  // Get tag statistics by type
   Future<Map<String, int>> getTagTypeStats() async {
     try {
       final tagMapping = await getTagMapping();
@@ -126,7 +126,7 @@ class TagResolver {
     }
   }
 
-  /// Search tags by name (fuzzy search)
+  // Search tags by name (fuzzy search)
   Future<List<Tag>> searchTags(String query, {int limit = 20}) async {
     if (query.isEmpty) return [];
 
@@ -163,7 +163,7 @@ class TagResolver {
     return results;
   }
 
-  /// Search across all tag types simultaneously with type information
+  // Search across all tag types simultaneously with type information
   Future<List<Tag>> searchAllTags(
     String query, {
     int limit = 50,
@@ -239,7 +239,7 @@ class TagResolver {
     }
   }
 
-  /// Get all tags from all types with type information
+  // Get all tags from all types with type information
   Future<List<Tag>> getAllTags({
     int offset = 0,
     int limit = 1000,
@@ -283,8 +283,8 @@ class TagResolver {
     }
   }
 
-  /// Get tags by type with enhanced filtering and pagination
-  /// Example usage: final tags = await tagResolver.getTagsByType('category');
+  // Get tags by type with enhanced filtering and pagination
+  // Example usage: final tags = await tagResolver.getTagsByType('category');
   Future<List<Tag>> getTagsByType(
     String type, {
     int offset = 0,
@@ -350,14 +350,14 @@ class TagResolver {
     }
   }
 
-  /// Clear memory cache
+  // Clear memory cache
   void clearCache() {
     _tagMapping = null;
     _lastCacheUpdate = null;
     _logger.d('Cleared tag mapping memory cache');
   }
 
-  /// Get cache statistics with detailed information
+  // Get cache statistics with detailed information
   Future<Map<String, dynamic>> getCacheStats() async {
     try {
       final tagMapping = await getTagMapping();
@@ -385,7 +385,7 @@ class TagResolver {
     }
   }
 
-  /// Load tag mapping from local asset with enhanced error handling
+  // Load tag mapping from local asset with enhanced error handling
   Future<Map<String, Map<String, dynamic>>?> _loadFromLocalAsset() async {
     try {
       // Import service locator at top if not already imported
@@ -466,7 +466,7 @@ class TagResolver {
     }
   }
 
-  /// Convert type code from local asset to type name
+  // Convert type code from local asset to type name
   String _convertTypeCodeToName(int typeCode) {
     switch (typeCode) {
       case 0:
@@ -490,7 +490,7 @@ class TagResolver {
     }
   }
 
-  /// Normalize tag type
+  // Normalize tag type
   String _normalizeTagType(dynamic type) {
     if (type == null) return 'tag';
 
@@ -515,7 +515,7 @@ class TagResolver {
     }
   }
 
-  /// Generate tag URL
+  // Generate tag URL
   String _generateTagUrl(dynamic name, dynamic type) {
     if (name == null) return '/';
 

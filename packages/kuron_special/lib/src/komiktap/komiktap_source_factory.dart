@@ -23,8 +23,8 @@ Map<String, dynamic> _withKomiktapBypassDefaults(Map<String, dynamic> config) {
   return patched;
 }
 
-/// Factory for KomikTap that routes GET requests through
-/// [WebViewSessionAdapter] so WAF challenges can trigger native bypass flow.
+// Factory for KomikTap that routes GET requests through
+// [WebViewSessionAdapter] so WAF challenges can trigger native bypass flow.
 class KomiktapSourceFactory implements SourceFactory {
   KomiktapSourceFactory({
     required Dio dio,

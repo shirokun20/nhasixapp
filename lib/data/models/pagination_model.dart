@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/pagination_info.dart';
 
-/// Data model for pagination information
+// Data model for pagination information
 class PaginationModel extends Equatable {
   const PaginationModel({
     required this.currentPage,
@@ -22,7 +22,7 @@ class PaginationModel extends Equatable {
   final int? previousPage;
   final List<int> visiblePages;
 
-  /// Create from JSON
+  // Create from JSON
   factory PaginationModel.fromJson(Map<String, dynamic> json) {
     return PaginationModel(
       currentPage: json['currentPage'] as int? ?? 1,
@@ -31,14 +31,13 @@ class PaginationModel extends Equatable {
       hasPrevious: json['hasPrevious'] as bool? ?? false,
       nextPage: json['nextPage'] as int?,
       previousPage: json['previousPage'] as int?,
-      visiblePages: (json['visiblePages'] as List<dynamic>?)
-              ?.cast<int>()
-              .toList() ??
-          const [],
+      visiblePages:
+          (json['visiblePages'] as List<dynamic>?)?.cast<int>().toList() ??
+              const [],
     );
   }
 
-  /// Convert to JSON
+  // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'currentPage': currentPage,
@@ -51,7 +50,7 @@ class PaginationModel extends Equatable {
     };
   }
 
-  /// Convert to domain entity
+  // Convert to domain entity
   PaginationInfo toEntity() {
     return PaginationInfo(
       currentPage: currentPage,
@@ -64,7 +63,7 @@ class PaginationModel extends Equatable {
     );
   }
 
-  /// Create from domain entity
+  // Create from domain entity
   factory PaginationModel.fromEntity(PaginationInfo entity) {
     return PaginationModel(
       currentPage: entity.currentPage,
@@ -77,7 +76,7 @@ class PaginationModel extends Equatable {
     );
   }
 
-  /// Create from scraper result
+  // Create from scraper result
   factory PaginationModel.fromScraperResult(
       Map<String, dynamic> scraperResult) {
     return PaginationModel(
@@ -91,7 +90,7 @@ class PaginationModel extends Equatable {
     );
   }
 
-  /// Copy with new values
+  // Copy with new values
   PaginationModel copyWith({
     int? currentPage,
     int? totalPages,
@@ -112,22 +111,22 @@ class PaginationModel extends Equatable {
     );
   }
 
-  /// Check if this is the first page
+  // Check if this is the first page
   bool get isFirstPage => currentPage == 1;
 
-  /// Check if this is the last page
+  // Check if this is the last page
   bool get isLastPage => currentPage == totalPages;
 
-  /// Get progress percentage (0.0 to 1.0)
+  // Get progress percentage (0.0 to 1.0)
   double get progressPercentage {
     if (totalPages <= 1) return 1.0;
     return currentPage / totalPages;
   }
 
-  /// Get remaining pages
+  // Get remaining pages
   int get remainingPages => totalPages - currentPage;
 
-  /// Get page range string (e.g., "Page 1 of 100")
+  // Get page range string (e.g., "Page 1 of 100")
   String get pageRangeString => 'Page $currentPage of $totalPages';
 
   @override

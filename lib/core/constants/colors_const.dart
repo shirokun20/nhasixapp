@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Brand colors extracted from Frame.svg
-/// Updated 2026-06-24: Warm human palette (physical-object inspired)
+// Brand colors extracted from Frame.svg
+// Updated 2026-06-24: Warm human palette (physical-object inspired)
 class AppColors {
   // Core brand — UNCHANGED (logo identity)
   static const Color brandCoral = Color(0xFFF1958E);
@@ -94,8 +94,8 @@ class AppColors {
   static const Color info = Color(0xFF7BB8FF);
 }
 
-/// Theme extension exposing Kuron-specific colors.
-/// Access via: `Theme.of(context).extension<KuronColors>()`
+// Theme extension exposing Kuron-specific colors.
+// Access via: `Theme.of(context).extension<KuronColors>()`
 class KuronColors extends ThemeExtension<KuronColors> {
   const KuronColors({
     required this.cardGradientStart,

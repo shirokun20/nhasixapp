@@ -1,39 +1,39 @@
 part of 'download_bloc.dart';
 
-/// Base class for all download BLoC states
+// Base class for all download BLoC states
 abstract class DownloadBlocState extends Equatable {
   const DownloadBlocState();
 
   @override
   List<Object?> get props => [];
 
-  /// Get all downloads - Implemented by subclasses
+  // Get all downloads - Implemented by subclasses
   List<DownloadStatus> get downloads => [];
 
-  /// Get download settings - Implemented by subclasses
+  // Get download settings - Implemented by subclasses
   DownloadSettings get settings => DownloadSettings.defaultSettings();
 
-  /// Get lastUpdated - Implemented by subclasses
+  // Get lastUpdated - Implemented by subclasses
   DateTime? get lastUpdated => null;
 
-  /// Get isProcessing - Implemented by subclasses
+  // Get isProcessing - Implemented by subclasses
   bool get isProcessing => false;
 
-  /// Get download by content ID - Implemented by subclasses
+  // Get download by content ID - Implemented by subclasses
   DownloadStatus? getDownload(String contentId) => null;
 }
 
-/// Initial state when download manager is not initialized
+// Initial state when download manager is not initialized
 class DownloadInitial extends DownloadBlocState {
   const DownloadInitial();
 }
 
-/// State when download manager is initializing
+// State when download manager is initializing
 class DownloadInitializing extends DownloadBlocState {
   const DownloadInitializing();
 }
 
-/// State when downloads are loaded and ready
+// State when downloads are loaded and ready
 class DownloadLoaded extends DownloadBlocState {
   const DownloadLoaded({
     required this.downloads,
@@ -57,13 +57,13 @@ class DownloadLoaded extends DownloadBlocState {
   @override
   final bool isProcessing;
 
-  /// Whether selection mode is active for bulk operations
+  // Whether selection mode is active for bulk operations
   final bool isSelectionMode;
 
-  /// Set of selected content IDs
+  // Set of selected content IDs
   final Set<String> selectedItems;
 
-  /// Whether bulk delete operation is in progress
+  // Whether bulk delete operation is in progress
   final bool isBulkDeleting;
 
   @override
@@ -77,7 +77,7 @@ class DownloadLoaded extends DownloadBlocState {
         isBulkDeleting,
       ];
 
-  /// Get download by content ID
+  // Get download by content ID
   @override
   DownloadStatus? getDownload(String contentId) {
     try {
@@ -87,36 +87,36 @@ class DownloadLoaded extends DownloadBlocState {
     }
   }
 
-  /// Get downloads by state
+  // Get downloads by state
   List<DownloadStatus> getDownloadsByState(DownloadState state) {
     return downloads.where((d) => d.state == state).toList();
   }
 
-  /// Check if content is being downloaded
+  // Check if content is being downloaded
   bool isDownloading(String contentId) {
     return downloads.any((d) =>
         d.contentId == contentId && d.state == DownloadState.downloading);
   }
 
-  /// Check if content is queued for download
+  // Check if content is queued for download
   bool isQueued(String contentId) {
-    return downloads.any((d) =>
-        d.contentId == contentId && d.state == DownloadState.queued);
+    return downloads.any(
+        (d) => d.contentId == contentId && d.state == DownloadState.queued);
   }
 
-  /// Check if content is downloaded
+  // Check if content is downloaded
   bool isDownloaded(String contentId) {
-    return downloads.any((d) =>
-        d.contentId == contentId && d.state == DownloadState.completed);
+    return downloads.any(
+        (d) => d.contentId == contentId && d.state == DownloadState.completed);
   }
 
-  /// Check if download failed
+  // Check if download failed
   bool isFailed(String contentId) {
-    return downloads.any((d) =>
-        d.contentId == contentId && d.state == DownloadState.failed);
+    return downloads.any(
+        (d) => d.contentId == contentId && d.state == DownloadState.failed);
   }
 
-  /// Copy with updated values
+  // Copy with updated values
   DownloadLoaded copyWith({
     List<DownloadStatus>? downloads,
     DownloadSettings? settings,
@@ -138,7 +138,7 @@ class DownloadLoaded extends DownloadBlocState {
   }
 }
 
-/// State when processing downloads (bulk operations)
+// State when processing downloads (bulk operations)
 class DownloadProcessing extends DownloadLoaded {
   const DownloadProcessing({
     required super.downloads,
@@ -187,7 +187,7 @@ class DownloadProcessing extends DownloadLoaded {
   }
 }
 
-/// State when an error occurs - Keeps previous state data
+// State when an error occurs - Keeps previous state data
 class DownloadError extends DownloadBlocState {
   const DownloadError({
     required this.message,
@@ -212,31 +212,31 @@ class DownloadError extends DownloadBlocState {
         stackTrace,
       ];
 
-  /// Keeps access to downloads from previous state
+  // Keeps access to downloads from previous state
   @override
   List<DownloadStatus> get downloads => previousState?.downloads ?? [];
 
-  /// Keeps access to settings from previous state
+  // Keeps access to settings from previous state
   @override
   DownloadSettings get settings =>
       previousState?.settings ?? DownloadSettings.defaultSettings();
 
-  /// Keeps access to lastUpdated from previous state
+  // Keeps access to lastUpdated from previous state
   @override
   DateTime? get lastUpdated => previousState?.lastUpdated;
 
-  /// Keeps access to isProcessing - always false for errors
+  // Keeps access to isProcessing - always false for errors
   @override
   bool get isProcessing => false;
 
-  /// Get download by content ID - preserved from previous state
+  // Get download by content ID - preserved from previous state
   @override
   DownloadStatus? getDownload(String contentId) {
     return previousState?.getDownload(contentId);
   }
 }
 
-/// Download settings configuration
+// Download settings configuration
 class DownloadSettings extends Equatable {
   const DownloadSettings({
     this.maxConcurrentDownloads = 3,
@@ -274,7 +274,7 @@ class DownloadSettings extends Equatable {
         customStorageRoot,
       ];
 
-  /// Copy with updated values
+  // Copy with updated values
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
     String? imageQuality,
@@ -300,13 +300,13 @@ class DownloadSettings extends Equatable {
     );
   }
 
-  /// Create default settings
+  // Create default settings
   factory DownloadSettings.defaultSettings() {
     return const DownloadSettings();
   }
 }
 
-/// Download error types
+// Download error types
 enum DownloadErrorType {
   network,
   storage,
@@ -318,9 +318,9 @@ enum DownloadErrorType {
   unknown,
 }
 
-/// Extension for DownloadErrorType
+// Extension for DownloadErrorType
 extension DownloadErrorTypeExtension on DownloadErrorType {
-  /// Check if error is retryable
+  // Check if error is retryable
   bool get isRetryable {
     switch (this) {
       case DownloadErrorType.network:
@@ -336,7 +336,7 @@ extension DownloadErrorTypeExtension on DownloadErrorType {
     }
   }
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String get message {
     switch (this) {
       case DownloadErrorType.network:

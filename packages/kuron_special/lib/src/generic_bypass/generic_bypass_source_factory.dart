@@ -6,12 +6,12 @@ import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 import '../webview_session/webview_session_adapter.dart';
 
-/// Reusable factory for any source that needs Cloudflare bypass via
-/// [WebViewSessionAdapter]. Wraps Dio with an interceptor that delegates
-/// GET requests through `requestWithBypass`.
+// Reusable factory for any source that needs Cloudflare bypass via
+// [WebViewSessionAdapter]. Wraps Dio with an interceptor that delegates
+// GET requests through `requestWithBypass`.
 ///
-/// Register one instance per source ID, passing a pre-configured
-/// [WebViewSessionAdapter] with isolated cookie storage.
+// Register one instance per source ID, passing a pre-configured
+// [WebViewSessionAdapter] with isolated cookie storage.
 class GenericBypassSourceFactory implements SourceFactory {
   final String _sourceId;
   final Dio _dio;
@@ -56,8 +56,8 @@ class GenericBypassSourceFactory implements SourceFactory {
   }
 }
 
-/// Dio wrapper that routes GET through [WebViewSessionAdapter.requestWithBypass]
-/// so Cloudflare 403 triggers native WebView bypass.
+// Dio wrapper that routes GET through [WebViewSessionAdapter.requestWithBypass]
+// so Cloudflare 403 triggers native WebView bypass.
 class _BypassDioInterceptor with DioMixin implements Dio {
   final Dio _baseDio;
   final WebViewSessionAdapter _sessionAdapter;

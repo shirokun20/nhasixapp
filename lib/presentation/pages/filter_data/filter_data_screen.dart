@@ -17,7 +17,7 @@ import '../../widgets/filter_type_tab_bar_widget.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/shimmer_loading_widgets.dart';
 
-/// Screen for advanced filter data selection with modern UI
+// Screen for advanced filter data selection with modern UI
 class FilterDataScreen extends StatefulWidget {
   const FilterDataScreen({
     super.key,
@@ -484,8 +484,8 @@ class _FilterDataScreenState extends State<FilterDataScreen>
   }
 }
 
-/// Small chip widget for a single tag in the filter list.
-/// Tap cycles: unselected → include (green) → exclude (red) → unselected.
+// Small chip widget for a single tag in the filter list.
+// Tap cycles: unselected → include (green) → exclude (red) → unselected.
 class _FilterTagChip extends StatelessWidget {
   const _FilterTagChip({
     super.key,

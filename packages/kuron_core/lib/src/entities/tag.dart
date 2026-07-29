@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-/// Tag entity representing content metadata tags.
+// Tag entity representing content metadata tags.
 ///
-/// Tags categorize content by artist, character, parody, etc.
+// Tags categorize content by artist, character, parody, etc.
 class Tag extends Equatable {
   const Tag({
     required this.id,
@@ -13,22 +13,22 @@ class Tag extends Equatable {
     this.slug,
   });
 
-  /// Tag ID
+  // Tag ID
   final int id;
 
-  /// Tag name
+  // Tag name
   final String name;
 
-  /// Tag type (tag, artist, character, parody, group, language, category)
+  // Tag type (tag, artist, character, parody, group, language, category)
   final String type;
 
-  /// Usage/popularity count
+  // Usage/popularity count
   final int count;
 
-  /// URL to tag page (source-specific)
+  // URL to tag page (source-specific)
   final String url;
 
-  /// URL-safe slug
+  // URL-safe slug
   final String? slug;
 
   @override
@@ -52,38 +52,38 @@ class Tag extends Equatable {
     );
   }
 
-  /// Get display name with count
+  // Get display name with count
   String get displayName => '$name ($count)';
 
-  /// Check if tag is of specific type
+  // Check if tag is of specific type
   bool isType(String tagType) => type.toLowerCase() == tagType.toLowerCase();
 
-  /// Check if tag is artist
+  // Check if tag is artist
   bool get isArtist => isType('artist');
 
-  /// Check if tag is character
+  // Check if tag is character
   bool get isCharacter => isType('character');
 
-  /// Check if tag is parody
+  // Check if tag is parody
   bool get isParody => isType('parody');
 
-  /// Check if tag is group
+  // Check if tag is group
   bool get isGroup => isType('group');
 
-  /// Check if tag is language
+  // Check if tag is language
   bool get isLanguage => isType('language');
 
-  /// Check if tag is category
+  // Check if tag is category
   bool get isCategory => isType('category');
 
-  /// Check if tag is regular tag
+  // Check if tag is regular tag
   bool get isRegularTag => isType('tag');
 
-  /// Check if tag is popular (high count)
+  // Check if tag is popular (high count)
   bool get isPopular => count > 1000;
 }
 
-/// Tag type constants
+// Tag type constants
 class TagType {
   static const String tag = 'tag';
   static const String artist = 'artist';

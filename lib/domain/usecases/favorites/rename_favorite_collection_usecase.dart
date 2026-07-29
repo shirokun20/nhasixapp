@@ -1,6 +1,6 @@
 import '../../repositories/user_data_repository.dart';
 
-/// Use case for renaming a favorite collection
+// Use case for renaming a favorite collection
 class RenameFavoriteCollectionUseCase {
   RenameFavoriteCollectionUseCase(this._repository);
 

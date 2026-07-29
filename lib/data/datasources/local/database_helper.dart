@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
-/// Database helper class for managing SQLite database
+// Database helper class for managing SQLite database
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
   static const int _databaseVersion =
@@ -18,19 +18,19 @@ class DatabaseHelper {
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
 
-  /// Get database instance
+  // Get database instance
   Future<Database> get database async {
     _database ??= await _initDatabase();
     return _database!;
   }
 
-  /// Get database path
+  // Get database path
   Future<String> getDatabasePath() async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
     return '${documentsDirectory.path}/$_databaseName';
   }
 
-  /// Initialize database
+  // Initialize database
   Future<Database> _initDatabase() async {
     try {
       final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -81,7 +81,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Configure database settings
+  // Configure database settings
   Future<void> _onConfigure(Database db) async {
     try {
       // Enable foreign key constraints
@@ -103,7 +103,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Create database tables
+  // Create database tables
   Future<void> _onCreate(Database db, int version) async {
     _logger.i('Creating database tables...');
 
@@ -131,7 +131,7 @@ class DatabaseHelper {
     _logger.i('Database tables created successfully');
   }
 
-  /// Handle database upgrades
+  // Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     _logger.i('Upgrading database from version $oldVersion to $newVersion');
 
@@ -497,7 +497,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Create favorites table with source_id for multi-source support
+  // Create favorites table with source_id for multi-source support
   void _createFavoritesTable(Batch batch) {
     batch.execute('''
       CREATE TABLE favorites (
@@ -536,7 +536,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create downloads table with source_id for multi-source support
+  // Create downloads table with source_id for multi-source support
   void _createDownloadsTable(Batch batch) {
     batch.execute('''
       CREATE TABLE downloads (
@@ -560,7 +560,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create history table with source_id for multi-source support
+  // Create history table with source_id for multi-source support
   void _createHistoryTable(Batch batch) {
     batch.execute('''
       CREATE TABLE history (
@@ -582,7 +582,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create preferences table
+  // Create preferences table
   void _createPreferencesTable(Batch batch) {
     batch.execute('''
       CREATE TABLE preferences (
@@ -592,7 +592,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create search history table
+  // Create search history table
   void _createSearchHistoryTable(Batch batch) {
     batch.execute('''
       CREATE TABLE search_history (
@@ -603,7 +603,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create search filter state table
+  // Create search filter state table
   void _createSearchFilterStateTable(Batch batch) {
     batch.execute('''
       CREATE TABLE search_filter_state (
@@ -614,7 +614,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create reader positions table with source_id for multi-source support
+  // Create reader positions table with source_id for multi-source support
   void _createReaderPositionsTable(Batch batch) {
     batch.execute('''
       CREATE TABLE reader_positions (
@@ -634,7 +634,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create doujin list table for Crotpedia
+  // Create doujin list table for Crotpedia
   void _createDoujinListTable(Batch batch) {
     batch.execute('''
       CREATE TABLE doujin_list (
@@ -646,7 +646,7 @@ class DatabaseHelper {
     ''');
   }
 
-  /// Create database indexes for performance
+  // Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Favorites indexes
     batch.execute(
@@ -685,7 +685,7 @@ class DatabaseHelper {
         'CREATE INDEX idx_reader_source ON reader_positions (source_id)');
   }
 
-  /// Insert default data
+  // Insert default data
   void _insertDefaultData(Batch batch) {
     // Insert default preferences
     final defaultPreferences = {
@@ -715,7 +715,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Drop all tables (for database recreation)
+  // Drop all tables (for database recreation)
   Future<void> _dropAllTables(Database db) async {
     final tables = [
       'search_filter_state',
@@ -733,7 +733,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Close database connection
+  // Close database connection
   Future<void> close() async {
     final db = _database;
     if (db != null) {
@@ -743,7 +743,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Clear all data (for testing or reset)
+  // Clear all data (for testing or reset)
   Future<void> clearAllData() async {
     final db = await database;
     final batch = db.batch();
@@ -762,7 +762,7 @@ class DatabaseHelper {
     _logger.i('All data cleared from database');
   }
 
-  /// Get database file size
+  // Get database file size
   Future<int> getDatabaseSize() async {
     try {
       final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -779,7 +779,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Vacuum database to reclaim space
+  // Vacuum database to reclaim space
   Future<void> vacuum() async {
     try {
       final db = await database;
@@ -790,7 +790,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Check database integrity
+  // Check database integrity
   Future<bool> checkIntegrity() async {
     try {
       final db = await database;
@@ -810,7 +810,7 @@ class DatabaseHelper {
     }
   }
 
-  /// Reset database by deleting and recreating it
+  // Reset database by deleting and recreating it
   Future<void> resetDatabase() async {
     try {
       // Close existing connection

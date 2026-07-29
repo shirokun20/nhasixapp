@@ -3,7 +3,7 @@ import '../../entities/entities.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for adding content to reading history
+// Use case for adding content to reading history
 class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
   AddToHistoryUseCase(this._userDataRepository);
 
@@ -61,7 +61,7 @@ class AddToHistoryUseCase extends UseCase<void, AddToHistoryParams> {
   }
 }
 
-/// Parameters for AddToHistoryUseCase
+// Parameters for AddToHistoryUseCase
 class AddToHistoryParams extends UseCaseParams {
   const AddToHistoryParams({
     required this.contentId,
@@ -130,7 +130,7 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params from string ID
+  // Create params from string ID
   factory AddToHistoryParams.fromString(
     String contentId,
     int page,
@@ -159,7 +159,7 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params from int ID
+  // Create params from int ID
   factory AddToHistoryParams.fromInt(
     int contentId,
     int page,
@@ -188,7 +188,7 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params for starting to read (page 1)
+  // Create params for starting to read (page 1)
   factory AddToHistoryParams.startReading(
     ContentId contentId,
     int totalPages,
@@ -200,7 +200,7 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params for completing reading (last page)
+  // Create params for completing reading (last page)
   factory AddToHistoryParams.completeReading(
     ContentId contentId,
     int totalPages, {
@@ -220,12 +220,12 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params with reading time
+  // Create params with reading time
   AddToHistoryParams withTimeSpent(Duration timeSpent) {
     return copyWith(timeSpent: timeSpent);
   }
 
-  /// Create params for next page
+  // Create params for next page
   AddToHistoryParams nextPage({Duration? additionalTime}) {
     return copyWith(
       page: page < totalPages ? page + 1 : totalPages,
@@ -233,7 +233,7 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params for previous page
+  // Create params for previous page
   AddToHistoryParams previousPage({Duration? additionalTime}) {
     return copyWith(
       page: page > 1 ? page - 1 : 1,
@@ -241,12 +241,12 @@ class AddToHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Check if this is the first page
+  // Check if this is the first page
   bool get isFirstPage => page == 1;
 
-  /// Check if this is the last page
+  // Check if this is the last page
   bool get isLastPage => page == totalPages;
 
-  /// Get reading progress percentage
+  // Get reading progress percentage
   double get progressPercentage => page / totalPages;
 }

@@ -3,7 +3,7 @@ import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 import '../../entities/entities.dart';
 
-/// Use case for getting chapter images
+// Use case for getting chapter images
 class GetChapterImagesUseCase
     extends UseCase<ChapterData, GetChapterImagesParams> {
   GetChapterImagesUseCase(this._contentRepository);
@@ -19,7 +19,7 @@ class GetChapterImagesUseCase
   }
 }
 
-/// Parameters for GetChapterImagesUseCase
+// Parameters for GetChapterImagesUseCase
 class GetChapterImagesParams extends UseCaseParams {
   const GetChapterImagesParams({
     required this.chapterId,

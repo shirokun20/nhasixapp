@@ -3,11 +3,11 @@ import 'package:equatable/equatable.dart';
 import 'diagnostic_severity.dart';
 import 'feature_kind.dart';
 
-/// A single diagnostic produced by static, fixture, or live validation.
+// A single diagnostic produced by static, fixture, or live validation.
 ///
-/// All free-form context values must be passed through `SecretRedactor`
-/// before being stored on a diagnostic so persisted/reported diagnostics
-/// never carry raw cookies, tokens, or signed URLs.
+// All free-form context values must be passed through `SecretRedactor`
+// before being stored on a diagnostic so persisted/reported diagnostics
+// never carry raw cookies, tokens, or signed URLs.
 class ValidationDiagnostic extends Equatable {
   const ValidationDiagnostic({
     required this.severity,
@@ -18,27 +18,27 @@ class ValidationDiagnostic extends Equatable {
     this.context = const <String, Object?>{},
   });
 
-  /// Severity level. Validators must promote any diagnostic that blocks a
-  /// declared required feature to [DiagnosticSeverity.error].
+  // Severity level. Validators must promote any diagnostic that blocks a
+  // declared required feature to [DiagnosticSeverity.error].
   final DiagnosticSeverity severity;
 
-  /// Stable machine-readable code (e.g. `schemaVersionMissing`,
-  /// `contentIdPatternMissing`). Use camelCase. New codes must be appended
-  /// without renaming existing ones to keep external tooling stable.
+  // Stable machine-readable code (e.g. `schemaVersionMissing`,
+  // `contentIdPatternMissing`). Use camelCase. New codes must be appended
+  // without renaming existing ones to keep external tooling stable.
   final String code;
 
-  /// Human-readable explanation.
+  // Human-readable explanation.
   final String message;
 
-  /// Feature this diagnostic applies to, when applicable.
+  // Feature this diagnostic applies to, when applicable.
   final FeatureKind? feature;
 
-  /// Dotted JSON path of the offending config field, when applicable.
-  /// Example: `scraper.urlPatterns.detail.url`.
+  // Dotted JSON path of the offending config field, when applicable.
+  // Example: `scraper.urlPatterns.detail.url`.
   final String? path;
 
-  /// Pre-redacted structured context. Never put raw cookies, tokens, or
-  /// signed URLs here. Use `SecretRedactor` upstream.
+  // Pre-redacted structured context. Never put raw cookies, tokens, or
+  // signed URLs here. Use `SecretRedactor` upstream.
   final Map<String, Object?> context;
 
   ValidationDiagnostic copyWith({

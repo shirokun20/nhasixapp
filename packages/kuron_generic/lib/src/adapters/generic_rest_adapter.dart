@@ -1,7 +1,7 @@
-/// Generic REST adapter — handles JSON API sources.
+// Generic REST adapter — handles JSON API sources.
 ///
-/// Uses [GenericJsonParser] with JSONPath selectors from the config to map
-/// API responses to [Content] entities.
+// Uses [GenericJsonParser] with JSONPath selectors from the config to map
+// API responses to [Content] entities.
 library;
 
 import 'dart:convert';
@@ -18,12 +18,12 @@ import '../parsers/generic_json_parser.dart';
 import '../url_builder/generic_url_builder.dart';
 import 'generic_adapter.dart';
 
-/// Function type for generating anti-detection headers dynamically.
-/// Returns a map of HTTP headers. Optional [referer] parameter can be passed.
+// Function type for generating anti-detection headers dynamically.
+// Returns a map of HTTP headers. Optional [referer] parameter can be passed.
 typedef HeadersGenerator = Map<String, String> Function({String? referer});
 
-/// Function type for applying rate limiting delays before HTTP requests.
-/// Used to prevent IP banning by spreading out requests over time.
+// Function type for applying rate limiting delays before HTTP requests.
+// Used to prevent IP banning by spreading out requests over time.
 typedef DelayApplier = Future<void> Function();
 
 class GenericRestAdapter implements GenericAdapter {
@@ -284,9 +284,9 @@ class GenericRestAdapter implements GenericAdapter {
       // allGalleries endpoint which doesn't require a query string.
       final String rawBrowseTmpl;
       if (_sourceId == 'nhentai') {
-        rawBrowseTmpl = (!rawMap.keys.any((k) =>
-            ['query', 'q', 'search', 'keyword'].contains(k)) &&
-            endpoints['allGalleries'] is String
+        rawBrowseTmpl = (!rawMap.keys.any(
+                    (k) => ['query', 'q', 'search', 'keyword'].contains(k)) &&
+                endpoints['allGalleries'] is String
             ? endpoints['allGalleries'] as String
             : searchTemplate);
       } else {
@@ -749,13 +749,16 @@ class GenericRestAdapter implements GenericAdapter {
           if (e is! Map) continue;
           final p = e['path']?.toString() ?? '';
           if (p.isNotEmpty) {
-            final cleanBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+            final cleanBase =
+                base.endsWith('/') ? base.substring(0, base.length - 1) : base;
             final cleanPath = p.startsWith('/') ? p.substring(1) : p;
             var url = '$cleanBase/$cleanPath';
-            
+
             // Append fallback URL if available
             if (fallback != null && fallback.isNotEmpty) {
-              final cleanFallback = fallback.endsWith('/') ? fallback.substring(0, fallback.length - 1) : fallback;
+              final cleanFallback = fallback.endsWith('/')
+                  ? fallback.substring(0, fallback.length - 1)
+                  : fallback;
               url = '$url|$cleanFallback/$cleanPath';
             }
             images.add(url);
@@ -1036,9 +1039,9 @@ class GenericRestAdapter implements GenericAdapter {
       // allGalleries endpoint which doesn't require a query string.
       final String rawBrowseTmpl;
       if (_sourceId == 'nhentai') {
-        rawBrowseTmpl = (!rawMap.keys.any((k) =>
-            ['query', 'q', 'search', 'keyword'].contains(k)) &&
-            endpoints['allGalleries'] is String
+        rawBrowseTmpl = (!rawMap.keys.any(
+                    (k) => ['query', 'q', 'search', 'keyword'].contains(k)) &&
+                endpoints['allGalleries'] is String
             ? endpoints['allGalleries'] as String
             : template);
       } else {
@@ -1504,13 +1507,13 @@ class GenericRestAdapter implements GenericAdapter {
     }
   }
 
-  /// Extract all `fields` from a JSON [data] object according to `fieldsConfig`.
+  // Extract all `fields` from a JSON [data] object according to `fieldsConfig`.
   ///
-  /// Field def types:
-  /// - default (`path`)  — JSONPath scalar (or list if `multi: true`)
-  /// - `tagObjects`      — extract list of tag Maps and store as `tagObjects`
-  ///   key so [GenericContentMapper] can split by type.
-  /// - `coverBuilder`    — build cover URL via template (same as old adapter).
+  // Field def types:
+  // - default (`path`)  — JSONPath scalar (or list if `multi: true`)
+  // - `tagObjects`      — extract list of tag Maps and store as `tagObjects`
+  //   key so [GenericContentMapper] can split by type.
+  // - `coverBuilder`    — build cover URL via template (same as old adapter).
   Map<String, dynamic> _extractRestFields(
     dynamic data,
     Map<String, dynamic> fieldsConfig,
@@ -1608,7 +1611,7 @@ class GenericRestAdapter implements GenericAdapter {
     return result;
   }
 
-  /// Extract a scalar string from [data] using a field def `{path: "…"}`.
+  // Extract a scalar string from [data] using a field def `{path: "…"}`.
   String? _extractRestScalar(dynamic data, dynamic fieldDef) {
     if (fieldDef == null) return null;
     if (fieldDef is Map && fieldDef.containsKey('value')) {
@@ -1885,12 +1888,12 @@ class GenericRestAdapter implements GenericAdapter {
     );
   }
 
-  /// Extract image URLs from the response.
+  // Extract image URLs from the response.
   ///
-  /// Supports two modes:
-  /// 1. Direct JSONPath selector under `selectors['imageUrls']` or `selectors['images']`
-  /// 2. Template-based URL building via `selectors['imageUrlBuilder']` — used for sources
-  ///    like nhentai where image URLs must be constructed from `media_id` + page extensions.
+  // Supports two modes:
+  // 1. Direct JSONPath selector under `selectors['imageUrls']` or `selectors['images']`
+  // 2. Template-based URL building via `selectors['imageUrlBuilder']` — used for sources
+  //    like nhentai where image URLs must be constructed from `media_id` + page extensions.
   List<String> _parseImageUrls(
     dynamic data,
     Map<String, dynamic> selectors,
@@ -1991,7 +1994,7 @@ class GenericRestAdapter implements GenericAdapter {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  /// Extract headers from network.headers configuration block.
+  // Extract headers from network.headers configuration block.
   Map<String, String> _extractHeaders(Map<String, dynamic> rawConfig) {
     _logger.d(
         '$_sourceId: _extractHeaders called, rawConfig keys: ${rawConfig.keys.toList()}');
@@ -2019,9 +2022,9 @@ class GenericRestAdapter implements GenericAdapter {
     return headers;
   }
 
-  /// Merge Dio's default headers with configured headers.
-  /// Configured headers take precedence for conflicts (e.g., override User-Agent).
-  /// Preserves critical headers like cookies from Cloudflare bypass.
+  // Merge Dio's default headers with configured headers.
+  // Configured headers take precedence for conflicts (e.g., override User-Agent).
+  // Preserves critical headers like cookies from Cloudflare bypass.
   Map<String, dynamic> _mergeHeaders(
     Map<String, dynamic> dioDefaultHeaders,
     Map<String, String> configuredHeaders,
@@ -2035,18 +2038,18 @@ class GenericRestAdapter implements GenericAdapter {
     return merged;
   }
 
-  /// Get request headers with proper priority:
-  /// 1. If HeadersGenerator provided (AntiDetection), use it (highest priority)
-  /// 2. Otherwise, merge config headers with Dio defaults
-  /// 3. If no config headers, use Dio defaults only
-  /// Prepare HTTP request by applying delays and setting anti-detection headers.
+  // Get request headers with proper priority:
+  // 1. If HeadersGenerator provided (AntiDetection), use it (highest priority)
+  // 2. Otherwise, merge config headers with Dio defaults
+  // 3. If no config headers, use Dio defaults only
+  // Prepare HTTP request by applying delays and setting anti-detection headers.
   ///
-  /// This method mimics NhentaiApiClient's per-request preparation:
-  /// 1. Apply rate limiting delay (if configured)
-  /// 2. Generate and apply fresh headers to Dio instance (if configured)
+  // This method mimics NhentaiApiClient's per-request preparation:
+  // 1. Apply rate limiting delay (if configured)
+  // 2. Generate and apply fresh headers to Dio instance (if configured)
   ///
-  /// CRITICAL: Headers are set DIRECTLY on `_dio.options.headers`, not via `Options()`,
-  /// to match the behavior of specialized sources like NhentaiSource.
+  // CRITICAL: Headers are set DIRECTLY on `_dio.options.headers`, not via `Options()`,
+  // to match the behavior of specialized sources like NhentaiSource.
   Future<void> _prepareRequest(
     Map<String, dynamic> rawConfig, {
     String? referer,
@@ -2088,7 +2091,7 @@ class GenericRestAdapter implements GenericAdapter {
     return _rateLimiter.execute(request);
   }
 
-  /// Extract base URL from config for referer header.
+  // Extract base URL from config for referer header.
   String? _getBaseUrl(Map<String, dynamic> rawConfig) {
     final api = rawConfig['api'] as Map<String, dynamic>?;
     final apiUrl = (api?['url'] ?? api?['apiBase'])?.toString().trim();
@@ -2103,14 +2106,14 @@ class GenericRestAdapter implements GenericAdapter {
     return fallback;
   }
 
-  /// Resolves an avatar URL that may be:
-  ///  - protocol-relative  (`//i1.nhentai.net/avatars/…`)
-  ///  - root-relative      (`/avatars/…`)
-  ///  - bare relative      (`avatars/177627.png?_=…`)  ← nhentai API format
-  ///  - already absolute   (`https://…`)
+  // Resolves an avatar URL that may be:
+  //  - protocol-relative  (`//i1.nhentai.net/avatars/…`)
+  //  - root-relative      (`/avatars/…`)
+  //  - bare relative      (`avatars/177627.png?_=…`)  ← nhentai API format
+  //  - already absolute   (`https://…`)
   ///
-  /// [avatarBaseUrl] should be the CDN origin declared in the source config
-  /// as `avatarBaseUrl` (e.g. `https://i1.nhentai.net`).
+  // [avatarBaseUrl] should be the CDN origin declared in the source config
+  // as `avatarBaseUrl` (e.g. `https://i1.nhentai.net`).
   String? _resolveAvatarUrl(String? raw, String? avatarBaseUrl) {
     if (raw == null || raw.isEmpty) return null;
     if (raw.startsWith('https://') || raw.startsWith('http://')) return raw;
@@ -2283,19 +2286,19 @@ class GenericRestAdapter implements GenericAdapter {
             data.containsKey('english_title'));
   }
 
-  /// Convert raw string tag names to [Tag] entities with default values.
+  // Convert raw string tag names to [Tag] entities with default values.
   List<Tag> _stringsToTags(List<String> names, String type) {
     return names
         .map((name) => Tag(id: 0, name: name, type: type, count: 0))
         .toList();
   }
 
-  /// Parse full tag objects from a selector that points to an array like
-  /// `[{"id":1,"name":"english","type":"language","count":12345}, …]`.
+  // Parse full tag objects from a selector that points to an array like
+  // `[{"id":1,"name":"english","type":"language","count":12345}, …]`.
   ///
-  /// Splits the list by `type` field so callers can populate separate
-  /// entity fields (artists, characters, etc.) while keeping proper
-  /// id/count on the pure-tag entries.
+  // Splits the list by `type` field so callers can populate separate
+  // entity fields (artists, characters, etc.) while keeping proper
+  // id/count on the pure-tag entries.
   _TagSplit _parseTagObjects(dynamic data, FieldSelector selector) {
     final objects = _parser.extractItems(data, selector);
     final tags = <Tag>[];
@@ -2349,7 +2352,7 @@ class GenericRestAdapter implements GenericAdapter {
     );
   }
 
-  /// Parse a date string, defaulting to epoch on failure.
+  // Parse a date string, defaulting to epoch on failure.
   DateTime _parseDate(String? raw) {
     if (raw == null) return DateTime.fromMillisecondsSinceEpoch(0);
     // Try unix timestamp (seconds)
@@ -2366,10 +2369,10 @@ class GenericRestAdapter implements GenericAdapter {
     return _parser.extractString(data, sel);
   }
 
-  /// Extract language, skipping "translated" — matches native CommentModel.fromApi logic.
-  /// nhentai tags often include both the real language (e.g. "chinese") AND "translated",
-  /// so the plain JSONPath selector may return "translated" first depending on tag order.
-  /// This method uses extractList and picks the first non-"translated" value.
+  // Extract language, skipping "translated" — matches native CommentModel.fromApi logic.
+  // nhentai tags often include both the real language (e.g. "chinese") AND "translated",
+  // so the plain JSONPath selector may return "translated" first depending on tag order.
+  // This method uses extractList and picks the first non-"translated" value.
   String _extractLanguage(
     dynamic data,
     Map<String, dynamic> selectors, {
@@ -2471,7 +2474,7 @@ class GenericRestAdapter implements GenericAdapter {
     return value.toString().trim();
   }
 
-  /// Extract string value from fields map, returning null if not found or empty.
+  // Extract string value from fields map, returning null if not found or empty.
   String? _str(Map<String, dynamic> fields, String key) {
     final value = fields[key];
     if (value == null) return null;
@@ -2608,19 +2611,19 @@ class GenericRestAdapter implements GenericAdapter {
 
   // ── URL builder helpers ────────────────────────────────────────────────────
 
-  /// Build a cover/thumbnail URL for a list item using the `coverUrlBuilder`
-  /// config block. Returns null if the block is absent or required data is
-  /// missing.
+  // Build a cover/thumbnail URL for a list item using the `coverUrlBuilder`
+  // config block. Returns null if the block is absent or required data is
+  // missing.
   ///
-  /// Config shape:
-  /// ```json
-  /// "coverUrlBuilder": {
-  ///   "mediaIdSelector": "$.media_id",
-  ///   "coverExtSelector": "$.images.cover.t",
-  ///   "template": "https://t.nhentai.net/galleries/{mediaId}/cover.{ext}",
-  ///   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
-  /// }
-  /// ```
+  // Config shape:
+  // ```json
+  // "coverUrlBuilder": {
+  //   "mediaIdSelector": "$.media_id",
+  //   "coverExtSelector": "$.images.cover.t",
+  //   "template": "https://t.nhentai.net/galleries/{mediaId}/cover.{ext}",
+  //   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
+  // }
+  // ```
   String? _buildCoverUrl(
     dynamic data,
     Map<String, dynamic> selectors,
@@ -2755,21 +2758,21 @@ class GenericRestAdapter implements GenericAdapter {
     return url.replaceAll('{language}', language);
   }
 
-  /// Apply proxy URL transformation to image URLs if configured.
+  // Apply proxy URL transformation to image URLs if configured.
   ///
-  /// The proxy URL template should contain `{url}` placeholder which will be
-  /// replaced with the URL-encoded original image URL.
+  // The proxy URL template should contain `{url}` placeholder which will be
+  // replaced with the URL-encoded original image URL.
   ///
-  /// If `proxyPatterns` is specified, only URLs matching those patterns will be proxied.
-  /// If `proxyPatterns` is empty or not specified, all URLs will be proxied.
+  // If `proxyPatterns` is specified, only URLs matching those patterns will be proxied.
+  // If `proxyPatterns` is empty or not specified, all URLs will be proxied.
   ///
-  /// Example config:
-  /// ```json
-  /// "images": {
-  ///   "proxyUrl": "https://v2.doujindesu.fun/api/image-proxy?url={url}",
-  ///   "proxyPatterns": ["desu.photos", "cdn.doujindesu"]
-  /// }
-  /// ```
+  // Example config:
+  // ```json
+  // "images": {
+  //   "proxyUrl": "https://v2.doujindesu.fun/api/image-proxy?url={url}",
+  //   "proxyPatterns": ["desu.photos", "cdn.doujindesu"]
+  // }
+  // ```
   List<String> _applyImageProxy(
     List<String> images,
     Map<String, dynamic> imagesCfg,
@@ -2885,11 +2888,11 @@ class GenericRestAdapter implements GenericAdapter {
     return chapters;
   }
 
-  /// Parse chapters inline from the detail response (no separate API call needed).
-  /// Used for sources like DoujinDesu v2 that include chapters in the detail response.
+  // Parse chapters inline from the detail response (no separate API call needed).
+  // Used for sources like DoujinDesu v2 that include chapters in the detail response.
   ///
-  /// For multi-chapter works, chapter ID is formatted as: {mangaSlug}/{chapterSlug}
-  /// to support the API endpoint: /api/read/{id}/{chapter}
+  // For multi-chapter works, chapter ID is formatted as: {mangaSlug}/{chapterSlug}
+  // to support the API endpoint: /api/read/{id}/{chapter}
   List<Chapter>? _parseChaptersInline(
     dynamic data, {
     required String contentId,
@@ -3046,8 +3049,8 @@ class GenericRestAdapter implements GenericAdapter {
     return '';
   }
 
-  /// Resolve [fields]`tagIds` → `language` via config `languageTagMap`.
-  /// Called after [_extractRestFields] for the new schema path.
+  // Resolve [fields]`tagIds` → `language` via config `languageTagMap`.
+  // Called after [_extractRestFields] for the new schema path.
   void _resolveLanguageTagMap(
     Map<String, dynamic> fields,
     Map<String, dynamic> rawConfig,
@@ -3346,18 +3349,18 @@ class GenericRestAdapter implements GenericAdapter {
     }
   }
 
-  /// Build the full list of image URLs for a detail response using the
-  /// `imageUrlBuilder` config block.
+  // Build the full list of image URLs for a detail response using the
+  // `imageUrlBuilder` config block.
   ///
-  /// Config shape:
-  /// ```json
-  /// "imageUrlBuilder": {
-  ///   "mediaIdSelector": "$.media_id",
-  ///   "pageExtSelector": "$.images.pages[*].t",
-  ///   "template": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
-  ///   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
-  /// }
-  /// ```
+  // Config shape:
+  // ```json
+  // "imageUrlBuilder": {
+  //   "mediaIdSelector": "$.media_id",
+  //   "pageExtSelector": "$.images.pages[*].t",
+  //   "template": "https://i.nhentai.net/galleries/{mediaId}/{page}.{ext}",
+  //   "extensionMapping": { "j": "jpg", "p": "png", "g": "gif", "w": "webp" }
+  // }
+  // ```
   List<String> _buildImageUrlsFromTemplate(
     dynamic data,
     Map<String, dynamic> builder,
@@ -3571,8 +3574,8 @@ class GenericRestAdapter implements GenericAdapter {
   }
 }
 
-/// Internal DTO used by [GenericRestAdapter._parseTagObjects] to return the
-/// result of splitting a unified tags array by type.
+// Internal DTO used by [GenericRestAdapter._parseTagObjects] to return the
+// result of splitting a unified tags array by type.
 class _TagSplit {
   const _TagSplit({
     required this.tags,
@@ -3591,10 +3594,10 @@ class _TagSplit {
   final String language;
 }
 
-/// Extract endpoint path from config value.
+// Extract endpoint path from config value.
 ///
-/// Supports both old schema (string) and new schema (object with `path` +
-/// optional `params` map).
+// Supports both old schema (string) and new schema (object with `path` +
+// optional `params` map).
 String _getEndpointPath(dynamic endpoint) {
   if (endpoint == null) return '';
   if (endpoint is String) return endpoint;

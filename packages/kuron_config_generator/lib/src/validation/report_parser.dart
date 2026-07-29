@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:kuron_core/kuron_core.dart';
 
-/// Represents a parsed validation report from the validator CLI.
+// Represents a parsed validation report from the validator CLI.
 class ParsedReport {
   final String sourceId;
   final String overallStatus;
@@ -37,7 +37,7 @@ class ParsedReport {
   }
 }
 
-/// A single diagnostic entry from a validation report.
+// A single diagnostic entry from a validation report.
 class ReportDiagnostic {
   final String severity;
   final String code;
@@ -72,7 +72,7 @@ class ReportDiagnostic {
   }
 }
 
-/// Parses validator JSON output into a [ParsedReport].
+// Parses validator JSON output into a [ParsedReport].
 class ReportParser {
   static ParsedReport parse(String jsonString) {
     final json = jsonDecode(jsonString) as Map<String, Object?>;

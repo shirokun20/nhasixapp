@@ -152,7 +152,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Toggle List/Grid View Mode
+  // Toggle List/Grid View Mode
   Future<void> toggleViewMode() async {
     final currentState = state;
     if (currentState is OfflineSearchLoaded) {
@@ -162,7 +162,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Search in offline content - DATABASE ONLY (optimized)
+  // Search in offline content - DATABASE ONLY (optimized)
   Future<void> searchOfflineContent(
     String query, {
     bool loadMore = false,
@@ -404,9 +404,9 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Load more search results (pagination)
+  // Load more search results (pagination)
   ///
-  /// This is a convenience method for infinite scroll in search
+  // This is a convenience method for infinite scroll in search
   Future<void> loadMoreSearchResults() async {
     final currentState = state;
     if (currentState is OfflineSearchLoaded && currentState.query.isNotEmpty) {
@@ -414,8 +414,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Get all offline content from DATABASE (primary source)
-  /// Falls back to file scan only if no database entries exist
+  // Get all offline content from DATABASE (primary source)
+  // Falls back to file scan only if no database entries exist
   Future<void> getAllOfflineContent({
     String? backupPath,
     bool loadMore = false,
@@ -624,8 +624,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Manual Import/Sync: Load from file system and populate database
-  /// This is now EXPLICITLY triggered by the user (not automatic)
+  // Manual Import/Sync: Load from file system and populate database
+  // This is now EXPLICITLY triggered by the user (not automatic)
   Future<void> importFromBackup([String? backupPath]) async {
     String? loadPath = backupPath;
     if (loadPath == null) {
@@ -702,10 +702,10 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Load more offline content (pagination)
+  // Load more offline content (pagination)
   ///
-  /// This smart method calls either searchOfflineContent or getAllOfflineContent
-  /// depending on whether a search query is active.
+  // This smart method calls either searchOfflineContent or getAllOfflineContent
+  // depending on whether a search query is active.
   Future<void> loadMoreContent() async {
     final currentState = state;
     if (currentState is OfflineSearchLoaded && currentState.query.isNotEmpty) {
@@ -715,8 +715,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Force reload content from database
-  /// Call this after sync operations to ensure UI is up to date
+  // Force reload content from database
+  // Call this after sync operations to ensure UI is up to date
   Future<void> forceRefresh({String? backupPath}) async {
     try {
       logInfo('Force refreshing offline content from database');
@@ -748,16 +748,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     return path.join(backupPath, sourceId);
   }
 
-  /// Set loading state (for external triggers like import operations)
+  // Set loading state (for external triggers like import operations)
   void setLoadingState() {
     emit(const OfflineSearchLoading());
   }
 
-  /// Get offline storage statistics
+  // Get offline storage statistics
   ///
-  /// Returns stats based on current state:
-  /// - When OfflineSearchLoaded (any query): calculate from loaded results
-  /// - When Initial/Loading/Empty/Error: get from database
+  // Returns stats based on current state:
+  // - When OfflineSearchLoaded (any query): calculate from loaded results
+  // - When Initial/Loading/Empty/Error: get from database
   Future<Map<String, dynamic>> getOfflineStats() async {
     try {
       int storageUsage = 0;
@@ -934,7 +934,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  /// Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
+  // Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
   Future<List<ContentGroup>> _groupContent(
     List<Content> flatItems, {
     Map<String, int> itemSizes = const {},

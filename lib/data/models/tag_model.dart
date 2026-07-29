@@ -1,6 +1,6 @@
 import 'package:kuron_core/kuron_core.dart';
 
-/// Data model for Tag entity with database serialization
+// Data model for Tag entity with database serialization
 class TagModel extends Tag {
   const TagModel({
     required super.id,
@@ -11,7 +11,7 @@ class TagModel extends Tag {
     super.slug,
   });
 
-  /// Create TagModel from Tag entity
+  // Create TagModel from Tag entity
   factory TagModel.fromEntity(Tag tag) {
     return TagModel(
       id: tag.id,
@@ -23,7 +23,7 @@ class TagModel extends Tag {
     );
   }
 
-  /// Convert to Tag entity
+  // Convert to Tag entity
   Tag toEntity() {
     return Tag(
       id: id,
@@ -35,7 +35,7 @@ class TagModel extends Tag {
     );
   }
 
-  /// Create from database map
+  // Create from database map
   factory TagModel.fromMap(Map<String, dynamic> map) {
     return TagModel(
       id: map['id'] ?? 0,
@@ -47,7 +47,7 @@ class TagModel extends Tag {
     );
   }
 
-  /// Convert to database map
+  // Convert to database map
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
@@ -59,7 +59,7 @@ class TagModel extends Tag {
     };
   }
 
-  /// Create copy with new values
+  // Create copy with new values
   @override
   TagModel copyWith({
     int? id,

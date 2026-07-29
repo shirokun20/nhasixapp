@@ -465,8 +465,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// O(1) average height estimation — no linear scan.
-  /// Improves accuracy as more images load into [_cachedImageHeights].
+  // O(1) average height estimation — no linear scan.
+  // Improves accuracy as more images load into [_cachedImageHeights].
   double _resolveAverageItemHeight({
     required ScrollMetrics metrics,
     required int totalPages,
@@ -569,12 +569,12 @@ class _ReaderScreenState extends State<ReaderScreen>
     });
   }
 
-  /// Called when an [ExtendedImageReaderWidget] at an early page detects a
-  /// heavy animated WebP (≥ 2 MB) while in continuous-scroll mode.
+  // Called when an [ExtendedImageReaderWidget] at an early page detects a
+  // heavy animated WebP (≥ 2 MB) while in continuous-scroll mode.
   ///
-  /// Automatically disables continuous-scroll and switches to single-page
-  /// mode so only one animation is rendered at a time, eliminating
-  /// concurrent-decode frame drops.
+  // Automatically disables continuous-scroll and switches to single-page
+  // mode so only one animation is rendered at a time, eliminating
+  // concurrent-decode frame drops.
   void _onHeavyImageDetected() {
     if (!mounted) return;
     final sourceId = _readerCubit.state.content?.sourceId;
@@ -999,11 +999,11 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  /// Evict excess pages when decoded image budget is exceeded.
+  // Evict excess pages when decoded image budget is exceeded.
   ///
-  /// Uses byte budget from [MemoryBudgetCoordinator] — estimates decoded size
-  /// per page (width × height × 4) and evicts farthest pages until under budget.
-  /// Eviction is skipped for offline content (pages are on disk).
+  // Uses byte budget from [MemoryBudgetCoordinator] — estimates decoded size
+  // per page (width × height × 4) and evicts farthest pages until under budget.
+  // Eviction is skipped for offline content (pages are on disk).
   //  page-count heuristic replaced by byte-aware budget from coordinator.
   // Budget resets [_heavyImageBudgetResetMs] after last scroll tick.
   static const Duration _heavyImageBudgetResetMs = Duration(seconds: 5);

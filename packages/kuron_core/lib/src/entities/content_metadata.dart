@@ -1,19 +1,19 @@
 import 'dart:convert';
 
-/// Metadata schema version for download files.
+// Metadata schema version for download files.
 ///
-/// v1.0 - Original format (nhentai-specific)
-/// v2.0 - Multi-source support with source identifier
+// v1.0 - Original format (nhentai-specific)
+// v2.0 - Multi-source support with source identifier
 class MetadataVersion {
   static const String v1 = '1.0';
   static const String v2 = '2.0';
   static const String current = v2;
 }
 
-/// Content metadata for downloaded content.
+// Content metadata for downloaded content.
 ///
-/// This model represents the metadata.json file structure that is saved
-/// alongside downloaded content files.
+// This model represents the metadata.json file structure that is saved
+// alongside downloaded content files.
 class ContentMetadata {
   const ContentMetadata({
     required this.schemaVersion,
@@ -39,70 +39,70 @@ class ContentMetadata {
     this.appVersion,
   });
 
-  /// Schema version for migration support
+  // Schema version for migration support
   final String schemaVersion;
 
-  /// Source identifier (e.g., 'nhentai', 'crotpedia')
+  // Source identifier (e.g., 'nhentai', 'crotpedia')
   final String source;
 
-  /// Content ID (source-specific format)
+  // Content ID (source-specific format)
   final String id;
 
-  /// Primary title
+  // Primary title
   final String title;
 
-  /// English title (optional)
+  // English title (optional)
   final String? englishTitle;
 
-  /// Japanese title (optional)
+  // Japanese title (optional)
   final String? japaneseTitle;
 
-  /// Cover image URL
+  // Cover image URL
   final String coverUrl;
 
-  /// Number of pages
+  // Number of pages
   final int pageCount;
 
-  /// List of image URLs or local paths
+  // List of image URLs or local paths
   final List<String> imageUrls;
 
-  /// Content tags
+  // Content tags
   final List<Map<String, dynamic>> tags;
 
-  /// Artist names
+  // Artist names
   final List<String> artists;
 
-  /// Character names
+  // Character names
   final List<String> characters;
 
-  /// Parody/series names
+  // Parody/series names
   final List<String> parodies;
 
-  /// Group/circle names
+  // Group/circle names
   final List<String> groups;
 
-  /// Content language
+  // Content language
   final String language;
 
-  /// Content category
+  // Content category
   final String category;
 
-  /// Upload/publish date (ISO 8601)
+  // Upload/publish date (ISO 8601)
   final String? uploadDate;
 
-  /// Favorites count
+  // Favorites count
   final int favorites;
 
-  /// Media ID (used for image URL building)
+  // Media ID (used for image URL building)
   final String? mediaId;
 
-  /// When content was downloaded (ISO 8601)
+  // When content was downloaded (ISO 8601)
   final String downloadedAt;
 
-  /// App version that created this metadata
+  // App version that created this metadata
   final String? appVersion;
 
-  /// Create from JSON map
+  // Create from JSON map
   factory ContentMetadata.fromJson(Map<String, dynamic> json) {
     // Handle v1.0 format (no schemaVersion field)
     final version = json['schemaVersion'] as String? ?? MetadataVersion.v1;
@@ -157,7 +157,7 @@ class ContentMetadata {
     );
   }
 
-  /// Convert to JSON map
+  // Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
       'schemaVersion': schemaVersion,
@@ -184,7 +184,7 @@ class ContentMetadata {
     };
   }
 
-  /// Convert to JSON string
+  // Convert to JSON string
   String toJsonString({bool pretty = false}) {
     if (pretty) {
       return const JsonEncoder.withIndent('  ').convert(toJson());
@@ -192,7 +192,7 @@ class ContentMetadata {
     return jsonEncode(toJson());
   }
 
-  /// Create v2.0 metadata from v1.0 format
+  // Create v2.0 metadata from v1.0 format
   factory ContentMetadata.migrateFromV1(Map<String, dynamic> v1Json) {
     // v1.0 format assumed to be nhentai-specific
     return ContentMetadata.fromJson({
@@ -202,10 +202,10 @@ class ContentMetadata {
     });
   }
 
-  /// Check if this metadata needs migration
+  // Check if this metadata needs migration
   bool get needsMigration => schemaVersion != MetadataVersion.current;
 
-  /// Create a copy with updated fields
+  // Create a copy with updated fields
   ContentMetadata copyWith({
     String? schemaVersion,
     String? source,

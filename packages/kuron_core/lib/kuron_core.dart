@@ -1,6 +1,6 @@
-/// Core library for Kuron multi-source content app.
-/// This library provides shared interfaces, entities, and value objects
-/// that are used across different content source implementations.
+// Core library for Kuron multi-source content app.
+// This library provides shared interfaces, entities, and value objects
+// that are used across different content source implementations.
 library;
 
 // Sources

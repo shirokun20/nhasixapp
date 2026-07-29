@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting reading history with pagination
+// Use case for getting reading history with pagination
 class GetHistoryUseCase extends UseCase<List<History>, GetHistoryParams> {
   GetHistoryUseCase(this._userDataRepository);
 
@@ -39,7 +39,7 @@ class GetHistoryUseCase extends UseCase<List<History>, GetHistoryParams> {
   }
 }
 
-/// Parameters for GetHistoryUseCase
+// Parameters for GetHistoryUseCase
 class GetHistoryParams extends UseCaseParams {
   const GetHistoryParams({
     this.page = 1,
@@ -62,24 +62,24 @@ class GetHistoryParams extends UseCaseParams {
     );
   }
 
-  /// Create params for first page
+  // Create params for first page
   factory GetHistoryParams.firstPage({int limit = 50}) {
     return GetHistoryParams(page: 1, limit: limit);
   }
 
-  /// Create params for next page
+  // Create params for next page
   GetHistoryParams nextPage() {
     return copyWith(page: page + 1);
   }
 
-  /// Create params for previous page
+  // Create params for previous page
   GetHistoryParams previousPage() {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }
 
-  /// Check if this is the first page
+  // Check if this is the first page
   bool get isFirstPage => page == 1;
 
-  /// Calculate offset for database queries
+  // Calculate offset for database queries
   int get offset => (page - 1) * limit;
 }

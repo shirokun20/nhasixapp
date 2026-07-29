@@ -7,7 +7,7 @@ import 'package:nhasixapp/data/models/tags/tag_autocomplete_result_model.dart';
 import 'package:nhasixapp/data/models/tags/tag_detail_model.dart';
 import 'package:nhasixapp/data/models/tags/tag_model.dart';
 
-/// Remote data source for tag operations using API v2 endpoints
+// Remote data source for tag operations using API v2 endpoints
 class TagsRemoteDataSource {
   final Dio _dio;
   final Logger _logger;
@@ -31,8 +31,8 @@ class TagsRemoteDataSource {
     return null;
   }
 
-  /// Get tags by type from API v2
-  /// Endpoint: GET /api/v2/tags/{tag_type}
+  // Get tags by type from API v2
+  // Endpoint: GET /api/v2/tags/{tag_type}
   Future<List<TagModel>> getTagsByType({
     required String tagType,
     required String sourceId,
@@ -132,8 +132,8 @@ class TagsRemoteDataSource {
     }
   }
 
-  /// Get autocomplete suggestions from API v2
-  /// Endpoint: POST /api/v2/tags/autocomplete
+  // Get autocomplete suggestions from API v2
+  // Endpoint: POST /api/v2/tags/autocomplete
   Future<TagAutocompleteResultModel> getAutocomplete({
     required String query,
     required String sourceId,
@@ -191,8 +191,8 @@ class TagsRemoteDataSource {
     }
   }
 
-  /// Get detailed tag information from API v2
-  /// Endpoint: GET /api/v2/tags/{tag_type}/{slug}
+  // Get detailed tag information from API v2
+  // Endpoint: GET /api/v2/tags/{tag_type}/{slug}
   Future<TagDetailModel> getTagDetail({
     required String tagType,
     required String slug,

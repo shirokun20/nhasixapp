@@ -1,6 +1,6 @@
 import 'report_parser.dart';
 
-/// A mapping from a validator diagnostic code to a human-readable fix instruction.
+// A mapping from a validator diagnostic code to a human-readable fix instruction.
 class FixSuggestion {
   const FixSuggestion({
     required this.diagnosticCode,
@@ -9,16 +9,16 @@ class FixSuggestion {
     this.configField,
   });
 
-  /// The diagnostic code this suggestion addresses (e.g. `schemaVersionMissing`).
+  // The diagnostic code this suggestion addresses (e.g. `schemaVersionMissing`).
   final String diagnosticCode;
 
-  /// Human-readable fix instruction text.
+  // Human-readable fix instruction text.
   final String suggestionText;
 
-  /// The feature this suggestion targets, if applicable (e.g. `reader`).
+  // The feature this suggestion targets, if applicable (e.g. `reader`).
   final String? targetFeature;
 
-  /// The specific config field to modify, if applicable (e.g. `scraper.selectors.reader`).
+  // The specific config field to modify, if applicable (e.g. `scraper.selectors.reader`).
   final String? configField;
 
   factory FixSuggestion.fromJson(Map<String, dynamic> json) {
@@ -31,11 +31,11 @@ class FixSuggestion {
   }
 }
 
-/// Maps validator diagnostic codes to [FixSuggestion] instances.
+// Maps validator diagnostic codes to [FixSuggestion] instances.
 class FixSuggestionMapper {
   FixSuggestionMapper._();
 
-  /// Static mapping of diagnostic codes to fix suggestions.
+  // Static mapping of diagnostic codes to fix suggestions.
   static const Map<String, FixSuggestion> kFixSuggestions = {
     'schemaVersionMissing': FixSuggestion(
       diagnosticCode: 'schemaVersionMissing',
@@ -74,9 +74,9 @@ class FixSuggestionMapper {
     ),
   };
 
-  /// Maps a list of [ReportDiagnostic]s to a list of [FixSuggestion]s.
-  /// Known codes are looked up in [kFixSuggestions]; unknown codes get a
-  /// generic fallback (R3.8).
+  // Maps a list of [ReportDiagnostic]s to a list of [FixSuggestion]s.
+  // Known codes are looked up in [kFixSuggestions]; unknown codes get a
+  // generic fallback (R3.8).
   static List<FixSuggestion> map(List<ReportDiagnostic> diagnostics) {
     return diagnostics.map((d) {
       final known = kFixSuggestions[d.code];

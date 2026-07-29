@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Entity representing user's reading statistics
+// Entity representing user's reading statistics
 class ReadingStatistics extends Equatable {
   const ReadingStatistics({
     required this.totalContentRead,
@@ -15,49 +15,49 @@ class ReadingStatistics extends Equatable {
     this.lastReadDate,
   });
 
-  /// Total number of content items read
+  // Total number of content items read
   final int totalContentRead;
 
-  /// Total number of pages read across all content
+  // Total number of pages read across all content
   final int totalPagesRead;
 
-  /// Total time spent reading
+  // Total time spent reading
   final Duration totalTimeSpent;
 
-  /// Map of favorite artists and their read count
+  // Map of favorite artists and their read count
   final Map<String, int> favoriteArtists;
 
-  /// Map of favorite tags and their occurrence count
+  // Map of favorite tags and their occurrence count
   final Map<String, int> favoriteTags;
 
-  /// Map of favorite languages and their read count
+  // Map of favorite languages and their read count
   final Map<String, int> favoriteLanguages;
 
-  /// Average time spent reading per content
+  // Average time spent reading per content
   final Duration averageReadingTime;
 
-  /// Number of completed content items
+  // Number of completed content items
   final int completedContent;
 
-  /// Current reading streak in days
+  // Current reading streak in days
   final int readingStreak;
 
-  /// Date of last reading session
+  // Date of last reading session
   final DateTime? lastReadDate;
 
-  /// Get completion rate as percentage
+  // Get completion rate as percentage
   double get completionRate {
     if (totalContentRead == 0) return 0.0;
     return (completedContent / totalContentRead) * 100;
   }
 
-  /// Get average pages per content
+  // Get average pages per content
   double get averagePagesPerContent {
     if (totalContentRead == 0) return 0.0;
     return totalPagesRead / totalContentRead;
   }
 
-  /// Get most read artist
+  // Get most read artist
   String? get mostReadArtist {
     if (favoriteArtists.isEmpty) return null;
     return favoriteArtists.entries
@@ -65,13 +65,13 @@ class ReadingStatistics extends Equatable {
         .key;
   }
 
-  /// Get most encountered tag
+  // Get most encountered tag
   String? get mostEncounteredTag {
     if (favoriteTags.isEmpty) return null;
     return favoriteTags.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
 
-  /// Get most read language
+  // Get most read language
   String? get mostReadLanguage {
     if (favoriteLanguages.isEmpty) return null;
     return favoriteLanguages.entries
@@ -79,19 +79,19 @@ class ReadingStatistics extends Equatable {
         .key;
   }
 
-  /// Get reading efficiency (pages per minute)
+  // Get reading efficiency (pages per minute)
   double get readingEfficiency {
     if (totalTimeSpent.inMinutes == 0) return 0.0;
     return totalPagesRead / totalTimeSpent.inMinutes;
   }
 
-  /// Check if user is an active reader (read in last 7 days)
+  // Check if user is an active reader (read in last 7 days)
   bool get isActiveReader {
     if (lastReadDate == null) return false;
     return DateTime.now().difference(lastReadDate!).inDays <= 7;
   }
 
-  /// Get reading level based on total content read
+  // Get reading level based on total content read
   String get readingLevel {
     if (totalContentRead < 10) return 'Beginner';
     if (totalContentRead < 50) return 'Casual';
@@ -100,7 +100,7 @@ class ReadingStatistics extends Equatable {
     return 'Expert';
   }
 
-  /// Create copy with updated values
+  // Create copy with updated values
   ReadingStatistics copyWith({
     int? totalContentRead,
     int? totalPagesRead,

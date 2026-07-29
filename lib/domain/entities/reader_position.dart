@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-/// Entity for tracking reader position and progress
-/// Used to persist reading state between app sessions
+// Entity for tracking reader position and progress
+// Used to persist reading state between app sessions
 class ReaderPosition extends Equatable {
   const ReaderPosition({
     required this.contentId,
@@ -17,37 +17,37 @@ class ReaderPosition extends Equatable {
     this.chapterTitle,
   });
 
-  /// Content ID (unique identifier)
+  // Content ID (unique identifier)
   final String contentId;
 
-  /// Current page being read (1-indexed)
+  // Current page being read (1-indexed)
   final int currentPage;
 
-  /// Total pages in content
+  // Total pages in content
   final int totalPages;
 
-  /// Last accessed timestamp
+  // Last accessed timestamp
   final DateTime lastAccessed;
 
-  /// Reading progress (0.0 to 1.0)
+  // Reading progress (0.0 to 1.0)
   final double readingProgress;
 
-  /// Reading time in minutes
+  // Reading time in minutes
   final int readingTimeMinutes;
 
-  /// Optional content title for display
+  // Optional content title for display
   final String? title;
 
-  /// Optional cover URL for display
+  // Optional cover URL for display
   final String? coverUrl;
 
-  /// Optional chapter ID for chapter-based content
+  // Optional chapter ID for chapter-based content
   final String? chapterId;
 
-  /// Optional chapter index for ordering
+  // Optional chapter index for ordering
   final int? chapterIndex;
 
-  /// Optional chapter title
+  // Optional chapter title
   final String? chapterTitle;
 
   @override
@@ -65,7 +65,7 @@ class ReaderPosition extends Equatable {
         chapterTitle,
       ];
 
-  /// Copy with new values
+  // Copy with new values
   ReaderPosition copyWith({
     String? contentId,
     int? currentPage,
@@ -94,34 +94,34 @@ class ReaderPosition extends Equatable {
     );
   }
 
-  /// Calculate progress from current page and total pages
+  // Calculate progress from current page and total pages
   static double calculateProgress(int currentPage, int totalPages) {
     if (totalPages <= 0) return 0.0;
     return (currentPage / totalPages).clamp(0.0, 1.0);
   }
 
-  /// Get reading progress as percentage (0 to 100)
+  // Get reading progress as percentage (0 to 100)
   int get progressPercentage {
     return (readingProgress * 100).round();
   }
 
-  /// Check if reading is completed (reached last page)
+  // Check if reading is completed (reached last page)
   bool get isCompleted {
     return currentPage >= totalPages && totalPages > 0;
   }
 
-  /// Check if reading has started (beyond first page)
+  // Check if reading has started (beyond first page)
   bool get isStarted {
     return currentPage > 1;
   }
 
-  /// Check if this is the first page
+  // Check if this is the first page
   bool get isFirstPage => currentPage <= 1;
 
-  /// Check if this is the last page
+  // Check if this is the last page
   bool get isLastPage => currentPage >= totalPages && totalPages > 0;
 
-  /// Create from basic parameters
+  // Create from basic parameters
   factory ReaderPosition.create({
     required String contentId,
     required int currentPage,
@@ -148,7 +148,7 @@ class ReaderPosition extends Equatable {
     );
   }
 
-  /// Create initial position (first page)
+  // Create initial position (first page)
   factory ReaderPosition.initial({
     required String contentId,
     required int totalPages,

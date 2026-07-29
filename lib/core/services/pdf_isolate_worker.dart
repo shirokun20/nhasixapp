@@ -4,10 +4,10 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
 
-/// Isolate worker untuk PDF processing
-/// Isolate worker for PDF processing
+// Isolate worker untuk PDF processing
+// Isolate worker for PDF processing
 class PdfIsolateWorker {
-  /// Main entry point for isolate worker
+  // Main entry point for isolate worker
   static void isolateEntryPoint(SendPort sendPort) {
     final receivePort = ReceivePort();
     sendPort.send(receivePort.sendPort);
@@ -31,7 +31,7 @@ class PdfIsolateWorker {
     });
   }
 
-  /// Process PDF creation in isolate
+  // Process PDF creation in isolate
   static Future<_PdfResult> _processPdfInIsolate(PdfProcessingTask task) async {
     final processedImages = <Uint8List>[];
 
@@ -77,7 +77,7 @@ class PdfIsolateWorker {
     );
   }
 
-  /// Process single image in isolate
+  // Process single image in isolate
   static Future<Uint8List?> _processImageInIsolate(
     String imagePath, {
     required int maxWidth,
@@ -121,7 +121,7 @@ class PdfIsolateWorker {
     }
   }
 
-  /// Create PDF bytes in isolate
+  // Create PDF bytes in isolate
   static Future<Uint8List> _createPdfInIsolate(
     List<Uint8List> images,
     String title,
@@ -156,8 +156,8 @@ class PdfIsolateWorker {
   }
 }
 
-/// Task untuk isolate processing
-/// Task for isolate processing
+// Task untuk isolate processing
+// Task for isolate processing
 class PdfProcessingTask {
   const PdfProcessingTask({
     required this.imagePaths,
@@ -174,8 +174,8 @@ class PdfProcessingTask {
   final int quality;
 }
 
-/// Result dari isolate processing
-/// Result from isolate processing
+// Result dari isolate processing
+// Result from isolate processing
 class PdfProcessingResult {
   const PdfProcessingResult({
     required this.success,
@@ -218,7 +218,7 @@ class PdfProcessingResult {
   }
 }
 
-/// Internal result class for isolate
+// Internal result class for isolate
 class _PdfResult {
   const _PdfResult({
     required this.pdfPath,

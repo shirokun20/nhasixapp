@@ -2,16 +2,16 @@ import 'dart:async';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
-/// Service for deduplicating concurrent API requests
-/// Prevents multiple simultaneous requests for the same resource
+// Service for deduplicating concurrent API requests
+// Prevents multiple simultaneous requests for the same resource
 class RequestDeduplicationService {
   static const Duration _defaultTimeout = Duration(seconds: 30);
 
   final Logger _logger = getIt<Logger>();
   final Map<String, _PendingRequest> _pendingRequests = {};
 
-  /// Execute a request with deduplication
-  /// If a request for the same key is already in progress, returns the existing future
+  // Execute a request with deduplication
+  // If a request for the same key is already in progress, returns the existing future
   Future<T> deduplicate<T>(
     String requestKey,
     Future<T> Function() requestFunction, {
@@ -63,15 +63,15 @@ class RequestDeduplicationService {
     return completer.future;
   }
 
-  /// Check if a request is currently in progress
+  // Check if a request is currently in progress
   bool isRequestInProgress(String requestKey) {
     return _pendingRequests.containsKey(requestKey);
   }
 
-  /// Get the number of currently pending requests
+  // Get the number of currently pending requests
   int get pendingRequestsCount => _pendingRequests.length;
 
-  /// Get statistics about pending requests
+  // Get statistics about pending requests
   Map<String, dynamic> getPendingRequestsStats() {
     final now = DateTime.now();
     final stats = <String, dynamic>{};
@@ -90,7 +90,7 @@ class RequestDeduplicationService {
     };
   }
 
-  /// Cancel all pending requests
+  // Cancel all pending requests
   void cancelAllPendingRequests() {
     for (final entry in _pendingRequests.entries) {
       if (!entry.value.completer.isCompleted) {
@@ -103,7 +103,7 @@ class RequestDeduplicationService {
     _logger.i('Cancelled all pending requests');
   }
 
-  /// Clean up timed out requests
+  // Clean up timed out requests
   void cleanupTimedOutRequests({Duration? customTimeout}) {
     final timeout = customTimeout ?? _defaultTimeout;
     final now = DateTime.now();
@@ -130,7 +130,7 @@ class RequestDeduplicationService {
   }
 }
 
-/// Internal class to track pending requests
+// Internal class to track pending requests
 class _PendingRequest<T> {
   _PendingRequest({
     required this.completer,

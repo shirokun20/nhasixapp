@@ -3,7 +3,7 @@ import 'package:kuron_core/kuron_core.dart';
 import '../datasources/remote/api/nhentai_api_models.dart';
 import '../datasources/remote/api/nhentai_image_url_builder.dart';
 
-/// Data model for Content entity with database serialization
+// Data model for Content entity with database serialization
 class ContentModel extends Content {
   const ContentModel({
     required super.id,
@@ -31,7 +31,7 @@ class ContentModel extends Content {
 
   final DateTime? cachedAt;
 
-  /// Create ContentModel from Content entity
+  // Create ContentModel from Content entity
   factory ContentModel.fromEntity(Content content) {
     return ContentModel(
       id: content.id,
@@ -56,10 +56,10 @@ class ContentModel extends Content {
     );
   }
 
-  /// Create ContentModel from nhentai API response
+  // Create ContentModel from nhentai API response
   ///
-  /// This factory provides direct mapping from API response,
-  /// without needing TagResolver since tags are already resolved in API.
+  // This factory provides direct mapping from API response,
+  // without needing TagResolver since tags are already resolved in API.
   factory ContentModel.fromNhentaiApi(NhentaiGalleryResponse response) {
     // Extract tags by type
     final allTags = response.tags
@@ -147,10 +147,10 @@ class ContentModel extends Content {
     );
   }
 
-  /// Create ContentModel from nhentai API response (list version)
+  // Create ContentModel from nhentai API response (list version)
   ///
-  /// Simplified version for list/search results where full page URLs
-  /// are not needed yet (will be fetched on detail view).
+  // Simplified version for list/search results where full page URLs
+  // are not needed yet (will be fetched on detail view).
   factory ContentModel.fromNhentaiApiPreview(NhentaiGalleryResponse response) {
     // Extract tags by type
     final allTags = response.tags
@@ -234,7 +234,7 @@ class ContentModel extends Content {
     );
   }
 
-  /// Convert to Content entity
+  // Convert to Content entity
   Content toEntity() {
     return Content(
       id: id,
@@ -258,7 +258,7 @@ class ContentModel extends Content {
     );
   }
 
-  /// Create from database map
+  // Create from database map
   factory ContentModel.fromMap(Map<String, dynamic> map, List<Tag> tags) {
     return ContentModel(
       id: map['id'],
@@ -296,7 +296,7 @@ class ContentModel extends Content {
     );
   }
 
-  /// Convert to database map
+  // Convert to database map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -338,10 +338,10 @@ class ContentModel extends Content {
     };
   }
 
-  /// Convert to JSON map (alias for toMap for jsonEncode support)
+  // Convert to JSON map (alias for toMap for jsonEncode support)
   Map<String, dynamic> toJson() => toMap();
 
-  /// Create from JSON map (includes tags parsing)
+  // Create from JSON map (includes tags parsing)
   factory ContentModel.fromJson(Map<String, dynamic> json) {
     final tagsList = json['tags'] as List<dynamic>? ?? [];
     final tags = tagsList.map((t) {
@@ -415,7 +415,7 @@ class ContentModel extends Content {
     );
   }
 
-  /// Create copy with updated cache time
+  // Create copy with updated cache time
   ContentModel copyWithCacheTime() {
     return ContentModel(
       id: id,
@@ -439,18 +439,18 @@ class ContentModel extends Content {
     );
   }
 
-  /// Check if cache is expired
+  // Check if cache is expired
   bool isCacheExpired({Duration maxAge = const Duration(hours: 24)}) {
     if (cachedAt == null) return true;
     return DateTime.now().difference(cachedAt!) > maxAge;
   }
 
-  /// Encode string list to JSON
+  // Encode string list to JSON
   static String _encodeStringList(List<String> list) {
     return jsonEncode(list);
   }
 
-  /// Decode string list from JSON
+  // Decode string list from JSON
   static List<String> _decodeStringList(String? json) {
     if (json == null || json.isEmpty) return [];
     try {

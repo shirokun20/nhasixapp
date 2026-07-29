@@ -4,23 +4,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'dns_models.dart';
 
-/// Service for managing DNS settings persistence and state
+// Service for managing DNS settings persistence and state
 class DnsSettingsService {
   static const String _settingsKey = 'dns_settings_v1';
 
   final SharedPreferences _prefs;
   final Logger _logger;
 
-  /// Stream controller for DNS settings changes
+  // Stream controller for DNS settings changes
   final _settingsController = StreamController<DnsSettings>.broadcast();
 
-  /// Stream of DNS settings changes
+  // Stream of DNS settings changes
   Stream<DnsSettings> get settingsStream => _settingsController.stream;
 
-  /// Current DNS settings (cached)
+  // Current DNS settings (cached)
   DnsSettings _currentSettings = const DnsSettings.defaultSettings();
 
-  /// Get current DNS settings
+  // Get current DNS settings
   DnsSettings get currentSettings => _currentSettings;
 
   DnsSettingsService({
@@ -29,7 +29,7 @@ class DnsSettingsService {
   })  : _prefs = prefs,
         _logger = logger;
 
-  /// Initialize service and load settings from storage
+  // Initialize service and load settings from storage
   Future<void> initialize() async {
     try {
       _currentSettings = await loadSettings();
@@ -41,7 +41,7 @@ class DnsSettingsService {
     }
   }
 
-  /// Load DNS settings from SharedPreferences
+  // Load DNS settings from SharedPreferences
   Future<DnsSettings> loadSettings() async {
     try {
       final jsonString = _prefs.getString(_settingsKey);
@@ -62,7 +62,7 @@ class DnsSettingsService {
     }
   }
 
-  /// Save DNS settings to SharedPreferences
+  // Save DNS settings to SharedPreferences
   Future<void> saveSettings(DnsSettings settings) async {
     try {
       final jsonString = jsonEncode(settings.toJson());
@@ -80,19 +80,19 @@ class DnsSettingsService {
     }
   }
 
-  /// Update DNS provider
+  // Update DNS provider
   Future<void> updateProvider(DnsProvider provider) async {
     final updatedSettings = _currentSettings.copyWith(provider: provider);
     await saveSettings(updatedSettings);
   }
 
-  /// Enable or disable DNS-over-HTTPS
+  // Enable or disable DNS-over-HTTPS
   Future<void> setEnabled(bool enabled) async {
     final updatedSettings = _currentSettings.copyWith(enabled: enabled);
     await saveSettings(updatedSettings);
   }
 
-  /// Set custom DNS server (for custom provider)
+  // Set custom DNS server (for custom provider)
   Future<void> setCustomDns(String? server, String? dohUrl) async {
     final updatedSettings = _currentSettings.copyWith(
       customDnsServer: server,
@@ -101,13 +101,13 @@ class DnsSettingsService {
     await saveSettings(updatedSettings);
   }
 
-  /// Reset to default settings
+  // Reset to default settings
   Future<void> resetToDefaults() async {
     await saveSettings(const DnsSettings.defaultSettings());
     _logger.i('DNS settings reset to defaults');
   }
 
-  /// Dispose resources
+  // Dispose resources
   void dispose() {
     _settingsController.close();
   }

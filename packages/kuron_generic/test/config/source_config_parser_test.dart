@@ -1,12 +1,12 @@
-/// Static contract tests: parse real source configs and verify that
-/// [SourceConfigParser] produces expected feature statuses and diagnostics.
+// Static contract tests: parse real source configs and verify that
+// [SourceConfigParser] produces expected feature statuses and diagnostics.
 ///
-/// These tests load config files from `informations/configs/` (path is
-/// resolved relative to the workspace root or `packages/kuron_generic/`).
-/// They run entirely offline — no network access.
+// These tests load config files from `informations/configs/` (path is
+// resolved relative to the workspace root or `packages/kuron_generic/`).
+// They run entirely offline — no network access.
 ///
-/// Run with:
-///   dart test packages/kuron_generic/test/config/source_config_parser_test.dart
+// Run with:
+//   dart test packages/kuron_generic/test/config/source_config_parser_test.dart
 library;
 
 import 'dart:convert';
@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 
 // ── Config resolver ──────────────────────────────────────────────────────────
 
-/// Load a config JSON from `informations/configs/<filename>`.
+// Load a config JSON from `informations/configs/<filename>`.
 Map<String, Object?> _loadConfig(String filename) {
   final List<String> candidates = <String>[
     '../../informations/configs/$filename',
@@ -35,8 +35,8 @@ Map<String, Object?> _loadConfig(String filename) {
   );
 }
 
-/// Returns a [SourceConfigParser] with an empty registered-primitive set so
-/// primitive-gap checking is skipped (tests focus on feature inference).
+// Returns a [SourceConfigParser] with an empty registered-primitive set so
+// primitive-gap checking is skipped (tests focus on feature inference).
 SourceConfigParser _parser() => const SourceConfigParser();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

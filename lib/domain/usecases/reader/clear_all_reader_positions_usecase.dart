@@ -1,6 +1,6 @@
 import '../../repositories/reader_repository.dart';
 
-/// Use case for clearing all reader positions
+// Use case for clearing all reader positions
 class ClearAllReaderPositionsUseCase {
   ClearAllReaderPositionsUseCase(this._repository);
 

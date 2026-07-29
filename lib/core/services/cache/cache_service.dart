@@ -1,30 +1,30 @@
 import 'dart:async';
 
-/// Abstract interface for cache services
-/// Defines the contract for memory and disk cache implementations
+// Abstract interface for cache services
+// Defines the contract for memory and disk cache implementations
 abstract class CacheService<T> {
-  /// Get a cached value by key
-  /// Returns null if key doesn't exist or cache is expired
+  // Get a cached value by key
+  // Returns null if key doesn't exist or cache is expired
   Future<T?> get(String key);
 
-  /// Set a value in the cache with optional TTL (Time To Live)
-  /// If [ttl] is null, uses the default cache duration
+  // Set a value in the cache with optional TTL (Time To Live)
+  // If [ttl] is null, uses the default cache duration
   Future<void> set(String key, T value, {Duration? ttl});
 
-  /// Remove a specific key from cache
+  // Remove a specific key from cache
   Future<void> remove(String key);
 
-  /// Clear all cached data
+  // Clear all cached data
   Future<void> clear();
 
-  /// Check if a key exists in cache and is not expired
+  // Check if a key exists in cache and is not expired
   Future<bool> containsKey(String key);
 
-  /// Get cache statistics
+  // Get cache statistics
   Future<CacheStats> getStats();
 }
 
-/// Cache statistics data class
+// Cache statistics data class
 class CacheStats {
   final int totalEntries;
   final int totalSize; // in bytes
@@ -61,7 +61,7 @@ class CacheStats {
   }
 }
 
-/// Cache entry wrapper with expiration support
+// Cache entry wrapper with expiration support
 class CacheEntry<T> {
   final T value;
   final DateTime createdAt;

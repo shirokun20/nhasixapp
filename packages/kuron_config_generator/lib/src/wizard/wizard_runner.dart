@@ -1,13 +1,13 @@
 import 'dart:io';
 import '../models/wizard_question.dart';
 
-/// Runs the interactive wizard and collects answers.
+// Runs the interactive wizard and collects answers.
 class WizardRunner {
   WizardRunner({required this.flow});
 
   final WizardFlow flow;
 
-  /// Run the wizard interactively via stdin/stdout.
+  // Run the wizard interactively via stdin/stdout.
   Future<Map<String, String?>> run() async {
     stdout.writeln('=== Kuron Config Generator - Interactive Mode ===\n');
 

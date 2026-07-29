@@ -24,9 +24,9 @@ class NativeBackupService {
     return result;
   }
 
-  /// Returns a map containing:
-  /// - `settingsJson`: The content of the settings.json file.
-  /// - `dbPath`: The path to the extracted database file (in cache).
+  // Returns a map containing:
+  // - `settingsJson`: The content of the settings.json file.
+  // - `dbPath`: The path to the extracted database file (in cache).
   Future<Map<String, dynamic>> extractBackupData(String contentUri) async {
     final result = await _channel
         .invokeMethod<Map<Object?, Object?>>('extractBackupData', {

@@ -1,4 +1,4 @@
-/// Smoke test: programmatically test the full wizard flow
+// Smoke test: programmatically test the full wizard flow
 library;
 
 import 'package:test/test.dart';

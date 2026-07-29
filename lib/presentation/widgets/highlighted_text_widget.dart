@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-/// A reusable widget that highlights matching text within a string.
+// A reusable widget that highlights matching text within a string.
 ///
-/// When [highlight] is non-empty, splits [text] into segments and applies
-/// [highlightStyle] to portions matching the query (case-insensitive).
-/// All occurrences are highlighted, not just the first.
+// When [highlight] is non-empty, splits [text] into segments and applies
+// [highlightStyle] to portions matching the query (case-insensitive).
+// All occurrences are highlighted, not just the first.
 ///
-/// Usage:
-/// ```dart
-/// HighlightedText(
-///   text: 'Naruto Shippuden',
-///   highlight: 'nar',
-///   style: TextStyle(color: Colors.white),
-/// )
-/// ```
+// Usage:
+// ```dart
+// HighlightedText(
+//   text: 'Naruto Shippuden',
+//   highlight: 'nar',
+//   style: TextStyle(color: Colors.white),
+// )
+// ```
 class HighlightedText extends StatelessWidget {
   final String text;
   final String highlight;

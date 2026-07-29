@@ -1,6 +1,6 @@
 part of 'content_bloc.dart';
 
-/// Base class for all content events
+// Base class for all content events
 abstract class ContentEvent extends Equatable {
   const ContentEvent();
 
@@ -8,7 +8,7 @@ abstract class ContentEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to load initial content list
+// Event to load initial content list
 class ContentLoadEvent extends ContentEvent {
   const ContentLoadEvent({
     this.sortBy = SortOption.newest,
@@ -24,12 +24,12 @@ class ContentLoadEvent extends ContentEvent {
   List<Object?> get props => [sortBy, forceRefresh, page];
 }
 
-/// Event to load more content (infinite scrolling)
+// Event to load more content (infinite scrolling)
 class ContentLoadMoreEvent extends ContentEvent {
   const ContentLoadMoreEvent();
 }
 
-/// Event to refresh content (pull-to-refresh)
+// Event to refresh content (pull-to-refresh)
 class ContentRefreshEvent extends ContentEvent {
   const ContentRefreshEvent({
     this.sortBy = SortOption.newest,
@@ -43,7 +43,7 @@ class ContentRefreshEvent extends ContentEvent {
   List<Object?> get props => [sortBy, currentPage];
 }
 
-/// Event to change sort option
+// Event to change sort option
 class ContentSortChangedEvent extends ContentEvent {
   const ContentSortChangedEvent(this.sortBy);
 
@@ -53,17 +53,17 @@ class ContentSortChangedEvent extends ContentEvent {
   List<Object?> get props => [sortBy];
 }
 
-/// Event to retry loading after error
+// Event to retry loading after error
 class ContentRetryEvent extends ContentEvent {
   const ContentRetryEvent();
 }
 
-/// Event to clear content list
+// Event to clear content list
 class ContentClearEvent extends ContentEvent {
   const ContentClearEvent();
 }
 
-/// Event to clear search results and return to normal content
+// Event to clear search results and return to normal content
 class ContentClearSearchEvent extends ContentEvent {
   const ContentClearSearchEvent({
     required this.sourceId,
@@ -77,7 +77,7 @@ class ContentClearSearchEvent extends ContentEvent {
   List<Object?> get props => [sourceId, sortBy];
 }
 
-/// Event to search content with filters
+// Event to search content with filters
 class ContentSearchEvent extends ContentEvent {
   const ContentSearchEvent(this.filter);
 
@@ -87,7 +87,7 @@ class ContentSearchEvent extends ContentEvent {
   List<Object?> get props => [filter];
 }
 
-/// Event to load popular content
+// Event to load popular content
 class ContentLoadPopularEvent extends ContentEvent {
   const ContentLoadPopularEvent({
     this.timeframe = PopularTimeframe.allTime,
@@ -101,7 +101,7 @@ class ContentLoadPopularEvent extends ContentEvent {
   List<Object?> get props => [timeframe, forceRefresh];
 }
 
-/// Event to load content by tag
+// Event to load content by tag
 class ContentLoadByTagEvent extends ContentEvent {
   const ContentLoadByTagEvent({
     required this.tag,
@@ -117,7 +117,7 @@ class ContentLoadByTagEvent extends ContentEvent {
   List<Object?> get props => [tag, sortBy, forceRefresh];
 }
 
-/// Event to toggle favorite status of content
+// Event to toggle favorite status of content
 class ContentToggleFavoriteEvent extends ContentEvent {
   const ContentToggleFavoriteEvent(this.contentId);
 
@@ -127,7 +127,7 @@ class ContentToggleFavoriteEvent extends ContentEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to update content in list (after external changes)
+// Event to update content in list (after external changes)
 class ContentUpdateEvent extends ContentEvent {
   const ContentUpdateEvent(this.content);
 
@@ -137,7 +137,7 @@ class ContentUpdateEvent extends ContentEvent {
   List<Object?> get props => [content];
 }
 
-/// Event to remove content from list
+// Event to remove content from list
 class ContentRemoveEvent extends ContentEvent {
   const ContentRemoveEvent(this.contentId);
 
@@ -147,17 +147,17 @@ class ContentRemoveEvent extends ContentEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to navigate to next page
+// Event to navigate to next page
 class ContentNextPageEvent extends ContentEvent {
   const ContentNextPageEvent();
 }
 
-/// Event to navigate to previous page
+// Event to navigate to previous page
 class ContentPreviousPageEvent extends ContentEvent {
   const ContentPreviousPageEvent();
 }
 
-/// Event to navigate to specific page
+// Event to navigate to specific page
 class ContentGoToPageEvent extends ContentEvent {
   const ContentGoToPageEvent(this.page);
 

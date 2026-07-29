@@ -1,6 +1,6 @@
 part of 'tag_autocomplete_bloc.dart';
 
-/// Events for TagAutocompleteBloc
+// Events for TagAutocompleteBloc
 abstract class TagAutocompleteEvent extends Equatable {
   const TagAutocompleteEvent();
 
@@ -8,7 +8,7 @@ abstract class TagAutocompleteEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to search for autocomplete suggestions
+// Event to search for autocomplete suggestions
 class TagAutocompleteSearchEvent extends TagAutocompleteEvent {
   final String query;
   final String? tagType;
@@ -22,7 +22,7 @@ class TagAutocompleteSearchEvent extends TagAutocompleteEvent {
   List<Object?> get props => [query, tagType];
 }
 
-/// Event to clear autocomplete results
+// Event to clear autocomplete results
 class TagAutocompleteClearEvent extends TagAutocompleteEvent {
   const TagAutocompleteClearEvent();
 }

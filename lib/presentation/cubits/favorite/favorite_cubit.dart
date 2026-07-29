@@ -11,8 +11,8 @@ import '../base/base_cubit.dart';
 
 part 'favorite_state.dart';
 
-/// Cubit for managing favorites with simple CRUD operations
-/// Handles favorites list, categories, and batch operations
+// Cubit for managing favorites with simple CRUD operations
+// Handles favorites list, categories, and batch operations
 class FavoriteCubit extends BaseCubit<FavoriteState> {
   FavoriteCubit({
     required AddToFavoritesUseCase addToFavoritesUseCase,
@@ -89,7 +89,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return _dedupeFavorites(await _getFavoritesUseCase(params));
   }
 
-  /// Load favorites list
+  // Load favorites list
   Future<void> loadFavorites({
     bool refresh = false,
     String? collectionId,
@@ -147,7 +147,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Load more favorites (pagination)
+  // Load more favorites (pagination)
   Future<void> loadMoreFavorites() async {
     final currentState = state;
     if (currentState is! FavoriteLoaded ||
@@ -199,7 +199,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Add content to favorites
+  // Add content to favorites
   Future<void> addToFavorites(Content content) async {
     try {
       logInfo('Adding content to favorites: ${content.title}');
@@ -245,7 +245,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Remove content from favorites
+  // Remove content from favorites
   Future<void> removeFromFavorites(String contentId, {String? sourceId}) async {
     try {
       logInfo('Starting removal of content from favorites: $contentId');
@@ -305,7 +305,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Check if content is favorited
+  // Check if content is favorited
   Future<bool> isFavorited(String contentId, {String? sourceId}) async {
     try {
       return await _userDataRepository.isFavorite(
@@ -318,7 +318,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Remove multiple favorites (batch operation)
+  // Remove multiple favorites (batch operation)
   Future<void> removeBatchFavorites(List<String> contentIds) async {
     if (contentIds.isEmpty) return;
 
@@ -365,7 +365,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Search within favorites
+  // Search within favorites
   Future<void> searchFavorites(String query) async {
     final currentState = state;
     if (currentState is! FavoriteLoaded) {
@@ -409,7 +409,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Clear search and show all favorites
+  // Clear search and show all favorites
   Future<void> clearSearch() async {
     logInfo('Clearing favorites search');
     await loadFavorites(refresh: true, collectionId: _activeCollectionId);
@@ -480,7 +480,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     await loadFavorites(refresh: true, collectionId: _activeCollectionId);
   }
 
-  /// Export favorites data
+  // Export favorites data
   Future<Map<String, dynamic>> exportFavorites() async {
     try {
       logInfo('Exporting favorites data');
@@ -509,14 +509,20 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Import favorites data
+  // Import favorites data
   Future<void> importFavorites(Map<String, dynamic> data) async {
     try {
       logInfo('Importing favorites data');
 
-      final favorites = data['favorites'] is List ? data['favorites'] as List<dynamic> : <dynamic>[];
-      final collectionMaps = data['collections'] is List ? data['collections'] as List<dynamic> : <dynamic>[];
-      final collectionItems = data['collection_items'] is List ? data['collection_items'] as List<dynamic> : <dynamic>[];
+      final favorites = data['favorites'] is List
+          ? data['favorites'] as List<dynamic>
+          : <dynamic>[];
+      final collectionMaps = data['collections'] is List
+          ? data['collections'] as List<dynamic>
+          : <dynamic>[];
+      final collectionItems = data['collection_items'] is List
+          ? data['collection_items'] as List<dynamic>
+          : <dynamic>[];
       int importedCount = 0;
       final importedCollectionIdsBySource = <String, String>{};
 
@@ -597,7 +603,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Get favorites statistics
+  // Get favorites statistics
   Future<Map<String, int>> getFavoritesStats() async {
     try {
       final totalCount = await _userDataRepository.getFavoritesCount();
@@ -613,19 +619,19 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     }
   }
 
-  /// Retry loading after error
+  // Retry loading after error
   Future<void> retryLoading() async {
     logInfo('Retrying favorites loading');
     await loadFavorites(refresh: true);
   }
 
-  /// Refresh favorites
+  // Refresh favorites
   Future<void> refresh() async {
     logInfo('Refreshing favorites');
     await loadFavorites(refresh: true);
   }
 
-  /// Get current favorites list
+  // Get current favorites list
   List<Map<String, dynamic>> get currentFavorites {
     final currentState = state;
     if (currentState is FavoriteLoaded) {
@@ -634,7 +640,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return [];
   }
 
-  /// Get current favorites count
+  // Get current favorites count
   int get favoritesCount {
     final currentState = state;
     if (currentState is FavoriteLoaded) {
@@ -643,7 +649,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return 0;
   }
 
-  /// Check if has more favorites to load
+  // Check if has more favorites to load
   bool get hasMoreFavorites {
     final currentState = state;
     if (currentState is FavoriteLoaded) {
@@ -652,7 +658,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return false;
   }
 
-  /// Check if currently loading more
+  // Check if currently loading more
   bool get isLoadingMore {
     final currentState = state;
     if (currentState is FavoriteLoaded) {
@@ -661,7 +667,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return false;
   }
 
-  /// Check if currently performing batch operation
+  // Check if currently performing batch operation
   bool get isBatchOperating {
     final currentState = state;
     if (currentState is FavoriteLoaded) {
@@ -670,7 +676,7 @@ class FavoriteCubit extends BaseCubit<FavoriteState> {
     return false;
   }
 
-  /// Get current search query
+  // Get current search query
   String? get currentSearchQuery {
     final currentState = state;
     if (currentState is FavoriteLoaded) {

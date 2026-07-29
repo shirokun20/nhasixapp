@@ -78,7 +78,7 @@ class _DemoPageState extends State<DemoPage> {
   final List<String> _log = [];
   final _imageAreaKey = GlobalKey();
 
-  /// Build mosaic in isolate. Max 800px wide.
+  // Build mosaic in isolate. Max 800px wide.
   Future<Uint8List?> _buildMosaicIsolate(
     Uint8List pageBytes,
     List<Map<String, dynamic>> boxMaps,

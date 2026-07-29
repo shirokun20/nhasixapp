@@ -11,7 +11,7 @@ import '../../core/services/pdf_conversion_service.dart';
 import '../../core/utils/download_storage_utils.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Widget for displaying individual download item with progress and actions
+// Widget for displaying individual download item with progress and actions
 class DownloadItemWidget extends StatelessWidget {
   const DownloadItemWidget({
     super.key,
@@ -554,7 +554,7 @@ class DownloadItemWidget extends StatelessWidget {
     return colorScheme.secondary;
   }
 
-  /// Build title widget - title is stored in database during download
+  // Build title widget - title is stored in database during download
   Widget _buildTitleWidget(BuildContext context, ColorScheme colorScheme) {
     return Text(
       download.title ?? download.contentId,
@@ -619,7 +619,7 @@ class DownloadItemWidget extends StatelessWidget {
     }
   }
 
-  /// Build verified pages text using actual file count
+  // Build verified pages text using actual file count
   Widget _buildVerifiedPagesText(DownloadStatus download) {
     return FutureBuilder<Map<String, dynamic>>(
       future: _verifyDownloadStatus(download.contentId),
@@ -678,7 +678,7 @@ class DownloadItemWidget extends StatelessWidget {
     );
   }
 
-  /// Verify download status by checking actual files
+  // Verify download status by checking actual files
   Future<Map<String, dynamic>> _verifyDownloadStatus(String contentId) async {
     try {
       final downloadService = GetIt.instance<DownloadService>();
@@ -694,8 +694,8 @@ class DownloadItemWidget extends StatelessWidget {
     }
   }
 
-  /// Get display ID string
-  /// Returns condensed ID for long slug-based IDs (like Crotpedia)
+  // Get display ID string
+  // Returns condensed ID for long slug-based IDs (like Crotpedia)
   String _getDisplayId(DownloadStatus download) {
     // For ALL sources, try to get a shorter "Elegant" ID if the original is too long
     // If it's already short (e.g. nhentai), getElegantId will return it as is.

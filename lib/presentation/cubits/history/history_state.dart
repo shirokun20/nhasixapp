@@ -1,12 +1,12 @@
 import '../../../domain/entities/entities.dart';
 import '../base/base_cubit.dart';
 
-/// History screen states
+// History screen states
 abstract class HistoryState extends BaseCubitState {
   const HistoryState();
 }
 
-/// Initial state
+// Initial state
 class HistoryInitial extends HistoryState {
   const HistoryInitial();
 
@@ -14,7 +14,7 @@ class HistoryInitial extends HistoryState {
   List<Object?> get props => [];
 }
 
-/// Loading state
+// Loading state
 class HistoryLoading extends HistoryState {
   const HistoryLoading();
 
@@ -22,7 +22,7 @@ class HistoryLoading extends HistoryState {
   List<Object?> get props => [];
 }
 
-/// Loaded state with history data
+// Loaded state with history data
 class HistoryLoaded extends HistoryState {
   const HistoryLoaded({
     required this.history,
@@ -55,7 +55,7 @@ class HistoryLoaded extends HistoryState {
   }
 }
 
-/// Error state
+// Error state
 class HistoryError extends HistoryState {
   const HistoryError({
     required this.message,
@@ -69,7 +69,7 @@ class HistoryError extends HistoryState {
   List<Object?> get props => [message, canRetry];
 }
 
-/// Empty state (no history)
+// Empty state (no history)
 class HistoryEmpty extends HistoryState {
   const HistoryEmpty();
 
@@ -77,7 +77,7 @@ class HistoryEmpty extends HistoryState {
   List<Object?> get props => [];
 }
 
-/// Clearing state
+// Clearing state
 class HistoryClearing extends HistoryState {
   const HistoryClearing();
 
@@ -85,7 +85,7 @@ class HistoryClearing extends HistoryState {
   List<Object?> get props => [];
 }
 
-/// Item removed state
+// Item removed state
 class HistoryItemRemoved extends HistoryState {
   const HistoryItemRemoved({
     required this.removedContentId,

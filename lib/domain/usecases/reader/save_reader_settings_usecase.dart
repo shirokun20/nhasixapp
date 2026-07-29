@@ -1,7 +1,7 @@
 import '../../entities/reader_settings_entity.dart';
 import '../../repositories/reader_settings_repository.dart';
 
-/// Use case for saving reader settings
+// Use case for saving reader settings
 class SaveReaderSettingsUseCase {
   SaveReaderSettingsUseCase(this._repository);
 

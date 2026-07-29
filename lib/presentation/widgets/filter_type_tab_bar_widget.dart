@@ -4,7 +4,7 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../domain/entities/entities.dart';
 
-/// Tab bar for switching between different filter types
+// Tab bar for switching between different filter types
 class FilterTypeTabBar extends StatelessWidget {
   const FilterTypeTabBar({
     super.key,
@@ -56,7 +56,7 @@ class FilterTypeTabBar extends StatelessWidget {
   }
 }
 
-/// Modern tab bar with custom styling
+// Modern tab bar with custom styling
 class FilterTypeTabBarModern extends StatelessWidget {
   const FilterTypeTabBarModern({
     super.key,
@@ -109,7 +109,7 @@ class FilterTypeTabBarModern extends StatelessWidget {
   }
 }
 
-/// Individual tab for filter type
+// Individual tab for filter type
 class FilterTypeTab extends StatelessWidget {
   const FilterTypeTab({
     super.key,
@@ -161,7 +161,7 @@ class FilterTypeTab extends StatelessWidget {
   }
 }
 
-/// Segmented control style tab bar
+// Segmented control style tab bar
 class FilterTypeSegmentedControl extends StatelessWidget {
   const FilterTypeSegmentedControl({
     super.key,
@@ -226,7 +226,7 @@ class FilterTypeSegmentedControl extends StatelessWidget {
   }
 }
 
-/// Chip-style tab bar
+// Chip-style tab bar
 class FilterTypeChipBar extends StatelessWidget {
   const FilterTypeChipBar({
     super.key,

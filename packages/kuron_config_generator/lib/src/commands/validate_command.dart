@@ -8,7 +8,7 @@ import '../validation/fix_suggestion.dart';
 import '../validation/report_printer.dart';
 import '../validation/validation_orchestrator.dart';
 
-/// Validate a generated config using the runtime validator.
+// Validate a generated config using the runtime validator.
 class ValidateCommand extends Command<void> {
   ValidateCommand() {
     argParser

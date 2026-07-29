@@ -6,11 +6,11 @@ import 'feature_kind.dart';
 import 'feature_status.dart';
 import 'validation_diagnostic.dart';
 
-/// Aggregated compatibility report for a single source config.
+// Aggregated compatibility report for a single source config.
 ///
-/// Produced by the `kuron_generic` validator (Section 4) and consumed by
-/// the app import flow, reader pre-flight checks, and download readiness
-/// checks.
+// Produced by the `kuron_generic` validator (Section 4) and consumed by
+// the app import flow, reader pre-flight checks, and download readiness
+// checks.
 class ValidationReport extends Equatable {
   ValidationReport({
     required this.sourceId,
@@ -33,53 +33,53 @@ class ValidationReport extends Equatable {
             Set<String>.unmodifiable(missingPlugins ?? const <String>{}),
         generatedAt = generatedAt ?? DateTime.now().toUtc();
 
-  /// Source identifier from the config (e.g. `nhentai`, `mangadex`).
+  // Source identifier from the config (e.g. `nhentai`, `mangadex`).
   final String sourceId;
 
-  /// Overall status computed from [featureStatuses] and [diagnostics].
-  /// See [computeOverallStatus] for the deterministic algorithm.
+  // Overall status computed from [featureStatuses] and [diagnostics].
+  // See [computeOverallStatus] for the deterministic algorithm.
   final CompatibilityStatus overallStatus;
 
-  /// Per-feature status. Features not present in this map are treated as
-  /// [FeatureStatus.notDeclared] by consumers.
+  // Per-feature status. Features not present in this map are treated as
+  // [FeatureStatus.notDeclared] by consumers.
   final Map<FeatureKind, FeatureStatus> featureStatuses;
 
-  /// Declared `schemaVersion` from the config, when present.
+  // Declared `schemaVersion` from the config, when present.
   final String? schemaVersion;
 
-  /// Engine version of the runtime that produced this report.
+  // Engine version of the runtime that produced this report.
   final String? engineVersion;
 
-  /// Minimum engine version required by the config (`minEngineVersion`), when
-  /// declared.
+  // Minimum engine version required by the config (`minEngineVersion`), when
+  // declared.
   final String? minEngineVersion;
 
-  /// All diagnostics emitted during validation. Already secret-redacted.
+  // All diagnostics emitted during validation. Already secret-redacted.
   final List<ValidationDiagnostic> diagnostics;
 
-  /// Plugin capability identifiers the config requires.
+  // Plugin capability identifiers the config requires.
   final Set<String> requiredPlugins;
 
-  /// Plugin capability identifiers that the host actually registered.
+  // Plugin capability identifiers that the host actually registered.
   final Set<String> detectedPlugins;
 
-  /// Plugin capability identifiers that are required but missing.
+  // Plugin capability identifiers that are required but missing.
   final Set<String> missingPlugins;
 
-  /// When this report was generated, in UTC.
+  // When this report was generated, in UTC.
   final DateTime generatedAt;
 
-  /// Validation mode used to produce this report.
+  // Validation mode used to produce this report.
   final ValidationMode mode;
 
-  /// Returns the diagnostics restricted to a single feature.
+  // Returns the diagnostics restricted to a single feature.
   List<ValidationDiagnostic> diagnosticsFor(FeatureKind feature) {
     return diagnostics
         .where((ValidationDiagnostic d) => d.feature == feature)
         .toList(growable: false);
   }
 
-  /// Returns all diagnostics matching [severity].
+  // Returns all diagnostics matching [severity].
   List<ValidationDiagnostic> diagnosticsOf({
     required DiagnosticSeverity severity,
   }) {
@@ -88,13 +88,13 @@ class ValidationReport extends Equatable {
         .toList(growable: false);
   }
 
-  /// Returns true if any diagnostic of severity [DiagnosticSeverity.error]
-  /// exists in this report.
+  // Returns true if any diagnostic of severity [DiagnosticSeverity.error]
+  // exists in this report.
   bool get hasErrors => diagnostics
       .any((ValidationDiagnostic d) => d.severity == DiagnosticSeverity.error);
 
-  /// Returns true if any diagnostic of severity [DiagnosticSeverity.warning]
-  /// exists in this report.
+  // Returns true if any diagnostic of severity [DiagnosticSeverity.warning]
+  // exists in this report.
   bool get hasWarnings => diagnostics.any(
       (ValidationDiagnostic d) => d.severity == DiagnosticSeverity.warning);
 
@@ -150,13 +150,13 @@ class ValidationReport extends Equatable {
                 ),
       };
 
-  /// Computes a deterministic [CompatibilityStatus] from per-feature
-  /// statuses, diagnostics, and plugin gap.
+  // Computes a deterministic [CompatibilityStatus] from per-feature
+  // statuses, diagnostics, and plugin gap.
   ///
-  /// The required-feature set is provided by the caller (typically the
-  /// validator that owns the config contract). Optional-feature failures
-  /// degrade to [CompatibilityStatus.partiallyCompatible] rather than
-  /// failing the source overall.
+  // The required-feature set is provided by the caller (typically the
+  // validator that owns the config contract). Optional-feature failures
+  // degrade to [CompatibilityStatus.partiallyCompatible] rather than
+  // failing the source overall.
   static CompatibilityStatus computeOverallStatus({
     required Map<FeatureKind, FeatureStatus> featureStatuses,
     required Set<FeatureKind> requiredFeatures,
@@ -253,14 +253,14 @@ class ValidationReport extends Equatable {
       ];
 }
 
-/// Mode the validator ran in.
+// Mode the validator ran in.
 enum ValidationMode {
-  /// Static schema/structural validation only. No network. Default in CI.
+  // Static schema/structural validation only. No network. Default in CI.
   staticMode,
 
-  /// Static + replay against stored fixtures (no network).
+  // Static + replay against stored fixtures (no network).
   fixture,
 
-  /// Static + optional probe against the live site. Network required.
+  // Static + optional probe against the live site. Network required.
   live,
 }

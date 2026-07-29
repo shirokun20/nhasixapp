@@ -12,7 +12,7 @@ import '../../domain/repositories/settings_repository.dart';
 import 'package:nhasixapp/core/services/native_backup_service.dart';
 import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 
-/// Implementation of SettingsRepository using SharedPreferences
+// Implementation of SettingsRepository using SharedPreferences
 class SettingsRepositoryImpl implements SettingsRepository {
   SettingsRepositoryImpl({
     required this.sharedPreferences,

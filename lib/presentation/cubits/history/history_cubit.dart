@@ -5,7 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../base/base_cubit.dart';
 import 'history_state.dart';
 
-/// Cubit for managing history screen state
+// Cubit for managing history screen state
 class HistoryCubit extends BaseCubit<HistoryState> {
   HistoryCubit({
     required this.getHistoryUseCase,
@@ -28,7 +28,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
 
   static const int _pageSize = 50;
 
-  /// Load history from the beginning
+  // Load history from the beginning
   Future<void> loadHistory() async {
     try {
       logInfo('Loading history');
@@ -59,7 +59,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Load more history (pagination)
+  // Load more history (pagination)
   Future<void> loadMoreHistory() async {
     final currentState = state;
     if (currentState is! HistoryLoaded ||
@@ -102,7 +102,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Refresh history (pull to refresh)
+  // Refresh history (pull to refresh)
   Future<void> refreshHistory() async {
     try {
       logInfo('Refreshing history');
@@ -132,7 +132,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Clear all history
+  // Clear all history
   Future<void> clearHistory() async {
     try {
       logInfo('Clearing all history');
@@ -152,7 +152,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Remove specific history item
+  // Remove specific history item
   Future<void> removeHistoryItem(String contentId) async {
     final currentState = state;
     if (currentState is! HistoryLoaded) return;
@@ -185,7 +185,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Get history count
+  // Get history count
   Future<int> getHistoryCount() async {
     try {
       return await getHistoryCountUseCase(const NoParams());
@@ -195,7 +195,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Get cleanup status
+  // Get cleanup status
   Future<HistoryCleanupStatus> getCleanupStatus() async {
     try {
       return await historyCleanupService.getCleanupStatus();
@@ -205,7 +205,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Trigger manual cleanup
+  // Trigger manual cleanup
   Future<void> performManualCleanup() async {
     try {
       logInfo('Performing manual history cleanup');
@@ -227,7 +227,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Update cleanup settings
+  // Update cleanup settings
   Future<void> updateCleanupSettings(UserPreferences preferences) async {
     try {
       logInfo('Updating cleanup settings');
@@ -239,7 +239,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     }
   }
 
-  /// Check if history item exists
+  // Check if history item exists
   bool hasHistoryItem(String contentId) {
     final currentState = state;
     if (currentState is HistoryLoaded) {
@@ -248,7 +248,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     return false;
   }
 
-  /// Get history item by content ID
+  // Get history item by content ID
   History? getHistoryItem(String contentId) {
     final currentState = state;
     if (currentState is HistoryLoaded) {
@@ -263,7 +263,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     return null;
   }
 
-  /// Get current history count from state
+  // Get current history count from state
   int get currentHistoryCount {
     final currentState = state;
     if (currentState is HistoryLoaded) {
@@ -272,7 +272,7 @@ class HistoryCubit extends BaseCubit<HistoryState> {
     return 0;
   }
 
-  /// Check if more history can be loaded
+  // Check if more history can be loaded
   bool get canLoadMore {
     final currentState = state;
     return currentState is HistoryLoaded &&
@@ -280,17 +280,17 @@ class HistoryCubit extends BaseCubit<HistoryState> {
         !currentState.isLoadingMore;
   }
 
-  /// Check if history is empty
+  // Check if history is empty
   bool get isEmpty {
     return state is HistoryEmpty;
   }
 
-  /// Check if history is loading
+  // Check if history is loading
   bool get isLoading {
     return state is HistoryLoading || state is HistoryClearing;
   }
 
-  /// Check if history has error
+  // Check if history has error
   bool get hasError {
     return state is HistoryError;
   }

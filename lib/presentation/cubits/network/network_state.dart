@@ -1,6 +1,6 @@
 part of 'network_cubit.dart';
 
-/// Network connection types
+// Network connection types
 enum NetworkConnectionType {
   wifi,
   mobile,
@@ -8,12 +8,12 @@ enum NetworkConnectionType {
   other,
 }
 
-/// Base state for NetworkCubit
+// Base state for NetworkCubit
 abstract class NetworkState extends BaseCubitState {
   const NetworkState();
 }
 
-/// Initial state before connectivity check
+// Initial state before connectivity check
 class NetworkInitial extends NetworkState {
   const NetworkInitial();
 
@@ -21,7 +21,7 @@ class NetworkInitial extends NetworkState {
   List<Object?> get props => [];
 }
 
-/// State when checking connectivity
+// State when checking connectivity
 class NetworkChecking extends NetworkState {
   const NetworkChecking();
 
@@ -29,7 +29,7 @@ class NetworkChecking extends NetworkState {
   List<Object?> get props => [];
 }
 
-/// State when network is connected
+// State when network is connected
 class NetworkConnected extends NetworkState {
   const NetworkConnected({
     required this.connectionType,
@@ -40,7 +40,7 @@ class NetworkConnected extends NetworkState {
   @override
   List<Object?> get props => [connectionType];
 
-  /// Get connection type display name
+  // Get connection type display name
   String get connectionTypeDisplayName {
     switch (connectionType) {
       case NetworkConnectionType.wifi:
@@ -54,16 +54,16 @@ class NetworkConnected extends NetworkState {
     }
   }
 
-  /// Check if connection is metered (mobile data)
+  // Check if connection is metered (mobile data)
   bool get isMetered => connectionType == NetworkConnectionType.mobile;
 
-  /// Check if connection is fast (WiFi or Ethernet)
+  // Check if connection is fast (WiFi or Ethernet)
   bool get isFastConnection =>
       connectionType == NetworkConnectionType.wifi ||
       connectionType == NetworkConnectionType.ethernet;
 }
 
-/// State when network is disconnected
+// State when network is disconnected
 class NetworkDisconnected extends NetworkState {
   const NetworkDisconnected();
 
@@ -71,7 +71,7 @@ class NetworkDisconnected extends NetworkState {
   List<Object?> get props => [];
 }
 
-/// State when there's an error with network monitoring
+// State when there's an error with network monitoring
 class NetworkError extends NetworkState {
   const NetworkError({
     required this.message,
@@ -84,6 +84,6 @@ class NetworkError extends NetworkState {
   @override
   List<Object?> get props => [message, errorType];
 
-  /// Check if error is retryable
+  // Check if error is retryable
   bool get canRetry => errorType == 'network' || errorType == 'connectivity';
 }

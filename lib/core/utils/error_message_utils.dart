@@ -8,7 +8,7 @@ import '../errors/error_handler.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
 class ErrorMessageUtils {
-  /// generate a user-friendly error message from any error object
+  // generate a user-friendly error message from any error object
   static String getFriendlyErrorMessage(dynamic error,
       [AppLocalizations? l10n]) {
     if (l10n != null) {

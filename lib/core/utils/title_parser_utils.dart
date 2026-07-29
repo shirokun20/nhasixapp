@@ -1,6 +1,6 @@
 class TitleParserUtils {
-  /// Extracts the base title from a full chapter/volume title.
-  /// Removes trailing markers like "Chapter 1", "Vol 2", "Part 3", etc.
+  // Extracts the base title from a full chapter/volume title.
+  // Removes trailing markers like "Chapter 1", "Vol 2", "Part 3", etc.
   static String getBaseTitle(String fullTitle) {
     if (fullTitle.isEmpty) return fullTitle;
 

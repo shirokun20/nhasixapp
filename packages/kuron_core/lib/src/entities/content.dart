@@ -3,10 +3,10 @@ import 'tag.dart';
 import 'chapter.dart';
 import '../enums/content_type.dart';
 
-/// Core content entity representing a manga/doujinshi.
+// Core content entity representing a manga/doujinshi.
 ///
-/// This entity is source-agnostic and can represent content from
-/// any source (nhentai, crotpedia, etc.).
+// This entity is source-agnostic and can represent content from
+// any source (nhentai, crotpedia, etc.).
 class Content extends Equatable {
   const Content({
     required this.id,
@@ -37,81 +37,81 @@ class Content extends Equatable {
     this.totalChapters,
   });
 
-  /// Content ID (format varies by source)
+  // Content ID (format varies by source)
   final String id;
 
-  /// Source identifier (e.g., 'nhentai', 'crotpedia')
+  // Source identifier (e.g., 'nhentai', 'crotpedia')
   final String sourceId;
 
-  /// Primary title
+  // Primary title
   final String title;
 
-  /// Cover image URL
+  // Cover image URL
   final String coverUrl;
 
-  /// Content tags
+  // Content tags
   final List<Tag> tags;
 
-  /// Artist names
+  // Artist names
   final List<String> artists;
 
-  /// Character names
+  // Character names
   final List<String> characters;
 
-  /// Parody/series names
+  // Parody/series names
   final List<String> parodies;
 
-  /// Group/circle names
+  // Group/circle names
   final List<String> groups;
 
-  /// Content language
+  // Content language
   final String language;
 
-  /// Number of pages
+  // Number of pages
   final int pageCount;
 
-  /// List of page image URLs
+  // List of page image URLs
   final List<String> imageUrls;
 
-  /// Upload/publish date
+  // Upload/publish date
   final DateTime uploadDate;
 
-  /// Favorites/popularity count
+  // Favorites/popularity count
   final int favorites;
 
-  /// English title (if available)
+  // English title (if available)
   final String? englishTitle;
 
-  /// Japanese title (if available)
+  // Japanese title (if available)
   final String? japaneseTitle;
 
-  /// Subtitle (if available)
+  // Subtitle (if available)
   final String? subTitle;
 
-  /// Media ID (used for image URL construction in some sources)
+  // Media ID (used for image URL construction in some sources)
   final String? mediaId;
 
-  /// Related content
+  // Related content
   final List<Content> relatedContent;
 
-  /// List of chapters (for multi-chapter content like manga/webtoon)
+  // List of chapters (for multi-chapter content like manga/webtoon)
   final List<Chapter>? chapters;
 
-  /// URL to content page (for navigation and history tracking)
+  // URL to content page (for navigation and history tracking)
   final String? url;
 
   // ========== Multi-Provider Additions ==========
 
-  /// Content type (doujinshi, manga, manhua, manhwa, artistCG, gameCG)
+  // Content type (doujinshi, manga, manhua, manhwa, artistCG, gameCG)
   final ContentType contentType;
 
-  /// Publication status (for chapter-based sources like MangaDex)
+  // Publication status (for chapter-based sources like MangaDex)
   final ContentStatus status;
 
-  /// Original URL at source website (e.g. https://nhentai.net/g/123456/)
+  // Original URL at source website (e.g. https://nhentai.net/g/123456/)
   final String? sourceUrl;
 
-  /// Total number of chapters (for chapter-based sources)
+  // Total number of chapters (for chapter-based sources)
   final int? totalChapters;
 
   @override
@@ -199,7 +199,7 @@ class Content extends Equatable {
     );
   }
 
-  /// Get display title based on preference
+  // Get display title based on preference
   String getDisplayTitle({bool preferEnglish = true}) {
     if (preferEnglish && englishTitle != null && englishTitle!.isNotEmpty) {
       return englishTitle!;
@@ -210,23 +210,23 @@ class Content extends Equatable {
     return title;
   }
 
-  /// Check if content has specific tag
+  // Check if content has specific tag
   bool hasTag(String tagName) {
     return tags.any((tag) => tag.name.toLowerCase() == tagName.toLowerCase());
   }
 
-  /// Check if content has specific artist
+  // Check if content has specific artist
   bool hasArtist(String artistName) {
     return artists
         .any((artist) => artist.toLowerCase() == artistName.toLowerCase());
   }
 
-  /// Get tags by type
+  // Get tags by type
   List<Tag> getTagsByType(String type) {
     return tags.where((tag) => tag.type == type).toList();
   }
 
-  /// Get content category
+  // Get content category
   String get category {
     final categoryTags = getTagsByType('category');
     return categoryTags.isNotEmpty ? categoryTags.first.name : 'doujinshi';

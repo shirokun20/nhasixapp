@@ -13,7 +13,7 @@ import '../datasources/remote/exceptions.dart';
 import '../../core/services/request_deduplication_service.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
 
-/// Implementation of ContentRepository with caching strategy and offline-first architecture
+// Implementation of ContentRepository with caching strategy and offline-first architecture
 class ContentRepositoryImpl implements ContentRepository {
   ContentRepositoryImpl({
     required this.contentSourceRegistry,
@@ -454,7 +454,7 @@ class ContentRepositoryImpl implements ContentRepository {
     }
   }
 
-  /// Sort tags based on sort option
+  // Sort tags based on sort option
   void _sortTags(List<Tag> tags, TagSortOption sortBy) {
     switch (sortBy) {
       case TagSortOption.count:
@@ -469,7 +469,7 @@ class ContentRepositoryImpl implements ContentRepository {
     }
   }
 
-  /// --- Mappers ---
+  // --- Mappers ---
 
   ContentListResult _mapToAppContentListResult(
       core.ContentListResult coreResult) {
@@ -483,7 +483,7 @@ class ContentRepositoryImpl implements ContentRepository {
     );
   }
 
-  /// Return core Content directly (no mapping needed since types are unified)
+  // Return core Content directly (no mapping needed since types are unified)
   Content _mapToAppContent(core.Content coreContent) => coreContent;
 
   bool _shouldBypassDetailCache(
@@ -505,7 +505,10 @@ class ContentRepositoryImpl implements ContentRepository {
       return true;
     }
 
-    if (source == 'hentainexus' || source == 'schale-network' || source == 'hdoujin' || source == 'nicomanga') {
+    if (source == 'hentainexus' ||
+        source == 'schale-network' ||
+        source == 'hdoujin' ||
+        source == 'nicomanga') {
       return true;
     }
 
@@ -546,7 +549,6 @@ class ContentRepositoryImpl implements ContentRepository {
 
     return false;
   }
-
 
   core.SearchFilter _mapToCoreSearchFilter(SearchFilter appFilter) {
     // Map SortOption

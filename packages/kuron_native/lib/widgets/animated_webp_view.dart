@@ -6,27 +6,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../kuron_native.dart';
 
-/// Native Android animated-WebP viewer backed by [AnimatedImageDrawable].
+// Native Android animated-WebP viewer backed by [AnimatedImageDrawable].
 ///
-/// ## Thumbnail-first approach
-/// Instead of immediately creating a [PlatformView] (which starts decoding all
-/// animation frames), this widget first requests a lightweight JPEG thumbnail
-/// (first frame only) from the native side. The list stays at full 60 fps with
-/// zero animation overhead. Playback starts automatically when the page becomes
-/// the active/visible reader page.
+// ## Thumbnail-first approach
+// Instead of immediately creating a [PlatformView] (which starts decoding all
+// animation frames), this widget first requests a lightweight JPEG thumbnail
+// (first frame only) from the native side. The list stays at full 60 fps with
+// zero animation overhead. Playback starts automatically when the page becomes
+// the active/visible reader page.
 ///
-/// ## API levels
-/// | API | Behaviour |
-/// |-----|-----------|
-/// | ≥ 28 | Full animated playback via `AnimatedImageDrawable` when visible |
-/// | < 28 | Static first-frame via `BitmapFactory` |
-/// | Non-Android | [fallback] widget is shown |
+// ## API levels
+// | API | Behaviour |
+// |-----|-----------|
+// | ≥ 28 | Full animated playback via `AnimatedImageDrawable` when visible |
+// | < 28 | Static first-frame via `BitmapFactory` |
+// | Non-Android | [fallback] widget is shown |
 ///
-/// ## Usage
-/// ```dart
-/// if (AnimatedWebPView.isAvailable)
-///   AnimatedWebPView(url: url, fallback: spinner)
-/// ```
+// ## Usage
+// ```dart
+// if (AnimatedWebPView.isAvailable)
+//   AnimatedWebPView(url: url, fallback: spinner)
+// ```
 class AnimatedWebPView extends StatefulWidget {
   const AnimatedWebPView({
     super.key,
@@ -45,46 +45,46 @@ class AnimatedWebPView extends StatefulWidget {
 
   final String url;
 
-  /// Absolute path to the already-downloaded file on disk.
+  // Absolute path to the already-downloaded file on disk.
   final String? filePath;
 
-  /// Optional HTTP headers forwarded to the native downloader.
+  // Optional HTTP headers forwarded to the native downloader.
   final Map<String, String> headers;
 
-  /// Target decode width in physical pixels.
+  // Target decode width in physical pixels.
   final int? targetWidth;
 
-  /// When true, skip the thumbnail step and start animation immediately.
-  /// In reader usage, [visiblePageNotifier] takes precedence so only the
-  /// current visible page keeps animating after scroll changes.
+  // When true, skip the thumbnail step and start animation immediately.
+  // In reader usage, [visiblePageNotifier] takes precedence so only the
+  // current visible page keeps animating after scroll changes.
   final bool autoPlay;
 
-  /// When true, skip animated decode and render static frame only.
-  /// Used for offline static images — native BitmapFactory/ImageDecoder
-  /// is faster than Flutter's ExtendedImage.file pipeline.
+  // When true, skip animated decode and render static frame only.
+  // Used for offline static images — native BitmapFactory/ImageDecoder
+  // is faster than Flutter's ExtendedImage.file pipeline.
   final bool staticOnly;
 
-  /// 1-based page number of this image in the reader.
+  // 1-based page number of this image in the reader.
   final int? pageNumber;
 
-  /// Notifier that emits the currently visible page number.
-  /// When provided, animation auto-pauses when this page is not visible.
+  // Notifier that emits the currently visible page number.
+  // When provided, animation auto-pauses when this page is not visible.
   final ValueNotifier<int>? visiblePageNotifier;
 
-  /// Optional builder for showing byte-level native preload progress.
+  // Optional builder for showing byte-level native preload progress.
   final Widget Function(
     BuildContext context,
     int receivedBytes,
     int? totalBytes,
   )? loadingBuilder;
 
-  /// Widget shown while the thumbnail is loading or on non-Android platforms.
+  // Widget shown while the thumbnail is loading or on non-Android platforms.
   final Widget fallback;
 
-  /// Whether the image should be forced to grayscale at the native level.
+  // Whether the image should be forced to grayscale at the native level.
   final bool grayscale;
 
-  /// Whether [AnimatedWebPView] can render on the current platform.
+  // Whether [AnimatedWebPView] can render on the current platform.
   static bool get isAvailable => Platform.isAndroid;
 
   @visibleForTesting
@@ -126,29 +126,29 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
   static const int _largeLocalFileSkipThumbnailThresholdBytes =
       10 * 1024 * 1024;
 
-  /// Path to the cached JPEG thumbnail (first frame of the WebP).
+  // Path to the cached JPEG thumbnail (first frame of the WebP).
   String? _thumbnailPath;
 
-  /// When true, the [AndroidView] is mounted and animation plays.
+  // When true, the [AndroidView] is mounted and animation plays.
   bool _isPlaying = false;
 
-  ///  guards against _onVisiblePageChanged cascade (called from 2
-  /// sources: visiblePageNotifier, didUpdateWidget).
-  /// null = uninitialized — first call always proceeds.
+  //  guards against _onVisiblePageChanged cascade (called from 2
+  // sources: visiblePageNotifier, didUpdateWidget).
+  // null = uninitialized — first call always proceeds.
   bool? _lastShouldAutoPlay;
 
-  /// Path to the raw WebP file cached on disk by [getThumbnailForWebP].
-  /// Passed to [AnimatedWebPView] as `filePath` so first play loads from disk
-  /// instantly — without a second network download.
+  // Path to the raw WebP file cached on disk by [getThumbnailForWebP].
+  // Passed to [AnimatedWebPView] as `filePath` so first play loads from disk
+  // instantly — without a second network download.
   String? _webpCachePath;
   bool _isLoadingThumbnail = false;
   int _thumbnailDownloadedBytes = 0;
   int? _thumbnailTotalBytes;
 
-  /// Unique ID for this thumbnail request, used to cancel it on dispose.
+  // Unique ID for this thumbnail request, used to cancel it on dispose.
   String? _requestId;
 
-  /// Next counter for generating unique request IDs.
+  // Next counter for generating unique request IDs.
   static int _nextRequestId = 0;
 
   bool get _shouldAutoPlay => AnimatedWebPView.shouldAutoPlayForTesting(
@@ -214,7 +214,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     super.dispose();
   }
 
-  /// Auto-pause when this page is no longer the visible page.
+  // Auto-pause when this page is no longer the visible page.
   void _onVisiblePageChanged() {
     //  guard against cascade — visiblePageNotifier + didUpdateWidget
     // both fire, triggering redundant play/pause toggles.
@@ -245,10 +245,10 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     }
   }
 
-  /// When app goes to background or becomes inactive, tear down the
-  /// [AndroidView] so the native [AnimatedImageDrawable] stops consuming
-  /// CPU/GPU. On resume the current visible page auto-plays again; other pages
-  /// return to their passive thumbnail preview.
+  // When app goes to background or becomes inactive, tear down the
+  // [AndroidView] so the native [AnimatedImageDrawable] stops consuming
+  // CPU/GPU. On resume the current visible page auto-plays again; other pages
+  // return to their passive thumbnail preview.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -330,7 +330,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     }
   }
 
-  /// Cancel the in-flight thumbnail request, if any.
+  // Cancel the in-flight thumbnail request, if any.
   void _cancelThumbnailRequest() {
     final rid = _requestId;
     _requestId = null;
@@ -339,7 +339,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
     }
   }
 
-  /// Asks the native plugin to generate/return the JPEG thumbnail.
+  // Asks the native plugin to generate/return the JPEG thumbnail.
   Future<void> _loadThumbnail() async {
     if (_isLoadingThumbnail) return;
     _isLoadingThumbnail = true;
@@ -447,8 +447,7 @@ class _AnimatedWebPViewState extends State<AnimatedWebPView>
               layoutDirection: TextDirection.ltr,
               creationParams: <String, Object>{
                 'url': widget.url,
-                if (widget.pageNumber != null)
-                  'pageNumber': widget.pageNumber!,
+                if (widget.pageNumber != null) 'pageNumber': widget.pageNumber!,
                 if (_webpCachePath != null)
                   'filePath': _webpCachePath!
                 else if (widget.filePath != null)

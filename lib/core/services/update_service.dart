@@ -29,8 +29,8 @@ class UpdateService {
   })  : _logger = logger,
         _dio = Dio();
 
-  /// Checks for update and returns [UpdateInfo] if a newer version is available.
-  /// Returns null if up to date or error.
+  // Checks for update and returns [UpdateInfo] if a newer version is available.
+  // Returns null if up to date or error.
   Future<UpdateInfo?> checkForUpdate() async {
     try {
       _logger.i('UpdateService: Checking for updates from $_baseUrl...');
@@ -90,7 +90,7 @@ class UpdateService {
     }
   }
 
-  /// Compare semantic versions
+  // Compare semantic versions
   bool _isNewerVersion(String current, String remote) {
     try {
       // Remove any build numbers (+11)

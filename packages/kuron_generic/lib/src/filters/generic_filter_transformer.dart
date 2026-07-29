@@ -1,36 +1,36 @@
-/// Transforms [SearchFilter] and [FilterList] state into URL params / query
-/// values understood by a generic source config.
+// Transforms [SearchFilter] and [FilterList] state into URL params / query
+// values understood by a generic source config.
 library;
 
 import 'package:kuron_core/kuron_core.dart';
 
-/// Result of a filter transformation — a flat map of query-parameter key/value
-/// pairs ready to be appended to a URL.
+// Result of a filter transformation — a flat map of query-parameter key/value
+// pairs ready to be appended to a URL.
 class FilterTransformResult {
-  /// Query parameters derived from the active filter state.
+  // Query parameters derived from the active filter state.
   final Map<String, String> params;
 
-  /// Page number (resolved from [SearchFilter.page]).
+  // Page number (resolved from [SearchFilter.page]).
   final int page;
 
   const FilterTransformResult({required this.params, required this.page});
 }
 
-/// Transforms a [SearchFilter] into a flat `Map<String, String>` of query
-/// parameters using the `searchConfig` block from a source's raw config JSON.
+// Transforms a [SearchFilter] into a flat `Map<String, String>` of query
+// parameters using the `searchConfig` block from a source's raw config JSON.
 ///
-/// Config keys consulted (under `searchConfig`):
-/// - `queryParam`      — name of the text-search parameter (default: `"q"`)
-/// - `pageParam`       — name of the pagination parameter (default: `"page"`)
-/// - `sortParam`       — name of the sort parameter (default: `"sort"`)
-/// - `sortValues`      — map of [SortOption] enum name → provider sort value
-/// - `languageParam`   — name of the language parameter
-/// - `tagParam`        — name of the include-tag parameter
-/// - `excludeTagParam` — name of the exclude-tag parameter
+// Config keys consulted (under `searchConfig`):
+// - `queryParam`      — name of the text-search parameter (default: `"q"`)
+// - `pageParam`       — name of the pagination parameter (default: `"page"`)
+// - `sortParam`       — name of the sort parameter (default: `"sort"`)
+// - `sortValues`      — map of [SortOption] enum name → provider sort value
+// - `languageParam`   — name of the language parameter
+// - `tagParam`        — name of the include-tag parameter
+// - `excludeTagParam` — name of the exclude-tag parameter
 class GenericFilterTransformer {
   const GenericFilterTransformer();
 
-  /// Transform [filter] using the `searchConfig` block from [rawConfig].
+  // Transform [filter] using the `searchConfig` block from [rawConfig].
   FilterTransformResult transform(
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
@@ -87,15 +87,15 @@ class GenericFilterTransformer {
     return FilterTransformResult(params: params, page: filter.page);
   }
 
-  /// Transform a [FilterList] (active filter states) into additional query
-  /// params, using the filter's [SourceFilter.name] as the param key.
+  // Transform a [FilterList] (active filter states) into additional query
+  // params, using the filter's [SourceFilter.name] as the param key.
   ///
-  /// Each filter type contributes differently:
-  /// - [TextSourceFilter] → `{name}: state`
-  /// - [SelectSourceFilter] → `{name}: options[state]`
-  /// - [SortSourceFilter] → `{name}: options[state.index]` (if non-null)
-  /// - [CheckBoxSourceFilter] → `{name}: "1"` when checked
-  /// - [TriStateSourceFilter] → contributed to include/exclude param lists
+  // Each filter type contributes differently:
+  // - [TextSourceFilter] → `{name}: state`
+  // - [SelectSourceFilter] → `{name}: options[state]`
+  // - [SortSourceFilter] → `{name}: options[state.index]` (if non-null)
+  // - [CheckBoxSourceFilter] → `{name}: "1"` when checked
+  // - [TriStateSourceFilter] → contributed to include/exclude param lists
   Map<String, String> transformFilterList(FilterList filters) {
     final params = <String, String>{};
 

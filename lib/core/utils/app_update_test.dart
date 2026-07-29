@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 
-/// Test script to verify AppUpdateService behavior
-/// Run this from a test button or debug menu
+// Test script to verify AppUpdateService behavior
+// Run this from a test button or debug menu
 class AppUpdateTest {
   static Future<void> runTests(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);

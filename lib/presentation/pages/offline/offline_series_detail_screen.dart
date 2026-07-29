@@ -309,7 +309,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (_isSelectionMode) {
-          setState(() { _isSelectionMode = false; _selectedContentIds.clear(); });
+          setState(() {
+            _isSelectionMode = false;
+            _selectedContentIds.clear();
+          });
           return;
         }
         if (didPop) return;
@@ -320,7 +323,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
             ? AppBar(
                 leading: IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () => setState(() { _isSelectionMode = false; _selectedContentIds.clear(); }),
+                  onPressed: () => setState(() {
+                    _isSelectionMode = false;
+                    _selectedContentIds.clear();
+                  }),
                 ),
                 title: Text('${_selectedContentIds.length} selected',
                     style: TextStyleConst.titleLarge),
@@ -378,11 +384,14 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () => context.pop(_didChange),
                     ),
-                    title: Text(widget.baseTitle, style: TextStyleConst.titleLarge),
+                    title: Text(widget.baseTitle,
+                        style: TextStyleConst.titleLarge),
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.checklist),
-                        onPressed: () => setState(() { _isSelectionMode = true; }),
+                        onPressed: () => setState(() {
+                          _isSelectionMode = true;
+                        }),
                       ),
                       IconButton(
                         icon: const Icon(Icons.search),
@@ -394,29 +403,33 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                         itemBuilder: (_) => [
                           PopupMenuItem(
                             value: _SortMode.dateDesc,
-                            child: Text('Newest', style: TextStyleConst.bodyMedium),
+                            child: Text('Newest',
+                                style: TextStyleConst.bodyMedium),
                           ),
                           PopupMenuItem(
                             value: _SortMode.dateAsc,
-                            child: Text('Oldest', style: TextStyleConst.bodyMedium),
+                            child: Text('Oldest',
+                                style: TextStyleConst.bodyMedium),
                           ),
                           PopupMenuItem(
                             value: _SortMode.titleAsc,
-                            child: Text('A-Z', style: TextStyleConst.bodyMedium),
+                            child:
+                                Text('A-Z', style: TextStyleConst.bodyMedium),
                           ),
                           PopupMenuItem(
                             value: _SortMode.titleDesc,
-                            child: Text('Z-A', style: TextStyleConst.bodyMedium),
+                            child:
+                                Text('Z-A', style: TextStyleConst.bodyMedium),
                           ),
                           PopupMenuItem(
                             value: _SortMode.pagesAsc,
-                            child:
-                                Text('Pages ↑', style: TextStyleConst.bodyMedium),
+                            child: Text('Pages ↑',
+                                style: TextStyleConst.bodyMedium),
                           ),
                           PopupMenuItem(
                             value: _SortMode.pagesDesc,
-                            child:
-                                Text('Pages ↓', style: TextStyleConst.bodyMedium),
+                            child: Text('Pages ↓',
+                                style: TextStyleConst.bodyMedium),
                           ),
                         ],
                       ),
@@ -466,15 +479,15 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
                     child: InkWell(
                       onTap: _isSelectionMode
                           ? () => setState(() {
-                              if (_selectedContentIds.contains(content.id)) {
-                                _selectedContentIds.remove(content.id);
-                                if (_selectedContentIds.isEmpty) {
-                                  _isSelectionMode = false;
+                                if (_selectedContentIds.contains(content.id)) {
+                                  _selectedContentIds.remove(content.id);
+                                  if (_selectedContentIds.isEmpty) {
+                                    _isSelectionMode = false;
+                                  }
+                                } else {
+                                  _selectedContentIds.add(content.id);
                                 }
-                              } else {
-                                _selectedContentIds.add(content.id);
-                              }
-                            })
+                              })
                           : () => _openReader(content),
                       onLongPress: _isSelectionMode
                           ? null
@@ -676,7 +689,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     );
   }
 
-  /// Show options bottom sheet for individual content (chapter)
+  // Show options bottom sheet for individual content (chapter)
   void _showBottomSheet(BuildContext parentContext, Content content) async {
     final bottomSheetContext = parentContext;
     final colorScheme = Theme.of(parentContext).colorScheme;
@@ -871,7 +884,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     );
   }
 
-  /// Generate PDF from offline content
+  // Generate PDF from offline content
   Future<void> _generatePdf(BuildContext context, Content content) async {
     final l10n = AppLocalizations.of(context)!;
     final offlineManager = getIt<OfflineContentManager>();
@@ -945,7 +958,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     }
   }
 
-  /// Show delete confirmation dialog
+  // Show delete confirmation dialog
   Future<void> _showDeleteConfirmation(
       BuildContext context, Content content) async {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1017,7 +1030,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     dontAskAgainNotifier.dispose();
   }
 
-  /// Delete offline content
+  // Delete offline content
   Future<void> _deleteContent(BuildContext context, Content content) async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -1068,7 +1081,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     }
   }
 
-  /// Show bulk delete confirmation for selected items
+  // Show bulk delete confirmation for selected items
   void _showBulkDeleteConfirmation(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
@@ -1103,10 +1116,13 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     );
   }
 
-  /// Bulk delete selected offline contents
+  // Bulk delete selected offline contents
   Future<void> _bulkDeleteContent() async {
     final ids = List<String>.from(_selectedContentIds);
-    setState(() { _isSelectionMode = false; _selectedContentIds.clear(); });
+    setState(() {
+      _isSelectionMode = false;
+      _selectedContentIds.clear();
+    });
 
     if (!mounted) return;
     ScaffoldMessenger.of(context)

@@ -35,7 +35,7 @@ class ContentGroup {
   //  items already deduped in constructor
   List<Content> get uniqueItems => items;
 
-  /// Get the representative content (usually the first chapter)
+  // Get the representative content (usually the first chapter)
   Content get representativeContent {
     final unique = uniqueItems;
     if (unique.isEmpty) throw StateError('ContentGroup cannot be empty');
@@ -43,7 +43,7 @@ class ContentGroup {
     return unique.first;
   }
 
-  /// Total chapters in this group
+  // Total chapters in this group
   int get chapterCount => uniqueItems.length;
 
   int sizeForContent(String contentId) => itemSizes[contentId] ?? 0;

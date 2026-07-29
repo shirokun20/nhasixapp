@@ -1,6 +1,6 @@
-/// Notification service components
+// Notification service components
 ///
-/// This library exports all notification-related components for easy import.
+// This library exports all notification-related components for easy import.
 library;
 
 export 'notification_constants.dart';

@@ -1,8 +1,8 @@
-/// Download settings entity
-/// Extracted from settings_repository.dart
+// Download settings entity
+// Extracted from settings_repository.dart
 library;
 
-/// Download settings configuration
+// Download settings configuration
 class DownloadSettings {
   const DownloadSettings({
     required this.maxConcurrentDownloads,

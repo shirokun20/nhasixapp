@@ -1,7 +1,7 @@
 import '../../domain/entities/reader_position.dart';
 
-/// Data model for ReaderPosition entity
-/// Handles conversion between entity and database map format
+// Data model for ReaderPosition entity
+// Handles conversion between entity and database map format
 class ReaderPositionModel extends ReaderPosition {
   const ReaderPositionModel({
     required super.contentId,
@@ -14,7 +14,7 @@ class ReaderPositionModel extends ReaderPosition {
     super.coverUrl,
   });
 
-  /// Create model from entity
+  // Create model from entity
   factory ReaderPositionModel.fromEntity(ReaderPosition entity) {
     return ReaderPositionModel(
       contentId: entity.contentId,
@@ -28,7 +28,7 @@ class ReaderPositionModel extends ReaderPosition {
     );
   }
 
-  /// Convert model to entity
+  // Convert model to entity
   ReaderPosition toEntity() {
     return ReaderPosition(
       contentId: contentId,
@@ -42,7 +42,7 @@ class ReaderPositionModel extends ReaderPosition {
     );
   }
 
-  /// Create model from database map
+  // Create model from database map
   factory ReaderPositionModel.fromMap(Map<String, dynamic> map) {
     return ReaderPositionModel(
       contentId: (map['content_id'] as String?) ?? '',
@@ -58,7 +58,7 @@ class ReaderPositionModel extends ReaderPosition {
     );
   }
 
-  /// Convert model to database map
+  // Convert model to database map
   Map<String, dynamic> toMap() {
     return {
       'content_id': contentId,
@@ -74,7 +74,7 @@ class ReaderPositionModel extends ReaderPosition {
     };
   }
 
-  /// Create model from JSON
+  // Create model from JSON
   factory ReaderPositionModel.fromJson(Map<String, dynamic> json) {
     return ReaderPositionModel(
       contentId: (json['contentId'] as String?) ?? '',
@@ -88,7 +88,7 @@ class ReaderPositionModel extends ReaderPosition {
     );
   }
 
-  /// Convert model to JSON
+  // Convert model to JSON
   Map<String, dynamic> toJson() {
     return {
       'contentId': contentId,

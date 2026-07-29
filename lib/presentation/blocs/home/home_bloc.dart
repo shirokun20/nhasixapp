@@ -25,7 +25,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     emit(HomeLoaded(data: 'Initial Data'));
   }
 
-  /// Ensure download privacy protection in background
+  // Ensure download privacy protection in background
   void _ensureDownloadPrivacy() {
     try {
       final downloadService = getIt<DownloadService>();

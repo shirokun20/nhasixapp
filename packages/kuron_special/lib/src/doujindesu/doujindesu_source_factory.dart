@@ -6,8 +6,8 @@ import 'package:native_dio_adapter/native_dio_adapter.dart';
 
 import '../webview_session/webview_session_adapter.dart';
 
-/// Factory for DoujinDesu v2 that routes GET requests through
-/// [WebViewSessionAdapter] so Cloudflare 403 can trigger native bypass flow.
+// Factory for DoujinDesu v2 that routes GET requests through
+// [WebViewSessionAdapter] so Cloudflare 403 can trigger native bypass flow.
 class DoujindesuSourceFactory implements SourceFactory {
   DoujindesuSourceFactory({
     required Dio dio,

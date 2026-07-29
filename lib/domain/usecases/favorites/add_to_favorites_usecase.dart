@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for adding content to favorites
+// Use case for adding content to favorites
 class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
   AddToFavoritesUseCase(this._userDataRepository);
 
@@ -48,7 +48,7 @@ class AddToFavoritesUseCase extends UseCase<void, AddToFavoritesParams> {
   }
 }
 
-/// Parameters for AddToFavoritesUseCase (simplified)
+// Parameters for AddToFavoritesUseCase (simplified)
 class AddToFavoritesParams extends UseCaseParams {
   const AddToFavoritesParams({
     required this.content,
@@ -79,12 +79,12 @@ class AddToFavoritesParams extends UseCaseParams {
     );
   }
 
-  /// Create params for content
+  // Create params for content
   factory AddToFavoritesParams.create(Content content) {
     return AddToFavoritesParams(content: content);
   }
 
-  /// Create params with duplicate check disabled
+  // Create params with duplicate check disabled
   factory AddToFavoritesParams.force(Content content) {
     return AddToFavoritesParams(
       content: content,

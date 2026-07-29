@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../../domain/entities/reader_settings_entity.dart';
 
-/// JSON-serializable model for reader settings persistence
+// JSON-serializable model for reader settings persistence
 class ReaderSettingsEntityModel extends ReaderSettingsEntity {
   const ReaderSettingsEntityModel({
     super.readingMode = ReadingMode.singlePage,
@@ -12,7 +12,7 @@ class ReaderSettingsEntityModel extends ReaderSettingsEntity {
     super.tapDirection = TapDirection.normal,
   });
 
-  /// From domain entity
+  // From domain entity
   factory ReaderSettingsEntityModel.fromEntity(ReaderSettingsEntity entity) {
     return ReaderSettingsEntityModel(
       readingMode: entity.readingMode,
@@ -23,7 +23,7 @@ class ReaderSettingsEntityModel extends ReaderSettingsEntity {
     );
   }
 
-  /// Create from JSON string with error handling
+  // Create from JSON string with error handling
   factory ReaderSettingsEntityModel.fromJsonString(String jsonString) {
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
@@ -39,7 +39,7 @@ class ReaderSettingsEntityModel extends ReaderSettingsEntity {
     }
   }
 
-  /// Convert to JSON string
+  // Convert to JSON string
   String toJsonString() => jsonEncode({
         'readingMode': readingMode.name,
         'keepScreenOn': keepScreenOn,

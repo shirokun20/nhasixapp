@@ -5,9 +5,9 @@ import '../../../domain/usecases/usecases.dart';
 import '../../../core/services/history_cleanup_service.dart';
 import 'history_cubit.dart';
 
-/// Factory class for creating HistoryCubit instances
+// Factory class for creating HistoryCubit instances
 class HistoryCubitFactory {
-  /// Create a new HistoryCubit instance with dependencies from service locator
+  // Create a new HistoryCubit instance with dependencies from service locator
   static HistoryCubit create() {
     return HistoryCubit(
       getHistoryUseCase: getIt<GetHistoryUseCase>(),
@@ -20,8 +20,8 @@ class HistoryCubitFactory {
   }
 }
 
-/// Extension to make it easier to create HistoryCubit in widgets
+// Extension to make it easier to create HistoryCubit in widgets
 extension HistoryCubitExtension on HistoryCubit {
-  /// Static factory method for convenience
+  // Static factory method for convenience
   static HistoryCubit create() => HistoryCubitFactory.create();
 }

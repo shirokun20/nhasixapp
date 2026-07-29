@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart'
     show AppColors, KuronColors;
 
-
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
@@ -16,7 +15,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:kuron_core/kuron_core.dart';
 
-/// Horizontal featured card widget: Image left (40%), Content info right (60%)
+// Horizontal featured card widget: Image left (40%), Content info right (60%)
 class MainFeaturedCard extends StatelessWidget {
   const MainFeaturedCard({
     super.key,
@@ -375,30 +374,30 @@ class MainFeaturedCard extends StatelessWidget {
                                     Row(
                                       children: [
                                         Builder(builder: (context) {
-                                            final langSvc =
-                                                getIt<LanguageService>();
-                                            final normLang = content
-                                                .language.toLowerCase().trim();
-                                            final hasLang =
-                                                normLang.isNotEmpty &&
-                                                    normLang != 'unknown';
-                                            final emoji = hasLang
-                                                ? langSvc.flagEmoji(normLang)
-                                                : null;
-                                            final label = hasLang
-                                                ? langSvc.displayName(normLang)
-                                                : content.language;
+                                          final langSvc =
+                                              getIt<LanguageService>();
+                                          final normLang = content.language
+                                              .toLowerCase()
+                                              .trim();
+                                          final hasLang = normLang.isNotEmpty &&
+                                              normLang != 'unknown';
+                                          final emoji = hasLang
+                                              ? langSvc.flagEmoji(normLang)
+                                              : null;
+                                          final label = hasLang
+                                              ? langSvc.displayName(normLang)
+                                              : content.language;
 
-                                            return Text(
-                                              '${emoji ?? normLang.substring(0, 2).toUpperCase()} $label',
-                                              style: TextStyleConst.labelSmall
-                                                  .copyWith(
-                                                color: theme.colorScheme
-                                                    .onSurfaceVariant,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            );
-                                          }),
+                                          return Text(
+                                            '${emoji ?? normLang.substring(0, 2).toUpperCase()} $label',
+                                            style: TextStyleConst.labelSmall
+                                                .copyWith(
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          );
+                                        }),
                                       ],
                                     ),
                                   ],
@@ -446,7 +445,7 @@ class MainFeaturedCard extends StatelessWidget {
     );
   }
 
-  /// Build image with optional blur effect
+  // Build image with optional blur effect
   Widget _buildImageWithBlur({
     required BuildContext context,
     required String coverUrl,
@@ -471,7 +470,7 @@ class MainFeaturedCard extends StatelessWidget {
     return image;
   }
 
-  /// Build cached image with fallback to first page if cover fails
+  // Build cached image with fallback to first page if cover fails
   Widget _buildCachedImage({
     required BuildContext context,
     required String coverUrl,

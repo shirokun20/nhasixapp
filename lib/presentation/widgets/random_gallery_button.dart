@@ -10,7 +10,7 @@ import 'package:nhasixapp/domain/usecases/content/get_random_galleries_usecase.d
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'animated_dice_widget.dart';
 
-/// Random Gallery Button — Rolls a dice to get random content
+// Random Gallery Button — Rolls a dice to get random content
 class RandomGalleryButton extends StatefulWidget {
   const RandomGalleryButton({super.key});
 
@@ -51,15 +51,17 @@ class _RandomGalleryButtonState extends State<RandomGalleryButton> {
         ? rawConfig['api'] as Map<String, dynamic>
         : null;
     final rawEndpoints = api?['endpoints'];
-    final apiEndpoints = rawEndpoints is Map<String, dynamic> ? rawEndpoints : null;
+    final apiEndpoints =
+        rawEndpoints is Map<String, dynamic> ? rawEndpoints : null;
     final apiRandomPath = apiEndpoints?['random']?.toString().trim() ?? '';
 
     final scraper = rawConfig['scraper'] is Map<String, dynamic>
         ? rawConfig['scraper'] as Map<String, dynamic>
         : null;
     final rawScraperEndpoints = scraper?['endpoints'];
-    final scraperEndpoints =
-        rawScraperEndpoints is Map<String, dynamic> ? rawScraperEndpoints : null;
+    final scraperEndpoints = rawScraperEndpoints is Map<String, dynamic>
+        ? rawScraperEndpoints
+        : null;
     final scraperRandomPath = scraperEndpoints?['random']?.toString().trim() ??
         scraper?['randomUrl']?.toString().trim() ??
         '';

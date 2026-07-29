@@ -1,19 +1,19 @@
 import 'package:equatable/equatable.dart';
 
-/// Reading modes for the reader
+// Reading modes for the reader
 enum ReadingMode {
   singlePage, // Horizontal PageView
   verticalPage, // Vertical PageView
   continuousScroll, // Vertical ListView
 }
 
-/// Tap direction for page navigation gestures
+// Tap direction for page navigation gestures
 enum TapDirection {
   normal, // Left = previous, Right = next
   inverted, // Left = next, Right = previous (for RTL manga)
 }
 
-/// Reader settings domain entity
+// Reader settings domain entity
 class ReaderSettingsEntity extends Equatable {
   const ReaderSettingsEntity({
     this.readingMode = ReadingMode.singlePage,

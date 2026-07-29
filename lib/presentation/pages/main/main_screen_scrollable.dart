@@ -155,7 +155,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Check if this is first launch and show welcome sheet
+  // Check if this is first launch and show welcome sheet
   Future<void> _checkAndShowWelcomeSheet() async {
     final prefs = await SharedPreferences.getInstance();
     final hasSeenWelcome = prefs.getBool('has_seen_welcome_v1') ?? false;
@@ -199,7 +199,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     _contentBloc.add(ContentLoadEvent(sortBy: _currentSortOption));
   }
 
-  /// Initialize content - check for saved search state first
+  // Initialize content - check for saved search state first
   Future<void> _initializeContent() async {
     try {
       // Get current source ID
@@ -255,7 +255,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Validate if search filter is meaningful and not empty/cleared
+  // Validate if search filter is meaningful and not empty/cleared
   bool _isValidSearchFilter(SearchFilter filter) {
     // Check if filter has any meaningful content beyond just having non-null values
     return filter.query != null && filter.query!.trim().isNotEmpty ||
@@ -268,7 +268,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
         filter.category != null;
   }
 
-  /// Reload search filter from storage and apply to content bloc
+  // Reload search filter from storage and apply to content bloc
   Future<void> _reloadSearchFilter() async {
     try {
       // Get current source ID
@@ -459,7 +459,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Build the new scrollable body with all components integrated
+  // Build the new scrollable body with all components integrated
   Widget _buildScrollableBody() {
     return BlocConsumer<ContentBloc, ContentState>(
       listenWhen: (previous, current) =>
@@ -488,7 +488,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Build scrollable content with all components integrated
+  // Build scrollable content with all components integrated
   Widget _buildScrollableContent(ContentState state) {
     // Use state parameter directly - no nested BlocBuilder/BlocConsumer
 
@@ -521,7 +521,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return const SizedBox.shrink();
   }
 
-  /// Build loading state UI
+  // Build loading state UI
   Widget _buildLoadingState(ContentLoading state) {
     // Show overlay loading for pagination changes if we have previous content
     if (state.previousContents != null && state.previousContents!.isNotEmpty) {
@@ -629,7 +629,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return const ListShimmer(itemCount: 8);
   }
 
-  /// Build empty state UI
+  // Build empty state UI
   Widget _buildEmptyState(ContentEmpty state) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
@@ -722,7 +722,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Build error state UI
+  // Build error state UI
   Widget _buildErrorState(ContentError state) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -776,7 +776,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Build the main scrollable content grid with integrated components
+  // Build the main scrollable content grid with integrated components
   Widget _buildScrollableContentGrid(ContentLoaded state) {
     return RefreshIndicator(
       onRefresh: _handleRefresh,
@@ -908,8 +908,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Build hybrid masonry grid with full-width featured cards at dynamic intervals
-  /// For 25 items per page: Featured at positions 0, 8, 17 (3 featured per page)
+  // Build hybrid masonry grid with full-width featured cards at dynamic intervals
+  // For 25 items per page: Featured at positions 0, 8, 17 (3 featured per page)
   Widget _buildHybridMasonryGrid(
     List<Content> contents,
     bool blurThumbnails,
@@ -1089,7 +1089,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Handle content tap to navigate to detail screen
+  // Handle content tap to navigate to detail screen
   void _onContentTap(Content content) async {
     final searchFilter = await AppRouter.goToContentDetail(
       context,
@@ -1109,7 +1109,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Handle sorting option change
+  // Handle sorting option change
   Future<void> _onSortingChanged(SortOption newSort) async {
     if (_currentSortOption == newSort) return;
 
@@ -1142,7 +1142,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Handle refresh indicator pull-to-refresh
+  // Handle refresh indicator pull-to-refresh
   Future<void> _handleRefresh() async {
     try {
       final colorScheme = Theme.of(context).colorScheme;
@@ -1188,7 +1188,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Check if sorting should be shown
+  // Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
     if (!mounted) return false;
 
@@ -1213,7 +1213,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return hasData;
   }
 
-  /// Build search results header
+  // Build search results header
   Widget _buildSearchResultsHeader() {
     if (!_isShowingSearchResults || _currentSearchFilter == null) {
       return const SizedBox.shrink();
@@ -1313,7 +1313,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Clear search results and return to normal content
+  // Clear search results and return to normal content
   void _clearSearchResults() {
     // Update local UI state immediately
     setState(() {
@@ -1335,7 +1335,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Build content footer with pagination
+  // Build content footer with pagination
   Widget _buildContentFooter(ContentState state) {
     if (state is! ContentLoaded) {
       return const SizedBox.shrink();
@@ -1383,7 +1383,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     );
   }
 
-  /// Open current page in browser
+  // Open current page in browser
   Future<void> _openInBrowser() async {
     try {
       final contentState = _contentBloc.state;
@@ -1488,7 +1488,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Build URL for content state context (non-search)
+  // Build URL for content state context (non-search)
   String _buildContentStateUrl(ContentLoaded contentState) {
     final baseUrl = _getSourceBaseUrl();
 
@@ -1514,7 +1514,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Build main page URL with optional sort and page parameters
+  // Build main page URL with optional sort and page parameters
   String _buildMainPageUrl(int currentPage, [SortOption? sortBy]) {
     // Try config-driven browse URL first
     final configUrl = _buildConfigDrivenUrl(isSearch: false, sortBy: sortBy);
@@ -1530,8 +1530,8 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return '$baseUrl/$sortParam$pageParam';
   }
 
-  /// Build a URL from config ui.browseUrlTemplate or ui.searchUrlTemplate.
-  /// Returns null if no template is configured.
+  // Build a URL from config ui.browseUrlTemplate or ui.searchUrlTemplate.
+  // Returns null if no template is configured.
   String? _buildConfigDrivenUrl({
     required bool isSearch,
     String query = '',
@@ -1556,7 +1556,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Get current active source
+  // Get current active source
   ContentSource? _getActiveSource() {
     try {
       final sourceCubit = context.read<SourceCubit>();
@@ -1567,16 +1567,16 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     }
   }
 
-  /// Get base URL for current source (fallback to nhentai)
+  // Get base URL for current source (fallback to nhentai)
   String _getSourceBaseUrl() {
     final source = _getActiveSource();
     return source?.baseUrl ?? 'https://nhentai.net';
   }
 
-  /// Optional config-driven override for Open Browser action.
+  // Optional config-driven override for Open Browser action.
   ///
-  /// If present, this URL is used directly instead of building route-based
-  /// links from source baseUrl.
+  // If present, this URL is used directly instead of building route-based
+  // links from source baseUrl.
   String? _getConfiguredOpenBrowserUrl() {
     final sourceId = _getActiveSource()?.id;
     if (sourceId == null || sourceId.isEmpty) return null;
@@ -1688,7 +1688,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
     return queuedCount;
   }
 
-  /// Download all galleries in current page
+  // Download all galleries in current page
   Future<void> _downloadAllGalleries() async {
     try {
       final l10n = AppLocalizations.of(context)!;

@@ -1,7 +1,7 @@
 import 'package:nhasixapp/data/models/tags/tag_model.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_autocomplete_result.dart';
 
-/// Data model for autocomplete result from API v2
+// Data model for autocomplete result from API v2
 class TagAutocompleteResultModel extends TagAutocompleteResult {
   const TagAutocompleteResultModel({
     required super.suggestions,
@@ -9,7 +9,7 @@ class TagAutocompleteResultModel extends TagAutocompleteResult {
     required super.totalResults,
   });
 
-  /// nhentai autocomplete returns a bare List OR a Map with a 'results' key
+  // nhentai autocomplete returns a bare List OR a Map with a 'results' key
   factory TagAutocompleteResultModel.fromJson(
     dynamic json, {
     String query = '',

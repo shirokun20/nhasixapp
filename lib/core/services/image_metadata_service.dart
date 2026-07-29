@@ -3,8 +3,8 @@ import 'package:logger/logger.dart';
 import '../../core/models/image_metadata.dart';
 import '../../core/utils/offline_content_manager.dart';
 
-/// Service for generating and managing image metadata
-/// Handles URL validation, offline status checking, and metadata creation
+// Service for generating and managing image metadata
+// Handles URL validation, offline status checking, and metadata creation
 class ImageMetadataService {
   final OfflineContentManager _offlineContentManager;
   final Logger _logger;
@@ -14,9 +14,9 @@ class ImageMetadataService {
     this._logger,
   );
 
-  /// Generate metadata for an image URL
-  /// Determines if image is cached or online, extracts page number,
-  /// and resolves nhentai media ID if needed
+  // Generate metadata for an image URL
+  // Determines if image is cached or online, extracts page number,
+  // and resolves nhentai media ID if needed
   Future<ImageMetadata> generateMetadata({
     required String imageUrl,
     required String contentId,
@@ -55,8 +55,8 @@ class ImageMetadataService {
     }
   }
 
-  /// Generate metadata for multiple images at once
-  /// More efficient than calling generateMetadata multiple times
+  // Generate metadata for multiple images at once
+  // More efficient than calling generateMetadata multiple times
   Future<List<ImageMetadata>> generateMetadataBatch({
     required List<String> imageUrls,
     required String contentId,
@@ -79,12 +79,12 @@ class ImageMetadataService {
     return metadataList;
   }
 
-  /// Check if an image URL is available offline
+  // Check if an image URL is available offline
   Future<bool> isImageAvailableOffline(String imageUrl) async {
     return await _offlineContentManager.isImageDownloaded(imageUrl);
   }
 
-  /// Get offline image path if available
+  // Get offline image path if available
   Future<String?> getOfflineImagePath(String imageUrl) async {
     try {
       // If it's already a local file path, return as-is
@@ -116,8 +116,8 @@ class ImageMetadataService {
     }
   }
 
-  /// Extract page number from image URL
-  /// Supports various URL patterns used by nhentai and other sources
+  // Extract page number from image URL
+  // Supports various URL patterns used by nhentai and other sources
   int _extractPageNumber(String imageUrl) {
     try {
       final uri = Uri.parse(imageUrl);
@@ -163,8 +163,8 @@ class ImageMetadataService {
     }
   }
 
-  /// Extract content ID from image URL
-  /// Uses similar logic to OfflineContentManager._extractContentIdFromUrl
+  // Extract content ID from image URL
+  // Uses similar logic to OfflineContentManager._extractContentIdFromUrl
   String? _extractContentIdFromUrl(String imageUrl) {
     try {
       final uri = Uri.parse(imageUrl);
@@ -218,7 +218,7 @@ class ImageMetadataService {
     }
   }
 
-  /// Validate if an image URL is properly formatted
+  // Validate if an image URL is properly formatted
   bool isValidImageUrl(String imageUrl) {
     try {
       final uri = Uri.parse(imageUrl);
@@ -253,7 +253,7 @@ class ImageMetadataService {
     }
   }
 
-  /// Get metadata summary for debugging/logging purposes
+  // Get metadata summary for debugging/logging purposes
   Map<String, dynamic> getMetadataSummary(ImageMetadata metadata) {
     return {
       'contentId': metadata.contentId,

@@ -58,10 +58,10 @@ class SourceCubit extends BaseCubit<SourceState> {
     }
   }
 
-  /// Call after content has been fully reloaded to hide the switching shimmer.
+  // Call after content has been fully reloaded to hide the switching shimmer.
   void clearSwitching() => emit(state.copyWith(isSwitching: false));
 
-  /// Explicitly refresh available sources
+  // Explicitly refresh available sources
   void refreshSources() {
     emit(state.copyWith(
       availableSources: _registry.allSources,

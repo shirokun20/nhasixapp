@@ -1,4 +1,4 @@
-/// Quick diagnostic: verify json_path filter expression support for MangaDex.
+// Quick diagnostic: verify json_path filter expression support for MangaDex.
 library;
 
 import 'package:json_path/json_path.dart';

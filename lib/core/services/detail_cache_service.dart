@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kuron_core/kuron_core.dart';
 import '../../data/models/content_model.dart';
 
-/// Service for caching content detail data to improve performance
-/// Reduces loading times from ~3-4 seconds to target <1.5 seconds
+// Service for caching content detail data to improve performance
+// Reduces loading times from ~3-4 seconds to target <1.5 seconds
 class DetailCacheService {
   static const String _cacheKeyPrefix = 'detail_cache_';
   static const String _metadataKey = 'detail_cache_metadata';
@@ -16,7 +16,7 @@ class DetailCacheService {
 
   final Logger _logger = getIt<Logger>();
 
-  /// Get cached content detail by ID
+  // Get cached content detail by ID
   Future<Content?> getCachedDetail(String contentId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -54,7 +54,7 @@ class DetailCacheService {
     }
   }
 
-  /// Cache content detail
+  // Cache content detail
   Future<void> cacheDetail(Content content) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -88,7 +88,7 @@ class DetailCacheService {
     }
   }
 
-  /// Parse tags from cached data
+  // Parse tags from cached data
   List<Tag> _parseTagsFromCache(List<dynamic> tagsData) {
     return tagsData.map((tagData) {
       final map = tagData as Map<String, dynamic>?;
@@ -104,7 +104,7 @@ class DetailCacheService {
     }).toList();
   }
 
-  /// Convert tags to cache format
+  // Convert tags to cache format
   List<Map<String, dynamic>> _tagsToCacheFormat(List<Tag> tags) {
     return tags
         .map((tag) => {
@@ -118,10 +118,10 @@ class DetailCacheService {
         .toList();
   }
 
-  /// Get cache key for content ID
+  // Get cache key for content ID
   String _getCacheKey(String contentId) => '$_cacheKeyPrefix$contentId';
 
-  /// Update cache metadata
+  // Update cache metadata
   Future<void> _updateCacheMetadata(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     final metadata = prefs.getString(_metadataKey);
@@ -136,7 +136,7 @@ class DetailCacheService {
     await prefs.setString(_metadataKey, json.encode(metadataList));
   }
 
-  /// Clean up old cache entries to maintain size limit
+  // Clean up old cache entries to maintain size limit
   Future<void> _cleanupOldEntries() async {
     final prefs = await SharedPreferences.getInstance();
     final metadata = prefs.getString(_metadataKey);
@@ -160,7 +160,7 @@ class DetailCacheService {
     }
   }
 
-  /// Remove content from cache
+  // Remove content from cache
   Future<void> _removeFromCache(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = _getCacheKey(contentId);
@@ -176,7 +176,7 @@ class DetailCacheService {
     }
   }
 
-  /// Clear all cached details
+  // Clear all cached details
   Future<void> clearAllCache() async {
     final prefs = await SharedPreferences.getInstance();
     final metadata = prefs.getString(_metadataKey);
@@ -194,7 +194,7 @@ class DetailCacheService {
     _logger.d('Cleared all detail cache');
   }
 
-  /// Get cache statistics
+  // Get cache statistics
   Future<Map<String, dynamic>> getCacheStats() async {
     final prefs = await SharedPreferences.getInstance();
     final metadata = prefs.getString(_metadataKey);

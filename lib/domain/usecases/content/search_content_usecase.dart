@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for searching content with advanced filters
+// Use case for searching content with advanced filters
 class SearchContentUseCase extends UseCase<ContentListResult, SearchFilter> {
   SearchContentUseCase(this._contentRepository);
 
@@ -33,7 +33,7 @@ class SearchContentUseCase extends UseCase<ContentListResult, SearchFilter> {
   }
 }
 
-/// Parameters for SearchContentUseCase
+// Parameters for SearchContentUseCase
 class SearchContentParams extends UseCaseParams {
   const SearchContentParams({
     required this.filter,
@@ -56,27 +56,27 @@ class SearchContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params with updated filter
+  // Create params with updated filter
   SearchContentParams withFilter(SearchFilter newFilter) {
     return copyWith(filter: newFilter);
   }
 
-  /// Create params for next page
+  // Create params for next page
   SearchContentParams nextPage() {
     return copyWith(filter: filter.nextPage());
   }
 
-  /// Create params for previous page
+  // Create params for previous page
   SearchContentParams previousPage() {
     return copyWith(filter: filter.previousPage());
   }
 
-  /// Create params for first page
+  // Create params for first page
   SearchContentParams firstPage() {
     return copyWith(filter: filter.resetPage());
   }
 
-  /// Create params with query
+  // Create params with query
   factory SearchContentParams.withQuery(
     String query, {
     SortOption sortBy = SortOption.newest,
@@ -91,7 +91,7 @@ class SearchContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params with tags
+  // Create params with tags
   factory SearchContentParams.withTags(
     List<String> tags, {
     SortOption sortBy = SortOption.newest,
@@ -106,7 +106,7 @@ class SearchContentParams extends UseCaseParams {
     );
   }
 
-  /// Create params with artist
+  // Create params with artist
   factory SearchContentParams.withArtist(
     String artist, {
     SortOption sortBy = SortOption.newest,

@@ -3,26 +3,26 @@ import 'package:kuron_core/kuron_core.dart';
 
 import 'remote_config_service.dart';
 
-/// Applies the remote manifest to the [ContentSourceRegistry].
+// Applies the remote manifest to the [ContentSourceRegistry].
 ///
-/// ### Responsibilities
-/// - After [RemoteConfigService.smartInitialize] completes, call
-///   [applyManifest] to reconcile the registry against manifest data.
-/// - Sources flagged `enabled: false` in the manifest are **unregistered**
-///   so they never appear in any UI list.
-/// - Sources flagged `maintenance.active: true` (but still enabled) remain registered
-///   but are tracked in [maintenanceSourceIds] so the UI can show a banner.
+// ### Responsibilities
+// - After [RemoteConfigService.smartInitialize] completes, call
+//   [applyManifest] to reconcile the registry against manifest data.
+// - Sources flagged `enabled: false` in the manifest are **unregistered**
+//   so they never appear in any UI list.
+// - Sources flagged `maintenance.active: true` (but still enabled) remain registered
+//   but are tracked in [maintenanceSourceIds] so the UI can show a banner.
 ///
-/// ### Usage (in splash / initialization flow)
-/// ```dart
-/// await remoteConfigService.smartInitialize();
-/// sourceLoader.applyManifest(registry);
-/// ```
+// ### Usage (in splash / initialization flow)
+// ```dart
+// await remoteConfigService.smartInitialize();
+// sourceLoader.applyManifest(registry);
+// ```
 class SourceLoader {
   final RemoteConfigService _configService;
   final Logger _logger;
 
-  /// Source IDs currently under maintenance (enabled but unavailable).
+  // Source IDs currently under maintenance (enabled but unavailable).
   final Set<String> _maintenanceSourceIds = {};
 
   SourceLoader({
@@ -33,10 +33,10 @@ class SourceLoader {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /// Reconcile [registry] against the loaded manifest.
+  // Reconcile [registry] against the loaded manifest.
   ///
-  /// Call this **after** [RemoteConfigService.smartInitialize] so manifest
-  /// data is available. Safe to call multiple times (idempotent).
+  // Call this **after** [RemoteConfigService.smartInitialize] so manifest
+  // data is available. Safe to call multiple times (idempotent).
   void applyManifest(ContentSourceRegistry registry) {
     final manifest = _configService.manifest;
 
@@ -74,20 +74,20 @@ class SourceLoader {
     );
   }
 
-  /// Returns `true` if the given source is currently under maintenance.
+  // Returns `true` if the given source is currently under maintenance.
   bool isUnderMaintenance(String sourceId) =>
       _maintenanceSourceIds.contains(sourceId);
 
-  /// Returns the maintenance message for a source, if any.
+  // Returns the maintenance message for a source, if any.
   ///
-  /// Returns `null` if the source is not under maintenance or no message
-  /// is defined in its [SourceConfig].
+  // Returns `null` if the source is not under maintenance or no message
+  // is defined in its [SourceConfig].
   String? getMaintenanceMessage(String sourceId) {
     if (!isUnderMaintenance(sourceId)) return null;
     return _configService.getConfig(sourceId)?.maintenanceMessage;
   }
 
-  /// All source IDs currently flagged as under maintenance.
+  // All source IDs currently flagged as under maintenance.
   Set<String> get maintenanceSourceIds =>
       Set.unmodifiable(_maintenanceSourceIds);
 }

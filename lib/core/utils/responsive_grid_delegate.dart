@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../presentation/cubits/settings/settings_cubit.dart';
 
-/// Helper class for creating responsive grid delegates based on user settings
+// Helper class for creating responsive grid delegates based on user settings
 ///
-/// This class provides a centralized way to create grid delegates that respect
-/// user preferences for column counts in different orientations.
+// This class provides a centralized way to create grid delegates that respect
+// user preferences for column counts in different orientations.
 class ResponsiveGridDelegate {
-  /// Creates a grid delegate with column count based on orientation and user settings
+  // Creates a grid delegate with column count based on orientation and user settings
   ///
-  /// [context] - BuildContext for accessing MediaQuery
-  /// [settingsCubit] - SettingsCubit for accessing user column preferences
-  /// [childAspectRatio] - Optional override for child aspect ratio (defaults to 0.7)
-  /// [crossAxisSpacing] - Optional override for cross axis spacing (defaults to 8)
-  /// [mainAxisSpacing] - Optional override for main axis spacing (defaults to 8)
+  // [context] - BuildContext for accessing MediaQuery
+  // [settingsCubit] - SettingsCubit for accessing user column preferences
+  // [childAspectRatio] - Optional override for child aspect ratio (defaults to 0.7)
+  // [crossAxisSpacing] - Optional override for cross axis spacing (defaults to 8)
+  // [mainAxisSpacing] - Optional override for main axis spacing (defaults to 8)
   static SliverGridDelegate createGridDelegate(
     BuildContext context,
     SettingsCubit settingsCubit, {
@@ -50,13 +50,13 @@ class ResponsiveGridDelegate {
     );
   }
 
-  /// Creates a standard grid delegate for use with GridView.builder
+  // Creates a standard grid delegate for use with GridView.builder
   ///
-  /// [context] - BuildContext for accessing MediaQuery
-  /// [settingsCubit] - SettingsCubit for accessing user column preferences
-  /// [childAspectRatio] - Optional override for child aspect ratio (defaults to 0.7)
-  /// [crossAxisSpacing] - Optional override for cross axis spacing (defaults to 8)
-  /// [mainAxisSpacing] - Optional override for main axis spacing (defaults to 8)
+  // [context] - BuildContext for accessing MediaQuery
+  // [settingsCubit] - SettingsCubit for accessing user column preferences
+  // [childAspectRatio] - Optional override for child aspect ratio (defaults to 0.7)
+  // [crossAxisSpacing] - Optional override for cross axis spacing (defaults to 8)
+  // [mainAxisSpacing] - Optional override for main axis spacing (defaults to 8)
   static SliverGridDelegateWithFixedCrossAxisCount createStandardGridDelegate(
     BuildContext context,
     SettingsCubit settingsCubit, {
@@ -87,10 +87,10 @@ class ResponsiveGridDelegate {
     );
   }
 
-  /// Get column count directly without creating delegate
+  // Get column count directly without creating delegate
   ///
-  /// [context] - BuildContext for accessing MediaQuery
-  /// [settingsCubit] - SettingsCubit for accessing user column preferences
+  // [context] - BuildContext for accessing MediaQuery
+  // [settingsCubit] - SettingsCubit for accessing user column preferences
   static int getColumnCount(
     BuildContext context,
     SettingsCubit settingsCubit,

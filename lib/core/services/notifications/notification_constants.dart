@@ -1,35 +1,35 @@
-/// Constants for notification service
+// Constants for notification service
 ///
-/// Contains channel IDs, action IDs, and default values
-/// used across notification handlers.
+// Contains channel IDs, action IDs, and default values
+// used across notification handlers.
 library;
 
-/// Notification Channel Configuration
+// Notification Channel Configuration
 class NotificationChannels {
   NotificationChannels._();
 
-  /// Download notification channel
+  // Download notification channel
   static const String downloadChannelId = 'download_channel';
   static const String downloadChannelName = 'Downloads';
   static const String downloadChannelDescription =
       'Download progress and status notifications';
 
-  /// PDF conversion notification channel
+  // PDF conversion notification channel
   static const String pdfChannelId = 'pdf_conversion_channel';
   static const String pdfChannelName = 'PDF Conversion';
   static const String pdfChannelDescription =
       'PDF conversion progress notifications';
 
-  /// General notification channel
+  // General notification channel
   static const String generalChannelId = 'general_channel';
   static const String generalChannelName = 'General';
   static const String generalChannelDescription = 'General app notifications';
 }
 
-/// Notification Action IDs
+// Notification Action IDs
 ///
-/// These IDs are used to identify which action button was pressed
-/// in a notification.
+// These IDs are used to identify which action button was pressed
+// in a notification.
 class NotificationActions {
   NotificationActions._();
 
@@ -46,16 +46,16 @@ class NotificationActions {
   static const String retryPdf = 'retry_pdf';
 }
 
-/// Notification Display Limits
+// Notification Display Limits
 class NotificationLimits {
   NotificationLimits._();
 
-  /// Maximum title length before truncation
+  // Maximum title length before truncation
   static const int maxTitleLength = 40;
 
-  /// Maximum error message length before truncation
+  // Maximum error message length before truncation
   static const int maxErrorLength = 100;
 
-  /// Progress update interval (only update every N percent)
+  // Progress update interval (only update every N percent)
   static const int progressUpdateInterval = 10;
 }

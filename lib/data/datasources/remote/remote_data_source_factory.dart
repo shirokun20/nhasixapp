@@ -9,7 +9,7 @@ import 'remote_data_source.dart';
 import 'nhentai_scraper.dart';
 import 'anti_detection.dart';
 
-/// Factory class for creating RemoteDataSource with all dependencies
+// Factory class for creating RemoteDataSource with all dependencies
 class RemoteDataSourceFactory {
   static RemoteDataSource create({Logger? logger}) {
     final log = logger ?? Logger();

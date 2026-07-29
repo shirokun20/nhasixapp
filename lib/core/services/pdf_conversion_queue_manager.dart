@@ -5,14 +5,14 @@ import 'package:logger/logger.dart';
 import 'pdf_conversion_service.dart';
 import 'notification_service.dart';
 
-/// Manages a queue of PDF conversion tasks to prevent resource contention
-/// and provide better user experience with clear progress tracking.
+// Manages a queue of PDF conversion tasks to prevent resource contention
+// and provide better user experience with clear progress tracking.
 ///
-/// This manager processes PDF conversions sequentially (one at a time) to:
-/// - Avoid overwhelming the native PDF generator
-/// - Provide clear progress notifications
-/// - Show queue status to users
-/// - Handle cancellation gracefully
+// This manager processes PDF conversions sequentially (one at a time) to:
+// - Avoid overwhelming the native PDF generator
+// - Provide clear progress notifications
+// - Show queue status to users
+// - Handle cancellation gracefully
 class PdfConversionQueueManager {
   // Singleton pattern
   static final PdfConversionQueueManager _instance =
@@ -35,7 +35,7 @@ class PdfConversionQueueManager {
       StreamController<QueueStatus>.broadcast();
   Stream<QueueStatus> get statusStream => _statusController.stream;
 
-  /// Initialize the queue manager with required dependencies
+  // Initialize the queue manager with required dependencies
   void initialize({
     required PdfConversionService conversionService,
     required NotificationService notificationService,
@@ -47,7 +47,7 @@ class PdfConversionQueueManager {
     _logger?.i('PdfConversionQueueManager: Initialized');
   }
 
-  /// Add a PDF conversion task to the queue
+  // Add a PDF conversion task to the queue
   Future<void> queueConversion({
     required String contentId,
     required String title,
@@ -81,7 +81,7 @@ class PdfConversionQueueManager {
     }
   }
 
-  /// Process the queue sequentially
+  // Process the queue sequentially
   Future<void> _processQueue() async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -152,14 +152,14 @@ class PdfConversionQueueManager {
     _broadcastStatus();
   }
 
-  /// Broadcast current queue status to listeners
+  // Broadcast current queue status to listeners
   void _broadcastStatus() {
     if (!_statusController.isClosed) {
       _statusController.add(getStatus());
     }
   }
 
-  /// Cancel all queued conversions (does not cancel current processing)
+  // Cancel all queued conversions (does not cancel current processing)
   Future<void> cancelAll() async {
     _logger?.w('🚫 Cancelling all queued PDF conversions');
     _queue.clear();
@@ -167,7 +167,7 @@ class PdfConversionQueueManager {
     _broadcastStatus();
   }
 
-  /// Get current queue status
+  // Get current queue status
   QueueStatus getStatus() {
     return QueueStatus(
       queuedCount: _queue.length,
@@ -177,13 +177,13 @@ class PdfConversionQueueManager {
     );
   }
 
-  /// Dispose resources
+  // Dispose resources
   void dispose() {
     _statusController.close();
   }
 }
 
-/// Represents a single PDF conversion task in the queue
+// Represents a single PDF conversion task in the queue
 class PdfConversionTask {
   final String contentId;
   final String title;
@@ -204,7 +204,7 @@ class PdfConversionTask {
       'PdfConversionTask(contentId: $contentId, title: $title, images: ${imagePaths.length})';
 }
 
-/// Represents the current status of the PDF conversion queue
+// Represents the current status of the PDF conversion queue
 class QueueStatus {
   final int queuedCount;
   final PdfConversionTask? currentTask;

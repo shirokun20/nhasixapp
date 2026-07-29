@@ -1,4 +1,4 @@
-/// nhentai Comment Model
+// nhentai Comment Model
 class NhentaiComment {
   final int id;
   final int galleryId;
@@ -27,7 +27,7 @@ class NhentaiComment {
   }
 }
 
-/// nhentai User Model
+// nhentai User Model
 class NhentaiUser {
   final int id;
   final String username;

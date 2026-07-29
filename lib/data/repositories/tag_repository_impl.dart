@@ -7,7 +7,7 @@ import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
 import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/repositories/tag_repository.dart';
 
-/// Implementation of TagRepository
+// Implementation of TagRepository
 class TagRepositoryImpl implements TagRepository {
   final TagsRemoteDataSource _remoteDataSource;
   final TagDataManager _tagDataManager;

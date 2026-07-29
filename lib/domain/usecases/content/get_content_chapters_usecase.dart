@@ -3,8 +3,9 @@ import '../../repositories/content_repository.dart';
 import '../../value_objects/value_objects.dart';
 import '../base_usecase.dart';
 
-/// Use case for fetching content chapters
-class GetContentChaptersUseCase extends UseCase<List<Chapter>, GetContentChaptersParams> {
+// Use case for fetching content chapters
+class GetContentChaptersUseCase
+    extends UseCase<List<Chapter>, GetContentChaptersParams> {
   GetContentChaptersUseCase({required ContentRepository contentRepository})
       : _contentRepository = contentRepository;
 
@@ -41,5 +42,6 @@ class GetContentChaptersParams extends UseCaseParams {
   final int? offset;
 
   @override
-  List<Object?> get props => [contentId, sourceId, language, scanGroup, page, offset];
+  List<Object?> get props =>
+      [contentId, sourceId, language, scanGroup, page, offset];
 }

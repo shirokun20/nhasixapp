@@ -27,9 +27,9 @@ extension StringCapitalize on String {
   }
 }
 
-/// Cache for download status to prevent repeated file system checks
-/// Public class to allow cache invalidation from other components
-/// 🐛 FIXED: Use DownloadBloc state as single source of truth to prevent false positives
+// Cache for download status to prevent repeated file system checks
+// Public class to allow cache invalidation from other components
+// 🐛 FIXED: Use DownloadBloc state as single source of truth to prevent false positives
 class ContentDownloadCache {
   static final Map<String, bool> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
@@ -189,10 +189,10 @@ class ContentDownloadCache {
             (download) =>
                 download.state == DownloadState.completed &&
                 matchesDownload(
-              download,
-              contentId,
-              sourceId: sourceId,
-            ),
+                  download,
+                  contentId,
+                  sourceId: sourceId,
+                ),
           );
 
           if (isDownloaded) {
@@ -264,7 +264,7 @@ class ContentDownloadCache {
     }
   }
 
-  /// Invalidate cache for specific content to force refresh
+  // Invalidate cache for specific content to force refresh
   static void invalidateCache(String contentId, {String? sourceId}) {
     if (sourceId != null) {
       final cacheKey = _buildCacheKey(contentId, sourceId);
@@ -286,7 +286,7 @@ class ContentDownloadCache {
     _sourceOfflineIdsCacheTime.clear();
   }
 
-  /// Clear all cache entries
+  // Clear all cache entries
   static void clearCache() {
     _cache.clear();
     _cacheTime.clear();
@@ -328,7 +328,7 @@ class ContentDownloadCache {
   }
 }
 
-/// Cache for read status to avoid repeated history lookups per card build.
+// Cache for read status to avoid repeated history lookups per card build.
 class ContentReadCache {
   static final Map<String, double?> _cache = {};
   static final Map<String, DateTime> _cacheTime = {};
@@ -478,13 +478,13 @@ class ContentReadCache {
   }
 }
 
-/// Widget that displays a grid of content with pagination support
-/// Designed to work with PaginationWidget for page navigation
+// Widget that displays a grid of content with pagination support
+// Designed to work with PaginationWidget for page navigation
 ///
-/// Usage:
-/// - Main screen: showHeader = false (default) - clean design like nhentai main page
-/// - Search/Browse: showHeader = true - shows metadata and pagination info
-/// - Content cards: showUploadDate controlled per card basis
+// Usage:
+// - Main screen: showHeader = false (default) - clean design like nhentai main page
+// - Search/Browse: showHeader = true - shows metadata and pagination info
+// - Content cards: showUploadDate controlled per card basis
 class ContentListWidget extends StatefulWidget {
   const ContentListWidget({
     super.key,
@@ -718,7 +718,7 @@ class _ContentListWidgetState extends State<ContentListWidget> {
     );
   }
 
-  /// Build the content grid layout
+  // Build the content grid layout
   Widget _buildContentGrid(ContentLoaded state) {
     return CustomScrollView(
       controller: _scrollController,

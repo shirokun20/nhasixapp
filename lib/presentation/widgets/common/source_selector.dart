@@ -12,13 +12,13 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_state.dart';
 
-/// A SourceSelector widget styled to match the AppDrawerContent nav items.
-/// Displays the current source and allows switching between available sources.
+// A SourceSelector widget styled to match the AppDrawerContent nav items.
+// Displays the current source and allows switching between available sources.
 ///
-/// **Purpose**: Allows users to switch between content sources (e.g., NHentai,
-/// Crotpedia). When a source is switched, the main screen refreshes with
-/// content from the new source, downloads are saved in source-specific folders,
-/// and search filters are reset since tags differ between sources.
+// **Purpose**: Allows users to switch between content sources (e.g., NHentai,
+// Crotpedia). When a source is switched, the main screen refreshes with
+// content from the new source, downloads are saved in source-specific folders,
+// and search filters are reset since tags differ between sources.
 class SourceSelector extends StatelessWidget {
   const SourceSelector({super.key});
 
@@ -127,7 +127,7 @@ class SourceSelector extends StatelessWidget {
     );
   }
 
-  /// Show source selection in a bottom sheet for better scalability.
+  // Show source selection in a bottom sheet for better scalability.
   void _showSourceMenu(
     BuildContext context,
     SourceState state,

@@ -1,4 +1,4 @@
-/// Popular content timeframe options
+// Popular content timeframe options
 enum PopularTimeframe {
   allTime('All Time', 'all'),
   week('This Week', 'week'),

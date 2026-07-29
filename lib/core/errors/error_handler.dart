@@ -1,4 +1,4 @@
-/// Common application exceptions
+// Common application exceptions
 abstract class AppException implements Exception {
   const AppException(this.message, {this.code});
 
@@ -9,7 +9,7 @@ abstract class AppException implements Exception {
   String toString() => code != null ? '[$code] $message' : message;
 }
 
-/// Network related exceptions
+// Network related exceptions
 class NetworkException extends AppException {
   const NetworkException([
     super.message = 'Network error occurred',
@@ -17,7 +17,7 @@ class NetworkException extends AppException {
   ]) : super(code: code);
 }
 
-/// Data/Cache related exceptions
+// Data/Cache related exceptions
 class DataException extends AppException {
   const DataException([
     super.message = 'Data error occurred',
@@ -25,7 +25,7 @@ class DataException extends AppException {
   ]) : super(code: code);
 }
 
-/// File system related exceptions
+// File system related exceptions
 class FileException extends AppException {
   const FileException([
     super.message = 'File operation failed',
@@ -33,7 +33,7 @@ class FileException extends AppException {
   ]) : super(code: code);
 }
 
-/// Permission related exceptions
+// Permission related exceptions
 class PermissionException extends AppException {
   const PermissionException([
     super.message = 'Permission denied',
@@ -41,7 +41,7 @@ class PermissionException extends AppException {
   ]) : super(code: code);
 }
 
-/// Content not found exceptions
+// Content not found exceptions
 class NotFoundException extends AppException {
   const NotFoundException([
     super.message = 'Resource not found',
@@ -49,7 +49,7 @@ class NotFoundException extends AppException {
   ]) : super(code: code);
 }
 
-/// Validation exceptions
+// Validation exceptions
 class ValidationException extends AppException {
   const ValidationException([
     super.message = 'Validation failed',

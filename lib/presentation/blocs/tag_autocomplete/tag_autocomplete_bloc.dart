@@ -9,7 +9,7 @@ import 'package:nhasixapp/domain/usecases/tags/get_tag_autocomplete_usecase.dart
 part 'tag_autocomplete_event.dart';
 part 'tag_autocomplete_state.dart';
 
-/// BLoC for managing tag autocomplete functionality
+// BLoC for managing tag autocomplete functionality
 class TagAutocompleteBloc
     extends Bloc<TagAutocompleteEvent, TagAutocompleteState> {
   final GetTagAutocompleteUseCase _getAutocompleteUseCase;

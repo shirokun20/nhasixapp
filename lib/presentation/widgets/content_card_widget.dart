@@ -16,12 +16,12 @@ import 'progressive_image_widget.dart';
 import 'highlighted_text_widget.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Enhanced content card widget with image caching and improved UI
+// Enhanced content card widget with image caching and improved UI
 ///
-/// Usage:
-/// - Main screen: showUploadDate = false (default) - matches nhentai main page
-/// - Search/Browse: showUploadDate = true - shows when content was uploaded
-/// - Detail views: Can show tags, upload date, and other metadata
+// Usage:
+// - Main screen: showUploadDate = false (default) - matches nhentai main page
+// - Search/Browse: showUploadDate = true - shows when content was uploaded
+// - Detail views: Can show tags, upload date, and other metadata
 class ContentCard extends StatelessWidget {
   const ContentCard({
     super.key,
@@ -734,7 +734,7 @@ class ContentCard extends StatelessWidget {
     );
   }
 
-  /// Helper method to get theme-aware tag color based on tag type.
+  // Helper method to get theme-aware tag color based on tag type.
   Color _getTagColor(BuildContext context, String tagType) {
     return TagColorPalette.resolve(
       tagType,
@@ -809,9 +809,8 @@ class ContentCard extends StatelessWidget {
         final normalizedLanguage = content.language.toLowerCase().trim();
         final hasLanguage =
             normalizedLanguage.isNotEmpty && normalizedLanguage != 'unknown';
-        final flagEmoji = hasLanguage
-            ? languageService.flagEmoji(normalizedLanguage)
-            : null;
+        final flagEmoji =
+            hasLanguage ? languageService.flagEmoji(normalizedLanguage) : null;
         final languageBadge = hasLanguage
             ? (normalizedLanguage.length >= 2
                 ? normalizedLanguage.substring(0, 2).toUpperCase()
@@ -862,7 +861,7 @@ class ContentCard extends StatelessWidget {
     }
   }
 
-  /// Static method to build image widget for reuse in other components
+  // Static method to build image widget for reuse in other components
   static Widget buildImage({
     required String imageUrl,
     BoxFit fit = BoxFit.cover,
@@ -1038,7 +1037,7 @@ class _SegmentedStatusBorderPainter extends CustomPainter {
   }
 }
 
-/// Compact content card for list views
+// Compact content card for list views
 class CompactContentCard extends StatelessWidget {
   const CompactContentCard({
     super.key,

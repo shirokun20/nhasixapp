@@ -1,11 +1,11 @@
 part of 'favorite_cubit.dart';
 
-/// Base state for FavoriteCubit
+// Base state for FavoriteCubit
 abstract class FavoriteState extends BaseCubitState {
   const FavoriteState();
 }
 
-/// Initial state
+// Initial state
 class FavoriteInitial extends FavoriteState {
   const FavoriteInitial();
 
@@ -13,7 +13,7 @@ class FavoriteInitial extends FavoriteState {
   List<Object?> get props => [];
 }
 
-/// Loading state
+// Loading state
 class FavoriteLoading extends FavoriteState {
   const FavoriteLoading();
 
@@ -21,7 +21,7 @@ class FavoriteLoading extends FavoriteState {
   List<Object?> get props => [];
 }
 
-/// Loaded state with favorites data
+// Loaded state with favorites data
 class FavoriteLoaded extends FavoriteState {
   const FavoriteLoaded({
     required this.favorites,
@@ -87,13 +87,13 @@ class FavoriteLoaded extends FavoriteState {
     );
   }
 
-  /// Check if favorites list is empty
+  // Check if favorites list is empty
   bool get isEmpty => favorites.isEmpty;
 
-  /// Check if currently searching
+  // Check if currently searching
   bool get isSearching => searchQuery != null && searchQuery!.isNotEmpty;
 
-  /// Get display message for empty state
+  // Get display message for empty state
   String getEmptyMessage(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackEmptyMessage();
@@ -112,7 +112,7 @@ class FavoriteLoaded extends FavoriteState {
     return 'No favorites yet. Start adding content to your favorites!';
   }
 
-  /// Get favorites for current page only
+  // Get favorites for current page only
   List<Map<String, dynamic>> get currentPageFavorites {
     final startIndex = (currentPage - 1) * 20;
     final endIndex = startIndex + 20;
@@ -126,7 +126,7 @@ class FavoriteLoaded extends FavoriteState {
   }
 }
 
-/// Error state
+// Error state
 class FavoriteError extends FavoriteState {
   const FavoriteError({
     required this.message,
@@ -162,7 +162,7 @@ class FavoriteError extends FavoriteState {
     );
   }
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String getUserMessage(AppLocalizations? localizations) {
     if (localizations == null) {
       return _getFallbackUserMessage();
@@ -203,7 +203,7 @@ class FavoriteError extends FavoriteState {
     }
   }
 
-  /// Check if error is recoverable
+  // Check if error is recoverable
   bool get isRecoverable {
     return canRetry && errorType != 'validation';
   }

@@ -10,64 +10,64 @@ import '../value_objects/sort_option.dart';
 import '../value_objects/popular_timeframe.dart';
 import 'search_capabilities.dart';
 
-/// Abstract interface for content sources.
+// Abstract interface for content sources.
 ///
-/// Each content source (nhentai, crotpedia, etc.) must implement this interface
-/// to provide content fetching capabilities.
+// Each content source (nhentai, crotpedia, etc.) must implement this interface
+// to provide content fetching capabilities.
 abstract class ContentSource {
-  /// Unique identifier for this source (e.g., 'nhentai', 'crotpedia')
+  // Unique identifier for this source (e.g., 'nhentai', 'crotpedia')
   String get id;
 
-  /// Display name shown in UI (e.g., 'nhentai', 'Crotpedia')
+  // Display name shown in UI (e.g., 'nhentai', 'Crotpedia')
   String get displayName;
 
-  /// Asset path to source icon
+  // Asset path to source icon
   String get iconPath;
 
-  /// Base URL for this source
+  // Base URL for this source
   String get baseUrl;
 
-  /// Whether this source requires cloudflare bypass
+  // Whether this source requires cloudflare bypass
   bool get requiresBypass;
 
-  /// Search capabilities supported by this source
+  // Search capabilities supported by this source
   SearchCapabilities get searchCapabilities;
 
-  /// Search content with the given filter
+  // Search content with the given filter
   Future<ContentListResult> search(SearchFilter filter);
 
-  /// Get content detail by ID
+  // Get content detail by ID
   Future<Content> getDetail(String contentId);
 
-  /// Get paginated list of content
+  // Get paginated list of content
   Future<ContentListResult> getList({
     int page = 1,
     SortOption sort = SortOption.newest,
   });
 
-  /// Get popular content
+  // Get popular content
   Future<ContentListResult> getPopular({
     PopularTimeframe timeframe = PopularTimeframe.allTime,
     int page = 1,
   });
 
-  /// Get random content
+  // Get random content
   Future<List<Content>> getRandom({int count = 1});
 
-  /// Get related content for a specific content ID
+  // Get related content for a specific content ID
   Future<List<Content>> getRelated(String contentId);
 
-  /// Get comments for a specific content ID
+  // Get comments for a specific content ID
   Future<List<Comment>> getComments(String contentId) async => [];
 
-  /// Get chapter image URLs and navigation data for a specific chapter ID.
-  /// Used primarily by manga/manhwa sources. Default implementation returns null.
+  // Get chapter image URLs and navigation data for a specific chapter ID.
+  // Used primarily by manga/manhwa sources. Default implementation returns null.
   Future<ChapterData?> getChapterImages(String chapterId) async => null;
 
-  /// Get chapters for a specific content lane.
+  // Get chapters for a specific content lane.
   ///
-  /// Default implementation returns an empty list so sources can opt in only
-  /// when they support lazy lane fetching.
+  // Default implementation returns an empty list so sources can opt in only
+  // when they support lazy lane fetching.
   Future<List<Chapter>> getChapters(
     String contentId, {
     String? language,
@@ -78,7 +78,7 @@ abstract class ContentSource {
   }) async =>
       const [];
 
-  /// Build full image URL for this source
+  // Build full image URL for this source
   String buildImageUrl({
     required String contentId,
     required String mediaId,
@@ -87,113 +87,113 @@ abstract class ContentSource {
     bool thumbnail = false,
   });
 
-  /// Build thumbnail URL for this source
+  // Build thumbnail URL for this source
   String buildThumbnailUrl({
     required String contentId,
     required String mediaId,
   });
 
-  /// Parse content ID from a URL string
+  // Parse content ID from a URL string
   String? parseContentIdFromUrl(String url);
 
-  /// Validate content ID format for this source
+  // Validate content ID format for this source
   bool isValidContentId(String contentId);
 
-  /// Get referer header value for requests
+  // Get referer header value for requests
   String get refererHeader;
 
   // ============ NEW: Download & Display Customization ============
 
-  /// Get HTTP headers required for downloading images from this source.
+  // Get HTTP headers required for downloading images from this source.
   ///
-  /// This method returns all necessary headers (Referer, User-Agent, cookies, etc.)
-  /// needed to successfully download images. Each source may have different
-  /// requirements.
+  // This method returns all necessary headers (Referer, User-Agent, cookies, etc.)
+  // needed to successfully download images. Each source may have different
+  // requirements.
   ///
-  /// Example:
-  /// ```dart
-  /// // nhentai
-  /// {'Referer': 'https://nhentai.net/', 'User-Agent': 'Mozilla/5.0...'}
+  // Example:
+  // ```dart
+  // // nhentai
+  // {'Referer': 'https://nhentai.net/', 'User-Agent': 'Mozilla/5.0...'}
   ///
-  /// // crotpedia with auth
-  /// {'Referer': 'https://crotpedia.com/', 'Cookie': 'session=...'}
-  /// ```
+  // // crotpedia with auth
+  // {'Referer': 'https://crotpedia.com/', 'Cookie': 'session=...'}
+  // ```
   Map<String, String> getImageDownloadHeaders({
     required String imageUrl,
     Map<String, String>? cookies,
   });
 
-  /// Brand color for this source, used in UI decorations.
+  // Brand color for this source, used in UI decorations.
   ///
-  /// This color is used for:
-  /// - Download item progress bars
-  /// - Source badges
-  /// - Accent colors in source-specific screens
+  // This color is used for:
+  // - Download item progress bars
+  // - Source badges
+  // - Accent colors in source-specific screens
   ///
-  /// Default returns null, which means use app's default theme color.
+  // Default returns null, which means use app's default theme color.
   int? get brandColor => null;
 
-  /// Whether this source displays page counts in list/grid views.
+  // Whether this source displays page counts in list/grid views.
   ///
-  /// - nhentai: true (shows "123 pages")
-  /// - manga sources (crotpedia, komiktap): false (shows chapters instead)
+  // - nhentai: true (shows "123 pages")
+  // - manga sources (crotpedia, komiktap): false (shows chapters instead)
   bool get showsPageCountInList => true;
 
-  /// Whether this source supports user authentication.
+  // Whether this source supports user authentication.
   ///
-  /// If true, the app will show login/logout menu items for this source.
+  // If true, the app will show login/logout menu items for this source.
   bool get supportsAuthentication => false;
 
-  /// Whether this source supports bookmarking/favoriting content.
+  // Whether this source supports bookmarking/favoriting content.
   ///
-  /// If true, bookmark buttons will be shown in detail screens.
+  // If true, bookmark buttons will be shown in detail screens.
   bool get supportsBookmarks => false;
 
   // ============ NEW: FilterList & Global Search Support ============
 
-  /// Filters available for this source (for advanced search UI).
+  // Filters available for this source (for advanced search UI).
   ///
-  /// Returns an empty list by default — backward compatible.
-  /// Override to expose source-specific filters.
+  // Returns an empty list by default — backward compatible.
+  // Override to expose source-specific filters.
   ///
-  /// Example:
-  /// ```dart
-  /// @override
-  /// FilterList get filterList => [
-  ///   SortSourceFilter('Sort By', ['Newest', 'Popular']),
-  ///   SelectSourceFilter('Language', ['All', 'English', 'Japanese']),
-  /// ];
-  /// ```
+  // Example:
+  // ```dart
+  // @override
+  // FilterList get filterList => [
+  //   SortSourceFilter('Sort By', ['Newest', 'Popular']),
+  //   SelectSourceFilter('Language', ['All', 'English', 'Japanese']),
+  // ];
+  // ```
   FilterList get filterList => const [];
 
-  /// Whether this source participates in global search.
+  // Whether this source participates in global search.
   ///
-  /// Global search dispatches the same query to all enabled sources in parallel
-  /// and shows results per-source in a single scrollable screen.
+  // Global search dispatches the same query to all enabled sources in parallel
+  // and shows results per-source in a single scrollable screen.
   bool get participatesInGlobalSearch => true;
 
-  /// Priority in global search results (lower number = shown first).
+  // Priority in global search results (lower number = shown first).
   ///
-  /// Default 100. Override to boost or demote in global search ordering.
+  // Default 100. Override to boost or demote in global search ordering.
   int get globalSearchPriority => 100;
 
-  /// Maximum results to return in global search context.
+  // Maximum results to return in global search context.
   ///
-  /// Global search shows a preview (not full pagination) per source.
+  // Global search shows a preview (not full pagination) per source.
   int get globalSearchMaxResults => 5;
 
-  /// Whether this source can handle the given query in global search.
+  // Whether this source can handle the given query in global search.
   ///
-  /// Use this to opt out of global search for certain query formats.
-  /// Default: always true.
+  // Use this to opt out of global search for certain query formats.
+  // Default: always true.
   bool canHandleGlobalQuery(String query) => true;
 
-  /// Get autocomplete suggestions for a partial search query.
+  // Get autocomplete suggestions for a partial search query.
   ///
-  /// Returns empty list by default — backward compatible.
-  /// Override for sources that support tag/artist autocomplete (e.g., nhentai).
+  // Returns empty list by default — backward compatible.
+  // Override for sources that support tag/artist autocomplete (e.g., nhentai).
   ///
-  /// [query] is the partial text typed by the user.
+  // [query] is the partial text typed by the user.
   Future<List<AutocompleteSuggestion>> getAutocompleteSuggestions(
     String query,
   ) async =>

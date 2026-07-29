@@ -67,8 +67,8 @@ class SplashError extends SplashState {
   List<Object?> get props => [message, canRetry, canUseOffline];
 }
 
-/// State when offline mode is detected
-/// Shows message while checking for offline content availability
+// State when offline mode is detected
+// Shows message while checking for offline content availability
 class SplashOfflineDetected extends SplashState {
   final String message;
 
@@ -80,8 +80,8 @@ class SplashOfflineDetected extends SplashState {
   List<Object?> get props => [message];
 }
 
-/// State when offline content is available
-/// Shows count of available offline items before auto-continuing
+// State when offline content is available
+// Shows count of available offline items before auto-continuing
 class SplashOfflineReady extends SplashState {
   final String message;
   final int offlineContentCount;
@@ -96,8 +96,8 @@ class SplashOfflineReady extends SplashState {
   List<Object?> get props => [message, offlineContentCount];
 }
 
-/// State when no offline content is available
-/// Shows options for user to retry, continue anyway, or exit
+// State when no offline content is available
+// Shows options for user to retry, continue anyway, or exit
 class SplashOfflineEmpty extends SplashState {
   final String message;
 
@@ -109,8 +109,8 @@ class SplashOfflineEmpty extends SplashState {
   List<Object?> get props => [message];
 }
 
-/// State when app is running in offline mode
-/// Indicates limited functionality but allows app usage
+// State when app is running in offline mode
+// Indicates limited functionality but allows app usage
 class SplashOfflineMode extends SplashState {
   final String message;
   final bool canRetryOnline;

@@ -4,7 +4,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
 
-/// Modern sorting widget for MainScreen
+// Modern sorting widget for MainScreen
 class SortingWidget extends StatelessWidget {
   const SortingWidget({
     super.key,
@@ -26,7 +26,7 @@ class SortingWidget extends StatelessWidget {
     }
   }
 
-  /// Build compact sorting for smaller spaces
+  // Build compact sorting for smaller spaces
   Widget _buildCompactSorting(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -63,7 +63,7 @@ class SortingWidget extends StatelessWidget {
     );
   }
 
-  /// Build full sorting with all options visible
+  // Build full sorting with all options visible
   Widget _buildFullSorting(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -157,7 +157,7 @@ class SortingWidget extends StatelessWidget {
   }
 }
 
-/// Dropdown version of sorting widget for compact spaces
+// Dropdown version of sorting widget for compact spaces
 class SortingDropdown extends StatelessWidget {
   const SortingDropdown({
     super.key,

@@ -1,6 +1,6 @@
 part of 'download_bloc.dart';
 
-/// Base class for all download events
+// Base class for all download events
 abstract class DownloadEvent extends Equatable {
   const DownloadEvent();
 
@@ -8,10 +8,10 @@ abstract class DownloadEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Collapsed bulk action types.
+// Collapsed bulk action types.
 enum BulkAction { pauseAll, resumeAll, cancelAll, clearCompleted }
 
-/// Parameterized bulk action event — replaces 4 separate events.
+// Parameterized bulk action event — replaces 4 separate events.
 class DownloadBulkActionEvent extends DownloadEvent {
   const DownloadBulkActionEvent(this.action);
   final BulkAction action;
@@ -19,12 +19,18 @@ class DownloadBulkActionEvent extends DownloadEvent {
   List<Object?> get props => [action];
 }
 
-/// Collapsed selection action types.
-enum SelectionAction { selectItem, selectAll, clearSelection, toggleSelectionMode }
+// Collapsed selection action types.
+enum SelectionAction {
+  selectItem,
+  selectAll,
+  clearSelection,
+  toggleSelectionMode
+}
 
-/// Parameterized selection action event — replaces 3 separate events.
+// Parameterized selection action event — replaces 3 separate events.
 class DownloadSelectionActionEvent extends DownloadEvent {
-  const DownloadSelectionActionEvent(this.action, {this.contentId, this.isSelected});
+  const DownloadSelectionActionEvent(this.action,
+      {this.contentId, this.isSelected});
   final SelectionAction action;
   final String? contentId;
   final bool? isSelected;
@@ -32,12 +38,12 @@ class DownloadSelectionActionEvent extends DownloadEvent {
   List<Object?> get props => [action, contentId, isSelected];
 }
 
-/// Event to initialize download manager
+// Event to initialize download manager
 class DownloadInitializeEvent extends DownloadEvent {
   const DownloadInitializeEvent();
 }
 
-/// Event to queue a new download
+// Event to queue a new download
 class DownloadQueueEvent extends DownloadEvent {
   const DownloadQueueEvent({
     required this.content,
@@ -51,23 +57,23 @@ class DownloadQueueEvent extends DownloadEvent {
   final int? startPage; // NEW: Start page for range download
   final int? endPage; // NEW: End page for range download
 
-  /// Check if this is a range download
+  // Check if this is a range download
   bool get isRangeDownload => startPage != null && endPage != null;
 
-  /// Get effective start page (1 if not specified)
+  // Get effective start page (1 if not specified)
   int get effectiveStartPage => startPage ?? 1;
 
-  /// Get effective end page (total pages if not specified)
+  // Get effective end page (total pages if not specified)
   int get effectiveEndPage => endPage ?? content.pageCount;
 
-  /// Get number of pages to download
+  // Get number of pages to download
   int get pagesToDownload => effectiveEndPage - effectiveStartPage + 1;
 
   @override
   List<Object?> get props => [content, priority, startPage, endPage];
 }
 
-/// Event to queue a range download
+// Event to queue a range download
 class DownloadRangeEvent extends DownloadEvent {
   const DownloadRangeEvent({
     required this.content,
@@ -81,10 +87,10 @@ class DownloadRangeEvent extends DownloadEvent {
   final int endPage;
   final int priority;
 
-  /// Get number of pages to download
+  // Get number of pages to download
   int get pagesToDownload => endPage - startPage + 1;
 
-  /// Validate range
+  // Validate range
   bool get isValidRange =>
       startPage >= 1 && endPage <= content.pageCount && startPage <= endPage;
 
@@ -92,7 +98,7 @@ class DownloadRangeEvent extends DownloadEvent {
   List<Object?> get props => [content, startPage, endPage, priority];
 }
 
-/// Event to start/resume a download
+// Event to start/resume a download
 class DownloadStartEvent extends DownloadEvent {
   const DownloadStartEvent(this.contentId);
 
@@ -102,7 +108,7 @@ class DownloadStartEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to pause a download
+// Event to pause a download
 class DownloadPauseEvent extends DownloadEvent {
   const DownloadPauseEvent(this.contentId);
 
@@ -112,7 +118,7 @@ class DownloadPauseEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to cancel a download
+// Event to cancel a download
 class DownloadCancelEvent extends DownloadEvent {
   const DownloadCancelEvent(this.contentId);
 
@@ -122,7 +128,7 @@ class DownloadCancelEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to retry a failed download
+// Event to retry a failed download
 class DownloadRetryEvent extends DownloadEvent {
   const DownloadRetryEvent(this.contentId);
 
@@ -132,7 +138,7 @@ class DownloadRetryEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to resume a paused download
+// Event to resume a paused download
 class DownloadResumeEvent extends DownloadEvent {
   const DownloadResumeEvent(this.contentId);
 
@@ -142,7 +148,7 @@ class DownloadResumeEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to remove a download from the list
+// Event to remove a download from the list
 class DownloadRemoveEvent extends DownloadEvent {
   const DownloadRemoveEvent(this.contentId);
 
@@ -152,12 +158,12 @@ class DownloadRemoveEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to refresh download list
+// Event to refresh download list
 class DownloadRefreshEvent extends DownloadEvent {
   const DownloadRefreshEvent();
 }
 
-/// Event to update download progress in real-time
+// Event to update download progress in real-time
 class DownloadProgressUpdateEvent extends DownloadEvent {
   const DownloadProgressUpdateEvent({
     required this.contentId,
@@ -186,7 +192,7 @@ class DownloadProgressUpdateEvent extends DownloadEvent {
       ];
 }
 
-/// Event to update download settings
+// Event to update download settings
 class DownloadSettingsUpdateEvent extends DownloadEvent {
   const DownloadSettingsUpdateEvent({
     this.maxConcurrentDownloads,
@@ -224,7 +230,7 @@ class DownloadSettingsUpdateEvent extends DownloadEvent {
       ];
 }
 
-/// Event to mark a download as completed
+// Event to mark a download as completed
 class DownloadCompletedEvent extends DownloadEvent {
   const DownloadCompletedEvent(this.contentId);
 
@@ -234,7 +240,7 @@ class DownloadCompletedEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event triggered when native layer reports terminal failure
+// Event triggered when native layer reports terminal failure
 class DownloadNativeFailedEvent extends DownloadEvent {
   const DownloadNativeFailedEvent(this.contentId, {this.error});
 
@@ -245,18 +251,18 @@ class DownloadNativeFailedEvent extends DownloadEvent {
   List<Object?> get props => [contentId, error];
 }
 
-/// Event to cleanup storage
+// Event to cleanup storage
 class DownloadCleanupStorageEvent extends DownloadEvent {
   const DownloadCleanupStorageEvent();
 }
 
-/// Event to export download list
+// Event to export download list
 class DownloadExportEvent extends DownloadEvent {
   const DownloadExportEvent();
 }
 
-/// Event to convert completed download to PDF
-/// This triggers background PDF conversion with notifications
+// Event to convert completed download to PDF
+// This triggers background PDF conversion with notifications
 class DownloadConvertToPdfEvent extends DownloadEvent {
   const DownloadConvertToPdfEvent(this.contentId, {this.sourceId});
 
@@ -267,7 +273,7 @@ class DownloadConvertToPdfEvent extends DownloadEvent {
   List<Object?> get props => [contentId, sourceId];
 }
 
-/// Event to open downloaded content (PDF or images)
+// Event to open downloaded content (PDF or images)
 class DownloadOpenContentEvent extends DownloadEvent {
   const DownloadOpenContentEvent(this.contentId);
 
@@ -277,7 +283,7 @@ class DownloadOpenContentEvent extends DownloadEvent {
   List<Object?> get props => [contentId];
 }
 
-/// Event to perform bulk delete operation
+// Event to perform bulk delete operation
 class DownloadBulkDeleteEvent extends DownloadEvent {
   const DownloadBulkDeleteEvent(this.contentIds);
 

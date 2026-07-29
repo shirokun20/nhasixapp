@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Shimmer loading widget for offline content cards
+// Shimmer loading widget for offline content cards
 class OfflineContentShimmer extends StatelessWidget {
   const OfflineContentShimmer({super.key});
 
@@ -84,7 +84,7 @@ class OfflineContentShimmer extends StatelessWidget {
   }
 }
 
-/// Shimmer loading widget for offline content grid
+// Shimmer loading widget for offline content grid
 class OfflineContentGridShimmer extends StatelessWidget {
   final int itemCount;
 

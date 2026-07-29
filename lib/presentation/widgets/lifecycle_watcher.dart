@@ -7,8 +7,8 @@ import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 import '../../core/services/workers/download_lifecycle_mixin.dart';
 import '../blocs/download/download_bloc.dart';
 
-/// Monitors app lifecycle and interacts with DownloadBloc to handle
-/// background downloads.
+// Monitors app lifecycle and interacts with DownloadBloc to handle
+// background downloads.
 class LifecycleWatcher extends StatefulWidget {
   final Widget child;
 
@@ -67,7 +67,8 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
     if (downloadState is DownloadLoaded) {
       // Map to ActiveDownloadInfo
       final activeDownloads = downloadState.downloads
-          .where((d) => d.state == DownloadState.downloading).map((download) {
+          .where((d) => d.state == DownloadState.downloading)
+          .map((download) {
         return ActiveDownloadInfo(
           contentId: download.contentId,
           isInProgress: true, // Only active ones are here

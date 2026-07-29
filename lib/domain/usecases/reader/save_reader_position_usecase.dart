@@ -1,7 +1,7 @@
 import '../../entities/reader_position.dart';
 import '../../repositories/reader_repository.dart';
 
-/// Use case for saving reader position
+// Use case for saving reader position
 class SaveReaderPositionUseCase {
   SaveReaderPositionUseCase(this._repository);
 

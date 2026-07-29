@@ -29,8 +29,8 @@ import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/highlighted_text_widget.dart';
 
-/// Screen for managing user's favorite content
-/// Features: favorites list, search, batch operations, export/import
+// Screen for managing user's favorite content
+// Features: favorites list, search, batch operations, export/import
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -1157,7 +1157,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         title: Text(
                             AppLocalizations.of(context)!.deleteCollection),
                         content: Text(
-                          AppLocalizations.of(context)!.deleteCollectionConfirm(collection.name),
+                          AppLocalizations.of(context)!
+                              .deleteCollectionConfirm(collection.name),
                         ),
                         actions: [
                           TextButton(

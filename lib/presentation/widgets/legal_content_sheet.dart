@@ -7,7 +7,7 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Bottom sheet widget for displaying legal content (T&C, Privacy, FAQ)
+// Bottom sheet widget for displaying legal content (T&C, Privacy, FAQ)
 class LegalContentSheet extends StatefulWidget {
   const LegalContentSheet({
     super.key,
@@ -18,7 +18,7 @@ class LegalContentSheet extends StatefulWidget {
   final LegalContentType contentType;
   final String locale;
 
-  /// Show the legal content bottom sheet
+  // Show the legal content bottom sheet
   static Future<void> show(
     BuildContext context, {
     required LegalContentType contentType,
@@ -329,7 +329,7 @@ class _LegalContentSheetState extends State<LegalContentSheet> {
   }
 }
 
-/// Dark theme for code blocks
+// Dark theme for code blocks
 const darkMarkdownTheme = {
   'root':
       TextStyle(color: Color(0xffdcdcdc), backgroundColor: Color(0xff1e1e1e)),
@@ -339,7 +339,7 @@ const darkMarkdownTheme = {
   'comment': TextStyle(color: Color(0xff6a9955)),
 };
 
-/// Light theme for code blocks
+// Light theme for code blocks
 const lightMarkdownTheme = {
   'root':
       TextStyle(color: Color(0xff1e1e1e), backgroundColor: Color(0xfff5f5f5)),

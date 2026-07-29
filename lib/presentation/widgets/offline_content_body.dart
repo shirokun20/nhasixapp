@@ -26,8 +26,8 @@ import 'content_group_card_widget.dart';
 import 'error_widget.dart';
 import 'offline_content_shimmer.dart';
 
-/// Reusable widget that displays offline content with search and filtering
-/// Used by OfflineContentScreen and OfflineMode in MainScreen
+// Reusable widget that displays offline content with search and filtering
+// Used by OfflineContentScreen and OfflineMode in MainScreen
 class OfflineContentBody extends StatefulWidget {
   const OfflineContentBody({super.key});
 
@@ -106,9 +106,11 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                 // This filters out frequent progress updates
                 if (previous is DownloadLoaded && current is DownloadLoaded) {
                   return previous.downloads
-                          .where((d) => d.state == DownloadState.completed).length !=
+                          .where((d) => d.state == DownloadState.completed)
+                          .length !=
                       current.downloads
-                          .where((d) => d.state == DownloadState.completed).length;
+                          .where((d) => d.state == DownloadState.completed)
+                          .length;
                 }
                 return true;
               },
@@ -294,14 +296,18 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
           controller: scrollController,
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            buildSortTile(AppLocalizations.of(context)!.sortAZ, 'title', false, Icons.sort_by_alpha_rounded),
-            buildSortTile(AppLocalizations.of(context)!.sortZA, 'title', true, Icons.sort_by_alpha_rounded),
-            buildSortTile(AppLocalizations.of(context)!.sortNewToOld, 'created_at', true, Icons.new_releases_rounded),
-            buildSortTile(AppLocalizations.of(context)!.sortOldToNew, 'created_at', false, Icons.history_rounded),
-            buildSortTile(AppLocalizations.of(context)!.sortPagesAsc, 'total_pages', false,
-                Icons.format_list_numbered_rounded),
-            buildSortTile(AppLocalizations.of(context)!.sortPagesDesc, 'total_pages', true,
-                Icons.format_list_numbered_rtl_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortAZ, 'title', false,
+                Icons.sort_by_alpha_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortZA, 'title', true,
+                Icons.sort_by_alpha_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortNewToOld,
+                'created_at', true, Icons.new_releases_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortOldToNew,
+                'created_at', false, Icons.history_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortPagesAsc,
+                'total_pages', false, Icons.format_list_numbered_rounded),
+            buildSortTile(AppLocalizations.of(context)!.sortPagesDesc,
+                'total_pages', true, Icons.format_list_numbered_rtl_rounded),
           ],
         );
       },
@@ -805,7 +811,8 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                             '${contentGroup.representativeContent.sourceId}_${contentGroup.baseTitle}'),
                         contentGroup: contentGroup,
                         isListMode: state.isListMode,
-                        hideOfflineIndicator: true, // Everything here is offline
+                        hideOfflineIndicator:
+                            true, // Everything here is offline
                         onTap: () => _openSeriesDetail(contentGroup),
                         onLongPress: () {
                           _showGroupContentActions(context, contentGroup);
@@ -1022,7 +1029,9 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         ),
                       );
                       ScaffoldMessenger.of(parentContext).showSnackBar(
-                      SnackBar(content: Text(AppLocalizations.of(parentContext)!.pathsCopied)),
+                        SnackBar(
+                            content: Text(AppLocalizations.of(parentContext)!
+                                .pathsCopied)),
                       );
                     },
                   ),
@@ -1089,14 +1098,17 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                                   ScaffoldMessenger.of(parentContext)
                                       .showSnackBar(
                                     SnackBar(
-                                        content: Text(AppLocalizations.of(parentContext)!.pathCopied)),
+                                        content: Text(
+                                            AppLocalizations.of(parentContext)!
+                                                .pathCopied)),
                                   );
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.open_in_new_rounded,
                                     size: 18),
-                                tooltip: AppLocalizations.of(context)!.openInExplorer,
+                                tooltip: AppLocalizations.of(context)!
+                                    .openInExplorer,
                                 onPressed: () => OpenFile.open(entry.path),
                               ),
                             ],

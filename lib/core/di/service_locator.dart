@@ -135,11 +135,12 @@ import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
 import 'package:nhasixapp/data/repositories/app_lock_repository_impl.dart';
 import 'package:nhasixapp/domain/repositories/app_lock_repository.dart';
-import 'package:nhasixapp/core/services/cache/cache_manager.dart' as multi_cache;
+import 'package:nhasixapp/core/services/cache/cache_manager.dart'
+    as multi_cache;
 
 final getIt = GetIt.instance;
 
-/// Initialize all dependencies
+// Initialize all dependencies
 Future<void> setupLocator() async {
   await _setupExternalDependencies();
   _setupCore();
@@ -151,7 +152,7 @@ Future<void> setupLocator() async {
   _setupCubits();
 }
 
-/// Setup external dependencies that require async initialization
+// Setup external dependencies that require async initialization
 Future<void> _setupExternalDependencies() async {
   // SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -170,7 +171,7 @@ Future<void> _setupExternalDependencies() async {
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
 }
 
-/// Setup core utilities and services
+// Setup core utilities and services
 void _setupCore() {
   // Logger - Using Singleton (not LazySingleton) to ensure it's immediately available
   final logger = Logger(
@@ -239,7 +240,7 @@ void _setupCore() {
       ));
 }
 
-/// Setup services
+// Setup services
 void _setupServices() {
   getIt.registerLazySingleton<AppPrivacyOverlayService>(
     () => AppPrivacyOverlayService(),
@@ -325,7 +326,7 @@ void _setupServices() {
   // Global reader-active notifier — used by coordinator + DownloadManager
   getIt.registerLazySingleton<ValueNotifier<bool>>(
       () => ValueNotifier<bool>(false),
-    instanceName: 'globalReaderActive');
+      instanceName: 'globalReaderActive');
 
   // Github Update Service
   getIt.registerLazySingleton<UpdateService>(() => UpdateService(
@@ -385,7 +386,7 @@ void _setupServices() {
       ));
 }
 
-/// Setup data sources (Remote and Local)
+// Setup data sources (Remote and Local)
 void _setupDataSources() {
   // Anti-Detection
   getIt.registerLazySingleton<AntiDetection>(() => AntiDetection(
@@ -422,10 +423,11 @@ void _setupDataSources() {
   getIt.registerLazySingleton<WebViewSessionAdapter>(() {
     final rawConfig =
         getIt<RemoteConfigService>().getRawConfig('crotpedia') ?? {};
-    final baseUrl =
-        (rawConfig['api'] is Map<String, dynamic> ? rawConfig['api'] as Map<String, dynamic> : null)?['baseUrl'] as String? ??
-            rawConfig['baseUrl']?.toString() ??
-            'https://crotpedia.net';
+    final baseUrl = (rawConfig['api'] is Map<String, dynamic>
+            ? rawConfig['api'] as Map<String, dynamic>
+            : null)?['baseUrl'] as String? ??
+        rawConfig['baseUrl']?.toString() ??
+        'https://crotpedia.net';
     final cookieStorage = GenericCookieStorage('crotpedia');
     final cookieJar = PersistCookieJar(storage: cookieStorage);
     return WebViewSessionAdapter(
@@ -466,10 +468,15 @@ void _setupDataSources() {
         getIt<RemoteConfigService>().getRawConfig('komiktap') ?? {},
       );
       final network = Map<String, dynamic>.from(
-        (rawConfig['network'] is Map ? rawConfig['network'] as Map : null)?.cast<String, dynamic>() ?? const {},
+        (rawConfig['network'] is Map ? rawConfig['network'] as Map : null)
+                ?.cast<String, dynamic>() ??
+            const {},
       );
       final siteProtection = Map<String, dynamic>.from(
-        (network['siteProtection'] is Map ? network['siteProtection'] as Map : null)?.cast<String, dynamic>() ??
+        (network['siteProtection'] is Map
+                    ? network['siteProtection'] as Map
+                    : null)
+                ?.cast<String, dynamic>() ??
             const {},
       );
       network['requiresBypass'] = true;
@@ -508,9 +515,13 @@ void _setupDataSources() {
     // so WebView stays open until user solves the interactive challenge
     // and presses back.
     final network = Map<String, dynamic>.from(
-        (raw['network'] is Map ? raw['network'] as Map : null)?.cast<String, dynamic>() ?? {});
+        (raw['network'] is Map ? raw['network'] as Map : null)
+                ?.cast<String, dynamic>() ??
+            {});
     final cf = Map<String, dynamic>.from(
-        (network['cloudflare'] is Map ? network['cloudflare'] as Map : null)?.cast<String, dynamic>() ?? {});
+        (network['cloudflare'] is Map ? network['cloudflare'] as Map : null)
+                ?.cast<String, dynamic>() ??
+            {});
     cf['autoCloseOnCookie'] = '';
     network['cloudflare'] = cf;
     raw['network'] = network;
@@ -540,7 +551,8 @@ void _setupDataSources() {
     instanceName: 'cf_manhwaread',
     () {
       final rawConfig = turnstileConfig('manhwaread');
-      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://manhwaread.com';
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://manhwaread.com';
       final cookieStorage = GenericCookieStorage('cf_manhwaread');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -557,7 +569,8 @@ void _setupDataSources() {
     instanceName: 'cf_hentaicosplay',
     () {
       final rawConfig = turnstileConfig('hentaicosplay');
-      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://hentaicosplay.com';
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://hentaicosplay.com';
       final cookieStorage = GenericCookieStorage('cf_hentaicosplay');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -574,7 +587,8 @@ void _setupDataSources() {
     instanceName: 'cf_spyfakku',
     () {
       final rawConfig = turnstileConfig('spyfakku');
-      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://spyfakku.com';
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://spyfakku.com';
       final cookieStorage = GenericCookieStorage('cf_spyfakku');
       final cookieJar = PersistCookieJar(storage: cookieStorage);
       return WebViewSessionAdapter(
@@ -600,7 +614,8 @@ void _setupDataSources() {
     instanceName: 'cf_vihentai',
     () {
       final rawConfig = turnstileConfig('vihentai');
-      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://vi-hentai.moe';
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://vi-hentai.moe';
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: getIt<PersistCookieJar>(instanceName: 'vihentai_jar'),
@@ -792,7 +807,7 @@ void _setupDataSources() {
       () => DoujinListDao(getIt<DatabaseHelper>()));
 }
 
-/// Setup repository implementations
+// Setup repository implementations
 void _setupRepositories() {
   // Content Repository with multi-layer cache integration
   getIt.registerLazySingleton<ContentRepository>(() => ContentRepositoryImpl(
@@ -874,7 +889,7 @@ void _setupRepositories() {
       ));
 }
 
-/// Setup use cases
+// Setup use cases
 void _setupUseCases() {
   // Settings Use Cases
   getIt.registerLazySingleton<GetUserPreferencesUseCase>(
@@ -927,7 +942,7 @@ void _setupUseCases() {
       () => GetRelatedContentUseCase(contentRepository: getIt()));
   getIt.registerLazySingleton<GetPopularContentUseCase>(
       () => GetPopularContentUseCase(contentRepository: getIt()));
-	// Reader Use Cases
+  // Reader Use Cases
   getIt.registerLazySingleton<GetReaderPositionUseCase>(
       () => GetReaderPositionUseCase(readerRepository: getIt()));
   getIt.registerLazySingleton<SaveReaderPositionUseCase>(
@@ -985,7 +1000,7 @@ void _setupUseCases() {
       () => GetHistoryCountUseCase(getIt()));
 }
 
-/// Setup BLoCs
+// Setup BLoCs
 void _setupBlocs() {
   // Splash BLoC
   getIt.registerFactory<SplashBloc>(() => SplashBloc(
@@ -1041,7 +1056,7 @@ void _setupBlocs() {
   // getIt.registerFactory<SettingsBloc>(() => SettingsBloc(getIt()));
 }
 
-/// Setup Cubits (Simple State Management)
+// Setup Cubits (Simple State Management)
 void _setupCubits() {
   // NetworkCubit - App-wide connectivity monitoring
   getIt.registerLazySingleton<NetworkCubit>(() => NetworkCubit(
@@ -1146,9 +1161,12 @@ void _setupCubits() {
         getFavoritesUseCase: getIt<GetFavoritesUseCase>(),
         removeFromFavoritesUseCase: getIt<RemoveFromFavoritesUseCase>(),
         getFavoriteCollectionsUseCase: getIt<GetFavoriteCollectionsUseCase>(),
-        createFavoriteCollectionUseCase: getIt<CreateFavoriteCollectionUseCase>(),
-        renameFavoriteCollectionUseCase: getIt<RenameFavoriteCollectionUseCase>(),
-        deleteFavoriteCollectionUseCase: getIt<DeleteFavoriteCollectionUseCase>(),
+        createFavoriteCollectionUseCase:
+            getIt<CreateFavoriteCollectionUseCase>(),
+        renameFavoriteCollectionUseCase:
+            getIt<RenameFavoriteCollectionUseCase>(),
+        deleteFavoriteCollectionUseCase:
+            getIt<DeleteFavoriteCollectionUseCase>(),
         addToFavoriteCollectionUseCase: getIt<AddToFavoriteCollectionUseCase>(),
         userDataRepository: getIt<UserDataRepository>(),
         logger: getIt<Logger>(),
@@ -1181,7 +1199,7 @@ void _setupCubits() {
       ));
 }
 
-/// Clean up all registered dependencies
+// Clean up all registered dependencies
 void cleanupLocator() {
   getIt.reset();
 }

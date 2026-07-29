@@ -15,8 +15,8 @@ class MosaicBuilder {
   // Gap between chips in mosaic
   static const int _chipGap = 10;
 
-  /// Build mosaic from page image bytes and detected bubble boxes.
-  /// Returns JPEG bytes of the mosaic, or null if failed.
+  // Build mosaic from page image bytes and detected bubble boxes.
+  // Returns JPEG bytes of the mosaic, or null if failed.
   static Future<Uint8List?> build({
     required Uint8List pageBytes,
     required List<BubbleBox> bubbles,

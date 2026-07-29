@@ -1,9 +1,9 @@
-/// kuron_generic — Config-driven generic HTTP source for Kuron app.
+// kuron_generic — Config-driven generic HTTP source for Kuron app.
 ///
-/// Provides [GenericHttpSource] which implements [ContentSource] based on
-/// a JSON config file (template URLs, JSONPath/CSS selector parsers,
-/// filter transformers). No Dart code changes needed to add a new provider —
-/// only a new JSON config.
+// Provides [GenericHttpSource] which implements [ContentSource] based on
+// a JSON config file (template URLs, JSONPath/CSS selector parsers,
+// filter transformers). No Dart code changes needed to add a new provider —
+// only a new JSON config.
 library;
 
 export 'src/adapters/generic_adapter.dart';

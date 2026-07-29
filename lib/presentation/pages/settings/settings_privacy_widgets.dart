@@ -321,8 +321,8 @@ Future<void> showTagBlacklistSheet(
                           .preferences.blacklistedTagMetadata.length)) {
             // If Cubit has different data, use that (source of truth)
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              localEntries = List<String>.from(
-                  settingsState.preferences.blacklistedTags);
+              localEntries =
+                  List<String>.from(settingsState.preferences.blacklistedTags);
               localMetadata = Map<String, BlacklistedTagMetadata>.from(
                 settingsState.preferences.blacklistedTagMetadata,
               );
@@ -346,12 +346,12 @@ Future<void> showTagBlacklistSheet(
             'nhentai',
           );
 
-          /// Sync localEntries from Cubit state to ensure data consistency
+          // Sync localEntries from Cubit state to ensure data consistency
           void syncFromCubit() {
             final settingsState = context.read<SettingsCubit>().state;
             if (settingsState is SettingsLoaded) {
-              localEntries = List<String>.from(
-                  settingsState.preferences.blacklistedTags);
+              localEntries =
+                  List<String>.from(settingsState.preferences.blacklistedTags);
               localMetadata = Map<String, BlacklistedTagMetadata>.from(
                 settingsState.preferences.blacklistedTagMetadata,
               );
@@ -607,8 +607,8 @@ Future<void> showTagBlacklistSheet(
                                     Text(
                                       AppLocalizations.of(context)!
                                           .manageTagBlacklist,
-                                      style: TextStyleConst.headingSmall
-                                          .copyWith(
+                                      style:
+                                          TextStyleConst.headingSmall.copyWith(
                                         color: theme.colorScheme.onSurface,
                                       ),
                                     ),
@@ -616,10 +616,9 @@ Future<void> showTagBlacklistSheet(
                                     Text(
                                       AppLocalizations.of(context)!
                                           .addTagRulesDescription,
-                                      style:
-                                          TextStyleConst.bodySmall.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant,
+                                      style: TextStyleConst.bodySmall.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -670,8 +669,7 @@ Future<void> showTagBlacklistSheet(
                                               'nhentai',
                                               forceRefresh: true,
                                             ),
-                                            tagBlacklistService
-                                                .syncOnlineRules(
+                                            tagBlacklistService.syncOnlineRules(
                                               'nhentai',
                                               forceRefresh: true,
                                             ),
@@ -694,8 +692,7 @@ Future<void> showTagBlacklistSheet(
                                           size: 18,
                                         ),
                                   label: Text(
-                                    AppLocalizations.of(context)!
-                                        .refreshOnline,
+                                    AppLocalizations.of(context)!.refreshOnline,
                                   ),
                                 ),
                               ),
@@ -765,8 +762,8 @@ Future<void> showTagBlacklistSheet(
                                           ),
                                         ),
                                         onDeleted: () => removeEntry(entry),
-                                        deleteIconColor: theme
-                                            .colorScheme.onSurfaceVariant,
+                                        deleteIconColor:
+                                            theme.colorScheme.onSurfaceVariant,
                                       ),
                                     )
                                     .toList(),

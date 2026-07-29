@@ -1,7 +1,7 @@
-/// Regression tests for [PageResolutionPipeline] (task 5.7).
+// Regression tests for [PageResolutionPipeline] (task 5.7).
 ///
-/// Verifies that reader and download use equivalent resolved page data for
-/// both REST and scraper-style inputs.
+// Verifies that reader and download use equivalent resolved page data for
+// both REST and scraper-style inputs.
 library;
 
 import 'package:kuron_core/kuron_core.dart';

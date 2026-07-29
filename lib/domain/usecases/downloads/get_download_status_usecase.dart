@@ -3,7 +3,7 @@ import '../../entities/entities.dart';
 import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting download status of specific content
+// Use case for getting download status of specific content
 class GetDownloadStatusUseCase
     extends UseCase<DownloadStatus?, GetDownloadStatusParams> {
   GetDownloadStatusUseCase(this._userDataRepository);
@@ -32,7 +32,7 @@ class GetDownloadStatusUseCase
   }
 }
 
-/// Parameters for GetDownloadStatusUseCase
+// Parameters for GetDownloadStatusUseCase
 class GetDownloadStatusParams extends UseCaseParams {
   const GetDownloadStatusParams({
     required this.contentId,
@@ -51,14 +51,14 @@ class GetDownloadStatusParams extends UseCaseParams {
     );
   }
 
-  /// Create params from string ID
+  // Create params from string ID
   factory GetDownloadStatusParams.fromString(String contentId) {
     return GetDownloadStatusParams(
       contentId: ContentId.fromString(contentId),
     );
   }
 
-  /// Create params from int ID
+  // Create params from int ID
   factory GetDownloadStatusParams.fromInt(int contentId) {
     return GetDownloadStatusParams(
       contentId: ContentId.fromInt(contentId),

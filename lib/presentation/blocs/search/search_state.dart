@@ -1,6 +1,6 @@
 part of 'search_bloc.dart';
 
-/// Base class for all search states
+// Base class for all search states
 abstract class SearchState extends Equatable {
   const SearchState();
 
@@ -8,12 +8,12 @@ abstract class SearchState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Initial search state
+// Initial search state
 class SearchInitial extends SearchState {
   const SearchInitial();
 }
 
-/// Search loading state
+// Search loading state
 class SearchLoading extends SearchState {
   const SearchLoading({this.message});
 
@@ -23,7 +23,7 @@ class SearchLoading extends SearchState {
   List<Object?> get props => [message];
 }
 
-/// Search results loaded state
+// Search results loaded state
 class SearchLoaded extends SearchState {
   const SearchLoaded({
     required this.results,
@@ -66,26 +66,26 @@ class SearchLoaded extends SearchState {
         tagSuggestions,
       ];
 
-  /// Check if can load more results
+  // Check if can load more results
   bool get canLoadMore => hasNext && !isLoadingMore;
 
-  /// Check if has results
+  // Check if has results
   bool get hasResults => results.isNotEmpty;
 
-  /// Get result count text
+  // Get result count text
   String get resultCountText {
     if (totalCount == 0) return 'No results';
     if (totalCount == 1) return '1 result';
     return '$totalCount results';
   }
 
-  /// Get page info text
+  // Get page info text
   String get pageInfoText {
     if (totalPages <= 1) return '';
     return 'Page $currentPage of $totalPages';
   }
 
-  /// Copy with updated properties
+  // Copy with updated properties
   SearchLoaded copyWith({
     List<Content>? results,
     SearchFilter? filter,
@@ -114,7 +114,7 @@ class SearchLoaded extends SearchState {
     );
   }
 
-  /// Copy with more results (for pagination)
+  // Copy with more results (for pagination)
   SearchLoaded copyWithMoreResults(List<Content> moreResults) {
     return copyWith(
       results: [...results, ...moreResults],
@@ -123,7 +123,7 @@ class SearchLoaded extends SearchState {
     );
   }
 
-  /// Copy with updated filter and reset results
+  // Copy with updated filter and reset results
   SearchLoaded copyWithNewFilter(SearchFilter newFilter) {
     return SearchLoaded(
       results: const [],
@@ -141,7 +141,7 @@ class SearchLoaded extends SearchState {
   }
 }
 
-/// Search loading more results state
+// Search loading more results state
 class SearchLoadingMore extends SearchLoaded {
   const SearchLoadingMore({
     required super.results,
@@ -157,7 +157,7 @@ class SearchLoadingMore extends SearchLoaded {
   }) : super(isLoadingMore: true);
 }
 
-/// Search refreshing state
+// Search refreshing state
 class SearchRefreshing extends SearchLoaded {
   const SearchRefreshing({
     required super.results,
@@ -173,7 +173,7 @@ class SearchRefreshing extends SearchLoaded {
   });
 }
 
-/// Search empty state (no results found)
+// Search empty state (no results found)
 class SearchEmpty extends SearchState {
   const SearchEmpty({
     required this.filter,
@@ -189,7 +189,7 @@ class SearchEmpty extends SearchState {
   List<Object?> get props => [filter, message, suggestions];
 }
 
-/// Search error state
+// Search error state
 class SearchError extends SearchState {
   const SearchError({
     required this.message,
@@ -217,11 +217,11 @@ class SearchError extends SearchState {
         stackTrace,
       ];
 
-  /// Check if has previous results to show
+  // Check if has previous results to show
   bool get hasPreviousResults =>
       previousResults != null && previousResults!.isNotEmpty;
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String get userMessage {
     switch (errorType) {
       case SearchErrorType.network:
@@ -241,7 +241,7 @@ class SearchError extends SearchState {
     }
   }
 
-  /// Get retry button text
+  // Get retry button text
   String get retryButtonText {
     switch (errorType) {
       case SearchErrorType.cloudflare:
@@ -258,7 +258,7 @@ class SearchError extends SearchState {
   }
 }
 
-/// Search suggestions state
+// Search suggestions state
 class SearchSuggestions extends SearchState {
   const SearchSuggestions({
     required this.query,
@@ -275,11 +275,11 @@ class SearchSuggestions extends SearchState {
   @override
   List<Object> get props => [query, suggestions, tagSuggestions, history];
 
-  /// Check if has any suggestions
+  // Check if has any suggestions
   bool get hasSuggestions =>
       suggestions.isNotEmpty || tagSuggestions.isNotEmpty || history.isNotEmpty;
 
-  /// Get filtered history based on query
+  // Get filtered history based on query
   List<String> get filteredHistory {
     if (query.isEmpty) return history;
     return history
@@ -287,7 +287,7 @@ class SearchSuggestions extends SearchState {
         .toList();
   }
 
-  /// Get filtered tag suggestions based on query
+  // Get filtered tag suggestions based on query
   List<Tag> get filteredTagSuggestions {
     if (query.isEmpty) return tagSuggestions.take(10).toList();
     return tagSuggestions
@@ -296,7 +296,7 @@ class SearchSuggestions extends SearchState {
         .toList();
   }
 
-  /// Copy with updated properties
+  // Copy with updated properties
   SearchSuggestions copyWith({
     String? query,
     List<String>? suggestions,
@@ -312,7 +312,7 @@ class SearchSuggestions extends SearchState {
   }
 }
 
-/// Search history state
+// Search history state
 class SearchHistory extends SearchState {
   const SearchHistory({
     required this.history,
@@ -327,17 +327,17 @@ class SearchHistory extends SearchState {
   @override
   List<Object?> get props => [history, popularSearches, timestamp];
 
-  /// Check if has history
+  // Check if has history
   bool get hasHistory => history.isNotEmpty;
 
-  /// Check if has popular searches
+  // Check if has popular searches
   bool get hasPopularSearches => popularSearches.isNotEmpty;
 
-  /// Check if has any content
+  // Check if has any content
   bool get hasContent => hasHistory || hasPopularSearches;
 }
 
-/// Search presets state
+// Search presets state
 class SearchPresets extends SearchState {
   const SearchPresets({
     required this.presets,
@@ -348,14 +348,14 @@ class SearchPresets extends SearchState {
   @override
   List<Object> get props => [presets];
 
-  /// Check if has presets
+  // Check if has presets
   bool get hasPresets => presets.isNotEmpty;
 
-  /// Get preset names
+  // Get preset names
   List<String> get presetNames => presets.keys.toList()..sort();
 }
 
-/// Search filter updated state (new flow - filter updated but no API call yet)
+// Search filter updated state (new flow - filter updated but no API call yet)
 class SearchFilterUpdated extends SearchState {
   const SearchFilterUpdated({
     required this.filter,
@@ -368,11 +368,11 @@ class SearchFilterUpdated extends SearchState {
   @override
   List<Object> get props => [filter, timestamp];
 
-  /// Check if filter has any criteria
+  // Check if filter has any criteria
   bool get hasFilters => filter.hasFilters;
 }
 
-/// Search error types
+// Search error types
 enum SearchErrorType {
   network,
   server,
@@ -383,9 +383,9 @@ enum SearchErrorType {
   unknown,
 }
 
-/// Extension for SearchErrorType
+// Extension for SearchErrorType
 extension SearchErrorTypeExtension on SearchErrorType {
-  /// Check if error is retryable
+  // Check if error is retryable
   bool get isRetryable {
     switch (this) {
       case SearchErrorType.network:
@@ -400,7 +400,7 @@ extension SearchErrorTypeExtension on SearchErrorType {
     }
   }
 
-  /// Get error icon
+  // Get error icon
   String get icon {
     switch (this) {
       case SearchErrorType.network:

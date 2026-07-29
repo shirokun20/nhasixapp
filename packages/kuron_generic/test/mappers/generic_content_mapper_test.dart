@@ -1,8 +1,8 @@
-/// Unit tests for [GenericContentMapper].
+// Unit tests for [GenericContentMapper].
 ///
-/// These tests validate that raw field maps extracted from HTML / JSON are
-/// correctly converted into typed domain entities.  No HTTP calls, no Dio,
-/// no Flutter — pure Dart.
+// These tests validate that raw field maps extracted from HTML / JSON are
+// correctly converted into typed domain entities.  No HTTP calls, no Dio,
+// no Flutter — pure Dart.
 library;
 
 import 'package:kuron_core/kuron_core.dart';

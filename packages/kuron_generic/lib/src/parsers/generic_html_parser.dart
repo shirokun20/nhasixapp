@@ -1,7 +1,7 @@
-/// CSS selector-based HTML parser for scraper-type sources.
+// CSS selector-based HTML parser for scraper-type sources.
 ///
-/// Wraps the `html` package to evaluate CSS selectors and extract text
-/// or attribute values from HTML documents.
+// Wraps the `html` package to evaluate CSS selectors and extract text
+// or attribute values from HTML documents.
 library;
 
 import 'package:html/dom.dart' as dom;
@@ -10,7 +10,7 @@ import 'package:logger/logger.dart';
 
 import '../models/source_config_runtime.dart';
 
-/// Ordered list of lazy-load image attributes to check as fallbacks.
+// Ordered list of lazy-load image attributes to check as fallbacks.
 const _kImageFallbackAttributes = ['data-src', 'data-lazy-src', 'src'];
 
 class GenericHtmlParser {
@@ -139,10 +139,10 @@ class GenericHtmlParser {
 
   // ── Private ────────────────────────────────────────────────────────────────
 
-  /// Query selector with :contains(text) pseudo-class support.
+  // Query selector with :contains(text) pseudo-class support.
   ///
-  /// The standard CSS parser from `html` package does not support :contains(),
-  /// so we preprocess selectors to handle it manually.
+  // The standard CSS parser from `html` package does not support :contains(),
+  // so we preprocess selectors to handle it manually.
   List<dom.Element> _selectAll(dynamic parent, String selector) {
     final containsRE = RegExp(r':contains\(([^)]+)\)');
     final match = containsRE.firstMatch(selector);

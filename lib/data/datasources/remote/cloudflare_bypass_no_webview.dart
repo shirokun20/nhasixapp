@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
 
-/// Cloudflare bypass implementation without using WebView
+// Cloudflare bypass implementation without using WebView
 class CloudflareBypassNoWebView {
   CloudflareBypassNoWebView({
     required this.httpClient,
@@ -18,7 +18,7 @@ class CloudflareBypassNoWebView {
   static const Duration maxWaitDuration = Duration(seconds: 5);
   static const Duration retryInterval = Duration(seconds: 3);
 
-  /// Attempt to bypass Cloudflare protection without WebView
+  // Attempt to bypass Cloudflare protection without WebView
   Future<bool> attemptBypass({String? targetUrl}) async {
     // Only Android platform is supported
     if (kIsWeb ||
@@ -65,7 +65,7 @@ class CloudflareBypassNoWebView {
     return false;
   }
 
-  /// Check if HTML contains Cloudflare challenge
+  // Check if HTML contains Cloudflare challenge
   bool isCloudflareChallenge(String html) {
     final cloudflareIndicators = [
       'Checking your browser before accessing',
@@ -84,7 +84,7 @@ class CloudflareBypassNoWebView {
         .any((indicator) => lowerHtml.contains(indicator.toLowerCase()));
   }
 
-  /// Extract cookies from response headers and add to HTTP client
+  // Extract cookies from response headers and add to HTTP client
   void _extractCookiesFromResponse(Response response) {
     try {
       final setCookieHeaders = response.headers.map['set-cookie'];
@@ -107,7 +107,7 @@ class CloudflareBypassNoWebView {
     }
   }
 
-  /// Clear stored cookies
+  // Clear stored cookies
   void clearCookies() {
     try {
       httpClient.options.headers.remove('cookie');

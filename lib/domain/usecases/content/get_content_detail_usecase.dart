@@ -3,7 +3,7 @@ import '../../value_objects/value_objects.dart';
 import '../../repositories/repositories.dart';
 import 'package:kuron_core/kuron_core.dart';
 
-/// Use case for getting detailed content information
+// Use case for getting detailed content information
 class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
   GetContentDetailUseCase(this._contentRepository);
 
@@ -41,7 +41,7 @@ class GetContentDetailUseCase extends UseCase<Content, GetContentDetailParams> {
   }
 }
 
-/// Parameters for GetContentDetailUseCase
+// Parameters for GetContentDetailUseCase
 class GetContentDetailParams extends UseCaseParams {
   const GetContentDetailParams({
     required this.contentId,
@@ -68,7 +68,7 @@ class GetContentDetailParams extends UseCaseParams {
     );
   }
 
-  /// Create params from string ID
+  // Create params from string ID
   factory GetContentDetailParams.fromString(
     String contentId, {
     bool verifyExists = false,
@@ -81,7 +81,7 @@ class GetContentDetailParams extends UseCaseParams {
     );
   }
 
-  /// Create params from int ID
+  // Create params from int ID
   factory GetContentDetailParams.fromInt(
     int contentId, {
     bool verifyExists = false,

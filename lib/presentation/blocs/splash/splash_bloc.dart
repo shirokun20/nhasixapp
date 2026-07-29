@@ -424,8 +424,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     }
   }
 
-  /// Enhanced offline mode handling with smart auto-continue functionality
-  /// Checks for offline content and either auto-continues or shows options
+  // Enhanced offline mode handling with smart auto-continue functionality
+  // Checks for offline content and either auto-continues or shows options
   Future<void> _handleOfflineMode(Emitter<SplashState> emit) async {
     try {
       // First, show that we're checking offline content
@@ -538,8 +538,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     }
   }
 
-  /// Force continue to main app even without offline content
-  /// Enables limited offline mode for basic app functionality
+  // Force continue to main app even without offline content
+  // Enables limited offline mode for basic app functionality
   Future<void> _onForceOfflineMode(
     SplashForceOfflineModeEvent event,
     Emitter<SplashState> emit,
@@ -573,8 +573,8 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
     }
   }
 
-  /// Manually check for offline content availability
-  /// Useful for refresh functionality when user wants to recheck
+  // Manually check for offline content availability
+  // Useful for refresh functionality when user wants to recheck
   Future<void> _onCheckOfflineContent(
     SplashCheckOfflineContentEvent event,
     Emitter<SplashState> emit,

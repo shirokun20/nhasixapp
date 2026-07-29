@@ -3,7 +3,7 @@ import 'package:nhasixapp/domain/entities/tags/tag_entity.dart';
 import 'package:nhasixapp/domain/repositories/tag_repository.dart';
 import 'package:nhasixapp/domain/usecases/base_usecase.dart';
 
-/// UseCase for getting tags by type from API v2
+// UseCase for getting tags by type from API v2
 class GetTagsByTypeUseCase
     extends UseCase<List<TagEntity>, GetTagsByTypeParams> {
   final TagRepository _tagRepository;

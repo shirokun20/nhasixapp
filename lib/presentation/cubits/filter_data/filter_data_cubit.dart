@@ -7,7 +7,7 @@ import '../base/base_cubit.dart';
 
 part 'filter_data_state.dart';
 
-/// Cubit for managing filter data screen state
+// Cubit for managing filter data screen state
 class FilterDataCubit extends BaseCubit<FilterDataState> {
   FilterDataCubit({
     required TagDataManager tagDataManager,
@@ -23,13 +23,13 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
   final GetTagsByTypeUseCase _getTagsByTypeUseCase;
   final GetTagAutocompleteUseCase _getTagAutocompleteUseCase;
 
-  /// Whether this source should fetch tags from API v2 instead of local JSON
+  // Whether this source should fetch tags from API v2 instead of local JSON
   bool _shouldUseApi(String sourceId) {
     const apiSources = {'nhentai'};
     return apiSources.contains(sourceId);
   }
 
-  /// Convert API TagEntity to kuron_core Tag for compatibility
+  // Convert API TagEntity to kuron_core Tag for compatibility
   Tag _tagEntityToTag(TagEntity entity) => Tag(
         id: entity.id,
         name: entity.name,
@@ -46,7 +46,7 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
   List<Tag> _filteredTags = [];
   String _searchQuery = '';
 
-  /// Initialize filter data screen
+  // Initialize filter data screen
   Future<void> initialize({
     required String filterType,
     String sourceId = 'nhentai',
@@ -111,7 +111,7 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Search filter data by query
+  // Search filter data by query
   Future<void> searchFilterData(String query) async {
     try {
       _searchQuery = query.trim();
@@ -176,7 +176,7 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Switch filter type (tag, artist, character, etc.)
+  // Switch filter type (tag, artist, character, etc.)
   Future<void> switchFilterType(String filterType) async {
     try {
       logger.i('FilterDataCubit: Switching to filter type: $filterType');
@@ -230,7 +230,7 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Toggle filter item selection
+  // Toggle filter item selection
   void toggleFilterItem(Tag tag, {bool? forceExclude}) {
     try {
       final existingIndex = _selectedFilters.indexWhere(
@@ -301,17 +301,17 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Add filter item as include
+  // Add filter item as include
   void addIncludeFilter(Tag tag) {
     toggleFilterItem(tag, forceExclude: false);
   }
 
-  /// Add filter item as exclude
+  // Add filter item as exclude
   void addExcludeFilter(Tag tag) {
     toggleFilterItem(tag, forceExclude: true);
   }
 
-  /// Remove filter item
+  // Remove filter item
   void removeFilterItem(String value) {
     try {
       final removedCount = _selectedFilters.length;
@@ -342,7 +342,7 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Clear all selected filters
+  // Clear all selected filters
   void clearAllFilters() {
     try {
       final hadFilters = _selectedFilters.isNotEmpty;
@@ -373,12 +373,12 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Get selected filters
+  // Get selected filters
   List<FilterItem> getSelectedFilters() {
     return List<FilterItem>.from(_selectedFilters);
   }
 
-  /// Check if tag is selected
+  // Check if tag is selected
   FilterItem? getSelectedFilterItem(String tagName) {
     try {
       return _selectedFilters.firstWhere((item) => item.value == tagName);
@@ -387,21 +387,21 @@ class FilterDataCubit extends BaseCubit<FilterDataState> {
     }
   }
 
-  /// Check if tag is selected as include
+  // Check if tag is selected as include
   bool isIncluded(String tagName) {
     final item = getSelectedFilterItem(tagName);
     return item != null && !item.isExcluded;
   }
 
-  /// Check if tag is selected as exclude
+  // Check if tag is selected as exclude
   bool isExcluded(String tagName) {
     final item = getSelectedFilterItem(tagName);
     return item != null && item.isExcluded;
   }
 
-  /// Get current filter type
+  // Get current filter type
   String get currentFilterType => _currentFilterType;
 
-  /// Get search query
+  // Get search query
   String get searchQuery => _searchQuery;
 }

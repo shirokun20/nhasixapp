@@ -39,7 +39,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:nhasixapp/presentation/pages/settings/doh_test_page.dart';
 
 class AppRouter {
-  /// Global navigator key untuk Cloudflare bypass dialog
+  // Global navigator key untuk Cloudflare bypass dialog
   static final navigatorKey = GlobalKey<NavigatorState>();
 
   static final GoRouter router = GoRouter(
@@ -95,7 +95,9 @@ class AppRouter {
           if (state.extra != null) {
             try {
               if (state.extra is List<FilterItem>) {
-                selectedFilters = state.extra is List<FilterItem> ? state.extra as List<FilterItem> : <FilterItem>[];
+                selectedFilters = state.extra is List<FilterItem>
+                    ? state.extra as List<FilterItem>
+                    : <FilterItem>[];
               } else if (state.extra is List<dynamic>) {
                 // Convert List<dynamic> to List<FilterItem>
                 final dynamicList = state.extra as List<dynamic>?;
@@ -210,7 +212,9 @@ class AppRouter {
         path: '/reader_pdf',
         name: 'reader_pdf',
         builder: (context, state) {
-          final extra = state.extra is Map<String, dynamic> ? state.extra as Map<String, dynamic> : <String, dynamic>{};
+          final extra = state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : <String, dynamic>{};
           final filePath = extra['filePath'] as String? ?? '';
           final contentId = extra['contentId'] as String? ?? '';
           final title = extra['title'] as String? ?? '';

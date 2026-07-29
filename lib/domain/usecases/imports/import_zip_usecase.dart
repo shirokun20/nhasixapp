@@ -9,9 +9,9 @@ import '../../../core/utils/download_storage_utils.dart';
 import '../../../domain/repositories/user_data_repository.dart';
 import '../../../domain/entities/download_status.dart';
 
-/// Parameters for importing a ZIP file
+// Parameters for importing a ZIP file
 class ImportZipParams {
-  /// Optional progress callback: (fileIndex, totalFiles, processed, total, imageCount, currentFile)
+  // Optional progress callback: (fileIndex, totalFiles, processed, total, imageCount, currentFile)
   final void Function(int fileIndex, int totalFiles, int processed, int total,
       int imageCount, String currentFile)? onProgress;
   final Future<void> Function(int totalFiles)? onStarted;
@@ -19,13 +19,13 @@ class ImportZipParams {
   const ImportZipParams({this.onProgress, this.onStarted});
 }
 
-/// UseCase for importing ZIP files containing doujin/manga content
+// UseCase for importing ZIP files containing doujin/manga content
 ///
-/// This handles:
-/// 1. Picking one or more ZIP files using native file picker
-/// 2. Extracting the ZIP natively with progress notifications
-/// 3. Auto-generating metadata.json
-/// 4. Registering the content in the database
+// This handles:
+// 1. Picking one or more ZIP files using native file picker
+// 2. Extracting the ZIP natively with progress notifications
+// 3. Auto-generating metadata.json
+// 4. Registering the content in the database
 class ImportZipUseCase {
   final KuronNative _kuronNative;
   final UserDataRepository _userDataRepository;
@@ -37,12 +37,12 @@ class ImportZipUseCase {
   })  : _kuronNative = kuronNative,
         _userDataRepository = userDataRepository;
 
-  /// Executes the ZIP import flow using native extraction with progress notifications
+  // Executes the ZIP import flow using native extraction with progress notifications
   ///
-  /// Returns a map with:
-  /// - 'success': bool
-  /// - 'contentId': String (if successful)
-  /// - 'error': String (if failed)
+  // Returns a map with:
+  // - 'success': bool
+  // - 'contentId': String (if successful)
+  // - 'error': String (if failed)
   Future<Map<String, dynamic>> call(ImportZipParams params) async {
     try {
       _logger.i('Starting native ZIP import flow');
@@ -255,7 +255,7 @@ class ImportZipUseCase {
     };
   }
 
-  /// Extracts file name from URI and decodes URL encoding
+  // Extracts file name from URI and decodes URL encoding
   String _extractFileNameFromUri(String uri) {
     // First decode URL encoding (e.g., %3A -> :, %2F -> /)
     final String decoded = Uri.decodeComponent(uri);
@@ -272,7 +272,7 @@ class ImportZipUseCase {
     return decoded;
   }
 
-  /// Sanitizes content ID (removes .zip extension, special chars)
+  // Sanitizes content ID (removes .zip extension, special chars)
   String _sanitizeContentId(String fileName) {
     var cleaned = fileName;
 
@@ -333,7 +333,7 @@ class ImportZipUseCase {
     }
   }
 
-  /// Formats content ID into a readable title
+  // Formats content ID into a readable title
   String _formatTitle(String contentId) {
     return contentId
         .split('-')
@@ -345,7 +345,7 @@ class ImportZipUseCase {
         .trim();
   }
 
-  /// Formats bytes into human-readable string
+  // Formats bytes into human-readable string
   String _formatBytes(int bytes) {
     if (bytes == 0) return '0 B';
 

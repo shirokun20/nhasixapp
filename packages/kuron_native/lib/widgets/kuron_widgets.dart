@@ -42,8 +42,8 @@ class _KuronGlassContainer extends StatelessWidget {
 
 // --- Features ---
 
-/// Premium button to open a PDF file.
-/// Automatically checks if file exists.
+// Premium button to open a PDF file.
+// Automatically checks if file exists.
 class KuronPdfButton extends StatelessWidget {
   final String filePath;
   final String label;
@@ -81,7 +81,7 @@ class KuronPdfButton extends StatelessWidget {
   }
 }
 
-/// Card to handle downloads with permissions and progress.
+// Card to handle downloads with permissions and progress.
 class KuronDownloadCard extends StatefulWidget {
   final String url;
   final String fileName;
@@ -183,7 +183,7 @@ class _KuronDownloadCardState extends State<KuronDownloadCard> {
   }
 }
 
-/// Button to open secure WebViews.
+// Button to open secure WebViews.
 class KuronWebButton extends StatelessWidget {
   final String url;
   final String label;
@@ -225,7 +225,7 @@ class KuronWebButton extends StatelessWidget {
   }
 }
 
-/// Login with SSO.
+// Login with SSO.
 class KuronSSOButton extends StatelessWidget {
   final String label;
   final String loginUrl;
@@ -268,7 +268,7 @@ class KuronSSOButton extends StatelessWidget {
   }
 }
 
-/// System Info Card.
+// System Info Card.
 class KuronInfoCard extends StatelessWidget {
   final String title;
   final String type; // 'ram', 'storage', 'battery'
@@ -305,10 +305,10 @@ class KuronInfoCard extends StatelessWidget {
 
 // --- Backup Buttons ---
 
-/// Export button for backing up JSON data.
+// Export button for backing up JSON data.
 ///
-/// If [customDirectory] is provided, the backup will be saved there.
-/// Otherwise, falls back to default Downloads folder.
+// If [customDirectory] is provided, the backup will be saved there.
+// Otherwise, falls back to default Downloads folder.
 class KuronExportButton extends StatelessWidget {
   final String data; // JSON string
   final String fileName;

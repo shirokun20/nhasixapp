@@ -7,7 +7,7 @@ class NativePdfReaderService {
 
   NativePdfReaderService({Logger? logger}) : _logger = logger ?? Logger();
 
-  /// [startPage] is NOT SUPPORTED by current KuronNative but kept for API compatibility
+  // [startPage] is NOT SUPPORTED by current KuronNative but kept for API compatibility
   Future<void> openPdf(
     String filePath, {
     String? title,
@@ -31,7 +31,7 @@ class NativePdfReaderService {
     }
   }
 
-  /// PDF reader auto-closes when user presses back
+  // PDF reader auto-closes when user presses back
   Future<void> closePdf() async {
     // Current native implementation doesn't expose closePdf
     // but the reader is managed by a separate Activity that closes on back press

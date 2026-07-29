@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'search_filter.freezed.dart';
 part 'search_filter.g.dart';
 
-/// Filter item for tagging and categorization
+// Filter item for tagging and categorization
 @freezed
 abstract class FilterItem with _$FilterItem {
   const factory FilterItem({
@@ -15,7 +15,7 @@ abstract class FilterItem with _$FilterItem {
     String? tagSlug,
   }) = _FilterItem;
 
-  /// Create an included filter item
+  // Create an included filter item
   factory FilterItem.include(
     String value, {
     int? tagId,
@@ -32,7 +32,7 @@ abstract class FilterItem with _$FilterItem {
         tagSlug: tagSlug,
       );
 
-  /// Create an excluded filter item
+  // Create an excluded filter item
   factory FilterItem.exclude(
     String value, {
     int? tagId,
@@ -53,13 +53,13 @@ abstract class FilterItem with _$FilterItem {
       _$FilterItemFromJson(json);
 }
 
-/// Extension for FilterItem helper methods
+// Extension for FilterItem helper methods
 extension FilterItemExtension on FilterItem {
-  /// Get prefix for query string
+  // Get prefix for query string
   String get prefix => isExcluded ? '-' : '';
 }
 
-/// Search filter entity for advanced content filtering
+// Search filter entity for advanced content filtering
 @freezed
 abstract class SearchFilter with _$SearchFilter {
   const factory SearchFilter({
@@ -88,9 +88,9 @@ abstract class SearchFilter with _$SearchFilter {
       _$SearchFilterFromJson(json);
 }
 
-/// Extension for SearchFilter helper methods
+// Extension for SearchFilter helper methods
 extension SearchFilterExtension on SearchFilter {
-  /// Check if filter is empty (no criteria set)
+  // Check if filter is empty (no criteria set)
   bool get isEmpty {
     return query == null &&
         tags.isEmpty &&
@@ -106,10 +106,10 @@ extension SearchFilterExtension on SearchFilter {
         highlightQuery == null;
   }
 
-  /// Check if filter has any criteria
+  // Check if filter has any criteria
   bool get hasFilters => !isEmpty;
 
-  /// Get total number of active filters
+  // Get total number of active filters
   int get activeFilterCount {
     int count = 0;
     if (query != null && query!.isNotEmpty) count++;
@@ -126,27 +126,27 @@ extension SearchFilterExtension on SearchFilter {
     return count;
   }
 
-  /// Clear all filters
+  // Clear all filters
   SearchFilter clear() {
     return const SearchFilter();
   }
 
-  /// Reset to first page
+  // Reset to first page
   SearchFilter resetPage() {
     return copyWith(page: 1);
   }
 
-  /// Go to next page
+  // Go to next page
   SearchFilter nextPage() {
     return copyWith(page: page + 1);
   }
 
-  /// Go to previous page
+  // Go to previous page
   SearchFilter previousPage() {
     return copyWith(page: page > 1 ? page - 1 : 1);
   }
 
-  /// Validate filter according to Matrix Filter Support rules
+  // Validate filter according to Matrix Filter Support rules
   FilterValidationResult validate() {
     final errors = <String>[];
     final warnings = <String>[];
@@ -233,7 +233,7 @@ extension SearchFilterExtension on SearchFilter {
     );
   }
 
-  /// Check if filter type supports multiple values
+  // Check if filter type supports multiple values
   static bool isMultipleSelectFilter(String filterType) {
     switch (filterType.toLowerCase()) {
       case 'tag':
@@ -250,7 +250,7 @@ extension SearchFilterExtension on SearchFilter {
     }
   }
 
-  /// Check if filter type supports include/exclude
+  // Check if filter type supports include/exclude
   static bool supportsIncludeExclude(String filterType) {
     switch (filterType.toLowerCase()) {
       case 'tag':
@@ -267,18 +267,18 @@ extension SearchFilterExtension on SearchFilter {
     }
   }
 
-  /// Convert to query string for URL (using SearchQueryBuilder)
+  // Convert to query string for URL (using SearchQueryBuilder)
   String toQueryString({Map<String, String>? prefixMap}) {
     return _buildUrlQuery(prefixMap: prefixMap);
   }
 
-  /// Build query string according to Matrix Filter Support rules
-  /// Output format: "+-tag:"a1"+-artist:"b1"+language:"english""
+  // Build query string according to Matrix Filter Support rules
+  // Output format: "+-tag:"a1"+-artist:"b1"+language:"english""
   String buildQueryString({Map<String, String>? prefixMap}) {
     return _buildQuery(prefixMap: prefixMap);
   }
 
-  /// Build URL query string with all parameters
+  // Build URL query string with all parameters
   String _buildUrlQuery({Map<String, String>? prefixMap}) {
     final params = <String>[];
 
@@ -308,7 +308,7 @@ extension SearchFilterExtension on SearchFilter {
     return params.join('&');
   }
 
-  /// Build query string from SearchFilter according to Matrix Filter Support rules
+  // Build query string from SearchFilter according to Matrix Filter Support rules
   String _buildQuery({Map<String, String>? prefixMap}) {
     final queryParts = <String>[];
 
@@ -370,7 +370,7 @@ extension SearchFilterExtension on SearchFilter {
     return queryParts.join(' ');
   }
 
-  /// Convert to JSON for persistence
+  // Convert to JSON for persistence
   Map<String, dynamic> toJson() {
     return {
       'query': query,
@@ -393,7 +393,7 @@ extension SearchFilterExtension on SearchFilter {
   }
 }
 
-/// Sort options for content
+// Sort options for content
 enum SortOption {
   newest,
   popular,
@@ -402,7 +402,7 @@ enum SortOption {
   rating,
 }
 
-/// Navigation source for search filter
+// Navigation source for search filter
 enum SearchSource {
   searchScreen,
   detailScreen,
@@ -410,7 +410,7 @@ enum SearchSource {
   unknown,
 }
 
-/// Extension for SearchSource display names
+// Extension for SearchSource display names
 extension SearchSourceExtension on SearchSource {
   String get displayName {
     switch (this) {
@@ -439,7 +439,7 @@ extension SearchSourceExtension on SearchSource {
   }
 }
 
-/// Extension for SortOption display names
+// Extension for SortOption display names
 extension SortOptionExtension on SortOption {
   String get displayName {
     switch (this) {
@@ -472,7 +472,7 @@ extension SortOptionExtension on SortOption {
   }
 }
 
-/// Integer range for filtering
+// Integer range for filtering
 @freezed
 abstract class IntRange with _$IntRange {
   const factory IntRange({
@@ -484,23 +484,23 @@ abstract class IntRange with _$IntRange {
       _$IntRangeFromJson(json);
 }
 
-/// Extension for IntRange helper methods
+// Extension for IntRange helper methods
 extension IntRangeExtension on IntRange {
-  /// Check if value is within range
+  // Check if value is within range
   bool contains(int value) {
     if (min != null && value < min!) return false;
     if (max != null && value > max!) return false;
     return true;
   }
 
-  /// Check if range is valid
+  // Check if range is valid
   bool get isValid {
     if (min == null && max == null) return false;
     if (min != null && max != null && min! > max!) return false;
     return true;
   }
 
-  /// Get display string
+  // Get display string
   String get displayString {
     if (min != null && max != null) {
       return '$min - $max pages';
@@ -513,7 +513,7 @@ extension IntRangeExtension on IntRange {
   }
 }
 
-/// Result of filter validation
+// Result of filter validation
 @freezed
 abstract class FilterValidationResult with _$FilterValidationResult {
   const factory FilterValidationResult({
@@ -526,12 +526,12 @@ abstract class FilterValidationResult with _$FilterValidationResult {
       _$FilterValidationResultFromJson(json);
 }
 
-/// Extension for FilterValidationResult helper methods
+// Extension for FilterValidationResult helper methods
 extension FilterValidationResultExtension on FilterValidationResult {
-  /// Check if has any issues
+  // Check if has any issues
   bool get hasIssues => errors.isNotEmpty || warnings.isNotEmpty;
 
-  /// Get all issues as formatted string
+  // Get all issues as formatted string
   String get issuesText {
     final issues = <String>[];
 

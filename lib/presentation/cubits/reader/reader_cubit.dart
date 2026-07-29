@@ -1216,7 +1216,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     _stopAutoHideTimer();
   }
 
-  /// Auto-switch to continuous scroll on tall-image detection
+  // Auto-switch to continuous scroll on tall-image detection
   void onImageLoaded(int pageNumber, Size imageSize) {
     // Only check first few images to avoid performance overhead
     if (pageNumber > 3 || _hasDetectedWebtoon) return;
@@ -2581,13 +2581,13 @@ class ReaderCubit extends Cubit<ReaderState> {
     });
   }
 
-  /// Extracts the parent content ID from a composite chapter ID.
+  // Extracts the parent content ID from a composite chapter ID.
   ///
-  /// Komikcast and similar sources store chapter IDs as composite slugs:
-  ///   - "doctors-rebirth/234"  → parent = "doctors-rebirth"
-  ///   - "doctor-rebirth/chapter/234" → parent = "doctors-rebirth"
+  // Komikcast and similar sources store chapter IDs as composite slugs:
+  //   - "doctors-rebirth/234"  → parent = "doctors-rebirth"
+  //   - "doctor-rebirth/chapter/234" → parent = "doctors-rebirth"
   ///
-  /// Returns the original [contentId] if it is not a composite ID (i.e. no `/`).
+  // Returns the original [contentId] if it is not a composite ID (i.e. no `/`).
   String _extractParentContentId(String contentId) {
     final trimmed = contentId.trim();
     final slashIndex = trimmed.indexOf('/');
@@ -2595,9 +2595,9 @@ class ReaderCubit extends Cubit<ReaderState> {
     return trimmed.substring(0, slashIndex);
   }
 
-  /// Check if contentId is a Crotpedia chapter ID
-  /// Crotpedia chapter IDs typically contain "chapter" in the slug
-  /// e.g., "manga-name-chapter-1-bahasa-indonesia"
+  // Check if contentId is a Crotpedia chapter ID
+  // Crotpedia chapter IDs typically contain "chapter" in the slug
+  // e.g., "manga-name-chapter-1-bahasa-indonesia"
   bool _isCrotpediaChapterId(
     String contentId, {
     String? sourceId,

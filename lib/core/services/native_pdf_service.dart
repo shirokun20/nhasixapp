@@ -6,18 +6,18 @@ import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 class NativePdfService {
   final Logger _logger = getIt<Logger>();
 
-  /// Generate PDF using native high-performance implementation
+  // Generate PDF using native high-performance implementation
   ///
-  /// This is ~5x faster than Flutter for large webtoon sets
+  // This is ~5x faster than Flutter for large webtoon sets
   ///
-  /// **Parameters**:
-  /// - [imagePaths]: List of absolute paths to image files
-  /// - [outputPath]: Absolute path where PDF should be saved
-  /// - [title]: Title for the PDF
-  /// - [onProgress]: Callback for progress updates (progress: 0-100, message: status)
+  // **Parameters**:
+  // - [imagePaths]: List of absolute paths to image files
+  // - [outputPath]: Absolute path where PDF should be saved
+  // - [title]: Title for the PDF
+  // - [onProgress]: Callback for progress updates (progress: 0-100, message: status)
   ///
-  /// **Returns**:
-  /// - Map with: `success`, `pdfPath`, `pageCount`, `fileSize`
+  // **Returns**:
+  // - Map with: `success`, `pdfPath`, `pageCount`, `fileSize`
   Future<Map<String, dynamic>> generatePdfNative({
     required List<String> imagePaths,
     required String outputPath,
@@ -47,9 +47,9 @@ class NativePdfService {
     }
   }
 
-  /// Open PDF in native high-performance reader (Activity)
+  // Open PDF in native high-performance reader (Activity)
   ///
-  /// This launches a separate Android Activity for 120Hz smooth reading
+  // This launches a separate Android Activity for 120Hz smooth reading
   Future<void> openPdf({
     required String path,
     required String title,

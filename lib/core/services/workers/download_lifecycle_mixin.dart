@@ -2,28 +2,28 @@ import 'package:flutter/widgets.dart';
 
 import './download_worker.dart';
 
-/// Mixin to handle app lifecycle for background download scheduling
+// Mixin to handle app lifecycle for background download scheduling
 ///
-/// Usage:
-/// 1. Add this mixin to your main widget state
-/// 2. Call [scheduleActiveDownloadsForBackground] when app goes to background
-/// 3. Call [cancelBackgroundDownloadSchedule] when app resumes
+// Usage:
+// 1. Add this mixin to your main widget state
+// 2. Call [scheduleActiveDownloadsForBackground] when app goes to background
+// 3. Call [cancelBackgroundDownloadSchedule] when app resumes
 ///
-/// Example:
-/// ```dart
-/// class _MyAppState extends State<MyApp>
-///     with WidgetsBindingObserver, DownloadLifecycleMixin {
+// Example:
+// ```dart
+// class _MyAppState extends State<MyApp>
+//     with WidgetsBindingObserver, DownloadLifecycleMixin {
 ///
-///   @override
-///   void didChangeAppLifecycleState(AppLifecycleState state) {
-///     handleLifecycleChange(state, getActiveDownloads());
-///   }
-/// }
-/// ```
+//   @override
+//   void didChangeAppLifecycleState(AppLifecycleState state) {
+//     handleLifecycleChange(state, getActiveDownloads());
+//   }
+// }
+// ```
 mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
-  /// Handle app lifecycle changes for download scheduling
+  // Handle app lifecycle changes for download scheduling
   ///
-  /// Call this from [didChangeAppLifecycleState] with current downloads
+  // Call this from [didChangeAppLifecycleState] with current downloads
   Future<void> handleLifecycleChange(
     AppLifecycleState state,
     List<ActiveDownloadInfo> activeDownloads,
@@ -48,7 +48,7 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Schedule all active downloads to continue in background
+  // Schedule all active downloads to continue in background
   Future<void> scheduleActiveDownloadsForBackground(
     List<ActiveDownloadInfo> activeDownloads,
   ) async {
@@ -73,7 +73,7 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Cancel background download schedules when app resumes
+  // Cancel background download schedules when app resumes
   Future<void> cancelBackgroundDownloadSchedule(
     List<ActiveDownloadInfo> activeDownloads,
   ) async {
@@ -83,7 +83,7 @@ mixin DownloadLifecycleMixin<T extends StatefulWidget> on State<T> {
   }
 }
 
-/// Information about an active download for background scheduling
+// Information about an active download for background scheduling
 class ActiveDownloadInfo {
   final String contentId;
   final String? downloadUrl;

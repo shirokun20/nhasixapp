@@ -7,10 +7,10 @@ import 'package:path_provider/path_provider.dart';
 
 import 'background_download_utils.dart';
 
-/// Usage:
-/// 1. Call `initializeWorkManager()` in main.dart after ensureInitialized()
-/// 2. Use `DownloadWorkerManager.scheduleDownload()` to queue downloads
-/// 3. App will continue downloads even when closed
+// Usage:
+// 1. Call `initializeWorkManager()` in main.dart after ensureInitialized()
+// 2. Use `DownloadWorkerManager.scheduleDownload()` to queue downloads
+// 3. App will continue downloads even when closed
 
 class DownloadWorkerTasks {
   DownloadWorkerTasks._();
@@ -34,8 +34,8 @@ class DownloadWorkerKeys {
   static const String currentProgress = 'currentProgress';
 }
 
-/// This must be a top-level function (not a method or closure)
-/// as it runs in a separate isolate.
+// This must be a top-level function (not a method or closure)
+// as it runs in a separate isolate.
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -70,16 +70,16 @@ void callbackDispatcher() {
   });
 }
 
-/// Call this in main.dart after WidgetsFlutterBinding.ensureInitialized()
+// Call this in main.dart after WidgetsFlutterBinding.ensureInitialized()
 ///
-/// Example:
-/// ```dart
-/// void main() async {
-///   WidgetsFlutterBinding.ensureInitialized();
-///   await initializeWorkManager();
-///   runApp(MyApp());
-/// }
-/// ```
+// Example:
+// ```dart
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await initializeWorkManager();
+//   runApp(MyApp());
+// }
+// ```
 Future<void> initializeWorkManager({bool isDebugMode = false}) async {
   await Workmanager().initialize(
     callbackDispatcher,
@@ -89,8 +89,8 @@ Future<void> initializeWorkManager({bool isDebugMode = false}) async {
 class DownloadWorkerManager {
   DownloadWorkerManager._();
 
-  /// This is useful when app lifecycle changes and full details
-  /// aren't readily available in the UI state.
+  // This is useful when app lifecycle changes and full details
+  // aren't readily available in the UI state.
   static Future<void> scheduleResume(String contentId) async {
     final resumeState =
         await BackgroundDownloadUtils.loadResumeState(contentId);
@@ -157,7 +157,7 @@ class DownloadWorkerManager {
     );
   }
 
-  /// Runs every 15 minutes (minimum interval on Android)
+  // Runs every 15 minutes (minimum interval on Android)
   static Future<void> schedulePeriodicDownloadCheck() async {
     await Workmanager().registerPeriodicTask(
       'periodic_download_check',

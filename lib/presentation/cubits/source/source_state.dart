@@ -11,7 +11,7 @@ class SourceState extends BaseCubitState {
   final List<ContentSource> availableSources;
   final ContentSource? activeSource;
 
-  /// True while a source switch is in progress (triggers loading UI).
+  // True while a source switch is in progress (triggers loading UI).
   final bool isSwitching;
 
   @override

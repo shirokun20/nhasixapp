@@ -1,23 +1,23 @@
-/// Page Resolution Pipeline (Section 5).
+// Page Resolution Pipeline (Section 5).
 ///
-/// Converts adapter-level chapter/image URL data into canonical
-/// [ResolvedChapterPages] that both the reader and the native download worker
-/// can consume without further parsing.
+// Converts adapter-level chapter/image URL data into canonical
+// [ResolvedChapterPages] that both the reader and the native download worker
+// can consume without further parsing.
 ///
-/// The pipeline:
-///   1. Accepts raw image URLs + global headers from an adapter.
-///   2. Applies source-level header and referer rules from [NetworkRules].
-///   3. Returns a [ResolvedChapterPages] with per-page [ResolvedPageRequest]s.
-///   4. Performs download-readiness checks and attaches diagnostics.
+// The pipeline:
+//   1. Accepts raw image URLs + global headers from an adapter.
+//   2. Applies source-level header and referer rules from [NetworkRules].
+//   3. Returns a [ResolvedChapterPages] with per-page [ResolvedPageRequest]s.
+//   4. Performs download-readiness checks and attaches diagnostics.
 ///
-/// This is a pure-Dart component — no Flutter, no network access.
+// This is a pure-Dart component — no Flutter, no network access.
 library;
 
 import 'package:kuron_core/kuron_core.dart';
 
 import '../config/typed_config/network_rules.dart';
 
-/// Input for a single pipeline resolution request.
+// Input for a single pipeline resolution request.
 class PageResolutionInput {
   const PageResolutionInput({
     required this.sourceId,
@@ -34,23 +34,23 @@ class PageResolutionInput {
   final String contentId;
   final String? chapterId;
 
-  /// Raw image URL list resolved by the adapter.
+  // Raw image URL list resolved by the adapter.
   final List<String> imageUrls;
 
-  /// Global headers the source declares for all requests.
+  // Global headers the source declares for all requests.
   final Map<String, String> globalHeaders;
 
-  /// Primary referer to use when none is per-page.
+  // Primary referer to use when none is per-page.
   final String? referer;
 
-  /// Optional mime hint for all pages (e.g. `image/webp`).
+  // Optional mime hint for all pages (e.g. `image/webp`).
   final String? pageMimeHint;
 
-  /// Optional filename prefix for download hints (e.g. `c001_`).
+  // Optional filename prefix for download hints (e.g. `c001_`).
   final String? filenamePrefix;
 }
 
-/// Result of running the pipeline.
+// Result of running the pipeline.
 class PageResolutionResult {
   const PageResolutionResult({
     required this.pages,
@@ -59,30 +59,30 @@ class PageResolutionResult {
 
   final ResolvedChapterPages pages;
 
-  /// Pipeline-level diagnostics (download readiness failures, warnings, etc.).
+  // Pipeline-level diagnostics (download readiness failures, warnings, etc.).
   final List<ValidationDiagnostic> diagnostics;
 
   bool get isDownloadReady => pages.isDownloadReady;
 }
 
-/// Shared resolution pipeline.
+// Shared resolution pipeline.
 ///
-/// Keeps adapter entry points (REST / scraper) independent while routing
-/// their internal results through the same canonical representation used by
-/// the reader and the native download worker.
+// Keeps adapter entry points (REST / scraper) independent while routing
+// their internal results through the same canonical representation used by
+// the reader and the native download worker.
 class PageResolutionPipeline {
   const PageResolutionPipeline({NetworkRules? networkRules})
       : _networkRules = networkRules;
 
   final NetworkRules? _networkRules;
 
-  /// Resolve a list of raw image URLs into [ResolvedChapterPages].
+  // Resolve a list of raw image URLs into [ResolvedChapterPages].
   ///
-  /// - Merges [NetworkRules.staticHeaders] with per-request [input.globalHeaders]
-  ///   (per-request wins).
-  /// - All pages are produced as [PageRequestKind.directImage] since
-  ///   the URLs are already resolved by the adapter.
-  /// - Runs download-readiness checks and emits diagnostics for failures.
+  // - Merges [NetworkRules.staticHeaders] with per-request [input.globalHeaders]
+  //   (per-request wins).
+  // - All pages are produced as [PageRequestKind.directImage] since
+  //   the URLs are already resolved by the adapter.
+  // - Runs download-readiness checks and emits diagnostics for failures.
   PageResolutionResult resolve(PageResolutionInput input) {
     final List<ValidationDiagnostic> diags = <ValidationDiagnostic>[];
 
@@ -100,7 +100,8 @@ class PageResolutionPipeline {
     int pageNumber = 1;
     for (final String rawUrl in input.imageUrls) {
       // Strip fallback URL if present (e.g. url1|url2) so native OkHttp doesn't fail parsing.
-      final String url = rawUrl.contains('|') ? rawUrl.split('|').first : rawUrl;
+      final String url =
+          rawUrl.contains('|') ? rawUrl.split('|').first : rawUrl;
       final bool valid = url.isNotEmpty;
       if (!valid) {
         diags.add(ValidationDiagnostic(
@@ -177,13 +178,13 @@ class PageResolutionPipeline {
     );
   }
 
-  /// Build a download-ready URL list from [ResolvedChapterPages].
+  // Build a download-ready URL list from [ResolvedChapterPages].
   ///
-  /// Returns only pages that pass [ResolvedPageRequest.isDownloadReady], in
-  /// order. Each entry is the [ResolvedPageRequest.finalImageUrl].
+  // Returns only pages that pass [ResolvedPageRequest.isDownloadReady], in
+  // order. Each entry is the [ResolvedPageRequest.finalImageUrl].
   ///
-  /// This is the bridge to [NativeDownloadService.startDownload] which
-  /// currently expects `List<String> imageUrls`.
+  // This is the bridge to [NativeDownloadService.startDownload] which
+  // currently expects `List<String> imageUrls`.
   List<String> toDownloadUrls(ResolvedChapterPages pages) {
     return pages.pages
         .where((ResolvedPageRequest p) => p.isDownloadReady)
@@ -191,10 +192,10 @@ class PageResolutionPipeline {
         .toList(growable: false);
   }
 
-  /// Build merged per-page headers for a specific page index.
+  // Build merged per-page headers for a specific page index.
   ///
-  /// Uses [ResolvedChapterPages.mergedPage] to combine global + per-page
-  /// headers. Returns the final header map the download worker should use.
+  // Uses [ResolvedChapterPages.mergedPage] to combine global + per-page
+  // headers. Returns the final header map the download worker should use.
   Map<String, String> headersForPage(ResolvedChapterPages pages, int index) {
     return pages.mergedPage(index).perPageHeaders;
   }

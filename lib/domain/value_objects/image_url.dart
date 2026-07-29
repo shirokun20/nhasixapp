@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Value object for Image URL with validation and utilities
+// Value object for Image URL with validation and utilities
 class ImageUrl extends Equatable {
   const ImageUrl(this.value);
 
@@ -12,31 +12,31 @@ class ImageUrl extends Equatable {
   @override
   String toString() => value;
 
-  /// Validate URL format
+  // Validate URL format
   bool get isValid {
     if (value.isEmpty) return false;
     final uri = Uri.tryParse(value);
     return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
   }
 
-  /// Check if URL is from nhentai domain
+  // Check if URL is from nhentai domain
   bool get isNhentaiUrl {
     final uri = Uri.tryParse(value);
     if (uri == null) return false;
     return uri.host.contains('nhentai.net');
   }
 
-  /// Check if URL is a thumbnail
+  // Check if URL is a thumbnail
   bool get isThumbnail {
     return value.contains('/thumb.') || value.contains('t.nhentai.net');
   }
 
-  /// Check if URL is a full-size image
+  // Check if URL is a full-size image
   bool get isFullSize {
     return value.contains('i.nhentai.net') && !isThumbnail;
   }
 
-  /// Get file extension
+  // Get file extension
   String get extension {
     final uri = Uri.tryParse(value);
     if (uri == null) return '';
@@ -46,19 +46,19 @@ class ImageUrl extends Equatable {
     return path.substring(lastDot + 1).toLowerCase();
   }
 
-  /// Check if image is JPEG
+  // Check if image is JPEG
   bool get isJpeg => extension == 'jpg' || extension == 'jpeg';
 
-  /// Check if image is PNG
+  // Check if image is PNG
   bool get isPng => extension == 'png';
 
-  /// Check if image is WebP
+  // Check if image is WebP
   bool get isWebp => extension == 'webp';
 
-  /// Check if image is GIF
+  // Check if image is GIF
   bool get isGif => extension == 'gif';
 
-  /// Get image format
+  // Get image format
   ImageFormat get format {
     switch (extension) {
       case 'jpg':
@@ -75,7 +75,7 @@ class ImageUrl extends Equatable {
     }
   }
 
-  /// Create with validation
+  // Create with validation
   factory ImageUrl.fromString(String url) {
     final imageUrl = ImageUrl(url);
     if (!imageUrl.isValid) {
@@ -84,7 +84,7 @@ class ImageUrl extends Equatable {
     return imageUrl;
   }
 
-  /// Try to create from string, return null if invalid
+  // Try to create from string, return null if invalid
   static ImageUrl? tryParse(String? url) {
     if (url == null || url.isEmpty) return null;
     try {
@@ -94,7 +94,7 @@ class ImageUrl extends Equatable {
     }
   }
 
-  /// Convert to thumbnail URL if possible
+  // Convert to thumbnail URL if possible
   ImageUrl? toThumbnail() {
     if (!isNhentaiUrl || isThumbnail) return this;
 
@@ -124,7 +124,7 @@ class ImageUrl extends Equatable {
     return null;
   }
 
-  /// Convert to full-size URL if possible
+  // Convert to full-size URL if possible
   ImageUrl? toFullSize() {
     if (!isNhentaiUrl || isFullSize) return this;
 
@@ -147,7 +147,7 @@ class ImageUrl extends Equatable {
     return null;
   }
 
-  /// Get optimized URL based on quality preference
+  // Get optimized URL based on quality preference
   ImageUrl getOptimized(ImageQuality quality) {
     switch (quality) {
       case ImageQuality.thumbnail:
@@ -163,7 +163,7 @@ class ImageUrl extends Equatable {
     }
   }
 
-  /// Convert to WebP format if possible
+  // Convert to WebP format if possible
   ImageUrl? _convertToWebP() {
     if (isWebp) return this;
 
@@ -180,12 +180,12 @@ class ImageUrl extends Equatable {
     return ImageUrl(webpUri.toString());
   }
 
-  /// Get cache key for the image
+  // Get cache key for the image
   String get cacheKey {
     return value.hashCode.toString();
   }
 
-  /// Get filename from URL
+  // Get filename from URL
   String get filename {
     final uri = Uri.tryParse(value);
     if (uri == null) return '';
@@ -193,7 +193,7 @@ class ImageUrl extends Equatable {
   }
 }
 
-/// Image format enumeration
+// Image format enumeration
 enum ImageFormat {
   jpeg,
   png,
@@ -202,7 +202,7 @@ enum ImageFormat {
   unknown,
 }
 
-/// Image quality levels
+// Image quality levels
 enum ImageQuality {
   thumbnail,
   low,
@@ -211,7 +211,7 @@ enum ImageQuality {
   original,
 }
 
-/// Extension for ImageFormat
+// Extension for ImageFormat
 extension ImageFormatExtension on ImageFormat {
   String get extension {
     switch (this) {
@@ -254,7 +254,7 @@ extension ImageFormatExtension on ImageFormat {
   }
 }
 
-/// Extension for String to convert to ImageUrl
+// Extension for String to convert to ImageUrl
 extension StringToImageUrl on String {
   ImageUrl get asImageUrl => ImageUrl.fromString(this);
   ImageUrl? get asImageUrlOrNull => ImageUrl.tryParse(this);

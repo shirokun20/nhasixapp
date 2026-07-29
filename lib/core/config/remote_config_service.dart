@@ -12,21 +12,21 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service responsible for loading, caching and refreshing source configs.
+// Service responsible for loading, caching and refreshing source configs.
 ///
-/// ### Storage layers (highest priority first)
-/// 1. **AppDocDir/configs/** — Downloaded/cached configs (writable, override bundled)
-/// 2. **assets/configs/** — Bundled defaults (read-only, always present)
-/// 3. **Hardcoded defaults** — Last-resort constants
+// ### Storage layers (highest priority first)
+// 1. **AppDocDir/configs/** — Downloaded/cached configs (writable, override bundled)
+// 2. **assets/configs/** — Bundled defaults (read-only, always present)
+// 3. **Hardcoded defaults** — Last-resort constants
 ///
-/// ### Startup sync strategy
-/// On [smartInitialize] the service:
-/// 1. Loads bundled defaults (`nhentai`, `app`, `tags`).
-/// 2. Restores manually installed sources from local cache.
-/// 3. Trusts installed/cached source configs as the source of truth.
+// ### Startup sync strategy
+// On [smartInitialize] the service:
+// 1. Loads bundled defaults (`nhentai`, `app`, `tags`).
+// 2. Restores manually installed sources from local cache.
+// 3. Trusts installed/cached source configs as the source of truth.
 ///
-/// Config is intentionally **not time-expiring** — invalidation is purely
-/// version-driven (bumping version in manifest triggers re-download).
+// Config is intentionally **not time-expiring** — invalidation is purely
+// version-driven (bumping version in manifest triggers re-download).
 class RemoteConfigService {
   final Dio _dio;
   final Logger _logger;
@@ -42,17 +42,17 @@ class RemoteConfigService {
   static const String _assetConfigBase = 'assets/configs';
   static const String _tagsAssetPath = '$_assetConfigBase/tags-config.json';
 
-  /// Bundled asset path for each **bundled** source.
+  // Bundled asset path for each **bundled** source.
   ///
-  /// Only `nhentai` is bundled into the APK as a permanent default — it is
-  /// always available without network. Other sources load via CDN/remote.
+  // Only `nhentai` is bundled into the APK as a permanent default — it is
+  // always available without network. Other sources load via CDN/remote.
   static const Map<String, String> _bundledAssetPaths = {
     'nhentai': '$_assetConfigBase/nhentai-config.json',
     'app': '$_assetConfigBase/app-config.json',
     'tags': _tagsAssetPath
   };
 
-  /// Source IDs that are bundled into the APK and always available.
+  // Source IDs that are bundled into the APK and always available.
   static const Set<String> _bundledSourceIds = {'nhentai'};
 
   // ── SharedPreferences keys ───────────────────────────────────────────────────
@@ -60,7 +60,7 @@ class RemoteConfigService {
   static const String _prefLastSyncMs = 'config_last_sync_timestamp';
   static const String _prefInstalledSourceIds = 'installed_source_ids';
 
-  /// Cached version for a specific source: "config_version_{sourceId}"
+  // Cached version for a specific source: "config_version_{sourceId}"
   static String _prefSourceVersion(String sourceId) =>
       'config_version_$sourceId';
 
@@ -88,10 +88,10 @@ class RemoteConfigService {
   // Public API
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Initialise config using the Smart Sync strategy.
+  // Initialise config using the Smart Sync strategy.
   ///
-  /// [isFirstRun] — when true, a critical failure rethrows the exception.
-  /// [onProgress] — optional 0.0–1.0 progress callback.
+  // [isFirstRun] — when true, a critical failure rethrows the exception.
+  // [onProgress] — optional 0.0–1.0 progress callback.
   Future<void> smartInitialize({
     bool isFirstRun = false,
     void Function(double progress, String message)? onProgress,
@@ -149,13 +149,13 @@ class RemoteConfigService {
 
   SourceConfig? getConfig(String source) => _sourceConfigs[source];
 
-  /// Returns the cached static [ValidationReport] for [source], or `null`
-  /// when the source is not loaded or is a non-source config (app, tags).
+  // Returns the cached static [ValidationReport] for [source], or `null`
+  // when the source is not loaded or is a non-source config (app, tags).
   ValidationReport? getValidationReport(String source) =>
       _validationReports[source];
 
-  /// Returns search config for [source], preferring typed config and falling
-  /// back to raw JSON when typed parsing was skipped/failed.
+  // Returns search config for [source], preferring typed config and falling
+  // back to raw JSON when typed parsing was skipped/failed.
   SearchConfig? getSearchConfig(String source) {
     final typed = _sourceConfigs[source]?.searchConfig;
     if (typed != null) return typed;
@@ -176,8 +176,8 @@ class RemoteConfigService {
     return null;
   }
 
-  /// Returns search form config for [source], preferring typed config and
-  /// falling back to raw JSON when typed parsing was skipped/failed.
+  // Returns search form config for [source], preferring typed config and
+  // falling back to raw JSON when typed parsing was skipped/failed.
   SearchFormConfig? getSearchFormConfig(String source) {
     final typed = _sourceConfigs[source]?.searchForm;
     if (typed != null) return typed;
@@ -198,11 +198,11 @@ class RemoteConfigService {
     return null;
   }
 
-  /// Returns the canonical package-side search contract for [source].
+  // Returns the canonical package-side search contract for [source].
   ///
-  /// This is the preferred app-facing search representation. Legacy
-  /// [SearchConfig] and [SearchFormConfig] remain compatibility inputs and are
-  /// normalized by `kuron_generic` before rendering.
+  // This is the preferred app-facing search representation. Legacy
+  // [SearchConfig] and [SearchFormConfig] remain compatibility inputs and are
+  // normalized by `kuron_generic` before rendering.
   DynamicSearchFormContract? getCanonicalSearchForm(String source) {
     final raw = _rawSourceConfigs[source];
     if (raw == null) return null;
@@ -227,7 +227,7 @@ class RemoteConfigService {
   List<SourceConfig> getAllSourceConfigs() =>
       _sourceConfigs.values.where((c) => c.enabled).toList();
 
-  /// All source configs including disabled ones (used by admin UI).
+  // All source configs including disabled ones (used by admin UI).
   List<SourceConfig> getAllSourceConfigsRaw() => _sourceConfigs.values.toList();
 
   AppConfig? get appConfig => _appConfig;
@@ -237,7 +237,7 @@ class RemoteConfigService {
   Map<String, dynamic>? getRawConfig(String source) =>
       _rawSourceConfigs[source];
 
-  /// Manually register a source config (used for testing/generic sources)
+  // Manually register a source config (used for testing/generic sources)
   void registerSourceConfig(String sourceId, Map<String, dynamic> rawConfig) {
     try {
       _rawSourceConfigs[sourceId] = rawConfig;
@@ -272,7 +272,7 @@ class RemoteConfigService {
     return selector(config!.features!);
   }
 
-  /// Returns `true` when [featureName] is enabled and **not** under maintenance.
+  // Returns `true` when [featureName] is enabled and **not** under maintenance.
   bool isFeatureAvailable(String source, String featureName) {
     final features = getConfig(source)?.features;
     if (features == null) return false;
@@ -292,8 +292,8 @@ class RemoteConfigService {
     };
   }
 
-  /// Returns the [MaintenanceInfo] for [featureName] if it is currently under
-  /// maintenance, otherwise `null`.
+  // Returns the [MaintenanceInfo] for [featureName] if it is currently under
+  // maintenance, otherwise `null`.
   MaintenanceInfo? getFeatureMaintenance(String source, String featureName) {
     final info = getConfig(source)?.features?.maintenanceFeatures?[featureName];
     return (info?.active == true) ? info : null;
@@ -308,13 +308,13 @@ class RemoteConfigService {
   Future<bool> hasValidCache(String source) async =>
       _sourceConfigs.containsKey(source);
 
-  /// `configUrl` refresh is disabled.
+  // `configUrl` refresh is disabled.
   ///
-  /// Installed source configs are the single source of truth. The runtime no
-  /// longer reaches out to the source's embedded `configUrl`, because that can
-  /// overwrite the locally installed config with stale remote data.
+  // Installed source configs are the single source of truth. The runtime no
+  // longer reaches out to the source's embedded `configUrl`, because that can
+  // overwrite the locally installed config with stale remote data.
   ///
-  /// Returns `false` to indicate no refresh happened.
+  // Returns `false` to indicate no refresh happened.
   Future<bool> refreshSourceFromConfigUrl(
     String sourceId, {
     bool forceRefresh = false,
@@ -326,15 +326,15 @@ class RemoteConfigService {
     return false;
   }
 
-  /// Downloads a source config from an explicit URL and applies it instantly.
+  // Downloads a source config from an explicit URL and applies it instantly.
   ///
-  /// This is intended for developer/admin flows (for example from Settings)
-  /// when testing a raw GitHub URL before the config is published to CDN.
+  // This is intended for developer/admin flows (for example from Settings)
+  // when testing a raw GitHub URL before the config is published to CDN.
   ///
-  /// The downloaded JSON is validated and then:
-  /// - saved into `AppDocDir/configs/{sourceId}-config.json`
-  /// - loaded into in-memory maps (`_rawSourceConfigs`, `_sourceConfigs`)
-  /// - version is persisted to SharedPreferences when available
+  // The downloaded JSON is validated and then:
+  // - saved into `AppDocDir/configs/{sourceId}-config.json`
+  // - loaded into in-memory maps (`_rawSourceConfigs`, `_sourceConfigs`)
+  // - version is persisted to SharedPreferences when available
   Future<SourceConfig> downloadAndApplySourceConfig({
     required String sourceId,
     required String url,
@@ -363,8 +363,8 @@ class RemoteConfigService {
     );
   }
 
-  /// Applies a source config from raw JSON string, persists it to cache,
-  /// updates in-memory maps, and stores version metadata when available.
+  // Applies a source config from raw JSON string, persists it to cache,
+  // updates in-memory maps, and stores version metadata when available.
   Future<SourceConfig> applySourceConfigFromJson({
     required String sourceId,
     required String rawJson,
@@ -414,7 +414,7 @@ class RemoteConfigService {
     return parsed;
   }
 
-  /// Persist install state for an installable source.
+  // Persist install state for an installable source.
   Future<void> markSourceInstalled(String sourceId) async {
     if (_bundledSourceIds.contains(sourceId)) return;
 
@@ -425,7 +425,7 @@ class RemoteConfigService {
     await prefs.setStringList(_prefInstalledSourceIds, ids.toList());
   }
 
-  /// Remove persisted install state for an installable source.
+  // Remove persisted install state for an installable source.
   Future<void> markSourceUninstalled(String sourceId) async {
     final prefs = await SharedPreferences.getInstance();
     final ids =
@@ -435,9 +435,9 @@ class RemoteConfigService {
     }
   }
 
-  /// Fully removes an installable source from local cache + in-memory maps.
+  // Fully removes an installable source from local cache + in-memory maps.
   ///
-  /// Bundled sources (e.g. nhentai) are protected and cannot be uninstalled.
+  // Bundled sources (e.g. nhentai) are protected and cannot be uninstalled.
   Future<void> uninstallSourceConfig(String sourceId) async {
     if (_bundledSourceIds.contains(sourceId)) {
       _logger.w('Skip uninstall for bundled source: $sourceId');
@@ -461,7 +461,7 @@ class RemoteConfigService {
     _logger.i('✅ Source uninstalled locally: $sourceId');
   }
 
-  /// Returns IDs for installable sources that user has installed.
+  // Returns IDs for installable sources that user has installed.
   Future<Set<String>> getInstalledSourceIds() async {
     final prefs = await SharedPreferences.getInstance();
     final ids = prefs.getStringList(_prefInstalledSourceIds) ?? <String>[];
@@ -561,7 +561,7 @@ class RemoteConfigService {
   // Private helpers
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Returns (or creates) the writable config directory in AppDocDir.
+  // Returns (or creates) the writable config directory in AppDocDir.
   Future<Directory> _getConfigDirectory() async {
     final docDir = await getApplicationDocumentsDirectory();
     final configDir = Directory(p.join(docDir.path, 'configs'));
@@ -571,7 +571,7 @@ class RemoteConfigService {
     return configDir;
   }
 
-  /// Restore manually installed source configs from local cache.
+  // Restore manually installed source configs from local cache.
   Future<void> _restoreInstalledSourcesFromCache(Directory configDir) async {
     final prefs = await SharedPreferences.getInstance();
     final installedIds =
@@ -599,7 +599,7 @@ class RemoteConfigService {
     }
   }
 
-  /// Load a source config JSON file from disk into memory.
+  // Load a source config JSON file from disk into memory.
   Future<void> _loadFromFile(String sourceId, File file) async {
     final rawString = await file.readAsString();
     final raw = jsonDecode(rawString) as Map<String, dynamic>;
@@ -628,7 +628,7 @@ class RemoteConfigService {
     _cacheValidationReport(sourceId: sourceId, raw: raw, sourceLabel: 'cache');
   }
 
-  /// Load a config from bundled assets (last resort).
+  // Load a config from bundled assets (last resort).
   Future<void> _loadSourceFromBundledFallback(String sourceId) async {
     final assetPath = _bundledAssetPaths[sourceId];
     if (assetPath == null) {
@@ -704,12 +704,12 @@ class RemoteConfigService {
     }
   }
 
-  /// Normalize older source config schemas into the typed model expected by
-  /// current app parsers.
+  // Normalize older source config schemas into the typed model expected by
+  // current app parsers.
   ///
-  /// Current compatibility fix:
-  /// - `network.rateLimit.requestsPerSecond` -> `requestsPerMinute`
-  /// - fills missing `minDelayMs` with derived/default value
+  // Current compatibility fix:
+  // - `network.rateLimit.requestsPerSecond` -> `requestsPerMinute`
+  // - fills missing `minDelayMs` with derived/default value
   Map<String, dynamic> _normalizeSourceConfigForCompatibility(
     Map<String, dynamic> raw,
   ) {

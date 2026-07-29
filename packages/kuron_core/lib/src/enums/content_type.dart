@@ -1,51 +1,51 @@
-/// Content type enumeration for multi-source support.
+// Content type enumeration for multi-source support.
 ///
-/// Maps to Tachiyomi's MangaType enum for cross-source compatibility.
+// Maps to Tachiyomi's MangaType enum for cross-source compatibility.
 enum ContentType {
-  /// Standard Japanese doujinshi / adult comics
+  // Standard Japanese doujinshi / adult comics
   doujinshi,
 
-  /// Standard manga (serialized or oneshot)
+  // Standard manga (serialized or oneshot)
   manga,
 
-  /// Chinese comics
+  // Chinese comics
   manhua,
 
-  /// Korean comics
+  // Korean comics
   manhwa,
 
-  /// Artist CG / illustration collections
+  // Artist CG / illustration collections
   artistCG,
 
-  /// Game CG / game illustration collections
+  // Game CG / game illustration collections
   gameCG,
 
-  /// Unknown or not specified
+  // Unknown or not specified
   unknown,
 }
 
-/// Publication status for chapter-based content.
+// Publication status for chapter-based content.
 ///
-/// Mirrors Tachiyomi's SManga status constants.
+// Mirrors Tachiyomi's SManga status constants.
 enum ContentStatus {
-  /// Status not known
+  // Status not known
   unknown,
 
-  /// Currently being published
+  // Currently being published
   ongoing,
 
-  /// Finished publication
+  // Finished publication
   completed,
 
-  /// Licensed and removed from source
+  // Licensed and removed from source
   licensed,
 
-  /// Publisher finished, no more chapters planned
+  // Publisher finished, no more chapters planned
   publishingFinished,
 
-  /// Cancelled before completion
+  // Cancelled before completion
   cancelled,
 
-  /// Temporarily on hold
+  // Temporarily on hold
   onHiatus,
 }

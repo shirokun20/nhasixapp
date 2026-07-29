@@ -1,6 +1,6 @@
 part of 'filter_data_cubit.dart';
 
-/// Base state for filter data screen
+// Base state for filter data screen
 class FilterDataState extends BaseCubitState {
   const FilterDataState({
     this.filterType,
@@ -53,7 +53,7 @@ class FilterDataState extends BaseCubitState {
     );
   }
 
-  /// Check if tag is selected
+  // Check if tag is selected
   FilterItem? getSelectedFilterItem(String tagName) {
     try {
       return selectedFilters?.firstWhere((item) => item.value == tagName);
@@ -62,30 +62,30 @@ class FilterDataState extends BaseCubitState {
     }
   }
 
-  /// Check if tag is selected as include
+  // Check if tag is selected as include
   bool isIncluded(String tagName) {
     final item = getSelectedFilterItem(tagName);
     return item != null && !item.isExcluded;
   }
 
-  /// Check if tag is selected as exclude
+  // Check if tag is selected as exclude
   bool isExcluded(String tagName) {
     final item = getSelectedFilterItem(tagName);
     return item != null && item.isExcluded;
   }
 
-  /// Check if tag is selected (either include or exclude)
+  // Check if tag is selected (either include or exclude)
   bool isSelected(String tagName) {
     return getSelectedFilterItem(tagName) != null;
   }
 
-  /// Get selected filters count
+  // Get selected filters count
   int get selectedCount => selectedFilters?.length ?? 0;
 
-  /// Check if has selected filters
+  // Check if has selected filters
   bool get hasSelectedFilters => selectedFilters != null && selectedCount > 0;
 
-  /// Get selected filters by type
+  // Get selected filters by type
   List<FilterItem> get includeFilters =>
       (selectedFilters ?? []).where((item) => !item.isExcluded).toList();
 
@@ -93,12 +93,12 @@ class FilterDataState extends BaseCubitState {
       (selectedFilters ?? []).where((item) => item.isExcluded).toList();
 }
 
-/// Initial state
+// Initial state
 class FilterDataInitial extends FilterDataState {
   const FilterDataInitial();
 }
 
-/// Loading state
+// Loading state
 class FilterDataLoading extends FilterDataState {
   FilterDataLoading(FilterDataState prevState)
       : super(
@@ -112,7 +112,7 @@ class FilterDataLoading extends FilterDataState {
         );
 }
 
-/// Loaded state with filter data
+// Loaded state with filter data
 class FilterDataLoaded extends FilterDataState {
   FilterDataLoaded(FilterDataState prevState)
       : super(
@@ -125,7 +125,7 @@ class FilterDataLoaded extends FilterDataState {
         );
 }
 
-/// Error state
+// Error state
 class FilterDataError extends FilterDataState {
   FilterDataError(FilterDataState prevState)
       : super(

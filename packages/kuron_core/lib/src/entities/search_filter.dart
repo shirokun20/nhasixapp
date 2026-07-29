@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import '../value_objects/sort_option.dart';
 import 'filter_item.dart';
 
-/// Search filter for content queries.
+// Search filter for content queries.
 class SearchFilter extends Equatable {
   const SearchFilter({
     this.query = '',
@@ -15,28 +15,28 @@ class SearchFilter extends Equatable {
     this.radioGroupSelections = const {},
   });
 
-  /// Search query string
+  // Search query string
   final String query;
 
-  /// Page number (1-indexed)
+  // Page number (1-indexed)
   final int page;
 
-  /// Sort option
+  // Sort option
   final SortOption sort;
 
-  /// Tags to include in search
+  // Tags to include in search
   final List<FilterItem> includeTags;
 
-  /// Tags to exclude from search
+  // Tags to exclude from search
   final List<FilterItem> excludeTags;
 
-  /// Language filter
+  // Language filter
   final String? language;
 
-  /// Category filter
+  // Category filter
   final String? category;
 
-  /// Dynamic radio group selections from the config
+  // Dynamic radio group selections from the config
   final Map<String, String> radioGroupSelections;
 
   @override
@@ -73,7 +73,7 @@ class SearchFilter extends Equatable {
     );
   }
 
-  /// Check if filter has any active filters
+  // Check if filter has any active filters
   bool get hasFilters =>
       query.isNotEmpty ||
       includeTags.isNotEmpty ||
@@ -81,12 +81,12 @@ class SearchFilter extends Equatable {
       language != null ||
       category != null;
 
-  /// Create filter for next page
+  // Create filter for next page
   SearchFilter nextPage() => copyWith(page: page + 1);
 
-  /// Create filter for previous page
+  // Create filter for previous page
   SearchFilter previousPage() => copyWith(page: page > 1 ? page - 1 : 1);
 
-  /// Reset to first page
+  // Reset to first page
   SearchFilter resetPage() => copyWith(page: 1);
 }

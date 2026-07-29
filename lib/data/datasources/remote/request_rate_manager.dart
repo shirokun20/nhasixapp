@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/config/config_models.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 
-/// Advanced request rate manager for intelligent rate limiting
+// Advanced request rate manager for intelligent rate limiting
 class RequestRateManager {
   RequestRateManager({
     required this.remoteConfigService,
@@ -35,7 +35,7 @@ class RequestRateManager {
   bool _isInCooldown = false;
   DateTime? _cooldownEndTime;
 
-  /// Check if a request can be made now
+  // Check if a request can be made now
   bool canMakeRequest() {
     if (!_isEnabled) {
       return true;
@@ -57,7 +57,7 @@ class RequestRateManager {
     return _requestHistory.length < _maxRequestsPerWindow;
   }
 
-  /// Calculate delay before next request
+  // Calculate delay before next request
   Duration calculateDelay() {
     if (!_isEnabled) {
       return Duration.zero;
@@ -88,7 +88,7 @@ class RequestRateManager {
     return jitteredDelay;
   }
 
-  /// Record a successful request
+  // Record a successful request
   void recordRequest() {
     if (!_isEnabled) {
       return;
@@ -101,7 +101,7 @@ class RequestRateManager {
         'Request recorded. Total in window: ${_requestHistory.length}/$_maxRequestsPerWindow');
   }
 
-  /// Trigger cooldown period when rate limit is detected
+  // Trigger cooldown period when rate limit is detected
   void triggerCooldown({Duration? cooldownDuration}) {
     if (!_isEnabled) {
       return;
@@ -117,19 +117,19 @@ class RequestRateManager {
     _requestHistory.clear();
   }
 
-  /// Check if currently in cooldown
+  // Check if currently in cooldown
   bool get isInCooldown =>
       _isInCooldown &&
       _cooldownEndTime != null &&
       DateTime.now().isBefore(_cooldownEndTime!);
 
-  /// Get remaining cooldown time
+  // Get remaining cooldown time
   Duration? get remainingCooldown {
     if (!isInCooldown) return null;
     return _cooldownEndTime!.difference(DateTime.now());
   }
 
-  /// Get current request rate statistics
+  // Get current request rate statistics
   Map<String, dynamic> getStatistics() {
     _cleanupOldRequests();
     return {
@@ -143,14 +143,14 @@ class RequestRateManager {
     };
   }
 
-  /// Clean up old requests outside the time window
+  // Clean up old requests outside the time window
   void _cleanupOldRequests() {
     final now = DateTime.now();
     _requestHistory
         .removeWhere((time) => now.difference(time) > _defaultTimeWindow);
   }
 
-  /// Reset all counters and state
+  // Reset all counters and state
   void reset() {
     _requestHistory.clear();
     _isInCooldown = false;
@@ -158,7 +158,7 @@ class RequestRateManager {
     _logger.i('Request rate manager reset');
   }
 
-  /// Dispose resources
+  // Dispose resources
   void dispose() {
     _requestHistory.clear();
     _logger.i('Request rate manager disposed');

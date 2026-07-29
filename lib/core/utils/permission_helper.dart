@@ -5,11 +5,11 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Helper class untuk handle permissions dengan user-friendly approach
+// Helper class untuk handle permissions dengan user-friendly approach
 class PermissionHelper {
   static final Logger _logger = getIt<Logger>();
 
-  /// Request storage permission dengan user guidance
+  // Request storage permission dengan user guidance
   static Future<bool> requestStoragePermission(BuildContext? context) async {
     try {
       _logger.i('Requesting storage permission...');
@@ -74,7 +74,7 @@ class PermissionHelper {
     }
   }
 
-  /// Show permission explanation dialog
+  // Show permission explanation dialog
   static Future<bool> _showPermissionDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
@@ -99,7 +99,7 @@ class PermissionHelper {
         false;
   }
 
-  /// Show settings dialog when permission is permanently denied
+  // Show settings dialog when permission is permanently denied
   static Future<void> _showSettingsDialog(BuildContext context) async {
     await showDialog(
       context: context,
@@ -125,7 +125,7 @@ class PermissionHelper {
     );
   }
 
-  /// Check if storage permission is granted
+  // Check if storage permission is granted
   static Future<bool> hasStoragePermission() async {
     try {
       final storageStatus = await Permission.storage.status;
@@ -138,7 +138,7 @@ class PermissionHelper {
     }
   }
 
-  /// Test if we can actually write to storage
+  // Test if we can actually write to storage
   static Future<bool> canWriteToStorage() async {
     try {
       const testPath = '/storage/emulated/0/Download/nhasix';

@@ -1,48 +1,48 @@
 import 'package:equatable/equatable.dart';
 
-/// Base class for all use cases
+// Base class for all use cases
 ///
-/// [Type] - Return type of the use case
-/// [Params] - Parameters type for the use case
+// [Type] - Return type of the use case
+// [Params] - Parameters type for the use case
 abstract class UseCase<T, Params> {
-  /// Execute the use case with given parameters
+  // Execute the use case with given parameters
   ///
-  /// [params] - Parameters for the use case
-  /// Returns the result of the use case execution
+  // [params] - Parameters for the use case
+  // Returns the result of the use case execution
   Future<T> call(Params params);
 }
 
-/// Base class for use cases that don't require parameters
+// Base class for use cases that don't require parameters
 abstract class NoParamsUseCase<T> {
-  /// Execute the use case without parameters
+  // Execute the use case without parameters
   ///
-  /// Returns the result of the use case execution
+  // Returns the result of the use case execution
   Future<T> call();
 }
 
-/// Base class for use cases that return streams
+// Base class for use cases that return streams
 abstract class StreamUseCase<T, Params> {
-  /// Execute the use case and return a stream
+  // Execute the use case and return a stream
   ///
-  /// [params] - Parameters for the use case
-  /// Returns a stream of results
+  // [params] - Parameters for the use case
+  // Returns a stream of results
   Stream<T> call(Params params);
 }
 
-/// Base class for stream use cases that don't require parameters
+// Base class for stream use cases that don't require parameters
 abstract class NoParamsStreamUseCase<T> {
-  /// Execute the use case and return a stream without parameters
+  // Execute the use case and return a stream without parameters
   ///
-  /// Returns a stream of results
+  // Returns a stream of results
   Stream<T> call();
 }
 
-/// Base parameters class for use cases
+// Base parameters class for use cases
 abstract class UseCaseParams extends Equatable {
   const UseCaseParams();
 }
 
-/// Empty parameters for use cases that don't need parameters
+// Empty parameters for use cases that don't need parameters
 class NoParams extends UseCaseParams {
   const NoParams();
 
@@ -50,7 +50,7 @@ class NoParams extends UseCaseParams {
   List<Object> get props => [];
 }
 
-/// Result wrapper for use cases with success/failure states
+// Result wrapper for use cases with success/failure states
 class UseCaseResult<T> extends Equatable {
   const UseCaseResult._({
     required this.isSuccess,
@@ -64,7 +64,7 @@ class UseCaseResult<T> extends Equatable {
   final Exception? error;
   final String? message;
 
-  /// Create successful result
+  // Create successful result
   factory UseCaseResult.success(T data) {
     return UseCaseResult._(
       isSuccess: true,
@@ -72,7 +72,7 @@ class UseCaseResult<T> extends Equatable {
     );
   }
 
-  /// Create failure result
+  // Create failure result
   factory UseCaseResult.failure(Exception error, [String? message]) {
     return UseCaseResult._(
       isSuccess: false,
@@ -81,10 +81,10 @@ class UseCaseResult<T> extends Equatable {
     );
   }
 
-  /// Check if result is failure
+  // Check if result is failure
   bool get isFailure => !isSuccess;
 
-  /// Get data or throw if failure
+  // Get data or throw if failure
   T get dataOrThrow {
     if (isFailure) {
       throw error ?? Exception(message ?? 'Unknown error');
@@ -92,12 +92,12 @@ class UseCaseResult<T> extends Equatable {
     return data as T;
   }
 
-  /// Get data or return default value
+  // Get data or return default value
   T getDataOrElse(T defaultValue) {
     return isSuccess ? data as T : defaultValue;
   }
 
-  /// Transform data if success
+  // Transform data if success
   UseCaseResult<R> map<R>(R Function(T data) transform) {
     if (isSuccess) {
       try {
@@ -111,7 +111,7 @@ class UseCaseResult<T> extends Equatable {
     return UseCaseResult.failure(error as Exception, message);
   }
 
-  /// Handle result with callbacks
+  // Handle result with callbacks
   R fold<R>(
     R Function(Exception error, String? message) onFailure,
     R Function(T data) onSuccess,
@@ -127,7 +127,7 @@ class UseCaseResult<T> extends Equatable {
   List<Object?> get props => [isSuccess, data, error, message];
 }
 
-/// Paginated result wrapper
+// Paginated result wrapper
 class PaginatedResult<T> extends Equatable {
   const PaginatedResult({
     required this.items,
@@ -145,16 +145,16 @@ class PaginatedResult<T> extends Equatable {
   final bool hasNext;
   final bool hasPrevious;
 
-  /// Check if result is empty
+  // Check if result is empty
   bool get isEmpty => items.isEmpty;
 
-  /// Check if result has items
+  // Check if result has items
   bool get isNotEmpty => items.isNotEmpty;
 
-  /// Get item count in current page
+  // Get item count in current page
   int get count => items.length;
 
-  /// Create empty result
+  // Create empty result
   factory PaginatedResult.empty() {
     return const PaginatedResult(
       items: [],
@@ -164,7 +164,7 @@ class PaginatedResult<T> extends Equatable {
     );
   }
 
-  /// Create single page result
+  // Create single page result
   factory PaginatedResult.single(List<T> items) {
     return PaginatedResult(
       items: items,
@@ -174,7 +174,7 @@ class PaginatedResult<T> extends Equatable {
     );
   }
 
-  /// Transform items
+  // Transform items
   PaginatedResult<R> map<R>(R Function(T item) transform) {
     return PaginatedResult(
       items: items.map(transform).toList(),
@@ -197,7 +197,7 @@ class PaginatedResult<T> extends Equatable {
       ];
 }
 
-/// Exception classes for use cases
+// Exception classes for use cases
 abstract class UseCaseException implements Exception {
   const UseCaseException(this.message);
   final String message;

@@ -4,14 +4,14 @@ import 'package:logger/logger.dart';
 
 import 'package:kuron_core/kuron_core.dart';
 
-/// Local data source for tag data from assets/json/tags.json
+// Local data source for tag data from assets/json/tags.json
 class TagDataSource {
   TagDataSource({required Logger logger}) : _logger = logger;
 
   final Logger _logger;
   List<Tag>? _cachedTags;
 
-  /// Load tags from assets/json/tags.json
+  // Load tags from assets/json/tags.json
   Future<List<Tag>> loadTags() async {
     if (_cachedTags != null) {
       return _cachedTags!;
@@ -44,7 +44,7 @@ class TagDataSource {
     }
   }
 
-  /// Search tags by query
+  // Search tags by query
   Future<List<Tag>> searchTags(String query, {int limit = 10}) async {
     if (query.length < 2) return [];
 
@@ -84,7 +84,7 @@ class TagDataSource {
     return results;
   }
 
-  /// Get tags by type
+  // Get tags by type
   Future<List<Tag>> getTagsByType(String type, {int limit = 50}) async {
     final tags = await loadTags();
 
@@ -92,7 +92,7 @@ class TagDataSource {
       ..sort((a, b) => b.count.compareTo(a.count)); // Sort by popularity
   }
 
-  /// Get popular tags
+  // Get popular tags
   Future<List<Tag>> getPopularTags({int limit = 20}) async {
     final tags = await loadTags();
 
@@ -103,7 +103,7 @@ class TagDataSource {
     return popularTags.take(limit).toList();
   }
 
-  /// Determine tag type based on tag name
+  // Determine tag type based on tag name
   String _determineTagType(String tagName) {
     // Category tags
     if (_isCategoryTag(tagName)) {
@@ -119,7 +119,7 @@ class TagDataSource {
     return 'tag';
   }
 
-  /// Check if tag is a category tag
+  // Check if tag is a category tag
   bool _isCategoryTag(String tagName) {
     const categoryTags = [
       'doujinshi',
@@ -136,7 +136,7 @@ class TagDataSource {
     return categoryTags.contains(tagName.toLowerCase());
   }
 
-  /// Check if tag is a language tag
+  // Check if tag is a language tag
   bool _isLanguageTag(String tagName) {
     const languageTags = [
       'english',
@@ -211,7 +211,7 @@ class TagDataSource {
     return languageTags.contains(tagName.toLowerCase());
   }
 
-  /// Clear cached tags (for testing or refresh)
+  // Clear cached tags (for testing or refresh)
   void clearCache() {
     _cachedTags = null;
   }

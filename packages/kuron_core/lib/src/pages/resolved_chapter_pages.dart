@@ -3,13 +3,13 @@ import 'package:equatable/equatable.dart';
 import '../compat/validation_diagnostic.dart';
 import 'resolved_page_request.dart';
 
-/// Canonical resolved pages for a single chapter (or single-gallery content).
+// Canonical resolved pages for a single chapter (or single-gallery content).
 ///
-/// Produced by `PageResolutionPipeline` in `kuron_generic` (Section 5) and
-/// consumed by both the reader and the native download payload builder.
-/// Chapter-level headers/referer are shared by all pages unless the page
-/// declares its own override on [ResolvedPageRequest.perPageHeaders] /
-/// [ResolvedPageRequest.referer].
+// Produced by `PageResolutionPipeline` in `kuron_generic` (Section 5) and
+// consumed by both the reader and the native download payload builder.
+// Chapter-level headers/referer are shared by all pages unless the page
+// declares its own override on [ResolvedPageRequest.perPageHeaders] /
+// [ResolvedPageRequest.referer].
 class ResolvedChapterPages extends Equatable {
   ResolvedChapterPages({
     required this.sourceId,
@@ -31,13 +31,13 @@ class ResolvedChapterPages extends Equatable {
   final String contentId;
   final String? chapterId;
 
-  /// Headers shared by every page in this chapter.
+  // Headers shared by every page in this chapter.
   final Map<String, String> globalHeaders;
 
-  /// Default referer shared by every page in this chapter.
+  // Default referer shared by every page in this chapter.
   final String? referer;
 
-  /// Pages in 1-based reading order.
+  // Pages in 1-based reading order.
   final List<ResolvedPageRequest> pages;
 
   final String? prevChapterId;
@@ -47,23 +47,23 @@ class ResolvedChapterPages extends Equatable {
 
   final List<ValidationDiagnostic> diagnostics;
 
-  /// True if every page is download-ready (final image URL known). When
-  /// false, the download pipeline must reject the request and surface the
-  /// missing-page diagnostics rather than attempting a partial download.
+  // True if every page is download-ready (final image URL known). When
+  // false, the download pipeline must reject the request and surface the
+  // missing-page diagnostics rather than attempting a partial download.
   bool get isDownloadReady =>
       pages.isNotEmpty &&
       pages.every((ResolvedPageRequest p) => p.isDownloadReady);
 
-  /// Pages that still need further resolution (scrape or API hop) before
-  /// they can be handed to the native downloader.
+  // Pages that still need further resolution (scrape or API hop) before
+  // they can be handed to the native downloader.
   List<ResolvedPageRequest> get unresolvedPages => pages
       .where((ResolvedPageRequest p) => !p.isDownloadReady)
       .toList(growable: false);
 
-  /// Resolved per-page request with the chapter-level headers and referer
-  /// merged in. The per-page values win on key collision. The returned
-  /// object is a fresh [ResolvedPageRequest] safe to pass to a native
-  /// download payload builder.
+  // Resolved per-page request with the chapter-level headers and referer
+  // merged in. The per-page values win on key collision. The returned
+  // object is a fresh [ResolvedPageRequest] safe to pass to a native
+  // download payload builder.
   ResolvedPageRequest mergedPage(int index) {
     final ResolvedPageRequest page = pages[index];
     final Map<String, String> merged = <String, String>{

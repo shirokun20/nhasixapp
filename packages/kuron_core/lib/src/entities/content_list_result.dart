@@ -1,6 +1,6 @@
 import 'content.dart';
 
-/// Result wrapper for paginated content lists.
+// Result wrapper for paginated content lists.
 class ContentListResult {
   const ContentListResult({
     required this.contents,
@@ -11,34 +11,34 @@ class ContentListResult {
     this.hasPrevious = false,
   });
 
-  /// List of content items
+  // List of content items
   final List<Content> contents;
 
-  /// Current page number (1-indexed)
+  // Current page number (1-indexed)
   final int currentPage;
 
-  /// Total number of pages
+  // Total number of pages
   final int totalPages;
 
-  /// Total number of items across all pages
+  // Total number of items across all pages
   final int totalCount;
 
-  /// Whether there is a next page
+  // Whether there is a next page
   final bool hasNext;
 
-  /// Whether there is a previous page
+  // Whether there is a previous page
   final bool hasPrevious;
 
-  /// Check if result is empty
+  // Check if result is empty
   bool get isEmpty => contents.isEmpty;
 
-  /// Check if result has content
+  // Check if result has content
   bool get isNotEmpty => contents.isNotEmpty;
 
-  /// Get content count in current page
+  // Get content count in current page
   int get count => contents.length;
 
-  /// Create empty result
+  // Create empty result
   factory ContentListResult.empty() {
     return const ContentListResult(
       contents: [],
@@ -48,7 +48,7 @@ class ContentListResult {
     );
   }
 
-  /// Create single page result
+  // Create single page result
   factory ContentListResult.single(List<Content> contents) {
     return ContentListResult(
       contents: contents,

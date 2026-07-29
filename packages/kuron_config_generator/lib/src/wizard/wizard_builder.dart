@@ -1,8 +1,8 @@
 import '../models/wizard_question.dart';
 
-/// Builds the wizard question flow for config generation.
+// Builds the wizard question flow for config generation.
 class WizardBuilder {
-  /// Create the full wizard flow for interactive config generation.
+  // Create the full wizard flow for interactive config generation.
   static WizardFlow buildFlow() {
     return WizardFlow(sections: {
       'identity': _buildIdentityQuestions(),

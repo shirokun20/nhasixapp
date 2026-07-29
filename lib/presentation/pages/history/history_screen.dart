@@ -22,7 +22,7 @@ import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import '../../../domain/entities/history.dart';
 import '../../../core/services/tag_blacklist_service.dart';
 
-/// Screen for displaying reading history with auto-cleanup features
+// Screen for displaying reading history with auto-cleanup features
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -427,7 +427,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final encodedContentId = Uri.encodeComponent(targetContentId);
 
-    getIt<Logger>().d('🔗 Navigating to: /content/$encodedContentId?$queryString');
+    getIt<Logger>()
+        .d('🔗 Navigating to: /content/$encodedContentId?$queryString');
 
     // Navigate to detail screen
     context.push('/content/$encodedContentId?$queryString');

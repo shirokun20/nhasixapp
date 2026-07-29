@@ -1,17 +1,17 @@
-/// Runtime representation of a parsed source config.
+// Runtime representation of a parsed source config.
 ///
-/// This bridges the raw JSON config (from [SourceConfig]) into typed,
-/// validated objects used by [GenericHttpSource] at runtime. Constructed
-/// once during source registration.
+// This bridges the raw JSON config (from [SourceConfig]) into typed,
+// validated objects used by [GenericHttpSource] at runtime. Constructed
+// once during source registration.
 library;
 
-/// Resolved URL template with placeholders like `{contentId}`, `{page}`, etc.
+// Resolved URL template with placeholders like `{contentId}`, `{page}`, etc.
 class UrlTemplate {
   final String template;
 
   const UrlTemplate(this.template);
 
-  /// Resolve the template by substituting [params].
+  // Resolve the template by substituting [params].
   String resolve(Map<String, String> params) {
     var result = template;
     for (final entry in params.entries) {
@@ -21,7 +21,7 @@ class UrlTemplate {
   }
 }
 
-/// Parsed endpoint map for a source (search, detail, pages, etc.).
+// Parsed endpoint map for a source (search, detail, pages, etc.).
 class SourceEndpoints {
   final String? search;
   final String? detail;
@@ -67,27 +67,27 @@ class SourceEndpoints {
   }
 }
 
-/// Defines how to extract a field from a parsed document.
+// Defines how to extract a field from a parsed document.
 class FieldSelector {
-  /// JSONPath expression (e.g. `$.result[*].id`) or CSS selector string.
+  // JSONPath expression (e.g. `$.result[*].id`) or CSS selector string.
   final String selector;
 
-  /// `"jsonpath"` or `"css"` or `"regex"`.
+  // `"jsonpath"` or `"css"` or `"regex"`.
   final String type;
 
-  /// Optional attribute to extract from a CSS-selected element (e.g. `"href"`).
+  // Optional attribute to extract from a CSS-selected element (e.g. `"href"`).
   final String? attribute;
 
-  /// Optional regex to apply to extracted text.
+  // Optional regex to apply to extracted text.
   final String? regex;
 
-  /// Optional prefix to prepend to extracted string.
+  // Optional prefix to prepend to extracted string.
   final String? prefix;
 
-  /// Optional suffix to append to extracted string.
+  // Optional suffix to append to extracted string.
   final String? suffix;
 
-  /// Fallback value if selector yields nothing.
+  // Fallback value if selector yields nothing.
   final String? fallback;
 
   const FieldSelector({

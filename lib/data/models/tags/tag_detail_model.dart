@@ -1,6 +1,6 @@
 import 'package:nhasixapp/domain/entities/tags/tag_detail_entity.dart';
 
-/// Data model for tag detail from API v2
+// Data model for tag detail from API v2
 class TagDetailModel extends TagDetailEntity {
   const TagDetailModel({
     required super.id,

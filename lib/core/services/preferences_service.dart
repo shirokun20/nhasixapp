@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/user_preferences.dart';
 
-/// Service for handling app preferences using SharedPreferences
+// Service for handling app preferences using SharedPreferences
 class PreferencesService {
   PreferencesService(this._prefs, {Logger? logger})
       : _logger = logger ?? Logger();
@@ -32,12 +32,12 @@ class PreferencesService {
   static const String _keyBlacklistedTags = 'blacklistedTags';
   static const String _keyBlacklistedTagMetadata = 'blacklistedTagMetadata';
 
-  /// Get blur thumbnails setting directly (for fallback scenarios)
+  // Get blur thumbnails setting directly (for fallback scenarios)
   bool getBlurThumbnailsDirect() {
     return _prefs.getBool(_keyBlurThumbnails) ?? true;
   }
 
-  /// Get all user preferences
+  // Get all user preferences
   Future<UserPreferences> getUserPreferences() async {
     final blurValue = _prefs.getBool(_keyBlurThumbnails) ?? true;
     _logger.d(
@@ -67,7 +67,7 @@ class PreferencesService {
     );
   }
 
-  /// Save user preferences
+  // Save user preferences
   Future<void> saveUserPreferences(UserPreferences preferences) async {
     try {
       _logger.d(
@@ -130,7 +130,7 @@ class PreferencesService {
     }
   }
 
-  /// Get specific setting
+  // Get specific setting
   Future<T?> getSetting<T>(String key, T? defaultValue) async {
     switch (T) {
       case const (String):
@@ -146,7 +146,7 @@ class PreferencesService {
     }
   }
 
-  /// Set specific setting
+  // Set specific setting
   Future<void> setSetting<T>(String key, T value) async {
     switch (T) {
       case const (String):
@@ -197,7 +197,7 @@ class PreferencesService {
       ? _prefs.setString(_keyLastAppAccess, value.toIso8601String())
       : _prefs.remove(_keyLastAppAccess);
 
-  /// Helper method to get DateTime from preferences
+  // Helper method to get DateTime from preferences
   DateTime? _getDateTime(String key) {
     final dateString = _prefs.getString(key);
     if (dateString == null) return null;
@@ -282,12 +282,12 @@ class PreferencesService {
     }
   }
 
-  /// Clear all preferences
+  // Clear all preferences
   Future<void> clear() async {
     await _prefs.clear();
   }
 
-  /// Update last app access timestamp
+  // Update last app access timestamp
   Future<void> updateLastAppAccess() async {
     await setLastAppAccess(DateTime.now());
   }

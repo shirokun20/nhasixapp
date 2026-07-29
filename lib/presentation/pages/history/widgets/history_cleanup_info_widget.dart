@@ -6,7 +6,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../core/services/history_cleanup_service.dart';
 import '../../../cubits/history/history_cubit.dart';
 
-/// Widget for displaying history cleanup information and settings
+// Widget for displaying history cleanup information and settings
 class HistoryCleanupInfoWidget extends StatefulWidget {
   const HistoryCleanupInfoWidget({
     super.key,

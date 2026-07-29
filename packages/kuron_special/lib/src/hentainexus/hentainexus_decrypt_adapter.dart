@@ -5,7 +5,7 @@ import 'package:logger/logger.dart';
 
 import 'hentainexus_decryptor.dart';
 
-/// HentaiNexus adapter that decrypts reader payload from initReader().
+// HentaiNexus adapter that decrypts reader payload from initReader().
 class HentaiNexusDecryptAdapter implements GenericAdapter {
   final Dio _dio;
   final GenericScraperAdapter _delegate;

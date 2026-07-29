@@ -5,7 +5,7 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Custom progress indicator widgets with theme-aware colors
+// Custom progress indicator widgets with theme-aware colors
 class AppProgressIndicator extends StatelessWidget {
   const AppProgressIndicator({
     super.key,
@@ -52,7 +52,7 @@ class AppProgressIndicator extends StatelessWidget {
   }
 }
 
-/// Linear progress indicator with custom styling
+// Linear progress indicator with custom styling
 class AppLinearProgressIndicator extends StatelessWidget {
   const AppLinearProgressIndicator({
     super.key,
@@ -128,7 +128,7 @@ class AppLinearProgressIndicator extends StatelessWidget {
   }
 }
 
-/// Shimmer loading placeholder
+// Shimmer loading placeholder
 class AppShimmerLoading extends StatelessWidget {
   const AppShimmerLoading({
     super.key,
@@ -157,7 +157,7 @@ class AppShimmerLoading extends StatelessWidget {
   }
 }
 
-/// Grid shimmer loading
+// Grid shimmer loading
 class ContentGridShimmer extends StatelessWidget {
   const ContentGridShimmer({
     super.key,
@@ -186,7 +186,7 @@ class ContentGridShimmer extends StatelessWidget {
   }
 }
 
-/// Pulsing dot indicator
+// Pulsing dot indicator
 class PulsingDotIndicator extends StatefulWidget {
   const PulsingDotIndicator({
     super.key,
@@ -275,7 +275,7 @@ class _PulsingDotIndicatorState extends State<PulsingDotIndicator>
   }
 }
 
-/// Skeleton loading for text
+// Skeleton loading for text
 class TextSkeleton extends StatelessWidget {
   const TextSkeleton({
     super.key,
@@ -305,7 +305,7 @@ class TextSkeleton extends StatelessWidget {
   }
 }
 
-/// Loading overlay widget
+// Loading overlay widget
 class LoadingOverlay extends StatelessWidget {
   const LoadingOverlay({
     super.key,

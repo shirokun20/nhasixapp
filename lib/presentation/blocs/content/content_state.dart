@@ -1,6 +1,6 @@
 part of 'content_bloc.dart';
 
-/// Base class for all content states
+// Base class for all content states
 abstract class ContentState extends Equatable {
   const ContentState();
 
@@ -8,12 +8,12 @@ abstract class ContentState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Initial state when bloc is created
+// Initial state when bloc is created
 class ContentInitial extends ContentState {
   const ContentInitial();
 }
 
-/// State when content is being loaded for the first time
+// State when content is being loaded for the first time
 class ContentLoading extends ContentState {
   const ContentLoading({
     this.message = 'Loading content...',
@@ -29,7 +29,7 @@ class ContentLoading extends ContentState {
   List<Object?> get props => [message, previousContents, pageNumber];
 }
 
-/// State when content is successfully loaded
+// State when content is successfully loaded
 class ContentLoaded extends ContentState {
   const ContentLoaded({
     required this.contents,
@@ -78,29 +78,29 @@ class ContentLoaded extends ContentState {
         lastUpdated,
       ];
 
-  /// Check if content list is empty
+  // Check if content list is empty
   bool get isEmpty => contents.isEmpty;
 
-  /// Check if content list is not empty
+  // Check if content list is not empty
   bool get isNotEmpty => contents.isNotEmpty;
 
-  /// Get content count
+  // Get content count
   int get count => contents.length;
 
-  /// Check if can load more content
+  // Check if can load more content
   bool get canLoadMore => hasNext && !isLoadingMore;
 
-  /// Check if currently loading or refreshing
+  // Check if currently loading or refreshing
   bool get isLoading => isLoadingMore || isRefreshing;
 
-  /// Get loading state message
+  // Get loading state message
   String get loadingMessage {
     if (isRefreshing) return 'Refreshing content...';
     if (isLoadingMore) return 'Loading more content...';
     return 'Loading content...';
   }
 
-  /// Create copy with updated values
+  // Create copy with updated values
   ContentLoaded copyWith({
     List<Content>? contents,
     int? currentPage,
@@ -133,7 +133,7 @@ class ContentLoaded extends ContentState {
     );
   }
 
-  /// Create copy with additional content (for pagination)
+  // Create copy with additional content (for pagination)
   ContentLoaded copyWithMoreContent(List<Content> moreContents) {
     return copyWith(
       contents: [...contents, ...moreContents],
@@ -141,7 +141,7 @@ class ContentLoaded extends ContentState {
     );
   }
 
-  /// Create copy with refreshed content
+  // Create copy with refreshed content
   ContentLoaded copyWithRefreshedContent(ContentListResult result) {
     return ContentLoaded(
       contents: result.contents,
@@ -160,7 +160,7 @@ class ContentLoaded extends ContentState {
     );
   }
 
-  /// Create copy with updated content item
+  // Create copy with updated content item
   ContentLoaded copyWithUpdatedContent(Content updatedContent) {
     final updatedContents = contents.map((content) {
       return content.id == updatedContent.id ? updatedContent : content;
@@ -172,7 +172,7 @@ class ContentLoaded extends ContentState {
     );
   }
 
-  /// Create copy with removed content
+  // Create copy with removed content
   ContentLoaded copyWithRemovedContent(String contentId) {
     final filteredContents =
         contents.where((content) => content.id != contentId).toList();
@@ -184,7 +184,7 @@ class ContentLoaded extends ContentState {
     );
   }
 
-  /// Get content type description
+  // Get content type description
   String get contentTypeDescription {
     if (searchFilter != null) {
       return 'Search Results';
@@ -198,7 +198,7 @@ class ContentLoaded extends ContentState {
   }
 }
 
-/// State when loading more content (infinite scroll)
+// State when loading more content (infinite scroll)
 class ContentLoadingMore extends ContentLoaded {
   const ContentLoadingMore({
     required super.contents,
@@ -215,7 +215,7 @@ class ContentLoadingMore extends ContentLoaded {
   }) : super(isLoadingMore: true);
 }
 
-/// State when refreshing content (pull-to-refresh)
+// State when refreshing content (pull-to-refresh)
 class ContentRefreshing extends ContentLoaded {
   const ContentRefreshing({
     required super.contents,
@@ -232,7 +232,7 @@ class ContentRefreshing extends ContentLoaded {
   }) : super(isRefreshing: true);
 }
 
-/// State when content loading fails
+// State when content loading fails
 class ContentError extends ContentState {
   const ContentError({
     required this.message,
@@ -281,11 +281,11 @@ class ContentError extends ContentState {
         timeframe,
       ];
 
-  /// Check if has previous content to show
+  // Check if has previous content to show
   bool get hasPreviousContent =>
       previousContents != null && previousContents!.isNotEmpty;
 
-  /// Get error icon based on error type
+  // Get error icon based on error type
   String get errorIcon {
     switch (errorType) {
       case ContentErrorType.network:
@@ -303,7 +303,7 @@ class ContentError extends ContentState {
     }
   }
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String get userFriendlyMessage {
     switch (errorType) {
       case ContentErrorType.network:
@@ -322,7 +322,7 @@ class ContentError extends ContentState {
   }
 }
 
-/// State when no content is found
+// State when no content is found
 class ContentEmpty extends ContentState {
   const ContentEmpty({
     required this.message,
@@ -362,7 +362,7 @@ class ContentEmpty extends ContentState {
         timeframe,
       ];
 
-  /// Get appropriate empty message based on context (returns l10n key)
+  // Get appropriate empty message based on context (returns l10n key)
   String get contextualMessage {
     if (searchFilter != null && searchFilter!.hasFilters) {
       return 'noContentMatchingSearch';
@@ -373,7 +373,7 @@ class ContentEmpty extends ContentState {
     }
   }
 
-  /// Get suggestions for empty state (returns l10n keys)
+  // Get suggestions for empty state (returns l10n keys)
   List<String> get suggestions {
     if (searchFilter != null && searchFilter!.hasFilters) {
       return [
@@ -397,7 +397,7 @@ class ContentEmpty extends ContentState {
   }
 }
 
-/// Types of content errors
+// Types of content errors
 enum ContentErrorType {
   network,
   server,
@@ -407,7 +407,7 @@ enum ContentErrorType {
   unknown,
 }
 
-/// Extension for ContentErrorType
+// Extension for ContentErrorType
 extension ContentErrorTypeExtension on ContentErrorType {
   String get displayName {
     switch (this) {

@@ -10,7 +10,7 @@ import '../../../../core/constants/text_style_const.dart';
 import '../../../../domain/entities/entities.dart';
 import '../../../widgets/progressive_image_widget.dart';
 
-/// Widget for displaying individual history item
+// Widget for displaying individual history item
 class HistoryItemWidget extends StatelessWidget {
   const HistoryItemWidget({
     super.key,

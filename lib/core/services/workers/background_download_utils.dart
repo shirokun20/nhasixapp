@@ -8,13 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 
-/// Standalone download utilities for background worker
+// Standalone download utilities for background worker
 ///
-/// These functions are designed to work in a background isolate
-/// without access to DI or Flutter framework.
+// These functions are designed to work in a background isolate
+// without access to DI or Flutter framework.
 ///
-/// Note: This is a lightweight version for background downloads.
-/// For full download with notifications, use DownloadService instead.
+// Note: This is a lightweight version for background downloads.
+// For full download with notifications, use DownloadService instead.
 class BackgroundDownloadUtils {
   BackgroundDownloadUtils._();
 
@@ -22,11 +22,12 @@ class BackgroundDownloadUtils {
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 60),
     sendTimeout: const Duration(seconds: 30),
-  ))..httpClientAdapter = NativeAdapter();
+  ))
+    ..httpClientAdapter = NativeAdapter();
 
-  /// Download a single image from URL to file path
+  // Download a single image from URL to file path
   ///
-  /// Returns true if successful, false otherwise.
+  // Returns true if successful, false otherwise.
   static Future<bool> downloadImage({
     required String imageUrl,
     required String filePath,
@@ -80,16 +81,16 @@ class BackgroundDownloadUtils {
     }
   }
 
-  /// Download multiple images for a content
+  // Download multiple images for a content
   ///
-  /// Parameters:
-  /// - [contentId]: ID of the content
-  /// - [imageUrls]: List of image URLs to download
-  /// - [savePath]: Base path to save files
-  /// - [startIndex]: Index to start from (for resume)
-  /// - [onProgress]: Progress callback (index, total)
+  // Parameters:
+  // - [contentId]: ID of the content
+  // - [imageUrls]: List of image URLs to download
+  // - [savePath]: Base path to save files
+  // - [startIndex]: Index to start from (for resume)
+  // - [onProgress]: Progress callback (index, total)
   ///
-  /// Returns number of successfully downloaded images.
+  // Returns number of successfully downloaded images.
   static Future<int> downloadImages({
     required String contentId,
     required List<String> imageUrls,
@@ -134,7 +135,7 @@ class BackgroundDownloadUtils {
     return successCount;
   }
 
-  /// Save download progress to SharedPreferences
+  // Save download progress to SharedPreferences
   static Future<void> saveProgress(
     String contentId,
     int current,
@@ -147,13 +148,13 @@ class BackgroundDownloadUtils {
         'bg_download_time_$contentId', DateTime.now().toIso8601String());
   }
 
-  /// Get saved download progress
+  // Get saved download progress
   static Future<int> getProgress(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('bg_download_progress_$contentId') ?? 0;
   }
 
-  /// Mark download as complete
+  // Mark download as complete
   static Future<void> markComplete(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('bg_download_complete_$contentId', true);
@@ -173,7 +174,7 @@ class BackgroundDownloadUtils {
     await prefs.setStringList('incomplete_downloads', incompleteList);
   }
 
-  /// Mark download as incomplete (for resume later)
+  // Mark download as incomplete (for resume later)
   static Future<void> markIncomplete(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     final incompleteList =
@@ -184,13 +185,13 @@ class BackgroundDownloadUtils {
     }
   }
 
-  /// Get list of incomplete downloads
+  // Get list of incomplete downloads
   static Future<List<String>> getIncompleteDownloads() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList('incomplete_downloads') ?? [];
   }
 
-  /// Save download state for resumption
+  // Save download state for resumption
   static Future<void> saveResumeState(
     String contentId, {
     required String downloadUrl,
@@ -210,23 +211,24 @@ class BackgroundDownloadUtils {
     await prefs.setString('resume_state_$contentId', jsonEncode(data));
   }
 
-  /// Load download state for resumption
+  // Load download state for resumption
   static Future<Map<String, dynamic>?> loadResumeState(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     final dataStr = prefs.getString('resume_state_$contentId');
     if (dataStr != null) {
-      return jsonDecode(dataStr) as Map<String, dynamic>? ?? <String, dynamic>{};
+      return jsonDecode(dataStr) as Map<String, dynamic>? ??
+          <String, dynamic>{};
     }
     return null;
   }
 
-  /// Clear resume state
+  // Clear resume state
   static Future<void> clearResumeState(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('resume_state_$contentId');
   }
 
-  /// Clear download state & resume state
+  // Clear download state & resume state
   static Future<void> clearState(String contentId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('bg_download_progress_$contentId');
@@ -236,13 +238,13 @@ class BackgroundDownloadUtils {
     await prefs.remove('resume_state_$contentId');
   }
 
-  /// Get app downloads directory path
+  // Get app downloads directory path
   static Future<String> getDownloadsPath() async {
     final appDir = await getApplicationDocumentsDirectory();
     return '${appDir.path}/Downloads';
   }
 
-  /// Create content download directory
+  // Create content download directory
   static Future<String> createContentDirectory(String contentId) async {
     final basePath = await getDownloadsPath();
     final contentPath = '$basePath/$contentId';
@@ -261,7 +263,7 @@ class BackgroundDownloadUtils {
     return contentPath;
   }
 
-  /// Save download metadata as JSON
+  // Save download metadata as JSON
   static Future<void> saveMetadata({
     required String contentId,
     required String title,
@@ -283,7 +285,7 @@ class BackgroundDownloadUtils {
     await file.writeAsString(jsonEncode(metadata));
   }
 
-  /// Read download metadata
+  // Read download metadata
   static Future<Map<String, dynamic>?> readMetadata(String savePath) async {
     try {
       final metadataPath = '$savePath/metadata.json';
@@ -299,7 +301,7 @@ class BackgroundDownloadUtils {
     return null;
   }
 
-  /// Sync database with filesystem (remove entries for missing files)
+  // Sync database with filesystem (remove entries for missing files)
   static Future<int> syncDatabaseFilesystem() async {
     try {
       final dbPath = await getDatabasesPath();

@@ -1,8 +1,8 @@
-/// Advanced settings entities
-/// Extracted from settings_repository.dart
+// Advanced settings entities
+// Extracted from settings_repository.dart
 library;
 
-/// Log levels
+// Log levels
 enum LogLevel {
   verbose,
   debug,
@@ -11,7 +11,7 @@ enum LogLevel {
   error,
 }
 
-/// Advanced settings configuration
+// Advanced settings configuration
 class AdvancedSettings {
   const AdvancedSettings({
     required this.enableLogging,
@@ -30,7 +30,7 @@ class AdvancedSettings {
   final int maxLogFiles;
 }
 
-/// Debug settings configuration
+// Debug settings configuration
 class DebugSettings {
   const DebugSettings({
     required this.showDebugInfo,
@@ -45,7 +45,7 @@ class DebugSettings {
   final bool showPerformanceOverlay;
 }
 
-/// Clear data result
+// Clear data result
 class ClearDataResult {
   const ClearDataResult({
     required this.success,
@@ -60,7 +60,7 @@ class ClearDataResult {
   final String? error;
 }
 
-/// Migration status information
+// Migration status information
 class MigrationStatus {
   const MigrationStatus({
     required this.currentVersion,
@@ -75,7 +75,7 @@ class MigrationStatus {
   final List<String>? migrationSteps;
 }
 
-/// Migration result
+// Migration result
 class MigrationResult {
   const MigrationResult({
     required this.success,

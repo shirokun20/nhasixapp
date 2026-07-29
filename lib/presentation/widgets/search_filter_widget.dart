@@ -6,7 +6,7 @@ import '../../core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import '../../domain/entities/search_filter.dart';
 
-/// Advanced search filter widget with expandable sections
+// Advanced search filter widget with expandable sections
 class SearchFilterWidget extends StatefulWidget {
   const SearchFilterWidget({
     super.key,
@@ -849,7 +849,7 @@ class _SearchFilterWidgetState extends State<SearchFilterWidget>
   }
 }
 
-/// Extension for string capitalization
+// Extension for string capitalization
 extension StringCapitalization on String {
   String capitalize() {
     if (isEmpty) return this;

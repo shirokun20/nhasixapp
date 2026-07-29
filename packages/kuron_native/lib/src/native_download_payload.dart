@@ -1,31 +1,31 @@
-/// Native download payload model (Section 7.1).
+// Native download payload model (Section 7.1).
 ///
-/// Bridges the canonical [ResolvedChapterPages] (from kuron_generic) to the
-/// native WorkManager download worker without requiring kuron_native to depend
-/// on kuron_core or kuron_generic.
+// Bridges the canonical [ResolvedChapterPages] (from kuron_generic) to the
+// native WorkManager download worker without requiring kuron_native to depend
+// on kuron_core or kuron_generic.
 ///
-/// ## v2 payload (canonical, per-page headers)
+// ## v2 payload (canonical, per-page headers)
 ///
-/// ```dart
-/// final payload = NativeDownloadPayload.fromResolved(
-///   contentId: content.id,
-///   sourceId: source.id,
-///   pages: resolvedPages,
-///   destinationPath: destPath,
-///   title: content.title,
-/// );
-/// await NativeDownloadService().startDownloadV2(payload);
-/// ```
+// ```dart
+// final payload = NativeDownloadPayload.fromResolved(
+//   contentId: content.id,
+//   sourceId: source.id,
+//   pages: resolvedPages,
+//   destinationPath: destPath,
+//   title: content.title,
+// );
+// await NativeDownloadService().startDownloadV2(payload);
+// ```
 ///
-/// ## v1 payload (legacy URL-list, still supported)
+// ## v1 payload (legacy URL-list, still supported)
 ///
-/// Apps using the old `imageUrls: List<String>` API still work — the native
-/// worker parses both formats via the presence of the `perPageHeaders` field.
+// Apps using the old `imageUrls: List<String>` API still work — the native
+// worker parses both formats via the presence of the `perPageHeaders` field.
 library;
 
 import 'dart:convert';
 
-/// Per-page item in a v2 download payload.
+// Per-page item in a v2 download payload.
 class NativeDownloadPage {
   const NativeDownloadPage({
     required this.pageNumber,
@@ -66,14 +66,14 @@ class NativeDownloadPage {
   }
 }
 
-/// Canonical download payload (v2 — canonical, supports per-page headers).
+// Canonical download payload (v2 — canonical, supports per-page headers).
 ///
-/// Serializes to a JSON map that is accepted by both the Dart
-/// [NativeDownloadService] and the Kotlin [DownloadWorker]:
+// Serializes to a JSON map that is accepted by both the Dart
+// [NativeDownloadService] and the Kotlin [DownloadWorker]:
 ///
-/// - New worker reads `perPagePayload` (JSON array of [NativeDownloadPage]).
-/// - Old worker falls back to `imageUrls` (plain string list) when
-///   `perPagePayload` is absent.
+// - New worker reads `perPagePayload` (JSON array of [NativeDownloadPage]).
+// - Old worker falls back to `imageUrls` (plain string list) when
+//   `perPagePayload` is absent.
 class NativeDownloadPayload {
   const NativeDownloadPayload({
     required this.contentId,
@@ -115,7 +115,7 @@ class NativeDownloadPayload {
 
   // ── Convenience getters ────────────────────────────────────────────────────
 
-  /// Legacy flat URL list (v1 compat) — only ready pages, in order.
+  // Legacy flat URL list (v1 compat) — only ready pages, in order.
   List<String> get imageUrls => pages
       .where((NativeDownloadPage p) => p.url.isNotEmpty)
       .map((NativeDownloadPage p) => p.url)
@@ -123,9 +123,9 @@ class NativeDownloadPayload {
 
   // ── Serialization ──────────────────────────────────────────────────────────
 
-  /// Serialize to the method-channel map sent to native.
+  // Serialize to the method-channel map sent to native.
   ///
-  /// Includes both `imageUrls` (v1 compat) and `perPagePayload` (v2).
+  // Includes both `imageUrls` (v1 compat) and `perPagePayload` (v2).
   Map<String, Object?> toChannelMap() => <String, Object?>{
         'contentId': contentId,
         'sourceId': sourceId,

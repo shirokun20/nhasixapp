@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Types of route transitions
+// Types of route transitions
 enum RouteTransitionType {
   fade,
   scale,
@@ -12,7 +12,7 @@ enum RouteTransitionType {
   fadeSlide,
 }
 
-/// Types of staggered animations
+// Types of staggered animations
 enum StaggeredAnimationType {
   fade,
   scale,
@@ -20,10 +20,10 @@ enum StaggeredAnimationType {
   fadeSlide,
 }
 
-/// Standardized Animation System for Consistent UI Transitions
+// Standardized Animation System for Consistent UI Transitions
 ///
-/// Provides pre-configured animations and transitions that follow
-/// Material Design guidelines and ensure consistent user experience.
+// Provides pre-configured animations and transitions that follow
+// Material Design guidelines and ensure consistent user experience.
 class AppAnimations {
   // Standard durations
   static const Duration fast = Duration(milliseconds: 200);
@@ -40,7 +40,7 @@ class AppAnimations {
   static const Curve elasticIn = Curves.elasticIn;
   static const Curve elasticOut = Curves.elasticOut;
 
-  /// Fade transition animation
+  // Fade transition animation
   static Widget fadeTransition({
     required Widget child,
     required Animation<double> animation,
@@ -53,7 +53,7 @@ class AppAnimations {
     );
   }
 
-  /// Scale transition animation
+  // Scale transition animation
   static Widget scaleTransition({
     required Widget child,
     required Animation<double> animation,
@@ -68,7 +68,7 @@ class AppAnimations {
     );
   }
 
-  /// Slide transition animation
+  // Slide transition animation
   static Widget slideTransition({
     required Widget child,
     required Animation<double> animation,
@@ -85,7 +85,7 @@ class AppAnimations {
     );
   }
 
-  /// Combined fade + slide transition
+  // Combined fade + slide transition
   static Widget fadeSlideTransition({
     required Widget child,
     required Animation<double> animation,
@@ -105,7 +105,7 @@ class AppAnimations {
     );
   }
 
-  /// Page route transition
+  // Page route transition
   static PageRouteBuilder<T> createRoute<T>({
     required Widget page,
     RouteTransitionType type = RouteTransitionType.fadeSlide,
@@ -159,7 +159,7 @@ class AppAnimations {
     );
   }
 
-  /// Create a Page for GoRouter with custom transitions
+  // Create a Page for GoRouter with custom transitions
   static Page<T> createPage<T>({
     required Widget child,
     required String name,
@@ -182,11 +182,11 @@ class AppAnimations {
     );
   }
 
-  /// Helper for GoRouter pageBuilder that applies animations.
+  // Helper for GoRouter pageBuilder that applies animations.
   ///
-  /// Uses [GoRouterState.pageKey] as the page key so that the same route
-  /// path visited multiple times in the navigation stack (e.g. cyclical
-  /// related-content navigation) does not produce duplicate [ValueKey]s.
+  // Uses [GoRouterState.pageKey] as the page key so that the same route
+  // path visited multiple times in the navigation stack (e.g. cyclical
+  // related-content navigation) does not produce duplicate [ValueKey]s.
   static Page<T> animatedPageBuilder<T>(
     BuildContext context,
     GoRouterState state,
@@ -208,7 +208,7 @@ class AppAnimations {
   }
 }
 
-/// Custom Page implementation for GoRouter that supports AppAnimations
+// Custom Page implementation for GoRouter that supports AppAnimations
 class CustomTransitionPage<T> extends Page<T> {
   const CustomTransitionPage({
     required this.child,
@@ -286,7 +286,7 @@ class CustomTransitionPage<T> extends Page<T> {
   }
 }
 
-/// Animated container with easy configuration
+// Animated container with easy configuration
 class AnimatedAppContainer extends StatefulWidget {
   const AnimatedAppContainer({
     super.key,
@@ -368,7 +368,7 @@ class _AnimatedAppContainerState extends State<AnimatedAppContainer>
   }
 }
 
-/// Staggered animation helper for lists
+// Staggered animation helper for lists
 class StaggeredAnimationHelper {
   static List<Widget> createStaggeredList({
     required List<Widget> children,
@@ -393,7 +393,7 @@ class StaggeredAnimationHelper {
   }
 }
 
-/// Individual staggered animation widget
+// Individual staggered animation widget
 class StaggeredAnimationWidget extends StatefulWidget {
   const StaggeredAnimationWidget({
     super.key,
@@ -475,9 +475,9 @@ class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
   }
 }
 
-/// Hero animation helper
+// Hero animation helper
 class AppHeroHelper {
-  /// Create a hero widget with enhanced animations
+  // Create a hero widget with enhanced animations
   static Widget createHero({
     required String tag,
     required Widget child,
@@ -495,7 +495,7 @@ class AppHeroHelper {
     );
   }
 
-  /// Create a hero animation for images
+  // Create a hero animation for images
   static Widget createImageHero({
     required String tag,
     required Widget image,
@@ -512,7 +512,7 @@ class AppHeroHelper {
   }
 }
 
-/// Mixin for widgets that need animation capabilities
+// Mixin for widgets that need animation capabilities
 mixin AnimationMixin<T extends StatefulWidget>
     on State<T>, TickerProviderStateMixin<T> {
   late AnimationController animationController;

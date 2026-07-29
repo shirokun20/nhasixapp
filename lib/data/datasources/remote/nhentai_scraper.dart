@@ -9,7 +9,7 @@ import 'tag_resolver.dart';
 
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 
-/// HTML scraper for nhentai.net with CSS selectors
+// HTML scraper for nhentai.net with CSS selectors
 class NhentaiScraper {
   NhentaiScraper({
     Logger? logger,
@@ -81,7 +81,7 @@ class NhentaiScraper {
   static const String imageUrlPattern =
       r'https://t\.nhentai\.net/galleries/(\d+)/(\d+)t\.(jpg|png|gif)';
 
-  /// Parse content list from HTML (async version with tag resolution)
+  // Parse content list from HTML (async version with tag resolution)
   Future<List<ContentModel>> parseContentList(String html) async {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -110,8 +110,8 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse content list from HTML (sync version without tag resolution)
-  /// Use this when you don't need tag resolution for better performance
+  // Parse content list from HTML (sync version without tag resolution)
+  // Use this when you don't need tag resolution for better performance
   List<ContentModel> parseContentListSync(String html) {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -140,7 +140,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse content detail from HTML
+  // Parse content detail from HTML
   ContentModel parseContentDetail(String html, String contentId) {
     try {
       final document = html_parser.parse(html);
@@ -210,7 +210,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse homepage content from HTML (async version with tag resolution)
+  // Parse homepage content from HTML (async version with tag resolution)
   Future<Map<String, List<ContentModel>>> parseHomepage(String html) async {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -257,8 +257,8 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse homepage content from HTML (sync version without tag resolution)
-  /// Use this when you don't need tag resolution for better performance
+  // Parse homepage content from HTML (sync version without tag resolution)
+  // Use this when you don't need tag resolution for better performance
   Map<String, List<ContentModel>> parseHomepageSync(String html) {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -306,7 +306,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse only from index containers (async version with tag resolution)
+  // Parse only from index containers (async version with tag resolution)
   Future<List<ContentModel>> parseFromIndexContainers(String html) async {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -334,8 +334,8 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse only from index containers (sync version without tag resolution)
-  /// Use this when you don't need tag resolution for better performance
+  // Parse only from index containers (sync version without tag resolution)
+  // Use this when you don't need tag resolution for better performance
   List<ContentModel> parseFromIndexContainersSync(String html) {
     try {
       final document = html_parser.parse(html, encoding: 'utf-8');
@@ -363,7 +363,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse search results from HTML (async version with tag resolution)
+  // Parse search results from HTML (async version with tag resolution)
   Future<List<ContentModel>> parseSearchResults(String html) async {
     // Search results use the same structure as content list
     return await parseContentList(html);
@@ -389,14 +389,14 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse search results from HTML (sync version without tag resolution)
-  /// Use this when you don't need tag resolution for better performance
+  // Parse search results from HTML (sync version without tag resolution)
+  // Use this when you don't need tag resolution for better performance
   List<ContentModel> parseSearchResultsSync(String html) {
     // Search results use the same structure as content list
     return parseContentListSync(html);
   }
 
-  /// Parse tags page from HTML
+  // Parse tags page from HTML
   List<TagModel> parseTagsPage(String html, {String? type}) {
     try {
       final document = html_parser.parse(html);
@@ -424,7 +424,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Extract content ID from page (for random content)
+  // Extract content ID from page (for random content)
   String? extractContentIdFromPage(String html) {
     try {
       final document = html_parser.parse(html);
@@ -514,7 +514,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse pagination information from HTML
+  // Parse pagination information from HTML
   Map<String, dynamic> parsePaginationInfo(String html) {
     try {
       final document = html_parser.parse(html);
@@ -620,7 +620,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Extract visible page numbers from pagination
+  // Extract visible page numbers from pagination
   List<int> extractVisiblePages(String html) {
     try {
       final document = html_parser.parse(html);
@@ -648,7 +648,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse individual content card (async version with tag resolution)
+  // Parse individual content card (async version with tag resolution)
   Future<ContentModel?> _parseContentCard(html_dom.Element element) async {
     try {
       // Extract content ID from link
@@ -729,8 +729,8 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse individual content card (sync version without tag resolution)
-  /// Use this when you don't need tag resolution for better performance
+  // Parse individual content card (sync version without tag resolution)
+  // Use this when you don't need tag resolution for better performance
   ContentModel? _parseContentCardSync(html_dom.Element element) {
     try {
       // Extract content ID from link
@@ -793,7 +793,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse tag IDs from data-tags attribute
+  // Parse tag IDs from data-tags attribute
   List<String> _parseTagIds(String? dataTags) {
     if (dataTags == null || dataTags.isEmpty) return [];
 
@@ -805,7 +805,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Extract aspect ratio from cover element style
+  // Extract aspect ratio from cover element style
   double? _extractAspectRatio(html_dom.Element? linkElement) {
     try {
       final style = linkElement?.attributes['style'];
@@ -827,12 +827,12 @@ class NhentaiScraper {
     return null;
   }
 
-  /// Get tag IDs from content card for potential tag resolution
+  // Get tag IDs from content card for potential tag resolution
   List<String> getTagIdsFromCard(html_dom.Element element) {
     return _parseTagIds(element.attributes['data-tags']);
   }
 
-  /// Get dimensions from content card
+  // Get dimensions from content card
   Map<String, int> getDimensionsFromCard(html_dom.Element element) {
     final linkElement = element.querySelector(contentLinkSelector);
     final coverElement = linkElement?.querySelector(contentCoverSelector);
@@ -844,7 +844,7 @@ class NhentaiScraper {
     return {'width': width, 'height': height};
   }
 
-  /// Parse tags from detail page
+  // Parse tags from detail page
   List<Tag> _parseTagsFromDetail(html_dom.Document document) {
     final tags = <Tag>[];
 
@@ -879,7 +879,7 @@ class NhentaiScraper {
     return tags;
   }
 
-  /// Parse tag from element
+  // Parse tag from element
   Tag? _parseTagFromElement(html_dom.Element element) {
     try {
       final nameElement = element.querySelector('.name');
@@ -923,7 +923,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse count with K/M suffix support (e.g., "93K" -> 93000)
+  // Parse count with K/M suffix support (e.g., "93K" -> 93000)
   int _parseCountWithSuffix(String? countText) {
     if (countText == null || countText.isEmpty) return 0;
 
@@ -959,7 +959,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse tag element from tags page
+  // Parse tag element from tags page
   TagModel? _parseTagElement(html_dom.Element element, String? type) {
     try {
       final nameElement = element.querySelector(tagNameSelector);
@@ -987,7 +987,7 @@ class NhentaiScraper {
     }
   }
 
-  /// Parse image URLs from detail page
+  // Parse image URLs from detail page
   List<String> _parseImageUrls(html_dom.Document document, String contentId) {
     final imageUrls = <String>[];
 
@@ -1045,7 +1045,7 @@ class NhentaiScraper {
     return imageUrls;
   }
 
-  /// Parse image URLs using media ID for accurate URL generation
+  // Parse image URLs using media ID for accurate URL generation
   String _convertThumbnailToFull(String thumbUrl) {
     _logger.d('🔄 Converting thumbnail URL: $thumbUrl');
 
@@ -1096,13 +1096,13 @@ class NhentaiScraper {
     return url;
   }
 
-  /// Generate image URL based on content ID and page number
+  // Generate image URL based on content ID and page number
   String _generateImageUrl(String contentId, int page) {
     // Default to JPG extension
     return 'https://i.nhentai.net/galleries/$contentId/$page.jpg';
   }
 
-  /// Extract image URL from various formats
+  // Extract image URL from various formats
   String _extractImageUrl(String url) {
     if (url.isEmpty) return '';
 
@@ -1121,7 +1121,7 @@ class NhentaiScraper {
     return url;
   }
 
-  /// Extract language from tags
+  // Extract language from tags
   String _extractLanguage(List<Tag> tags) {
     final languageTags = tags.where((tag) => tag.type == 'language').toList();
     if (languageTags.isNotEmpty) {
@@ -1130,7 +1130,7 @@ class NhentaiScraper {
     return 'japanese'; // Default language
   }
 
-  /// Extract tags by type
+  // Extract tags by type
   List<String> _extractTagsByType(List<Tag> tags, String type) {
     return tags
         .where((tag) => tag.type == type)
@@ -1138,7 +1138,7 @@ class NhentaiScraper {
         .toList();
   }
 
-  /// Parse upload date from time element with datetime attribute
+  // Parse upload date from time element with datetime attribute
   DateTime _parseUploadDateFromTime(html_dom.Document document) {
     try {
       final timeElement = document.querySelector('time[datetime]');
@@ -1154,7 +1154,7 @@ class NhentaiScraper {
     return DateTime.now();
   }
 
-  /// Parse favorites count from button text
+  // Parse favorites count from button text
   int _parseFavoritesFromButton(html_dom.Document document) {
     try {
       final favoriteButton = document.querySelector('.btn .nobold');
@@ -1172,7 +1172,7 @@ class NhentaiScraper {
     return 0;
   }
 
-  /// Parse related content from "More Like This" section
+  // Parse related content from "More Like This" section
   List<ContentModel> _parseRelatedContent(html_dom.Document document) {
     final relatedContent = <ContentModel>[];
 
@@ -1239,21 +1239,21 @@ class NhentaiScraper {
     return relatedContent;
   }
 
-  /// Check if text is English
+  // Check if text is English
   bool _isEnglish(String text) {
     // Simple heuristic - check for ASCII characters
     return RegExp(r'^[\x00-\x7F]+$').hasMatch(text);
   }
 
-  /// Check if text is Japanese
+  // Check if text is Japanese
   bool _isJapanese(String text) {
     // Check for Japanese characters (Hiragana, Katakana, Kanji)
     return RegExp(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]').hasMatch(text);
   }
 
-  /// Resolve tag IDs to Tag objects using external tag mapping
-  /// This method can be used when tag ID to name mapping is available
-  /// For example, using data from https://github.com/maxwai/NClientV3/blob/main/data/tagsPretty.json
+  // Resolve tag IDs to Tag objects using external tag mapping
+  // This method can be used when tag ID to name mapping is available
+  // For example, using data from https://github.com/maxwai/NClientV3/blob/main/data/tagsPretty.json
   List<Tag> resolveTagIds(
       List<String> tagIds, Map<String, Map<String, dynamic>>? tagMapping) {
     if (tagMapping == null || tagIds.isEmpty) return [];
@@ -1280,32 +1280,32 @@ class NhentaiScraper {
     return tags;
   }
 
-  /// Create enhanced ContentModel with resolved tags from tag IDs (async version)
-  /// Uses TagResolver to automatically download and cache tag mapping
-  /// This is now an alias to the main _parseContentCard method
+  // Create enhanced ContentModel with resolved tags from tag IDs (async version)
+  // Uses TagResolver to automatically download and cache tag mapping
+  // This is now an alias to the main _parseContentCard method
   Future<ContentModel?> parseContentCardWithTagsAsync(
       html_dom.Element element) async {
     return await _parseContentCard(element);
   }
 
-  /// Parse homepage content with resolved tags (async version)
-  /// This is now an alias to the main parseHomepage method
+  // Parse homepage content with resolved tags (async version)
+  // This is now an alias to the main parseHomepage method
   Future<Map<String, List<ContentModel>>> parseHomepageWithTagsAsync(
       String html) async {
     return await parseHomepage(html);
   }
 
-  /// Parse content list with resolved tags (async version)
-  /// This is now an alias to the main parseContentList method
+  // Parse content list with resolved tags (async version)
+  // This is now an alias to the main parseContentList method
   Future<List<ContentModel>> parseContentListWithTagsAsync(String html) async {
     return await parseContentList(html);
   }
 
-  /// Get TagResolver instance for direct access
+  // Get TagResolver instance for direct access
   TagResolver get tagResolver => _tagResolver;
 
-  /// Create enhanced ContentModel with resolved tags from tag IDs (sync version with mapping)
-  /// This method can be used when tag mapping is already available
+  // Create enhanced ContentModel with resolved tags from tag IDs (sync version with mapping)
+  // This method can be used when tag mapping is already available
   ContentModel? parseContentCardWithTags(
       html_dom.Element element, Map<String, Map<String, dynamic>>? tagMapping) {
     final baseContent = _parseContentCardSync(element);
@@ -1360,7 +1360,7 @@ class NhentaiScraper {
     );
   }
 
-  /// Parse page count from dedicated Pages section
+  // Parse page count from dedicated Pages section
   int _parsePageCount(html_dom.Document document) {
     try {
       // Look for Pages section specifically

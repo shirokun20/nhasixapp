@@ -7,7 +7,7 @@ abstract class AppLockRepository {
   Future<bool> getBiometricEnabled();
   Future<bool> isBiometricAvailable();
 
-  /// Session expiry — after unlock, session stays active for [sessionDuration].
+  // Session expiry — after unlock, session stays active for [sessionDuration].
   Future<void> saveSessionExpiry(DateTime expiry);
   Future<DateTime?> getSessionExpiry();
   Future<void> clearSession();

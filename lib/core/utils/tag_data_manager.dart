@@ -10,9 +10,9 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Comprehensive tag data manager for assets integration
-/// Provides advanced tag management with caching, validation, and Matrix Filter Support
-/// Comprehensive tag data manager for remote-first architecture
+// Comprehensive tag data manager for assets integration
+// Provides advanced tag management with caching, validation, and Matrix Filter Support
+// Comprehensive tag data manager for remote-first architecture
 class TagDataManager {
   TagDataManager({required Dio dio, required Logger logger})
       : _dio = dio,
@@ -41,7 +41,7 @@ class TagDataManager {
     TagType.genre: true,
   };
 
-  /// Initialize tag data from local storage or assets
+  // Initialize tag data from local storage or assets
   Future<void> initialize({required String source}) async {
     try {
       _logger.i('TagDataManager: Initializing tags for $source');
@@ -93,7 +93,7 @@ class TagDataManager {
     }
   }
 
-  /// Check for updates and download if necessary
+  // Check for updates and download if necessary
   Future<void> checkForUpdates({required String source}) async {
     try {
       final manifest = getIt<RemoteConfigService>().tagsManifest;
@@ -131,7 +131,7 @@ class TagDataManager {
     }
   }
 
-  /// Download and cache tags
+  // Download and cache tags
   Future<bool> downloadTags(
     String url,
     String version,
@@ -207,10 +207,10 @@ class TagDataManager {
     }
   }
 
-  /// Load tags directly from a remote JSON URL without caching or version sync.
+  // Load tags directly from a remote JSON URL without caching or version sync.
   ///
-  /// This is used by source configs that declare their tag list inline and do
-  /// not rely on the legacy tags manifest.
+  // This is used by source configs that declare their tag list inline and do
+  // not rely on the legacy tags manifest.
   Future<List<Tag>> loadTagsFromUrl(String url) async {
     final response = await _dio.get<dynamic>(url);
     dynamic payload = response.data;
@@ -221,10 +221,10 @@ class TagDataManager {
     return _parseTagsPayload(payload);
   }
 
-  /// Load tags from a remote URL and cache them per [source].
+  // Load tags from a remote URL and cache them per [source].
   ///
-  /// Unlike [loadTagsFromUrl] this persists the result so that [hasTags] and
-  /// [searchTags] with a source argument work afterwards.
+  // Unlike [loadTagsFromUrl] this persists the result so that [hasTags] and
+  // [searchTags] with a source argument work afterwards.
   Future<List<Tag>> loadAndCacheTagsFromUrl(String url, String source) async {
     final tags = await loadTagsFromUrl(url);
     if (tags.isNotEmpty) {
@@ -234,7 +234,7 @@ class TagDataManager {
     return tags;
   }
 
-  /// Check if tags are loaded for a source
+  // Check if tags are loaded for a source
   bool hasTags(String source) =>
       _cachedTagsBySource.containsKey(source) &&
       (_cachedTagsBySource[source]?.isNotEmpty ?? false);
@@ -327,7 +327,8 @@ class TagDataManager {
             final slug = item[2]?.toString() ?? '';
             final typeCode = (item[3] as num?)?.toInt() ?? 0;
             // Count might be missing in old formats or some datasets
-            final count = (item.length > 4) ? ((item[4] as num?)?.toInt() ?? 0) : 0;
+            final count =
+                (item.length > 4) ? ((item[4] as num?)?.toInt() ?? 0) : 0;
 
             final type = TagType.fromCode(typeCode);
 
@@ -352,7 +353,7 @@ class TagDataManager {
     return tags;
   }
 
-  /// Search tags by query with type filtering
+  // Search tags by query with type filtering
   Future<List<Tag>> searchTags(
     String query, {
     String? type,
@@ -412,13 +413,13 @@ class TagDataManager {
     return results;
   }
 
-  /// Get tags by type with pagination and search
-  /// Resolve the effective tag source.
+  // Get tags by type with pagination and search
+  // Resolve the effective tag source.
   ///
-  /// If [source] has no cached tags, checks the tags-config manifest for a
-  /// `parentSource` declaration. Sources with `parentSource` set (e.g. alias
-  /// or test variants) inherit tag data from their parent without loading
-  /// their own dataset.
+  // If [source] has no cached tags, checks the tags-config manifest for a
+  // `parentSource` declaration. Sources with `parentSource` set (e.g. alias
+  // or test variants) inherit tag data from their parent without loading
+  // their own dataset.
   String _resolveTagSource(String source) {
     if (_cachedTagsBySource[source]?.isNotEmpty == true) return source;
     final manifest = getIt<RemoteConfigService>().tagsManifest;
@@ -468,7 +469,7 @@ class TagDataManager {
     return tags.skip(offset).take(limit).toList();
   }
 
-  /// Get popular tags with type filtering
+  // Get popular tags with type filtering
   Future<List<Tag>> getPopularTags({
     String? type,
     int limit = 20,
@@ -495,20 +496,20 @@ class TagDataManager {
     return popularTags.take(limit).toList();
   }
 
-  /// Validate Matrix Filter Support rules
+  // Validate Matrix Filter Support rules
   bool validateMatrixFilterSupport(String type, List<String> selectedValues) {
     final normalizedType = _normalizeTagType(type);
     final supportsMultiple = _multipleSelectSupport[normalizedType] ?? true;
     return supportsMultiple || selectedValues.length <= 1;
   }
 
-  /// Check if type supports multiple selection
+  // Check if type supports multiple selection
   bool supportsMultipleSelection(String type) {
     final normalizedType = _normalizeTagType(type);
     return _multipleSelectSupport[normalizedType] ?? true;
   }
 
-  /// Get all available tag types
+  // Get all available tag types
   List<String> getAvailableTypes() {
     return _multipleSelectSupport.keys.map((e) => e.name).toList();
   }

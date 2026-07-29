@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/design_tokens.dart';
 import '../../core/constants/text_style_const.dart';
 
-/// Search widget for filter data with modern design
+// Search widget for filter data with modern design
 class FilterDataSearchWidget extends StatelessWidget {
   const FilterDataSearchWidget({
     super.key,
@@ -84,7 +84,7 @@ class FilterDataSearchWidget extends StatelessWidget {
   }
 }
 
-/// Search widget with real-time suggestions
+// Search widget with real-time suggestions
 class FilterDataSearchWithSuggestions extends StatefulWidget {
   const FilterDataSearchWithSuggestions({
     super.key,

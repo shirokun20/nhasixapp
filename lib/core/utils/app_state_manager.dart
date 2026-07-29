@@ -4,28 +4,28 @@
 
 import 'dart:async';
 
-/// Global application state manager for handling offline/online modes
-/// and other app-wide state management needs.
+// Global application state manager for handling offline/online modes
+// and other app-wide state management needs.
 ///
-/// This singleton class provides centralized state management for:
-/// - Offline/online mode tracking
-/// - Network connectivity state
-/// - Offline content availability and count
-/// - App-wide settings that affect multiple screens
+// This singleton class provides centralized state management for:
+// - Offline/online mode tracking
+// - Network connectivity state
+// - Offline content availability and count
+// - App-wide settings that affect multiple screens
 ///
-/// Usage:
-/// ```dart
-/// // Enable offline mode
-/// AppStateManager().enableOfflineMode();
+// Usage:
+// ```dart
+// // Enable offline mode
+// AppStateManager().enableOfflineMode();
 ///
-/// // Listen to mode changes
-/// AppStateManager().offlineModeStream.listen((isOffline) {
-///   print('Offline mode: $isOffline');
-/// });
+// // Listen to mode changes
+// AppStateManager().offlineModeStream.listen((isOffline) {
+//   print('Offline mode: $isOffline');
+// });
 ///
-/// // Check current state
-/// bool isOffline = AppStateManager().isOfflineMode;
-/// ```
+// // Check current state
+// bool isOffline = AppStateManager().isOfflineMode;
+// ```
 class AppStateManager {
   static final AppStateManager _instance = AppStateManager._internal();
   factory AppStateManager() => _instance;
@@ -52,9 +52,9 @@ class AppStateManager {
   Stream<OfflineStateUpdate> get offlineStateStream =>
       _offlineStateController.stream;
 
-  /// Set the offline mode state and notify listeners
+  // Set the offline mode state and notify listeners
   ///
-  /// [offline] - true to enable offline mode, false for online mode
+  // [offline] - true to enable offline mode, false for online mode
   void setOfflineMode(bool offline) {
     if (_isOfflineMode != offline) {
       _isOfflineMode = offline;
@@ -70,16 +70,16 @@ class AppStateManager {
     }
   }
 
-  /// Enable offline mode
+  // Enable offline mode
   void enableOfflineMode() => setOfflineMode(true);
 
-  /// Enable online mode
+  // Enable online mode
   void enableOnlineMode() => setOfflineMode(false);
 
-  /// Update offline content information
+  // Update offline content information
   ///
-  /// [hasContent] - whether offline content is available
-  /// [contentCount] - number of offline content items
+  // [hasContent] - whether offline content is available
+  // [contentCount] - number of offline content items
   void updateOfflineContentInfo({
     required bool hasContent,
     required int contentCount,
@@ -96,7 +96,7 @@ class AppStateManager {
     ));
   }
 
-  /// Get current offline state as a snapshot
+  // Get current offline state as a snapshot
   OfflineStateUpdate getCurrentState() {
     return OfflineStateUpdate(
       isOfflineMode: _isOfflineMode,
@@ -106,7 +106,7 @@ class AppStateManager {
     );
   }
 
-  /// Reset all state to default values
+  // Reset all state to default values
   void reset() {
     _isOfflineMode = false;
     _hasOfflineContent = false;
@@ -121,14 +121,14 @@ class AppStateManager {
     ));
   }
 
-  /// Dispose of resources when app is closing
+  // Dispose of resources when app is closing
   void dispose() {
     _offlineModeController.close();
     _offlineStateController.close();
   }
 }
 
-/// Data class containing complete offline state information
+// Data class containing complete offline state information
 class OfflineStateUpdate {
   const OfflineStateUpdate({
     required this.isOfflineMode,

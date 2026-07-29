@@ -8,14 +8,14 @@ import 'package:pdf/widgets.dart' as pw;
 import 'pdf_isolate_worker.dart';
 import '../utils/image_splitter.dart';
 
-/// Service untuk convert downloaded images ke PDF
+// Service untuk convert downloaded images ke PDF
 class PdfService {
   PdfService({Logger? logger}) : _logger = logger ?? Logger();
 
   final Logger _logger;
 
-  /// Static function untuk compute() - berjalan di isolate terpisah
-  /// Static function for compute() - runs in separate isolate
+  // Static function untuk compute() - berjalan di isolate terpisah
+  // Static function for compute() - runs in separate isolate
   static Future<PdfProcessingResult> _processPdfTask(
       PdfProcessingTask task) async {
     try {
@@ -81,7 +81,7 @@ class PdfService {
     }
   }
 
-  /// Static image processing function for isolate (processes bytes directly)
+  // Static image processing function for isolate (processes bytes directly)
   static Future<Uint8List?> _processImageBytesStatic(
     Uint8List imageBytes, {
     required int maxWidth,
@@ -118,7 +118,7 @@ class PdfService {
     }
   }
 
-  /// Static PDF creation function for isolate
+  // Static PDF creation function for isolate
   static Future<Uint8List> _createPdfStatic(
     List<Uint8List> images,
     String title,
@@ -152,7 +152,7 @@ class PdfService {
     }
   }
 
-  /// Convert downloaded images to PDF using compute() for background processing
+  // Convert downloaded images to PDF using compute() for background processing
   Future<PdfResult> convertToPdfInIsolate({
     required String contentId,
     required String title,
@@ -239,7 +239,7 @@ class PdfService {
     }
   }
 
-  /// Convert downloaded images to PDF
+  // Convert downloaded images to PDF
   Future<PdfResult> convertToPdf({
     required String contentId,
     required String title,
@@ -325,7 +325,7 @@ class PdfService {
     }
   }
 
-  /// Process single image (resize, compress, optimize)
+  // Process single image (resize, compress, optimize)
   Future<Uint8List?> _processImage(String imagePath,
       {required int maxWidth, required int quality}) async {
     try {
@@ -365,7 +365,7 @@ class PdfService {
     }
   }
 
-  /// Create PDF from processed images
+  // Create PDF from processed images
   Future<void> _createPdf(List<Uint8List> images, String outputPath,
       {required String title, required String contentId}) async {
     try {
@@ -401,7 +401,7 @@ class PdfService {
     }
   }
 
-  /// Create safe filename from title
+  // Create safe filename from title
   String _createSafeFilename(String title) {
     // Remove or replace invalid characters including special symbols
     String safe = title
@@ -421,7 +421,7 @@ class PdfService {
     return safe.isEmpty ? 'untitled' : safe;
   }
 
-  /// Format file size for display
+  // Format file size for display
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
@@ -431,7 +431,7 @@ class PdfService {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
-  /// Check if PDF exists for content
+  // Check if PDF exists for content
   Future<bool> pdfExists(String contentId, String outputDir,
       {int? partNumber}) async {
     try {
@@ -460,7 +460,7 @@ class PdfService {
     }
   }
 
-  /// Get PDF path for content (returns first found PDF or specific part)
+  // Get PDF path for content (returns first found PDF or specific part)
   Future<String?> getPdfPath(String contentId, String outputDir,
       {int? partNumber}) async {
     try {
@@ -498,7 +498,7 @@ class PdfService {
     }
   }
 
-  /// Delete PDF for content (all parts or specific part)
+  // Delete PDF for content (all parts or specific part)
   Future<bool> deletePdf(String contentId, String outputDir,
       {int? partNumber}) async {
     try {
@@ -535,7 +535,7 @@ class PdfService {
     }
   }
 
-  /// Get all PDF paths for content (useful for multi-part PDFs)
+  // Get all PDF paths for content (useful for multi-part PDFs)
   Future<List<String>> getAllPdfPaths(
       String contentId, String outputDir) async {
     try {
@@ -564,7 +564,7 @@ class PdfService {
     }
   }
 
-  /// Get total PDF file size for content (all parts combined)
+  // Get total PDF file size for content (all parts combined)
   Future<int> getPdfSize(String contentId, String outputDir) async {
     try {
       final directory = Directory(outputDir);
@@ -589,7 +589,7 @@ class PdfService {
   }
 }
 
-/// Result of PDF conversion
+// Result of PDF conversion
 class PdfResult {
   const PdfResult({
     required this.success,
@@ -606,7 +606,7 @@ class PdfResult {
   final String? error;
 }
 
-/// PDF conversion options
+// PDF conversion options
 class PdfOptions {
   const PdfOptions({
     this.maxWidth = 1200,
@@ -621,7 +621,7 @@ class PdfOptions {
   final PdfFitMode fitMode;
 }
 
-/// PDF page format options
+// PDF page format options
 enum PdfPageFormat {
   a4,
   a5,
@@ -629,7 +629,7 @@ enum PdfPageFormat {
   legal,
 }
 
-/// PDF fit mode options
+// PDF fit mode options
 enum PdfFitMode {
   contain,
   cover,

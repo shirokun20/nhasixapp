@@ -6,7 +6,7 @@ import '../../core/constants/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../blocs/download/download_bloc.dart';
 
-/// Widget for displaying download statistics and overall progress
+// Widget for displaying download statistics and overall progress
 class DownloadStatsWidget extends StatelessWidget {
   const DownloadStatsWidget({
     super.key,

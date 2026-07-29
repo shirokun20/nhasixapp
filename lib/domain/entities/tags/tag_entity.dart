@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Domain entity for tag data from API v2
+// Domain entity for tag data from API v2
 class TagEntity extends Equatable {
   final int id;
   final String name;

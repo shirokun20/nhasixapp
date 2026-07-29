@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-/// Represents a download task with proper state management for pause/cancel operations
+// Represents a download task with proper state management for pause/cancel operations
 class DownloadTask {
   DownloadTask({
     required this.contentId,
@@ -17,22 +17,22 @@ class DownloadTask {
   DateTime? _pausedAt;
   DateTime? _cancelledAt;
 
-  /// Check if the task is paused
+  // Check if the task is paused
   bool get isPaused => _isPaused;
 
-  /// Check if the task is cancelled
+  // Check if the task is cancelled
   bool get isCancelled => _isCancelled || cancelToken.isCancelled;
 
-  /// Check if the task is active (not paused and not cancelled)
+  // Check if the task is active (not paused and not cancelled)
   bool get isActive => !isPaused && !isCancelled;
 
-  /// Get when the task was paused
+  // Get when the task was paused
   DateTime? get pausedAt => _pausedAt;
 
-  /// Get when the task was cancelled
+  // Get when the task was cancelled
   DateTime? get cancelledAt => _cancelledAt;
 
-  /// Pause the download task
+  // Pause the download task
   void pause() {
     if (!_isCancelled && !_isPaused) {
       _isPaused = true;
@@ -40,7 +40,7 @@ class DownloadTask {
     }
   }
 
-  /// Resume the download task
+  // Resume the download task
   void resume() {
     if (!_isCancelled && _isPaused) {
       _isPaused = false;
@@ -48,7 +48,7 @@ class DownloadTask {
     }
   }
 
-  /// Cancel the download task
+  // Cancel the download task
   void cancel([String? reason]) {
     if (!_isCancelled) {
       _isCancelled = true;
@@ -60,7 +60,7 @@ class DownloadTask {
     }
   }
 
-  /// Get current status text
+  // Get current status text
   String get statusText {
     if (isCancelled) return 'Cancelled';
     if (isPaused) return 'Paused';

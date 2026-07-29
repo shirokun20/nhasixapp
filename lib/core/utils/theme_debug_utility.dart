@@ -7,11 +7,11 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import '../../presentation/cubits/settings/settings_cubit.dart';
 import '../../presentation/cubits/theme/theme_cubit.dart';
 
-/// Debug utility for theme debugging
+// Debug utility for theme debugging
 class ThemeDebugUtility {
   static final Logger _logger = getIt<Logger>();
 
-  /// Log current theme state
+  // Log current theme state
   static void logCurrentTheme(BuildContext context) {
     try {
       final themeCubit = context.read<ThemeCubit>();
@@ -43,7 +43,7 @@ class ThemeDebugUtility {
     }
   }
 
-  /// Test theme change
+  // Test theme change
   static Future<void> testThemeChange(
       BuildContext context, String newTheme) async {
     try {
@@ -64,7 +64,7 @@ class ThemeDebugUtility {
     }
   }
 
-  /// Debug widget to display current theme info
+  // Debug widget to display current theme info
   static Widget debugThemeWidget(BuildContext context) {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {

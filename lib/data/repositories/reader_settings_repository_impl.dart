@@ -7,8 +7,8 @@ import '../../domain/entities/reader_settings_entity.dart';
 import '../../domain/repositories/reader_settings_repository.dart';
 import '../models/reader_settings_model.dart' as model;
 
-/// Implementation of ReaderSettingsEntityRepository using SharedPreferences
-/// with comprehensive error handling and edge case management
+// Implementation of ReaderSettingsEntityRepository using SharedPreferences
+// with comprehensive error handling and edge case management
 class ReaderSettingsEntityRepositoryImpl
     implements ReaderSettingsEntityRepository {
   const ReaderSettingsEntityRepositoryImpl(this._prefs);
@@ -30,7 +30,7 @@ class ReaderSettingsEntityRepositoryImpl
   // Concurrent access protection
   static final Map<String, Completer<void>> _operationLocks = {};
 
-  /// Log error with consistent formatting and context
+  // Log error with consistent formatting and context
   void _logError(String operation, dynamic error, [StackTrace? stackTrace]) {
     developer.log(
       'ReaderSettingsEntityRepository.$operation failed: $error',
@@ -41,7 +41,7 @@ class ReaderSettingsEntityRepositoryImpl
     );
   }
 
-  /// Log warning with consistent formatting
+  // Log warning with consistent formatting
   void _logWarning(String operation, String message) {
     developer.log(
       'ReaderSettingsEntityRepository.$operation warning: $message',
@@ -50,7 +50,7 @@ class ReaderSettingsEntityRepositoryImpl
     );
   }
 
-  /// Log info for debugging
+  // Log info for debugging
   void _logInfo(String operation, String message) {
     developer.log(
       'ReaderSettingsEntityRepository.$operation: $message',
@@ -59,7 +59,7 @@ class ReaderSettingsEntityRepositoryImpl
     );
   }
 
-  /// Execute operation with concurrent access protection
+  // Execute operation with concurrent access protection
   Future<T> _withLock<T>(String lockKey, Future<T> Function() operation) async {
     // Check if operation is already in progress
     if (_operationLocks.containsKey(lockKey)) {
@@ -82,7 +82,7 @@ class ReaderSettingsEntityRepositoryImpl
     }
   }
 
-  /// Check if SharedPreferences is available and accessible
+  // Check if SharedPreferences is available and accessible
   Future<bool> _isSharedPreferencesAvailable() async {
     try {
       // Try a simple read operation to test availability
@@ -94,7 +94,7 @@ class ReaderSettingsEntityRepositoryImpl
     }
   }
 
-  /// Detect and handle corrupt data
+  // Detect and handle corrupt data
   Future<bool> _isDataCorrupt() async {
     try {
       // Check if we've previously detected corrupt data
@@ -127,7 +127,7 @@ class ReaderSettingsEntityRepositoryImpl
     }
   }
 
-  /// Mark data as corrupt and clear it
+  // Mark data as corrupt and clear it
   Future<void> _markDataAsCorrupt() async {
     try {
       await _prefs.setBool(_keyCorruptDataFlag, true);
@@ -137,7 +137,7 @@ class ReaderSettingsEntityRepositoryImpl
     }
   }
 
-  /// Retry operation with exponential backoff
+  // Retry operation with exponential backoff
   Future<T> _retryOperation<T>(
     String operationName,
     Future<T> Function() operation,
@@ -411,7 +411,7 @@ class ReaderSettingsEntityRepositoryImpl
     });
   }
 
-  /// Get diagnostic information about the repository state
+  // Get diagnostic information about the repository state
   Future<Map<String, dynamic>> getDiagnosticInfo() async {
     try {
       final isAvailable = await _isSharedPreferencesAvailable();

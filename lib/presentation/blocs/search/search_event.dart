@@ -1,6 +1,6 @@
 part of 'search_bloc.dart';
 
-/// Base class for all search events
+// Base class for all search events
 abstract class SearchEvent extends Equatable {
   const SearchEvent();
 
@@ -8,7 +8,7 @@ abstract class SearchEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to initialize search
+// Event to initialize search
 class SearchInitializeEvent extends SearchEvent {
   const SearchInitializeEvent({required this.sourceId});
 
@@ -18,7 +18,7 @@ class SearchInitializeEvent extends SearchEvent {
   List<Object> get props => [sourceId];
 }
 
-/// Event to perform search with query
+// Event to perform search with query
 class SearchQueryEvent extends SearchEvent {
   const SearchQueryEvent(this.query);
 
@@ -28,7 +28,7 @@ class SearchQueryEvent extends SearchEvent {
   List<Object> get props => [query];
 }
 
-/// Event to perform search with filters
+// Event to perform search with filters
 class SearchWithFiltersEvent extends SearchEvent {
   const SearchWithFiltersEvent(this.filter);
 
@@ -38,7 +38,7 @@ class SearchWithFiltersEvent extends SearchEvent {
   List<Object> get props => [filter];
 }
 
-/// Event to update search filter without triggering API call
+// Event to update search filter without triggering API call
 class SearchUpdateFilterEvent extends SearchEvent {
   const SearchUpdateFilterEvent(this.filter);
 
@@ -48,32 +48,32 @@ class SearchUpdateFilterEvent extends SearchEvent {
   List<Object> get props => [filter];
 }
 
-/// Event to submit search with current filter (triggers API call)
+// Event to submit search with current filter (triggers API call)
 class SearchSubmittedEvent extends SearchEvent {
   const SearchSubmittedEvent();
 }
 
-/// Event to clear search
+// Event to clear search
 class SearchClearEvent extends SearchEvent {
   const SearchClearEvent();
 }
 
-/// Event to load more search results
+// Event to load more search results
 class SearchLoadMoreEvent extends SearchEvent {
   const SearchLoadMoreEvent();
 }
 
-/// Event to refresh search results
+// Event to refresh search results
 class SearchRefreshEvent extends SearchEvent {
   const SearchRefreshEvent();
 }
 
-/// Event to retry search after error
+// Event to retry search after error
 class SearchRetryEvent extends SearchEvent {
   const SearchRetryEvent();
 }
 
-/// Event to get search suggestions
+// Event to get search suggestions
 class SearchGetSuggestionsEvent extends SearchEvent {
   const SearchGetSuggestionsEvent(this.query);
 
@@ -83,7 +83,7 @@ class SearchGetSuggestionsEvent extends SearchEvent {
   List<Object> get props => [query];
 }
 
-/// Event to get tag suggestions
+// Event to get tag suggestions
 class SearchGetTagSuggestionsEvent extends SearchEvent {
   const SearchGetTagSuggestionsEvent(this.query);
 
@@ -93,7 +93,7 @@ class SearchGetTagSuggestionsEvent extends SearchEvent {
   List<Object> get props => [query];
 }
 
-/// Event to add query to search history
+// Event to add query to search history
 class SearchAddToHistoryEvent extends SearchEvent {
   const SearchAddToHistoryEvent(this.query);
 
@@ -103,17 +103,17 @@ class SearchAddToHistoryEvent extends SearchEvent {
   List<Object> get props => [query];
 }
 
-/// Event to load search history
+// Event to load search history
 class SearchLoadHistoryEvent extends SearchEvent {
   const SearchLoadHistoryEvent();
 }
 
-/// Event to clear search history
+// Event to clear search history
 class SearchClearHistoryEvent extends SearchEvent {
   const SearchClearHistoryEvent();
 }
 
-/// Event to remove item from search history
+// Event to remove item from search history
 class SearchRemoveFromHistoryEvent extends SearchEvent {
   const SearchRemoveFromHistoryEvent(this.query);
 
@@ -123,7 +123,7 @@ class SearchRemoveFromHistoryEvent extends SearchEvent {
   List<Object> get props => [query];
 }
 
-/// Event to apply quick filter
+// Event to apply quick filter
 class SearchApplyQuickFilterEvent extends SearchEvent {
   const SearchApplyQuickFilterEvent({
     this.tag,
@@ -141,12 +141,12 @@ class SearchApplyQuickFilterEvent extends SearchEvent {
   List<Object?> get props => [tag, artist, language, category];
 }
 
-/// Event to toggle advanced search mode
+// Event to toggle advanced search mode
 class SearchToggleAdvancedModeEvent extends SearchEvent {
   const SearchToggleAdvancedModeEvent();
 }
 
-/// Event to save search filter as preset
+// Event to save search filter as preset
 class SearchSavePresetEvent extends SearchEvent {
   const SearchSavePresetEvent({
     required this.name,
@@ -160,7 +160,7 @@ class SearchSavePresetEvent extends SearchEvent {
   List<Object> get props => [name, filter];
 }
 
-/// Event to load search preset
+// Event to load search preset
 class SearchLoadPresetEvent extends SearchEvent {
   const SearchLoadPresetEvent(this.presetName);
 
@@ -170,7 +170,7 @@ class SearchLoadPresetEvent extends SearchEvent {
   List<Object> get props => [presetName];
 }
 
-/// Event to delete search preset
+// Event to delete search preset
 class SearchDeletePresetEvent extends SearchEvent {
   const SearchDeletePresetEvent(this.presetName);
 
@@ -180,12 +180,12 @@ class SearchDeletePresetEvent extends SearchEvent {
   List<Object> get props => [presetName];
 }
 
-/// Event to get popular searches
+// Event to get popular searches
 class SearchGetPopularEvent extends SearchEvent {
   const SearchGetPopularEvent();
 }
 
-/// Event to update search sort option
+// Event to update search sort option
 class SearchUpdateSortEvent extends SearchEvent {
   const SearchUpdateSortEvent(this.sortBy);
 

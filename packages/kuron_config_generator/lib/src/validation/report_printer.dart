@@ -6,14 +6,14 @@ import 'dart:io';
 import 'fix_suggestion.dart';
 import 'report_parser.dart';
 
-/// Formats and prints validation reports in various output formats.
+// Formats and prints validation reports in various output formats.
 ///
-/// Supported formats: text (R5.1), json (R5.2), markdown (R5.3).
+// Supported formats: text (R5.1), json (R5.2), markdown (R5.3).
 class ReportPrinter {
-  /// Prints a validation report in the specified [format].
+  // Prints a validation report in the specified [format].
   ///
-  /// [format] must be one of `text`, `json`, `markdown`.
-  /// If [format] is invalid, prints error to stderr and exits with code 64 (R5.5).
+  // [format] must be one of `text`, `json`, `markdown`.
+  // If [format] is invalid, prints error to stderr and exits with code 64 (R5.5).
   static void printReport(
     ParsedReport report,
     List<FixSuggestion> suggestions, {
@@ -36,7 +36,7 @@ class ReportPrinter {
     }
   }
 
-  /// Formats the report as plain text (R5.1).
+  // Formats the report as plain text (R5.1).
   static String formatText(
     ParsedReport report,
     List<FixSuggestion> suggestions, {
@@ -81,7 +81,7 @@ class ReportPrinter {
     return sb.toString();
   }
 
-  /// Formats the report as JSON (R5.2).
+  // Formats the report as JSON (R5.2).
   static String formatJson(
     ParsedReport report,
     List<FixSuggestion> suggestions,
@@ -110,7 +110,7 @@ class ReportPrinter {
     return const JsonEncoder.withIndent('  ').convert(output);
   }
 
-  /// Formats the report as Markdown (R5.3).
+  // Formats the report as Markdown (R5.3).
   static String formatMarkdown(
     ParsedReport report,
     List<FixSuggestion> suggestions, {

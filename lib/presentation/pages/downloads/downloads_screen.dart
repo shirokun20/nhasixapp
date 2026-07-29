@@ -17,7 +17,7 @@ import '../../widgets/widgets.dart';
 import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/permission_request_sheet.dart';
 
-/// Screen for managing downloads with status tracking and progress indicators
+// Screen for managing downloads with status tracking and progress indicators
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
 

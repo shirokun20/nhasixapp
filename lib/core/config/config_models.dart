@@ -23,16 +23,16 @@ class SourceConfig {
   final String? lastUpdated;
   final String? baseUrl;
 
-  /// Whether this source is enabled. Controlled by the remote manifest.
-  /// Defaults to true so bundled configs (which lack this field) remain active.
+  // Whether this source is enabled. Controlled by the remote manifest.
+  // Defaults to true so bundled configs (which lack this field) remain active.
   @JsonKey(defaultValue: true)
   final bool enabled;
 
-  /// Whether this source is under maintenance (temporary unavailability).
+  // Whether this source is under maintenance (temporary unavailability).
   @JsonKey(defaultValue: false)
   final bool maintenance;
 
-  /// Human-readable maintenance message shown to users when [maintenance] is true.
+  // Human-readable maintenance message shown to users when [maintenance] is true.
   final String? maintenanceMessage;
 
   final ApiConfig? api;
@@ -44,9 +44,9 @@ class SourceConfig {
   final Map<String, String>? typeMapping; // Map type code to display name
   final SearchConfig? searchConfig;
 
-  /// Dynamic search form definition (used by scraper-based sources like
-  /// KomikTap). Parsed from the top-level `searchForm` block in the source
-  /// config JSON.
+  // Dynamic search form definition (used by scraper-based sources like
+  // KomikTap). Parsed from the top-level `searchForm` block in the source
+  // config JSON.
   final SearchFormConfig? searchForm;
 
   SourceConfig({
@@ -244,8 +244,8 @@ class ApiConfig {
   final int? timeout;
   final Map<String, dynamic>? endpoints;
 
-  /// Images config can have nested structure (mode, items, proxyPatterns, etc.)
-  /// so it must be `Map<String, dynamic>`, not `Map<String, String>`.
+  // Images config can have nested structure (mode, items, proxyPatterns, etc.)
+  // so it must be `Map<String, dynamic>`, not `Map<String, String>`.
   final Map<String, dynamic>? images;
 
   final Map<String, dynamic>? extensionMapping;
@@ -371,9 +371,9 @@ class FeatureConfig {
   final bool generatePdf;
   final bool offlineMode;
 
-  /// Per-feature maintenance info keyed by feature name (e.g. `"comments"`).
-  /// When a key is present and its `active` flag is `true`, the feature is
-  /// shown as under maintenance instead of being fully hidden.
+  // Per-feature maintenance info keyed by feature name (e.g. `"comments"`).
+  // When a key is present and its `active` flag is `true`, the feature is
+  // shown as under maintenance instead of being fully hidden.
   final Map<String, MaintenanceInfo>? maintenanceFeatures;
 
   FeatureConfig({
@@ -475,9 +475,9 @@ class TagSourceConfig {
   final Map<String, bool>? multiSelectSupport;
   final Map<String, String>? mappings;
 
-  /// If set, this source is an alias/variant of another source and shares its
-  /// tag data. The value is the source ID to inherit tags from.
-  /// Example: `nhentai_test` sets `parentSource: "nhentai"` to reuse nhentai tags.
+  // If set, this source is an alias/variant of another source and shares its
+  // tag data. The value is the source ID to inherit tags from.
+  // Example: `nhentai_test` sets `parentSource: "nhentai"` to reuse nhentai tags.
   final String? parentSource;
 
   TagSourceConfig({
@@ -740,22 +740,22 @@ class AppPrivacy {
 // Manifest Models (remote manifest.json entry point)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Top-level manifest downloaded from the CDN. Describes all available source
-/// configs and their current versions.
+// Top-level manifest downloaded from the CDN. Describes all available source
+// configs and their current versions.
 @JsonSerializable(explicitToJson: true)
 class SourceManifest {
-  /// Bump this when the manifest JSON schema changes incompatibly.
+  // Bump this when the manifest JSON schema changes incompatibly.
   final int schemaVersion;
   final String lastUpdated;
 
-  /// Minimum app version required to use these configs.
+  // Minimum app version required to use these configs.
   final String? minimumAppVersion;
 
-  /// Metadata for the global app-config.json.
+  // Metadata for the global app-config.json.
   final SourceManifestAppEntry? appConfig;
 
-  /// List of installable (non-bundled) source entries available for download.
-  /// Bundled sources like `nhentai` are not included here.
+  // List of installable (non-bundled) source entries available for download.
+  // Bundled sources like `nhentai` are not included here.
   @JsonKey(defaultValue: [])
   final List<SourceManifestEntry> installableSources;
 
@@ -772,12 +772,12 @@ class SourceManifest {
   Map<String, dynamic> toJson() => _$SourceManifestToJson(this);
 }
 
-/// Manifest entry for the global app-config.
+// Manifest entry for the global app-config.
 @JsonSerializable()
 class SourceManifestAppEntry {
   final String version;
 
-  /// Relative URL to the config file (resolved against the CDN base URL).
+  // Relative URL to the config file (resolved against the CDN base URL).
   final String url;
   final String? checksum;
 
@@ -792,35 +792,35 @@ class SourceManifestAppEntry {
   Map<String, dynamic> toJson() => _$SourceManifestAppEntryToJson(this);
 }
 
-/// One source entry inside the manifest.
+// One source entry inside the manifest.
 @JsonSerializable(explicitToJson: true)
 class SourceManifestEntry {
-  /// Unique source identifier (e.g. "nhentai", "mangadex").
+  // Unique source identifier (e.g. "nhentai", "mangadex").
   final String id;
 
-  /// Whether this source is bundled into the APK.
-  /// `true` only for nhentai — it is always available and cannot be uninstalled.
-  /// All other sources are installable: user downloads the config via Settings.
+  // Whether this source is bundled into the APK.
+  // `true` only for nhentai — it is always available and cannot be uninstalled.
+  // All other sources are installable: user downloads the config via Settings.
   @JsonKey(defaultValue: false)
   final bool bundled;
 
-  /// Whether this source should be loaded by the app.
+  // Whether this source should be loaded by the app.
   @JsonKey(defaultValue: true)
   final bool enabled;
 
-  /// Maintenance status for this source (fast gate from manifest level).
+  // Maintenance status for this source (fast gate from manifest level).
   final MaintenanceInfo? maintenance;
 
-  /// Version string — used for cache invalidation against locally stored config.
+  // Version string — used for cache invalidation against locally stored config.
   final String version;
 
-  /// Relative URL to the source config file.
+  // Relative URL to the source config file.
   final String url;
 
-  /// Optional SHA-256 checksum for integrity validation.
+  // Optional SHA-256 checksum for integrity validation.
   final String? checksum;
 
-  /// Metadata used by the Source Manager UI before the full config is downloaded.
+  // Metadata used by the Source Manager UI before the full config is downloaded.
   final SourceManifestMeta? meta;
 
   SourceManifestEntry({
@@ -839,32 +839,32 @@ class SourceManifestEntry {
   Map<String, dynamic> toJson() => _$SourceManifestEntryToJson(this);
 }
 
-/// Display metadata for a source shown in the Source Manager UI.
-/// Available from the manifest before the full per-source config is downloaded.
+// Display metadata for a source shown in the Source Manager UI.
+// Available from the manifest before the full per-source config is downloaded.
 @JsonSerializable()
 class SourceManifestMeta {
   final String displayName;
   final String? description;
 
-  /// For bundled sources (nhentai): local asset path.
-  /// For installable sources: CDN URL.
+  // For bundled sources (nhentai): local asset path.
+  // For installable sources: CDN URL.
   final String? iconUrl;
 
-  /// E.g. "manga", "doujinshi", "all"
+  // E.g. "manga", "doujinshi", "all"
   final String? contentType;
 
-  /// Dominant language of the content, e.g. "id", "en", "all"
+  // Dominant language of the content, e.g. "id", "en", "all"
   final String? language;
 
-  /// Whether the user must log in to use this source.
+  // Whether the user must log in to use this source.
   @JsonKey(defaultValue: false)
   final bool requiresAuth;
 
-  /// Whether this source needs a special adapter (CF bypass, decryption, etc.)
+  // Whether this source needs a special adapter (CF bypass, decryption, etc.)
   @JsonKey(defaultValue: false)
   final bool requiresSpecialAdapter;
 
-  /// Estimated config file size in KB.
+  // Estimated config file size in KB.
   final int? sizeKb;
 
   SourceManifestMeta({
@@ -883,7 +883,7 @@ class SourceManifestMeta {
   Map<String, dynamic> toJson() => _$SourceManifestMetaToJson(this);
 }
 
-/// Maintenance status at the manifest level (fast gate, no full config needed).
+// Maintenance status at the manifest level (fast gate, no full config needed).
 @JsonSerializable()
 class MaintenanceInfo {
   @JsonKey(defaultValue: false)
@@ -908,17 +908,17 @@ class MaintenanceInfo {
 // Dynamic Search Form — used by scraper-based sources (e.g. KomikTap)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Top-level `searchForm` block in a source config JSON.
+// Top-level `searchForm` block in a source config JSON.
 ///
-/// Describes which URL pattern to use for search and what form fields are
-/// available so [DynamicFormSearchUI] can render them generically.
+// Describes which URL pattern to use for search and what form fields are
+// available so [DynamicFormSearchUI] can render them generically.
 @JsonSerializable(explicitToJson: true)
 class SearchFormConfig {
-  /// Key in `scraper.urlPatterns` to use for the search request.
+  // Key in `scraper.urlPatterns` to use for the search request.
   final String urlPattern;
 
-  /// Map of logical field name → field definition.
-  /// Field names are arbitrary (e.g. "query", "status", "order", "genre").
+  // Map of logical field name → field definition.
+  // Field names are arbitrary (e.g. "query", "status", "order", "genre").
   final Map<String, SearchFormFieldConfig> params;
 
   SearchFormConfig({required this.urlPattern, required this.params});
@@ -928,13 +928,13 @@ class SearchFormConfig {
   Map<String, dynamic> toJson() => _$SearchFormConfigToJson(this);
 }
 
-/// A single option entry for [SearchFormFieldConfig.options].
+// A single option entry for [SearchFormFieldConfig.options].
 ///
-/// Supports both plain-string and object-form in JSON:
-/// ```json
-/// "options": ["update"]
-/// "options": [{"name": "Update", "value": "update"}]
-/// ```
+// Supports both plain-string and object-form in JSON:
+// ```json
+// "options": ["update"]
+// "options": [{"name": "Update", "value": "update"}]
+// ```
 @JsonSerializable()
 class SearchFormOptionConfig {
   final String value;
@@ -944,7 +944,7 @@ class SearchFormOptionConfig {
 
   const SearchFormOptionConfig({required this.value, this.name, this.label});
 
-  /// Accepts both `{"value": "...", "name": "..."}` and plain `"..."` strings.
+  // Accepts both `{"value": "...", "name": "..."}` and plain `"..."` strings.
   factory SearchFormOptionConfig.fromJson(dynamic json) {
     if (json is String) {
       return SearchFormOptionConfig(value: json, label: json, name: json);
@@ -954,24 +954,24 @@ class SearchFormOptionConfig {
   Map<String, dynamic> toJson() => _$SearchFormOptionConfigToJson(this);
 }
 
-/// Single field definition inside [SearchFormConfig.params].
+// Single field definition inside [SearchFormConfig.params].
 @JsonSerializable(explicitToJson: true)
 class SearchFormFieldConfig {
-  /// Field type: `"text"`, `"select"`, `"tag"`, or `"page"`.
+  // Field type: `"text"`, `"select"`, `"tag"`, or `"page"`.
   final String type;
 
-  /// The actual HTTP query-parameter name sent to the server (e.g. `"s"`,
-  /// `"status"`, `"order"`, `"genre"`).
+  // The actual HTTP query-parameter name sent to the server (e.g. `"s"`,
+  // `"status"`, `"order"`, `"genre"`).
   final String? queryParam;
 
-  /// Placeholder text (for `text` fields).
+  // Placeholder text (for `text` fields).
   final String? placeholder;
 
-  /// Allowed option values (for `select` fields).
+  // Allowed option values (for `select` fields).
   final List<SearchFormOptionConfig>? options;
 
-  /// Which URL pattern to use when this field drives navigation
-  /// (for `tag`/genre fields, e.g. `"genreSearch"`).
+  // Which URL pattern to use when this field drives navigation
+  // (for `tag`/genre fields, e.g. `"genreSearch"`).
   final String? urlPattern;
 
   SearchFormFieldConfig({

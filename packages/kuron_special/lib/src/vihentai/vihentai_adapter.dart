@@ -1,4 +1,4 @@
-/// ViHentai adapter — handles Livewire auth and packed JS image URL decode.
+// ViHentai adapter — handles Livewire auth and packed JS image URL decode.
 library;
 
 import 'package:cookie_jar/cookie_jar.dart';
@@ -98,7 +98,11 @@ class ViHentaiAdapter implements GenericAdapter {
           if (key == 'laravel_session' || key == 'session') {
             await _cookieJar.saveFromResponse(
               Uri.parse(baseUrl),
-              [Cookie(key, value)..path = '/'..domain = '.vi-hentai.moe'],
+              [
+                Cookie(key, value)
+                  ..path = '/'
+                  ..domain = '.vi-hentai.moe'
+              ],
             );
             _logger.d('$_sourceId: saved $key to shared cookie jar');
           }
@@ -160,7 +164,8 @@ class ViHentaiAdapter implements GenericAdapter {
     try {
       // Use bypass Dio — handles CF via WebViewSessionAdapter. CookieManager
       // on the global Dio reads cf_vihentai jar which now has laravel_session.
-      final response = await _dio.get<String>(url,
+      final response = await _dio.get<String>(
+        url,
         options: Options(responseType: ResponseType.plain),
       );
       final html = response.data ?? '';

@@ -5,7 +5,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 
 import '../../../widgets/widgets.dart';
 
-/// Widget displayed when history is empty
+// Widget displayed when history is empty
 class HistoryEmptyWidget extends StatelessWidget {
   const HistoryEmptyWidget({super.key});
 

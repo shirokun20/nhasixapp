@@ -4,8 +4,8 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
-/// Widget for selecting download range (page X to page Y)
-/// Allows users to download partial content instead of all pages
+// Widget for selecting download range (page X to page Y)
+// Allows users to download partial content instead of all pages
 class DownloadRangeSelector extends StatefulWidget {
   final int totalPages;
   final Function(int startPage, int endPage) onRangeSelected;

@@ -1,7 +1,7 @@
 import '../base_usecase.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for clearing all reading history
+// Use case for clearing all reading history
 class ClearHistoryUseCase extends UseCase<void, NoParams> {
   ClearHistoryUseCase(this._userDataRepository);
 

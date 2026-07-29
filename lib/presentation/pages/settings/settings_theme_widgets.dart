@@ -239,7 +239,7 @@ Widget buildSettingsSheetHint(ThemeData theme, String text) {
   );
 }
 
-/// Build colored dot for source reachability status.
+// Build colored dot for source reachability status.
 Widget buildHealthDot(
   ContentSource source,
   SourceHealthStatus health,

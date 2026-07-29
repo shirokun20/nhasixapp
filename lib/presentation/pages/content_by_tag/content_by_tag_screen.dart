@@ -25,11 +25,11 @@ import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/usecases/content/content_usecases.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 
-/// Screen for browsing content by specific tag
+// Screen for browsing content by specific tag
 ///
-/// URL format: /search?q=[tag-name]
-/// Simple UI: Back button + Title + Filter + Content List + Pagination
-/// No database save, no highlight effects
+// URL format: /search?q=[tag-name]
+// Simple UI: Back button + Title + Filter + Content List + Pagination
+// No database save, no highlight effects
 class ContentByTagScreen extends StatefulWidget {
   const ContentByTagScreen({
     super.key,
@@ -94,7 +94,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     unawaited(_refreshOnlineBlacklist());
   }
 
-  /// Initialize content with tag search
+  // Initialize content with tag search
   Future<void> _initializeContent() async {
     try {
       // Load saved sorting preference
@@ -308,7 +308,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     }
   }
 
-  /// Handle content tap to navigate to detail screen
+  // Handle content tap to navigate to detail screen
   void _onContentTap(Content content) {
     AppRouter.goToContentDetail(
       context,
@@ -317,7 +317,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     );
   }
 
-  /// Handle sorting option change
+  // Handle sorting option change
   Future<void> _onSortingChanged(SortOption newSort) async {
     if (_currentSortOption == newSort) return;
 
@@ -344,7 +344,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     }
   }
 
-  /// Check if sorting should be shown
+  // Check if sorting should be shown
   bool _shouldShowSorting(ContentState state) {
     // Check active source - only Nhentai supports sorting
     final sourceCubit = context.read<SourceCubit>();
@@ -371,7 +371,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
     return false;
   }
 
-  /// Determine if content should be blurred (excluded content)
+  // Determine if content should be blurred (excluded content)
   bool _shouldBlurContent(Content content) {
     if (content.sourceId.toLowerCase() != 'nhentai') {
       return false;

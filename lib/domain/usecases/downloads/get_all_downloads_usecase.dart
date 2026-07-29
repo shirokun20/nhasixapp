@@ -2,7 +2,7 @@ import '../base_usecase.dart';
 import '../../entities/entities.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting all downloads with optional filtering
+// Use case for getting all downloads with optional filtering
 class GetAllDownloadsUseCase
     extends UseCase<List<DownloadStatus>, GetAllDownloadsParams> {
   GetAllDownloadsUseCase(this._userDataRepository);
@@ -39,7 +39,7 @@ class GetAllDownloadsUseCase
   }
 }
 
-/// Parameters for GetAllDownloadsUseCase
+// Parameters for GetAllDownloadsUseCase
 class GetAllDownloadsParams extends UseCaseParams {
   const GetAllDownloadsParams({
     this.state,
@@ -74,12 +74,12 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for all downloads
+  // Create params for all downloads
   factory GetAllDownloadsParams.all({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(limit: limit, offset: offset);
   }
 
-  /// Create params for active downloads only
+  // Create params for active downloads only
   factory GetAllDownloadsParams.active({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.downloading,
@@ -88,7 +88,7 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for queued downloads only
+  // Create params for queued downloads only
   factory GetAllDownloadsParams.queued({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.queued,
@@ -97,7 +97,7 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for completed downloads only
+  // Create params for completed downloads only
   factory GetAllDownloadsParams.completed({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.completed,
@@ -106,7 +106,7 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for failed downloads only
+  // Create params for failed downloads only
   factory GetAllDownloadsParams.failed({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.failed,
@@ -115,7 +115,7 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for paused downloads only
+  // Create params for paused downloads only
   factory GetAllDownloadsParams.paused({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.paused,
@@ -124,7 +124,7 @@ class GetAllDownloadsParams extends UseCaseParams {
     );
   }
 
-  /// Create params for cancelled downloads only
+  // Create params for cancelled downloads only
   factory GetAllDownloadsParams.cancelled({int limit = 20, int offset = 0}) {
     return GetAllDownloadsParams(
       state: DownloadState.cancelled,

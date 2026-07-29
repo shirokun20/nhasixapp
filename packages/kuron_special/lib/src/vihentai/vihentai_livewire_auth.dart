@@ -1,19 +1,19 @@
-/// Livewire password auth solver for ViHentai.
+// Livewire password auth solver for ViHentai.
 ///
-/// ViHentai uses a Laravel Livewire password gate (`enter-secret`) before
-/// serving content. Password is hardcoded in JS: `input.value = 'lothanhchiton'`
-/// Flow:
-/// 1. Detect gate in first response (contains `wire:initial-data` + `enter-secret`)
-/// 2. Extract password from JS, CSRF token, and wire:initial-data JSON
-/// 3. POST syncInput (set password) → POST callMethod (submit)
-/// 4. Preserve session cookies for subsequent requests
+// ViHentai uses a Laravel Livewire password gate (`enter-secret`) before
+// serving content. Password is hardcoded in JS: `input.value = 'lothanhchiton'`
+// Flow:
+// 1. Detect gate in first response (contains `wire:initial-data` + `enter-secret`)
+// 2. Extract password from JS, CSRF token, and wire:initial-data JSON
+// 3. POST syncInput (set password) → POST callMethod (submit)
+// 4. Preserve session cookies for subsequent requests
 library;
 
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
-/// Thrown when password cannot be extracted from response HTML.
+// Thrown when password cannot be extracted from response HTML.
 class ViHentaiPasswordNotFoundException implements Exception {
   final String message;
   final String? htmlSnippet;
@@ -23,7 +23,7 @@ class ViHentaiPasswordNotFoundException implements Exception {
   String toString() => 'ViHentaiPasswordNotFoundException: $message';
 }
 
-/// Extracted Livewire auth data.
+// Extracted Livewire auth data.
 class ViHentaiAuthData {
   final String password;
   final String csrfToken;
@@ -38,17 +38,17 @@ class ViHentaiAuthData {
   });
 }
 
-/// Static utility for Livewire password gate detection and solving.
+// Static utility for Livewire password gate detection and solving.
 class ViHentaiLivewireAuth {
-  /// Check if response contains Livewire password gate.
+  // Check if response contains Livewire password gate.
   static bool needsPassword(String responseBody) {
     return responseBody.contains('enter-secret') &&
         responseBody.contains('wire:initial-data');
   }
 
-  /// Extract auth data from gate HTML page.
+  // Extract auth data from gate HTML page.
   ///
-  /// Throws [ViHentaiPasswordNotFoundException] if password can't be found.
+  // Throws [ViHentaiPasswordNotFoundException] if password can't be found.
   static ViHentaiAuthData extractAuthData(String html) {
     final password = _extractPassword(html);
     if (password == null || password.isEmpty) {
@@ -69,18 +69,18 @@ class ViHentaiLivewireAuth {
     );
   }
 
-  /// Solve Livewire password gate: sync input then submit.
+  // Solve Livewire password gate: sync input then submit.
   ///
-  /// Returns the cookie string (e.g. "laravel_session=abc") from Set-Cookie
-  /// headers on success, empty string on failure.
+  // Returns the cookie string (e.g. "laravel_session=abc") from Set-Cookie
+  // headers on success, empty string on failure.
   static Future<String> solvePassword(
     Dio dio,
     String baseUrl,
     ViHentaiAuthData authData, {
     Map<String, String>? extraHeaders,
   }) async {
-    final initialData = jsonDecode(authData.wireInitialDataJson)
-        as Map<String, dynamic>;
+    final initialData =
+        jsonDecode(authData.wireInitialDataJson) as Map<String, dynamic>;
     final fingerprint = initialData['fingerprint'];
     var serverMemo = initialData['serverMemo'] as Map<String, dynamic>? ?? {};
     final headers = <String, dynamic>{
@@ -145,22 +145,20 @@ class ViHentaiLivewireAuth {
     final setCookies = submitResp.headers.map['set-cookie'];
     if (setCookies == null || setCookies.isEmpty) return '';
 
-    return setCookies
-        .map((raw) => raw.split(';').first.trim())
-        .join('; ');
+    return setCookies.map((raw) => raw.split(';').first.trim()).join('; ');
   }
 
-  /// Extract password from JS pattern `input.value = '...'`.
+  // Extract password from JS pattern `input.value = '...'`.
   static String? _extractPassword(String html) {
     final match = RegExp(r"input\.value\s*=\s*'([^']+)'").firstMatch(html);
     return match?.group(1);
   }
 
-  /// Extract CSRF token from `window.livewire_token = '...'` or meta tag.
+  // Extract CSRF token from `window.livewire_token = '...'` or meta tag.
   static String _extractCsrfToken(String html) {
     // Try window.livewire_token first
-    final jsMatch = RegExp(r"window\.livewire_token\s*=\s*'([^']+)'")
-        .firstMatch(html);
+    final jsMatch =
+        RegExp(r"window\.livewire_token\s*=\s*'([^']+)'").firstMatch(html);
     if (jsMatch != null) return jsMatch.group(1)!;
 
     // Fallback: meta action_token
@@ -180,7 +178,7 @@ class ViHentaiLivewireAuth {
     return '';
   }
 
-  /// Extract wire:id and wire:initial-data JSON from HTML.
+  // Extract wire:id and wire:initial-data JSON from HTML.
   static (String, String) _extractWireInitialData(String html) {
     final match = RegExp(
       r'wire:id="([^"]+)"[^>]*wire:initial-data="([^"]+)"',
@@ -203,7 +201,7 @@ class ViHentaiLivewireAuth {
     return ('', '');
   }
 
-  /// Decode HTML-entity-encoded wire:initial-data JSON.
+  // Decode HTML-entity-encoded wire:initial-data JSON.
   static String _decodeWireJson(String raw) {
     return raw
         .replaceAll('&quot;', '"')
@@ -214,7 +212,7 @@ class ViHentaiLivewireAuth {
         .replaceAll('&apos;', "'");
   }
 
-  /// Deep merge `source` into `target` for keys that exist in either.
+  // Deep merge `source` into `target` for keys that exist in either.
   static Map<String, dynamic> _deepMerge(
     Map<String, dynamic> target,
     Map<String, dynamic> source,

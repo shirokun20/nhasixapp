@@ -2,14 +2,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'notification_constants.dart';
 
-/// Builder class for creating NotificationDetails with common configurations
+// Builder class for creating NotificationDetails with common configurations
 ///
-/// This reduces duplication in NotificationService by providing factory methods
-/// for common notification types.
+// This reduces duplication in NotificationService by providing factory methods
+// for common notification types.
 class NotificationDetailsBuilder {
   NotificationDetailsBuilder._();
 
-  /// Build details for progress notifications (downloads, PDF conversion)
+  // Build details for progress notifications (downloads, PDF conversion)
   static NotificationDetails progress({
     required int progress,
     int maxProgress = 100,
@@ -41,7 +41,7 @@ class NotificationDetailsBuilder {
     );
   }
 
-  /// Build details for success notifications (completed downloads, PDF ready)
+  // Build details for success notifications (completed downloads, PDF ready)
   static NotificationDetails success({
     String? summaryText,
     String? bigText,
@@ -70,7 +70,7 @@ class NotificationDetailsBuilder {
     );
   }
 
-  /// Build details for error notifications
+  // Build details for error notifications
   static NotificationDetails error({
     String? summaryText,
     String? bigText,
@@ -99,7 +99,7 @@ class NotificationDetailsBuilder {
     );
   }
 
-  /// Build details for paused notifications
+  // Build details for paused notifications
   static NotificationDetails paused({
     required int progress,
     List<AndroidNotificationAction>? actions,
@@ -126,7 +126,7 @@ class NotificationDetailsBuilder {
     );
   }
 
-  /// Common action buttons for downloads
+  // Common action buttons for downloads
   static List<AndroidNotificationAction> downloadInProgressActions() {
     return const [
       AndroidNotificationAction(
@@ -142,7 +142,7 @@ class NotificationDetailsBuilder {
     ];
   }
 
-  /// Common action buttons for paused downloads
+  // Common action buttons for paused downloads
   static List<AndroidNotificationAction> downloadPausedActions() {
     return const [
       AndroidNotificationAction(
@@ -158,7 +158,7 @@ class NotificationDetailsBuilder {
     ];
   }
 
-  /// Common action buttons for completed downloads
+  // Common action buttons for completed downloads
   static List<AndroidNotificationAction> downloadCompletedActions() {
     return const [
       AndroidNotificationAction(
@@ -169,7 +169,7 @@ class NotificationDetailsBuilder {
     ];
   }
 
-  /// Common action buttons for failed downloads
+  // Common action buttons for failed downloads
   static List<AndroidNotificationAction> downloadErrorActions() {
     return const [
       AndroidNotificationAction(
@@ -180,7 +180,7 @@ class NotificationDetailsBuilder {
     ];
   }
 
-  /// Common action buttons for completed PDF
+  // Common action buttons for completed PDF
   static List<AndroidNotificationAction> pdfCompletedActions() {
     return const [
       AndroidNotificationAction(
@@ -196,7 +196,7 @@ class NotificationDetailsBuilder {
     ];
   }
 
-  /// Common action buttons for failed PDF conversion
+  // Common action buttons for failed PDF conversion
   static List<AndroidNotificationAction> pdfErrorActions() {
     return const [
       AndroidNotificationAction(

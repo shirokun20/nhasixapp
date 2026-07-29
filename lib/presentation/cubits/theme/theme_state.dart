@@ -1,6 +1,6 @@
 part of 'theme_cubit.dart';
 
-/// State for theme management
+// State for theme management
 class ThemeState {
   const ThemeState({
     required this.themeData,
@@ -14,7 +14,7 @@ class ThemeState {
   final String currentTheme;
   final DateTime lastUpdated;
 
-  /// Initial state with default dark theme
+  // Initial state with default dark theme
   factory ThemeState.initial() {
     return ThemeState(
       themeData: _createDefaultDarkTheme(),
@@ -24,7 +24,7 @@ class ThemeState {
     );
   }
 
-  /// Create default dark theme data
+  // Create default dark theme data
   static ThemeData _createDefaultDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
@@ -63,7 +63,7 @@ class ThemeState {
     );
   }
 
-  /// Copy with new values
+  // Copy with new values
   ThemeState copyWith({
     ThemeData? themeData,
     ThemeMode? themeMode,

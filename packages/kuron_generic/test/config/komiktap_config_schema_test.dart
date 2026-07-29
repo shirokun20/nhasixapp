@@ -1,17 +1,17 @@
-/// Schema validation tests for komiktap-config.json and nhentai-config.json.
+// Schema validation tests for komiktap-config.json and nhentai-config.json.
 ///
-/// These tests load the actual JSON config files from disk and validate that:
-///   1. All required top-level keys are present with correct types.
-///   2. Every list URL pattern has the new `list.{container, fields}` schema.
-///   3. `fields` maps use the canonical `{selector, ...}` field definition format.
-///   4. Detail selectors and chapter selectors are well-formed.
-///   5. Reader config has the required sub-structure.
-///   6. `configUrl` is present (so self-refresh works).
-///   7. `searchForm` structure is valid.
-///   8. `inherits` references point to existing patterns.
+// These tests load the actual JSON config files from disk and validate that:
+//   1. All required top-level keys are present with correct types.
+//   2. Every list URL pattern has the new `list.{container, fields}` schema.
+//   3. `fields` maps use the canonical `{selector, ...}` field definition format.
+//   4. Detail selectors and chapter selectors are well-formed.
+//   5. Reader config has the required sub-structure.
+//   6. `configUrl` is present (so self-refresh works).
+//   7. `searchForm` structure is valid.
+//   8. `inherits` references point to existing patterns.
 ///
-/// Run with:
-///   dart test packages/kuron_generic/test/config/komiktap_config_schema_test.dart
+// Run with:
+//   dart test packages/kuron_generic/test/config/komiktap_config_schema_test.dart
 library;
 
 import 'dart:convert';
@@ -19,9 +19,9 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-/// Resolve config path with explicit source policy:
-/// - installable sources -> app/config/
-/// - bundled defaults (nhentai) -> assets/configs/
+// Resolve config path with explicit source policy:
+// - installable sources -> app/config/
+// - bundled defaults (nhentai) -> assets/configs/
 String _resolveConfigPath(String filename) {
   final bool isBundledNhentai = filename == 'nhentai-config.json';
   final candidates = isBundledNhentai
@@ -53,13 +53,13 @@ Map<String, dynamic> _loadJson(String filename) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// Assert that [map] has a non-null value at [key].
+// Assert that [map] has a non-null value at [key].
 void _hasKey(Map<String, dynamic> map, String key, String context) {
   expect(map.containsKey(key), isTrue,
       reason: '$context: missing key "$key". Keys present: ${map.keys}');
 }
 
-/// Assert [map][key] is a [Map<String,dynamic>].
+// Assert [map][key] is a [Map<String,dynamic>].
 Map<String, dynamic> _asMap(Map<String, dynamic> map, String key, String ctx) {
   _hasKey(map, key, ctx);
   expect(map[key], isA<Map>(),
@@ -68,7 +68,7 @@ Map<String, dynamic> _asMap(Map<String, dynamic> map, String key, String ctx) {
   return (map[key] as Map).cast<String, dynamic>();
 }
 
-/// Assert [map][key] is a non-empty, non-blank [String].
+// Assert [map][key] is a non-empty, non-blank [String].
 void _asString(Map<String, dynamic> map, String key, String ctx) {
   _hasKey(map, key, ctx);
   expect(map[key], isA<String>(), reason: '$ctx: "$key" should be a String');
@@ -76,8 +76,8 @@ void _asString(Map<String, dynamic> map, String key, String ctx) {
       reason: '$ctx: "$key" is present but empty');
 }
 
-/// Validate a single field definition value: either a String shorthand or
-/// a Map with at least a "selector" key.
+// Validate a single field definition value: either a String shorthand or
+// a Map with at least a "selector" key.
 void _validateFieldDef(dynamic def, String ctx) {
   if (def is String) {
     expect(def.trim(), isNotEmpty, reason: '$ctx: field def String is empty');
@@ -88,7 +88,7 @@ void _validateFieldDef(dynamic def, String ctx) {
   _asString(m, 'selector', '$ctx fieldDef');
 }
 
-/// Validate the `list` config block in a URL pattern.
+// Validate the `list` config block in a URL pattern.
 void _validateListBlock(Map<String, dynamic> listConfig, String ctx) {
   _asString(listConfig, 'container', '$ctx.list');
 

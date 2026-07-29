@@ -52,18 +52,18 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   final Function(int pageNumber, Size imageSize)? onImageLoaded;
 
-  /// If set, double-tap calls this instead of the built-in zoom animation.
+  // If set, double-tap calls this instead of the built-in zoom animation.
   final VoidCallback? onDoubleTapGesture;
 
-  /// Called once (per content ID) when this page is identified as a heavy
-  /// animated WebP (≥ 2 MB) while in continuous-scroll mode.
+  // Called once (per content ID) when this page is identified as a heavy
+  // animated WebP (≥ 2 MB) while in continuous-scroll mode.
   final VoidCallback? onHeavyImageDetected;
 
-  /// Notifier that emits the currently visible page number.
-  /// Forwarded to [AnimatedWebPView] to auto-pause off-screen animations.
+  // Notifier that emits the currently visible page number.
+  // Forwarded to [AnimatedWebPView] to auto-pause off-screen animations.
   final ValueNotifier<int>? visiblePageNotifier;
 
-  /// Whether the image should be forced to grayscale (Note theme).
+  // Whether the image should be forced to grayscale (Note theme).
   final bool grayscale;
 
   @override
@@ -252,7 +252,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   static const int _headerBatchThreshold = 10;
   static Future<Map<String, FileHeaderResult>>? _headerBatchFuture;
 
-  /// Enqueue a file path for header inspection.
+  // Enqueue a file path for header inspection.
   static Future<FileHeaderResult> _enqueueHeaderInspect(String path) async {
     if (_pendingHeaderPaths.isEmpty && _headerBatchFuture == null) {
       return inspectFileHeader(path);
@@ -287,8 +287,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     });
   }
 
-  /// Files ≥ 10 MB get a more aggressive native target width because the
-  /// offline reader otherwise pays twice: thumbnail prep + animated playback.
+  // Files ≥ 10 MB get a more aggressive native target width because the
+  // offline reader otherwise pays twice: thumbnail prep + animated playback.
   static const int _ultraHeavyAnimatedImageThresholdBytes =
       10 * 1024 * 1024; // 10 MB
   static const int _maxNativeAvifHeight = 4096;
@@ -304,12 +304,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   bool _isHeavyImage = false;
 
-  /// Whether this image was positively identified as animated WebP bytes.
+  // Whether this image was positively identified as animated WebP bytes.
   bool _isConfirmedAnimatedWebP = false;
 
   String? _cachedFilePath;
 
-  /// Image dimensions parsed from the file header (e.g., `ispe` box for AVIF).
+  // Image dimensions parsed from the file header (e.g., `ispe` box for AVIF).
   Size? _nativeImageSize;
 
   int _ehentaiResolveRetries = 0;
@@ -318,13 +318,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   bool _isOpeningSourcePage = false;
   bool _shouldBypassLocalDecode = false;
 
-  /// Whether the one-shot AVIF-decode-failure async re-check has already run.
-  /// Prevents an infinite loop: on the second decode failure for the same
-  /// widget instance we give up and show the error widget instead of retrying.
+  // Whether the one-shot AVIF-decode-failure async re-check has already run.
+  // Prevents an infinite loop: on the second decode failure for the same
+  // widget instance we give up and show the error widget instead of retrying.
   bool _avifDecodeRetried = false;
 
-  /// Prevents ExtendedImage from attempting to decode an avis sequence before
-  /// native view routing, avoiding "getPixels failed with error invalid input".
+  // Prevents ExtendedImage from attempting to decode an avis sequence before
+  // native view routing, avoiding "getPixels failed with error invalid input".
   bool _awaitingNativeCheck = false;
 
   // Size? _loadedImageSize;
@@ -380,8 +380,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     if (_isLocalFilePath(widget.imageUrl)) {
       final localPath = _normalizeLocalPath(widget.imageUrl);
       _cachedFilePath = localPath;
-      _boundedMapPut(
-          _cachedFilePathByUrl, widget.imageUrl, localPath, _maxCachedFilePathByUrl);
+      _boundedMapPut(_cachedFilePathByUrl, widget.imageUrl, localPath,
+          _maxCachedFilePathByUrl);
       final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
           _knownBrokenLocalAvifPaths.contains(localPath);
       _shouldBypassLocalDecode =
@@ -412,8 +412,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     _prepareMangaFireImageFuture();
   }
 
-  /// Async disk-cache check: if a cached .webp file ≥ threshold exists,
-  /// seed the static maps and rebuild to route straight to native.
+  // Async disk-cache check: if a cached .webp file ≥ threshold exists,
+  // seed the static maps and rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
     getCachedImageFile(widget.imageUrl).then((file) async {
       if (file == null) return;
@@ -555,9 +555,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Pre-check for offline/local files so heavy animated pages can route
-  /// directly to native view on first build. When a tall avis AVIF file is
-  /// detected, the file is converted in-place to WebP and metadata is updated.
+  // Pre-check for offline/local files so heavy animated pages can route
+  // directly to native view on first build. When a tall avis AVIF file is
+  // detected, the file is converted in-place to WebP and metadata is updated.
   Future<void> _preCheckLocalFileForHeavy(String localPath) async {
     if (!AnimatedWebPView.isAvailable) {
       return;
@@ -787,7 +787,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Fire [widget.onHeavyImageDetected] at most once per content ID.
+  // Fire [widget.onHeavyImageDetected] at most once per content ID.
   void _maybeNotifyHeavyImageDetected() {
     if (!ExtendedImageReaderWidget.shouldNotifyHeavyImageDetectedForTesting(
       readingMode: widget.readingMode,
@@ -797,16 +797,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     )) {
       return;
     }
-    _boundedSetAdd(
-        _notifiedHeavyContentIds, widget.contentId, _maxNotifiedHeavyContentIds);
+    _boundedSetAdd(_notifiedHeavyContentIds, widget.contentId,
+        _maxNotifiedHeavyContentIds);
     // postFrameCallback so we never call this during a build/layout phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.onHeavyImageDetected?.call();
     });
   }
 
-  /// Pre-seed the static set WITHOUT setState so an in-flight ExtendedImage
-  /// download is never interrupted mid-way.
+  // Pre-seed the static set WITHOUT setState so an in-flight ExtendedImage
+  // download is never interrupted mid-way.
   void _preSeedHeavyImageUrl() {
     _boundedSetAdd(_heavyImageUrls, widget.imageUrl, _maxHeavyImageUrls);
   }
@@ -928,8 +928,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       if (_isLocalFilePath(widget.imageUrl)) {
         final localPath = _normalizeLocalPath(widget.imageUrl);
         _cachedFilePath = localPath;
-        _boundedMapPut(
-            _cachedFilePathByUrl, widget.imageUrl, localPath, _maxCachedFilePathByUrl);
+        _boundedMapPut(_cachedFilePathByUrl, widget.imageUrl, localPath,
+            _maxCachedFilePathByUrl);
         final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
             _knownBrokenLocalAvifPaths.contains(localPath);
         _shouldBypassLocalDecode =
@@ -991,7 +991,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     super.dispose();
   }
 
-  /// Adaptive BoxFit — uses fitWidth for all modes so the image always fills width.
+  // Adaptive BoxFit — uses fitWidth for all modes so the image always fills width.
   BoxFit _getAdaptiveBoxFit() {
     // Use fitWidth for all modes so the image always fills the screen width.
     // This ensures:
@@ -1497,8 +1497,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Wraps [AnimatedWebPView] in [RepaintBoundary] so native animation
-  /// layers do not invalidate the surrounding Flutter tree.
+  // Wraps [AnimatedWebPView] in [RepaintBoundary] so native animation
+  // layers do not invalidate the surrounding Flutter tree.
   Widget _buildNativeAnimatedWebP(
     String url,
     Map<String, String>? headers, {
@@ -1621,8 +1621,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     required bool confirmedAnimatedWebP,
   }) {
     _boundedSetAdd(_heavyImageUrls, cacheKey, _maxHeavyImageUrls);
-    _boundedMapPut(
-        _cachedFilePathByUrl, cacheKey, cachedFilePath, _maxCachedFilePathByUrl);
+    _boundedMapPut(_cachedFilePathByUrl, cacheKey, cachedFilePath,
+        _maxCachedFilePathByUrl);
     if (confirmedAnimatedWebP) {
       _boundedSetAdd(
           _confirmedAnimatedWebPUrls, cacheKey, _maxConfirmedAnimatedWebPUrls);
@@ -1692,8 +1692,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Delegate to [inspectFileHeader] — parses format, width, height from header.
-  /// Width/height from `ispe` box for AVIF; null for WebP.
+  // Delegate to [inspectFileHeader] — parses format, width, height from header.
+  // Width/height from `ispe` box for AVIF; null for WebP.
   static ({String? format, int? width, int? height})
       _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
     return inspectFileHeader(file.path);
@@ -1791,7 +1791,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         .round();
   }
 
-  /// Viewport-relative decode width with caps for very large offline animated WebP.
+  // Viewport-relative decode width with caps for very large offline animated WebP.
   int _nativeDecodeWidth(BuildContext context) {
     final mq = MediaQuery.of(context);
     return ExtendedImageReaderWidget.resolveNativeAnimatedDecodeWidthForTesting(
@@ -2030,7 +2030,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  /// Card for a page skipped during download, with repair/redownload buttons.
+  // Card for a page skipped during download, with repair/redownload buttons.
   Widget _buildFailedPagePlaceholderWidget(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
@@ -2167,7 +2167,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Loading indicator with download progress.
+  // Loading indicator with download progress.
   Widget _buildLoadingIndicator(BuildContext context,
       {ExtendedImageState? state,
       int? loadedBytesOverride,
@@ -2290,7 +2290,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Error widget with logo and retry option
+  // Error widget with logo and retry option
   Widget _buildErrorWidget(
     BuildContext context, {
     ExtendedImageState? state,
@@ -2599,9 +2599,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Completed image with zoom indicator.
-  /// Animated images wrapped in [RepaintBoundary] so each animation tick
-  /// re-rasterizes only its own composited layer, not siblings.
+  // Completed image with zoom indicator.
+  // Animated images wrapped in [RepaintBoundary] so each animation tick
+  // re-rasterizes only its own composited layer, not siblings.
   Widget _buildCompletedImage(
     BuildContext context,
     ExtendedImageState state, {

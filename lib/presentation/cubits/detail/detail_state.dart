@@ -1,11 +1,11 @@
 part of 'detail_cubit.dart';
 
-/// Base state for DetailCubit
+// Base state for DetailCubit
 abstract class DetailState extends BaseCubitState {
   const DetailState();
 }
 
-/// Initial state before loading content
+// Initial state before loading content
 class DetailInitial extends DetailState {
   const DetailInitial();
 
@@ -13,7 +13,7 @@ class DetailInitial extends DetailState {
   List<Object?> get props => [];
 }
 
-/// State when loading content detail
+// State when loading content detail
 class DetailLoading extends DetailState {
   const DetailLoading();
 
@@ -21,7 +21,7 @@ class DetailLoading extends DetailState {
   List<Object?> get props => [];
 }
 
-/// State when content detail is loaded successfully
+// State when content detail is loaded successfully
 class DetailLoaded extends DetailState {
   const DetailLoaded({
     required this.content,
@@ -58,7 +58,7 @@ class DetailLoaded extends DetailState {
         comments,
       ];
 
-  /// Create a copy with updated properties
+  // Create a copy with updated properties
   DetailLoaded copyWith({
     Content? content,
     bool? isFavorited,
@@ -83,16 +83,16 @@ class DetailLoaded extends DetailState {
     );
   }
 
-  /// Check if content can be read
+  // Check if content can be read
   bool get canRead => content.imageUrls.isNotEmpty;
 
-  /// Check if content has tags
+  // Check if content has tags
   bool get hasTags => content.tags.isNotEmpty;
 
-  /// Get formatted page count
+  // Get formatted page count
   String get formattedPageCount => '${content.pageCount} pages';
 
-  /// Get formatted upload date
+  // Get formatted upload date
   String get formattedUploadDate {
     final now = DateTime.now();
     final difference = now.difference(content.uploadDate);
@@ -112,30 +112,30 @@ class DetailLoaded extends DetailState {
     }
   }
 
-  /// Get tags by type
+  // Get tags by type
   List<Tag> getTagsByType(String type) {
     return content.tags.where((tag) => tag.type == type).toList();
   }
 
-  /// Get artists as tags
+  // Get artists as tags
   List<Tag> get artistTags => getTagsByType('artist');
 
-  /// Get character tags
+  // Get character tags
   List<Tag> get characterTags => getTagsByType('character');
 
-  /// Get parody tags
+  // Get parody tags
   List<Tag> get parodyTags => getTagsByType('parody');
 
-  /// Get group tags
+  // Get group tags
   List<Tag> get groupTags => getTagsByType('group');
 
-  /// Get language tags
+  // Get language tags
   List<Tag> get languageTags => getTagsByType('language');
 
-  /// Get category tags
+  // Get category tags
   List<Tag> get categoryTags => getTagsByType('category');
 
-  /// Get regular tags (excluding special types)
+  // Get regular tags (excluding special types)
   List<Tag> get regularTags {
     const specialTypes = {
       'artist',
@@ -151,7 +151,7 @@ class DetailLoaded extends DetailState {
   }
 }
 
-/// State when there's an error loading content detail
+// State when there's an error loading content detail
 class DetailError extends DetailState {
   const DetailError({
     required this.message,
@@ -170,7 +170,7 @@ class DetailError extends DetailState {
   @override
   List<Object?> get props => [message, errorType, canRetry, contentId, error];
 
-  /// Get user-friendly error message
+  // Get user-friendly error message
   String get userFriendlyMessage {
     switch (errorType) {
       case 'network':
@@ -186,7 +186,7 @@ class DetailError extends DetailState {
     }
   }
 
-  /// Get error icon based on type
+  // Get error icon based on type
   String get errorIcon {
     switch (errorType) {
       case 'network':
@@ -203,7 +203,7 @@ class DetailError extends DetailState {
   }
 }
 
-/// State when opening a chapter (loading images)
+// State when opening a chapter (loading images)
 class DetailOpeningChapter extends DetailLoaded {
   const DetailOpeningChapter({
     required super.content,
@@ -213,11 +213,10 @@ class DetailOpeningChapter extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
-
   });
 }
 
-/// State when chapter is ready to read
+// State when chapter is ready to read
 class DetailReaderReady extends DetailLoaded {
   const DetailReaderReady({
     required this.chapterContent,
@@ -228,7 +227,6 @@ class DetailReaderReady extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
-
     this.chapterData,
     this.currentChapter,
   });
@@ -242,7 +240,7 @@ class DetailReaderReady extends DetailLoaded {
       [...super.props, chapterContent, chapterData, currentChapter];
 }
 
-/// State when login is required for an action
+// State when login is required for an action
 class DetailNeedsLogin extends DetailState {
   const DetailNeedsLogin();
 
@@ -250,7 +248,7 @@ class DetailNeedsLogin extends DetailState {
   List<Object?> get props => [];
 }
 
-/// State when an action fails but content is still loaded
+// State when an action fails but content is still loaded
 class DetailActionFailure extends DetailLoaded {
   const DetailActionFailure({
     required this.message,
@@ -261,7 +259,6 @@ class DetailActionFailure extends DetailLoaded {
     super.chapterHistory,
     super.relatedContent,
     super.comments,
-
     this.needsLogin = false,
     this.error,
   });

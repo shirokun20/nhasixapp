@@ -14,7 +14,7 @@ class NativeDownloadService {
 
   Stream<Map<String, dynamic>>? _progressStream;
 
-  /// Start download via native layer
+  // Start download via native layer
   Future<String> startDownload({
     required String contentId,
     required String sourceId,
@@ -67,11 +67,11 @@ class NativeDownloadService {
     }
   }
 
-  /// Start download using the canonical v2 [NativeDownloadPayload].
+  // Start download using the canonical v2 [NativeDownloadPayload].
   ///
-  /// Produces a v2 channel map that includes per-page headers in addition to
-  /// the legacy `imageUrls` field for backward compatibility with older native
-  /// workers.
+  // Produces a v2 channel map that includes per-page headers in addition to
+  // the legacy `imageUrls` field for backward compatibility with older native
+  // workers.
   Future<String> startDownloadV2(NativeDownloadPayload payload) async {
     try {
       final workId = await _channel.invokeMethod<String>(
@@ -114,7 +114,7 @@ class NativeDownloadService {
     }
   }
 
-  /// Listen to download progress
+  // Listen to download progress
   Stream<Map<String, dynamic>> getProgressStream() {
     _progressStream ??= _progressChannel
         .receiveBroadcastStream()
@@ -122,7 +122,7 @@ class NativeDownloadService {
     return _progressStream!;
   }
 
-  /// Get downloaded files for content
+  // Get downloaded files for content
   Future<List<String>> getDownloadedFiles(String contentId) async {
     try {
       final result = await _channel
@@ -135,7 +135,7 @@ class NativeDownloadService {
     }
   }
 
-  /// Get download directory path for content
+  // Get download directory path for content
   Future<String?> getDownloadPath(String contentId) async {
     try {
       return await _channel.invokeMethod<String>('kuronNativeGetDownloadPath', {
@@ -146,7 +146,7 @@ class NativeDownloadService {
     }
   }
 
-  /// Delete downloaded content by content ID
+  // Delete downloaded content by content ID
   Future<void> deleteDownloadedContent(String contentId,
       {String? dirPath}) async {
     try {
@@ -159,7 +159,7 @@ class NativeDownloadService {
     }
   }
 
-  /// Count downloaded files in folder
+  // Count downloaded files in folder
   Future<int> countDownloadedFiles(String contentId) async {
     try {
       final count =
@@ -172,7 +172,7 @@ class NativeDownloadService {
     }
   }
 
-  /// Check if content is downloaded
+  // Check if content is downloaded
   Future<bool> isContentDownloaded(String contentId) async {
     try {
       final count = await countDownloadedFiles(contentId);

@@ -1,67 +1,67 @@
-/// Generic scraper adapter — handles HTML scraping sources.
+// Generic scraper adapter — handles HTML scraping sources.
 ///
-/// All extraction behaviour is driven purely by the source config JSON; the
-/// adapter has no knowledge of any specific source's CSS selectors or field
-/// naming conventions.
+// All extraction behaviour is driven purely by the source config JSON; the
+// adapter has no knowledge of any specific source's CSS selectors or field
+// naming conventions.
 ///
-/// ### Config schema expected by this adapter
+// ### Config schema expected by this adapter
 ///
-/// Each **list URL pattern** (home, search, genreSearch, …) is either a plain
-/// String (URL only) or a Map with at minimum a `"url"` key and a `"list"`
-/// sub-block:
+// Each **list URL pattern** (home, search, genreSearch, …) is either a plain
+// String (URL only) or a Map with at minimum a `"url"` key and a `"list"`
+// sub-block:
 ///
-/// ```json
-/// "home": {
-///   "url": "/",
-///   "list": {
-///     "container": ".utao",
-///     "fields": {
-///       "id":       { "selector": "a.series", "attribute": "href", "transform": "slug" },
-///       "title":    { "selector": ".luf > a > h4" },
-///       "coverUrl": { "selector": "img.ts-post-image", "attribute": "src" }
-///     },
-///     "pagination": { "next": ".hpage a.r", "alt": ".pagination .next.page-numbers" }
-///   }
-/// }
-/// ```
+// ```json
+// "home": {
+//   "url": "/",
+//   "list": {
+//     "container": ".utao",
+//     "fields": {
+//       "id":       { "selector": "a.series", "attribute": "href", "transform": "slug" },
+//       "title":    { "selector": ".luf > a > h4" },
+//       "coverUrl": { "selector": "img.ts-post-image", "attribute": "src" }
+//     },
+//     "pagination": { "next": ".hpage a.r", "alt": ".pagination .next.page-numbers" }
+//   }
+// }
+// ```
 ///
-/// Patterns may declare `"inherits": "home"` to copy the parent pattern's
-/// `"list"` block (then optionally override individual keys locally).
+// Patterns may declare `"inherits": "home"` to copy the parent pattern's
+// `"list"` block (then optionally override individual keys locally).
 ///
-/// The **detail** selectors live in `scraper.selectors.detail`:
+// The **detail** selectors live in `scraper.selectors.detail`:
 ///
-/// ```json
-/// "detail": {
-///   "fields": {
-///     "title":    { "selector": ".entry-title" },
-///     "coverUrl": { "selector": ".thumb img", "attribute": "src" },
-///     "tags":     { "selector": ".seriestugenre a", "multi": true }
-///   },
-///   "chapters": {
-///     "container": "#chapterlist li",
-///     "fields": {
-///       "id":    { "selector": ".chbox a", "attribute": "href", "transform": "slug" },
-///       "title": { "selector": ".chapternum" },
-///       "date":  { "selector": ".chapterdate" }
-///     }
-///   }
-/// }
-/// ```
+// ```json
+// "detail": {
+//   "fields": {
+//     "title":    { "selector": ".entry-title" },
+//     "coverUrl": { "selector": ".thumb img", "attribute": "src" },
+//     "tags":     { "selector": ".seriestugenre a", "multi": true }
+//   },
+//   "chapters": {
+//     "container": "#chapterlist li",
+//     "fields": {
+//       "id":    { "selector": ".chbox a", "attribute": "href", "transform": "slug" },
+//       "title": { "selector": ".chapternum" },
+//       "date":  { "selector": ".chapterdate" }
+//     }
+//   }
+// }
+// ```
 ///
-/// The **reader** config (for chapter image extraction) lives in
-/// `scraper.selectors.reader`:
+// The **reader** config (for chapter image extraction) lives in
+// `scraper.selectors.reader`:
 ///
-/// ```json
-/// "reader": {
-///   "tsReaderRegex": "ts_reader\\.run\\((.*?)\\);",
-///   "container": "#readerarea",
-///   "images":    { "selector": "img", "attribute": "src" },
-///   "nav": { "next": "a.next-chapter", "prev": "a.prev-chapter" }
-/// }
-/// ```
+// ```json
+// "reader": {
+//   "tsReaderRegex": "ts_reader\\.run\\((.*?)\\);",
+//   "container": "#readerarea",
+//   "images":    { "selector": "img", "attribute": "src" },
+//   "nav": { "next": "a.next-chapter", "prev": "a.prev-chapter" }
+// }
+// ```
 ///
-/// ### URL template placeholders
-/// `{page}`, `{query}` (URI-encoded), `{tag}` (first included tag, kebab-case).
+// ### URL template placeholders
+// `{page}`, `{query}` (URI-encoded), `{tag}` (first included tag, kebab-case).
 library;
 
 import 'dart:convert';
@@ -273,11 +273,11 @@ class GenericScraperAdapter implements GenericAdapter {
     );
   }
 
-  /// Handle `raw:` query format produced by [DynamicFormSearchUI].
+  // Handle `raw:` query format produced by [DynamicFormSearchUI].
   ///
-  /// Parses the raw query-param string and builds the final URL by taking the
-  /// base path of the appropriate URL pattern (strip any `?…` template vars)
-  /// and appending all raw params + the page param.
+  // Parses the raw query-param string and builds the final URL by taking the
+  // base path of the appropriate URL pattern (strip any `?…` template vars)
+  // and appending all raw params + the page param.
   Future<AdapterSearchResult> _searchRaw({
     required String rawParams,
     required int page,
@@ -1976,11 +1976,11 @@ class GenericScraperAdapter implements GenericAdapter {
 
   // ── Private: pattern resolution ────────────────────────────────────────────
 
-  /// Resolve a named URL pattern into `(resolvedUrl, listConfig)`.
+  // Resolve a named URL pattern into `(resolvedUrl, listConfig)`.
   ///
-  /// - Plain String → URL only; `listConfig` is `null`.
-  /// - Object with `"list"` key → URL + list config.
-  /// - `"inherits"` borrows parent's `"list"` block; local overrides are merged.
+  // - Plain String → URL only; `listConfig` is `null`.
+  // - Object with `"list"` key → URL + list config.
+  // - `"inherits"` borrows parent's `"list"` block; local overrides are merged.
   (String, Map<String, dynamic>?) _resolvePattern(
     Map<String, dynamic> scraper,
     String patternKey, {
@@ -2247,7 +2247,7 @@ class GenericScraperAdapter implements GenericAdapter {
 
   // ── Private: field extraction ──────────────────────────────────────────────
 
-  /// Extract a fields map from a full [dom.Document] (detail pages).
+  // Extract a fields map from a full [dom.Document] (detail pages).
   Map<String, dynamic> _extractDocumentFields(
     dom.Document doc,
     Map<String, dynamic> fieldsConfig,
@@ -2414,7 +2414,7 @@ class GenericScraperAdapter implements GenericAdapter {
     return result;
   }
 
-  /// Extract a fields map from a single [dom.Element] (list items / chapters).
+  // Extract a fields map from a single [dom.Element] (list items / chapters).
   Map<String, dynamic> _extractElementFields(
     dom.Element el,
     Map<String, dynamic> fieldsConfig,
@@ -2480,7 +2480,7 @@ class GenericScraperAdapter implements GenericAdapter {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  /// URL string from a urlPatterns entry (plain String or `{url:…}` Map).
+  // URL string from a urlPatterns entry (plain String or `{url:…}` Map).
   String _patternUrl(Map<String, dynamic> urlPatternsCfg, String key) {
     final val = urlPatternsCfg[key];
     if (val is String) return val;
@@ -2488,7 +2488,7 @@ class GenericScraperAdapter implements GenericAdapter {
     return '';
   }
 
-  /// Normalise a field definition value to `Map<String, dynamic>`.
+  // Normalise a field definition value to `Map<String, dynamic>`.
   Map<String, dynamic>? _toDefMap(dynamic def) {
     if (def is Map<String, dynamic>) return def;
     if (def is Map) return def.cast<String, dynamic>();
@@ -2496,7 +2496,7 @@ class GenericScraperAdapter implements GenericAdapter {
     return null;
   }
 
-  /// Convert a field definition map to a [FieldSelector].
+  // Convert a field definition map to a [FieldSelector].
   FieldSelector? _fieldDefToSelector(Map<String, dynamic> def) {
     final selector = def['selector'] as String?;
     if (selector == null || selector.isEmpty) return null;
@@ -2525,16 +2525,16 @@ class GenericScraperAdapter implements GenericAdapter {
         uploadDate: DateTime.fromMillisecondsSinceEpoch(0),
       );
 
-  /// Normalize chapterId against template prefix to prevent double-prefix.
+  // Normalize chapterId against template prefix to prevent double-prefix.
   ///
-  /// When a broad regex extracts an ID that already includes a URL path prefix
-  /// (e.g. `/manhwa/queen-bee/side-story-3`), and the template also has that
-  /// prefix (e.g. `/manhwa/{id}`), building the full URL produces
-  /// `/manhwa//manhwa/queen-bee/...`. Strip the template's static prefix from
-  /// the ID so substitution is clean.
+  // When a broad regex extracts an ID that already includes a URL path prefix
+  // (e.g. `/manhwa/queen-bee/side-story-3`), and the template also has that
+  // prefix (e.g. `/manhwa/{id}`), building the full URL produces
+  // `/manhwa//manhwa/queen-bee/...`. Strip the template's static prefix from
+  // the ID so substitution is clean.
   ///
-  ///  simple path-based stripping — works for all current configs.
-  /// Upgrade to template-aware AST parsing if exotic configs collide.
+  //  simple path-based stripping — works for all current configs.
+  // Upgrade to template-aware AST parsing if exotic configs collide.
   String _normalizeChapterIdForTemplate(String chapterId, String template) {
     if (chapterId.isEmpty) return chapterId;
 
@@ -2570,20 +2570,20 @@ class GenericScraperAdapter implements GenericAdapter {
     return stripped;
   }
 
-  /// Extract the last meaningful path slug from a URL.
+  // Extract the last meaningful path slug from a URL.
   ///
-  /// We match the common `/manga/<slug>` and `/<slug>-chapter-<number>`
-  /// shapes before attempting [Uri.parse]. Regex matching tolerates raw
-  /// Unicode path characters such as `〜` and `ー`, which can appear in source
-  /// URLs and may throw inside `Uri.parse` when the path is not already
-  /// percent-encoded.
+  // We match the common `/manga/<slug>` and `/<slug>-chapter-<number>`
+  // shapes before attempting [Uri.parse]. Regex matching tolerates raw
+  // Unicode path characters such as `〜` and `ー`, which can appear in source
+  // URLs and may throw inside `Uri.parse` when the path is not already
+  // percent-encoded.
   ///
-  /// Examples:
-  /// - `https://komiku.org/manga/one-piece/` -> `one-piece`
-  /// - `https://komiku.org/manga/title-%E3%80%9Cspecial%E3%80%9C/` ->
-  ///   `title-〜special〜`
-  /// - `https://komiku.org/nishuume-cheat-〜-chapter-1/` ->
-  ///   `nishuume-cheat-〜-chapter-1`
+  // Examples:
+  // - `https://komiku.org/manga/one-piece/` -> `one-piece`
+  // - `https://komiku.org/manga/title-%E3%80%9Cspecial%E3%80%9C/` ->
+  //   `title-〜special〜`
+  // - `https://komiku.org/nishuume-cheat-〜-chapter-1/` ->
+  //   `nishuume-cheat-〜-chapter-1`
   String _extractSlugFromUrl(String url) {
     if (url.isEmpty) return '';
 
@@ -2614,7 +2614,7 @@ class GenericScraperAdapter implements GenericAdapter {
     return '';
   }
 
-  /// Decode percent-encoded slugs without turning malformed inputs into errors.
+  // Decode percent-encoded slugs without turning malformed inputs into errors.
   String _decodeSlugComponent(String slug) {
     if (!slug.contains('%')) return slug;
     try {
@@ -2624,7 +2624,7 @@ class GenericScraperAdapter implements GenericAdapter {
     }
   }
 
-  /// Decode only valid `%HH` sequences so mixed raw+encoded Unicode survives.
+  // Decode only valid `%HH` sequences so mixed raw+encoded Unicode survives.
   String? _decodePercentEncodedSegments(String slug) {
     bool isHexDigit(int codeUnit) =>
         (codeUnit >= 0x30 && codeUnit <= 0x39) ||
@@ -2668,8 +2668,8 @@ class GenericScraperAdapter implements GenericAdapter {
     return output.toString();
   }
 
-  /// Apply a regex pattern to extract a substring.
-  /// Returns the first capture group if it exists, else the entire match (group 0).
+  // Apply a regex pattern to extract a substring.
+  // Returns the first capture group if it exists, else the entire match (group 0).
   String? _applyRegex(String input, String pattern) {
     try {
       final match = RegExp(pattern).firstMatch(input);
@@ -2963,11 +2963,11 @@ class GenericScraperAdapter implements GenericAdapter {
     }
   }
 
-  /// Extract image URLs from a `chapterData` JS variable pattern.
+  // Extract image URLs from a `chapterData` JS variable pattern.
   ///
-  /// Matches `<script>chapterData = {"data":"<base64>","base":"<cdn>"}</script>`
-  /// where `data` is a base64-encoded JSON array of `{src, w, h}` entries.
-  /// Full CDN URL = `$base/$src`.
+  // Matches `<script>chapterData = {"data":"<base64>","base":"<cdn>"}</script>`
+  // where `data` is a base64-encoded JSON array of `{src, w, h}` entries.
+  // Full CDN URL = `$base/$src`.
   List<String> _extractChapterDataScriptImageUrls(
     String htmlContent, {
     required Map<String, dynamic> readerConfig,
@@ -3213,9 +3213,9 @@ class GenericScraperAdapter implements GenericAdapter {
     return '$cacheKey|page=$page';
   }
 
-  /// Tries to prime cursor pagination for [page] > 1 and returns the cached
-  /// URL. Returns null if cursor pagination doesn't apply or the cache wasn't
-  /// populated.
+  // Tries to prime cursor pagination for [page] > 1 and returns the cached
+  // URL. Returns null if cursor pagination doesn't apply or the cache wasn't
+  // populated.
   //  maxPrimePages — add threshold if sources need deep pagination
   static const _maxPrimePages = 10;
 
@@ -3289,7 +3289,7 @@ class GenericScraperAdapter implements GenericAdapter {
     return (extMatch?.group(1) ?? extMatch?.group(2) ?? 'jpg').toLowerCase();
   }
 
-  /// Build HentaiFox image URLs using per-page extension mapping from `g_th`.
+  // Build HentaiFox image URLs using per-page extension mapping from `g_th`.
   List<String> _buildHentaiFoxImageUrlsFromSample(
     String sampleUrl,
     int pageCount,
@@ -3328,7 +3328,7 @@ class GenericScraperAdapter implements GenericAdapter {
     );
   }
 
-  /// Parse HentaiFox `g_th` map and return image extension by page number.
+  // Parse HentaiFox `g_th` map and return image extension by page number.
   Map<int, String> _extractHentaiFoxExtensionsByPage(String html) {
     if (html.isEmpty) return const {};
 

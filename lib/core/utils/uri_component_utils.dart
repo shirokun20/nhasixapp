@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-/// Utilities for decoding route/query components without crashing on malformed
-/// percent sequences.
+// Utilities for decoding route/query components without crashing on malformed
+// percent sequences.
 class UriComponentUtils {
   const UriComponentUtils._();
 
-  /// This is intentionally tolerant because some route parameters can already
-  /// arrive pre-decoded from GoRouter, which means a literal `%` would make
-  /// [Uri.decodeComponent] throw even though the original content ID is valid.
+  // This is intentionally tolerant because some route parameters can already
+  // arrive pre-decoded from GoRouter, which means a literal `%` would make
+  // [Uri.decodeComponent] throw even though the original content ID is valid.
   static String safeDecode(String value) {
     if (value.isEmpty || !value.contains('%')) {
       return value;

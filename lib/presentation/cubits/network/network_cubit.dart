@@ -5,8 +5,8 @@ import '../base/base_cubit.dart';
 
 part 'network_state.dart';
 
-/// Cubit for tracking network connectivity status
-/// Simple state management for connection monitoring
+// Cubit for tracking network connectivity status
+// Simple state management for connection monitoring
 class NetworkCubit extends BaseCubit<NetworkState> {
   NetworkCubit({
     required Connectivity connectivity,
@@ -21,7 +21,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
   final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
-  /// Initialize connectivity monitoring
+  // Initialize connectivity monitoring
   Future<void> _initializeConnectivity() async {
     try {
       logInfo('Initializing network connectivity monitoring');
@@ -50,7 +50,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     }
   }
 
-  /// Update connection status based on connectivity results
+  // Update connection status based on connectivity results
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     try {
       // Take the first result or the most reliable connection
@@ -76,7 +76,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     }
   }
 
-  /// Prioritize connectivity results (wifi > ethernet > mobile > other > none)
+  // Prioritize connectivity results (wifi > ethernet > mobile > other > none)
   ConnectivityResult _prioritizeConnectivityResult(
       List<ConnectivityResult> results) {
     if (results.isEmpty) return ConnectivityResult.none;
@@ -101,7 +101,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     return results.first;
   }
 
-  /// Get connection type from connectivity result
+  // Get connection type from connectivity result
   NetworkConnectionType _getConnectionType(ConnectivityResult result) {
     switch (result) {
       case ConnectivityResult.wifi:
@@ -115,7 +115,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     }
   }
 
-  /// Manually check connectivity status
+  // Manually check connectivity status
   Future<void> checkConnectivity() async {
     try {
       logInfo('Manually checking connectivity');
@@ -132,16 +132,16 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     }
   }
 
-  /// Retry connectivity check after error
+  // Retry connectivity check after error
   Future<void> retryConnectivity() async {
     logInfo('Retrying connectivity check');
     await checkConnectivity();
   }
 
-  /// Get current connection status
+  // Get current connection status
   bool get isConnected => state is NetworkConnected;
 
-  /// Get current connection type
+  // Get current connection type
   NetworkConnectionType? get connectionType {
     final currentState = state;
     if (currentState is NetworkConnected) {
@@ -150,7 +150,7 @@ class NetworkCubit extends BaseCubit<NetworkState> {
     return null;
   }
 
-  /// Check if connection is suitable for heavy operations (downloads, etc.)
+  // Check if connection is suitable for heavy operations (downloads, etc.)
   bool get isSuitableForHeavyOperations {
     final currentState = state;
     if (currentState is NetworkConnected) {

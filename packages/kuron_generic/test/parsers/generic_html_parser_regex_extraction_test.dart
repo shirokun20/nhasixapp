@@ -1,20 +1,20 @@
-/// Unit tests for [GenericHtmlParser] regex extraction on multi-fields.
+// Unit tests for [GenericHtmlParser] regex extraction on multi-fields.
 ///
-/// This test suite validates that:
-/// 1. extractList() applies regex to each element when multi: true
-/// 2. Tag extraction works correctly with patterns like "tagname (count)"
-/// 3. Single string extraction applies regex correctly
-/// 4. Regex capture groups (group 1) are extracted properly
-/// 5. Elements that don't match regex are filtered out
+// This test suite validates that:
+// 1. extractList() applies regex to each element when multi: true
+// 2. Tag extraction works correctly with patterns like "tagname (count)"
+// 3. Single string extraction applies regex correctly
+// 4. Regex capture groups (group 1) are extracted properly
+// 5. Elements that don't match regex are filtered out
 ///
-/// Example use case (HentaiNexus):
-/// HTML: `<span class="tag"><a>ahegao (123)</a></span>`
-/// Selector: `span.tag a`
-/// Regex: `^([a-z0-9 ]+)\s+\(`
-/// Expected: `["ahegao"]`
+// Example use case (HentaiNexus):
+// HTML: `<span class="tag"><a>ahegao (123)</a></span>`
+// Selector: `span.tag a`
+// Regex: `^([a-z0-9 ]+)\s+\(`
+// Expected: `["ahegao"]`
 ///
-/// Run with:
-///   dart test packages/kuron_generic/test/parsers/generic_html_parser_regex_extraction_test.dart
+// Run with:
+//   dart test packages/kuron_generic/test/parsers/generic_html_parser_regex_extraction_test.dart
 library;
 
 import 'dart:io';

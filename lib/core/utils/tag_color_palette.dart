@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:nhasixapp/core/constants/colors_const.dart';
 
-/// Resolves theme-aware tag colors for UI chips and labels.
+// Resolves theme-aware tag colors for UI chips and labels.
 ///
-/// Light mode uses warm accent tones that fit the app theme.
-/// Dark mode keeps muted, theme-aligned tones for readability.
-/// Unknown tag types are mapped deterministically so they stay distinct.
+// Light mode uses warm accent tones that fit the app theme.
+// Dark mode keeps muted, theme-aligned tones for readability.
+// Unknown tag types are mapped deterministically so they stay distinct.
 class TagColorPalette {
   static const Map<String, Color> _lightColors = <String, Color>{
     'artist': Color(0xFFB8655E),

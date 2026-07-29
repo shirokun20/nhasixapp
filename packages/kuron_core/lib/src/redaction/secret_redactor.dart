@@ -1,22 +1,22 @@
-/// Utilities to redact secrets from header maps, URLs, and JSON payloads
-/// before they are written into a [ValidationReport],
-/// [ValidationDiagnostic], or persisted compatibility log.
+// Utilities to redact secrets from header maps, URLs, and JSON payloads
+// before they are written into a [ValidationReport],
+// [ValidationDiagnostic], or persisted compatibility log.
 ///
-/// All redaction is conservative: when in doubt, redact. Redaction is
-/// length-preserving (replaces value with `***`) so consumers can still
-/// tell that a value was present.
+// All redaction is conservative: when in doubt, redact. Redaction is
+// length-preserving (replaces value with `***`) so consumers can still
+// tell that a value was present.
 ///
-/// This class is intentionally not configurable; the set of sensitive
-/// names is treated as a runtime constant so different reports always
-/// redact the same fields.
+// This class is intentionally not configurable; the set of sensitive
+// names is treated as a runtime constant so different reports always
+// redact the same fields.
 class SecretRedactor {
   SecretRedactor._();
 
-  /// Placeholder used in place of a redacted value.
+  // Placeholder used in place of a redacted value.
   static const String placeholder = '***';
 
-  /// Header names whose values are always redacted. Comparison is case
-  /// insensitive.
+  // Header names whose values are always redacted. Comparison is case
+  // insensitive.
   static const Set<String> _sensitiveHeaderNames = <String>{
     'authorization',
     'proxy-authorization',
@@ -32,8 +32,8 @@ class SecretRedactor {
     'x-refresh-token',
   };
 
-  /// URL query parameter names whose values are always redacted. Comparison
-  /// is case insensitive.
+  // URL query parameter names whose values are always redacted. Comparison
+  // is case insensitive.
   static const Set<String> _sensitiveQueryKeys = <String>{
     'token',
     'access_token',
@@ -58,8 +58,8 @@ class SecretRedactor {
     'xsrf',
   };
 
-  /// JSON keys whose values are always redacted at any depth. Comparison
-  /// is case insensitive.
+  // JSON keys whose values are always redacted at any depth. Comparison
+  // is case insensitive.
   static const Set<String> _sensitiveJsonKeys = <String>{
     'cookie',
     'cookies',
@@ -82,9 +82,9 @@ class SecretRedactor {
     'sig',
   };
 
-  /// Returns a copy of [headers] with sensitive values replaced by
-  /// [placeholder]. Empty values are kept empty (an empty string is not a
-  /// secret).
+  // Returns a copy of [headers] with sensitive values replaced by
+  // [placeholder]. Empty values are kept empty (an empty string is not a
+  // secret).
   static Map<String, String> redactHeaders(Map<String, String> headers) {
     final Map<String, String> out = <String, String>{};
     headers.forEach((String name, String value) {
@@ -101,9 +101,9 @@ class SecretRedactor {
     return out;
   }
 
-  /// Returns a copy of [url] with sensitive query parameter values replaced
-  /// by [placeholder]. Returns the original string unchanged when [url] is
-  /// not a valid URI.
+  // Returns a copy of [url] with sensitive query parameter values replaced
+  // by [placeholder]. Returns the original string unchanged when [url] is
+  // not a valid URI.
   static String redactUrl(String url) {
     if (url.isEmpty) return url;
     final Uri? uri = Uri.tryParse(url);
@@ -121,13 +121,13 @@ class SecretRedactor {
     return uri.replace(queryParameters: redactedParams).toString();
   }
 
-  /// Returns a deep-redacted copy of [data].
+  // Returns a deep-redacted copy of [data].
   ///
-  /// - Map keys matching [_sensitiveJsonKeys] have their values replaced
-  ///   with [placeholder] at any depth.
-  /// - String values that look like URLs are passed through [redactUrl].
-  /// - Nested maps/lists are walked recursively.
-  /// - Non-string scalars are preserved.
+  // - Map keys matching [_sensitiveJsonKeys] have their values replaced
+  //   with [placeholder] at any depth.
+  // - String values that look like URLs are passed through [redactUrl].
+  // - Nested maps/lists are walked recursively.
+  // - Non-string scalars are preserved.
   static Map<String, Object?> redactJson(Map<String, Object?> data) {
     return _redactJsonMap(data);
   }

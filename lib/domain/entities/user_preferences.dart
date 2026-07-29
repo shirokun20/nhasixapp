@@ -35,8 +35,8 @@ class BlacklistedTagMetadata extends Equatable {
   }
 }
 
-/// User preferences entity for app customization
-/// NOTE: Default values are hardcoded to avoid dependency on get_it during initialization
+// User preferences entity for app customization
+// NOTE: Default values are hardcoded to avoid dependency on get_it during initialization
 class UserPreferences extends Equatable {
   const UserPreferences({
     this.theme = 'dark',
@@ -287,33 +287,34 @@ class UserPreferences extends Equatable {
     );
   }
 
-  /// Check if theme is dark
-  bool get isDarkTheme => theme == 'dark' || theme == 'amoled' || theme == 'note_dark';
+  // Check if theme is dark
+  bool get isDarkTheme =>
+      theme == 'dark' || theme == 'amoled' || theme == 'note_dark';
 
-  /// Check if theme is AMOLED
+  // Check if theme is AMOLED
   bool get isAmoledTheme => theme == 'amoled';
 
-  /// Check if theme is light
+  // Check if theme is light
   bool get isLightTheme => theme == 'light';
 
-  /// Get columns for current orientation
+  // Get columns for current orientation
   int getColumnsForOrientation(bool isPortrait) {
     return isPortrait ? columnsPortrait : columnsLandscape;
   }
 
-  /// Check if tag is blacklisted
+  // Check if tag is blacklisted
   bool isTagBlacklisted(String tagName) {
     return blacklistedTags
         .any((tag) => tag.toLowerCase() == tagName.toLowerCase());
   }
 
-  /// Add tag to blacklist
+  // Add tag to blacklist
   UserPreferences addBlacklistedTag(String tagName) {
     if (isTagBlacklisted(tagName)) return this;
     return copyWith(blacklistedTags: [...blacklistedTags, tagName]);
   }
 
-  /// Remove tag from blacklist
+  // Remove tag from blacklist
   UserPreferences removeBlacklistedTag(String tagName) {
     return copyWith(
       blacklistedTags: blacklistedTags
@@ -322,13 +323,13 @@ class UserPreferences extends Equatable {
     );
   }
 
-  /// Add favorite category
+  // Add favorite category
   UserPreferences addFavoriteCategory(String category) {
     if (favoriteCategories.contains(category)) return this;
     return copyWith(favoriteCategories: [...favoriteCategories, category]);
   }
 
-  /// Remove favorite category
+  // Remove favorite category
   UserPreferences removeFavoriteCategory(String category) {
     return copyWith(
       favoriteCategories:
@@ -336,7 +337,7 @@ class UserPreferences extends Equatable {
     );
   }
 
-  /// Get image quality as percentage
+  // Get image quality as percentage
   double get imageQualityPercentage {
     switch (imageQuality.toLowerCase()) {
       case 'low':
@@ -352,13 +353,13 @@ class UserPreferences extends Equatable {
     }
   }
 
-  /// Get retry delay as Duration
+  // Get retry delay as Duration
   Duration get retryDelay => Duration(seconds: retryDelaySeconds);
 
-  /// Get timeout duration as Duration
+  // Get timeout duration as Duration
   Duration get timeoutDuration => Duration(seconds: timeoutDurationSeconds);
 
-  /// Convert to JSON map
+  // Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
       'theme': theme,
@@ -411,7 +412,7 @@ class UserPreferences extends Equatable {
     };
   }
 
-  /// Create from JSON map
+  // Create from JSON map
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     return UserPreferences(
       theme: json['theme'] ?? 'dark',
@@ -476,7 +477,7 @@ class UserPreferences extends Equatable {
     );
   }
 
-  /// Safely parse boolean value from JSON, handling various data types
+  // Safely parse boolean value from JSON, handling various data types
   static bool _safeParseBool(dynamic value, bool defaultValue) {
     if (value == null) return defaultValue;
 
@@ -525,7 +526,7 @@ class UserPreferences extends Equatable {
     return result;
   }
 
-  /// Safely parse integer value from JSON, handling various data types
+  // Safely parse integer value from JSON, handling various data types
   static int _safeParseInt(dynamic value, int defaultValue) {
     if (value == null) return defaultValue;
 
@@ -548,14 +549,14 @@ class UserPreferences extends Equatable {
   }
 }
 
-/// Reading direction options
+// Reading direction options
 enum ReadingDirection {
   leftToRight,
   rightToLeft,
   vertical,
 }
 
-/// Extension for ReadingDirection display names
+// Extension for ReadingDirection display names
 extension ReadingDirectionExtension on ReadingDirection {
   String get displayName {
     switch (this) {
@@ -580,7 +581,7 @@ extension ReadingDirectionExtension on ReadingDirection {
   }
 }
 
-/// Theme options
+// Theme options
 class ThemeOption {
   static const String light = 'light';
   static const String dark = 'dark';
@@ -608,7 +609,7 @@ class ThemeOption {
   }
 }
 
-/// Image quality options
+// Image quality options
 class ImageQuality {
   static const String low = 'low';
   static const String medium = 'medium';

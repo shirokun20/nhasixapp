@@ -1,7 +1,7 @@
 import '../base_usecase.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for getting total history count
+// Use case for getting total history count
 class GetHistoryCountUseCase extends UseCase<int, NoParams> {
   GetHistoryCountUseCase(this._userDataRepository);
 

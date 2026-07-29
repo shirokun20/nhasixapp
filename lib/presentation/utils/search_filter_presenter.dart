@@ -3,7 +3,7 @@ import 'package:nhasixapp/domain/entities/search_filter.dart';
 class SearchFilterPresenter {
   const SearchFilterPresenter._();
 
-  /// Get helpful message based on filter
+  // Get helpful message based on filter
   static String buildHelpfulMessage(SearchFilter filter) {
     if (filter.hasFilters) {
       return 'Try adjusting your search filters or search terms.';
@@ -12,7 +12,7 @@ class SearchFilterPresenter {
     }
   }
 
-  /// Get filter summary for display
+  // Get filter summary for display
   static String buildFilterSummary(SearchFilter filter) {
     final parts = <String>[];
 

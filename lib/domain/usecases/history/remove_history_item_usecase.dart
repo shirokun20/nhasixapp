@@ -1,7 +1,7 @@
 import '../base_usecase.dart';
 import '../../repositories/repositories.dart';
 
-/// Use case for removing specific item from reading history
+// Use case for removing specific item from reading history
 class RemoveHistoryItemUseCase extends UseCase<void, RemoveHistoryItemParams> {
   RemoveHistoryItemUseCase(this._userDataRepository);
 
@@ -25,7 +25,7 @@ class RemoveHistoryItemUseCase extends UseCase<void, RemoveHistoryItemParams> {
   }
 }
 
-/// Parameters for RemoveHistoryItemUseCase
+// Parameters for RemoveHistoryItemUseCase
 class RemoveHistoryItemParams extends UseCaseParams {
   const RemoveHistoryItemParams({
     required this.contentId,
@@ -44,7 +44,7 @@ class RemoveHistoryItemParams extends UseCaseParams {
     );
   }
 
-  /// Create params from content ID
+  // Create params from content ID
   factory RemoveHistoryItemParams.fromContentId(String contentId) {
     return RemoveHistoryItemParams(contentId: contentId);
   }

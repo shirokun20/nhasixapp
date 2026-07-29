@@ -1,8 +1,8 @@
 import 'package:kuron_core/kuron_core.dart';
 
-/// App-specific extension methods for kuron_core Tag entity.
+// App-specific extension methods for kuron_core Tag entity.
 extension TagAppExtensions on Tag {
-  /// Get tag color based on type (for UI display)
+  // Get tag color based on type (for UI display)
   String get colorHex {
     switch (type.toLowerCase()) {
       case 'artist':
@@ -22,7 +22,7 @@ extension TagAppExtensions on Tag {
     }
   }
 
-  /// Get popularity level
+  // Get popularity level
   TagPopularity get popularity {
     if (count > 10000) return TagPopularity.veryHigh;
     if (count > 5000) return TagPopularity.high;
@@ -32,7 +32,7 @@ extension TagAppExtensions on Tag {
   }
 }
 
-/// Tag popularity levels
+// Tag popularity levels
 enum TagPopularity {
   veryLow,
   low,

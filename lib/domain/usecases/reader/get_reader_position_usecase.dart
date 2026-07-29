@@ -2,7 +2,7 @@ import '../../entities/reader_position.dart';
 import '../../repositories/reader_repository.dart';
 import '../base_usecase.dart';
 
-/// Use case for fetching reader position
+// Use case for fetching reader position
 class GetReaderPositionUseCase extends UseCase<ReaderPosition?, String> {
   GetReaderPositionUseCase({required ReaderRepository readerRepository})
       : _readerRepository = readerRepository;

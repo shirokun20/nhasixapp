@@ -3,26 +3,26 @@ import 'package:flutter/services.dart';
 
 import 'kuron_native_platform_interface.dart';
 
-/// An implementation of [KuronNativePlatform] that uses method channels.
+// An implementation of [KuronNativePlatform] that uses method channels.
 class MethodChannelKuronNative extends KuronNativePlatform {
-  /// The method channel used to interact with the native platform.
+  // The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('kuron_native');
 
-  /// Progress callback for PDF conversion
+  // Progress callback for PDF conversion
   Function(int progress, String message)? _onPdfProgress;
 
-  /// Progress callback for ZIP extraction
+  // Progress callback for ZIP extraction
   Function(int processed, int total, int imageCount, String currentFile)?
       _onZipExtractionProgress;
 
-  /// Progress callbacks for native animated-WebP thumbnail preparation.
+  // Progress callbacks for native animated-WebP thumbnail preparation.
   final Map<String, Function(int receivedBytes, int? totalBytes)>
       _onWebPThumbnailProgress =
       <String, Function(int receivedBytes, int? totalBytes)>{};
   static int _nextWebPThumbnailRequestId = 0;
 
-  /// Constructor
+  // Constructor
   MethodChannelKuronNative() {
     methodChannel.setMethodCallHandler(_handleMethodCall);
   }
@@ -365,7 +365,6 @@ class MethodChannelKuronNative extends KuronNativePlatform {
   }) async {
     final result = await methodChannel.invokeMapMethod<String, dynamic>(
       'showCaptchaWebView',
-
       {
         'provider': provider,
         'siteKey': siteKey,
