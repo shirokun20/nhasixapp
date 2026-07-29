@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart';
 
 // ── Native function C signatures ───────────────────────────
 
@@ -92,27 +92,20 @@ class RustBridge {
     try {
       if (Platform.isAndroid) {
         lib = DynamicLibrary.open('libkuron_rust.so');
-        debugPrint('[RustBridge] libkuron_rust.so loaded on Android');
       } else if (Platform.isIOS) {
         lib = DynamicLibrary.process();
-        debugPrint('[RustBridge] using DynamicLibrary.process() on iOS');
       } else {
-        debugPrint(
-            '[RustBridge] unsupported platform: ${Platform.operatingSystem}');
         return null;
       }
     } catch (e) {
-      debugPrint('[RustBridge] FAILED to load native library: $e');
       return null;
     }
 
     try {
       final bridge = RustBridge._(lib);
       bridge._lookupFunctions();
-      debugPrint('[RustBridge] all function symbols resolved OK');
       return bridge;
     } catch (e) {
-      debugPrint('[RustBridge] symbol lookup FAILED: $e');
       return null;
     }
   }
@@ -136,7 +129,6 @@ class RustBridge {
 
   /// Decrypt HentaiNexus content. Returns UTF-8 string, or null.
   String? hentaiNexusDecrypt(Uint8List encrypted, String hostname) {
-    debugPrint('[RustBridge] hentaiNexusDecrypt(${encrypted.length} bytes)');
     final dataPtr = malloc<Uint8>(encrypted.length);
     dataPtr.asTypedList(encrypted.length).setAll(0, encrypted);
 
@@ -148,7 +140,6 @@ class RustBridge {
     malloc.free(dataPtr);
 
     if (ptr == nullptr) {
-      debugPrint('[RustBridge] hentaiNexusDecrypt: Rust returned null');
       malloc.free(outLen);
       return null;
     }
@@ -157,13 +148,11 @@ class RustBridge {
     final result = String.fromCharCodes(ptr.asTypedList(len));
     _freeBuffer(ptr, len);
     malloc.free(outLen);
-    debugPrint('[RustBridge] hentaiNexusDecrypt: $len chars decrypted');
     return result;
   }
 
   /// Unpack ViHentai packed-JS script. Returns decoded string, or null.
   String? vihentaiUnpack(String script) {
-    debugPrint('[RustBridge] vihentaiUnpack(${script.length} chars)');
     final scriptPtr = script.toNativeUtf8();
     final outLen = malloc<Uint32>();
 
@@ -171,7 +160,6 @@ class RustBridge {
     malloc.free(scriptPtr);
 
     if (ptr == nullptr) {
-      debugPrint('[RustBridge] vihentaiUnpack: Rust returned null');
       malloc.free(outLen);
       return null;
     }
@@ -180,15 +168,12 @@ class RustBridge {
     final result = String.fromCharCodes(ptr.asTypedList(len));
     _freeBuffer(ptr, len);
     malloc.free(outLen);
-    debugPrint('[RustBridge] vihentaiUnpack: $len chars decoded');
     return result;
   }
 
   /// Process single image: decode → resize → encode JPEG. Returns JPEG bytes, or null.
   Uint8List? imageProcessSingle(String path,
       {int maxWidth = 1200, int quality = 90}) {
-    debugPrint(
-        '[RustBridge] imageProcessSingle($path, w=$maxWidth, q=$quality)');
     final pathPtr = path.toNativeUtf8();
     final outLen = malloc<Uint32>();
 
@@ -196,7 +181,6 @@ class RustBridge {
     malloc.free(pathPtr);
 
     if (ptr == nullptr) {
-      debugPrint('[RustBridge] imageProcessSingle: Rust returned null');
       malloc.free(outLen);
       return null;
     }
@@ -205,7 +189,6 @@ class RustBridge {
     final result = Uint8List.fromList(ptr.asTypedList(len));
     _freeBuffer(ptr, len);
     malloc.free(outLen);
-    debugPrint('[RustBridge] imageProcessSingle: $len bytes JPEG');
     return result;
   }
 
@@ -216,8 +199,6 @@ class RustBridge {
     int maxHeightPerChunk = 3000,
     int quality = 90,
   }) {
-    debugPrint(
-        '[RustBridge] imageSplit($path, w=$maxWidth, chunk=$maxHeightPerChunk, q=$quality)');
     final pathPtr = path.toNativeUtf8();
     final outLen = malloc<Uint32>();
 
@@ -226,7 +207,6 @@ class RustBridge {
     malloc.free(pathPtr);
 
     if (ptr == nullptr) {
-      debugPrint('[RustBridge] imageSplit: Rust returned null');
       malloc.free(outLen);
       return null;
     }
@@ -248,7 +228,6 @@ class RustBridge {
 
     _freeBuffer(ptr, totalLen);
     malloc.free(outLen);
-    debugPrint('[RustBridge] imageSplit: $count chunks, $totalLen total bytes');
     return chunks;
   }
 

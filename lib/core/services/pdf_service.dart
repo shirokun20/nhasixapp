@@ -4,7 +4,7 @@ import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf/widgets.dart' as pw;
-import 'package:kuron_native/kuron_native.dart';
+// import 'package:kuron_native/kuron_native.dart'; // Rust
 
 import 'pdf_isolate_worker.dart';
 import '../utils/image_splitter.dart';
@@ -329,17 +329,15 @@ class PdfService {
   // Process single image (resize, compress, optimize)
   Future<Uint8List?> _processImage(String imagePath,
       {required int maxWidth, required int quality}) async {
-    // Try Rust path (fast native decode → resize → encode JPEG)
-    try {
-      final rust = RustBridge.instance;
-      if (rust != null) {
-        final result = rust.imageProcessSingle(imagePath,
-            maxWidth: maxWidth, quality: quality);
-        if (result != null) return result;
-      }
-    } catch (_) {
-      // Fall through to Dart implementation
-    }
+    // // Rust: native image proc — uncomment with kuron_native Rust bridge
+    // try {
+    //   final rust = RustBridge.instance;
+    //   if (rust != null) {
+    //     final result = rust.imageProcessSingle(imagePath,
+    //         maxWidth: maxWidth, quality: quality);
+    //     if (result != null) return result;
+    //   }
+    // } catch (_) {}
 
     try {
       final file = File(imagePath);
