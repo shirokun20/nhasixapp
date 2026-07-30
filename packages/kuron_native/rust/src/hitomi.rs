@@ -106,6 +106,7 @@ fn locate_key(key: &[u8], node: &HitomiNode) -> (bool, usize) {
 // ── Public API ───────────────────────────────────────────
 
 /// SHA256 hash of a key string, returns first 4 bytes.
+#[allow(dead_code)]
 pub fn hash_key(key: &str) -> [u8; 4] {
     let result = Sha256::digest(key.as_bytes());
     let mut key_bytes = [0u8; 4];
