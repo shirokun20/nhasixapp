@@ -313,17 +313,19 @@ class HitomiAdapter implements GenericAdapter {
     final result = <int>{};
     var initialized = false;
 
-    for (final term in positiveTerms) {
-      final ids = await getIdsForQueryToken(term);
-      if (!initialized) {
-        result.addAll(ids);
-        initialized = true;
-      } else {
-        result.retainAll(ids);
-      }
-
-      if (result.isEmpty) {
-        return const <int>[];
+    // Fetch all positive terms in parallel
+    if (positiveTerms.isNotEmpty) {
+      final positiveResults = await Future.wait(
+        positiveTerms.map((t) => getIdsForQueryToken(t)),
+      );
+      for (final ids in positiveResults) {
+        if (!initialized) {
+          result.addAll(ids);
+          initialized = true;
+        } else {
+          result.retainAll(ids);
+        }
+        if (result.isEmpty) return const <int>[];
       }
     }
 
@@ -331,9 +333,14 @@ class HitomiAdapter implements GenericAdapter {
       result.addAll(await fetchNozomiIds(indexEndpoint));
     }
 
-    for (final term in negativeTerms) {
-      final ids = await getIdsForQueryToken(term);
-      result.removeAll(ids);
+    // Fetch all negative terms in parallel, then remove
+    if (negativeTerms.isNotEmpty) {
+      final negativeResults = await Future.wait(
+        negativeTerms.map((t) => getIdsForQueryToken(t)),
+      );
+      for (final ids in negativeResults) {
+        result.removeAll(ids);
+      }
     }
 
     return result.toList(growable: false);
