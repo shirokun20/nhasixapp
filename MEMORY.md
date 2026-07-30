@@ -74,6 +74,7 @@ lib/
 > Tracked via `openspec/` — Last updated: 2026-07-30
 
 ### Archived (in `openspec/changes/archive/`) — Newest first
+- `2026-07-30-rust-hotspot-acceleration` — Rust FFI hotspot acceleration for Hitomi B-tree search (21-byte binary struct), EHentai regex batch (extract_urls + extract_tags), file header inspection (WebP/AVIF). Dart fallback restored for compute() isolates. Parallel nozomi fetch via Future.wait. Bug fixes: extract_tags rawType extraction, inspect_webp static false-positive, clean_html_text HTML tag stripping. 33/33 cargo test, 18/18 parity test, flutter analyze clean. Files: `hitomi.rs`, `ehentai.rs`, `header.rs`, `lib.rs`, `Cargo.toml`, `rust_bridge.dart`, `hitomi_adapter.dart`, `ehentai_scraper_adapter.dart`, `header_inspector.dart`, `rust_parity_test.dart`.
 - `2026-07-30-fix-ehentai-cs-restart-on-scroll` — Animated WebP re-mount in continuous scroll skip thumbnail generation when file already local (`filePath != null`). Fix `"image loading lagi"` visual glitch on rapid scroll re-mount. Files: `packages/kuron_native/lib/widgets/animated_webp_view.dart` (`shouldSkipThumbnailForTesting` + getter), `packages/kuron_native/test/animated_webp_view_test.dart` (+2 tests).
 - `2026-07-30-fix-ehentai-animated-loading-card` — Loading container di animated WebP tidak lagi blow up ke `maxH: 3*W` (1170px) — tightened ke `1.6*W` (624px) di `_buildNativeAnimatedWebP`. Plus immediate `setState` di `_onContinuousImageLoaded` (hapus 16ms `_heightBatchTimer` debounce + `_pendingHeightUpdates` field). Container height predictable, no more "image kecil" perception. Files: `lib/presentation/widgets/extended_image_reader_widget.dart`, `lib/presentation/pages/reader/reader_screen.dart`.
 - `2026-07-30-ehentai-cache-key-consistency` — **HOTFIX (no openspec)**: Line `extended_image_reader_widget.dart:1434` `cacheKey: url` (resolved image URL) → `cacheKey: widget.imageUrl` (page URL). Untuk E-Hentai, page URL ≠ resolved URL → static set lookup miss → `_isHeavyImage = false` → fallback network path → "loading lagi" pada rapid scroll. Sekarang konsisten dengan 11 caller lain.
@@ -166,7 +167,7 @@ lib/
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Proposed. Pass search language filters (originalLanguage, availableTranslatedLanguage) from search to detail page for auto-selecting chapter language.
 - `reader-ai-learning-mode` — AI translate pipeline: ONNX bubble detection, mosaic, multi-provider, overlay. Example demo functional. 7 style. Skip prev 5 gimmick styles. Proposal updated: per-bubble loading, edit manual, SFX toggle. [[ai-translation-demo-feat]]
-- `rust-hotspot-acceleration` — Implemented. Rust Hitomi B-tree search, EHentai regex batch, header inspection. Binary struct FFI, parallel nozomi fetch. Tasks 5.2/5.3/5.5 pending (flutter test cross-validate, physical device).
+- `rust-hotspot-acceleration`
 - `local-recommendation-engine`
 - `text-only-mode-export`
 - `ai-image-upscaling`
