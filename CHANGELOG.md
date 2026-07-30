@@ -10,11 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **Rust Hitomi nozomi B-tree search**: Full binary-tree search via `hitomiDecodeNode` FFI using compact 21-byte binary struct (no JSON overhead). `_bSearchWithRust` replaces Dart `_decodeNode` + `_bSearch` loop — single-pass binary parse + SHA256-based key lookup. `cargo test` 33/33.
+- **Rust EHentai regex batch**: `ehentaiExtractUrls` + `ehentaiExtractTags` FFI — compiled regex + dedup pipeline. Tag extraction with rawType parsing matching Dart `$rawType:$tagText` format. `clean_html_text` strips all HTML tags (regex `<[^>]+>`).
+- **Rust file header inspection**: `headerInspect` + `headerInspectBatch` FFI — WebP/AVIF magic byte detection + dimensions. `inspect_webp` only returns format for animated VP8X (animation flag bit 1 set), matching Dart `looksLikeAnimatedWebPHeader` behavior.
+- **Hitomi parallel nozomi fetch**: `_loadIds` now uses `Future.wait` to fetch positive/negative term nozomi files in parallel (was sequential — 7 terms = 7× latency).
+- **Dart-Rust parity test**: `test/rust_parity_test.dart` — 18 tests validating Dart fallback output against expected values. On device (Rust available), also asserts Rust output == Dart output per function.
 - **Image download cancellation on reader dispose**: Cancel all in-flight image network requests when reader screen is disposed — CancellationToken for ExtendedImage.network, Dio CancelToken for prefetch downloads, native HttpURLConnection.disconnect() in AnimatedWebPView.kt. Prevents orphaned requests causing UI lag on home screen.
 - **Native-first heavy image routing**: Heavy images (E-Hentai 10MB+ AVIF/WebP) prefer native AnimatedWebPView where supported (static/animated), with Flutter ExtendedImage as fallback. Configurable via static URL sets in `extended_image_reader_widget.dart`.
 - **Android CPU thermal management**: Prefetch throttle (back=1, forward=3) for heavy sources in continuous scroll. GPU memory budget eviction (heavy count tracking, evict farthest 25% only when exceeded). Repeated prefetch to same URL skipped.
 - **CancellationToken post-completion lifecycle**: After heavy image detection fires in post-completion, CancellationToken is cancelled and recreated (with mounted guard) — prevents stale token from blocking future retries.
-`local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
+- **App Lock (PIN + Biometric)**: Full app-level lock with PIN setup/verify/change/remove and optional biometric (fingerprint/face) via `local_auth`. Session-based — 10 min session after unlock persisted in flutter_secure_storage (survives Activity recreation). Timer checks every 30s, re-locks when expired. Gate renders after splash on home route (not blocking root), so all sources load before lock appears.
 - **Content Source loading fix**: `ContentBloc` removed from `MultiBlocProviderConfig` — `ContentSourceRegistry` no longer created eagerly at startup with only nhentai. Now created from `MainScreen.getIt<ContentBloc>()` after splash completes + RemoteConfigService loads all sources.
 - **Session time-limit lock**: `AppLockCubit` starts 10-min session on unlock. Periodic 30s check — if expired, auto-lock. Short lifecycle pauses from biometric dialog (< 30s onPaused/resumed) ignored.
 - **MIUI biometric compatibility**: `MainActivity.kt` changed from `FlutterActivity` to `FlutterFragmentActivity`. Auth uses `sensitiveTransaction: false`, `useErrorDialogs: false`, `stickyAuth: false`. `canCheckBiometrics` removed — MIUI false negative bug.
@@ -22,6 +27,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🔧 Changed
 
+- **Rust `hitomiDecodeNode` binary format**: FFI now returns 21-byte fixed struct `[tag:u8][data:u64 LE][data:u32 LE]` instead of JSON string. Eliminates JSON serialization/deserialization per B-tree step. `hitomiBsetSearch` same format.
+- **Rust-first, no Dart fallback policy**: All integration points (`_decodeGalleryIdsFromData`, `_decodeNozomiIds`, `_extractReaderLinks`, `_extractTags`, `batchInspectHeaders`, `inspectFileHeader`, `inspectAvifHeaderForRouting`) now skip Dart fallback when `RustBridge.instance != null`. Dart fallback only runs when Rust unavailable (compute isolates, dev platforms).
+- **`header_inspector.dart` Dart fallback restored**: `inspectFileHeader` + `inspectAvifHeaderForRouting` Dart fallback uncommented — needed for `compute()` isolates where `RustBridge.instance` is null.
+- **`clean_html_text` in Rust `ehentai.rs`**: Now strips all HTML tags via regex `<[^>]+>` (was only `<br>`/`<br/>`), matching Dart `_cleanHtmlText`.
 - **ExtendedImageReaderWidget**: Added `_cancelToken` field (init → dispose), passed to `ExtendedImage.network` as `cancelToken`. Dead retry code removed (`_imageLoadRetries`, `_maxImageLoadRetries`, `_autoRetryTimer`, `_shouldAutoRetryImage`/`_scheduleAutoRetry`, `isRetrying`). Post-completion heavy detect now cancels + recreates token only when still mounted.
 - **ReaderScreen dispose**: `_prefetchCancelTokens` map (`Map<int, CancelToken>`) tracks prefetch download tokens. On dispose: cancel all pending, clear map, clear `_decodeQueue`, reset `_isDecodeTickScheduled`, call `ExtendedImageReaderWidget.clearNativeAnimatedCache()`.
 - **LocalImagePreloader**: Refactored `downloadAndCacheImage()` from raw dart:io HttpClient → Dio with optional `CancelToken` param. Removed ~28 lines of HttpClient boilerplate.
@@ -29,16 +38,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **pubspec.yaml**: Added `http_client_helper: ^3.0.0` dependency for CancellationToken.
 - **App architecture**: `AppLockGate` now `StatefulWidget` with `didChangeDependencies` (one-time init, gated by `_inited`). `MultiBlocProviderConfig` no longer provides `ContentBloc` eagerly.
 - **MainActivity.kt**: Extends `FlutterFragmentActivity` instead of `FlutterActivity` for `local_auth` FragmentActivity requirement.
-- **ContentBloc access pattern**: Two `context.read<ContentBloc>()` calls in `main_screen_scrollable.dart` changed to `getIt<ContentBloc>()` (DI singleton, no BlocProvider needed). Genre/tag pages now use `https://nicomanga.com/g/{base64}.html` format via `tagTransform: "base64"` in config. Field extraction `transform: "base64"` also supported di detail page untuk author, tags, artist (base64-encoded text).
+- **ContentBloc access pattern**: Two `context.read<ContentBloc>()` calls in `main_screen_scrollable.dart` changed to `getIt<ContentBloc>()` (DI singleton, no BlocProvider needed).
 - **GenericScraperAdapter tagTransform: base64**: `_resolvePattern()` now supports `tagTransform: "base64"` in pattern config — base64-encodes tag value before URL substitution. Used by nicomanga genreSearch.
 - **CS Reader "Go to First Page" button**: Added `onGoToFirstPage` callback to `EndOfChapterOverlay` — when reaching chapter end in continuous scroll mode, tapping "Go to First Page" jumps back to page 0. Files: `end_of_chapter_overlay.dart`, `reader_screen.dart`.
-- **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator. Added `ponytail:` comments on intentional hardcode boundaries.
+- **HDoujin Source Integration**: New HDoujin source (`hdoujin.org`) reusing Schale Network's clearance engine and CDN architecture. Fully config-driven via `informations/configs/hdoujin-config.json`. Turnstile bypass scoped per-source with isolated storage keys. Refactored `SchaleClearanceService` to accept dynamic `domainUrl` + `sourceId`. Refactored `SchaleSourceFactory` for conditional domain routing. Registered hdoujin factory in service locator.
 - **Lifecycle-aware Cubits**: `ReaderCubit` now pauses reading timer and disables `WakelockPlus` on lock screen (via `didChangeAppLifecycleState` in `ReaderScreen`). `DownloadBloc` has `pauseBackgroundWork()` / `resumeBackgroundWork()` — cancels DB flush timer (5s) and FrameTimingCallback on background, restores on foreground. Prevents CPU/GPU overheating saat app di lock screen.
 - **ReaderCubit screen-level scoping**: Moved `ReaderCubit` from app-level `MultiBlocProviderConfig` to `BlocProvider` wrapping in route builder. Cubit `close()` sekarang kepanggil otomatis saat navigasi keluar dari reader — timer mati, wakelock di-disable, posisi baca tersimpan.
 - **Native HTTP cancel untuk WebP thumbnail**: `getThumbnailForWebP` sekarang support `cancelWebPThumbnail(requestId)` via MethodChannel. `AnimatedWebPViewState` generate unique `_requestId`, kirim cancel signal di `dispose()`. Native Kotlin `downloadBytesForThumbnail()` check cancellation flag tiap read chunk untuk stop HTTP request lebih awal.
 
 ### 🐛 Fixed
 
+- **Rust `extract_tags` double-joined tagSpec**: Was outputting `"language:korean:korean"` instead of `"language:korean"`. Now extracts rawType from tagSpec before joining.
+- **Rust `inspect_webp` false positive for static WebP**: Was returning `format: "webp"` for ALL WebP files, causing reader to treat static WebP as animated heavy → continuous scroll break. Now returns `None` when no VP8X animation flag.
+- **`_extractReaderLinks` Dart fallback missing**: Dart regex fallback was commented out → `return const []` when Rust unavailable. Restored full Dart regex + dedup pipeline.
+- **Dead code removed**: `bsearch_json` in `hitomi.rs` (FFI now calls `decode_node_binary` directly).
 - **CancellationToken leak after dispose**: Post-completion code ran `_cancelToken?.cancel(); _cancelToken = CancellationToken()` before `if (!mounted) return;`. If dispose fired between these, new token leaked. Fix: moved mounted guard before token creation.
 - **TOCTOU race in AnimatedWebPView.kt**: `fetchBytes()` sets `activeConnection = conn`, but `dispose()` could read it as null before assignment — missed abort, 90s HTTP drain. Fix: disposed guard after setting activeConnection.
 - **Orphaned prefetch downloads on reader close**: Prefetch using raw HttpClient had no cancellation mechanism. Fix: refactored to Dio + CancelToken tracked in `_prefetchCancelTokens`, all cancelled on dispose.
@@ -61,7 +74,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Prev/next chapter navigasi 404 via EndOfChapterOverlay**: `_resolveNextChapterId` prioritaskan `state.chapterData?.nextChapterId` yang berisi raw URL dari source (misal `chapter-c35.3i294523.html`) — gak match format ID di `_allChapters` → `loadChapter` kirim URL korup → 404. Fix: balik prioritas — cek adjacent di `_allChapters` dulu, `chapterData` jadi fallback. File: `reader_cubit.dart:750-792`.
 - **ManhwaRead side-story chapter double prefix `/manhwa/`**: Chapter URL `/manhwa/cliterary-book-club/side-story-2-minsuk-3/`. Regex `chapter-` gagal match → raw href dipakai → template `/manhwa/{id}` bikin `//manhwa//manhwa/...`. Fix 3 lapis: (1) config regex `contentIdPattern` jadi `[^/]+(?:/[^/]+)?` — tangkap 2 segmen path; (2) config chapter id regex hapus prefix `chapter-`; (3) adapter tambah `_normalizeChapterIdForTemplate()` — strip template prefix dari chapterID sebelum substitusi. Files: `manhwaread-config.json`, `generic_scraper_adapter.dart`.
 
----
+### 🧪 Tests
+- `cargo test` 33/33 (hitomi 8, ehentai 8, header 9, decrypt 2, unpack 3, imageproc 3)
+- `flutter test test/rust_parity_test.dart` 18/18
+- `flutter analyze`: No issues found
 
 ## [0.9.23+33] - 2026-07-14
 
