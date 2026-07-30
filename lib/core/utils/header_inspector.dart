@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:kuron_native/kuron_native.dart';
+
 import 'reader_image_repair_utils.dart';
 
 // Result from a single file header inspection.
@@ -18,6 +20,34 @@ const int maxNativeAvifHeight = 4096;
 // Designed to be `compute()`-eligible — top-level function, no closures.
 FileHeaderResult inspectFileHeader(String path) {
   const empty = (format: null, width: null, height: null) as FileHeaderResult;
+
+  // Try Rust first — fast zero-copy binary scan
+  final bridge = RustBridge.instance;
+  if (bridge != null) {
+    try {
+      final file = File(path);
+      if (!file.existsSync()) return empty;
+      final raf = file.openSync(mode: FileMode.read);
+      final length = raf.lengthSync();
+      if (length < 16) {
+        raf.closeSync();
+        return empty;
+      }
+      final sampleLength = length < 4096 ? length : 4096;
+      final bytes = raf.readSync(sampleLength);
+      raf.closeSync();
+      final result = bridge.headerInspect(bytes);
+      if (result != null) {
+        return (
+          format: result['format'] as String?,
+          width: result['width'] as int?,
+          height: result['height'] as int?,
+        );
+      }
+    } catch (_) {
+      // Fall through to Dart
+    }
+  }
 
   File file;
   RandomAccessFile? raf;
@@ -107,6 +137,25 @@ FileHeaderResult inspectFileHeader(String path) {
 // Batch inspect file headers via [compute] or sync loop.
 // Used when >10 files need inspection.
 List<FileHeaderResult> batchInspectHeaders(List<String> paths) {
+  // Try Rust first
+  final bridge = RustBridge.instance;
+  if (bridge != null) {
+    try {
+      final results = bridge.headerInspectBatch(paths);
+      if (results != null) {
+        return results
+            .map((r) => (
+                  format: r['format'] as String?,
+                  width: r['width'] as int?,
+                  height: r['height'] as int?,
+                ))
+            .toList();
+      }
+    } catch (_) {
+      // Fall through to Dart
+    }
+  }
+
   return [for (final p in paths) inspectFileHeader(p)];
 }
 

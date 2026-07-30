@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 
 // E-Hentai adapter that delegates generic scraping and adds per-page image
@@ -761,6 +762,19 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   List<String> _extractReaderLinks(String html) {
+    // Try Rust first
+    final bridge = RustBridge.instance;
+    if (bridge != null) {
+      try {
+        final rustUrls = bridge.ehentaiExtractUrls(html);
+        if (rustUrls != null && rustUrls.isNotEmpty) {
+          return rustUrls.map((u) => _normalizeReaderLink(u)).toList();
+        }
+      } catch (_) {
+        // Fall through to Dart
+      }
+    }
+
     final normalizedHtml = html.replaceAll(r'\/', '/');
     final matches = RegExp(
       r'((?:(?:https?:)?//(?:e-hentai|exhentai)\.org)?/s/[A-Za-z0-9_-]+/[0-9]+-[0-9]+)',

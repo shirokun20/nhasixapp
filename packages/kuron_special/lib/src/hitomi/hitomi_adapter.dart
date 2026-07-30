@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
+import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 
 class HitomiAdapter implements GenericAdapter {
@@ -492,6 +493,19 @@ class HitomiAdapter implements GenericAdapter {
   }
 
   Set<int> _decodeGalleryIdsFromData(Uint8List inbuf) {
+    // Try Rust first
+    final bridge = RustBridge.instance;
+    if (bridge != null) {
+      try {
+        final rustIds = bridge.hitomiDecodeGalleryIds(inbuf);
+        if (rustIds != null && rustIds.isNotEmpty) {
+          return rustIds.toSet();
+        }
+      } catch (_) {
+        // Fall through to Dart
+      }
+    }
+
     if (inbuf.length < 4) return const <int>{};
 
     final buffer = ByteData.sublistView(inbuf);
@@ -513,6 +527,19 @@ class HitomiAdapter implements GenericAdapter {
   }
 
   List<int> _decodeNozomiIds(Uint8List bytes) {
+    // Try Rust first
+    final bridge = RustBridge.instance;
+    if (bridge != null) {
+      try {
+        final rustIds = bridge.hitomiDecodeNozomiIds(bytes);
+        if (rustIds != null && rustIds.isNotEmpty) {
+          return rustIds;
+        }
+      } catch (_) {
+        // Fall through to Dart
+      }
+    }
+
     if (bytes.length < 4) return const <int>[];
 
     final usableLength = bytes.length - (bytes.length % 4);

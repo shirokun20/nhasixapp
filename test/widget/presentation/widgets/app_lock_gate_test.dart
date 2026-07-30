@@ -11,9 +11,11 @@ import 'package:nhasixapp/presentation/pages/app_lock/pin_entry_screen.dart';
 import 'package:nhasixapp/presentation/pages/app_lock/pin_setup_screen.dart';
 
 class MockAppLockRepository extends Mock implements AppLockRepository {}
+
 class MockLogger extends Mock implements Logger {}
 
-Widget buildTestApp(AppLockCubit cubit, {Widget child = const SizedBox(key: Key('child'))}) {
+Widget buildTestApp(AppLockCubit cubit,
+    {Widget child = const SizedBox(key: Key('child'))}) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
@@ -40,14 +42,19 @@ void main() {
         stackTrace: any(named: 'stackTrace'))).thenAnswer((_) {});
   });
 
+  tearDown(() async {
+    await cubit.close();
+  });
+
   group('AppLockGate', () {
     testWidgets('shows PinSetupScreen when no PIN set', (tester) async {
-      when(() => repository.getPinEnabled()).thenAnswer((_) async => false);
+      when(() => repository.getPinEnabled()).thenAnswer((_) async => true);
       when(() => repository.getPinHash()).thenAnswer((_) async => null);
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
-          .thenAnswer((_) async => false);
+          .thenAnswer((_) async => true);
+      when(() => repository.isSessionActive()).thenAnswer((_) async => false);
 
       cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
@@ -59,12 +66,12 @@ void main() {
 
     testWidgets('shows PinEntryScreen when PIN set and locked', (tester) async {
       when(() => repository.getPinEnabled()).thenAnswer((_) async => true);
-      when(() => repository.getPinHash())
-          .thenAnswer((_) async => 'hash');
+      when(() => repository.getPinHash()).thenAnswer((_) async => 'hash');
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
-          .thenAnswer((_) async => false);
+          .thenAnswer((_) async => true);
+      when(() => repository.isSessionActive()).thenAnswer((_) async => false);
 
       cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
@@ -80,7 +87,8 @@ void main() {
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
-          .thenAnswer((_) async => false);
+          .thenAnswer((_) async => true);
+      when(() => repository.isSessionActive()).thenAnswer((_) async => false);
 
       cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();

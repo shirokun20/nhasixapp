@@ -12,8 +12,7 @@ class MockAppLockRepository extends Mock implements AppLockRepository {}
 
 class MockLogger extends Mock implements Logger {}
 
-String hashPin(String pin) =>
-    sha256.convert(utf8.encode(pin)).toString();
+String hashPin(String pin) => sha256.convert(utf8.encode(pin)).toString();
 
 void main() {
   late AppLockCubit cubit;
@@ -33,6 +32,10 @@ void main() {
     when(() => repository.isSessionActive()).thenAnswer((_) async => false);
   });
 
+  tearDown(() async {
+    await cubit.close();
+  });
+
   group('AppLockCubit init', () {
     test('emits AppLockReady with default values when no PIN set', () async {
       when(() => repository.getPinEnabled()).thenAnswer((_) async => false);
@@ -42,8 +45,7 @@ void main() {
       when(() => repository.isBiometricAvailable())
           .thenAnswer((_) async => false);
 
-      cubit = AppLockCubit(
-          appLockRepository: repository, logger: logger);
+      cubit = AppLockCubit(appLockRepository: repository, logger: logger);
 
       expect(cubit.state, isA<AppLockLoading>());
 
@@ -62,15 +64,13 @@ void main() {
     test('emits AppLockReady locked=true when PIN enabled and hash exists',
         () async {
       when(() => repository.getPinEnabled()).thenAnswer((_) async => true);
-      when(() => repository.getPinHash())
-          .thenAnswer((_) async => 'somehash');
+      when(() => repository.getPinHash()).thenAnswer((_) async => 'somehash');
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
           .thenAnswer((_) async => false);
 
-      cubit = AppLockCubit(
-          appLockRepository: repository, logger: logger);
+      cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
 
       final state = cubit.state as AppLockReady;
@@ -89,16 +89,13 @@ void main() {
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
           .thenAnswer((_) async => false);
-      cubit = AppLockCubit(
-          appLockRepository: repository, logger: logger);
+      cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
     });
 
     test('setupPin saves hash and enables PIN', () async {
-      when(() => repository.savePinHash(any()))
-          .thenAnswer((_) async {});
-      when(() => repository.setPinEnabled(true))
-          .thenAnswer((_) async {});
+      when(() => repository.savePinHash(any())).thenAnswer((_) async {});
+      when(() => repository.setPinEnabled(true)).thenAnswer((_) async {});
 
       final result = await cubit.setupPin('123456');
 
@@ -134,10 +131,8 @@ void main() {
     test('changePin returns true when old PIN correct', () async {
       when(() => repository.getPinHash())
           .thenAnswer((_) async => hashPin('123456'));
-      when(() => repository.savePinHash(any()))
-          .thenAnswer((_) async {});
-      when(() => repository.setPinEnabled(true))
-          .thenAnswer((_) async {});
+      when(() => repository.savePinHash(any())).thenAnswer((_) async {});
+      when(() => repository.setPinEnabled(true)).thenAnswer((_) async {});
 
       final result = await cubit.changePin('123456', '654321');
 
@@ -175,20 +170,17 @@ void main() {
   group('AppLockCubit biometric', () {
     setUp(() async {
       when(() => repository.getPinEnabled()).thenAnswer((_) async => true);
-      when(() => repository.getPinHash())
-          .thenAnswer((_) async => 'somehash');
+      when(() => repository.getPinHash()).thenAnswer((_) async => 'somehash');
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
           .thenAnswer((_) async => false);
-      cubit = AppLockCubit(
-          appLockRepository: repository, logger: logger);
+      cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
     });
 
     test('enableBiometric updates state', () async {
-      when(() => repository.setBiometricEnabled(true))
-          .thenAnswer((_) async {});
+      when(() => repository.setBiometricEnabled(true)).thenAnswer((_) async {});
 
       await cubit.enableBiometric();
 
@@ -210,20 +202,17 @@ void main() {
   group('AppLockCubit session', () {
     setUp(() async {
       when(() => repository.getPinEnabled()).thenAnswer((_) async => true);
-      when(() => repository.getPinHash())
-          .thenAnswer((_) async => 'somehash');
+      when(() => repository.getPinHash()).thenAnswer((_) async => 'somehash');
       when(() => repository.getBiometricEnabled())
           .thenAnswer((_) async => false);
       when(() => repository.isBiometricAvailable())
           .thenAnswer((_) async => false);
-      cubit = AppLockCubit(
-          appLockRepository: repository, logger: logger);
+      cubit = AppLockCubit(appLockRepository: repository, logger: logger);
       await cubit.init();
     });
 
     test('init does not lock when session active', () async {
-      when(() => repository.isSessionActive())
-          .thenAnswer((_) async => true);
+      when(() => repository.isSessionActive()).thenAnswer((_) async => true);
       // Re-init with session
       expect((cubit.state as AppLockReady).isLocked, isTrue);
       // After session, new init should see session and not lock
@@ -232,8 +221,7 @@ void main() {
     test('verifyPin starts session', () async {
       when(() => repository.getPinHash())
           .thenAnswer((_) async => hashPin('123456'));
-      when(() => repository.saveSessionExpiry(any()))
-          .thenAnswer((_) async {});
+      when(() => repository.saveSessionExpiry(any())).thenAnswer((_) async {});
       // can't test private method directly, just verify verifyPin calls it
     });
   });

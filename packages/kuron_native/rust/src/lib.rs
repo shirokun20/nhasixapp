@@ -1,4 +1,7 @@
 mod decrypt;
+mod ehentai;
+mod header;
+mod hitomi;
 mod imageproc;
 mod unpack;
 

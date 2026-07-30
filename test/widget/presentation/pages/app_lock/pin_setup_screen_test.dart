@@ -9,6 +9,7 @@ import 'package:nhasixapp/presentation/cubits/app_lock/app_lock_cubit.dart';
 import 'package:nhasixapp/presentation/pages/app_lock/pin_setup_screen.dart';
 
 class MockAppLockRepository extends Mock implements AppLockRepository {}
+
 class MockLogger extends Mock implements Logger {}
 
 Widget buildTestApp(AppLockCubit cubit) {
@@ -38,12 +39,15 @@ void main() {
         stackTrace: any(named: 'stackTrace'))).thenAnswer((_) {});
     when(() => repository.getPinEnabled()).thenAnswer((_) async => false);
     when(() => repository.getPinHash()).thenAnswer((_) async => null);
-    when(() => repository.getBiometricEnabled())
-        .thenAnswer((_) async => false);
+    when(() => repository.getBiometricEnabled()).thenAnswer((_) async => false);
     when(() => repository.isBiometricAvailable())
         .thenAnswer((_) async => false);
 
     cubit = AppLockCubit(appLockRepository: repository, logger: logger);
+  });
+
+  tearDown(() async {
+    await cubit.close();
   });
 
   group('PinSetupScreen', () {
@@ -68,10 +72,8 @@ void main() {
     });
 
     testWidgets('calls setupPin when confirm matches', (tester) async {
-      when(() => repository.savePinHash(any()))
-          .thenAnswer((_) async {});
-      when(() => repository.setPinEnabled(true))
-          .thenAnswer((_) async {});
+      when(() => repository.savePinHash(any())).thenAnswer((_) async {});
+      when(() => repository.setPinEnabled(true)).thenAnswer((_) async {});
 
       await tester.pumpWidget(buildTestApp(cubit));
       await tester.pumpAndSettle();

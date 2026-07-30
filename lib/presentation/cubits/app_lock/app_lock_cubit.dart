@@ -207,5 +207,11 @@ class AppLockCubit extends BaseCubit<AppLockState> {
     ));
   }
 
+  @override
+  Future<void> close() {
+    _sessionTimer?.cancel();
+    return super.close();
+  }
+
   String _hashPin(String pin) => sha256.convert(utf8.encode(pin)).toString();
 }
