@@ -386,8 +386,8 @@ class RustBridge {
     return ids;
   }
 
-  /// Decode a Hitomi binary node with a key. Returns JSON string, or null.
-  String? hitomiDecodeNode(Uint8List data, List<int> key) {
+  /// Decode a Hitomi binary node with a key. Returns 21-byte search result, or null.
+  Uint8List? hitomiDecodeNode(Uint8List data, List<int> key) {
     final dataPtr = malloc<Uint8>(data.length);
     dataPtr.asTypedList(data.length).setAll(0, data);
     final keyPtr = malloc<Uint8>(key.length);
@@ -404,14 +404,14 @@ class RustBridge {
     }
 
     final len = outLen.value;
-    final result = String.fromCharCodes(ptr.asTypedList(len));
+    final result = Uint8List.fromList(ptr.asTypedList(len));
     _freeBuffer(ptr, len);
     malloc.free(outLen);
     return result;
   }
 
-  /// B-tree search in Hitomi binary index. Returns JSON string, or null.
-  String? hitomiBsetSearch(Uint8List data, int target) {
+  /// B-tree search in Hitomi binary index. Returns 21-byte search result, or null.
+  Uint8List? hitomiBsetSearch(Uint8List data, int target) {
     final dataPtr = malloc<Uint8>(data.length);
     dataPtr.asTypedList(data.length).setAll(0, data);
     final outLen = malloc<Uint32>();
@@ -425,7 +425,7 @@ class RustBridge {
     }
 
     final len = outLen.value;
-    final result = String.fromCharCodes(ptr.asTypedList(len));
+    final result = Uint8List.fromList(ptr.asTypedList(len));
     _freeBuffer(ptr, len);
     malloc.free(outLen);
     return result;

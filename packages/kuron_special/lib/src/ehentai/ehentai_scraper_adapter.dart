@@ -762,33 +762,31 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   List<String> _extractReaderLinks(String html) {
-    // Try Rust first
     final bridge = RustBridge.instance;
     if (bridge != null) {
       try {
         final rustUrls = bridge.ehentaiExtractUrls(html);
-        if (rustUrls != null && rustUrls.isNotEmpty) {
+        if (rustUrls != null) {
           return rustUrls.map((u) => _normalizeReaderLink(u)).toList();
         }
       } catch (_) {
-        // Fall through to Dart
+        return const <String>[];
       }
+      return const <String>[];
     }
 
+    // Dart fallback — only when Rust unavailable
     final normalizedHtml = html.replaceAll(r'\/', '/');
-    final matches = RegExp(
-      r'((?:(?:https?:)?//(?:e-hentai|exhentai)\.org)?/s/[A-Za-z0-9_-]+/[0-9]+-[0-9]+)',
+    final urlPattern = RegExp(
+      r'((?:https?:)?//(?:e-hentai|exhentai)\.org)?/s/[A-Za-z0-9_-]+/[0-9]+-[0-9]+',
       caseSensitive: false,
-    ).allMatches(normalizedHtml);
+    );
     final seen = <String>{};
     final links = <String>[];
-
-    for (final match in matches) {
-      final link = match.group(1);
-      if (link == null || link.isEmpty) continue;
-      final normalized = _normalizeReaderLink(link);
-      if (seen.add(normalized)) {
-        links.add(normalized);
+    for (final match in urlPattern.allMatches(normalizedHtml)) {
+      final link = match.group(0)!;
+      if (seen.add(link)) {
+        links.add(_normalizeReaderLink(link));
       }
     }
     return links;
@@ -1085,6 +1083,25 @@ class EHentaiScraperAdapter implements GenericAdapter {
   }
 
   List<Tag> _extractTags(String html) {
+    final bridge = RustBridge.instance;
+    if (bridge != null) {
+      try {
+        final rustTags = bridge.ehentaiExtractTags(html);
+        if (rustTags != null) {
+          return rustTags.map((t) {
+            return Tag(
+              id: 0, name: t, type: TagType.tag,
+              count: 0, url: '', slug: t,
+            );
+          }).toList();
+        }
+      } catch (_) {
+        return const <Tag>[];
+      }
+      return const <Tag>[];
+    }
+
+    // Dart fallback — only when Rust unavailable
     // E-Hentai detail page tag structure:
     // <div id="td_language:korean" class="gt" ...>
     //   <a id="ta_language:korean" href="..." class="">korean</a>

@@ -34,11 +34,12 @@ pub fn extract_tags(html: &str) -> Vec<String> {
         if tag_spec.is_empty() || !tag_spec.contains(':') {
             continue;
         }
+        let raw_type = &tag_spec[..tag_spec.find(':').unwrap()];
         let tag_text = cap.get(2).map(|m| clean_html_text(m.as_str())).unwrap_or_default();
         if tag_text.is_empty() {
             continue;
         }
-        tags.push(format!("{}:{}", tag_spec, tag_text));
+        tags.push(format!("{}:{}", raw_type, tag_text));
     }
 
     // Fallback: title="type:value" pattern for legacy pages
@@ -56,9 +57,8 @@ pub fn extract_tags(html: &str) -> Vec<String> {
 }
 
 fn clean_html_text(text: &str) -> String {
-    text.replace('\\', "")
-        .replace("<br>", "")
-        .replace("<br/>", "")
+    let re = Regex::new(r"<[^>]+>").unwrap();
+    re.replace_all(text, "")
         .replace("&amp;", "&")
         .replace("&#039;", "'")
         .replace("&quot;", "\"")
@@ -184,6 +184,14 @@ mod tests {
         let tags = extract_tags(html);
         assert!(!tags.is_empty());
         assert!(tags[0].contains("language"));
+    }
+
+    #[test]
+    fn test_extract_tags_with_br() {
+        let html = r#"<div id="td_artist:some_artist" class="gt"><a href="/tag/artist:some_artist">some<br/>artist</a></div>"#;
+        let tags = extract_tags(html);
+        assert!(!tags.is_empty());
+        assert_eq!(tags[0], "artist:someartist");
     }
 
     #[test]

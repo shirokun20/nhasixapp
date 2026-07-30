@@ -97,7 +97,7 @@ fn inspect_webp(data: &[u8]) -> HeaderInfo {
     }
 
     HeaderInfo {
-        format: Some("webp".to_string()),
+        format: None,
         width: None,
         height: None,
     }
@@ -287,7 +287,7 @@ mod tests {
         data.extend_from_slice(&[0u8; 10]);
 
         let info = inspect(&data);
-        assert_eq!(info.format.as_deref(), Some("webp"));
+        assert_eq!(info.format.as_deref(), None);
         assert!(info.width.is_none());
     }
 

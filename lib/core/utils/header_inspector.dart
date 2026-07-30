@@ -45,10 +45,12 @@ FileHeaderResult inspectFileHeader(String path) {
         );
       }
     } catch (_) {
-      // Fall through to Dart
+      return empty;
     }
+    return empty;
   }
 
+  // Dart fallback — only when Rust unavailable (compute isolate, dev platforms)
   File file;
   RandomAccessFile? raf;
   try {
@@ -137,7 +139,6 @@ FileHeaderResult inspectFileHeader(String path) {
 // Batch inspect file headers via [compute] or sync loop.
 // Used when >10 files need inspection.
 List<FileHeaderResult> batchInspectHeaders(List<String> paths) {
-  // Try Rust first
   final bridge = RustBridge.instance;
   if (bridge != null) {
     try {
@@ -152,10 +153,12 @@ List<FileHeaderResult> batchInspectHeaders(List<String> paths) {
             .toList();
       }
     } catch (_) {
-      // Fall through to Dart
+      return const <FileHeaderResult>[];
     }
+    return const <FileHeaderResult>[];
   }
 
+  // Dart fallback — only when Rust unavailable
   return [for (final p in paths) inspectFileHeader(p)];
 }
 
@@ -203,16 +206,43 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
     width: null,
     height: null,
   );
+
+  // Try Rust first
+  final bridge = RustBridge.instance;
+  if (bridge != null) {
+    try {
+      if (!file.existsSync()) return empty;
+      final length = file.lengthSync();
+      if (length < 16) return empty;
+      final sampleLength = length < 4096 ? length : 4096;
+      final raf = file.openSync(mode: FileMode.read);
+      final bytes = raf.readSync(sampleLength);
+      raf.closeSync();
+
+      final result = bridge.headerInspect(bytes);
+      if (result == null) return empty;
+      final format = result['format'] as String?;
+      if (format != 'avif') return empty;
+      return (
+        isAvif: true,
+        isAvisBrand: true, // Rust already checked "avis" at offset 8
+        width: result['width'] as int?,
+        height: result['height'] as int?,
+      );
+    } catch (_) {
+      return empty;
+    }
+  }
+
+  // Dart fallback — only when Rust unavailable (dev platforms)
   RandomAccessFile? raf;
   try {
     raf = file.openSync(mode: FileMode.read);
     final length = raf.lengthSync();
     if (length < 16) return empty;
-
     final sampleLength = length < 4096 ? length : 4096;
     final bytes = raf.readSync(sampleLength);
     if (inferImageExtension(bytes: bytes) != 'avif') return empty;
-
     var isAvisBrand = false;
     if (bytes.length >= 12) {
       const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
@@ -221,7 +251,6 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
           bytes[10] == kAvis2 &&
           bytes[11] == kAvis3;
     }
-
     int? parsedWidth;
     int? parsedHeight;
     const kIspe = <int>[0x69, 0x73, 0x70, 0x65];
@@ -240,7 +269,6 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
         break;
       }
     }
-
     return (
       isAvif: true,
       isAvisBrand: isAvisBrand,

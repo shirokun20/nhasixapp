@@ -134,8 +134,39 @@ pub fn decode_gallery_ids(data: &[u8]) -> Vec<i32> {
     ids
 }
 
+/// Parse a binary node and locate a matching key. Returns 21-byte search result.
+///
+/// Binary format (21 bytes):
+///   tag: u8 (0=not_found_leaf, 1=found, 2=not_found_recurse)
+///   If tag == 1: offset: u64 LE, length: u32 LE
+///   If tag == 2: next_address: u64 LE
+///   If tag == 0: all zeros
+///
+/// Returns None on parse error.
+pub fn decode_node_binary(data: &[u8], key: &[u8]) -> Option<[u8; 21]> {
+    let node = parse_node(data).ok()?;
+    let (found, index) = locate_key(key, &node);
+
+    let mut buf = [0u8; 21];
+
+    if found {
+        let d = &node.datas[index];
+        buf[0] = 1;
+        buf[1..9].copy_from_slice(&d.offset.to_le_bytes());
+        buf[9..13].copy_from_slice(&d.length.to_le_bytes());
+    } else if is_leaf(&node) {
+        buf[0] = 0;
+    } else {
+        buf[0] = 2;
+        buf[1..9].copy_from_slice(&node.sub_node_addresses[index].to_le_bytes());
+    }
+
+    Some(buf)
+}
+
 /// Parse a binary node and locate a matching key. Returns JSON result.
 /// JSON: {"found":true,"offset":N,"length":N} or {"found":false} or {"found":false,"next_address":N}
+#[allow(dead_code)]
 pub fn decode_node_json(data: &[u8], key: &[u8]) -> String {
     let node = match parse_node(data) {
         Ok(n) => n,
@@ -156,12 +187,6 @@ pub fn decode_node_json(data: &[u8], key: &[u8]) -> String {
         let addr = node.sub_node_addresses[index];
         format!(r#"{{"found":false,"next_address":{}}}"#, addr)
     }
-}
-
-/// B-tree search with i32 target (4-byte BE hash). Same result format as decode_node_json.
-pub fn bsearch_json(data: &[u8], target: i32) -> String {
-    let target_bytes = target.to_be_bytes();
-    decode_node_json(data, &target_bytes)
 }
 
 /// Decode nozomi index IDs from binary data.
@@ -221,14 +246,18 @@ pub extern "C" fn hitomi_decode_node(
     let data = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
     let key = unsafe { std::slice::from_raw_parts(key, key_len as usize) };
 
-    let json = decode_node_json(data, key);
-    let mut bytes = json.into_bytes();
-    unsafe {
-        *out_len = bytes.len() as u32;
+    match decode_node_binary(data, key) {
+        Some(result) => {
+            let mut buf = result.to_vec();
+            unsafe {
+                *out_len = buf.len() as u32;
+            }
+            let ptr = buf.as_mut_ptr();
+            std::mem::forget(buf);
+            ptr
+        }
+        None => std::ptr::null_mut(),
     }
-    let ptr = bytes.as_mut_ptr();
-    std::mem::forget(bytes);
-    ptr
 }
 
 #[no_mangle]
@@ -239,14 +268,20 @@ pub extern "C" fn hitomi_bset_search(
     out_len: *mut u32,
 ) -> *mut u8 {
     let data = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
-    let json = bsearch_json(data, target);
-    let mut bytes = json.into_bytes();
-    unsafe {
-        *out_len = bytes.len() as u32;
+    let target_bytes = target.to_be_bytes();
+
+    match decode_node_binary(data, &target_bytes) {
+        Some(result) => {
+            let mut buf = result.to_vec();
+            unsafe {
+                *out_len = buf.len() as u32;
+            }
+            let ptr = buf.as_mut_ptr();
+            std::mem::forget(buf);
+            ptr
+        }
+        None => std::ptr::null_mut(),
     }
-    let ptr = bytes.as_mut_ptr();
-    std::mem::forget(bytes);
-    ptr
 }
 
 #[no_mangle]
