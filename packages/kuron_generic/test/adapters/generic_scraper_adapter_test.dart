@@ -2456,6 +2456,95 @@ void main() {
     });
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // fetchChapterImages() — parseChapterApi JSON POST endpoint
+  // ─────────────────────────────────────────────────────────────────────────
+
+  group('GenericScraperAdapter.fetchChapterImages() — parseChapterApi', () {
+    const parseChapterConfig = {
+      'source': 'nicomanga',
+      'baseUrl': _nicomangaBaseUrl,
+      'scraper': {
+        'urlPatterns': {
+          'chapter': '/{id}',
+        },
+        'selectors': {
+          'reader': {
+            'mode': 'parseChapterApi',
+            'parseChapterApiUrl': '/api/parse-chapter',
+            'images': {'selector': 'img', 'attribute': 'src'},
+          },
+        },
+      },
+    };
+
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildNicomangaDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildNicomangaAdapter(dio);
+    });
+
+    test('returns image URLs from parseChapterApi POST response', () async {
+      const chapterId =
+          'https://nicomanga.com/manga7786/a76abcab/chapter-c56i300110.html';
+      dioAdapter.onGet(
+        chapterId,
+        (s) =>
+            s.reply(200, '<html><body>Next.js reader</body></html>', headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_nicomangaBaseUrl/api/parse-chapter',
+        (s) => s.reply(200, {
+          'success': true,
+          'images': [
+            'https://ihlv1.xyz/images4/20260802/page1.jpg',
+            'https://ihlv1.xyz/images4/20260802/page2.jpg',
+          ],
+        }, headers: {
+          Headers.contentTypeHeader: ['application/json']
+        }),
+      );
+
+      final result =
+          await adapter.fetchChapterImages(chapterId, parseChapterConfig);
+      expect(result, isNotNull);
+      expect(result!.images, [
+        'https://ihlv1.xyz/images4/20260802/page1.jpg',
+        'https://ihlv1.xyz/images4/20260802/page2.jpg',
+      ]);
+    });
+
+    test('falls back to DOM when parseChapterApi errors', () async {
+      const chapterId =
+          'https://nicomanga.com/manga7786/a76abcab/chapter-c56i300110.html';
+      dioAdapter.onGet(
+        chapterId,
+        (s) => s.reply(200, _chapterHtmlNoTsReader, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+      dioAdapter.onPost(
+        '$_nicomangaBaseUrl/api/parse-chapter',
+        (s) => s.reply(500, {
+          'error': 'boom'
+        }, headers: {
+          Headers.contentTypeHeader: ['application/json']
+        }),
+      );
+
+      final result =
+          await adapter.fetchChapterImages(chapterId, parseChapterConfig);
+      expect(result, isNotNull);
+      expect(result!.images, isNotEmpty);
+    });
+  });
+
   group('GenericScraperAdapter.fetchChapterImages() — script array regex', () {
     late Dio dio;
     late DioAdapter dioAdapter;

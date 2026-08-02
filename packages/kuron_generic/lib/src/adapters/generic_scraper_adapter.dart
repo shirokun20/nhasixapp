@@ -1556,6 +1556,52 @@ class GenericScraperAdapter implements GenericAdapter {
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       if (readerConfig == null) return null;
 
+      // JSON API mode: reader images are not in static HTML (e.g. Next.js
+      // SPA), site exposes a POST endpoint returning the image URL list.
+      if (readerConfig['mode'] == 'parseChapterApi') {
+        final apiPath = (readerConfig['parseChapterApiUrl'] as String?) ??
+            '/api/parse-chapter';
+        try {
+          final apiResponse = await _executeRequest<Response<String>>(
+            () => _dio.post<String>(
+              _urlBuilder.resolve(apiPath, const {}),
+              data: json.encode({'chapterUrl': url}),
+              options: Options(
+                responseType: ResponseType.plain,
+                headers: {
+                  ...chapterRequestHeaders,
+                  Headers.contentTypeHeader: 'application/json',
+                },
+              ),
+            ),
+          );
+          final apiData =
+              json.decode(apiResponse.data ?? '') as Map<String, dynamic>;
+          final imagesRaw = apiData['images'];
+          if (imagesRaw is List && imagesRaw.isNotEmpty) {
+            final apiImages = imagesRaw
+                .whereType<String>()
+                .map((u) => u.trim())
+                .where((u) => u.isNotEmpty)
+                .toList();
+            if (apiImages.isNotEmpty) {
+              _logger.d(
+                  '$_sourceId parseChapterApi returned ${apiImages.length} images');
+              return ChapterData(
+                images: _normalizeChapterImageUrls(apiImages),
+              );
+            }
+          }
+          final apiError = apiData['error'];
+          if (apiError != null && apiError.toString().isNotEmpty) {
+            _logger.w('$_sourceId parseChapterApi error: $apiError');
+          }
+        } catch (e) {
+          _logger.w('$_sourceId parseChapterApi failed, falling back to DOM',
+              error: e);
+        }
+      }
+
       var workingUrl = url;
       var workingHtmlContent = htmlContent;
       var workingDoc = _parser.parse(workingHtmlContent);

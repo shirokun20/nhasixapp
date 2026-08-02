@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### ✨ Added
 
+- **Nicomanga reader via `parseChapterApi`**: Reader page migrated to Next.js SPA — chapter images no longer in static HTML. New `GenericScraperAdapter.fetchChapterImages` mode `parseChapterApi`: `POST /api/parse-chapter` with `{"chapterUrl": ...}` → `{images: [...]}` (endpoint from legacy reader fixture). DOM fallback retained. Config `nicomanga-config.json` v1.2.0. +2 adapter tests (76/76 pass).
 - **Rust Hitomi nozomi B-tree search**: Full binary-tree search via `hitomiDecodeNode` FFI using compact 21-byte binary struct (no JSON overhead). `_bSearchWithRust` replaces Dart `_decodeNode` + `_bSearch` loop — single-pass binary parse + SHA256-based key lookup. `cargo test` 33/33.
 - **Rust EHentai regex batch**: `ehentaiExtractUrls` + `ehentaiExtractTags` FFI — compiled regex + dedup pipeline. Tag extraction with rawType parsing matching Dart `$rawType:$tagText` format. `clean_html_text` strips all HTML tags (regex `<[^>]+>`).
 - **Rust file header inspection**: `headerInspect` + `headerInspectBatch` FFI — WebP/AVIF magic byte detection + dimensions. `inspect_webp` only returns format for animated VP8X (animation flag bit 1 set), matching Dart `looksLikeAnimatedWebPHeader` behavior.
@@ -846,4 +847,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 |:--------|:-----|:-----|:------------|
 | 0.6.0 | 2025-12-12 | Feature | Offline export & database-first |
 | 0.5.0 | 2025-11-26 | Release | Initial public release |
-
