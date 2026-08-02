@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🔧 Changed
 
+- **Remove dead Dart PDF chain**: Deleted `pdf_service.dart`, `pdf_isolate_worker.dart`, `image_splitter.dart` — active PDF path is Kotlin native (`PdfConversionService` → `NativePdfService` → `KuronNative.convertImagesToPdf`). `DownloadContentUseCase.convertToPdfIfRequested()` had zero callers. Removed `PdfService` DI registration + use case param + `pdf` dependency (unused after deletion; `image` kept — used by `image_cache_service`).
 - **Rust `hitomiDecodeNode` binary format**: FFI now returns 21-byte fixed struct `[tag:u8][data:u64 LE][data:u32 LE]` instead of JSON string. Eliminates JSON serialization/deserialization per B-tree step. `hitomiBsetSearch` same format.
 - **Rust-first, no Dart fallback policy**: All integration points (`_decodeGalleryIdsFromData`, `_decodeNozomiIds`, `_extractReaderLinks`, `_extractTags`, `batchInspectHeaders`, `inspectFileHeader`, `inspectAvifHeaderForRouting`) now skip Dart fallback when `RustBridge.instance != null`. Dart fallback only runs when Rust unavailable (compute isolates, dev platforms).
 - **`header_inspector.dart` Dart fallback restored**: `inspectFileHeader` + `inspectAvifHeaderForRouting` Dart fallback uncommented — needed for `compute()` isolates where `RustBridge.instance` is null.

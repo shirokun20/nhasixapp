@@ -95,7 +95,6 @@ dependencies:
   crypto: ^3.0.3
 
   # PDF Generation
-  pdf: ^3.11.1
 
   package_info_plus: ^10.2.1
   markdown_widget: ^2.3.2+8

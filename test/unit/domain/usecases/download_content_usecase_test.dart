@@ -11,13 +11,10 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/domain/repositories/user_data_repository.dart';
 import 'package:nhasixapp/domain/usecases/downloads/download_content_usecase.dart';
 import 'package:nhasixapp/core/services/native_download_service.dart';
-import 'package:nhasixapp/core/services/pdf_service.dart';
 
 class MockUserDataRepository extends Mock implements UserDataRepository {}
 
 class MockNativeDownloadService extends Mock implements NativeDownloadService {}
-
-class MockPdfService extends Mock implements PdfService {}
 
 class MockRemoteConfigService extends Mock implements RemoteConfigService {}
 
@@ -26,7 +23,6 @@ class MockLogger extends Mock implements Logger {}
 void main() {
   late MockUserDataRepository userDataRepository;
   late MockNativeDownloadService nativeDownloadService;
-  late MockPdfService pdfService;
   late MockRemoteConfigService remoteConfigService;
   late MockLogger logger;
   late DownloadContentUseCase useCase;
@@ -43,13 +39,11 @@ void main() {
   setUp(() {
     userDataRepository = MockUserDataRepository();
     nativeDownloadService = MockNativeDownloadService();
-    pdfService = MockPdfService();
     remoteConfigService = MockRemoteConfigService();
     logger = MockLogger();
     useCase = DownloadContentUseCase(
       userDataRepository,
       nativeDownloadService,
-      pdfService,
       logger: logger,
     );
 

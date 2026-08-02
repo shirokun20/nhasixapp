@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:kuron_generic/kuron_generic.dart'
     show PageResolutionPipeline, PageResolutionInput;
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 
 import '../base_usecase.dart';
 import '../../entities/entities.dart';
@@ -11,8 +9,6 @@ import '../../repositories/repositories.dart';
 import '../../../core/services/memory_budget_coordinator.dart';
 import '../../repositories/user_data_repository.dart';
 import '../../../core/services/native_download_service.dart';
-import '../../../core/services/pdf_service.dart';
-import '../../../core/services/download_manager.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/download_storage_utils.dart';
 
@@ -22,13 +18,12 @@ class DownloadContentUseCase
   DownloadContentUseCase(
     this._userDataRepository,
     this._nativeDownloadService,
-    this._pdfService, {
+    {
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
   final UserDataRepository _userDataRepository;
   final NativeDownloadService _nativeDownloadService;
-  final PdfService _pdfService;
   final Logger _logger;
 
   @override
@@ -291,90 +286,6 @@ class DownloadContentUseCase
     }
   }
 
-  // Convert downloaded images to PDF if requested
-  // Enhanced with progress reporting via DownloadManager
-  Future<void> convertToPdfIfRequested(Content content) async {
-    try {
-      _logger.i('Starting PDF conversion for content: ${content.id}');
-
-      // Get downloaded image files
-      final imageFiles =
-          await _nativeDownloadService.getDownloadedFiles(content.id);
-      if (imageFiles.isEmpty) {
-        _logger.w('No images found for PDF conversion: ${content.id}');
-        return;
-      }
-
-      _logger.i(
-          'Converting ${imageFiles.length} images to PDF for: ${content.id}');
-
-      // Create PDF folder: nhasix/{source}/{contentId}/pdf/
-      final pdfOutputPath = await _getOrCreatePdfOutputPath(content.id);
-
-      // Emit progress for PDF conversion start
-      DownloadManager().emitProgress(DownloadProgressUpdate(
-        contentId: content.id,
-        downloadedPages: content.pageCount,
-        totalPages: content.pageCount,
-        downloadSpeed: 0.0,
-        estimatedTimeRemaining:
-            Duration(seconds: imageFiles.length * 2), // Estimate 2s per image
-      ));
-
-      // Convert to PDF with custom output path
-      final pdfResult = await _pdfService.convertToPdf(
-        contentId: content.id,
-        title: content.title,
-        imagePaths: imageFiles,
-        outputDir: pdfOutputPath, // Use PDF folder instead of download folder
-      );
-
-      if (pdfResult.success) {
-        _logger.i(
-            'PDF created successfully for content: ${content.id} at: $pdfOutputPath');
-
-        // Emit final progress for PDF completion
-        DownloadManager().emitProgress(DownloadProgressUpdate(
-          contentId: content.id,
-          downloadedPages: content.pageCount,
-          totalPages: content.pageCount,
-          downloadSpeed: 0.0,
-          estimatedTimeRemaining: Duration.zero,
-        ));
-      } else {
-        _logger.w(
-            'PDF conversion failed for content: ${content.id} - ${pdfResult.error}');
-      }
-    } catch (e) {
-      _logger.e('Error during PDF conversion: $e');
-    }
-  }
-
-  // Create PDF output path in nhasix/{source}/{contentId}/pdf/ folder
-  Future<String> _getOrCreatePdfOutputPath(String contentId) async {
-    try {
-      // Get content download path (nhasix/{source}/{contentId})
-      final contentPath =
-          await _nativeDownloadService.getDownloadPath(contentId);
-
-      if (contentPath == null) {
-        throw Exception('Content path not found');
-      }
-
-      // Create pdf folder inside content folder
-      final pdfFolder = Directory(path.join(contentPath, 'pdf'));
-
-      if (!await pdfFolder.exists()) {
-        await pdfFolder.create(recursive: true);
-        _logger.i('Created PDF folder: ${pdfFolder.path}');
-      }
-
-      return pdfFolder.path;
-    } catch (e) {
-      _logger.e('Error creating PDF folder: $e');
-      rethrow;
-    }
-  }
 }
 
 // Parameters for DownloadContentUseCase

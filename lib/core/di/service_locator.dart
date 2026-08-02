@@ -116,7 +116,6 @@ import 'package:nhasixapp/core/services/download_service.dart';
 import 'package:nhasixapp/core/services/update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
-import 'package:nhasixapp/core/services/pdf_service.dart';
 import 'package:nhasixapp/core/services/pdf_conversion_service.dart';
 import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
@@ -249,10 +248,6 @@ void _setupServices() {
   // Notification Service
   getIt.registerLazySingleton<NotificationService>(
       () => NotificationService(logger: getIt<Logger>()));
-
-  // PDF Service
-  getIt.registerLazySingleton<PdfService>(
-      () => PdfService(logger: getIt<Logger>()));
 
   // Native PDF Service
   getIt.registerLazySingleton<NativePdfService>(() => NativePdfService());
@@ -977,7 +972,6 @@ void _setupUseCases() {
       () => DownloadContentUseCase(
             getIt<UserDataRepository>(),
             getIt<NativeDownloadService>(),
-            getIt<PdfService>(),
             logger: getIt<Logger>(),
           ));
   getIt.registerLazySingleton<GetDownloadStatusUseCase>(
