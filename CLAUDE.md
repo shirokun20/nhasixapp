@@ -70,3 +70,10 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - Conventional Commits: `feat(auth): add login`, `fix(reader): null check`.
 - Branches: `master` (prod), `develop`, `feature/*`, `fix/*`, `hotfix/*`.
 - **Never** run `git add` or `git commit`. User handles source control.
+
+## Session Notes — 2026-08-02 (pending, do NOT write to MEMORY.md unless user says so)
+
+- **Rust imageproc.rs** (`image_process_single`/`image_split`): dormant, zero live callers (Dart PDF chain deleted). Re-enable only with `reader-ai-learning-mode` mosaic pipeline if `ImageSplitter` becomes bottleneck. Prerequisite: test FFI-in-isolate (`DynamicLibrary.open` per isolate) on device — code was commented out (`575ebca8`) because RustBridge was null in compute isolates.
+- **GenericHtmlParser → Rust**: verdict CLOSED (YAGNI). Benchmark (warmup + median 7× + AOT `dart compile exe`): nicomanga detail 250KB = 12ms, reader 1.1MB = 17ms, home/mangapill = 1-3ms. Lesson: first benchmark was JIT-warmup artifact (78ms "parse" = first-run compile cost) — always warmup before measuring.
+- **`convertToPdf` flag** in `DownloadContentParams`: legacy no-op (threaded to `_performActualDownload`, never executed). Cleanup pending — touches many call sites.
+- **PDF chain removal verification**: `dart analyze lib test` clean; `fvm flutter test test/unit/domain/usecases/download_content_usecase_test.dart` NOT yet run (sandbox blocked fvm cache write). Confirm on device/CLI.
