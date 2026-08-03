@@ -17,8 +17,7 @@ class DownloadContentUseCase
     extends UseCase<DownloadStatus, DownloadContentParams> {
   DownloadContentUseCase(
     this._userDataRepository,
-    this._nativeDownloadService,
-    {
+    this._nativeDownloadService, {
     Logger? logger,
   }) : _logger = logger ?? Logger();
 
@@ -102,7 +101,6 @@ class DownloadContentUseCase
         downloadStatus = await _performActualDownload(
           params.content,
           downloadStatus,
-          params.convertToPdf,
           params.imageQuality,
           params.timeoutDuration,
           params.startPage,
@@ -145,7 +143,6 @@ class DownloadContentUseCase
   Future<DownloadStatus> _performActualDownload(
     Content content,
     DownloadStatus initialStatus,
-    bool convertToPdf,
     String imageQuality,
     Duration? timeoutDuration,
     int? startPage,
@@ -285,7 +282,6 @@ class DownloadContentUseCase
       return currentStatus;
     }
   }
-
 }
 
 // Parameters for DownloadContentUseCase
@@ -299,7 +295,6 @@ class DownloadContentParams extends UseCaseParams {
     this.checkExisting = true,
     this.throwIfExists = false,
     this.startImmediately = false,
-    this.convertToPdf = false,
     this.imageQuality = 'high',
     this.timeoutDuration,
     this.startPage,
@@ -316,7 +311,6 @@ class DownloadContentParams extends UseCaseParams {
   final bool checkExisting;
   final bool throwIfExists;
   final bool startImmediately;
-  final bool convertToPdf;
   final String imageQuality;
   final Duration? timeoutDuration;
   final int? startPage; // NEW: Start page for range download (1-based)
@@ -342,7 +336,6 @@ class DownloadContentParams extends UseCaseParams {
         checkExisting,
         throwIfExists,
         startImmediately,
-        convertToPdf,
         imageQuality,
         timeoutDuration,
         startPage,
@@ -360,7 +353,6 @@ class DownloadContentParams extends UseCaseParams {
     bool? checkExisting,
     bool? throwIfExists,
     bool? startImmediately,
-    bool? convertToPdf,
     String? imageQuality,
     Duration? timeoutDuration,
     int? startPage,
@@ -377,7 +369,6 @@ class DownloadContentParams extends UseCaseParams {
       checkExisting: checkExisting ?? this.checkExisting,
       throwIfExists: throwIfExists ?? this.throwIfExists,
       startImmediately: startImmediately ?? this.startImmediately,
-      convertToPdf: convertToPdf ?? this.convertToPdf,
       imageQuality: imageQuality ?? this.imageQuality,
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       startPage: startPage ?? this.startPage,
@@ -427,7 +418,6 @@ class DownloadContentParams extends UseCaseParams {
   // Create params for immediate download with images
   factory DownloadContentParams.immediate(
     Content content, {
-    bool convertToPdf = false,
     String imageQuality = 'high',
     Duration? timeoutDuration,
     int? startPage,
@@ -442,7 +432,6 @@ class DownloadContentParams extends UseCaseParams {
       content: content,
       priority: 5,
       startImmediately: true,
-      convertToPdf: convertToPdf,
       imageQuality: imageQuality,
       timeoutDuration: timeoutDuration,
       startPage: startPage,
@@ -452,16 +441,6 @@ class DownloadContentParams extends UseCaseParams {
       savePath: savePath,
       enableNotifications: enableNotifications,
       maxParallelImages: maxParallelImages,
-    );
-  }
-
-  // Create params for PDF download
-  factory DownloadContentParams.pdf(Content content) {
-    return DownloadContentParams(
-      content: content,
-      priority: 3,
-      startImmediately: true,
-      convertToPdf: true,
     );
   }
 }
