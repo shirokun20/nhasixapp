@@ -14,6 +14,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:logger/logger.dart';
 
 // Grid card widget for 2-column layout with ripple effect
 class MainGridCard extends StatefulWidget {
@@ -37,14 +38,17 @@ class MainGridCard extends StatefulWidget {
 class _MainGridCardState extends State<MainGridCard> {
   // Once a content's cover has loaded, keep the Hero eligible across widget
   // rebuilds (home grid rebuilds often) so the flight works consistently.
-  static final Set<String> _readyContentIds = <String>{};
+  static final Logger _logger = getIt<Logger>();
 
   bool _imageReady = false;
 
   @override
   void initState() {
     super.initState();
-    _imageReady = _readyContentIds.contains(content.id);
+    _imageReady = AppHeroHelper.readyCoverContentIds.contains(content.id);
+    if (_imageReady) {
+      _logger.d('🦸 [GridCard] Hero ready from cache for ${content.id}');
+    }
   }
 
   Content get content => widget.content;
@@ -353,6 +357,9 @@ class _MainGridCardState extends State<MainGridCard> {
     // Hero flight only when the primary image has loaded — otherwise the
     // transition falls back to the normal page transition (no placeholder
     // flying to the detail header).
+    if (_imageReady) {
+      _logger.d('🦸 [GridCard] Hero enabled for ${content.id}');
+    }
     final heroImage = _imageReady
         ? AppHeroHelper.createImageHero(
             tag: 'content-cover-${content.id}',
@@ -385,8 +392,9 @@ class _MainGridCardState extends State<MainGridCard> {
         if (mounted) {
           setState(() {
             _imageReady = true;
-            _readyContentIds.add(content.id);
+            AppHeroHelper.readyCoverContentIds.add(content.id);
           });
+          _logger.d('🦸 [GridCard] Image loaded for ${content.id}');
         }
       },
       httpHeaders: getIt<ContentSourceRegistry>()

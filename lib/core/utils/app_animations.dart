@@ -477,6 +477,12 @@ class _StaggeredAnimationWidgetState extends State<StaggeredAnimationWidget>
 
 // Hero animation helper
 class AppHeroHelper {
+  // Content cover already loaded at least once (eligible for Hero flight).
+  // Shared across all card types so featured/grid/other cards agree on the
+  // same content id, otherwise a featured card would slide on first visit
+  // even though a grid card loaded the same cover.
+  static final Set<String> readyCoverContentIds = <String>{};
+
   // Create a hero widget with enhanced animations
   static Widget createHero({
     required String tag,

@@ -152,12 +152,16 @@ class AppRouter {
           final encodedId = state.pathParameters['id']!;
           final contentId = UriComponentUtils.safeDecode(encodedId);
           final sourceId = state.uri.queryParameters['sourceId'];
+          final preloaded = state.extra is Content
+              ? state.extra as Content
+              : null;
           return AppAnimations.animatedPageBuilder(
             context,
             state,
             DetailScreen(
               contentId: contentId,
               sourceId: sourceId,
+              preloadedContent: preloaded,
             ),
             type: RouteTransitionType.fadeSlide,
           );
@@ -546,11 +550,17 @@ class AppRouter {
   }
 
   static Future<SearchFilter?> goToContentDetail(
-      BuildContext context, String contentId,
-      {String? sourceId}) async {
+    BuildContext context,
+    String contentId, {
+    String? sourceId,
+    Content? content,
+  }) async {
     final encodedContentId = Uri.encodeComponent(contentId);
     final query = sourceId != null ? '?sourceId=$sourceId' : '';
-    return await context.push<SearchFilter>('/content/$encodedContentId$query');
+    return await context.push<SearchFilter>(
+      '/content/$encodedContentId$query',
+      extra: content,
+    );
   }
 
   static Future<void> goToReader(BuildContext context, String contentId,

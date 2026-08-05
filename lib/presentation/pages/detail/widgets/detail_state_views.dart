@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 class DetailStateHeader extends StatelessWidget {
   const DetailStateHeader({
@@ -48,26 +47,6 @@ class DetailStateHeader extends StatelessWidget {
   }
 }
 
-class DetailLoadingView extends StatelessWidget {
-  const DetailLoadingView({
-    super.key,
-    required this.title,
-    required this.onBack,
-  });
-
-  final String title;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        DetailStateHeader(title: title, onBack: onBack),
-        const Expanded(child: DetailScreenShimmer()),
-      ],
-    );
-  }
-}
 
 class DetailErrorView extends StatelessWidget {
   const DetailErrorView({

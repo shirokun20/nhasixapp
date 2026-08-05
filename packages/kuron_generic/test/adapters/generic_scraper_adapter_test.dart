@@ -1554,6 +1554,30 @@ void main() {
       expect(result.items.first.id, 'search-result-one');
     });
 
+    test('raw mode with prefix-like value routes to search, not prefix pattern',
+        () async {
+      // Regression: "raw:f_search=parody:azur lane" must go through _searchRaw,
+      // not the parody:/genre:/... prefix routing (which would look up
+      // "parodySearch" and return empty when the source lacks that pattern).
+      dioAdapter.onGet(
+        'https://api.komiku.org/?post_type=manga&s=parody%3Aazur%20lane',
+        (s) => s.reply(200, _searchHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          query: 'raw:s=parody:azur lane',
+          page: 1,
+        ),
+        _absoluteRawConfig,
+      );
+
+      expect(result.items, hasLength(2));
+      expect(result.items.first.id, 'search-result-one');
+    });
+
     test(
         'replaces {page} in template query without appending default paged param',
         () async {

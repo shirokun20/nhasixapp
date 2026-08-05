@@ -34,6 +34,7 @@ import 'widgets/comments_section_widget.dart';
 import 'widgets/detail_content_view.dart';
 import 'widgets/detail_info_sections.dart';
 import 'widgets/detail_state_views.dart';
+import '../../widgets/shimmer_loading_widgets.dart';
 import 'services/detail_tag_query_resolver.dart';
 import 'services/reader_launch_payload_builder.dart';
 import 'services/detail_mangafire_coordinator.dart';
@@ -43,11 +44,17 @@ class DetailScreen extends StatefulWidget {
   final String? sourceId;
   final String? chapterId; // Chapter ID from history for read indicator
 
+  // Content passed from the tapped card (home/content-by-tag) so the header
+  // cover + title render instantly during the Hero flight while the rest of
+  // the detail (chapters, metadata, related) loads in the background.
+  final Content? preloadedContent;
+
   const DetailScreen({
     super.key,
     required this.contentId,
     this.sourceId,
     this.chapterId,
+    this.preloadedContent,
   });
 
   @visibleForTesting
@@ -169,7 +176,11 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildDetailStateBody(DetailState state, bool isOfflineMode) {
     if (state is DetailLoading) {
-      return _buildLoadingState();
+      // Render the same DetailContentView (with its permanent Hero header)
+      // so the flight from a content card lands on a stable destination —
+      // only the body below the header is replaced with shimmer while the
+      // rest of the detail loads. Avoids a Hero swap mid-transition.
+      return _buildPreloadedContent(state, isOfflineMode);
     }
     if (state is DetailLoaded) {
       return Stack(
@@ -190,6 +201,39 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     return const SizedBox.shrink();
+  }
+
+  // Loading-state body built on DetailContentView so the header + Hero tag
+  // exist from the first frame (cover/title from the tapped card via
+  // preloadedContent), with shimmer placeholder sections below.
+  Widget _buildPreloadedContent(DetailState state, bool isOfflineMode) {
+    final preloaded = widget.preloadedContent;
+    final preloadedCover = preloaded?.coverUrl ?? '';
+    final appBarActions = preloaded != null
+        ? _buildDetailAppBarActions(preloaded, isOfflineMode)
+        : <Widget>[];
+    final preloadedSourceId = preloaded?.sourceId;
+    return DetailContentView(
+      scrollController: _scrollController,
+      isOfflineMode: isOfflineMode,
+      headerImageUrl: preloadedCover,
+      contentId: widget.contentId,
+      sourceId: preloadedSourceId ?? widget.sourceId ?? '',
+      imageHeaders: preloadedSourceId != null && preloadedCover.isNotEmpty
+          ? getIt<ContentSourceRegistry>()
+              .getSource(preloadedSourceId)
+              ?.getImageDownloadHeaders(
+                imageUrl: preloadedCover,
+              )
+          : null,
+      onBack: context.pop,
+      onGoOnline: () => _showGoOnlineDialog(context),
+      appBarActions: appBarActions,
+      sections: [
+        const SizedBox(height: DesignTokens.spaceLg),
+        const DetailScreenShimmer(),
+      ],
+    );
   }
 
   String? _resolveTagIdFromLoadedContent(
@@ -641,13 +685,6 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return DetailLoadingView(
-      title: AppLocalizations.of(context)!.loadingContentTitle,
-      onBack: context.pop,
     );
   }
 

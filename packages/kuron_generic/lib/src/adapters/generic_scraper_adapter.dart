@@ -144,6 +144,22 @@ class GenericScraperAdapter implements GenericAdapter {
     final urlPatternsCfg =
         (scraper['urlPatterns'] as Map?)?.cast<String, dynamic>() ?? {};
 
+    // ── Raw-param mode (from DynamicFormSearchUI) ──────────────────────────
+    // Must run BEFORE prefix routing: a raw query value can itself look like
+    // a prefix (e.g. "raw:f_search=parody:azur lane"), and the prefix branch
+    // would strip it and route to a pattern like "parodySearch" that the
+    // source may not have configured. raw: always means the form supplied the
+    // query params directly.
+    if (filter.query.startsWith('raw:')) {
+      return _searchRaw(
+        rawParams: filter.query.substring(4),
+        page: filter.page,
+        rawConfig: rawConfig,
+        scraper: scraper,
+        urlPatternsCfg: urlPatternsCfg,
+      );
+    }
+
     // ── Prefix-based routing (genre:/tag:/author:/artist:/publisher:) ────
     // Map each prefix → {searchPattern, searchPagePattern}
     const prefixMapping = {
@@ -168,20 +184,6 @@ class GenericScraperAdapter implements GenericAdapter {
         }
         break;
       }
-    }
-
-    // ── Raw-param mode (from DynamicFormSearchUI) ──────────────────────────
-    // When query starts with "raw:", the form supplied all query-params
-    // directly. We build the URL from the searchForm.urlPattern base path and
-    // append the raw params instead of using the {query} template substitution.
-    if (filter.query.startsWith('raw:')) {
-      return _searchRaw(
-        rawParams: filter.query.substring(4),
-        page: filter.page,
-        rawConfig: rawConfig,
-        scraper: scraper,
-        urlPatternsCfg: urlPatternsCfg,
-      );
     }
 
     // 1) Prefix pattern (genreSearch / tagSearch / authorSearch / …)

@@ -38,14 +38,12 @@ class MainFeaturedCard extends StatefulWidget {
 class _MainFeaturedCardState extends State<MainFeaturedCard> {
   // Once a content's cover has loaded, keep the Hero eligible across widget
   // rebuilds (home grid rebuilds often) so the flight works consistently.
-  static final Set<String> _readyContentIds = <String>{};
-
   bool _imageReady = false;
 
   @override
   void initState() {
     super.initState();
-    _imageReady = _readyContentIds.contains(content.id);
+    _imageReady = AppHeroHelper.readyCoverContentIds.contains(content.id);
   }
 
   Content get content => widget.content;
@@ -514,7 +512,7 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
         if (mounted) {
           setState(() {
             _imageReady = true;
-            _readyContentIds.add(content.id);
+            AppHeroHelper.readyCoverContentIds.add(content.id);
           });
         }
       },

@@ -1095,6 +1095,7 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
       context,
       content.id,
       sourceId: content.sourceId,
+      content: content,
     );
 
     // If user searched by tag from detail screen, trigger search

@@ -314,6 +314,7 @@ class _ContentByTagScreenState extends State<ContentByTagScreen> {
       context,
       content.id,
       sourceId: content.sourceId,
+      content: content,
     );
   }
 
