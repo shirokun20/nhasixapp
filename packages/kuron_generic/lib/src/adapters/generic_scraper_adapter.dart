@@ -174,15 +174,24 @@ class GenericScraperAdapter implements GenericAdapter {
       'release:': ('releaseSearch', 'releaseSearchPage'),
     };
 
+    // Sources with a searchForm send their query as a raw form value, so a
+    // value that looks like a prefix (e.g. "parody:azur lane" inside
+    // "f_search=...") is search TEXT, not a routing prefix. Only apply
+    // prefix routing when the source has no searchForm.
+    final usesSearchForm =
+        rawConfig['searchForm'] is Map<String, dynamic>;
+
     var prefixPatternKey = <String>{};
-    for (final entry in prefixMapping.entries) {
-      if (filter.query.startsWith(entry.key)) {
-        final tagValue = filter.query.substring(entry.key.length);
-        if (tagValue.isNotEmpty) {
-          filter = filter.copyWith(query: tagValue);
-          prefixPatternKey = <String>{entry.value.$1, entry.value.$2};
+    if (!usesSearchForm) {
+      for (final entry in prefixMapping.entries) {
+        if (filter.query.startsWith(entry.key)) {
+          final tagValue = filter.query.substring(entry.key.length);
+          if (tagValue.isNotEmpty) {
+            filter = filter.copyWith(query: tagValue);
+            prefixPatternKey = <String>{entry.value.$1, entry.value.$2};
+          }
+          break;
         }
-        break;
       }
     }
 

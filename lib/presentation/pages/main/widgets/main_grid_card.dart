@@ -389,13 +389,15 @@ class _MainGridCardState extends State<MainGridCard> {
     return ProgressiveImageWidget(
       networkUrl: coverUrl,
       onImageLoaded: () {
-        if (mounted) {
-          setState(() {
-            _imageReady = true;
-            AppHeroHelper.readyCoverContentIds.add(content.id);
-          });
-          _logger.d('🦸 [GridCard] Image loaded for ${content.id}');
-        }
+        // frameBuilder fires during the Image build phase — defer the
+        // setState so we never call markNeedsBuild mid-build.
+        AppHeroHelper.readyCoverContentIds.add(content.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() => _imageReady = true);
+            _logger.d('🦸 [GridCard] Image loaded for ${content.id}');
+          }
+        });
       },
       httpHeaders: getIt<ContentSourceRegistry>()
           .getSource(content.sourceId)

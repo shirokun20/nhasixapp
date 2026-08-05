@@ -231,7 +231,60 @@ class _DetailScreenState extends State<DetailScreen> {
       appBarActions: appBarActions,
       sections: [
         const SizedBox(height: DesignTokens.spaceLg),
-        const DetailScreenShimmer(),
+        _DetailLoadingBodyShimmer(),
+      ],
+    );
+  }
+
+  // Light shimmer for the loading body below the header. Uses a shrinkWrap
+  // ListView so it never needs a bounded height (sits in a SliverToBoxAdapter)
+  // and thus cannot overflow like SingleChildScrollView would.
+  Widget _DetailLoadingBodyShimmer() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final box = (double h, double w) => Container(
+      height: h,
+      width: w,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      children: [
+        box(24, double.infinity),
+        const SizedBox(height: 12),
+        box(16, MediaQuery.of(context).size.width * 0.6),
+        const SizedBox(height: 16),
+        Row(
+          children: List.generate(
+            4,
+            (index) => Container(
+              height: 28,
+              width: 80,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        ...List.generate(
+          5,
+          (_) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                box(16, MediaQuery.of(context).size.width * 0.3),
+                const SizedBox(width: 16),
+                Expanded(child: box(16, double.infinity)),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
