@@ -13,10 +13,11 @@ import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
+import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 // Horizontal featured card widget: Image left (40%), Content info right (60%)
-class MainFeaturedCard extends StatelessWidget {
+class MainFeaturedCard extends StatefulWidget {
   const MainFeaturedCard({
     super.key,
     required this.content,
@@ -29,6 +30,28 @@ class MainFeaturedCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool blurThumbnails;
   final bool isBlacklisted;
+
+  @override
+  State<MainFeaturedCard> createState() => _MainFeaturedCardState();
+}
+
+class _MainFeaturedCardState extends State<MainFeaturedCard> {
+  // Once a content's cover has loaded, keep the Hero eligible across widget
+  // rebuilds (home grid rebuilds often) so the flight works consistently.
+  static final Set<String> _readyContentIds = <String>{};
+
+  bool _imageReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageReady = _readyContentIds.contains(content.id);
+  }
+
+  Content get content => widget.content;
+  VoidCallback get onTap => widget.onTap;
+  bool get blurThumbnails => widget.blurThumbnails;
+  bool get isBlacklisted => widget.isBlacklisted;
 
   @override
   Widget build(BuildContext context) {
@@ -457,17 +480,26 @@ class MainFeaturedCard extends StatelessWidget {
       fallbackUrl: fallbackUrl,
     );
 
+    // Hero flight only when the primary image has loaded — otherwise the
+    // transition falls back to the normal page transition.
+    final heroImage = _imageReady
+        ? AppHeroHelper.createImageHero(
+            tag: 'content-cover-${content.id}',
+            image: image,
+          )
+        : image;
+
     if (blurThumbnails) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: image,
+          child: heroImage,
         ),
       );
     }
 
-    return image;
+    return heroImage;
   }
 
   // Build cached image with fallback to first page if cover fails
@@ -478,6 +510,14 @@ class MainFeaturedCard extends StatelessWidget {
   }) {
     return ProgressiveImageWidget(
       networkUrl: coverUrl,
+      onImageLoaded: () {
+        if (mounted) {
+          setState(() {
+            _imageReady = true;
+            _readyContentIds.add(content.id);
+          });
+        }
+      },
       httpHeaders: getIt<ContentSourceRegistry>()
           .getSource(content.sourceId)
           ?.getImageDownloadHeaders(imageUrl: coverUrl),

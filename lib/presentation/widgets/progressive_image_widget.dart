@@ -53,6 +53,7 @@ class ProgressiveImageWidget extends StatefulWidget {
     this.fadeOutDuration = const Duration(milliseconds: 100),
     this.httpHeaders,
     this.preferStaticPreview = false,
+    this.onImageLoaded,
   });
 
   final String networkUrl;
@@ -71,6 +72,7 @@ class ProgressiveImageWidget extends StatefulWidget {
   final Duration fadeOutDuration;
   final Map<String, String>? httpHeaders;
   final bool preferStaticPreview;
+  final VoidCallback? onImageLoaded;
 
   @visibleForTesting
   static int get heavyAnimatedThumbnailThresholdBytesForTesting =>
@@ -142,6 +144,13 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
+  bool _imageLoadedNotified = false;
+
+  void _notifyImageLoaded() {
+    if (_imageLoadedNotified) return;
+    _imageLoadedNotified = true;
+    widget.onImageLoaded?.call();
+  }
 
   String _networkCacheKey({String? urlToHash}) {
     final targetUrl = urlToHash ?? widget.networkUrl.split('|').first;
@@ -357,6 +366,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       },
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded || frame != null) {
+          _notifyImageLoaded();
           return child;
         }
         return _buildPlaceholder();
@@ -557,6 +567,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
           widget.errorWidget ?? _buildErrorWidget(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded || frame != null) {
+          _notifyImageLoaded();
           return child;
         }
         return widget.placeholder ?? _buildPlaceholder();
@@ -605,6 +616,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
             return widget.errorWidget ?? _buildErrorWidget();
           }
 
+          _notifyImageLoaded();
           final imageWidget = Image.file(
             snapshot.data!,
             width: widget.width,
@@ -639,6 +651,19 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
       memCacheHeight:
           widget.memCacheHeight ?? (widget.isThumbnail ? 600 : 1200),
       placeholder: (context, url) => widget.placeholder ?? _buildPlaceholder(),
+      imageBuilder: (context, imageProvider) => Image(
+        image: imageProvider,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) {
+            _notifyImageLoaded();
+            return child;
+          }
+          return widget.placeholder ?? _buildPlaceholder();
+        },
+      ),
       errorWidget: (context, url, error) {
         if (kDebugMode) {
           _logger.w('Network image load failed for $url: $error');

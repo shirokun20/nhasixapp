@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 
 class DetailContentView extends StatelessWidget {
@@ -90,32 +91,38 @@ class DetailContentView extends StatelessWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ProgressiveImageWidget(
-                        networkUrl: headerImageUrl,
-                        contentId: contentId,
-                        pageNumber: pageNumber,
-                        isThumbnail: false,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        memCacheWidth: 800,
-                        memCacheHeight: 1200,
-                        httpHeaders: imageHeaders,
-                        placeholder: Container(
-                          color: colorScheme.surfaceContainer,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: colorScheme.primary,
+                      // Destination for the Hero flight started from content
+                      // cards (MainGridCard/MainFeaturedCard). Tag is always
+                      // present — source side gates the flight on image load.
+                      AppHeroHelper.createImageHero(
+                        tag: 'content-cover-$contentId',
+                        image: ProgressiveImageWidget(
+                          networkUrl: headerImageUrl,
+                          contentId: contentId,
+                          pageNumber: pageNumber,
+                          isThumbnail: false,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 800,
+                          memCacheHeight: 1200,
+                          httpHeaders: imageHeaders,
+                          placeholder: Container(
+                            color: colorScheme.surfaceContainer,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: colorScheme.primary,
+                              ),
                             ),
                           ),
-                        ),
-                        errorWidget: Container(
-                          color: colorScheme.surfaceContainer,
-                          child: Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 64,
-                              color: colorScheme.onSurfaceVariant,
+                          errorWidget: Container(
+                            color: colorScheme.surfaceContainer,
+                            child: Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 64,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ),
