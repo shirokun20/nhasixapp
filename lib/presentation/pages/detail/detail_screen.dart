@@ -34,7 +34,6 @@ import 'widgets/comments_section_widget.dart';
 import 'widgets/detail_content_view.dart';
 import 'widgets/detail_info_sections.dart';
 import 'widgets/detail_state_views.dart';
-import '../../widgets/shimmer_loading_widgets.dart';
 import 'services/detail_tag_query_resolver.dart';
 import 'services/reader_launch_payload_builder.dart';
 import 'services/detail_mangafire_coordinator.dart';
@@ -231,7 +230,7 @@ class _DetailScreenState extends State<DetailScreen> {
       appBarActions: appBarActions,
       sections: [
         const SizedBox(height: DesignTokens.spaceLg),
-        _DetailLoadingBodyShimmer(),
+        _detailLoadingBodyShimmer(),
       ],
     );
   }
@@ -239,16 +238,16 @@ class _DetailScreenState extends State<DetailScreen> {
   // Light shimmer for the loading body below the header. Uses a shrinkWrap
   // ListView so it never needs a bounded height (sits in a SliverToBoxAdapter)
   // and thus cannot overflow like SingleChildScrollView would.
-  Widget _DetailLoadingBodyShimmer() {
+  Widget _detailLoadingBodyShimmer() {
     final colorScheme = Theme.of(context).colorScheme;
-    final box = (double h, double w) => Container(
-      height: h,
-      width: w,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
-      ),
-    );
+    Widget box(double h, double w) => Container(
+          height: h,
+          width: w,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
