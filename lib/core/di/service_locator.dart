@@ -10,6 +10,7 @@ import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,6 +45,12 @@ import 'package:nhasixapp/data/datasources/remote/tags/tags_remote_data_source.d
 import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
+import 'package:nhasixapp/data/repositories/ai_provider_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/glossary_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/ai/mosaic_builder.dart';
+import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
+import 'package:nhasixapp/data/repositories/ai/ai_provider_factory.dart';
 
 // BLoCs
 import 'package:nhasixapp/presentation/blocs/splash/splash_bloc.dart';
@@ -880,6 +887,38 @@ void _setupRepositories() {
         remoteDataSource: getIt<TagsRemoteDataSource>(),
         tagDataManager: getIt<TagDataManager>(),
         configService: getIt<RemoteConfigService>(),
+        logger: getIt<Logger>(),
+      ));
+
+  // ── AI Translation (reader-ai-learning-mode) ────────────────────────
+  getIt.registerLazySingleton<AiProviderRepository>(
+      () => AiProviderRepositoryImpl(
+            storage: const FlutterSecureStorage(),
+            logger: getIt<Logger>(),
+          ));
+  getIt.registerLazySingleton<TranslationCacheRepository>(
+      () => TranslationCacheRepositoryImpl(
+            databaseProvider: () => DatabaseHelper.instance.database,
+            logger: getIt<Logger>(),
+          ));
+  getIt.registerLazySingleton<AiPreferencesRepository>(
+      () => AiPreferencesRepositoryImpl(prefs: getIt<SharedPreferences>()));
+  getIt.registerLazySingleton<GlossaryRepository>(
+      () => GlossaryRepositoryImpl(prefs: getIt<SharedPreferences>()));
+
+  // Provider factory: builds the right provider implementation for a config.
+  getIt.registerLazySingleton<AiProviderFactory>(
+      () => AiProviderFactoryImpl(dio: getIt<Dio>(), logger: getIt<Logger>()));
+  getIt.registerLazySingleton<MosaicBuilder>(() => MosaicBuilder());
+  getIt.registerLazySingleton<FallbackImageHandler>(
+      () => FallbackImageHandler());
+  getIt.registerFactory<ReaderTranslationCubit>(() => ReaderTranslationCubit(
+        providerRepository: getIt<AiProviderRepository>(),
+        providerFactory: getIt<AiProviderFactory>(),
+        preferencesRepository: getIt<AiPreferencesRepository>(),
+        cacheRepository: getIt<TranslationCacheRepository>(),
+        mosaicBuilder: getIt<MosaicBuilder>(),
+        fallbackHandler: getIt<FallbackImageHandler>(),
         logger: getIt<Logger>(),
       ));
 }

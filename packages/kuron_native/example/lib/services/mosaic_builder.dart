@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart' hide Image;
-import '../models/bubble_box.dart';
+import 'package:kuron_native/kuron_native.dart';
 
 class MosaicBuilder {
   // Mosaic padding per bubble (% of bubble size)

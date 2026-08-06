@@ -15,3 +15,4 @@ export 'history.dart';
 export 'reading_statistics.dart';
 export 'reader_position.dart';
 export 'favorite_collection.dart';
+export 'ai_translation.dart';

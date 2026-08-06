@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'models/ai_provider_config.dart';
-import 'models/bubble_box.dart';
 import 'models/page_translation.dart';
 import 'widgets/translation_style_picker.dart';
 
@@ -1012,17 +1011,7 @@ class _DemoPageState extends State<DemoPage> {
         return [];
       }
       _logm('ONNX: ${result.length} raw bubbles');
-      return result
-          .map(
-            (m) => BubbleBox(
-              x: (m['x'] as num).toInt(),
-              y: (m['y'] as num).toInt(),
-              w: (m['w'] as num).toInt(),
-              h: (m['h'] as num).toInt(),
-              confidence: (m['confidence'] as num?)?.toDouble() ?? 0.0,
-            ),
-          )
-          .toList();
+      return result;
     } catch (e) {
       _logm('ONNX detect failed: $e');
       return [];

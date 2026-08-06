@@ -39,6 +39,11 @@ import '../../widgets/extended_image_reader_widget.dart';
 import 'chapter_open_overlay.dart';
 import 'end_of_chapter_overlay.dart';
 
+import 'reader_translation_widgets.dart';
+import 'reader_translation_draw_mode.dart';
+import '../../cubits/reader/reader_translation_cubit.dart';
+import '../../../domain/repositories/ai_translation_repositories.dart';
+
 part 'reader_overlay_widgets.dart';
 part 'reader_settings_widgets.dart';
 part 'reader_image_widgets.dart';

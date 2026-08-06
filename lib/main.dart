@@ -18,6 +18,7 @@ import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dar
 import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/core/services/analytics_service.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
+import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
@@ -48,6 +49,12 @@ void main() async {
   // Initialize History Cleanup Service
   final historyCleanupService = getIt<HistoryCleanupService>();
   await historyCleanupService.initialize();
+
+  // Purge expired translation cache (>30 days)
+  try {
+    final cacheRepo = getIt<TranslationCacheRepositoryImpl>();
+    await cacheRepo.purgeExpired();
+  } catch (_) {}
 
   // Initialize App Update Service (clears cache on app updates)
   await AppUpdateService.initialize();

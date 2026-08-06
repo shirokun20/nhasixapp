@@ -37,6 +37,7 @@ import 'settings_theme_widgets.dart';
 import 'settings_download_widgets.dart';
 import 'settings_privacy_widgets.dart';
 import 'settings_app_lock_widgets.dart';
+import 'ai_settings_screen.dart';
 
 part 'settings_source_install.dart';
 
@@ -456,6 +457,28 @@ class _SettingsScreenState extends State<SettingsScreen>
               theme: theme,
             ),
           ], theme),
+
+          SizedBox(height: DesignTokens.spaceXl),
+
+          // AI Translation Card
+          buildSettingsSectionHeader(
+            Icons.auto_awesome_outlined,
+            'AI TRANSLATION',
+            theme,
+          ),
+          SizedBox(height: DesignTokens.spaceMd),
+          buildSettingsActionTile(
+            title: 'AI Settings',
+            subtitle: 'Providers, language, style, translation cache',
+            actionLabel: 'Open',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const AiSettingsScreen(),
+              ),
+            ),
+            theme: theme,
+          ),
 
           SizedBox(height: DesignTokens.spaceXl),
 

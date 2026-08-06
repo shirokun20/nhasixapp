@@ -1,12 +1,15 @@
 import 'kuron_native_platform_interface.dart';
 import 'dart:typed_data';
 
+import 'src/bubble_box.dart';
+
 export 'utils/backup_utils.dart'; // Export for users
 export 'widgets/kuron_widgets.dart'; // Export Widgets
 export 'widgets/animated_webp_view.dart'; // Export native animated-WebP viewer
 export 'src/doh_provider.dart'; // Export DoH provider constants
 export 'src/native_download_payload.dart'; // v2 download payload model (§7)
 export 'src/rust_bridge.dart'; // Export Rust FFI bridge
+export 'src/bubble_box.dart'; // Export BubbleBox model
 
 class KuronNative {
   // Singleton instance
@@ -329,16 +332,18 @@ class KuronNative {
   }
 
   // Detect manga speech bubbles using on-device ONNX model.
-  // Returns list of [BubbleBox]-compatible maps.
-  Future<List<Map<String, dynamic>>?> detectBubbles({
+  // Returns list of [BubbleBox] in original image pixel coordinates,
+  // or null when detection is unavailable/fails.
+  Future<List<BubbleBox>?> detectBubbles({
     required Uint8List imageBytes,
     required int imageWidth,
     required int imageHeight,
-  }) {
-    return KuronNativePlatform.instance.detectBubbles(
+  }) async {
+    final raw = await KuronNativePlatform.instance.detectBubbles(
       imageBytes: imageBytes,
       imageWidth: imageWidth,
       imageHeight: imageHeight,
     );
+    return raw?.map(BubbleBox.fromMap).toList();
   }
 }

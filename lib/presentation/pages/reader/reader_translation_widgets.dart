@@ -1,0 +1,306 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:nhasixapp/domain/entities/glossary.dart';
+import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
+
+import '../../../domain/entities/ai_translation.dart';
+
+/// Toolbar button group for AI translation: ✨ translate, then overlay toggle.
+class ReaderTranslationToolbar extends StatelessWidget {
+  const ReaderTranslationToolbar({
+    super.key,
+    required this.readingMode,
+    required this.onTranslate,
+    this.onEnterDrawMode,
+  });
+
+  final ReadingMode readingMode;
+  final VoidCallback onTranslate;
+
+  /// Called when the user ENABLES draw mode — the reader fetches the page
+  /// and runs ONNX detection so blue reference bubbles appear immediately.
+  final VoidCallback? onEnterDrawMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = readingMode == ReadingMode.continuousScroll;
+    return BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
+      builder: (context, state) {
+        final cubit = context.read<ReaderTranslationCubit>();
+        final active = state is ReaderTranslationTranslated &&
+            cubit.overlayVisible;
+        final busy = state is ReaderTranslationDetecting ||
+            state is ReaderTranslationBuildingMosaic ||
+            state is ReaderTranslationTranslating ||
+            state is ReaderTranslationTranslatingBubble;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: isDisabled
+                  ? 'AI translate tidak tersedia di continue scroll'
+                  : (active
+                      ? 'Hide translation'
+                      : busy
+                          ? 'Translating...'
+                          : 'Translate page'),
+              onPressed: isDisabled || busy
+                  ? null
+                  : () {
+                      if (state is ReaderTranslationTranslated) {
+                        cubit.toggleOverlay();
+                      } else {
+                        onTranslate();
+                      }
+                    },
+              icon: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      active ? Icons.auto_awesome : Icons.auto_awesome_outlined,
+                      color: active ? Colors.amber : null,
+                    ),
+              iconSize: 20,
+              visualDensity: VisualDensity.compact,
+            ),
+            // Reset translate result + reference bubbles
+            if (state is ReaderTranslationTranslated ||
+                cubit.detectedBoxes.isNotEmpty ||
+                cubit.manualBubbles.isNotEmpty)
+              IconButton(
+                tooltip: 'Clear translate + bubbles',
+                onPressed: isDisabled ? null : cubit.resetPage,
+                icon: const Icon(Icons.delete_sweep_outlined,
+                    size: 20, color: Colors.redAccent),
+                visualDensity: VisualDensity.compact,
+              ),
+            // Manual bubble drawing toggle (9.5)
+            IconButton(
+              tooltip: cubit.drawMode ? 'Exit draw mode' : 'Draw bubbles',
+              onPressed: isDisabled
+                  ? null
+                  : () {
+                      if (cubit.drawMode) {
+                        cubit.setDrawMode(false);
+                      } else {
+                        cubit.setDrawMode(true);
+                        // Cache current page so the Detect button can run ONNX
+                        // without a prior translate.
+                        onEnterDrawMode?.call();
+                      }
+                    },
+              icon: Icon(
+                Icons.draw_outlined,
+                color: cubit.drawMode ? Colors.amber : null,
+              ),
+              iconSize: 20,
+              visualDensity: VisualDensity.compact,
+            ),
+            // SFX skip toggle (9.3)
+            IconButton(
+              tooltip: cubit.skipSfx ? 'Skip SFX: ON' : 'Skip SFX: OFF',
+              onPressed: isDisabled
+                  ? null
+                  : () => cubit.setSkipSfx(!cubit.skipSfx),
+              icon: Icon(
+                Icons.volume_off_outlined,
+                color: cubit.skipSfx ? Colors.amber : null,
+              ),
+              iconSize: 20,
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Overlay layer: positions translated bubbles over the reader image.
+///
+/// The reader renders the page with `BoxFit.fitWidth`, so bubble rects in
+/// ORIGINAL-image pixel space are mapped to screen space by scaling with
+/// `screenW / imageW` (X) and `screenH / imageH` (Y). Vertical alignment:
+/// image height = `screenW * imgH / imgW`, letterboxed/centered vertically
+/// if the image is shorter than the viewport.
+class ReaderTranslationOverlay extends StatelessWidget {
+  const ReaderTranslationOverlay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    return BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
+      buildWhen: (prev, curr) =>
+          curr is ReaderTranslationTranslated ||
+          curr is ReaderTranslationTranslatingBubble ||
+          curr is ReaderTranslationTranslating ||
+          curr is ReaderTranslationIdle, // reset clears the overlay
+      builder: (context, state) {
+        if (state is! ReaderTranslationTranslated) {
+          return const SizedBox.shrink();
+        }
+        final result = state.result;
+        final imgW = state.imageWidth.toDouble();
+        final imgH = state.imageHeight.toDouble();
+        if (imgW <= 0 || imgH <= 0) return const SizedBox.shrink();
+
+        // fitWidth scale: image fills screen width; height derived from AR.
+        final scaleX = screenSize.width / imgW;
+        final renderedH = screenSize.width * (imgH / imgW);
+        final scaleY = renderedH / imgH;
+        // Vertical letterbox offset (image centered when shorter than screen)
+        final topOffset =
+            renderedH < screenSize.height ? (screenSize.height - renderedH) / 2 : 0.0;
+
+        return Stack(
+          children: [
+            for (var i = 0; i < result.bubbles.length; i++)
+              Positioned.fromRect(
+                rect: Rect.fromLTWH(
+                  result.bubbles[i].rect.left * scaleX,
+                  result.bubbles[i].rect.top * scaleY + topOffset,
+                  result.bubbles[i].rect.width * scaleX,
+                  result.bubbles[i].rect.height * scaleY,
+                ),
+                child: _TranslatedBubble(
+                  bubble: result.bubbles[i],
+                  index: i,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TranslatedBubble extends StatelessWidget {
+  const _TranslatedBubble({required this.bubble, required this.index});
+
+  final BubbleTranslation bubble;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showEditSheet(context),
+      onLongPress: () => _showSaveToGlossarySheet(context),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.amber, width: 1.5),
+        ),
+        child: Text(
+          bubble.translated,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: (bubble.rect.height * 0.18).clamp(8.0, 18.0),
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tap → edit translation bottom sheet (spec 9.2).
+  void _showEditSheet(BuildContext context) {
+    final controller = TextEditingController(text: bubble.translated);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Edit Translation',
+                style: Theme.of(sheetContext).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Translation',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () {
+                context.read<ReaderTranslationCubit>().editBubbleTranslation(
+                    index, controller.text.trim());
+                Navigator.pop(sheetContext);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Long-press → "Save to Glossary" action sheet (spec 7.1).
+  void _showSaveToGlossarySheet(BuildContext context) {
+    final state = context.read<ReaderTranslationCubit>().state;
+    final contentId =
+        state is ReaderTranslationTranslated ? state.contentId : '';
+    final pageIndex =
+        state is ReaderTranslationTranslated ? state.pageIndex : 0;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(bubble.translated),
+              subtitle: Text(bubble.original.isEmpty
+                  ? 'Save to learning glossary'
+                  : bubble.original),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.bookmark_add_outlined),
+              title: const Text('Save to Glossary'),
+              onTap: () async {
+                await getIt<GlossaryRepository>().save(GlossaryEntry(
+                  id:
+                      'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
+                  sourceText: bubble.original,
+                  translatedText: bubble.translated,
+                  contentId: contentId,
+                  pageIndex: pageIndex,
+                  timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                ));
+                if (sheetContext.mounted) Navigator.pop(sheetContext);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Saved to Glossary')),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

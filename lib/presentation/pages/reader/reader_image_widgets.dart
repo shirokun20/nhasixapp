@@ -1,5 +1,17 @@
 part of 'reader_screen.dart';
 
+// ───── AI translation: image download headers ─────
+
+/// Resolves the download headers (referer/cookie/user-agent) for a page image
+/// from its source. Plain requests are rejected by most sources — the
+/// translation pipeline MUST reuse the reader's header strategy.
+Map<String, String>? _sourceImageHeaders(String? sourceId, String imageUrl) {
+  if (sourceId == null || sourceId.trim().isEmpty) return null;
+  return getIt<ContentSourceRegistry>()
+      .getSource(sourceId)
+      ?.getImageDownloadHeaders(imageUrl: imageUrl);
+}
+
 // ───── _ReaderImageViewer ─────
 
 class _ReaderImageViewer extends StatelessWidget {
@@ -54,12 +66,8 @@ class _ReaderImageViewer extends StatelessWidget {
     return supportsSourcePageManualRepair(rawConfig);
   }
 
-  Map<String, String>? _headers(String? sourceId, String imageUrl) {
-    if (sourceId == null) return null;
-    return getIt<ContentSourceRegistry>()
-        .getSource(sourceId)
-        ?.getImageDownloadHeaders(imageUrl: imageUrl);
-  }
+  Map<String, String>? _headers(String? sourceId, String imageUrl) =>
+      _sourceImageHeaders(sourceId, imageUrl);
 
   Map<String, dynamic>? _rawConfig(String? sourceId) {
     if (sourceId == null || sourceId.trim().isEmpty) return null;

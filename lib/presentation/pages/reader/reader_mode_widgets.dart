@@ -167,6 +167,23 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   Offset _tapDownPosition = Offset.zero;
   DateTime _tapDownTime = DateTime.now();
 
+  /// Owned here so handlers (which run in contexts above the provider) can
+  /// reach it directly.
+  late final ReaderTranslationCubit _translationCubit =
+      getIt<ReaderTranslationCubit>();
+
+  @override
+  void initState() {
+    super.initState();
+    _translationCubit.initPreferences();
+  }
+
+  @override
+  void dispose() {
+    _translationCubit.close();
+    super.dispose();
+  }
+
   Widget _buildChapterNavigationPage({VoidCallback? onGoToFirstPage}) {
     final hasPrevChapter = widget.cubit.hasPreviousChapter;
     final hasNextChapter = widget.cubit.hasNextChapter;
@@ -205,6 +222,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         final reportPage = index + 1;
         widget.visiblePageNotifier.value = reportPage;
         widget.animatedPauseNotifier.value = reportPage;
+        // New page → clear stale translation overlay
+        _translationCubit.resetPage();
 
         widget.logger.d(
             '📖 VerticalPageView changed to index=$index (reporting page $reportPage)');
@@ -259,6 +278,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         final reportPage = index + 1;
         widget.visiblePageNotifier.value = reportPage;
         widget.animatedPauseNotifier.value = reportPage;
+        // New page → clear stale translation overlay
+        _translationCubit.resetPage();
 
         widget.logger.d(
             '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
@@ -409,53 +430,258 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final showOverlay = !widget.chapterOverlayShown && (state.content != null);
+    final isContinuous = state.readingMode == ReadingMode.continuousScroll;
+    // Exit draw mode + hide overlay when entering continue scroll.
+    if (isContinuous) {
+      _translationCubit.onReadingModeChanged(ReadingMode.continuousScroll);
+    }
 
-    return Stack(
-      children: [
-        _buildReaderContent(),
-        _ReaderUIOverlay(
-          isVisible: state.showUI ?? false,
-          topBar: _ReaderTopBar(
-            state: state,
-            onBack: () => context.pop(),
-            onToggleKeepScreenOn: widget.cubit.toggleKeepScreenOn,
-            onOpenSettings: () => widget.onShowSettings(state),
-          ),
-          bottomBar: state.readingMode != ReadingMode.continuousScroll
-              ? _ReaderBottomBar(
-                  state: state,
-                  onPrevPage: widget.cubit.previousPage,
-                  onNextPage: widget.cubit.nextPage,
-                  onJumpToPage: widget.cubit.jumpToPage,
-                  onChangeReadingMode: () {
-                    final newMode = widget.getNextReadingMode(
-                      state.readingMode ?? ReadingMode.singlePage,
-                      disableContinuousScroll:
-                          widget.isContinuousScrollDisabled(),
-                    );
-                    widget.cubit.changeReadingMode(newMode);
-                  },
-                  disableContinuousScroll: widget.isContinuousScrollDisabled(),
-                )
-              : null,
+    return BlocProvider<ReaderTranslationCubit>.value(
+      value: _translationCubit,
+      child: BlocListener<ReaderTranslationCubit, ReaderTranslationState>(
+        // Surface pipeline failures exactly once per emit (not per rebuild).
+        listener: (context, state) {
+          final messenger = ScaffoldMessenger.of(context);
+          if (state is ReaderTranslationError) {
+            messenger.showSnackBar(
+                SnackBar(content: Text('Translate gagal: ${state.message}')));
+          } else if (state is ReaderTranslationNoProvider) {
+            messenger.showSnackBar(SnackBar(
+              content: Text(state.message ??
+                  'AI translate butuh vision provider. Setup di Settings → AI Translation.'),
+            ));
+          } else if (state is ReaderTranslationRateLimited) {
+            messenger.showSnackBar(SnackBar(
+              content: Text(
+                  'Rate limited. ${state.fallbackName != null ? 'Using ${state.fallbackName} as fallback.' : 'Tunggu ${state.cooldownSeconds}s.'}'),
+            ));
+          }
+        },
+        child: BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
+          builder: (context, cubitState) {
+            final drawMode = context.read<ReaderTranslationCubit>().drawMode;
+            return Stack(
+              children: [
+                // Lock page navigation (PageView swipe + bottom-bar slider /
+                // prev / next) while in draw mode.
+                AbsorbPointer(
+                  absorbing: drawMode,
+                  child: Stack(
+                    children: [
+                      _buildReaderContent(),
+                      _ReaderUIOverlay(
+                        isVisible: state.showUI ?? false,
+                        topBar: _ReaderTopBar(
+                          state: state,
+                          onBack: () => context.pop(),
+                          onToggleKeepScreenOn: widget.cubit.toggleKeepScreenOn,
+                          onOpenSettings: () => widget.onShowSettings(state),
+                          onTranslate: () => _onTranslatePressed(),
+                          onEnterDrawMode: () => _onEnterDrawMode(),
+                        ),
+                        bottomBar: state.readingMode !=
+                                ReadingMode.continuousScroll
+                            ? _ReaderBottomBar(
+                                state: state,
+                                onPrevPage: widget.cubit.previousPage,
+                                onNextPage: widget.cubit.nextPage,
+                                onJumpToPage: widget.cubit.jumpToPage,
+                                onChangeReadingMode: () {
+                                  final newMode = widget.getNextReadingMode(
+                                    state.readingMode ?? ReadingMode.singlePage,
+                                    disableContinuousScroll:
+                                        widget.isContinuousScrollDisabled(),
+                                  );
+                                  widget.cubit.changeReadingMode(newMode);
+                                },
+                                disableContinuousScroll:
+                                    widget.isContinuousScrollDisabled(),
+                              )
+                            : null,
+                      ),
+                      _ReaderMiniChromeToggle(
+                        isVisible: state.showUI ?? false,
+                        onToggle: widget.cubit.toggleUI,
+                      ),
+                    ],
+                  ),
+                ),
+                // AI translation overlay layer (above reader image)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: isContinuous,
+                    child: const ReaderTranslationOverlay(),
+                  ),
+                ),
+                // Manual bubble drawing mode (9.5) — stays interactive while
+                // everything below is absorbed.
+                const Positioned.fill(
+                  child: ReaderTranslationDrawMode(),
+                ),
+                if (state.readingMode == ReadingMode.continuousScroll)
+                  _ReaderFloatingPageIndicator(
+                    scrollingNotifier: widget.scrollingNotifier,
+                    visiblePageNotifier: widget.visiblePageNotifier,
+                    totalPages: state.content?.pageCount ?? 0,
+                  ),
+                if (showOverlay)
+                  ChapterOpenOverlay(
+                    title: state.content!.getDisplayTitle(),
+                    totalPages: state.content!.pageCount,
+                    onDismiss: widget.onDismissChapterOverlay,
+                  ),
+              ],
+            );
+          },
         ),
-        _ReaderMiniChromeToggle(
-          isVisible: state.showUI ?? false,
-          onToggle: widget.cubit.toggleUI,
-        ),
-        if (state.readingMode == ReadingMode.continuousScroll)
-          _ReaderFloatingPageIndicator(
-            scrollingNotifier: widget.scrollingNotifier,
-            visiblePageNotifier: widget.visiblePageNotifier,
-            totalPages: state.content?.pageCount ?? 0,
-          ),
-        if (showOverlay)
-          ChapterOpenOverlay(
-            title: state.content!.getDisplayTitle(),
-            totalPages: state.content!.pageCount,
-            onDismiss: widget.onDismissChapterOverlay,
-          ),
-      ],
+      ),
     );
+  }
+
+  /// Fetches the active page image bytes and triggers the AI pipeline.
+  Future<void> _onTranslatePressed() async {
+    final state = widget.state;
+    // Use the VISIBLE page (updated onPageChanged), not state.currentPage
+    // which can lag behind during swipe/zoom.
+    final visible = widget.visiblePageNotifier.value;
+    final pageIndex = (visible > 0 ? visible : 1) - 1;
+    final urls = state.content?.imageUrls ?? [];
+    if (pageIndex < 0 || pageIndex >= urls.length) return;
+
+    final cubit = _translationCubit;
+
+    // 4.3 Privacy disclosure — shown once before first translate
+    final prefsRepo = getIt<AiPreferencesRepository>();
+    if (!await prefsRepo.isPrivacyAcknowledged()) {
+      if (!mounted) return;
+      final ok = await _showPrivacyDialog(context);
+      if (ok != true || !mounted) return;
+      await prefsRepo.setPrivacyAcknowledged();
+    }
+
+    final page = await _fetchAndCapturePage(
+      url: urls[pageIndex],
+      pageIndex: pageIndex,
+    );
+    if (page == null || !mounted) return;
+
+    cubit.translatePage(
+      imageBytes: page.bytes,
+      imageWidth: page.size.width.round(),
+      imageHeight: page.size.height.round(),
+      contentId: widget.contentId,
+      pageIndex: pageIndex,
+      imageUrl: urls[pageIndex],
+      readingMode: state.readingMode ?? ReadingMode.singlePage,
+    );
+  }
+
+  Future<bool?> _showPrivacyDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Privacy Disclosure'),
+        content: const Text(
+            'Gambar halaman yang kamu translate akan dikirim ke provider '
+            'yang kamu pilih menggunakan key kamu sendiri. Tidak ada data '
+            'yang melalui server Kuron.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Agree & Translate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Draw-mode entry: fetch + capture current page. Detection is explicit
+  /// (🛰 button), mirroring the example app.
+  Future<void> _onEnterDrawMode() async {
+    final state = widget.state;
+    final visible = widget.visiblePageNotifier.value;
+    final pageIndex = (visible > 0 ? visible : 1) - 1;
+    final urls = state.content?.imageUrls ?? [];
+    if (pageIndex < 0 || pageIndex >= urls.length) return;
+    // Cache the page so the draw-mode 🛰 Detect button can run ONNX without
+    // a prior translate. Detection itself is explicit (button), like example.
+    await _fetchAndCapturePage(url: urls[pageIndex], pageIndex: pageIndex);
+  }
+
+  /// Fetches the page image, caches it in the translation cubit (for
+  /// draw-mode detect) and returns bytes + pixel size. Null on failure.
+  Future<({Uint8List bytes, Size size})?> _fetchAndCapturePage({
+    required String url,
+    required int pageIndex,
+  }) async {
+    final bytes = await _fetchPageBytes(url);
+    if (bytes == null) {
+      widget.logger.w('AI translate: fetch gagal untuk $url');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.')));
+      }
+      return null;
+    }
+    if (!mounted) return null;
+    final size = await _imageSize(bytes);
+    if (size == null) {
+      widget.logger
+          .w('AI translate: decode ukuran gagal, bytes=${bytes.length}');
+      return null;
+    }
+    widget.logger.d(
+        'AI translate: page ${size.width.round()}x${size.height.round()}, bytes=${bytes.length}');
+    _translationCubit.capturePage(
+      imageBytes: bytes,
+      imageWidth: size.width.round(),
+      imageHeight: size.height.round(),
+    );
+    return (bytes: bytes, size: size);
+  }
+
+  Future<Uint8List?> _fetchPageBytes(String url) async {
+    // Local/offline images: read directly from disk.
+    if (url.startsWith('/') || url.startsWith('file://')) {
+      final path = url.replaceFirst('file://', '');
+      final file = File(path);
+      if (await file.exists()) return file.readAsBytes();
+      return null;
+    }
+    // Remote: use the source's download headers (referer/cookie/user-agent) —
+    // most sources reject plain requests, silently killing the pipeline.
+    final headers = _sourceImageHeaders(
+      widget.state.content?.sourceId,
+      url,
+    );
+    try {
+      final response = await getIt<Dio>().get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: headers,
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+      return response.data == null ? null : Uint8List.fromList(response.data!);
+    } catch (e) {
+      widget.logger.w('Failed to fetch page for translate: $e');
+      return null;
+    }
+  }
+
+  Future<Size?> _imageSize(Uint8List bytes) async {
+    try {
+      final decoded = await decodeImageFromList(bytes);
+      return Size(decoded.width.toDouble(), decoded.height.toDouble());
+    } catch (_) {
+      return null;
+    }
   }
 }

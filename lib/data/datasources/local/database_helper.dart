@@ -9,7 +9,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
   static const int _databaseVersion =
-      13; // Updated for favorite collections support
+      14; // v14: translation_cache table for AI translation
 
   static Database? _database;
   static final Logger _logger = getIt<Logger>();
@@ -120,6 +120,7 @@ class DatabaseHelper {
     _createSearchFilterStateTable(batch);
     _createReaderPositionsTable(batch);
     _createDoujinListTable(batch);
+    _createTranslationCacheTable(batch);
 
     // Create indexes
     _createIndexes(batch);
@@ -458,6 +459,27 @@ class DatabaseHelper {
       }
     }
 
+    if (oldVersion < 14 && newVersion >= 14) {
+      _logger.i('Upgrading to version 14: Adding translation_cache table');
+      try {
+        await db.execute('''
+          CREATE TABLE translation_cache (
+            cache_key   TEXT PRIMARY KEY,
+            content_id  TEXT NOT NULL,
+            page_index  INTEGER NOT NULL,
+            result_json TEXT NOT NULL,
+            created_at  INTEGER NOT NULL
+          )
+        ''');
+        await db.execute(
+            'CREATE INDEX idx_tc_content ON translation_cache(content_id)');
+        _logger.i('translation_cache table created successfully');
+      } catch (e) {
+        _logger.e('Error creating translation_cache table: $e');
+        rethrow;
+      }
+    }
+
     if (oldVersion < 13 && newVersion >= 13) {
       _logger.i('Upgrading to version 13: Adding favorite collections tables');
       try {
@@ -646,6 +668,21 @@ class DatabaseHelper {
     ''');
   }
 
+  // Create translation cache table for AI page translation
+  void _createTranslationCacheTable(Batch batch) {
+    batch.execute('''
+      CREATE TABLE translation_cache (
+        cache_key   TEXT PRIMARY KEY,
+        content_id  TEXT NOT NULL,
+        page_index  INTEGER NOT NULL,
+        result_json TEXT NOT NULL,
+        created_at  INTEGER NOT NULL
+      )
+    ''');
+    batch.execute(
+        'CREATE INDEX idx_tc_content ON translation_cache(content_id)');
+  }
+
   // Create database indexes for performance
   void _createIndexes(Batch batch) {
     // Favorites indexes
@@ -726,6 +763,7 @@ class DatabaseHelper {
       'favorite_collection_items',
       'favorite_collections',
       'favorites',
+      'translation_cache',
     ];
 
     for (final table in tables) {

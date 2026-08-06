@@ -84,17 +84,22 @@ class _FailedPageCard extends StatelessWidget {
 // ───── Top bar ─────
 
 class _ReaderTopBar extends StatelessWidget {
+
   const _ReaderTopBar({
     required this.state,
     required this.onBack,
     required this.onToggleKeepScreenOn,
     required this.onOpenSettings,
+    this.onTranslate,
+    this.onEnterDrawMode,
   });
 
   final ReaderState state;
   final VoidCallback onBack;
   final VoidCallback onToggleKeepScreenOn;
   final VoidCallback onOpenSettings;
+  final VoidCallback? onTranslate;
+  final VoidCallback? onEnterDrawMode;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +213,13 @@ class _ReaderTopBar extends StatelessWidget {
                 iconSize: 20,
                 visualDensity: VisualDensity.compact,
               ),
+              if (onTranslate != null)
+                ReaderTranslationToolbar(
+                  readingMode:
+                      state.readingMode ?? ReadingMode.singlePage,
+                  onTranslate: onTranslate!,
+                  onEnterDrawMode: onEnterDrawMode,
+                ),
             ],
           ),
         ),
