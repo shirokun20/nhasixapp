@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.23%2B33-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.24%2B34-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](#)
 [![Code Quality](https://img.shields.io/badge/code_quality-A+-blueviolet?style=for-the-badge)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
@@ -26,7 +26,7 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.23+33**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.23%2B33)
+[📦 **Download v0.9.24+34**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.24%2B34)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|

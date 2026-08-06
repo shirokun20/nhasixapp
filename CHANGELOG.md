@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.24+34] - 2026-08-07
+
 ### ✨ Added
 
 - **Reader AI Learning Mode (image translation)**: BYOK multi-provider page translation with ONNX bubble detection. Pipeline: on-device `detectBubbles` (ONNX 1280 letterbox) → NMS IoU 0.45 + false-positive filter → mosaic (crop 2× + red labels, JPEG85/2MB) → AI provider → `Positioned` overlay scaled to fitWidth render. **Providers**: OpenAICompatible (OpenCode Go/OpenAI/OpenRouter/Zen/Custom) + Gemini — separate Go vs free endpoints, text-only `deepseek-v4-flash-free` excluded from vision path. **Features**: 7 translation styles (incl. Kasar 18+ confirm), target language, SFX skip toggle, per-bubble partial loading, tap-to-edit bubble (`isUserEdited`), long-press save glossary with romaji reading, manual draw mode (Detect blue / manual red, tap-delete, page-lock), continue-scroll guard, 429 multi-key round robin, SQLite `translation_cache` (SHA256 16-hex key, 30-day purge at launch), one-time full-screen tutorial. **kuron_native**: ONNX Runtime Android 1.23.0, `BubbleDetector.kt`, `BubbleBox` Dart class, `detectBubbles()` method channel. Full l10n (en/id/zh). 19 tests pass, analyze clean.
