@@ -361,12 +361,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         await _providerRepository.setDefault(visionProvider.id);
         logInfo('Active provider ${active.model} text-only — switched to ${visionProvider.model}');
       } else {
-        emit(ReaderTranslationNoProvider(
-          message:
-              'Model "${active.model}" tidak support image translation '
-              '(text-only/free). Pilih model vision (mis. kimi-k2.6, '
-              'gemini-2.5-flash, gpt-4o-mini) di Settings → AI Translation.',
-        ));
+        emit(ReaderTranslationNoProvider(modelName: active.model));
         return;
       }
     }
@@ -473,11 +468,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     if (!provider.isVisionCapable) {
       final vision = providers.where((p) => p.isVisionCapable).firstOrNull;
       if (vision == null) {
-        emit(ReaderTranslationNoProvider(
-          message:
-              'Model "${provider.model}" text-only/free — pilih model vision '
-              'di Settings → AI Translation (mis. kimi-k2.6).',
-        ));
+        emit(ReaderTranslationNoProvider(modelName: provider.model));
         throw const AiTranslationException('No vision provider');
       }
       provider = vision;

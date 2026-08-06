@@ -9407,6 +9407,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get continue_;
+
+  /// No description provided for @aiTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Translate'**
+  String get aiTranslate;
+
+  /// No description provided for @aiTutorialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere to close'**
+  String get aiTutorialHint;
+
+  /// No description provided for @aiTutorialTranslateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'✨ Translate page'**
+  String get aiTutorialTranslateTitle;
+
+  /// No description provided for @aiTutorialTranslateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto bubble detection -> translation overlaid on original text. Tap again to toggle.'**
+  String get aiTutorialTranslateDesc;
+
+  /// No description provided for @aiTutorialDrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'✏️ Draw bubbles'**
+  String get aiTutorialDrawTitle;
+
+  /// No description provided for @aiTutorialDrawDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual correction. Drag to add bubble (red), 🛰 Detect to see ONNX one (blue). Done locks but bubbles stay visible.'**
+  String get aiTutorialDrawDesc;
+
+  /// No description provided for @aiTutorialClearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🗑 Clear'**
+  String get aiTutorialClearTitle;
+
+  /// No description provided for @aiTutorialClearDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove translation result + all reference bubbles.'**
+  String get aiTutorialClearDesc;
+
+  /// No description provided for @aiTutorialGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get aiTutorialGotIt;
+
+  /// No description provided for @aiNotAvailableCS.
+  ///
+  /// In en, this message translates to:
+  /// **'AI translate tidak tersedia di continue scroll.'**
+  String get aiNotAvailableCS;
+
+  /// No description provided for @aiHideTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide translation'**
+  String get aiHideTranslation;
+
+  /// No description provided for @aiTranslating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating...'**
+  String get aiTranslating;
+
+  /// No description provided for @aiTranslatePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate page'**
+  String get aiTranslatePage;
+
+  /// No description provided for @aiClearTranslateBubbles.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear translate + bubbles'**
+  String get aiClearTranslateBubbles;
+
+  /// No description provided for @aiExitDrawMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit draw mode'**
+  String get aiExitDrawMode;
+
+  /// No description provided for @aiDrawBubbles.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw bubbles'**
+  String get aiDrawBubbles;
+
+  /// No description provided for @aiSkipSfxOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip SFX: ON'**
+  String get aiSkipSfxOn;
+
+  /// No description provided for @aiSkipSfxOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip SFX: OFF'**
+  String get aiSkipSfxOff;
+
+  /// No description provided for @aiEditTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Translation'**
+  String get aiEditTranslation;
+
+  /// No description provided for @aiTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get aiTranslation;
+
+  /// No description provided for @aiSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get aiSave;
+
+  /// No description provided for @aiSaveToGlossaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to learning glossary'**
+  String get aiSaveToGlossaryHint;
+
+  /// No description provided for @aiSaveToGlossary.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Glossary'**
+  String get aiSaveToGlossary;
+
+  /// No description provided for @aiSavedToGlossary.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to Glossary'**
+  String get aiSavedToGlossary;
+
+  /// No description provided for @aiTranslateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate gagal: {error}'**
+  String aiTranslateFailed(Object error);
+
+  /// No description provided for @aiNeedVisionProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'AI translate needs a vision provider. Set it up in Settings → AI Translation.'**
+  String get aiNeedVisionProvider;
+
+  /// No description provided for @aiRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limited. {fallback}'**
+  String aiRateLimited(Object fallback);
+
+  /// No description provided for @aiUsingFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Using {name} as fallback.'**
+  String aiUsingFallback(Object name);
+
+  /// No description provided for @aiWaitCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {seconds}s.'**
+  String aiWaitCooldown(Object seconds);
+
+  /// No description provided for @aiGagalFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.'**
+  String get aiGagalFetch;
+
+  /// No description provided for @aiSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Settings'**
+  String get aiSettings;
+
+  /// No description provided for @aiProvidersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers, language, style, translation cache'**
+  String get aiProvidersSubtitle;
+
+  /// No description provided for @aiOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get aiOpen;
+
+  /// No description provided for @aiTargetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Language'**
+  String get aiTargetLanguage;
+
+  /// No description provided for @aiTargetLangSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language AI translates into'**
+  String get aiTargetLangSubtitle;
+
+  /// No description provided for @aiTranslationStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation Style'**
+  String get aiTranslationStyle;
+
+  /// No description provided for @aiSkipSfx.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip SFX bubbles'**
+  String get aiSkipSfx;
+
+  /// No description provided for @aiSkipSfxSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip sound-effect-only bubbles (default on)'**
+  String get aiSkipSfxSubtitle;
+
+  /// No description provided for @aiPrivacyDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Disclosure'**
+  String get aiPrivacyDisclosure;
+
+  /// No description provided for @aiPrivacyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Images are sent to your chosen provider. Kuron does not relay your data.'**
+  String get aiPrivacyDesc;
+
+  /// No description provided for @aiClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Translation Cache'**
+  String get aiClearCache;
+
+  /// No description provided for @aiClearCacheSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all cached page translations'**
+  String get aiClearCacheSubtitle;
+
+  /// No description provided for @aiGlossary.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning Glossary'**
+  String get aiGlossary;
+
+  /// No description provided for @aiGlossarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review saved vocabulary'**
+  String get aiGlossarySubtitle;
+
+  /// No description provided for @aiAddProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Provider'**
+  String get aiAddProvider;
+
+  /// No description provided for @aiEditProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Provider'**
+  String get aiEditProvider;
+
+  /// No description provided for @aiProviderType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get aiProviderType;
+
+  /// No description provided for @aiDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Name'**
+  String get aiDisplayName;
+
+  /// No description provided for @aiApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get aiApiKey;
+
+  /// No description provided for @aiApiKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for no-key free models'**
+  String get aiApiKeyHint;
+
+  /// No description provided for @aiModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get aiModel;
+
+  /// No description provided for @aiBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Base URL'**
+  String get aiBaseUrl;
+
+  /// No description provided for @aiTestKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Key'**
+  String get aiTestKey;
+
+  /// No description provided for @aiTesting.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing...'**
+  String get aiTesting;
+
+  /// No description provided for @aiDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get aiDelete;
+
+  /// No description provided for @aiValidKey.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Valid key'**
+  String get aiValidKey;
+
+  /// No description provided for @aiCheckIconD.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Valid key — model {model} OK'**
+  String aiCheckIconD(Object model);
+
+  /// No description provided for @aiCustomTypeDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'user must supply'**
+  String get aiCustomTypeDefault;
+
+  /// No description provided for @aiModeKasarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kasar Mode (18+)'**
+  String get aiModeKasarTitle;
+
+  /// No description provided for @aiModeKasarConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Kasar mode uses strong language. Continue?'**
+  String get aiModeKasarConfirm;
+
+  /// No description provided for @aiEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get aiEnable;
+
+  /// No description provided for @aiCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get aiCancel;
+
+  /// No description provided for @aiModelNotVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Model \"{model}\" does not support image translation (text-only/free). Choose a vision model (e.g. kimi-k2.6, gemini-2.5-flash, gpt-4o-mini) in Settings → AI Translation.'**
+  String aiModelNotVision(Object model);
+
+  /// No description provided for @aiNoVisionProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Model \"{model}\" is text-only/free — choose a vision model in Settings → AI Translation (e.g. kimi-k2.6).'**
+  String aiNoVisionProvider(Object model);
+
+  /// No description provided for @aiGlossaryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No glossary entries yet.\\nLong-press a translated bubble to save one.'**
+  String get aiGlossaryEmpty;
+
+  /// No description provided for @aiDefaultModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: {model}'**
+  String aiDefaultModel(Object model);
+
+  /// No description provided for @aiClearCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation cache cleared'**
+  String get aiClearCacheCleared;
+
+  /// No description provided for @aiPrivacyDialogDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Page images you translate are sent to the provider you choose using your own key. No data passes through Kuron\'s servers.'**
+  String get aiPrivacyDialogDesc;
+
+  /// No description provided for @aiPrivacyAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree & Translate'**
+  String get aiPrivacyAgree;
+
+  /// No description provided for @aiNoKeyNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'No key needed'**
+  String get aiNoKeyNeeded;
+
+  /// No description provided for @glossaryPage.
+  ///
+  /// In en, this message translates to:
+  /// **'page'**
+  String get glossaryPage;
 }
 
 class _AppLocalizationsDelegate

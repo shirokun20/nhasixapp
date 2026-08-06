@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/glossary.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
 import '../../../domain/entities/ai_translation.dart';
@@ -26,6 +28,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = readingMode == ReadingMode.continuousScroll;
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
@@ -40,12 +43,12 @@ class ReaderTranslationToolbar extends StatelessWidget {
           children: [
             IconButton(
               tooltip: isDisabled
-                  ? 'AI translate tidak tersedia di continue scroll'
+                  ? l10n.aiNotAvailableCS
                   : (active
-                      ? 'Hide translation'
+                      ? l10n.aiHideTranslation
                       : busy
-                          ? 'Translating...'
-                          : 'Translate page'),
+                          ? l10n.aiTranslating
+                          : l10n.aiTranslatePage),
               onPressed: isDisabled || busy
                   ? null
                   : () {
@@ -73,7 +76,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
                 cubit.detectedBoxes.isNotEmpty ||
                 cubit.manualBubbles.isNotEmpty)
               IconButton(
-                tooltip: 'Clear translate + bubbles',
+                tooltip: l10n.aiClearTranslateBubbles,
                 onPressed: isDisabled ? null : cubit.resetPage,
                 icon: const Icon(Icons.delete_sweep_outlined,
                     size: 20, color: Colors.redAccent),
@@ -81,7 +84,8 @@ class ReaderTranslationToolbar extends StatelessWidget {
               ),
             // Manual bubble drawing toggle (9.5)
             IconButton(
-              tooltip: cubit.drawMode ? 'Exit draw mode' : 'Draw bubbles',
+              tooltip:
+                  cubit.drawMode ? l10n.aiExitDrawMode : l10n.aiDrawBubbles,
               onPressed: isDisabled
                   ? null
                   : () {
@@ -103,7 +107,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
             ),
             // SFX skip toggle (9.3)
             IconButton(
-              tooltip: cubit.skipSfx ? 'Skip SFX: ON' : 'Skip SFX: OFF',
+              tooltip: cubit.skipSfx ? l10n.aiSkipSfxOn : l10n.aiSkipSfxOff,
               onPressed: isDisabled
                   ? null
                   : () => cubit.setSkipSfx(!cubit.skipSfx),
@@ -229,15 +233,15 @@ class _TranslatedBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Edit Translation',
+            Text(AppLocalizations.of(sheetContext)!.aiEditTranslation,
                 style: Theme.of(sheetContext).textTheme.titleLarge),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Translation',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(sheetContext)!.aiTranslation,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -247,7 +251,7 @@ class _TranslatedBubble extends StatelessWidget {
                     index, controller.text.trim());
                 Navigator.pop(sheetContext);
               },
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(sheetContext)!.aiSave),
             ),
           ],
         ),
@@ -272,28 +276,38 @@ class _TranslatedBubble extends StatelessWidget {
             ListTile(
               title: Text(bubble.translated),
               subtitle: Text(bubble.original.isEmpty
-                  ? 'Save to learning glossary'
+                  ? AppLocalizations.of(sheetContext)!.aiSaveToGlossaryHint
                   : bubble.original),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.bookmark_add_outlined),
-              title: const Text('Save to Glossary'),
+              title: Text(AppLocalizations.of(sheetContext)!.aiSaveToGlossary),
               onTap: () async {
-                await getIt<GlossaryRepository>().save(GlossaryEntry(
-                  id:
-                      'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
-                  sourceText: bubble.original,
-                  translatedText: bubble.translated,
-                  contentId: contentId,
-                  pageIndex: pageIndex,
-                  timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                ));
+                getIt<Logger>().d(
+                    'Glossary: saving "${bubble.translated}" from page $pageIndex');
+                try {
+                  await getIt<GlossaryRepository>().save(GlossaryEntry(
+                    id:
+                        'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
+                    sourceText: bubble.original,
+                    translatedText: bubble.translated,
+                    reading: bubble.reading,
+                    contentId: contentId,
+                    pageIndex: pageIndex,
+                    timestamp:
+                        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  ));
+                  getIt<Logger>().i('Glossary saved OK');
+                } catch (e) {
+                  getIt<Logger>().e('Glossary save FAILED: $e');
+                }
                 if (sheetContext.mounted) Navigator.pop(sheetContext);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Saved to Glossary')),
+                    SnackBar(
+                        content: Text(
+                            AppLocalizations.of(context)!.aiSavedToGlossary)),
                   );
                 }
               },

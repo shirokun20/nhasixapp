@@ -468,9 +468,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           SizedBox(height: DesignTokens.spaceMd),
           buildSettingsActionTile(
-            title: 'AI Settings',
-            subtitle: 'Providers, language, style, translation cache',
-            actionLabel: 'Open',
+            title: AppLocalizations.of(context)!.aiSettings,
+            subtitle: AppLocalizations.of(context)!.aiProvidersSubtitle,
+            actionLabel: AppLocalizations.of(context)!.aiOpen,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute<void>(

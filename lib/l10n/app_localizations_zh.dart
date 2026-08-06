@@ -5356,4 +5356,235 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get continue_ => '继续';
+
+  @override
+  String get aiTranslate => 'AI 翻译';
+
+  @override
+  String get aiTutorialHint => '点击任意位置关闭';
+
+  @override
+  String get aiTutorialTranslateTitle => '✨ 翻译页面';
+
+  @override
+  String get aiTutorialTranslateDesc => '自动检测气泡 → 翻译叠加在原文上。再次点击切换显示。';
+
+  @override
+  String get aiTutorialDrawTitle => '✏️ 绘制气泡';
+
+  @override
+  String get aiTutorialDrawDesc =>
+      '手动修正。拖动添加气泡（红），🛰 Detect 查看 ONNX 检测（蓝）。Done 锁定但气泡保持显示。';
+
+  @override
+  String get aiTutorialClearTitle => '🗑 清除';
+
+  @override
+  String get aiTutorialClearDesc => '移除翻译结果 + 所有参考气泡。';
+
+  @override
+  String get aiTutorialGotIt => '明白了！';
+
+  @override
+  String get aiNotAvailableCS => '连续滚动模式下不可用 AI 翻译。';
+
+  @override
+  String get aiHideTranslation => '隐藏翻译';
+
+  @override
+  String get aiTranslating => '翻译中...';
+
+  @override
+  String get aiTranslatePage => '翻译页面';
+
+  @override
+  String get aiClearTranslateBubbles => '清除翻译 + 气泡';
+
+  @override
+  String get aiExitDrawMode => '退出绘制模式';
+
+  @override
+  String get aiDrawBubbles => '绘制气泡';
+
+  @override
+  String get aiSkipSfxOn => '跳过音效：开';
+
+  @override
+  String get aiSkipSfxOff => '跳过音效：关';
+
+  @override
+  String get aiEditTranslation => '编辑翻译';
+
+  @override
+  String get aiTranslation => '翻译';
+
+  @override
+  String get aiSave => '保存';
+
+  @override
+  String get aiSaveToGlossaryHint => '保存到学习词汇表';
+
+  @override
+  String get aiSaveToGlossary => '保存到词汇表';
+
+  @override
+  String get aiSavedToGlossary => '已保存到词汇表';
+
+  @override
+  String aiTranslateFailed(Object error) {
+    return '翻译失败：$error';
+  }
+
+  @override
+  String get aiNeedVisionProvider => 'AI 翻译需要视觉模型。请在设置 → AI 翻译中配置。';
+
+  @override
+  String aiRateLimited(Object fallback) {
+    return '速率受限。$fallback';
+  }
+
+  @override
+  String aiUsingFallback(Object name) {
+    return '使用 $name 作为备用。';
+  }
+
+  @override
+  String aiWaitCooldown(Object seconds) {
+    return '等待 $seconds 秒。';
+  }
+
+  @override
+  String get aiGagalFetch => '获取页面图片失败。请重试或检查网络。';
+
+  @override
+  String get aiSettings => 'AI 设置';
+
+  @override
+  String get aiProvidersSubtitle => '提供商、语言、风格、翻译缓存';
+
+  @override
+  String get aiOpen => '打开';
+
+  @override
+  String get aiTargetLanguage => '目标语言';
+
+  @override
+  String get aiTargetLangSubtitle => 'AI 翻译成的语言';
+
+  @override
+  String get aiTranslationStyle => '翻译风格';
+
+  @override
+  String get aiSkipSfx => '跳过音效气泡';
+
+  @override
+  String get aiSkipSfxSubtitle => '跳过仅含音效的气泡（默认开）';
+
+  @override
+  String get aiPrivacyDisclosure => '隐私声明';
+
+  @override
+  String get aiPrivacyDesc => '图片发送到您选择的提供商。Kuron 不转发您的数据。';
+
+  @override
+  String get aiClearCache => '清除翻译缓存';
+
+  @override
+  String get aiClearCacheSubtitle => '删除所有缓存的页面翻译';
+
+  @override
+  String get aiGlossary => '学习词汇表';
+
+  @override
+  String get aiGlossarySubtitle => '查看已保存的词汇';
+
+  @override
+  String get aiAddProvider => '添加提供商';
+
+  @override
+  String get aiEditProvider => '编辑提供商';
+
+  @override
+  String get aiProviderType => '类型';
+
+  @override
+  String get aiDisplayName => '显示名称';
+
+  @override
+  String get aiApiKey => 'API 密钥';
+
+  @override
+  String get aiApiKeyHint => '免密钥免费模型留空';
+
+  @override
+  String get aiModel => '模型';
+
+  @override
+  String get aiBaseUrl => '基础 URL';
+
+  @override
+  String get aiTestKey => '测试密钥';
+
+  @override
+  String get aiTesting => '测试中...';
+
+  @override
+  String get aiDelete => '删除';
+
+  @override
+  String get aiValidKey => '✓ 密钥有效';
+
+  @override
+  String aiCheckIconD(Object model) {
+    return '✓ 密钥有效 — 模型 $model 正常';
+  }
+
+  @override
+  String get aiCustomTypeDefault => '用户必须填写';
+
+  @override
+  String get aiModeKasarTitle => '粗俗模式（18+）';
+
+  @override
+  String get aiModeKasarConfirm => '粗俗模式使用强硬语言。继续？';
+
+  @override
+  String get aiEnable => '启用';
+
+  @override
+  String get aiCancel => '取消';
+
+  @override
+  String aiModelNotVision(Object model) {
+    return '模型 \"$model\" 不支持图片翻译（仅文本/免费）。请在设置 → AI 翻译中选择视觉模型（如 kimi-k2.6、gemini-2.5-flash、gpt-4o-mini）。';
+  }
+
+  @override
+  String aiNoVisionProvider(Object model) {
+    return '模型 \"$model\" 仅文本/免费 — 请在设置 → AI 翻译中选择视觉模型（如 kimi-k2.6）。';
+  }
+
+  @override
+  String get aiGlossaryEmpty => '尚无词汇表条目。\\n长按翻译气泡可保存。';
+
+  @override
+  String aiDefaultModel(Object model) {
+    return '默认：$model';
+  }
+
+  @override
+  String get aiClearCacheCleared => '翻译缓存已清除';
+
+  @override
+  String get aiPrivacyDialogDesc =>
+      '您翻译的页面图片将使用您自己的密钥发送到您选择的提供商。没有数据经过 Kuron 的服务器。';
+
+  @override
+  String get aiPrivacyAgree => '同意并翻译';
+
+  @override
+  String get aiNoKeyNeeded => '无需密钥';
+
+  @override
+  String get glossaryPage => '页';
 }

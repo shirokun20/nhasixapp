@@ -34,7 +34,12 @@ void main() {
 
       return jsonEncode({
         'choices': [
-          {'message': {'content': '{"1": "Siapa dia?", "2": "SKIP"}'}},
+          {
+            'message': {
+              'content':
+                  '{"1": {"original": "誰だ？", "reading": "dare da?", "translated": "Siapa dia?"}, "2": "SKIP"}'
+            }
+          },
         ],
       });
     });
@@ -59,6 +64,8 @@ void main() {
 
     expect(result.bubbles.length, 1);
     expect(result.bubbles.first.translated, 'Siapa dia?');
+    expect(result.bubbles.first.original, '誰だ？');
+    expect(result.bubbles.first.reading, 'dare da?');
     expect(result.bubbles.first.rect, const Rect.fromLTWH(0, 0, 10, 10));
   });
 

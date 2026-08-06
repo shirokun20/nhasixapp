@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/glossary.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Learning glossary review: list entries, delete individually.
 class GlossaryScreen extends StatefulWidget {
@@ -28,7 +29,8 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Glossary')),
+      appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.aiGlossary)),
       body: FutureBuilder<List<GlossaryEntry>>(
         future: _future,
         builder: (context, snapshot) {
@@ -37,29 +39,103 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           }
           final entries = snapshot.data ?? [];
           if (entries.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'No glossary entries yet.\nLong-press a translated bubble to save one.',
+                AppLocalizations.of(context)!.aiGlossaryEmpty,
                 textAlign: TextAlign.center,
               ),
             );
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             itemCount: entries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final e = entries[index];
-              return ListTile(
-                title: Text(e.translatedText,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(e.sourceText.isEmpty
-                    ? '${e.contentId} • page ${e.pageIndex}'
-                    : '${e.sourceText}\n${e.contentId} • page ${e.pageIndex}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    await getIt<GlossaryRepository>().delete(e.id);
-                    _reload();
-                  },
+              final theme = Theme.of(context);
+              // Card-per-entry: source + translated + metadata terpisah rapi.
+              return Card(
+                margin: EdgeInsets.zero,
+                color: theme.colorScheme.surfaceContainer,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Bahasa asli (tebal)
+                            Text(
+                            e.sourceText.isEmpty
+                                ? e.translatedText
+                                : e.sourceText,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                          ),
+                          if (e.sourceText.isNotEmpty) ...[
+                            if (e.reading.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              // Latin reading (romaji/romanization)
+                              Text(
+                                e.reading,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            // Terjemahan (italic, aksen)
+                            Text(
+                              e.translatedText,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontStyle: FontStyle.italic,
+                                color: theme.colorScheme.primary,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                            if (e.contentId.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.menu_book_outlined,
+                                      size: 12,
+                                      color: theme.colorScheme.outline),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${e.contentId} • ${AppLocalizations.of(context)!.glossaryPage} ${e.pageIndex}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline,
+                            color: theme.colorScheme.error),
+                        onPressed: () async {
+                          await getIt<GlossaryRepository>().delete(e.id);
+                          _reload();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

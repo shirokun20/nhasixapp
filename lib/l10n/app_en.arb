@@ -59,7 +59,7 @@
   "randomGalleryUnavailableMessage": "Random Gallery is not available for this source.",
   "offlineContent": "Offline Content",
   "settings": "Settings",
-  "appDisguise": "App Disguise",
+  "appDisguise": "APP DISGUISE",
   "disguiseMode": "Disguise Mode",
   "offline": "Offline",
   "about": "About",
@@ -67,7 +67,7 @@
   "supportDeveloperSubtitle": "Buy me a coffee",
   "donateMessage": "Support development via QRIS donation. Thank you! ☕",
   "thankYouMessage": "Thank you for your support!",
-  "searchHint": "Search content...",
+  "searchHint": "Search...",
   "searchPlaceholder": "Enter search keywords",
   "noResults": "No Results Found",
   "searchSuggestions": "Search Suggestions",
@@ -739,8 +739,8 @@
   "loadingContentTitle": "Loading Content",
   "loadingContentDetails": "Loading Content Details",
   "fetchingMetadata": "Fetching metadata and images...",
-  "thisMayTakeMoments": "This may take a few moments",
-  "youAreOffline": "You are offline. Some features may be limited.",
+  "thisMayTakeMoments": "This may take a few moments...",
+  "youAreOffline": "You are offline",
   "goOnline": "Go Online",
   "youAreOfflineTapToGoOnline": "You are offline. Tap to go online.",
   "contentInformation": "Content Information",
@@ -748,7 +748,7 @@
   "moreOptions": "More Options",
   "moreLikeThis": "More Like This",
   "statistics": "Statistics",
-  "failedToLoadContent": "Failed to load content.",
+  "failedToLoadContent": "Failed to load content",
   "shareContent": "Share Content",
   "sharePanelOpened": "Share panel opened successfully!",
   "shareFailed": "Share failed, but link copied to clipboard",
@@ -771,7 +771,7 @@
   "goingOnline": "Going online...",
   "idLabel": "ID",
   "pagesLabel": "Pages",
-  "artistLabel": "Artist",
+  "artistLabel": "Artist: {name}",
   "uploadedLabel": "Uploaded",
   "viewAllChapters": "View All Chapters",
   "searchChapters": "Search chapters...",
@@ -870,7 +870,7 @@
       }
     }
   },
-  "failedToLoad": "Failed to load.",
+  "failedToLoad": "Failed to load",
   "loginRequiredForAction": "Login required for this action",
   "login": "Login",
   "offlineContentTitle": "Offline Content",
@@ -1018,7 +1018,7 @@
   "unknownTitle": "Unknown Title",
   "readingCompleted": "Completed",
   "readAgain": "Read Again",
-  "continueReading": "Continue Reading",
+  "continueReading": "Continue",
   "removeFromHistory": "Remove from History",
   "lessThanOneMinute": "Less than 1 minute",
   "readingTime": "reading time",
@@ -1125,7 +1125,7 @@
   "connectionFailed": "Connection Failed",
   "readyToGo": "Ready to Go!",
   "launchingApp": "Launching main application...",
-  "downloaded": "Downloaded",
+  "downloaded": "{size} downloaded",
   "imageNotAvailable": "Image not available",
   "loadingPage": "Loading page {pageNumber}...",
   "@loadingPage": {
@@ -1135,7 +1135,7 @@
       }
     }
   },
-  "pageNumber": "Page number",
+  "pageNumber": "Page {pageNumber}",
   "checkInternetConnection": "Check your internet connection",
   "selectedItemsCount": "{count} selected",
   "@selectedItemsCount": {
@@ -1643,7 +1643,7 @@
   },
   "pages": "Pages",
   "offlineManagerMessages": "Offline Content Manager Messages",
-  "offlineContentAvailable": "Content {contentId} is available offline: {available}",
+  "offlineContentAvailable": "Offline Content Available",
   "@offlineContentAvailable": {
     "placeholders": {
       "contentId": {
@@ -2873,16 +2873,11 @@
   "remoteSource": "Remote source",
   "removeOfflineChapters": "Remove {count} offline chapters?",
   "requestList": "Request List",
-  "retry": "Retry",
   "retryFetch": "Retry fetch",
-  "searchChapters": "Search chapters...",
-  "searchHint": "Search...",
-  "selectAll": "Select All",
   "selectMode": "Select Mode",
   "showAvailability": "Show availability",
   "showingFirstChapters": "Showing first {count} chapters. Go to detail page and use \"View All\" to see more.",
   "sortAZ": "A - Z",
-  "sortBy": "Sort by",
   "sortDirectionAZ": "A - Z",
   "sortDirectionZA": "Z - A",
   "sortNewToOld": "New to Old",
@@ -2899,7 +2894,6 @@
   "statusIdle": "Idle",
   "statusLoading": "Loading",
   "statusLocal": "Local",
-  "tapToRetry": "Tap to retry",
   "today": "Today",
   "weeksAgo": "{weeks}w ago",
   "@weeksAgo": {
@@ -3124,7 +3118,7 @@
   "bulkDeletePartial": "Bulk Delete Partial",
   "failedToInitSearch": "Failed to initialize search",
   "searchingMsg": "Searching...",
-  "noResultsForQuery": "No results found for \"{query}\"",
+  "noResultsForQuery": "No results for \"{query}\"",
   "@noResultsForQuery": {
     "placeholders": {
       "query": {
@@ -3337,7 +3331,6 @@
   "darkThemeDesc": "Dark theme with muted colors",
   "amoledThemeDesc": "Pure black theme for AMOLED displays",
   "systemThemeDesc": "Follow system theme settings",
-
   "nItems": "{count} items",
   "@nItems": {
     "placeholders": {
@@ -3387,7 +3380,6 @@
     }
   },
   "dohUrlOptional": "DoH URL (Optional)",
-
   "dnsEncryptedDescription": "Use encrypted DNS for enhanced privacy and bypass censorship",
   "usingSystemDns": "Using system default DNS resolver",
   "dnsProvider": "DNS Provider",
@@ -3397,7 +3389,6 @@
   "dnsQueriesEncrypted": "All DNS queries encrypted via HTTPS",
   "enhancedPrivacy": "Enhanced privacy and security",
   "resetDnsConfirmation": "This will reset DNS settings to system defaults. Continue?",
-
   "appDns": "App DNS",
   "devicePrivateDns": "Private DNS",
   "dnsModeOn": "ON",
@@ -3411,11 +3402,8 @@
   "dnsPrivateDnsRequiresAndroid10": "Device Private DNS status requires Android 10+.",
   "dnsPrivateDnsCannotAutoSet": "Kuron cannot set device-wide Private DNS automatically on standard installs.",
   "openDnsSettings": "Open DNS Settings",
-
   "collections": "Collections",
   "collectionsUpdatedSuccessfully": "Collections updated successfully",
-  "createCollection": "Create collection",
-  "deleteCollection": "Delete collection",
   "blacklistMatchWarning": "This gallery matches blacklist rules. Cover/cards can be blurred in list views.",
   "chapterCompleted": "Chapter completed",
   "continueFromPage": "Continue from page {page}",
@@ -3426,10 +3414,7 @@
       }
     }
   },
-  "readAgain": "Read Again",
   "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
-  "unknownError": "Unknown error",
-
   "commentsCount": "Comments ({count})",
   "@commentsCount": {
     "placeholders": {
@@ -3444,7 +3429,6 @@
   "commentLengthRequirement": "Comment must be 10-1000 characters.",
   "noCommentsYet": "No comments yet",
   "failedToLoadComments": "Failed to load comments",
-
   "nSelected": "{count} selected",
   "@nSelected": {
     "placeholders": {
@@ -3462,7 +3446,6 @@
       }
     }
   },
-
   "exportedFavoritesTo": "Exported favorites only ({count} items) to:\n{path}",
   "@exportedFavoritesTo": {
     "placeholders": {
@@ -3476,14 +3459,6 @@
   },
   "failedToSaveExportFile": "Failed to save export file",
   "importFavorites": "Import Favorites",
-  "successfullyImportedFavorites": "Successfully imported {count} favorites",
-  "@successfullyImportedFavorites": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "importFailed": "Import failed: {error}",
   "@importFailed": {
     "placeholders": {
@@ -3493,7 +3468,6 @@
     }
   },
   "noOnlineFavoritesSource": "No online favorites source available.",
-  "unsupportedGalleryId": "Unsupported gallery ID for online favorite.",
   "collectionWithCount": "{name} ({count})",
   "@collectionWithCount": {
     "placeholders": {
@@ -3506,26 +3480,8 @@
     }
   },
   "newLabel": "New",
-  "failedToRemoveFavorite": "Failed to remove favorite: {error}",
-  "@failedToRemoveFavorite": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-
   "tryDifferentSearchTerm": "Try a different search term",
-  "applyWithCount": "Apply ({count})",
-  "@applyWithCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "apply": "Apply",
-
   "nItemsInHistory": "{count} items in history",
   "@nItemsInHistory": {
     "placeholders": {
@@ -3545,28 +3501,13 @@
       }
     }
   },
-
-  "tapToLoadContent": "Tap to load content",
-  "refreshingContent": "Refreshing content...",
-
   "chapterComplete": "Chapter Complete!",
   "finishedReading": "Finished Reading",
-
-  "readerSettings": "Reader Settings",
   "chapterLabel": "Chapter",
   "noChapterSelected": "No chapter selected",
   "preventScreenOff": "Prevent screen from turning off while reading",
   "chapters": "Chapters",
   "readerSettingsReset": "Reader settings have been reset to defaults.",
-  "failedToResetSettings": "Failed to reset settings: {error}",
-  "@failedToResetSettings": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-
   "tagInputTip": "Tip: press Enter or the + button to add a tag. You can type multiple tags using commas or new lines.",
   "loadingOptions": "Loading options...",
   "filterTags": "Filter Tags",
@@ -3574,7 +3515,6 @@
   "failedLoadingOptions": "Failed loading options. Check connection and try again.",
   "noTagsFound": "No tags found",
   "previewQuery": "Preview Query (q)",
-  "all": "All",
   "showLess": "Show Less",
   "showAllCount": "Show All ({count})",
   "@showAllCount": {
@@ -3596,7 +3536,6 @@
     }
   },
   "checkInternetOrReload": "Please check your internet connection or try reloading the application.",
-
   "tagBlacklist": "Tag blacklist",
   "blacklistDescription": "Nhentai-only feature. Local entries work offline for nhentai, and logged-in nhentai accounts also pull online blacklist IDs. Other sources are not affected.",
   "onlineRuleDetailsCount": "Online rule details ({count})",
@@ -3667,33 +3606,22 @@
       }
     }
   },
-
   "enhancedReadingExperience": "Enhanced Reading Experience",
   "initializingApplication": "Initializing Application...",
-  "offlineContentAvailable": "Offline Content Available",
   "offlineContentAvailableLabel": "Offline Content Available",
   "offlineModeEnabled": "Offline Mode Enabled",
-  "launchingApp": "Launching main application...",
-
   "confirmExit": "Are you sure you want to exit?",
   "resize": "Resize",
-  "youAreOffline": "You are offline",
   "offlineFeaturesLimited": "Some features are limited. Connect to internet for full access.",
-
   "downloadSettings": "Download Settings",
-  "maxConcurrentDownloads": "Max Concurrent Downloads",
   "higherValuesBandwidth": "Higher values may consume more bandwidth and device resources",
   "autoRetryFailed": "Auto Retry Failed Downloads",
-  "autoRetryDescription": "Automatically retry failed downloads",
-  "maxRetryAttempts": "Max Retry Attempts",
   "wifiOnlyDownload": "Only download when connected to WiFi",
   "downloadTimeout": "Download Timeout",
   "enableNotifications": "Enable Notifications",
   "showNotificationsProgress": "Show notifications for download progress",
-
   "failedToLoadImage": "Failed to load image",
   "retrying": "Retrying...",
-  "failedToLoad": "Failed to load",
   "readerRedownloadImage": "Redownload page",
   "readerRepairingImage": "Repairing image...",
   "readerPageNotDownloaded": "Page {pageNumber} not downloaded",
@@ -3765,7 +3693,6 @@
       }
     }
   },
-  "pageNumber": "Page {pageNumber}",
   "@pageNumber": {
     "placeholders": {
       "pageNumber": {
@@ -3781,14 +3708,11 @@
       }
     }
   },
-  "failedToLoadContent": "Failed to load content",
-
   "noOfflineContent": "No offline content",
   "howToGetStarted": "How to get started",
   "loadingMore": "Loading more...",
   "noImagesFound": "No images found",
   "dontAskAgain": "Don't ask again",
-
   "pageOfTotal": "Page {current} of {total}",
   "@pageOfTotal": {
     "placeholders": {
@@ -3800,7 +3724,6 @@
       }
     }
   },
-
   "loadingPageNumber": "Loading page {pageNumber}...",
   "@loadingPageNumber": {
     "placeholders": {
@@ -3809,11 +3732,8 @@
       }
     }
   },
-  "checkInternetConnection": "Check your internet connection",
-
   "recentSearches": "Recent Searches",
   "pageCountRange": "Page Count Range",
-
   "nMoreFilters": "+{count} more",
   "@nMoreFilters": {
     "placeholders": {
@@ -3822,12 +3742,10 @@
       }
     }
   },
-
   "newUpdateAvailable": "New Update Available!",
   "newVersion": "New Version: ",
   "whatsNew": "What's New",
   "downloadUpdate": "Download Update",
-
   "exportPath": "Path: {path}",
   "@exportPath": {
     "placeholders": {
@@ -3847,7 +3765,6 @@
       }
     }
   },
-
   "failedToLoadCaptcha": "Failed to load CAPTCHA: {error}",
   "@failedToLoadCaptcha": {
     "placeholders": {
@@ -3859,20 +3776,8 @@
   "turnstileRejected": "Cloudflare Turnstile rejected the challenge (110200). Please retry or use manual token input.",
   "openingNativeCaptcha": "Opening native CAPTCHA solver...",
   "tapRefreshToRetry": "Tap refresh to retry native CAPTCHA challenge.",
-
-  "loginRequired": "Login Required",
   "loginToCrotpediaDescription": "Login to Crotpedia using the native secure browser to access bookmarks and more.",
   "crotpediaBookmarkLoginPrompt": "This feature (Bookmarking) requires you to be logged in to Crotpedia.\n\nWould you like to login now?",
-
-  "thisMayTakeMoments": "This may take a few moments...",
-  "noResultsForQuery": "No results for \"{query}\"",
-  "@noResultsForQuery": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "browseByGenre": "Browse by Genre",
   "nMoreGenres": "+{count} more",
   "@nMoreGenres": {
@@ -3882,7 +3787,6 @@
       }
     }
   },
-
   "selectSourceFromManifest": "From Manifest",
   "pagesWithSize": "{pageCount} pages • {size}",
   "@pagesWithSize": {
@@ -3898,10 +3802,7 @@
   "browseComics": "1. Browse comics you like",
   "tapDownloadButton": "2. Tap the download button",
   "accessOffline": "3. Access them here anytime, even offline!",
-
   "source": "Source",
-  "continueReading": "Continue",
-  "artistLabel": "Artist: {name}",
   "@artistLabel": {
     "placeholders": {
       "name": {
@@ -3925,11 +3826,8 @@
       }
     }
   },
-
   "filteredResults": "Filtered Results",
   "filter": "Filter",
-  "clearingHistory": "Clearing history...",
-
   "crotpediaMaintenance": "Crotpedia maintenance: {reason}",
   "@crotpediaMaintenance": {
     "placeholders": {
@@ -3939,10 +3837,8 @@
     }
   },
   "tapToChangeFilters": "Tap to change search filters",
-
   "prevChapter": "Prev Chapter",
   "nextChapter": "Next Chapter",
-  "loadingContent": "Loading content...",
   "pageOfContent": "Page {current} of {total}",
   "@pageOfContent": {
     "placeholders": {
@@ -3954,8 +3850,6 @@
       }
     }
   },
-  "horizontalPages": "Horizontal Pages",
-  "continuousScroll": "Continuous Scroll",
   "nChapters": "{count} chapters",
   "@nChapters": {
     "placeholders": {
@@ -3964,9 +3858,6 @@
       }
     }
   },
-  "today": "Today",
-  "yesterday": "Yesterday",
-
   "failedToLoadOptionsTap": "Failed to load options. Tap to retry.",
   "chooseField": "{field}",
   "@chooseField": {
@@ -4003,8 +3894,6 @@
   "orderBy": "Order by",
   "authorLabel": "Author",
   "artistFilterLabel": "Artist",
-
-  "tags": "Tags",
   "artists": "Artists",
   "characters": "Characters",
   "parodies": "Parodies",
@@ -4013,12 +3902,9 @@
   "dateUploaded": "DATE UPLOADED",
   "numericFilters": "NUMERIC FILTERS",
   "older": "Older",
-
   "contentFilters": "CONTENT FILTERS",
   "blurCoversDescription": "Blur covers that match your local tag rules, even when browsing offline. If you are logged into nhentai, online blacklist IDs are merged automatically.",
-  "appDisguise": "APP DISGUISE",
   "developerTools": "DEVELOPER TOOLS",
-  "login": "Login",
   "noOnlineRulesYet": "No online detailed rules returned yet. Pull refresh to fetch /blacklist data.",
   "nothingSavedLocally": "Nothing saved locally yet. Local rules are always applied, including offline results.",
   "loginRequiredForRules": "Login required to fetch detailed rule metadata from /blacklist.",
@@ -4034,15 +3920,11 @@
     }
   },
   "availableSources": "AVAILABLE SOURCES",
-
   "settingUpConnection": "Setting up components and checking connection...",
-  "bypassingProtection": "Bypassing protection and establishing connection...",
-
   "tagId": "Tag ID",
   "slug": "Slug",
   "path": "Path",
   "tag": "Tag",
-
   "profileWithName": "Profile ({name})",
   "@profileWithName": {
     "placeholders": {
@@ -4061,21 +3943,10 @@
       }
     }
   },
-
-  "pause": "Pause",
-  "resume": "Resume",
-  "cancel": "Cancel",
-  "retry": "Retry",
-  "details": "Details",
-  "remove": "Remove",
-  "convertToPdf": "Convert to PDF",
-
   "performance": "Performance",
   "autoRetry": "Auto Retry",
   "network": "Network",
   "notifications": "Notifications",
-
-  "downloaded": "{size} downloaded",
   "@downloaded": {
     "placeholders": {
       "size": {
@@ -4086,18 +3957,13 @@
   "estimatingProgress": "Estimating progress...",
   "processingBadAvifToWebp": "Processing conversion from bad AVIF to WebP...",
   "downloadingImageData": "Downloading image data...",
-
-  "searchHint": "Search...",
   "hideFilters": "Hide filters",
   "showMoreFilters": "Show more filters",
-
   "preparingExport": "Preparing export...",
   "readingFavorites": "Reading favorites from database...",
   "encodingFavorites": "Encoding favorites data...",
   "writingExportFile": "Writing export file...",
   "finalizingExport": "Finalizing export...",
-  "renameCollection": "Rename collection",
-
   "readerContinuousDisabledHeavyImage": "Continuous Scroll disabled: heavy animated image detected. Use Horizontal/Vertical mode.",
   "readerContinuousOffHeavyImage": "Continuous off (heavy image)",
   "chapterCurrentBadge": "NOW",
@@ -4125,7 +3991,6 @@
       }
     }
   },
-
   "readerTapDirectionLabel": "Tap Direction",
   "readerTapDirectionNormal": "Normal",
   "readerTapDirectionInverted": "Reverse",
@@ -4135,7 +4000,6 @@
   "readerImageCacheCleared": "Image cache cleared. Scroll to reload pages.",
   "readerOpenInGallery": "Open in gallery",
   "readerPinchToZoom": "Pinch to zoom",
-
   "captchaCancelled": "CAPTCHA challenge was cancelled or failed.",
   "failedToOpenCaptcha": "Failed to open native CAPTCHA solver: {error}",
   "@failedToOpenCaptcha": {
@@ -4215,5 +4079,76 @@
   "enterPinToDisable": "Enter PIN to Disable",
   "enterPinToDisableSubtitle": "This will remove PIN and disable lock",
   "unlockKuron": "Unlock Kuron to continue",
-  "continue_": "Continue"
+  "continue_": "Continue",
+  "aiTranslate": "AI Translate",
+  "aiTutorialHint": "Tap anywhere to close",
+  "aiTutorialTranslateTitle": "✨ Translate page",
+  "aiTutorialTranslateDesc": "Auto bubble detection -> translation overlaid on original text. Tap again to toggle.",
+  "aiTutorialDrawTitle": "✏️ Draw bubbles",
+  "aiTutorialDrawDesc": "Manual correction. Drag to add bubble (red), 🛰 Detect to see ONNX one (blue). Done locks but bubbles stay visible.",
+  "aiTutorialClearTitle": "🗑 Clear",
+  "aiTutorialClearDesc": "Remove translation result + all reference bubbles.",
+  "aiTutorialGotIt": "Got it!",
+  "aiNotAvailableCS": "AI translate tidak tersedia di continue scroll.",
+  "aiHideTranslation": "Hide translation",
+  "aiTranslating": "Translating...",
+  "aiTranslatePage": "Translate page",
+  "aiClearTranslateBubbles": "Clear translate + bubbles",
+  "aiExitDrawMode": "Exit draw mode",
+  "aiDrawBubbles": "Draw bubbles",
+  "aiSkipSfxOn": "Skip SFX: ON",
+  "aiSkipSfxOff": "Skip SFX: OFF",
+  "aiEditTranslation": "Edit Translation",
+  "aiTranslation": "Translation",
+  "aiSave": "Save",
+  "aiSaveToGlossaryHint": "Save to learning glossary",
+  "aiSaveToGlossary": "Save to Glossary",
+  "aiSavedToGlossary": "Saved to Glossary",
+  "aiTranslateFailed": "Translate gagal: {error}",
+  "aiNeedVisionProvider": "AI translate needs a vision provider. Set it up in Settings → AI Translation.",
+  "aiRateLimited": "Rate limited. {fallback}",
+  "aiUsingFallback": "Using {name} as fallback.",
+  "aiWaitCooldown": "Wait {seconds}s.",
+  "aiGagalFetch": "Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.",
+  "aiSettings": "AI Settings",
+  "aiProvidersSubtitle": "Providers, language, style, translation cache",
+  "aiOpen": "Open",
+  "aiTargetLanguage": "Target Language",
+  "aiTargetLangSubtitle": "Language AI translates into",
+  "aiTranslationStyle": "Translation Style",
+  "aiSkipSfx": "Skip SFX bubbles",
+  "aiSkipSfxSubtitle": "Skip sound-effect-only bubbles (default on)",
+  "aiPrivacyDisclosure": "Privacy Disclosure",
+  "aiPrivacyDesc": "Images are sent to your chosen provider. Kuron does not relay your data.",
+  "aiClearCache": "Clear Translation Cache",
+  "aiClearCacheSubtitle": "Delete all cached page translations",
+  "aiGlossary": "Learning Glossary",
+  "aiGlossarySubtitle": "Review saved vocabulary",
+  "aiAddProvider": "Add Provider",
+  "aiEditProvider": "Edit Provider",
+  "aiProviderType": "Type",
+  "aiDisplayName": "Display Name",
+  "aiApiKey": "API Key",
+  "aiApiKeyHint": "Leave empty for no-key free models",
+  "aiModel": "Model",
+  "aiBaseUrl": "Base URL",
+  "aiTestKey": "Test Key",
+  "aiTesting": "Testing...",
+  "aiDelete": "Delete",
+  "aiValidKey": "✓ Valid key",
+  "aiCheckIconD": "✓ Valid key — model {model} OK",
+  "aiCustomTypeDefault": "user must supply",
+  "aiModeKasarTitle": "Kasar Mode (18+)",
+  "aiModeKasarConfirm": "Kasar mode uses strong language. Continue?",
+  "aiEnable": "Enable",
+  "aiCancel": "Cancel",
+  "aiModelNotVision": "Model \"{model}\" does not support image translation (text-only/free). Choose a vision model (e.g. kimi-k2.6, gemini-2.5-flash, gpt-4o-mini) in Settings → AI Translation.",
+  "aiNoVisionProvider": "Model \"{model}\" is text-only/free — choose a vision model in Settings → AI Translation (e.g. kimi-k2.6).",
+  "aiGlossaryEmpty": "No glossary entries yet.\\nLong-press a translated bubble to save one.",
+  "aiDefaultModel": "Default: {model}",
+  "aiClearCacheCleared": "Translation cache cleared",
+  "aiPrivacyDialogDesc": "Page images you translate are sent to the provider you choose using your own key. No data passes through Kuron's servers.",
+  "aiPrivacyAgree": "Agree & Translate",
+  "aiNoKeyNeeded": "No key needed",
+  "glossaryPage": "page"
 }

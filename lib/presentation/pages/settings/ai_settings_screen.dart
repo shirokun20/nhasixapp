@@ -37,6 +37,7 @@ class _AiSettingsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<AiSettingsCubit, AiSettingsState>(
       builder: (context, state) {
         if (state is AiSettingsLoading) {
@@ -67,7 +68,7 @@ class _AiSettingsBody extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: () => _showAddProviderSheet(context),
                 icon: const Icon(Icons.add),
-                label: const Text('Add Provider'),
+                label: Text(l10n.aiAddProvider),
               ),
             ),
             const SizedBox(height: 24),
@@ -76,8 +77,8 @@ class _AiSettingsBody extends StatelessWidget {
             buildSettingsCard([
               buildSettingsDropdownTile<String>(
                 context: context,
-                title: 'Target Language',
-                subtitle: 'Language AI translates into',
+                title: l10n.aiTargetLanguage,
+                subtitle: l10n.aiTargetLangSubtitle,
                 value: state.targetLang,
                 items: AiSettingsCubit.supportedLanguages
                     .map((l) => DropdownMenuItem(value: l, child: Text(l)))
@@ -91,7 +92,7 @@ class _AiSettingsBody extends StatelessWidget {
               ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                title: Text('Translation Style',
+                title: Text(l10n.aiTranslationStyle,
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   state.style.instruction,
@@ -116,9 +117,8 @@ class _AiSettingsBody extends StatelessWidget {
               ),
               buildSettingsDivider(theme),
               SwitchListTile(
-                title: const Text('Skip SFX bubbles'),
-                subtitle:
-                    const Text('Skip sound-effect-only bubbles (default on)'),
+                title: Text(l10n.aiSkipSfx),
+                subtitle: Text(l10n.aiSkipSfxSubtitle),
                 value: state.skipSfx,
                 onChanged: (v) => cubit.setSkipSfx(v),
               ),
@@ -130,21 +130,19 @@ class _AiSettingsBody extends StatelessWidget {
             buildSettingsCard([
               ListTile(
                 leading: const Icon(Icons.privacy_tip_outlined),
-                title: const Text('Privacy Disclosure'),
-                subtitle: const Text(
-                    'Images are sent to your chosen provider. Kuron does not relay your data.'),
+                title: Text(l10n.aiPrivacyDisclosure),
+                subtitle: Text(l10n.aiPrivacyDesc),
               ),
               buildSettingsDivider(theme),
               ListTile(
                 leading: const Icon(Icons.delete_sweep_outlined),
-                title: const Text('Clear Translation Cache'),
-                subtitle: const Text('Delete all cached page translations'),
+                title: Text(l10n.aiClearCache),
+                subtitle: Text(l10n.aiClearCacheSubtitle),
                 onTap: () async {
                   await cubit.clearCache();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Translation cache cleared')),
+                      SnackBar(content: Text(l10n.aiClearCacheCleared)),
                     );
                   }
                 },
@@ -152,8 +150,8 @@ class _AiSettingsBody extends StatelessWidget {
               buildSettingsDivider(theme),
               ListTile(
                 leading: const Icon(Icons.bookmarks_outlined),
-                title: const Text('Learning Glossary'),
-                subtitle: const Text('Review saved vocabulary'),
+                title: Text(l10n.aiGlossary),
+                subtitle: Text(l10n.aiGlossarySubtitle),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(
@@ -238,7 +236,7 @@ class _ProviderTile extends StatelessWidget {
         ),
         subtitle: Text(
           '${provider.type.displayName} • ${provider.model}'
-          '${isZen ? ' • No key needed' : ''}',
+          '${isZen ? ' • ${AppLocalizations.of(context)!.aiNoKeyNeeded}' : ''}',
           style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(Icons.edit_outlined, size: 18),
@@ -325,6 +323,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cubit = context.read<AiSettingsCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -338,14 +337,14 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isEditing ? 'Edit Provider' : 'Add Provider',
+              _isEditing ? l10n.aiEditProvider : l10n.aiAddProvider,
               style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             if (!_isEditing) ...[
               DropdownButtonFormField<AiProviderType>(
                 initialValue: _type,
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: InputDecoration(labelText: l10n.aiProviderType),
                 items: AiProviderType.values
                     .map((t) =>
                         DropdownMenuItem(value: t, child: Text(t.displayName)))
@@ -362,29 +361,29 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
             ],
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Display Name'),
+              decoration: InputDecoration(labelText: l10n.aiDisplayName),
             ),
             const SizedBox(height: 12),
             if (!_isEditing || widget.provider!.id != 'zen-builtin') ...[
               TextField(
                 controller: _keyController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'API Key',
-                  hintText: 'Leave empty for no-key free models',
+                decoration: InputDecoration(
+                  labelText: l10n.aiApiKey,
+                  hintText: l10n.aiApiKeyHint,
                 ),
               ),
               const SizedBox(height: 12),
             ],
             TextField(
               controller: _modelController,
-              decoration: const InputDecoration(labelText: 'Model'),
+              decoration: InputDecoration(labelText: l10n.aiModel),
             ),
             if (_type == AiProviderType.custom) ...[
               const SizedBox(height: 12),
               TextField(
                 controller: _baseUrlController,
-                decoration: const InputDecoration(labelText: 'Base URL'),
+                decoration: InputDecoration(labelText: l10n.aiBaseUrl),
               ),
             ],
             const SizedBox(height: 16),
@@ -411,12 +410,12 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(result == null
-                                    ? '✓ Valid key — model ${_modelController.text} OK'
+                                    ? l10n.aiCheckIconD(_modelController.text)
                                     : '✗ ${result.substring(0, result.length > 100 ? 100 : result.length)}'),
                               ),
                             );
                           },
-                    child: Text(_isTesting ? 'Testing...' : 'Test Key'),
+                    child: Text(_isTesting ? l10n.aiTesting : l10n.aiTestKey),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -430,7 +429,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                         await cubit.deleteProvider(widget.provider!.id);
                         if (context.mounted) Navigator.pop(context);
                       },
-                      child: const Text('Delete'),
+                      child: Text(l10n.aiDelete),
                     ),
                   ),
                 const SizedBox(width: 12),
@@ -446,7 +445,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    child: const Text('Save'),
+                    child: Text(l10n.aiSave),
                   ),
                 ),
               ],
@@ -454,7 +453,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
             if (_testRan) ...[
               const SizedBox(height: 12),
               Text(
-                _testResult == null ? '✓ Valid key' : '✗ $_testResult',
+                _testResult == null ? l10n.aiValidKey : '✗ $_testResult',
                 style: TextStyle(
                   color: _testResult == null
                       ? Colors.green
@@ -465,7 +464,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
             if (!_isEditing) ...[
               const SizedBox(height: 12),
               Text(
-                'Default: ${_type.defaultModel ?? 'user must supply'}',
+                l10n.aiDefaultModel(_type.defaultModel ?? l10n.aiCustomTypeDefault),
                 style: theme.textTheme.bodySmall,
               ),
             ],

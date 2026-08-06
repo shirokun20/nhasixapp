@@ -5504,4 +5504,243 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get continue_ => 'Continue';
+
+  @override
+  String get aiTranslate => 'AI Translate';
+
+  @override
+  String get aiTutorialHint => 'Tap anywhere to close';
+
+  @override
+  String get aiTutorialTranslateTitle => '✨ Translate page';
+
+  @override
+  String get aiTutorialTranslateDesc =>
+      'Auto bubble detection -> translation overlaid on original text. Tap again to toggle.';
+
+  @override
+  String get aiTutorialDrawTitle => '✏️ Draw bubbles';
+
+  @override
+  String get aiTutorialDrawDesc =>
+      'Manual correction. Drag to add bubble (red), 🛰 Detect to see ONNX one (blue). Done locks but bubbles stay visible.';
+
+  @override
+  String get aiTutorialClearTitle => '🗑 Clear';
+
+  @override
+  String get aiTutorialClearDesc =>
+      'Remove translation result + all reference bubbles.';
+
+  @override
+  String get aiTutorialGotIt => 'Got it!';
+
+  @override
+  String get aiNotAvailableCS =>
+      'AI translate tidak tersedia di continue scroll.';
+
+  @override
+  String get aiHideTranslation => 'Hide translation';
+
+  @override
+  String get aiTranslating => 'Translating...';
+
+  @override
+  String get aiTranslatePage => 'Translate page';
+
+  @override
+  String get aiClearTranslateBubbles => 'Clear translate + bubbles';
+
+  @override
+  String get aiExitDrawMode => 'Exit draw mode';
+
+  @override
+  String get aiDrawBubbles => 'Draw bubbles';
+
+  @override
+  String get aiSkipSfxOn => 'Skip SFX: ON';
+
+  @override
+  String get aiSkipSfxOff => 'Skip SFX: OFF';
+
+  @override
+  String get aiEditTranslation => 'Edit Translation';
+
+  @override
+  String get aiTranslation => 'Translation';
+
+  @override
+  String get aiSave => 'Save';
+
+  @override
+  String get aiSaveToGlossaryHint => 'Save to learning glossary';
+
+  @override
+  String get aiSaveToGlossary => 'Save to Glossary';
+
+  @override
+  String get aiSavedToGlossary => 'Saved to Glossary';
+
+  @override
+  String aiTranslateFailed(Object error) {
+    return 'Translate gagal: $error';
+  }
+
+  @override
+  String get aiNeedVisionProvider =>
+      'AI translate needs a vision provider. Set it up in Settings → AI Translation.';
+
+  @override
+  String aiRateLimited(Object fallback) {
+    return 'Rate limited. $fallback';
+  }
+
+  @override
+  String aiUsingFallback(Object name) {
+    return 'Using $name as fallback.';
+  }
+
+  @override
+  String aiWaitCooldown(Object seconds) {
+    return 'Wait ${seconds}s.';
+  }
+
+  @override
+  String get aiGagalFetch =>
+      'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.';
+
+  @override
+  String get aiSettings => 'AI Settings';
+
+  @override
+  String get aiProvidersSubtitle =>
+      'Providers, language, style, translation cache';
+
+  @override
+  String get aiOpen => 'Open';
+
+  @override
+  String get aiTargetLanguage => 'Target Language';
+
+  @override
+  String get aiTargetLangSubtitle => 'Language AI translates into';
+
+  @override
+  String get aiTranslationStyle => 'Translation Style';
+
+  @override
+  String get aiSkipSfx => 'Skip SFX bubbles';
+
+  @override
+  String get aiSkipSfxSubtitle => 'Skip sound-effect-only bubbles (default on)';
+
+  @override
+  String get aiPrivacyDisclosure => 'Privacy Disclosure';
+
+  @override
+  String get aiPrivacyDesc =>
+      'Images are sent to your chosen provider. Kuron does not relay your data.';
+
+  @override
+  String get aiClearCache => 'Clear Translation Cache';
+
+  @override
+  String get aiClearCacheSubtitle => 'Delete all cached page translations';
+
+  @override
+  String get aiGlossary => 'Learning Glossary';
+
+  @override
+  String get aiGlossarySubtitle => 'Review saved vocabulary';
+
+  @override
+  String get aiAddProvider => 'Add Provider';
+
+  @override
+  String get aiEditProvider => 'Edit Provider';
+
+  @override
+  String get aiProviderType => 'Type';
+
+  @override
+  String get aiDisplayName => 'Display Name';
+
+  @override
+  String get aiApiKey => 'API Key';
+
+  @override
+  String get aiApiKeyHint => 'Leave empty for no-key free models';
+
+  @override
+  String get aiModel => 'Model';
+
+  @override
+  String get aiBaseUrl => 'Base URL';
+
+  @override
+  String get aiTestKey => 'Test Key';
+
+  @override
+  String get aiTesting => 'Testing...';
+
+  @override
+  String get aiDelete => 'Delete';
+
+  @override
+  String get aiValidKey => '✓ Valid key';
+
+  @override
+  String aiCheckIconD(Object model) {
+    return '✓ Valid key — model $model OK';
+  }
+
+  @override
+  String get aiCustomTypeDefault => 'user must supply';
+
+  @override
+  String get aiModeKasarTitle => 'Kasar Mode (18+)';
+
+  @override
+  String get aiModeKasarConfirm => 'Kasar mode uses strong language. Continue?';
+
+  @override
+  String get aiEnable => 'Enable';
+
+  @override
+  String get aiCancel => 'Cancel';
+
+  @override
+  String aiModelNotVision(Object model) {
+    return 'Model \"$model\" does not support image translation (text-only/free). Choose a vision model (e.g. kimi-k2.6, gemini-2.5-flash, gpt-4o-mini) in Settings → AI Translation.';
+  }
+
+  @override
+  String aiNoVisionProvider(Object model) {
+    return 'Model \"$model\" is text-only/free — choose a vision model in Settings → AI Translation (e.g. kimi-k2.6).';
+  }
+
+  @override
+  String get aiGlossaryEmpty =>
+      'No glossary entries yet.\\nLong-press a translated bubble to save one.';
+
+  @override
+  String aiDefaultModel(Object model) {
+    return 'Default: $model';
+  }
+
+  @override
+  String get aiClearCacheCleared => 'Translation cache cleared';
+
+  @override
+  String get aiPrivacyDialogDesc =>
+      'Page images you translate are sent to the provider you choose using your own key. No data passes through Kuron\'s servers.';
+
+  @override
+  String get aiPrivacyAgree => 'Agree & Translate';
+
+  @override
+  String get aiNoKeyNeeded => 'No key needed';
+
+  @override
+  String get glossaryPage => 'page';
 }

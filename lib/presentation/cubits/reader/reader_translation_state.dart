@@ -17,12 +17,16 @@ class ReaderTranslationIdle extends ReaderTranslationState {
 
 /// No usable provider — guide user to Settings.
 class ReaderTranslationNoProvider extends ReaderTranslationState {
-  const ReaderTranslationNoProvider({this.message});
+  const ReaderTranslationNoProvider({this.message, this.modelName});
 
   final String? message;
 
+  /// The text-only model that triggered this state — the UI localizes the
+  /// guidance using this name instead of a hardcoded message.
+  final String? modelName;
+
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, modelName];
 }
 
 class ReaderTranslationDetecting extends ReaderTranslationState {

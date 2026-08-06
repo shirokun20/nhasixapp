@@ -101,18 +101,23 @@ class GeminiTranslationProvider implements AiTranslationProvider {
     TranslationStyle style,
     bool skipSfx,
   ) {
+    final sfxRule = skipSfx
+        ? 'Return "SKIP" for any bubble containing only sound effects (ドドド, バキ, ガシャン, etc.).'
+        : 'Translate ALL bubbles including sound effects (no SKIP for SFX).';
     return '''
 Translate the manga image. Each bubble has a red number ID on its left.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
-{"1": "translation", "2": "SKIP", ...}
+{"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
 Rules:
 - Map each number to the text inside that bubble.
+- "original" = the exact text inside the bubble (for learning/glossary).
+- "reading" = Latin reading of the original text: romaji for Japanese, romanization for Korean/Chinese/other (helps pronunciation). Empty if original is already Latin.
+- "translated" = the translation into $targetLang.
 - SKIP if a bubble contains only sound effects (ドドド, バキ, etc.).
 - Keep honorifics (-san, -kun, -chan) as-is.
 - Return ALL visible IDs.
-- Translate to $targetLang.
 - Style: ${style.instruction}
-${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects (ドドド, バキ, ガシャン, etc.).' : 'Translate ALL bubbles including sound effects (no SKIP for SFX).'}
+$sfxRule
 ''';
   }
 
@@ -200,8 +205,20 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
     final out = <BubbleTranslation>[];
     for (var i = 0; i < bubbles.length; i++) {
       final box = bubbles[i];
-      final value = parsed['${i + 1}']?.toString().trim();
-      if (value == null || value.isEmpty || value.toUpperCase() == 'SKIP') {
+      final raw = parsed['${i + 1}'];
+      // New format: {"original": ..., "translated": ...}. Old: plain string.
+      String? translated;
+      String original = '';
+      String reading = '';
+      if (raw is Map) {
+        translated = raw['translated']?.toString().trim();
+        original = raw['original']?.toString().trim() ?? '';
+        reading = raw['reading']?.toString().trim() ?? '';
+      } else if (raw != null) {
+        translated = raw.toString().trim();
+      }
+      if (translated == null || translated.isEmpty ||
+          translated.toUpperCase() == 'SKIP') {
         continue;
       }
       out.add(BubbleTranslation(
@@ -211,8 +228,9 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
           box.w.toDouble(),
           box.h.toDouble(),
         ),
-        original: '',
-        translated: value,
+        original: original,
+        translated: translated,
+        reading: reading,
       ));
     }
     return PageTranslation(bubbles: out, detectedLang: lang);

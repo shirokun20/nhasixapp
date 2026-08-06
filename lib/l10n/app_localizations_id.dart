@@ -5531,4 +5531,244 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get continue_ => 'Lanjutkan';
+
+  @override
+  String get aiTranslate => 'AI Translate';
+
+  @override
+  String get aiTutorialHint => 'Tap di mana saja untuk tutup';
+
+  @override
+  String get aiTutorialTranslateTitle => '✨ Translate halaman';
+
+  @override
+  String get aiTutorialTranslateDesc =>
+      'Deteksi bubble otomatis → terjemahan di-overlay di atas teks asli. Tap lagi untuk hide/show.';
+
+  @override
+  String get aiTutorialDrawTitle => '✏️ Draw bubbles';
+
+  @override
+  String get aiTutorialDrawDesc =>
+      'Koreksi manual. Drag untuk tambah bubble (merah), 🛰 Detect untuk lihat deteksi ONNX (biru). Done mengunci tapi bubble tetap tampil.';
+
+  @override
+  String get aiTutorialClearTitle => '🗑 Clear';
+
+  @override
+  String get aiTutorialClearDesc =>
+      'Hapus hasil translate + semua bubble referensi.';
+
+  @override
+  String get aiTutorialGotIt => 'Paham!';
+
+  @override
+  String get aiNotAvailableCS =>
+      'AI translate tidak tersedia di continue scroll.';
+
+  @override
+  String get aiHideTranslation => 'Sembunyikan terjemahan';
+
+  @override
+  String get aiTranslating => 'Menerjemahkan...';
+
+  @override
+  String get aiTranslatePage => 'Translate halaman';
+
+  @override
+  String get aiClearTranslateBubbles => 'Bersihkan translate + bubble';
+
+  @override
+  String get aiExitDrawMode => 'Keluar mode gambar';
+
+  @override
+  String get aiDrawBubbles => 'Gambar bubble';
+
+  @override
+  String get aiSkipSfxOn => 'Skip SFX: NYALA';
+
+  @override
+  String get aiSkipSfxOff => 'Skip SFX: MATI';
+
+  @override
+  String get aiEditTranslation => 'Edit Terjemahan';
+
+  @override
+  String get aiTranslation => 'Terjemahan';
+
+  @override
+  String get aiSave => 'Simpan';
+
+  @override
+  String get aiSaveToGlossaryHint => 'Simpan ke glossary belajar';
+
+  @override
+  String get aiSaveToGlossary => 'Simpan ke Glossary';
+
+  @override
+  String get aiSavedToGlossary => 'Tersimpan ke Glossary';
+
+  @override
+  String aiTranslateFailed(Object error) {
+    return 'Translate gagal: $error';
+  }
+
+  @override
+  String get aiNeedVisionProvider =>
+      'AI translate butuh vision provider. Setup di Settings → AI Translation.';
+
+  @override
+  String aiRateLimited(Object fallback) {
+    return 'Rate limited. $fallback';
+  }
+
+  @override
+  String aiUsingFallback(Object name) {
+    return 'Pakai $name sebagai fallback.';
+  }
+
+  @override
+  String aiWaitCooldown(Object seconds) {
+    return 'Tunggu ${seconds}s.';
+  }
+
+  @override
+  String get aiGagalFetch =>
+      'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.';
+
+  @override
+  String get aiSettings => 'AI Settings';
+
+  @override
+  String get aiProvidersSubtitle => 'Provider, bahasa, gaya, cache terjemahan';
+
+  @override
+  String get aiOpen => 'Buka';
+
+  @override
+  String get aiTargetLanguage => 'Bahasa Target';
+
+  @override
+  String get aiTargetLangSubtitle => 'Bahasa yang AI terjemahkan ke';
+
+  @override
+  String get aiTranslationStyle => 'Gaya Terjemahan';
+
+  @override
+  String get aiSkipSfx => 'Skip bubble SFX';
+
+  @override
+  String get aiSkipSfxSubtitle =>
+      'Lewati bubble berisi efek suara saja (default nyala)';
+
+  @override
+  String get aiPrivacyDisclosure => 'Pemberitahuan Privasi';
+
+  @override
+  String get aiPrivacyDesc =>
+      'Gambar dikirim ke provider pilihanmu. Kuron tidak meneruskan datamu.';
+
+  @override
+  String get aiClearCache => 'Bersihkan Cache Terjemahan';
+
+  @override
+  String get aiClearCacheSubtitle => 'Hapus semua cache terjemahan halaman';
+
+  @override
+  String get aiGlossary => 'Glossary Belajar';
+
+  @override
+  String get aiGlossarySubtitle => 'Tinjau kosakata tersimpan';
+
+  @override
+  String get aiAddProvider => 'Tambah Provider';
+
+  @override
+  String get aiEditProvider => 'Edit Provider';
+
+  @override
+  String get aiProviderType => 'Tipe';
+
+  @override
+  String get aiDisplayName => 'Nama Tampilan';
+
+  @override
+  String get aiApiKey => 'API Key';
+
+  @override
+  String get aiApiKeyHint => 'Kosongkan untuk model free tanpa key';
+
+  @override
+  String get aiModel => 'Model';
+
+  @override
+  String get aiBaseUrl => 'Base URL';
+
+  @override
+  String get aiTestKey => 'Tes Key';
+
+  @override
+  String get aiTesting => 'Menguji...';
+
+  @override
+  String get aiDelete => 'Hapus';
+
+  @override
+  String get aiValidKey => '✓ Key valid';
+
+  @override
+  String aiCheckIconD(Object model) {
+    return '✓ Key valid — model $model OK';
+  }
+
+  @override
+  String get aiCustomTypeDefault => 'wajib diisi user';
+
+  @override
+  String get aiModeKasarTitle => 'Mode Kasar (18+)';
+
+  @override
+  String get aiModeKasarConfirm =>
+      'Mode Kasar menggunakan kata-kata keras. Lanjutkan?';
+
+  @override
+  String get aiEnable => 'Aktifkan';
+
+  @override
+  String get aiCancel => 'Batal';
+
+  @override
+  String aiModelNotVision(Object model) {
+    return 'Model \"$model\" tidak support image translation (text-only/free). Pilih model vision (mis. kimi-k2.6, gemini-2.5-flash, gpt-4o-mini) di Settings → AI Translation.';
+  }
+
+  @override
+  String aiNoVisionProvider(Object model) {
+    return 'Model \"$model\" text-only/free — pilih model vision di Settings → AI Translation (mis. kimi-k2.6).';
+  }
+
+  @override
+  String get aiGlossaryEmpty =>
+      'Belum ada entri glossary.\\nTekan lama bubble terjemahan untuk menyimpan.';
+
+  @override
+  String aiDefaultModel(Object model) {
+    return 'Default: $model';
+  }
+
+  @override
+  String get aiClearCacheCleared => 'Cache terjemahan dibersihkan';
+
+  @override
+  String get aiPrivacyDialogDesc =>
+      'Gambar halaman yang kamu translate akan dikirim ke provider yang kamu pilih menggunakan key kamu sendiri. Tidak ada data yang melalui server Kuron.';
+
+  @override
+  String get aiPrivacyAgree => 'Setuju & Translate';
+
+  @override
+  String get aiNoKeyNeeded => 'Tanpa key';
+
+  @override
+  String get glossaryPage => 'halaman';
 }

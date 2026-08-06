@@ -220,6 +220,7 @@ class BubbleTranslation extends Equatable {
     required this.rect,
     required this.original,
     required this.translated,
+    this.reading = '',
     this.isUserEdited = false,
     this.isSfxSkipped = false,
   });
@@ -227,6 +228,10 @@ class BubbleTranslation extends Equatable {
   final Rect rect; // Pixel coordinates in original page space
   final String original;
   final String translated;
+
+  /// Latin reading of the original (romaji for JP, romanization for
+  /// KR/ZH/other scripts) so users can pronounce the source text.
+  final String reading;
   final bool isUserEdited; // User corrected — AI must not overwrite
   final bool isSfxSkipped;
 
@@ -234,6 +239,7 @@ class BubbleTranslation extends Equatable {
     Rect? rect,
     String? original,
     String? translated,
+    String? reading,
     bool? isUserEdited,
     bool? isSfxSkipped,
   }) {
@@ -241,6 +247,7 @@ class BubbleTranslation extends Equatable {
       rect: rect ?? this.rect,
       original: original ?? this.original,
       translated: translated ?? this.translated,
+      reading: reading ?? this.reading,
       isUserEdited: isUserEdited ?? this.isUserEdited,
       isSfxSkipped: isSfxSkipped ?? this.isSfxSkipped,
     );
@@ -257,6 +264,7 @@ class BubbleTranslation extends Equatable {
       ),
       original: json['original'] as String? ?? '',
       translated: json['translated'] as String,
+      reading: json['reading'] as String? ?? '',
       isUserEdited: json['isUserEdited'] as bool? ?? false,
       isSfxSkipped: json['isSfxSkipped'] as bool? ?? false,
     );
@@ -272,6 +280,7 @@ class BubbleTranslation extends Equatable {
       },
       'original': original,
       'translated': translated,
+      'reading': reading,
       'isUserEdited': isUserEdited,
       'isSfxSkipped': isSfxSkipped,
     };
@@ -279,7 +288,7 @@ class BubbleTranslation extends Equatable {
 
   @override
   List<Object?> get props =>
-      [rect, original, translated, isUserEdited, isSfxSkipped];
+      [rect, original, translated, reading, isUserEdited, isSfxSkipped];
 }
 
 /// Full page translation result.

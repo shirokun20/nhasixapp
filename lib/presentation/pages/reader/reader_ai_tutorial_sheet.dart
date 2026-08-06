@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 
 /// Full-screen one-time tutorial overlay explaining the AI-translate toolbar.
 /// Dark translucent barrier over the whole reader + centered info card.
@@ -10,6 +11,7 @@ class ReaderAiTutorialOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: Colors.black.withValues(alpha: 0.78),
       child: SafeArea(
@@ -37,7 +39,7 @@ class ReaderAiTutorialOverlay extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'AI Translate',
+                        l10n.aiTranslate,
                         style: theme.textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -48,7 +50,7 @@ class ReaderAiTutorialOverlay extends StatelessWidget {
                           Icon(Icons.touch_app,
                               size: 14, color: theme.colorScheme.outline),
                           const SizedBox(width: 4),
-                          Text('Tap di mana saja untuk tutup',
+                          Text(l10n.aiTutorialHint,
                               style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.outline)),
                         ],
@@ -57,32 +59,27 @@ class ReaderAiTutorialOverlay extends StatelessWidget {
                       _TutorialRow(
                         icon: Icons.auto_awesome,
                         color: Colors.amber,
-                        title: '✨ Translate halaman',
-                        desc:
-                            'Deteksi bubble otomatis → terjemahan di-overlay '
-                            'di atas teks asli. Tap lagi untuk hide/show.',
+                        title: l10n.aiTutorialTranslateTitle,
+                        desc: l10n.aiTutorialTranslateDesc,
                       ),
                       const SizedBox(height: 14),
                       _TutorialRow(
                         icon: Icons.draw_outlined,
                         color: Colors.blueAccent,
-                        title: '✏️ Draw bubbles',
-                        desc:
-                            'Koreksi manual. Drag untuk tambah bubble (merah), '
-                            '🛰 Detect untuk lihat deteksi ONNX (biru). Done '
-                            'mengunci tapi bubble tetap tampil.',
+                        title: l10n.aiTutorialDrawTitle,
+                        desc: l10n.aiTutorialDrawDesc,
                       ),
                       const SizedBox(height: 14),
                       _TutorialRow(
                         icon: Icons.delete_sweep_outlined,
                         color: Colors.redAccent,
-                        title: '🗑 Clear',
-                        desc: 'Hapus hasil translate + semua bubble referensi.',
+                        title: l10n.aiTutorialClearTitle,
+                        desc: l10n.aiTutorialClearDesc,
                       ),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: onComplete,
-                        child: const Text('Paham!'),
+                        child: Text(l10n.aiTutorialGotIt),
                       ),
                     ],
                   ),

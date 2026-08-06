@@ -470,18 +470,21 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         // Surface pipeline failures exactly once per emit (not per rebuild).
         listener: (context, state) {
           final messenger = ScaffoldMessenger.of(context);
+          final l10n = AppLocalizations.of(context)!;
           if (state is ReaderTranslationError) {
             messenger.showSnackBar(
-                SnackBar(content: Text('Translate gagal: ${state.message}')));
+                SnackBar(content: Text(l10n.aiTranslateFailed(state.message))));
           } else if (state is ReaderTranslationNoProvider) {
             messenger.showSnackBar(SnackBar(
-              content: Text(state.message ??
-                  'AI translate butuh vision provider. Setup di Settings → AI Translation.'),
+              content: Text(state.modelName != null
+                  ? l10n.aiModelNotVision(state.modelName!)
+                  : (state.message ?? l10n.aiNeedVisionProvider)),
             ));
           } else if (state is ReaderTranslationRateLimited) {
             messenger.showSnackBar(SnackBar(
-              content: Text(
-                  'Rate limited. ${state.fallbackName != null ? 'Using ${state.fallbackName} as fallback.' : 'Tunggu ${state.cooldownSeconds}s.'}'),
+              content: Text(state.fallbackName != null
+                  ? l10n.aiRateLimited(l10n.aiUsingFallback(state.fallbackName!))
+                  : l10n.aiRateLimited(l10n.aiWaitCooldown(state.cooldownSeconds))),
             ));
           }
         },
@@ -608,19 +611,16 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Privacy Disclosure'),
-        content: const Text(
-            'Gambar halaman yang kamu translate akan dikirim ke provider '
-            'yang kamu pilih menggunakan key kamu sendiri. Tidak ada data '
-            'yang melalui server Kuron.'),
+        title: Text(AppLocalizations.of(dialogContext)!.aiPrivacyDisclosure),
+        content: Text(AppLocalizations.of(dialogContext)!.aiPrivacyDialogDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(dialogContext)!.aiCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Agree & Translate'),
+            child: Text(AppLocalizations.of(dialogContext)!.aiPrivacyAgree),
           ),
         ],
       ),
@@ -650,9 +650,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     if (bytes == null) {
       widget.logger.w('AI translate: fetch gagal untuk $url');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.')));
+                AppLocalizations.of(context)!.aiGagalFetch)));
       }
       return null;
     }
