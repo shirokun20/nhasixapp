@@ -108,6 +108,14 @@ class FakeAiPreferencesRepository implements AiPreferencesRepository {
 
   @override
   Future<void> setSkipSfx(bool value) async => skipSfx = value;
+
+  bool aiTutorialSeen = false;
+
+  @override
+  Future<bool> isAiTutorialSeen() async => aiTutorialSeen;
+
+  @override
+  Future<void> markAiTutorialSeen() async => aiTutorialSeen = true;
 }
 
 class FakeCacheRepository implements TranslationCacheRepository {

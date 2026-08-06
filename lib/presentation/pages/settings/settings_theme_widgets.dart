@@ -51,9 +51,13 @@ Widget buildSettingsCard(List<Widget> children, ThemeData theme) {
     color: theme.colorScheme.surfaceContainer,
     shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(children: children),
+    child: Material(
+      // Restore ink-splash rendering for ListTiles inside the card.
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(children: children),
+      ),
     ),
   );
 }

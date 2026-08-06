@@ -63,4 +63,6 @@ abstract interface class AiPreferencesRepository {
   Future<void> setPrivacyAcknowledged();
   Future<bool> getSkipSfx();
   Future<void> setSkipSfx(bool value);
+  Future<bool> isAiTutorialSeen();
+  Future<void> markAiTutorialSeen();
 }

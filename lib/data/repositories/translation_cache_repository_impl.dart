@@ -33,7 +33,8 @@ class TranslationCacheRepositoryImpl implements TranslationCacheRepository {
     if (rows.isEmpty) return null;
     try {
       return PageTranslation.fromJson(
-          jsonDecode(rows.first['result_json'] as String) as Map<String, dynamic>);
+          jsonDecode(rows.first['result_json'] as String)
+              as Map<String, dynamic>);
     } catch (e) {
       _logger.w('Failed to decode cache entry $key: $e');
       return null;
@@ -96,6 +97,7 @@ class AiPreferencesRepositoryImpl implements AiPreferencesRepository {
   static const String _styleKey = 'ai_translation_style';
   static const String _privacyKey = 'ai_privacy_acknowledged';
   static const String _skipSfxKey = 'ai_skip_sfx';
+  static const String _tutorialKey = 'ai_reader_tutorial_seen';
 
   @override
   Future<String> getTargetLanguage() async {
@@ -110,9 +112,7 @@ class AiPreferencesRepositoryImpl implements AiPreferencesRepository {
   @override
   Future<TranslationStyle> getTranslationStyle() async {
     final raw = _prefs.getString(_styleKey);
-    return TranslationStyle.values
-        .where((s) => s.name == raw)
-        .firstOrNull ??
+    return TranslationStyle.values.where((s) => s.name == raw).firstOrNull ??
         TranslationStyle.natural;
   }
 
@@ -139,5 +139,15 @@ class AiPreferencesRepositoryImpl implements AiPreferencesRepository {
   @override
   Future<void> setSkipSfx(bool value) async {
     await _prefs.setBool(_skipSfxKey, value);
+  }
+
+  @override
+  Future<bool> isAiTutorialSeen() async {
+    return _prefs.getBool(_tutorialKey) ?? false;
+  }
+
+  @override
+  Future<void> markAiTutorialSeen() async {
+    await _prefs.setBool(_tutorialKey, true);
   }
 }

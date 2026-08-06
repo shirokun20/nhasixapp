@@ -41,6 +41,7 @@ import 'end_of_chapter_overlay.dart';
 
 import 'reader_translation_widgets.dart';
 import 'reader_translation_draw_mode.dart';
+import 'reader_ai_tutorial_sheet.dart';
 import '../../cubits/reader/reader_translation_cubit.dart';
 import '../../../domain/repositories/ai_translation_repositories.dart';
 

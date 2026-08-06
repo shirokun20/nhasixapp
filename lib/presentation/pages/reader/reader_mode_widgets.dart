@@ -176,6 +176,34 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   void initState() {
     super.initState();
     _translationCubit.initPreferences();
+    _maybeShowAiTutorial();
+  }
+
+  /// One-time tutorial for the AI-translate toolbar buttons (first reader
+  /// open). Never blocks — sheet dismisses or auto-shows once.
+  Future<void> _maybeShowAiTutorial() async {
+    final prefs = getIt<AiPreferencesRepository>();
+    if (await prefs.isAiTutorialSeen()) return;
+    await prefs.markAiTutorialSeen();
+    if (!mounted) return;
+    // Defer: reader builds its Scaffold in the same frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Full-screen dark barrier + centered info card (not a bottom sheet).
+      Navigator.of(context).push(
+        PageRouteBuilder<void>(
+          opaque: false,
+          barrierDismissible: true,
+          pageBuilder: (_, __, ___) => ReaderAiTutorialOverlay(
+            onComplete: _dismissTutorial,
+          ),
+        ),
+      );
+    });
+  }
+
+  void _dismissTutorial() {
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
