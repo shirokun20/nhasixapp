@@ -218,6 +218,20 @@ You can also scan the QRIS below to donate:
 
 ---
 
+## 🤖 Built with AI Assistance
+
+This project is heavily assisted by AI coding agents alongside human engineering:
+
+| Tool | Role |
+|:-----|:-----|
+| [![Claude](https://img.shields.io/badge/Claude-205060?style=for-the-badge&logo=anthropic&logoColor=white)](https://claude.ai/code) | Architecture, feature implementation, code generation & review |
+| [![OpenAI Codex](https://img.shields.io/badge/Codex-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/codex) | Code generation, refactoring & debugging |
+| [![OpenCode](https://img.shields.io/badge/OpenCode-FF6B6B?style=for-the-badge&logo=openai&logoColor=white)](https://opencode.ai) | Agentic coding sessions, AI translation research & credentials |
+
+> 💡 Human supervision, architecture decisions, and final QA remain the core of Kuron — AI agents accelerate the workflow, they don't replace engineering judgment.
+
+---
+
 ## 👥 Contributors
 
 Thanks to all contributors who helped make kuron better!

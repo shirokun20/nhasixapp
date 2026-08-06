@@ -218,6 +218,20 @@ Kamu juga bisa scan QRIS di bawah ini untuk berdonasi:
 
 ---
 
+## 🤖 Dibangun dengan Bantuan AI
+
+Aplikasi ini sangat terbantu oleh agen coding AI di samping rekayasa manusia:
+
+| Tool | Peran |
+|:-----|:------|
+| [![Claude](https://img.shields.io/badge/Claude-205060?style=for-the-badge&logo=anthropic&logoColor=white)](https://claude.ai/code) | Arsitektur, implementasi fitur, pembuatan & review kode |
+| [![OpenAI Codex](https://img.shields.io/badge/Codex-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/codex) | Pembuatan kode, refactoring & debugging |
+| [![OpenCode](https://img.shields.io/badge/OpenCode-FF6B6B?style=for-the-badge&logo=openai&logoColor=white)](https://opencode.ai) | Sesi coding agentik, riset AI translation & kredensial |
+
+> 💡 Supervisi manusia, keputusan arsitektur, dan QA akhir tetap menjadi inti Kuron — agen AI mempercepat alur kerja, bukan menggantikan penilaian engineer.
+
+---
+
 ## 👥 Contributors
 
 Terimakasih kepada kontributor yang membuat aplikasi kuron ini lebih baik!
