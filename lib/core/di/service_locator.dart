@@ -754,6 +754,10 @@ void _setupDataSources() {
           logger: getIt<Logger>(),
           secureStorage: const FlutterSecureStorage(),
         ),
+        DoujinDesuXxxSourceFactory(
+          dio: getIt<Dio>(),
+          logger: getIt<Logger>(),
+        ),
       ],
       defaultFactory: getIt<GenericSourceFactory>(),
     );
