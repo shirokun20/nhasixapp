@@ -57,6 +57,7 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
         final drawMode = cubit.drawMode;
+        final colorScheme = Theme.of(context).colorScheme;
 
         final screenSize = MediaQuery.sizeOf(context);
         // Coordinate mapping: image px ↔ screen px — SAME fitWidth math as
@@ -121,6 +122,8 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                   child: CustomPaint(
                     painter: _DrawPainter(
                       dragging: _dragging,
+                      onnxColor: colorScheme.primary,
+                      manualColor: colorScheme.secondary,
                       onnxRects: _onnxRects,
                       manualRects: _manualRects = cubit.manualBubbles
                           .map((b) => Rect.fromLTWH(
@@ -315,28 +318,32 @@ class _DrawPainter extends CustomPainter {
     this.dragging,
     this.onnxRects = const [],
     this.manualRects = const [],
+    this.onnxColor = const Color(0xFFFFFFFF),
+    this.manualColor = const Color(0xFFFFFFFF),
   });
 
   final Rect? dragging;
-  final List<Rect> onnxRects; // ONNX-detected (blue reference)
-  final List<Rect> manualRects; // user-drawn (red)
+  final List<Rect> onnxRects; // ONNX-detected (reference)
+  final List<Rect> manualRects; // user-drawn
+  final Color onnxColor;
+  final Color manualColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bluePaint = Paint()
+    final onnxPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5
-      ..color = Colors.blueAccent;
+      ..color = onnxColor;
     for (final r in onnxRects) {
-      canvas.drawRect(r, bluePaint);
+      canvas.drawRect(r, onnxPaint);
     }
 
-    final redPaint = Paint()
+    final manualPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = Colors.red;
+      ..color = manualColor;
     for (final r in manualRects) {
-      canvas.drawRect(r, redPaint);
+      canvas.drawRect(r, manualPaint);
     }
 
     if (dragging != null) {
@@ -353,6 +360,8 @@ class _DrawPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DrawPainter oldDelegate) =>
       oldDelegate.dragging != dragging ||
+      oldDelegate.onnxColor != onnxColor ||
+      oldDelegate.manualColor != manualColor ||
       !listEquals(oldDelegate.onnxRects, onnxRects) ||
       !listEquals(oldDelegate.manualRects, manualRects);
 }

@@ -38,6 +38,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
             state is ReaderTranslationBuildingMosaic ||
             state is ReaderTranslationTranslating ||
             state is ReaderTranslationTranslatingBubble;
+        final activeColor = Theme.of(context).colorScheme.primary;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -66,7 +67,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
                     )
                   : Icon(
                       active ? Icons.auto_awesome : Icons.auto_awesome_outlined,
-                      color: active ? Colors.amber : null,
+                      color: active ? activeColor : null,
                     ),
               iconSize: 20,
               visualDensity: VisualDensity.compact,
@@ -100,7 +101,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
                     },
               icon: Icon(
                 Icons.draw_outlined,
-                color: cubit.drawMode ? Colors.amber : null,
+                color: cubit.drawMode ? activeColor : null,
               ),
               iconSize: 20,
               visualDensity: VisualDensity.compact,
@@ -113,7 +114,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
                   : () => cubit.setSkipSfx(!cubit.skipSfx),
               icon: Icon(
                 Icons.volume_off_outlined,
-                color: cubit.skipSfx ? Colors.amber : null,
+                color: cubit.skipSfx ? activeColor : null,
               ),
               iconSize: 20,
               visualDensity: VisualDensity.compact,
@@ -200,7 +201,10 @@ class _TranslatedBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.amber, width: 1.5),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
         ),
         child: Text(
           bubble.translated,

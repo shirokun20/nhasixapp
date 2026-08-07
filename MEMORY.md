@@ -164,6 +164,7 @@ lib/
 - `2026-02-11-nhentai-search-revamp`
 
 ### Active Changes (in `openspec/changes/`)
+- `reader-ai-render-polish` — Proposal dibuat 2026-08-07. Tingkatkan kualitas render teks overlay AI: (1) bundle font manga `Komika Axis.ttf` (Latin) + `KosugiMaru.ttf` (CJK) sebagai asset, pilih per-skrip; (2) font-fit algorithm (`TextPainter` loop size besar→kecil, wrap) ganti `fontSize = rect.height*0.18` kaku; (3) white-outline stroke (hitam + stroke putih) + white patch (rounded, blur) untuk bubble flat. Inspirasi: `indravoyager/cypy` (Python, MIT) — beda: cypy mutasi bitmap asli, Kuron tetap overlay non-destruktif. Scope: presentation-layer only, tidak sentuh pipeline AI/cache/deteksi. Validate OK.
 - `komiktap-ssl-websocket-bypass`
 - `add-doujin-desu-xxx-source`
 - `mangadex-search-language-to-detail` — Active. Pass search language filters (sourceLanguage, availableLanguage) from search to detail page for auto-selecting chapter language.
