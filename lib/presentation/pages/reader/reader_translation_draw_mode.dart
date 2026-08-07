@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
 /// Manual bubble drawing mode (spec 9.5): pan-drag → red rectangle.
@@ -134,45 +135,29 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                 ),
               ),
             ),
-            // Controls — draw mode only
+            // Controls — draw mode only. A small pill that expands into the
+            // action panel on tap, so it never blocks the reader chrome or
+            // the page below.
             if (drawMode)
               Positioned(
-                bottom: 90,
+                bottom: 20,
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ChipButton(
-                        label: '🛰 Detect',
-                        onTap: () async {
-                          await cubit.detectBubblesOnly();
-                          _repaint();
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _ChipButton(
-                        label: 'Undo',
-                        onTap: () {
-                          cubit.undoLastManual();
-                          _repaint();
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _ChipButton(
-                        label: 'Clear',
-                        onTap: () {
-                          cubit.clearManualBubbles();
-                          _repaint();
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _ChipButton(
-                        label: 'Done ✓',
-                        onTap: () => cubit.setDrawMode(false),
-                      ),
-                    ],
+                  child: _DrawModeControls(
+                    onDetect: () async {
+                      await cubit.detectBubblesOnly();
+                      _repaint();
+                    },
+                    onUndo: () {
+                      cubit.undoLastManual();
+                      _repaint();
+                    },
+                    onClear: () {
+                      cubit.clearManualBubbles();
+                      _repaint();
+                    },
+                    onDone: () => cubit.setDrawMode(false),
                   ),
                 ),
               ),
@@ -183,23 +168,142 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
   }
 }
 
-class _ChipButton extends StatelessWidget {
-  const _ChipButton({required this.label, required this.onTap});
+/// Expandable action pill for draw mode. Collapsed: a single round button.
+/// Expanded: Detect / Undo / Clear / Done actions above it.
+class _DrawModeControls extends StatefulWidget {
+  const _DrawModeControls({
+    required this.onDetect,
+    required this.onUndo,
+    required this.onClear,
+    required this.onDone,
+  });
 
-  final String label;
+  final VoidCallback onDetect;
+  final VoidCallback onUndo;
+  final VoidCallback onClear;
+  final VoidCallback onDone;
+
+  @override
+  State<_DrawModeControls> createState() => _DrawModeControlsState();
+}
+
+class _DrawModeControlsState extends State<_DrawModeControls> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    // Shared pill visuals — matches the mini chrome toggle look.
+    final pillDecoration = BoxDecoration(
+      color: colorScheme.inverseSurface.withValues(alpha: 0.88),
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: colorScheme.onInverseSurface.withValues(alpha: 0.18),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.18),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: _expanded
+              ? Material(
+                  color: colorScheme.inverseSurface.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(28),
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _DrawAction(
+                          icon: Icons.radar,
+                          tooltip: l10n.aiDrawDetect,
+                          onTap: widget.onDetect,
+                        ),
+                        _DrawAction(
+                          icon: Icons.undo,
+                          tooltip: l10n.aiDrawUndo,
+                          onTap: widget.onUndo,
+                        ),
+                        _DrawAction(
+                          icon: Icons.delete_sweep_outlined,
+                          tooltip: l10n.aiDrawClear,
+                          onTap: widget.onClear,
+                        ),
+                        _DrawAction(
+                          icon: Icons.check,
+                          tooltip: l10n.aiExitDrawMode,
+                          onTap: widget.onDone,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 10),
+        Material(
+          color: Colors.transparent,
+          child: Tooltip(
+            message: _expanded ? l10n.aiCollapseDraw : l10n.aiExpandDraw,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(28),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: _expanded ? 48 : 56,
+                height: _expanded ? 48 : 56,
+                decoration: pillDecoration,
+                child: Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_down_rounded
+                      : Icons.edit_outlined,
+                  size: 24,
+                  color: colorScheme.onInverseSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DrawAction extends StatelessWidget {
+  const _DrawAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.7),
-      borderRadius: BorderRadius.circular(20),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Text(label, style: const TextStyle(color: Colors.white)),
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, size: 20, color: colorScheme.onInverseSurface),
         ),
       ),
     );

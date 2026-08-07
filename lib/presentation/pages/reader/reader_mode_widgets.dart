@@ -176,6 +176,16 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   void initState() {
     super.initState();
     _translationCubit.initPreferences();
+    // Hide the reader chrome (top bar + bottom slider/nav) while in manual
+    // bubble draw mode — the drawer is a full-screen task and the chrome
+    // only blocks the page it is drawn over.
+    _translationCubit.onDrawModeChanged = () {
+      if (_translationCubit.drawMode) {
+        widget.cubit.hideUI();
+      } else {
+        widget.cubit.showUI();
+      }
+    };
     _maybeShowAiTutorial();
   }
 
@@ -208,6 +218,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
 
   @override
   void dispose() {
+    _translationCubit.onDrawModeChanged = null;
     _translationCubit.close();
     super.dispose();
   }

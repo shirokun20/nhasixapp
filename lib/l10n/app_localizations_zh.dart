@@ -5407,6 +5407,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiDrawBubbles => '绘制气泡';
 
   @override
+  String get aiExpandDraw => '显示操作';
+
+  @override
+  String get aiCollapseDraw => '隐藏操作';
+
+  @override
+  String get aiDrawDetect => '检测气泡';
+
+  @override
+  String get aiDrawUndo => '撤消';
+
+  @override
+  String get aiDrawClear => '清除';
+
+  @override
   String get aiSkipSfxOn => '跳过音效：开';
 
   @override

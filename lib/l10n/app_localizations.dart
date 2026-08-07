@@ -9504,6 +9504,36 @@ abstract class AppLocalizations {
   /// **'Draw bubbles'**
   String get aiDrawBubbles;
 
+  /// No description provided for @aiExpandDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Show actions'**
+  String get aiExpandDraw;
+
+  /// No description provided for @aiCollapseDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide actions'**
+  String get aiCollapseDraw;
+
+  /// No description provided for @aiDrawDetect.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect bubbles'**
+  String get aiDrawDetect;
+
+  /// No description provided for @aiDrawUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get aiDrawUndo;
+
+  /// No description provided for @aiDrawClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get aiDrawClear;
+
   /// No description provided for @aiSkipSfxOn.
   ///
   /// In en, this message translates to:

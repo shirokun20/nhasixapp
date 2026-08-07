@@ -82,9 +82,19 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   bool get drawMode => _drawMode;
 
+  /// Notified whenever [drawMode] flips (including force-exit via
+  /// [onReadingModeChanged]). Lets the reader chrome auto-hide while drawing.
+  VoidCallback? onDrawModeChanged;
+
   void setDrawMode(bool value) {
-    _drawMode = value;
+    _setDrawMode(value);
     _bumpUi();
+  }
+
+  void _setDrawMode(bool value) {
+    if (_drawMode == value) return;
+    _drawMode = value;
+    onDrawModeChanged?.call();
   }
 
   /// Called by the reader when navigation mode changes — exits draw mode in
@@ -92,8 +102,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   void onReadingModeChanged(ReadingMode mode) {
     if (mode == ReadingMode.continuousScroll &&
         (_drawMode || _overlayVisible)) {
-      _drawMode = false;
       _overlayVisible = false;
+      _setDrawMode(false);
       _bumpUi();
     }
   }
