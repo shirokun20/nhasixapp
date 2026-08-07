@@ -83,8 +83,9 @@ class _FailedPageCard extends StatelessWidget {
 
 // ───── Top bar ─────
 
-class _ReaderTopBar extends StatelessWidget {
+enum _TopBarAction { keepScreenOn, settings, skipSfx }
 
+class _ReaderTopBar extends StatelessWidget {
   const _ReaderTopBar({
     required this.state,
     required this.onBack,
@@ -92,6 +93,7 @@ class _ReaderTopBar extends StatelessWidget {
     required this.onOpenSettings,
     this.onTranslate,
     this.onEnterDrawMode,
+    this.onToggleSkipSfx,
   });
 
   final ReaderState state;
@@ -100,6 +102,7 @@ class _ReaderTopBar extends StatelessWidget {
   final VoidCallback onOpenSettings;
   final VoidCallback? onTranslate;
   final VoidCallback? onEnterDrawMode;
+  final VoidCallback? onToggleSkipSfx;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +114,8 @@ class _ReaderTopBar extends StatelessWidget {
     final iconColor = isDark ? Colors.white : const Color(0xFF2E2722);
     final textColor = isDark ? Colors.white : const Color(0xFF2E2722);
     final subColor = isDark ? Colors.white60 : const Color(0xFF7A6E66);
+    final colorScheme = Theme.of(context).colorScheme;
+    final skipSfx = context.read<ReaderTranslationCubit>().skipSfx;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
@@ -194,32 +199,78 @@ class _ReaderTopBar extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: onToggleKeepScreenOn,
-                icon: Icon(
-                  (state.keepScreenOn ?? false)
-                      ? Icons.screen_lock_portrait
-                      : Icons.screen_lock_portrait_outlined,
-                  color: (state.keepScreenOn ?? false)
-                      ? Colors.amberAccent
-                      : subColor,
-                ),
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                onPressed: onOpenSettings,
-                icon: Icon(Icons.settings, color: subColor),
-                iconSize: 20,
-                visualDensity: VisualDensity.compact,
-              ),
-              if (onTranslate != null)
+                            if (onTranslate != null)
                 ReaderTranslationToolbar(
                   readingMode:
                       state.readingMode ?? ReadingMode.singlePage,
                   onTranslate: onTranslate!,
                   onEnterDrawMode: onEnterDrawMode,
                 ),
+              PopupMenuButton<_TopBarAction>(
+                onSelected: (action) {
+                  switch (action) {
+                    case _TopBarAction.keepScreenOn:
+                      onToggleKeepScreenOn();
+                    case _TopBarAction.settings:
+                      onOpenSettings();
+                    case _TopBarAction.skipSfx:
+                      onToggleSkipSfx?.call();
+                  }
+                },
+                icon: Icon(Icons.more_vert, color: subColor),
+                iconSize: 20,
+                tooltip: AppLocalizations.of(context)?.moreActions,
+                color: kuron?.readerBg ?? const Color(0xFF000000),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: _TopBarAction.keepScreenOn,
+                    child: Row(
+                      children: [
+                        Icon(
+                          (state.keepScreenOn ?? false)
+                              ? Icons.screen_lock_portrait
+                              : Icons.screen_lock_portrait_outlined,
+                          size: 18,
+                          color: (state.keepScreenOn ?? false)
+                              ? colorScheme.primary
+                              : subColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!
+                            .keepScreenOnLabel),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _TopBarAction.settings,
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings, size: 18, color: subColor),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!
+                            .readerSettings),
+                      ],
+                    ),
+                  ),
+                  if (onTranslate != null)
+                    PopupMenuItem(
+                      value: _TopBarAction.skipSfx,
+                      child: Row(
+                        children: [
+                          Icon(
+                            skipSfx ? Icons.volume_off : Icons.volume_up,
+                            size: 18,
+                            color: skipSfx ? colorScheme.primary : subColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(skipSfx
+                              ? AppLocalizations.of(context)!.aiSkipSfxOn
+                              : AppLocalizations.of(context)!.aiSkipSfxOff),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
         ),

@@ -5428,6 +5428,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiSkipSfxOff => '跳过音效：关';
 
   @override
+  String get moreActions => '更多操作';
+
+  @override
   String get aiEditTranslation => '编辑翻译';
 
   @override

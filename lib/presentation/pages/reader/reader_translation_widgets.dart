@@ -106,19 +106,6 @@ class ReaderTranslationToolbar extends StatelessWidget {
               iconSize: 20,
               visualDensity: VisualDensity.compact,
             ),
-            // SFX skip toggle (9.3)
-            IconButton(
-              tooltip: cubit.skipSfx ? l10n.aiSkipSfxOn : l10n.aiSkipSfxOff,
-              onPressed: isDisabled
-                  ? null
-                  : () => cubit.setSkipSfx(!cubit.skipSfx),
-              icon: Icon(
-                Icons.volume_off_outlined,
-                color: cubit.skipSfx ? activeColor : null,
-              ),
-              iconSize: 20,
-              visualDensity: VisualDensity.compact,
-            ),
           ],
         );
       },

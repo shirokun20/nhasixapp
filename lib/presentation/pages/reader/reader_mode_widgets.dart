@@ -520,6 +520,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                           onOpenSettings: () => widget.onShowSettings(state),
                           onTranslate: () => _onTranslatePressed(),
                           onEnterDrawMode: () => _onEnterDrawMode(),
+                          onToggleSkipSfx: () =>
+                              _translationCubit.setSkipSfx(
+                                  !_translationCubit.skipSfx),
                         ),
                         bottomBar: state.readingMode !=
                                 ReadingMode.continuousScroll

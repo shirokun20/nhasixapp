@@ -9546,6 +9546,12 @@ abstract class AppLocalizations {
   /// **'Skip SFX: OFF'**
   String get aiSkipSfxOff;
 
+  /// No description provided for @moreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get moreActions;
+
   /// No description provided for @aiEditTranslation.
   ///
   /// In en, this message translates to:

@@ -5579,6 +5579,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiSkipSfxOff => 'Skip SFX: OFF';
 
   @override
+  String get moreActions => 'More actions';
+
+  @override
   String get aiEditTranslation => 'Edit Translation';
 
   @override

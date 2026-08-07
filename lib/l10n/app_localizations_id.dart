@@ -5606,6 +5606,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiSkipSfxOff => 'Skip SFX: MATI';
 
   @override
+  String get moreActions => 'Aksi lainnya';
+
+  @override
   String get aiEditTranslation => 'Edit Terjemahan';
 
   @override
