@@ -122,8 +122,8 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                   child: CustomPaint(
                     painter: _DrawPainter(
                       dragging: _dragging,
-                      onnxColor: colorScheme.primary,
-                      manualColor: colorScheme.secondary,
+                      onnxColor: colorScheme.tertiary,
+                      manualColor: colorScheme.primary,
                       onnxRects: _onnxRects,
                       manualRects: _manualRects = cubit.manualBubbles
                           .map((b) => Rect.fromLTWH(
