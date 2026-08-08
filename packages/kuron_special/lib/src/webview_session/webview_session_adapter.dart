@@ -416,28 +416,29 @@ class WebViewSessionAdapter {
           }
         }
 
+        if (usedSslFallback && _hasCapturedHtml(pageHtml)) {
+          // WebView proceeded past a bad cert (komiktap ERR_SSL_PROTOCOL_ERROR,
+          // openspec komiktap-ssl-websocket-bypass). Dio's shared client has
+          // no badCertificateCallback — it would 3× retry and die on the same
+          // bad cert. The WebView just proved the page loads; trust its
+          // captured HTML directly.
+          final htmlContent = await _readCapturedHtml(pageHtml!);
+          if (htmlContent != null) {
+            _logger.w(
+                '⚠️ SSL fallback — skipping Dio re-verify, serving captured '
+                'HTML (${htmlContent.length} chars)');
+            return _htmlResponse<T>(htmlContent, targetUrl);
+          }
+        }
+
         // 4. If WebView saved HTML to file and this source asked for it,
         // use it directly instead of re-verifying with Dio.
-        if (bypassOptions.preferCapturedHtml &&
-            pageHtml != null &&
-            pageHtml.isNotEmpty &&
-            pageHtml.startsWith('/')) {
-          try {
-            final file = File(pageHtml);
-            final rawContent = await file.readAsString();
-            // evaluateJavascript returns JSON-encoded string (quoted + escaped)
-            final htmlContent = rawContent.startsWith('"')
-                ? (jsonDecode(rawContent) as String)
-                : rawContent;
+        if (bypassOptions.preferCapturedHtml && _hasCapturedHtml(pageHtml)) {
+          final htmlContent = await _readCapturedHtml(pageHtml!);
+          if (htmlContent != null) {
             _logger.i(
                 '📄 Using WebView-captured HTML (${htmlContent.length} chars) — skipping Dio verify');
-            return Response<String>(
-              statusCode: 200,
-              data: htmlContent,
-              requestOptions: RequestOptions(path: targetUrl),
-            ) as Response<T>;
-          } catch (e) {
-            _logger.w('Failed to read HTML file: $e');
+            return _htmlResponse<T>(htmlContent, targetUrl);
           }
         }
 
@@ -456,6 +457,31 @@ class WebViewSessionAdapter {
       _bypassingUrls.remove(targetUrl);
     }
   }
+
+  bool _hasCapturedHtml(String? pageHtml) =>
+      pageHtml != null && pageHtml.isNotEmpty && pageHtml.startsWith('/');
+
+  /// Reads the HTML file captured by the WebView. evaluateJavascript returns
+  /// a JSON-encoded string (quoted + escaped) — decode when present.
+  /// Returns null on read failure so callers fall through to Dio re-verify.
+  Future<String?> _readCapturedHtml(String pageHtml) async {
+    try {
+      final rawContent = await File(pageHtml).readAsString();
+      return rawContent.startsWith('"')
+          ? (jsonDecode(rawContent) as String)
+          : rawContent;
+    } catch (e) {
+      _logger.w('Failed to read HTML file: $e');
+      return null;
+    }
+  }
+
+  Response<T> _htmlResponse<T>(String htmlContent, String targetUrl) =>
+      Response<String>(
+        statusCode: 200,
+        data: htmlContent,
+        requestOptions: RequestOptions(path: targetUrl),
+      ) as Response<T>;
 
   Future<Response<T>?> _verifyBypass<T>(
     String url, {

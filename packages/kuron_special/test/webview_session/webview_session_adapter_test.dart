@@ -221,6 +221,40 @@ void main() {
       expect(saved, isEmpty);
     });
 
+    test(
+        'ssl fallback serves captured html without Dio re-verify (komiktap '
+        'bad-cert path)', () async {
+      var calls = 0;
+      final native = _FakeKuronNative();
+      final htmlFile = await writeCapturedHtml('<html>ssl-ok</html>');
+      native.result = {
+        'success': true,
+        'pageHtml': htmlFile.path,
+        'cookies': <String>['cf_clearance=untrusted'],
+        'usedSslFallback': true,
+        'userAgent': 'ua',
+      };
+
+      final dio = buildChallengeDio(callCount: () => ++calls);
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: PersistCookieJar(),
+        config: const WebViewSessionConfig(bypassEnabled: true),
+        baseUrl: 'https://komiktap.info',
+        native: native,
+      );
+
+      final response = await adapter.requestWithBypass<String>(
+        'https://komiktap.info/you-wont-break-me-chapter-37/',
+      );
+
+      // SSL path skips Dio re-verify (shared Dio has no badCertificateCallback
+      // — it would 3x retry and die on the same bad cert). WebView already
+      // proved the page loads, so captured HTML is the source of truth.
+      expect(response.data, '<html>ssl-ok</html>');
+      expect(calls, 1); // HTTP probe only, no re-verify attempt
+    });
+
     test('generic adapter ignores captured html and re-verifies with Dio',
         () async {
       var calls = 0;
