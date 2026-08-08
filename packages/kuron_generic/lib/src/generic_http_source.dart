@@ -629,12 +629,14 @@ class GenericHttpSource implements ContentSource {
       }
     }
 
-    if (_id == 'hentairead') {
-      headers['Accept'] = 'image/webp,image/*,*/*;q=0.8';
-      headers['Origin'] = _baseUrl;
-      headers['Sec-Fetch-Dest'] = 'image';
-      headers['Sec-Fetch-Mode'] = 'no-cors';
-      headers['Sec-Fetch-Site'] = 'cross-site';
+    // Image CDN needs cross-site Sec-Fetch hints — config-driven via
+    // `network.imageHeaders` (HentaiRead/ManhwaRead).
+    final imageHeaders = (_rawConfig['network'] as Map<String, dynamic>?)
+            ?['imageHeaders'] as Map<String, dynamic>?;
+    if (imageHeaders != null && imageHeaders.isNotEmpty) {
+      for (final entry in imageHeaders.entries) {
+        headers[entry.key] = entry.value.toString();
+      }
     }
 
     if (_id == 'schale-network' || _id == 'hdoujin') {

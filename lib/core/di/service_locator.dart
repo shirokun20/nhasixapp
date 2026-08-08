@@ -549,7 +549,14 @@ void _setupDataSources() {
         config: WebViewSessionConfig.fromJson(rawConfig),
         baseUrl: baseUrl,
         logger: getIt<Logger>(),
-        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+        bypassOptionsBuilder: (url, config) =>
+            WebViewReaderSourceFactory.buildBypassOptions(
+              url,
+              config,
+              readerPagePattern: '/english/p/',
+              captureHost: 'henread.xyz',
+              previewHost: 'hencover.xyz',
+            ),
       );
     },
   );
@@ -567,6 +574,14 @@ void _setupDataSources() {
         config: WebViewSessionConfig.fromJson(rawConfig),
         baseUrl: baseUrl,
         logger: getIt<Logger>(),
+        bypassOptionsBuilder: (url, config) =>
+            WebViewReaderSourceFactory.buildBypassOptions(
+              url,
+              config,
+              readerPagePattern: '/chapter-',
+              captureHost: 'manread.xyz',
+              previewHost: 'mancover.xyz',
+            ),
       );
     },
   );
@@ -710,13 +725,14 @@ void _setupDataSources() {
           logger: getIt<Logger>(),
         ),
         // CF-protected generic sources
-        HentaiReadSourceFactory(
+        WebViewReaderSourceFactory(
+          sourceId: 'hentairead',
           dio: getIt<Dio>(),
           sessionAdapter:
               getIt<WebViewSessionAdapter>(instanceName: 'cf_hentairead'),
           logger: getIt<Logger>(),
         ),
-        GenericBypassSourceFactory(
+        WebViewReaderSourceFactory(
           sourceId: 'manhwaread',
           dio: getIt<Dio>(),
           sessionAdapter:

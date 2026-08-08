@@ -273,7 +273,14 @@ void main() {
         config: const WebViewSessionConfig(bypassEnabled: true),
         baseUrl: 'https://hentairead.com',
         native: native,
-        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+        bypassOptionsBuilder: (url, config) =>
+            WebViewReaderSourceFactory.buildBypassOptions(
+              url,
+              config,
+              readerPagePattern: '/english/p/',
+              captureHost: 'henread.xyz',
+              previewHost: 'hencover.xyz',
+            ),
       );
 
       final response = await adapter
@@ -307,7 +314,14 @@ void main() {
         ),
         baseUrl: 'https://hentairead.com',
         native: native,
-        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+        bypassOptionsBuilder: (url, config) =>
+            WebViewReaderSourceFactory.buildBypassOptions(
+              url,
+              config,
+              readerPagePattern: '/english/p/',
+              captureHost: 'henread.xyz',
+              previewHost: 'hencover.xyz',
+            ),
       );
 
       final response = await adapter.requestWithBypass<String>(
@@ -345,7 +359,14 @@ void main() {
         ),
         baseUrl: 'https://hentairead.com',
         native: native,
-        bypassOptionsBuilder: HentaiReadSourceFactory.buildBypassOptions,
+        bypassOptionsBuilder: (url, config) =>
+            WebViewReaderSourceFactory.buildBypassOptions(
+              url,
+              config,
+              readerPagePattern: '/english/p/',
+              captureHost: 'henread.xyz',
+              previewHost: 'hencover.xyz',
+            ),
       );
 
       final response = await adapter.requestWithBypass<String>(

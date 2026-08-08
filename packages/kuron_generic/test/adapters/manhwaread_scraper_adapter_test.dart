@@ -96,4 +96,39 @@ void main() {
       );
     });
   });
+
+  group('manhwaread reader chapterDataScript', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = Dio(BaseOptions(baseUrl: _baseUrl));
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAdapter(dio);
+    });
+
+    test('resolves relative srcs via localStaticData + cdnHost', () async {
+      dioAdapter.onGet(
+        '$_baseUrl/manhwa/queen-bee/chapter-001',
+        (server) => server.reply(
+          200,
+          _readFixture('halaman-reader.html'),
+          headers: {
+            Headers.contentTypeHeader: ['text/html; charset=utf-8'],
+          },
+        ),
+      );
+
+      final result =
+          await adapter.fetchChapterImages('queen-bee/chapter-001', config);
+
+      expect(result, isNotNull);
+      expect(result!.images, isNotEmpty);
+      expect(result.images.first,
+          'https://manread.xyz/5830/94297/mr_001.jpg');
+      expect(result.images,
+          everyElement(startsWith('https://manread.xyz/5830/94297/mr_')));
+    });
+  });
 }

@@ -1928,6 +1928,10 @@ class GenericScraperAdapter implements GenericAdapter {
       // 3b. Re-write preview CDN → reader CDN if configured.
       final cdnHost = readerConfig['cdnHost'] as String?;
       if (cdnHost != null && cdnHost.isNotEmpty) {
+        final previewHost =
+            (readerConfig['previewHost'] as String?)?.trim().isNotEmpty == true
+                ? (readerConfig['previewHost'] as String).trim()
+                : 'hencover.xyz'; // legacy default
         final realMangaId = _parser.extractString(
                 workingDoc,
                 const FieldSelector(
@@ -1950,7 +1954,7 @@ class GenericScraperAdapter implements GenericAdapter {
                     selector: '[data-chapter]', attribute: 'data-chapter'));
 
         imageUrls = imageUrls.map((url) {
-          String replaced = url.replaceAll('hencover.xyz/preview', cdnHost);
+          String replaced = url.replaceAll('$previewHost/preview', cdnHost);
 
           if (realMangaId != null &&
               realMangaId.isNotEmpty &&
@@ -1988,10 +1992,16 @@ class GenericScraperAdapter implements GenericAdapter {
             }
           }
 
-          // Bulletproof fallback for HentaiRead: scan entire HTML for hr_X.jpg
-          final hrMatches =
-              RegExp(r'hr_(\d+)\.jpg').allMatches(workingHtmlContent);
-          for (final m in hrMatches) {
+          // Fallback: scan entire HTML for reader CDN page images
+          // (prefix from config, e.g. `hr_` for HentaiRead, `mr_` for
+          // ManhwaRead).
+          final imagePrefix = (readerConfig['imagePrefix'] as String?) ??
+              'hr_'; // legacy default
+          final prefixMatches = RegExp(
+            '${RegExp.escape(imagePrefix)}(\\d+)\\.(jpg|jpeg|png|webp)',
+            caseSensitive: false,
+          ).allMatches(workingHtmlContent);
+          for (final m in prefixMatches) {
             final num = int.tryParse(m.group(1) ?? '0') ?? 0;
             if (num > maxPage) maxPage = num;
           }
@@ -2010,10 +2020,13 @@ class GenericScraperAdapter implements GenericAdapter {
                 imageUrls.add('$basePath$prefix$padded.$ext');
               }
             } else if (realMangaId != null && realChapterId != null) {
+              final imagePrefix = (readerConfig['imagePrefix'] as String?) ??
+                  'hr_'; // legacy default
               for (int i = imageUrls.length + 1; i <= maxPage; i++) {
                 final padded = i.toString().padLeft(4, '0');
                 imageUrls.add(
-                    'https://$cdnHost/$realMangaId/$realChapterId/hr_$padded.jpg');
+                    'https://$cdnHost/$realMangaId/$realChapterId/'
+                    '$imagePrefix$padded.jpg');
               }
             }
           }
@@ -3060,6 +3073,39 @@ class GenericScraperAdapter implements GenericAdapter {
       base64Str = inlineChapterDataMatch.group(1);
       baseUrl = inlineChapterDataMatch.group(2);
     } else {
+      // Variant used by ManhwaRead/HentaiRead:
+      // `var chapterData = {"data":"<base64>"}` (no `base`) — relative srcs
+      // like `94297/mr_001.jpg` resolve against the CDN host:
+      // `https://{cdnHost}/{currentId}/{chapterId}/{src}`, where
+      // `currentId` (manga id) and `chapterId` come from `localStaticData`.
+      final chapterDataNoBaseMatch = RegExp(
+        r'''chapterData\s*=\s*\{[^}]*?"data"\s*:\s*"([^"]+)"\s*\}''',
+        dotAll: true,
+      ).firstMatch(htmlContent);
+      if (chapterDataNoBaseMatch != null) {
+        final cdnHost = readerConfig['cdnHost'] as String?;
+        final localStatic = RegExp(
+          r'''localStaticData\s*=\s*\{.*?"currentId"\s*:\s*(\d+).*?"chapterId"\s*:\s*(\d+)''',
+          dotAll: true,
+        ).firstMatch(htmlContent);
+        if (cdnHost != null &&
+            cdnHost.isNotEmpty &&
+            localStatic != null) {
+          base64Str = chapterDataNoBaseMatch.group(1);
+          baseUrl = 'https://$cdnHost/${localStatic.group(1)}/'
+              '${localStatic.group(2)}';
+          _logger.d('$_sourceId chapterDataScript: manhwaread-style '
+              'script, cdnHost=$cdnHost, '
+              'mangaId=${localStatic.group(1)}, '
+              'chapterId=${localStatic.group(2)}');
+        } else {
+          _logger.d('$_sourceId chapterDataScript: chapterData found but '
+              'missing cdnHost/localStaticData; skipping');
+        }
+      }
+    }
+
+    if (base64Str == null) {
       final scriptBaseUrlMatch = RegExp(
         r'''single-chapter-js-extra[^>]*>[\s\S]*?"baseUrl"\s*:\s*"([^"]+)"''',
         dotAll: true,

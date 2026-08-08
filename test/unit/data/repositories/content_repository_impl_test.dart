@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_core/kuron_core.dart' as core;
+import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/di/service_locator.dart' show getIt;
 import 'package:nhasixapp/data/datasources/remote/remote_data_source.dart';
 import 'package:nhasixapp/data/models/content_model.dart';
 import 'package:nhasixapp/data/repositories/content_repository_impl.dart';
@@ -26,6 +28,16 @@ class MockTagCacheManager extends Mock
 class MockContentSource extends Mock implements core.ContentSource {}
 
 void main() {
+  setUpAll(() {
+    // RequestDeduplicationService resolves Logger via GetIt
+    // (commit 5f34d29a moved Logger to DI without updating tests).
+    getIt.registerSingleton<Logger>(Logger(level: Level.off));
+  });
+
+  tearDownAll(() {
+    getIt.reset();
+  });
+
   late core.ContentSourceRegistry registry;
   late MockRemoteConfigService remoteConfigService;
   late MockRemoteDataSource remoteDataSource;
