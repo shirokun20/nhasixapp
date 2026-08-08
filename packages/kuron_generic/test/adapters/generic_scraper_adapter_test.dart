@@ -484,6 +484,35 @@ const _nicomangaDetailFixtureConfig = {
   }
 };
 
+const _nicomangaChaoticConfig = {
+  'source': 'nicomanga',
+  'baseUrl': _nicomangaBaseUrl,
+  'scraper': {
+    'urlPatterns': {
+      'detail': '/{id}',
+      'chapter': '{id}',
+    },
+    'selectors': {
+      'detail': {
+        'chaoticKey': 'NicoMangaX2',
+        'chaotic': {
+          'title': 'n',
+          'coverUrl': 'c',
+          'author': 'a',
+          'genres': 'genres',
+          'genresList': 'genres_list',
+          'description': 'description',
+          'status': 'status_text',
+        },
+      },
+      'reader': {
+        'mode': 'chaoticPayload',
+        'chaoticKey': 'NicoMangaX2',
+      },
+    },
+  },
+};
+
 const _scriptArrayReaderConfig = {
   'source': 'komiktap',
   'baseUrl': _baseUrl,
@@ -2034,6 +2063,37 @@ void main() {
       expect(tagNames.length, greaterThan(3));
     });
 
+    test('nicomanga chaotic_payload detail decodes title/tags/chapters',
+        () async {
+      final nicomangaDio = _buildNicomangaDio();
+      final nicomangaMock =
+          DioAdapter(dio: nicomangaDio, matcher: const UrlRequestMatcher());
+      final nicomangaAdapter = _buildNicomangaAdapter(nicomangaDio);
+      final html = _readFixtureFile('test/fixtures/nicomanga_chaotic_detail.html');
+
+      nicomangaMock.onGet(
+        '$_nicomangaBaseUrl/manga2122/a189649f.html',
+        (s) => s.reply(200, html, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await nicomangaAdapter.fetchDetail(
+        'manga2122/a189649f.html',
+        _nicomangaChaoticConfig,
+      );
+
+      expect(result.content.title, contains('WARE NI CHEAT O'));
+      expect(
+          result.content.coverUrl, startsWith('https://s4.ihlv1.xyz/'));
+      final tagNames = result.content.tags.map((t) => t.name).toList();
+      expect(tagNames, containsAll(['Adult', 'Fantasy', 'Seinen']));
+      expect(result.content.chapters, isNotNull);
+      expect(result.content.chapters!.length, greaterThan(50));
+      expect(result.content.chapters!.first.url,
+          'https://nicomanga.com/manga2122/a189649f/chapter-c75.3i301466.html');
+    });
+
     test('extracts chapters with correct count', () async {
       dioAdapter.onGet(
         '$_baseUrl/manga/manga-slug-one/',
@@ -2360,6 +2420,40 @@ void main() {
       });
     }); // doujindesuTests
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // fetchChapterImages() — nicomanga chaoticPayload
+  // ─────────────────────────────────────────────────────────────────────────
+
+  group('GenericScraperAdapter.fetchChapterImages() — chaoticPayload', () {
+    test('decodes reader payload images', () async {
+      final nicomangaDio = _buildNicomangaDio();
+      final nicomangaMock =
+          DioAdapter(dio: nicomangaDio, matcher: const UrlRequestMatcher());
+      final nicomangaAdapter = _buildNicomangaAdapter(nicomangaDio);
+      final html = _readFixtureFile('test/fixtures/nicomanga_chaotic_reader.html');
+
+      nicomangaMock.onGet(
+        '$_nicomangaBaseUrl/manga2122/a189649f/chapter-c75.3i301466.html',
+        (s) => s.reply(200, html, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final chapter = await nicomangaAdapter.fetchChapterImages(
+        'https://nicomanga.com/manga2122/a189649f/chapter-c75.3i301466.html',
+        _nicomangaChaoticConfig,
+      );
+
+      expect(chapter, isNotNull);
+      expect(chapter!.images, isNotEmpty);
+      expect(
+        chapter.images.first,
+        startsWith('https://s4.ihlv1.xyz/'),
+      );
+      expect(chapter.images.length, greaterThanOrEqualTo(9));
+    });
+  });
 
   // ─────────────────────────────────────────────────────────────────────────
   // fetchChapterImages() — ts_reader JSON path

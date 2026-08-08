@@ -1139,12 +1139,38 @@ class GenericScraperAdapter implements GenericAdapter {
           '[$_sourceId] getDetail: response received, status=${response.statusCode}');
       Logger().i(
           '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, value=${response.data?.substring(1, 10)}');
-      final doc = _parser.parse(response.data ?? '');
 
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
       final detailCfg = (selectors['detail'] as Map<String, dynamic>?) ?? {};
       final fieldsConfig =
           (detailCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
+
+      // Next.js obfuscated JSON detail (nicomanga redesign): the static DOM
+      // carries only skeletons; content lives in `chaotic_payload`. When a
+      // decode succeeds it replaces DOM extraction entirely.
+      final chaoticDecoded = _decodeChaoticPayload(
+        response.data ?? '',
+        key: detailCfg['chaoticKey'] as String?,
+      );
+      if (chaoticDecoded != null) {
+        try {
+          final payload = json.decode(chaoticDecoded) as Map<String, dynamic>;
+          final chaotic = _extractChaoticDetailFields(payload, detailCfg);
+          return AdapterDetailResult(
+            content: GenericContentMapper.toDetail(
+              contentId,
+              chaotic,
+              sourceId: _sourceId,
+              chapters: _chaoticChapters(payload),
+            ),
+            imageUrls: const [],
+          );
+        } catch (e) {
+          _logger.w('$_sourceId chaotic detail parse failed: $e');
+        }
+      }
+
+      final doc = _parser.parse(response.data ?? '');
 
       Logger().i(
           '[$_sourceId] getDetail: fieldsConfig keys=${fieldsConfig.keys.toList()}');
@@ -1585,6 +1611,35 @@ class GenericScraperAdapter implements GenericAdapter {
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
       final readerConfig = selectors['reader'] as Map<String, dynamic>?;
       if (readerConfig == null) return null;
+
+      // Next.js obfuscated JSON reader (nicomanga redesign): images live in
+      // the page's `chaotic_payload` (decoded with the configured key).
+      if (readerConfig['mode'] == 'chaoticPayload') {
+        final decoded = _decodeChaoticPayload(
+          htmlContent,
+          key: readerConfig['chaoticKey'] as String?,
+        );
+        if (decoded != null) {
+          try {
+            final payload = json.decode(decoded) as Map<String, dynamic>;
+            final imagesRaw = (payload['images'] as List?) ?? const [];
+            final images = imagesRaw
+                .whereType<String>()
+                .map((u) => u.trim())
+                .where((u) => u.isNotEmpty)
+                .toList();
+            if (images.isNotEmpty) {
+              _logger.d(
+                  '$_sourceId chaoticPayload reader: ${images.length} images');
+              return ChapterData(
+                images: _normalizeChapterImageUrls(images),
+              );
+            }
+          } catch (e) {
+            _logger.w('$_sourceId chaoticPayload reader parse failed: $e');
+          }
+        }
+      }
 
       // JSON API mode: reader images are not in static HTML (e.g. Next.js
       // SPA), site exposes a POST endpoint returning the image URL list.
@@ -2337,6 +2392,58 @@ class GenericScraperAdapter implements GenericAdapter {
   // ── Private: field extraction ──────────────────────────────────────────────
 
   // Extract a fields map from a full [dom.Document] (detail pages).
+  // ── chaotic_payload decoding (Next.js obfuscated JSON) ─────────────────────
+  //
+  // Nicomanga (2026-08 redesign) embeds detail/reader data as
+  // `self.__next_f.push([1,"<obfuscated>"])` where each character is
+  // `char - 0x4E00` then XOR'd with a rotating key byte:
+  //   `(codePointAt(i) - 19968) ^ key.charCodeAt(i % key.length)`
+  // The key is fixed per site (nicomanga: "NicoMangaX2"), config-driven
+  // via `scraper.selectors.detail.chaoticKey` / `reader.chaoticKey`.
+  // Returns the decoded JSON string, or null when not present / garbled.
+
+  // The page references the payload as `"chaotic_payload":"$17"` (a Next.js
+  // flight ref), but the string itself is pushed separately:
+  // `self.__next_f.push([1,"<obfuscated>"])`. The obfuscated chunk is the
+  // only push whose body starts with CJK glyphs (0x4E00+).
+  static final _chaoticPushRegex = RegExp(
+    r'''self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)</script>''',
+    dotAll: true,
+  );
+
+  String? _decodeChaoticPayload(
+    String htmlContent, {
+    required String? key,
+  }) {
+    if (key == null || key.isEmpty) return null;
+    String? body;
+    for (final match in _chaoticPushRegex.allMatches(htmlContent)) {
+      final candidate = match.group(1)!;
+      if (candidate.isNotEmpty && candidate.codeUnitAt(0) >= 0x4E00) {
+        body = candidate;
+        break;
+      }
+    }
+    if (body == null) return null;
+
+    // Unescape the JSON string body (\uXXXX, \", \\, \n, ...).
+    String unescaped;
+    try {
+      unescaped = json.decode('"$body"') as String;
+    } catch (e) {
+      _logger.w('$_sourceId chaotic_payload unescape failed: $e');
+      return null;
+    }
+
+    final out = StringBuffer();
+    for (var i = 0; i < unescaped.length; i++) {
+      final code = unescaped.codeUnitAt(i) - 0x4E00;
+      if (code < 0) continue;
+      out.writeCharCode(code ^ key.codeUnitAt(i % key.length));
+    }
+    return out.toString();
+  }
+
   Map<String, dynamic> _extractDocumentFields(
     dom.Document doc,
     Map<String, dynamic> fieldsConfig,
@@ -2501,6 +2608,94 @@ class GenericScraperAdapter implements GenericAdapter {
       }
     }
     return result;
+  }
+
+  // Map a decoded chaotic detail payload to canonical detail fields.
+  // Payload shape (nicomanga): `{"manga": {...}, "chapters_list": [...]}`.
+  // All config keys are optional; missing keys fall back to existing
+  // behavior. Multi-valued fields come through as comma-separated strings
+  // for compatibility with the DOM extraction path.
+  Map<String, dynamic> _extractChaoticDetailFields(
+    Map<String, dynamic> payload,
+    Map<String, dynamic> detailCfg,
+  ) {
+    final manga =
+        (payload['manga'] as Map<String, dynamic>?) ?? const {};
+    final cfg = (detailCfg['chaotic'] as Map<String, dynamic>?) ?? const {};
+    String strVal(String key) =>
+        (manga[key]?.toString() ?? '').trim();
+    List<String> listVal(String key) => strVal(key)
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    List<Map<String, dynamic>> objectsOf(String listKey) =>
+        ((manga[listKey] as List?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .toList();
+
+    final fields = <String, dynamic>{};
+    final title = strVal(cfg['title'] ?? 'n');
+    if (title.isNotEmpty) fields['title'] = title;
+    final cover = strVal(cfg['coverUrl'] ?? 'c');
+    if (cover.isNotEmpty) fields['coverUrl'] = cover;
+    final author = strVal(cfg['author'] ?? 'a');
+    if (author.isNotEmpty) fields['author'] = author;
+
+    final tagObjs = objectsOf(cfg['genresList'] ?? 'genres_list');
+    if (tagObjs.isNotEmpty) {
+      fields['tagObjects'] = tagObjs.map((t) {
+        final n = t['n']?.toString() ?? '';
+        final ur = t['ur']?.toString() ?? '';
+        var type = 'tag';
+        var slug = '';
+        final uri = Uri.tryParse(ur);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          final segments =
+              uri.pathSegments.where((s) => s.isNotEmpty).toList();
+          if (segments.length >= 2) {
+            type = segments[segments.length - 2].toLowerCase();
+            slug = segments.last.toLowerCase();
+          } else if (segments.isNotEmpty) {
+            slug = segments.last.toLowerCase();
+          }
+        }
+        return <String, dynamic>{
+          'name': n,
+          'type': type,
+          'slug': slug,
+          'count': 0,
+        };
+      }).toList();
+    } else {
+      final genreStr = strVal(cfg['genres'] ?? 'genres');
+      if (genreStr.isNotEmpty) fields['tags'] = listVal(cfg['genres'] ?? 'genres');
+    }
+
+    final description = strVal(cfg['description'] ?? 'description');
+    if (description.isNotEmpty) fields['description'] = description;
+    final status = strVal(cfg['status'] ?? 'status_text');
+    if (status.isNotEmpty) fields['status'] = status;
+
+    return fields;
+  }
+
+  // Build chapter list from a decoded chaotic payload's `chapters_list`.
+  // Each entry carries a display name (`n`) and absolute URL (`ur`) —
+  // the URL is used verbatim as the chapter id (it already includes the
+  // full `/manga{id}/{slug}/chapter-...` path).
+  List<Chapter>? _chaoticChapters(Map<String, dynamic> payload) {
+    final raw =
+        (payload['chapters_list'] as List?) ?? const [];
+    if (raw.isEmpty) return null;
+    final chapters = <Chapter>[];
+    for (final entry in raw.whereType<Map<String, dynamic>>()) {
+      final url = entry['ur']?.toString() ?? '';
+      final title = entry['n']?.toString() ?? '';
+      if (url.isEmpty || title.isEmpty) continue;
+      chapters.add(Chapter(id: url, title: title, url: url));
+    }
+    return chapters.isEmpty ? null : chapters;
   }
 
   // Extract a fields map from a single [dom.Element] (list items / chapters).
