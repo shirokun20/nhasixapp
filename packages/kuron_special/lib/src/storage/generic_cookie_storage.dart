@@ -1,49 +1,38 @@
-import 'dart:io' show Directory, File;
+import 'dart:io' show Directory;
 
 import 'package:cookie_jar/cookie_jar.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
-// A reusable [Storage] implementation for [PersistCookieJar] that stores
-// cookies under `{appDocsDir}/{sourceId}/` on disk.
+// A reusable [Storage] implementation for [PersistCookieJar] backed by
+// [FlutterSecureStorage] (Keystore-backed on Android).
 ///
-// This replaces per-source cookie stores (e.g. CrotpediaCookieStore) with
-// a single generic implementation usable by any provider.
+/// Replaces the legacy plaintext JSON cookie files under
+/// `{appDocsDir}/{sourceId}/` — cookies never touch unencrypted disk.
 class GenericCookieStorage implements Storage {
   final String sourceId;
-  String? _storagePath;
+  final FlutterSecureStorage _secureStorage;
 
-  GenericCookieStorage(this.sourceId);
+  GenericCookieStorage(this.sourceId,
+      {FlutterSecureStorage? secureStorage})
+      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  String _key(String key) => 'cookie_jar_${sourceId}_$key';
 
   @override
   Future<void> init(bool persistSession, bool ignoreExpires) async {
-    _storagePath = await _getStoragePath();
+    // No path init needed — delegating to FlutterSecureStorage.
   }
 
   @override
-  Future<String?> read(String key) async {
-    final path = await _getStoragePath();
-    final file = File('$path/$key');
-    if (await file.exists()) {
-      return await file.readAsString();
-    }
-    return null;
-  }
+  Future<String?> read(String key) => _secureStorage.read(key: _key(key));
 
   @override
-  Future<void> write(String key, String value) async {
-    final path = await _getStoragePath();
-    final file = File('$path/$key');
-    await file.writeAsString(value);
-  }
+  Future<void> write(String key, String value) =>
+      _secureStorage.write(key: _key(key), value: value);
 
   @override
-  Future<void> delete(String key) async {
-    final path = await _getStoragePath();
-    final file = File('$path/$key');
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
+  Future<void> delete(String key) => _secureStorage.delete(key: _key(key));
 
   @override
   Future<void> deleteAll(List<String> keys) async {
@@ -52,14 +41,18 @@ class GenericCookieStorage implements Storage {
     }
   }
 
-  Future<String> _getStoragePath() async {
-    if (_storagePath != null) return _storagePath!;
-    final directory = await getApplicationDocumentsDirectory();
-    final cookieDir = Directory('${directory.path}/$sourceId');
-    if (!await cookieDir.exists()) {
-      await cookieDir.create(recursive: true);
+  // First-run migration (task 2.4): remove legacy plaintext cookie dirs
+  // `{docs}/{sourceId}/` written by the old file-backed storage. Safe to
+  // delete wholesale — nothing else writes under that path.
+  Future<void> migrateLegacyPlaintextFiles() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final cookieDir = Directory('${directory.path}/$sourceId');
+      if (await cookieDir.exists()) {
+        await cookieDir.delete(recursive: true);
+      }
+    } catch (e) {
+      // Best-effort migration; a stale plaintext dir is harmless if kept.
     }
-    _storagePath = cookieDir.path;
-    return _storagePath!;
   }
 }

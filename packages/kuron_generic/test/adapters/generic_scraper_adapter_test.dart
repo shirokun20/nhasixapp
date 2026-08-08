@@ -3021,4 +3021,89 @@ void main() {
       expect(result, isNotNull);
     });
   });
+
+  group('GenericScraperAdapter — redirect allowlist (task 3.3)', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+
+    setUp(() {
+      dio = _buildAbsoluteRawDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildAbsoluteRawAdapter(dio);
+    });
+
+    test('redirect to foreign host is rejected without fetching target',
+        () async {
+      const searchUrl =
+          'https://api.komiku.org/?post_type=manga&s=bleach';
+      dioAdapter.onGet(
+        searchUrl,
+        (s) => s.reply(
+          302,
+          '',
+          headers: {'Location': ['https://evil.example.com/bleach']},
+        ),
+      );
+
+      // Guard throws DioException inside search(); the adapter swallows it
+      // into an empty result — assert the foreign target was never fetched
+      // (no onGet stub for it → fetch would throw) and search fails empty.
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:s=bleach', page: 1),
+        _absoluteRawConfig,
+      );
+
+      expect(result.items, isEmpty);
+    });
+
+    test('redirect within same registrable domain is followed', () async {
+      const searchUrl =
+          'https://api.komiku.org/?post_type=manga&s=bleach';
+      dioAdapter.onGet(
+        searchUrl,
+        (s) => s.reply(
+          302,
+          '',
+          headers: {'Location': ['https://komiku.org/result/bleach']},
+        ),
+      );
+      dioAdapter.onGet(
+        'https://komiku.org/result/bleach',
+        (s) => s.reply(
+          200,
+          '<html><body><div class="bsx"><a href="/manga/x/"><div class="tt">X</div></a></div></body></html>',
+          headers: {'content-type': ['text/html; charset=utf-8']},
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:s=bleach', page: 1),
+        _absoluteRawConfig,
+      );
+
+      expect(result.items, hasLength(1));
+    });
+
+    test('protocol downgrade https to http is rejected', () async {
+      const searchUrl =
+          'https://api.komiku.org/?post_type=manga&s=bleach';
+      dioAdapter.onGet(
+        searchUrl,
+        (s) => s.reply(
+          302,
+          '',
+          headers: {'Location': ['http://api.komiku.org/result/bleach']},
+        ),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'raw:s=bleach', page: 1),
+        _absoluteRawConfig,
+      );
+
+      // Downgraded redirect rejected → empty result, no http fetch.
+      expect(result.items, isEmpty);
+    });
+  });
 }

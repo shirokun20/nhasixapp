@@ -154,6 +154,71 @@ void main() {
       return dio;
     }
 
+    test(
+        'usedSslFallback cookies ride the verify chain only and never persist '
+        'to the jar (task 1.5 untrusted session tagging)', () async {
+      var calls = 0;
+      String? seenCookie;
+      final native = _FakeKuronNative();
+      native.result = {
+        'success': true,
+        'usedSslFallback': true,
+        'cookies': <String>['cf_clearance=untrusted-value'],
+        'userAgent': 'ua',
+      };
+
+      final dio = Dio();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (calls == 0) {
+              calls++;
+              handler.resolve(
+                Response<String>(
+                  requestOptions: options,
+                  statusCode: 403,
+                  data: 'challenge',
+                  headers: Headers.fromMap({
+                    'cf-mitigated': ['challenge'],
+                  }),
+                ),
+              );
+              return;
+            }
+            calls++;
+            seenCookie = options.headers['Cookie']?.toString();
+            handler.resolve(
+              Response<String>(
+                requestOptions: options,
+                statusCode: 200,
+                data: 'verified',
+              ),
+            );
+          },
+        ),
+      );
+
+      final jar = PersistCookieJar();
+      final adapter = WebViewSessionAdapter(
+        dio: dio,
+        cookieJar: jar,
+        native: native,
+        config: const WebViewSessionConfig(bypassEnabled: true),
+        baseUrl: 'https://komiktap.info',
+      );
+
+      final response = await adapter.requestWithBypass<String>(
+        'https://komiktap.info/page',
+      );
+
+      expect(response.statusCode, 200);
+      expect(seenCookie, contains('cf_clearance=untrusted-value'));
+      // Untrusted cookies never reach the persistent jar.
+      final saved =
+          await jar.loadForRequest(Uri.parse('https://komiktap.info/page'));
+      expect(saved, isEmpty);
+    });
+
     test('generic adapter ignores captured html and re-verifies with Dio',
         () async {
       var calls = 0;

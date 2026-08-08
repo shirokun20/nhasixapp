@@ -14,6 +14,9 @@ class CloudflareBypassNoWebView {
   final Dio httpClient;
   final Logger _logger;
 
+  // Cookies scoped per response host — never applied as a global header.
+  final Map<String, String> _hostCookies = {};
+
   static const String defaultBaseUrl = 'https://nhentai.net';
   static const Duration maxWaitDuration = Duration(seconds: 5);
   static const Duration retryInterval = Duration(seconds: 3);
@@ -100,16 +103,23 @@ class CloudflareBypassNoWebView {
       }
 
       final cookieHeader = cookies.join('; ');
-      httpClient.options.headers['cookie'] = cookieHeader;
-      _logger.i('Extracted cookies and added to HTTP client: $cookieHeader');
+      _hostCookies[response.requestOptions.uri.host] = cookieHeader;
+      _logger.i(
+          'Extracted ${cookies.length} cookie(s) for host ${response.requestOptions.uri.host}');
     } catch (e) {
       _logger.w('Failed to extract cookies from response: $e');
     }
   }
 
+  // Cookie header for a specific URL's host, if captured during bypass.
+  String? cookieHeaderFor(String url) {
+    return _hostCookies[Uri.parse(url).host];
+  }
+
   // Clear stored cookies
   void clearCookies() {
     try {
+      _hostCookies.clear();
       httpClient.options.headers.remove('cookie');
       _logger.i('Cleared Cloudflare cookies');
     } catch (e) {

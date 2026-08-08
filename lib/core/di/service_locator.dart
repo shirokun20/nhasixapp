@@ -419,6 +419,16 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
       ));
 
+  // Secure cookie jar wrapper: GenericCookieStorage backs onto
+  // FlutterSecureStorage (secure wrapper). Fire-and-forget migration of
+  // legacy plaintext cookie dirs on first use per source (same instance
+  // the jar reads/writes through, so migration runs once per source).
+  PersistCookieJar secureCookieJar(String sourceId) {
+    final storage = GenericCookieStorage(sourceId);
+    storage.migrateLegacyPlaintextFiles(); // best-effort, non-blocking
+    return PersistCookieJar(storage: storage);
+  }
+
   // Crotpedia WebView Session Adapter
   // Replaces legacy CrotpediaCookieStore + CrotpediaAuthManager + CrotpediaSource.
   // Provides CF bypass + auth via WebViewSessionAdapter for multi-source arch.
@@ -430,8 +440,7 @@ void _setupDataSources() {
             : null)?['baseUrl'] as String? ??
         rawConfig['baseUrl']?.toString() ??
         'https://crotpedia.net';
-    final cookieStorage = GenericCookieStorage('crotpedia');
-    final cookieJar = PersistCookieJar(storage: cookieStorage);
+    final cookieJar = secureCookieJar('crotpedia');
     return WebViewSessionAdapter(
       dio: getIt<Dio>(),
       cookieJar: cookieJar,
@@ -451,8 +460,7 @@ void _setupDataSources() {
           getIt<RemoteConfigService>().getRawConfig('doujindesuv2') ?? {};
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://doujindesu.tv';
-      final cookieStorage = GenericCookieStorage('doujindesuv2');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('doujindesuv2');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -488,8 +496,7 @@ void _setupDataSources() {
       rawConfig['network'] = network;
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://komiktap.info';
-      final cookieStorage = GenericCookieStorage('komiktap');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('komiktap');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -502,8 +509,7 @@ void _setupDataSources() {
 
   // PersistCookieJar for EHentai — cookie persistence for auth & session mgmt
   getIt.registerLazySingleton<PersistCookieJar>(() {
-    final cookieStorage = GenericCookieStorage('ehentai');
-    return PersistCookieJar(storage: cookieStorage);
+    return secureCookieJar('ehentai');
   });
 
   // ── Cloudflare-protected generic source sessions ─────────────────────────
@@ -536,8 +542,7 @@ void _setupDataSources() {
       final rawConfig = turnstileConfig('hentairead');
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://hentairead.com';
-      final cookieStorage = GenericCookieStorage('cf_hentairead');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('cf_hentairead');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -555,8 +560,7 @@ void _setupDataSources() {
       final rawConfig = turnstileConfig('manhwaread');
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://manhwaread.com';
-      final cookieStorage = GenericCookieStorage('cf_manhwaread');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('cf_manhwaread');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -573,8 +577,7 @@ void _setupDataSources() {
       final rawConfig = turnstileConfig('hentaicosplay');
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://hentaicosplay.com';
-      final cookieStorage = GenericCookieStorage('cf_hentaicosplay');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('cf_hentaicosplay');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -591,8 +594,7 @@ void _setupDataSources() {
       final rawConfig = turnstileConfig('spyfakku');
       final baseUrl =
           rawConfig['baseUrl']?.toString() ?? 'https://spyfakku.com';
-      final cookieStorage = GenericCookieStorage('cf_spyfakku');
-      final cookieJar = PersistCookieJar(storage: cookieStorage);
+      final cookieJar = secureCookieJar('cf_spyfakku');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
         cookieJar: cookieJar,
@@ -607,8 +609,7 @@ void _setupDataSources() {
   getIt.registerLazySingleton<PersistCookieJar>(
     instanceName: 'vihentai_jar',
     () {
-      final cookieStorage = GenericCookieStorage('cf_vihentai');
-      return PersistCookieJar(storage: cookieStorage);
+      return secureCookieJar('cf_vihentai');
     },
   );
 

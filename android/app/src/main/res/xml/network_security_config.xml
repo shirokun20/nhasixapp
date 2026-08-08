@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HTTPS-only by default. Cleartext (http://) is blocked unless a host is
+     explicitly allowlisted below. Keep the allowlist empty unless a source
+     config legitimately needs http://. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

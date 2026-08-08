@@ -228,10 +228,8 @@ class KuronNativePlugin :
                                                 webview.destroy()
                                                 
                                                 val cookieManager = android.webkit.CookieManager.getInstance()
-                                                val c1 = cookieManager.getCookie(url) ?: ""
-                                                val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
-                                                val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
-                                                val cookies = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                                                val raw = cookieManager.getCookie(url) ?: ""
+                                                val cookies = raw.split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
                                                 
                                                 val resultMap = mapOf(
                                                     "token" to token,

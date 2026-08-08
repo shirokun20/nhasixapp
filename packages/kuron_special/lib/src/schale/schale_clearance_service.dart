@@ -76,7 +76,8 @@ class SchaleClearanceService {
 
       if (crt != null && crt.isNotEmpty) {
         _logger.i('$_logTag: acquired clearance token crt (headless)');
-        _logger.i('$_logTag: cookies extracted: $cookies');
+        _logger.i(
+            '$_logTag: cookies extracted (${cookies?.length ?? 0} chars)');
 
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) {
@@ -120,7 +121,8 @@ class SchaleClearanceService {
       final crt = scriptResult?.replaceAll('"', '');
       if (crt != null && crt != 'null' && crt.isNotEmpty) {
         _logger.i('$_logTag: acquired clearance token crt (visible)');
-        _logger.i('$_logTag: cookies extracted: $cookies');
+        _logger.i(
+            '$_logTag: cookies extracted (${cookies?.length ?? 0} chars)');
 
         _cachedToken = crt;
         if (userAgent != null && userAgent.isNotEmpty) {

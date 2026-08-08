@@ -110,6 +110,8 @@ class WebViewActivity : AppCompatActivity() {
     private var usedSslFallback = false
     private var capturedPageHtmlPath: String? = null
     private val capturedImageUrls = mutableListOf<String>()
+    private val sslConsentHosts = mutableSetOf<String>()
+    private var sessionTargetHost: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -218,6 +220,7 @@ class WebViewActivity : AppCompatActivity() {
         allowRequestPatterns = intent.getStringArrayListExtra(EXTRA_ALLOW_REQUEST_PATTERNS) ?: emptyList()
         pageFinishedScript = intent.getStringExtra(EXTRA_PAGE_FINISHED_SCRIPT)
         blockNetworkImages = intent.getBooleanExtra(EXTRA_BLOCK_NETWORK_IMAGES, false)
+        sessionTargetHost = intent.getStringExtra(EXTRA_URL)?.let { getDomainFromUrl(it) }
 
         // Sync Initial Cookies if provided
         val cookieManager = CookieManager.getInstance()
@@ -257,13 +260,11 @@ class WebViewActivity : AppCompatActivity() {
         webView.addJavascriptInterface(object : Any() {
             @android.webkit.JavascriptInterface
             fun sendToken(token: String) {
-                android.util.Log.d("KuronNative", "Caught token from JS interface: $token")
+                android.util.Log.d("KuronNative", "Caught token from JS interface (length=${token.length})")
                 runOnUiThread {
                     val cookieManager = android.webkit.CookieManager.getInstance()
-                    val cookies1 = cookieManager.getCookie("https://niyaniya.moe/") ?: ""
-                    val cookies2 = cookieManager.getCookie("https://api.schale.network") ?: ""
-                    val cookies3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
-                    val cookiesStr = "$cookies1; $cookies2; $cookies3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                    val harvestUrl = webView.url ?: sessionTargetHost
+                    val cookiesStr = cookieManager.getCookie(harvestUrl)?.split(";")?.filter { it.isNotBlank() }?.distinct()?.joinToString("; ") ?: ""
                     val cookieList = arrayListOf(cookiesStr)
 
                     val resultIntent = Intent()
@@ -279,7 +280,7 @@ class WebViewActivity : AppCompatActivity() {
 
             @android.webkit.JavascriptInterface
             fun logNetwork(log: String) {
-                android.util.Log.d("KuronNative", "JS Network Log: $log")
+                android.util.Log.d("KuronNative", "JS Network Log (chars=${log.length})")
             }
         }, "KuronTokenInterface")
 
@@ -307,10 +308,7 @@ class WebViewActivity : AppCompatActivity() {
                                     resultIntent.putExtra("pageFinishedScriptResult", result)
                                     
                                     val cookieManager = android.webkit.CookieManager.getInstance()
-                                    val c1 = cookieManager.getCookie(view?.url ?: "https://niyaniya.moe/") ?: ""
-                                    val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
-                                    val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
-                                    val cookiesStr = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
+                                    val cookiesStr = cookieManager.getCookie(view?.url ?: sessionTargetHost)?.split(";")?.filter { it.isNotBlank() }?.distinct()?.joinToString("; ") ?: ""
                                     val cookieList = arrayListOf(cookiesStr)
                                     resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
                                     
@@ -406,41 +404,74 @@ class WebViewActivity : AppCompatActivity() {
 
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
                 val primaryError = error?.primaryError ?: "unknown"
-                android.util.Log.w("KuronNative", "SSL error encountered: primaryError=$primaryError url=${error?.url}, certificate=${error?.certificate}")
-                usedSslFallback = true
-                handler?.proceed()
+                val failingHost = error?.url?.let { getDomainFromUrl(it) }
+                android.util.Log.w("KuronNative", "SSL error: type=$primaryError url=${error?.url}")
+                if (failingHost == null) {
+                    handler?.cancel()
+                    return
+                }
+                val pageHost = view?.url?.let { getDomainFromUrl(it) }
+                val allowed = failingHost == sessionTargetHost ||
+                    (pageHost != null && registrableDomain(failingHost) == registrableDomain(pageHost))
+                if (!allowed) {
+                    android.util.Log.w("KuronNative", "SSL error rejected for host $failingHost")
+                    handler?.cancel()
+                    return
+                }
+                if (sslConsentHosts.contains(failingHost)) {
+                    usedSslFallback = true
+                    handler?.proceed()
+                    return
+                }
+                runOnUiThread {
+                    androidx.appcompat.app.AlertDialog.Builder(this@WebViewActivity)
+                        .setTitle("Untrusted certificate")
+                        .setMessage("The site $failingHost presented an untrusted certificate. Continue anyway? (session only)")
+                        .setPositiveButton("Continue") { _, _ ->
+                            sslConsentHosts.add(failingHost)
+                            usedSslFallback = true
+                            handler?.proceed()
+                        }
+                        .setNegativeButton("Cancel") { _, _ -> handler?.cancel() }
+                        .setCancelable(false)
+                        .show()
+                }
             }
 
             // AdBlock Implementation
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
                 val requestUrl = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
 
-                // Sniff for Authorization header (Schale Clearance)
-                val authHeader = request.requestHeaders?.entries?.firstOrNull { it.key.equals("Authorization", ignoreCase = true) }?.value
-                if (authHeader != null && authHeader.startsWith("Bearer ", ignoreCase = true)) {
-                    val token = authHeader.substring(7).trim()
-                    if (token.isNotBlank() && token != "null" && token.length > 10) {
-                        android.util.Log.d("KuronNative", "Caught token from Authorization header: $token")
-                        view?.postDelayed({
-                            val cookieManager = android.webkit.CookieManager.getInstance()
-                            cookieManager.flush()
-                            val c1 = cookieManager.getCookie(view.url ?: "https://niyaniya.moe/") ?: ""
-                            val c2 = cookieManager.getCookie("https://api.schale.network") ?: ""
-                            val c3 = cookieManager.getCookie("https://auth.schale.network") ?: ""
-                            val cookiesStr = "$c1; $c2; $c3".split("; ").filter { it.isNotBlank() }.distinct().joinToString("; ")
-                            val cookieList = arrayListOf(cookiesStr)
+                // Sniff for Authorization header (Schale Clearance) — same registrable domain as session target only
+                val requestHost = request?.url?.host
+                val sessionHost = sessionTargetHost // immutable snapshot (mutable field)
+                val sniffAllowed = sessionHost != null &&
+                    requestHost != null &&
+                    registrableDomain(requestHost) == registrableDomain(sessionHost)
+                if (sniffAllowed) {
+                    val authHeader = request.requestHeaders?.entries?.firstOrNull { it.key.equals("Authorization", ignoreCase = true) }?.value
+                    if (authHeader != null && authHeader.startsWith("Bearer ", ignoreCase = true)) {
+                        val token = authHeader.substring(7).trim()
+                        if (token.isNotBlank() && token != "null" && token.length > 10) {
+                            android.util.Log.d("KuronNative", "Caught token from Authorization header (length=${token.length})")
+                            view?.postDelayed({
+                                val cookieManager = android.webkit.CookieManager.getInstance()
+                                cookieManager.flush()
+                                val cookiesStr = cookieManager.getCookie(view.url ?: sessionTargetHost)?.split(";")?.filter { it.isNotBlank() }?.distinct()?.joinToString("; ") ?: ""
+                                val cookieList = arrayListOf(cookiesStr)
 
-                            val resultIntent = Intent()
-                            resultIntent.putExtra(RESULT_USER_AGENT, view.settings.userAgentString)
-                            resultIntent.putExtra(RESULT_CURRENT_URL, view.url)
-                            resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
-                            resultIntent.putExtra("pageFinishedScriptResult", token)
-                            resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
-                            
-                            setResult(android.app.Activity.RESULT_OK, resultIntent)
-                            finish()
-                        }, 1000) // Delay 1 second to ensure cookies are written
-                        return super.shouldInterceptRequest(view, request)
+                                val resultIntent = Intent()
+                                resultIntent.putExtra(RESULT_USER_AGENT, view.settings.userAgentString)
+                                resultIntent.putExtra(RESULT_CURRENT_URL, view.url)
+                                resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
+                                resultIntent.putExtra("pageFinishedScriptResult", token)
+                                resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
+
+                                setResult(android.app.Activity.RESULT_OK, resultIntent)
+                                finish()
+                            }, 1000) // Delay 1 second to ensure cookies are written
+                            return super.shouldInterceptRequest(view, request)
+                        }
                     }
                 }
 
@@ -492,6 +523,18 @@ class WebViewActivity : AppCompatActivity() {
             uri.host ?: url
         } catch (e: Exception) {
             url
+        }
+    }
+
+    // Last two labels of a host, e.g. sub.komiktap.info -> komiktap.info.
+    // ponytail: naive last-two-labels; co.uk-type multi-label TLDs out of scope
+    // per spec (no PublicSuffixDatabase) — add one if such hosts appear.
+    private fun registrableDomain(host: String): String {
+        val labels = host.split(".")
+        return if (labels.size >= 2) {
+            labels.takeLast(2).joinToString(".")
+        } else {
+            host
         }
     }
 
@@ -592,7 +635,7 @@ class WebViewActivity : AppCompatActivity() {
         
         val cookies = cookieManager.getCookie(currentUrl) // Returns "key=value; key2=value2"
         android.util.Log.d("KuronNative", "WebView Finishing. URL: $currentUrl")
-        android.util.Log.d("KuronNative", "Cookies found: $cookies")
+        android.util.Log.d("KuronNative", "Cookies found: ${cookies?.split(";")?.size ?: 0} cookie(s)")
         
         // Helper to get cookies for the base domain too if redirected
         // But getCookie(url) usually gets applicable cookies.

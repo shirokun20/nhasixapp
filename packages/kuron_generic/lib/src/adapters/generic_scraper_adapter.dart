@@ -887,6 +887,15 @@ class GenericScraperAdapter implements GenericAdapter {
       final location = initialResponse.headers.value('location')?.trim();
       if (location != null && location.isNotEmpty) {
         final resolvedUrl = Uri.parse(url).resolve(location).toString();
+        if (!_isAllowedRedirect(Uri.parse(url), Uri.parse(resolvedUrl))) {
+          _logger.w(
+              '$_sourceId redirect rejected: $url -> $resolvedUrl (host not allowed or protocol downgrade)');
+          throw DioException.badResponse(
+            statusCode: initialStatus,
+            requestOptions: initialResponse.requestOptions,
+            response: initialResponse,
+          );
+        }
         final resolvedResponse = await _executeRequest<Response<String>>(
           () => _dio.get<String>(
             resolvedUrl,
@@ -1051,6 +1060,16 @@ class GenericScraperAdapter implements GenericAdapter {
         statusCode == 303 ||
         statusCode == 307 ||
         statusCode == 308;
+  }
+
+  bool _isAllowedRedirect(Uri origin, Uri target) {
+    if (target.scheme != 'https' && origin.scheme == 'https') {
+      return false; // protocol downgrade
+    }
+    final originDomain = registrableDomain(origin);
+    final targetDomain = registrableDomain(target);
+    if (originDomain == null || targetDomain == null) return false;
+    return originDomain == targetDomain;
   }
 
   bool _isSuccessStatus(int? statusCode) {

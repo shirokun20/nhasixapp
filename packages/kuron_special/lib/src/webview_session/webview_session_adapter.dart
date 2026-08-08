@@ -145,12 +145,13 @@ class WebViewSessionAdapter {
   WebViewAuthState _authState = WebViewAuthState.notLoggedIn;
   String? _username;
   String? _email;
-  bool _isBypassing = false;
+  // Per-URL bypass latch: concurrent requests to the same URL wait, other
+  // URLs bypass independently (no cross-source blocking).
+  final Set<String> _bypassingUrls = {};
 
   // Secure storage keys
   static const _keyPrefix = 'kuron_special_auth_';
   String get _keyEmail => '$_keyPrefix${_baseUrl.hashCode}_email';
-  String get _keyPassword => '$_keyPrefix${_baseUrl.hashCode}_password';
 
   WebViewSessionAdapter({
     required Dio dio,
@@ -313,9 +314,9 @@ class WebViewSessionAdapter {
         '🔒 Site protection challenge detected for: $url (${e.response?.statusCode})',
       );
 
-      // Prevent concurrent bypass loops
-      if (_isBypassing) {
-        _logger.w('Already bypassing, waiting and retrying...');
+      // Prevent concurrent bypass loops for the same URL only
+      if (_bypassingUrls.contains(url)) {
+        _logger.w('Already bypassing $url, waiting and retrying...');
         await Future.delayed(const Duration(seconds: 5));
         return await _dio.get<T>(url, options: options);
       }
@@ -341,7 +342,7 @@ class WebViewSessionAdapter {
     Options? options,
     WebViewBypassOptions? bypassOptions,
   }) async {
-    _isBypassing = true;
+    _bypassingUrls.add(targetUrl);
     try {
       _logger.i('🚀 Launching Native WebView for CF Bypass...');
 
@@ -382,8 +383,18 @@ class WebViewSessionAdapter {
           _logger.i('🔄 Synced User-Agent: $userAgent');
         }
 
+        // Untrusted-session cookies ride only this verify chain, then drop
+        // (no jar write, no secure storage). Local var, never instance state —
+        // no cross-chain races on concurrent bypasses.
+        String? untrustedHeader;
         if (cookiesRaw.isNotEmpty) {
-          await _saveRawCookies(cookiesRaw, targetUrl);
+          if (usedSslFallback) {
+            untrustedHeader = cookiesRaw.join('; ');
+            _logger.w(
+                '⚠️ SSL fallback — using ${cookiesRaw.length} untrusted cookie(s) for this request chain only (not persisted)');
+          } else {
+            await _saveRawCookies(cookiesRaw, targetUrl);
+          }
         }
 
         if (bypassOptions.preferCapturedImageUrls) {
@@ -431,49 +442,71 @@ class WebViewSessionAdapter {
         }
 
         // 5. Fallback: verify with a fresh Dio request using WebView cookies.
-        return await _verifyBypass<T>(targetUrl, options: options);
+        return await _verifyBypass<T>(
+          targetUrl,
+          options: options,
+          untrustedCookieHeader: untrustedHeader,
+        );
       }
       return null;
     } catch (e) {
       _logger.e('Native Bypass Error: $e');
       return null;
     } finally {
-      _isBypassing = false;
+      _bypassingUrls.remove(targetUrl);
     }
   }
 
   Future<Response<T>?> _verifyBypass<T>(
     String url, {
     Options? options,
+    String? untrustedCookieHeader,
   }) async {
-    for (int i = 0; i < 3; i++) {
-      try {
-        final response = await _dio.get<T>(
-          url,
-          options: Options(
-            followRedirects: true,
-            validateStatus: (status) => status != null && status < 500,
-          ),
-        );
-
-        if (response.statusCode != null && response.statusCode! >= 400) {
-          _logger.w(
-            'Bypass verify attempt ${i + 1} got status ${response.statusCode}',
+    // Untrusted-session cookies ride only this verify chain, then drop.
+    final untrustedHeader = untrustedCookieHeader;
+    try {
+      for (int i = 0; i < 3; i++) {
+        try {
+          final response = await _dio.get<T>(
+            url,
+            options: Options(
+              followRedirects: true,
+              validateStatus: (status) => status != null && status < 500,
+              headers: {
+                if (untrustedHeader != null) 'Cookie': untrustedHeader,
+              },
+            ),
           );
-          continue;
-        }
 
-        // Status < 400 means bypass worked — return immediately.
-        // Don't re-check isCloudflareChallenge here because normal pages
-        // can contain CF-related strings (Ray ID in footer, challenge-platform
-        // in Turnstile scripts) causing false positives.
-        return response;
-      } catch (e) {
-        _logger.w('Verify attempt ${i + 1} failed: $e');
+          if (response.statusCode != null && response.statusCode! >= 400) {
+            _logger.w(
+              'Bypass verify attempt ${i + 1} got status ${response.statusCode}',
+            );
+            continue;
+          }
+
+          // Status < 400 means bypass worked — return immediately.
+          // Don't re-check isCloudflareChallenge here because normal pages
+          // can contain CF-related strings (Ray ID in footer, challenge-platform
+          // in Turnstile scripts) causing false positives.
+          return response;
+        } catch (e) {
+          _logger.w('Verify attempt ${i + 1} failed: $e');
+        }
+        await Future.delayed(const Duration(seconds: 1));
       }
-      await Future.delayed(const Duration(seconds: 1));
+      return null;
+    } finally {
+      if (untrustedHeader != null) {
+        // CookieManager interceptor may have captured Set-Cookie from the
+        // verify response — purge so untrusted cookies never persist.
+        try {
+          await _cookieJar.delete(Uri.parse(url));
+        } catch (_) {
+          // Best-effort purge; jar may not have written anything.
+        }
+      }
     }
-    return null;
   }
 
   Future<void> _saveRawCookies(List<String> rawCookies, String urlStr) async {
@@ -548,8 +581,9 @@ class WebViewSessionAdapter {
         _username = email.split('@').first;
 
         if (rememberMe) {
+          // Password intentionally NOT persisted (security: no replay of
+          // koi_user_pass at rest). Session verified via cookies instead.
           await _secureStorage.write(key: _keyEmail, value: email);
-          await _secureStorage.write(key: _keyPassword, value: password);
         }
         return WebViewAuthResult.success(_username!);
       }
@@ -598,15 +632,7 @@ class WebViewSessionAdapter {
         _authState = WebViewAuthState.loggedIn;
         return true;
       }
-
-      final savedEmail = await _secureStorage.read(key: _keyEmail);
-      final savedPassword = await _secureStorage.read(key: _keyPassword);
-
-      if (savedEmail != null && savedPassword != null) {
-        final result = await login(
-            email: savedEmail, password: savedPassword, rememberMe: true);
-        return result.success;
-      }
+      // No password replay: expired session requires explicit re-login.
       return false;
     } catch (_) {
       return false;
@@ -636,7 +662,6 @@ class WebViewSessionAdapter {
   Future<void> logout() async {
     await _cookieJar.deleteAll();
     await _secureStorage.delete(key: _keyEmail);
-    await _secureStorage.delete(key: _keyPassword);
 
     _authState = WebViewAuthState.notLoggedIn;
     _email = null;

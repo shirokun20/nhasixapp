@@ -163,7 +163,7 @@ class CaptchaWebViewActivity : AppCompatActivity() {
             javaScriptCanOpenWindowsAutomatically = true
             useWideViewPort = true
             loadWithOverviewMode = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
 
         webView.addJavascriptInterface(CaptchaBridge(), "AndroidCaptcha")

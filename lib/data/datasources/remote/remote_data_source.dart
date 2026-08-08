@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:kuron_core/kuron_core.dart' show registrableDomain;
 import 'package:logger/logger.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart'
     hide NetworkException;
@@ -57,9 +58,45 @@ class RemoteDataSource implements AppInitializer {
   // Public method to fetch HTML content from a specific path
   // Used by feature-specific repositories (e.g., Crotpedia)
   Future<String> fetchHtml(String path) async {
-    // Construct full URL if path is relative
+    // Trust boundary: only relative paths may be fetched. Absolute URLs
+    // (including protocol-relative `//host/path`) are rejected unless they
+    // target the source's own registrable domain over https.
+    if (path.startsWith('//')) {
+      throw StateError('fetchHtml rejected: protocol-relative URL: $path');
+    }
+    if (!path.startsWith('/')) {
+      final parsed = Uri.tryParse(path);
+      if (parsed == null || parsed.host.isEmpty) {
+        throw StateError('fetchHtml rejected: not a valid path: $path');
+      }
+      if (parsed.scheme != 'https') {
+        throw StateError('fetchHtml rejected: non-https: $path');
+      }
+      if (registrableDomain(parsed) != registrableDomain(Uri.parse(baseUrl))) {
+        throw StateError('fetchHtml rejected: host not allowed: $path');
+      }
+    }
     final url = path.startsWith('http') ? path : '$baseUrl$path';
     return _getPageHtml(url);
+  }
+
+  bool _isRedirectStatus(int statusCode) =>
+      statusCode == 301 ||
+      statusCode == 302 ||
+      statusCode == 303 ||
+      statusCode == 307 ||
+      statusCode == 308;
+
+  // Same rules as kuron_generic's redirect guard (task 3.3): target must
+  // stay on the origin's registrable domain, no https -> http downgrade.
+  bool _isAllowedRedirect(Uri origin, Uri target) {
+    if (target.scheme != 'https' && origin.scheme == 'https') {
+      return false; // protocol downgrade
+    }
+    final originDomain = registrableDomain(origin);
+    final targetDomain = registrableDomain(target);
+    if (originDomain == null || targetDomain == null) return false;
+    return originDomain == targetDomain;
   }
 
   // Initialize the remote data source
@@ -526,19 +563,56 @@ class RemoteDataSource implements AppInitializer {
 
         final headers = antiDetection.getRandomHeaders(referer: referer);
 
-        _logger.i('headers: $headers');
+        // Scoped per-host bypass cookies (never global). Count only in logs.
+        final bypassCookie =
+            cloudflareBypass.cookieHeaderFor(uri.host) ?? '';
+        if (bypassCookie.isNotEmpty) {
+          headers.putIfAbsent('Cookie', () => bypassCookie);
+        }
 
-        final response = await httpClient.get(
+        // Redirect allowlist (task 3.3): only same-registrable-domain
+        // targets, no https -> http downgrade. Manual hop loop because dio
+        // 5.x has no onRedirect callback; each hop is validated, rejected
+        // hops throw -> retry loop.
+        var currentResponse = await httpClient.get(
           url,
           options: Options(
             headers: headers,
             sendTimeout: requestTimeout,
             receiveTimeout: requestTimeout,
-            followRedirects: true,
-            maxRedirects: 5,
+            followRedirects: false,
+            validateStatus: (status) => status != null && status < 500,
             responseType: ResponseType.plain,
           ),
         );
+        var hopCount = 0;
+        while (currentResponse.statusCode != null &&
+            _isRedirectStatus(currentResponse.statusCode!) &&
+            hopCount < 5) {
+          final location =
+              currentResponse.headers.value('location')?.trim();
+          if (location == null || location.isEmpty) break;
+          final next = Uri.parse(url).resolve(location);
+          if (!_isAllowedRedirect(Uri.parse(url), next)) {
+            _logger.w('Redirect rejected: $url -> $next');
+            throw NetworkException(
+                'Redirect rejected: $url -> $next',
+                '${currentResponse.statusCode}');
+          }
+          hopCount++;
+          currentResponse = await httpClient.get(
+            next.toString(),
+            options: Options(
+              headers: headers,
+              sendTimeout: requestTimeout,
+              receiveTimeout: requestTimeout,
+              followRedirects: false,
+              validateStatus: (status) => status != null && status < 500,
+              responseType: ResponseType.plain,
+            ),
+          );
+        }
+        final response = currentResponse;
 
         if (response.statusCode == 200) {
           final html = response.data as String;
