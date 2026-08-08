@@ -13,6 +13,7 @@ class _FakeKuronNative extends KuronNative {
   List<String>? lastCaptureRequestPatterns;
   List<String>? lastAllowRequestPatterns;
   bool? lastClearCookies;
+  String? lastPageFinishedScript;
 
   @override
   Future<Map<String, dynamic>?> showLoginWebView({
@@ -38,6 +39,7 @@ class _FakeKuronNative extends KuronNative {
     lastCaptureRequestPatterns = captureRequestPatterns;
     lastAllowRequestPatterns = allowRequestPatterns;
     lastClearCookies = clearCookies;
+    lastPageFinishedScript = pageFinishedScript;
     return result;
   }
 }
@@ -329,18 +331,31 @@ void main() {
       );
 
       expect(response.data, '<html>reader</html>');
-      expect(calls, 0);
+      expect(calls, 1); // HTTP probe first, WebView only on 403 challenge
       expect(native.lastAutoCloseOnCookie, 'cf_clearance');
-      expect(native.lastCaptureRequestPatterns, const ['henread.xyz/']);
+      // captureRequestPatterns deliberately unset — captured image URLs only
+      // hold the ~3 viewport lazy-load images; the chapterData script in the
+      // captured HTML has all of them.
+      expect(native.lastCaptureRequestPatterns, isNull);
       expect(native.lastAllowRequestPatterns, contains('hentairead.com'));
+      // CF jsd oneshot challenge has no cf_clearance — pageFinishedScript
+      // polls title and auto-closes once the challenge resolves.
+      expect(native.lastPageFinishedScript, isNotNull);
+      expect(native.lastPageFinishedScript, contains('just a moment'));
     });
 
-    test('hentairead reader bypass prefers captured image urls when present',
+    test('hentairead reader bypass prefers captured html over image urls',
         () async {
+      // Captured image URLs are only the ~3 viewport images (blob lazy-load
+      // scrolls to fetch the rest) — the captured HTML's chapterData script
+      // has ALL of them, so preferCapturedImageUrls is deliberately off and
+      // capturedImageUrls must be ignored.
       var calls = 0;
       final native = _FakeKuronNative();
+      final htmlFile = await writeCapturedHtml('<html>reader</html>');
       native.result = {
         'success': true,
+        'pageHtml': htmlFile.path,
         'capturedImageUrls': <String>[
           'https://henread.xyz/294075/87911/hr_0001.jpg',
           'https://henread.xyz/294075/87911/hr_0002.jpg',
@@ -373,11 +388,8 @@ void main() {
         'https://hentairead.com/hentai/sample/english/p/1/',
       );
 
-      expect(
-        response.data,
-        '{"images":["https://henread.xyz/294075/87911/hr_0001.jpg","https://henread.xyz/294075/87911/hr_0002.jpg"]}',
-      );
-      expect(calls, 0);
+      expect(response.data, '<html>reader</html>');
+      expect(calls, 1); // HTTP probe first, WebView only on 403 challenge
     });
   });
 }

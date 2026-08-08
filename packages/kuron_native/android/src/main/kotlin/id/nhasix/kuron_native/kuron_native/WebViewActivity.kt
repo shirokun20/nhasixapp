@@ -108,6 +108,7 @@ class WebViewActivity : AppCompatActivity() {
     private var blockNetworkImages: Boolean = false
     private var hasFinishedResult = false
     private var usedSslFallback = false
+    private var pageFinishedScriptResult: String? = null
     private var capturedPageHtmlPath: String? = null
     private val capturedImageUrls = mutableListOf<String>()
     private val sslConsentHosts = mutableSetOf<String>()
@@ -301,19 +302,14 @@ class WebViewActivity : AppCompatActivity() {
                                 android.util.Log.d("KuronNative", "evaluateJavascript result: $result")
                                 if (result != null && result != "null" && result != "\"\"" && result.isNotBlank()) {
                                     android.util.Log.d("KuronNative", "Clearance found! Closing WebView.")
-                                    val resultIntent = Intent()
-                                    resultIntent.putExtra(RESULT_USER_AGENT, view?.settings?.userAgentString)
-                                    resultIntent.putExtra(RESULT_CURRENT_URL, view?.url)
-                                    resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
-                                    resultIntent.putExtra("pageFinishedScriptResult", result)
-                                    
-                                    val cookieManager = android.webkit.CookieManager.getInstance()
-                                    val cookiesStr = cookieManager.getCookie(view?.url ?: sessionTargetHost)?.split(";")?.filter { it.isNotBlank() }?.distinct()?.joinToString("; ") ?: ""
-                                    val cookieList = arrayListOf(cookiesStr)
-                                    resultIntent.putStringArrayListExtra(RESULT_COOKIES, cookieList)
-                                    
-                                    setResult(android.app.Activity.RESULT_OK, resultIntent)
-                                    finish()
+                                    // Route through finishWithSuccess so the real page's
+                                    // HTML is captured to file (RESULT_PAGE_HTML) and
+                                    // captured image URLs are returned — the raw
+                                    // resultIntent path above omitted both, which left
+                                    // preferCapturedHtml with no pageHtml and fell back
+                                    // to a Dio verify that fails CF fingerprinting.
+                                    pageFinishedScriptResult = result
+                                    finishWithSuccess(view?.url ?: sessionTargetHost ?: "")
                                 } else {
                                     handler.postDelayed(this, 1000)
                                 }
@@ -652,6 +648,9 @@ class WebViewActivity : AppCompatActivity() {
         resultIntent.putExtra(RESULT_USER_AGENT, webView.settings.userAgentString)
         resultIntent.putExtra(RESULT_CURRENT_URL, currentUrl)
         resultIntent.putExtra(RESULT_USED_SSL_FALLBACK, usedSslFallback)
+        if (pageFinishedScriptResult != null) {
+            resultIntent.putExtra("pageFinishedScriptResult", pageFinishedScriptResult)
+        }
 
         // Pass saved HTML file path if available
         if (capturedPageHtmlPath != null) {
