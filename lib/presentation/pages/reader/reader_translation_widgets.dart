@@ -178,12 +178,12 @@ Widget _positionedBubble(
   }
   return Positioned.fromRect(
     rect: rect,
-    child: _TranslatedBubble(bubble: bubble, index: index),
+    child: ReaderTranslatedBubble(bubble: bubble, index: index),
   );
 }
 
-class _TranslatedBubble extends StatelessWidget {
-  const _TranslatedBubble({required this.bubble, required this.index});
+class ReaderTranslatedBubble extends StatelessWidget {
+  const ReaderTranslatedBubble({super.key, required this.bubble, required this.index});
 
   final BubbleTranslation bubble;
   final int index;

@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Manga font rendering for AI translation overlay** (openspec: `reader-ai-render-polish`): Bundled `Komika Axis.ttf` (Latin) + `KosugiMaru.ttf` (CJK) as Flutter assets, picked per-bubble by script. Font-fit algorithm replaces rigid `rect.height * 0.18` — iterates font size large→small with `TextPainter` word-wrap, picks largest size that fits within the bubble (scale-down floor for tiny bubbles, bounded ~40 layout iterations). Tiny bubbles (below 44px touch target) are inflated outward from center so text fits and stays tappable. White patch background (α 0.85, rounded) retained as non-destructive erase-to-white — stroke skipped (invisible over white patch). Files: `pubspec.yaml`, `assets/fonts/`, `reader_translation_widgets.dart`, `reader_translation_overlay_test.dart`.
+
 ### 🐛 Fixed
 
 - **AI translate in continue-scroll now WYSIWYG (viewport-based)**: Replaced scroll-offset math (which drifted) with an actual on-screen viewport capture. Continue-scroll translate/detect now snapshots the visible `RenderRepaintBoundary` (the reader content) and runs the pipeline on that exact bitmap — bubbles align with what the user sees, not the full page image. Lazy capture on the draw-mode 🛰 Detect button (no capture on draw-mode entry, so toggling draw no longer janks). Re-encode to JPG runs on a background isolate. Added capture loading/success/failure snackbars (l10n en/id/zh). Bubbles are now interactive in continue-scroll (tap to edit, long-press save glossary). Files: `reader_mode_widgets.dart`, `reader_translation_cubit.dart`, `reader_image_widgets.dart`, `reader_translation_draw_mode.dart`, `reader_translation_widgets.dart`, `reader_overlay_widgets.dart`, `lib/l10n/*.arb`.

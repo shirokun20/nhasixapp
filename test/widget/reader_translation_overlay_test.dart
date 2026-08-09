@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
+import 'package:nhasixapp/domain/entities/ai_translation.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_translation_widgets.dart';
@@ -77,6 +78,52 @@ void main() {
     expect(cubit.state, isA<ReaderTranslationTranslated>());
     expect(find.byType(Positioned), findsNWidgets(3));
   });
+
+  testWidgets('tiny bubble text stays within bubble (font-fit, no overflow)',
+      (tester) async {
+    // Render the bubble directly in a 30x20 box — below the 44px min — with
+    // a long text; the fitted style must never exceed the box.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 30,
+              height: 20,
+              child: _TranslatedBubbleForTest(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final text = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(SizedBox),
+        matching: find.byType(Text),
+      ),
+    );
+    expect(text.style!.fontSize, lessThanOrEqualTo(30));
+    expect(text.style!.fontSize, greaterThanOrEqualTo(4));
+  });
+}
+
+/// Minimal bubble with a long translated string, for font-fit assertions.
+class _TranslatedBubbleForTest extends StatelessWidget {
+  const _TranslatedBubbleForTest();
+
+  @override
+  Widget build(BuildContext context) {
+    return ReaderTranslatedBubble(
+      bubble: BubbleTranslation(
+        rect: Rect.fromLTWH(0, 0, 30, 20),
+        original: '長い日本語のセリフがこの狭い吹き出しに収まるか確認するためのテストです',
+        translated: 'This is a very long translated sentence that must fit',
+      ),
+      index: 0,
+    );
+  }
 }
 
 /// Mosaic builder that returns minimal bytes (test image decoding not needed
