@@ -77,3 +77,4 @@ skills-lock.json
 /prompts/*
 /.playwright-mcp/*
 /designs/*
+/tooling/*
