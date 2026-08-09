@@ -337,7 +337,7 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
   final maxSize = (42.0 * shortSide).clamp(6.0, 42.0);
   final minSize = (7.0 * shortSide).clamp(4.0, 7.0);
   final maxW = box.width * 0.8;
-  final maxH = box.height * 0.8;
+  final maxH = box.height * 0.9;
 
   for (var size = maxSize; size >= minSize; size -= 1) {
     final style = _textStyle(size, fontFamily);
@@ -355,13 +355,13 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
 /// membentuk outline tajam penuh mengelilingi glyph (bukan halo blur), jadi
 /// teks tetap terbaca di atas gambar rumit tanpa patch putih.
 TextStyle _textStyle(double size, String fontFamily) {
-  final stroke = size * 0.14;
+  final stroke = size * 0.16;
   return TextStyle(
     fontSize: size,
     color: Colors.black,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,
-    height: 1.15,
+    height: 1.25,
     shadows: [
       for (final o in const [
         Offset(-1, -1), Offset(0, -1), Offset(1, -1),

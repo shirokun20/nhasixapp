@@ -62,14 +62,10 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
         final drawMode = cubit.drawMode;
-        // Boxes stay visible while draw mode is active AND while a translate
-        // is running (user sees which bubbles are being processed); they hide
-        // once the translated overlay replaces them.
-        final showBoxes = drawMode ||
-            state is ReaderTranslationDetecting ||
-            state is ReaderTranslationBuildingMosaic ||
-            state is ReaderTranslationTranslating ||
-            state is ReaderTranslationTranslatingBubble;
+        // Boxes stay visible in draw mode, while a translate runs, and after
+        // Done (draw off, no translate running). They hide ONLY once the
+        // translated overlay replaces them.
+        final showBoxes = state is! ReaderTranslationTranslated;
         final colorScheme = Theme.of(context).colorScheme;
 
         final screenSize = MediaQuery.sizeOf(context);
