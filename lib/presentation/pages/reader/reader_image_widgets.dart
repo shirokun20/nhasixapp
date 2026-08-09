@@ -96,7 +96,7 @@ class _ReaderImageViewer extends StatelessWidget {
           key: ValueKey('image_viewer_$pageNumber'),
           height: resolvedHeight,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: ReaderScreen.kReaderContinuousGap),
             child: ExtendedImageReaderWidget(
               imageUrl: imageUrl,
               contentId: contentId,

@@ -1,10 +1,12 @@
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
+import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
 
 import 'fakes.dart';
 
@@ -62,6 +64,7 @@ void main() {
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
     );
     await pumpEventQueue();
 
@@ -89,6 +92,7 @@ void main() {
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
     );
     await pumpEventQueue();
 
@@ -103,6 +107,7 @@ void main() {
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
     );
     await pumpEventQueue();
 
@@ -112,19 +117,63 @@ void main() {
     expect(types.every((t) => t == ReaderTranslationTranslated), true);
   });
 
-  test('continueScroll guard emits error', () async {
+  test('continueScroll guard emits error for non-webtoon multi-image',
+      () async {
     final cubit = makeCubit();
     addTearDown(cubit.close);
     await cubit.translatePage(
       imageBytes: Uint8List.fromList([1]),
-      imageWidth: 10,
-      imageHeight: 10,
+      imageWidth: 100,
+      imageHeight: 100, // square → not webtoon
       contentId: 'c1',
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.continuousScroll,
+      imageUrlCount: 3,
     );
     expect(cubit.state, isA<ReaderTranslationError>());
+  });
+
+  test('continueScroll single-image webtoon (tall image) runs pipeline',
+      () async {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    // Real decodable image (split path decodes it). Empty/1-byte bytes crash
+    // img.decodeImage → RangeError in the webtoon chunk loop.
+    final image = img.Image(width: 100, height: 400); // AR 4.0 → webtoon
+    await cubit.translatePage(
+      imageBytes: img.encodeJpg(image),
+      imageWidth: 100,
+      imageHeight: 400,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.continuousScroll,
+      imageUrlCount: 1,
+    );
+    await pumpEventQueue();
+    expect(cubit.state, isA<ReaderTranslationTranslated>());
+  });
+
+  test('continueScroll single-image cropped (square) runs pipeline',
+      () async {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    // After viewport crop a webtoon strip becomes normal AR — must still be
+    // allowed when it is the single strip (imageUrlCount == 1).
+    final image = img.Image(width: 100, height: 200); // AR 2.0 → not webtoon
+    await cubit.translatePage(
+      imageBytes: img.encodeJpg(image),
+      imageWidth: 100,
+      imageHeight: 200,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.continuousScroll,
+      imageUrlCount: 1,
+    );
+    await pumpEventQueue();
+    expect(cubit.state, isA<ReaderTranslationTranslated>());
   });
 
   test('no providers emits NoProvider', () async {
@@ -140,8 +189,68 @@ void main() {
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
     );
     expect(cubit.state, isA<ReaderTranslationNoProvider>());
+  });
+
+  test('computeViewportCrop maps scroll offset to image px and clamps',
+      () {
+    // 720px-wide strip, 13818 tall; 360px-wide viewport → scale 2.0.
+    const full = Size(720, 13818);
+    const viewport = Size(360, 800);
+
+    // Top of strip.
+    var crop = computeViewportCrop(offset: 0, full: full, viewport: viewport)!;
+    expect(crop.yTop, 0);
+    expect(crop.cropH, 1600); // 800 * 2.0
+
+    // Mid-strip: offset 2000 screen px → 4000 image px.
+    crop = computeViewportCrop(offset: 2000, full: full, viewport: viewport)!;
+    expect(crop.yTop, 4000);
+    expect(crop.cropH, 1600);
+
+    // Bottom: offset beyond image → yTop clamps so crop stays in bounds.
+    crop = computeViewportCrop(
+        offset: 7000, full: full, viewport: viewport)!;
+    expect(crop.yTop + crop.cropH, full.height.toInt());
+    expect(crop.cropH, 1600);
+
+    // Degenerate viewport → null.
+    expect(
+      computeViewportCrop(offset: 0, full: full, viewport: Size.zero),
+      isNull,
+    );
+  });
+
+  test('computeScrollPage maps offset to page + in-item offset', () {
+    // Two pages: 1000 and 800 screen px tall (incl. gap).
+    const heights = [1000.0, 800.0];
+
+    // On page 1.
+    var p = computeScrollPage(offset: 0, itemHeights: heights);
+    expect(p.page, 0);
+    expect(p.offsetInItem, 0);
+
+    // Mid page 1.
+    p = computeScrollPage(offset: 500, itemHeights: heights);
+    expect(p.page, 0);
+    expect(p.offsetInItem, 500);
+
+    // Boundary: just before page 2 starts.
+    p = computeScrollPage(offset: 1000, itemHeights: heights);
+    expect(p.page, 1);
+    expect(p.offsetInItem, 0);
+
+    // Deep in page 2.
+    p = computeScrollPage(offset: 1400, itemHeights: heights);
+    expect(p.page, 1);
+    expect(p.offsetInItem, 400);
+
+    // Past the last item → clamped to last page's end.
+    p = computeScrollPage(offset: 99999, itemHeights: heights);
+    expect(p.page, 1);
+    expect(p.offsetInItem, 800);
   });
 
   test('buildCacheKey is deterministic 16-hex', () {
@@ -152,5 +261,13 @@ void main() {
     expect(a, isNot(c));
     expect(a.length, 16);
     expect(RegExp(r'^[0-9a-f]{16}$').hasMatch(a), true);
+  });
+
+  test('different crop positions yield different cache keys', () {
+    // Same page + url, different crop y → must NOT hit the same cache entry,
+    // else scrolling to a new position shows stale bubbles.
+    final at0 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#0');
+    final at4000 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#4000');
+    expect(at0, isNot(at4000));
   });
 }

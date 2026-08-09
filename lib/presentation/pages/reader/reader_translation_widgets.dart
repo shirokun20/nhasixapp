@@ -27,33 +27,36 @@ class ReaderTranslationToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDisabled = readingMode == ReadingMode.continuousScroll;
+    // Translate + draw stay enabled in continuous scroll. The cubit gates
+    // translate on the fetched page's aspect ratio (webtoon); draw/detect
+    // work on the visible page (captured on entry). Nothing is disabled in CS.
     final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
-        final active = state is ReaderTranslationTranslated &&
-            cubit.overlayVisible;
+        final active =
+            state is ReaderTranslationTranslated && cubit.overlayVisible;
         final busy = state is ReaderTranslationDetecting ||
             state is ReaderTranslationBuildingMosaic ||
             state is ReaderTranslationTranslating ||
             state is ReaderTranslationTranslatingBubble;
+        final shouldRefreshViewport =
+            readingMode == ReadingMode.continuousScroll;
         final activeColor = Theme.of(context).colorScheme.primary;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              tooltip: isDisabled
-                  ? l10n.aiNotAvailableCS
-                  : (active
-                      ? l10n.aiHideTranslation
-                      : busy
-                          ? l10n.aiTranslating
-                          : l10n.aiTranslatePage),
-              onPressed: isDisabled || busy
+              tooltip: (active
+                  ? l10n.aiHideTranslation
+                  : busy
+                      ? l10n.aiTranslating
+                      : l10n.aiTranslatePage),
+              onPressed: busy
                   ? null
                   : () {
-                      if (state is ReaderTranslationTranslated) {
+                      if (state is ReaderTranslationTranslated &&
+                          !shouldRefreshViewport) {
                         cubit.toggleOverlay();
                       } else {
                         onTranslate();
@@ -78,7 +81,7 @@ class ReaderTranslationToolbar extends StatelessWidget {
                 cubit.manualBubbles.isNotEmpty)
               IconButton(
                 tooltip: l10n.aiClearTranslateBubbles,
-                onPressed: isDisabled ? null : cubit.resetPage,
+                onPressed: cubit.resetPage,
                 icon: const Icon(Icons.delete_sweep_outlined,
                     size: 20, color: Colors.redAccent),
                 visualDensity: VisualDensity.compact,
@@ -87,18 +90,16 @@ class ReaderTranslationToolbar extends StatelessWidget {
             IconButton(
               tooltip:
                   cubit.drawMode ? l10n.aiExitDrawMode : l10n.aiDrawBubbles,
-              onPressed: isDisabled
-                  ? null
-                  : () {
-                      if (cubit.drawMode) {
-                        cubit.setDrawMode(false);
-                      } else {
-                        cubit.setDrawMode(true);
-                        // Cache current page so the Detect button can run ONNX
-                        // without a prior translate.
-                        onEnterDrawMode?.call();
-                      }
-                    },
+              onPressed: () {
+                if (cubit.drawMode) {
+                  cubit.setDrawMode(false);
+                } else {
+                  cubit.setDrawMode(true);
+                  // Cache current page so the Detect button can run ONNX
+                  // without a prior translate.
+                  onEnterDrawMode?.call();
+                }
+              },
               icon: Icon(
                 Icons.draw_outlined,
                 color: cubit.drawMode ? activeColor : null,
@@ -146,8 +147,9 @@ class ReaderTranslationOverlay extends StatelessWidget {
         final renderedH = screenSize.width * (imgH / imgW);
         final scaleY = renderedH / imgH;
         // Vertical letterbox offset (image centered when shorter than screen)
-        final topOffset =
-            renderedH < screenSize.height ? (screenSize.height - renderedH) / 2 : 0.0;
+        final topOffset = renderedH < screenSize.height
+            ? (screenSize.height - renderedH) / 2
+            : 0.0;
 
         return Stack(
           children: [
@@ -238,8 +240,9 @@ class _TranslatedBubble extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () {
-                context.read<ReaderTranslationCubit>().editBubbleTranslation(
-                    index, controller.text.trim());
+                context
+                    .read<ReaderTranslationCubit>()
+                    .editBubbleTranslation(index, controller.text.trim());
                 Navigator.pop(sheetContext);
               },
               child: Text(AppLocalizations.of(sheetContext)!.aiSave),
@@ -279,15 +282,13 @@ class _TranslatedBubble extends StatelessWidget {
                     'Glossary: saving "${bubble.translated}" from page $pageIndex');
                 try {
                   await getIt<GlossaryRepository>().save(GlossaryEntry(
-                    id:
-                        'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
+                    id: 'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
                     sourceText: bubble.original,
                     translatedText: bubble.translated,
                     reading: bubble.reading,
                     contentId: contentId,
                     pageIndex: pageIndex,
-                    timestamp:
-                        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                   ));
                   getIt<Logger>().i('Glossary saved OK');
                 } catch (e) {

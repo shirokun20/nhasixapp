@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:image/image.dart' as img;
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import '../../../core/constants/colors_const.dart' show KuronColors;
@@ -51,6 +52,10 @@ part 'reader_image_widgets.dart';
 part 'reader_mode_widgets.dart';
 
 class ReaderScreen extends StatefulWidget {
+  /// Bottom padding added to each image in continue scroll — must match
+  /// `Padding(bottom:)` in reader_image_widgets.dart. Kept as one const so
+  /// the continuous-scroll crop math (which excludes the gap) stays in sync.
+  static const double kReaderContinuousGap = 8.0;
   const ReaderScreen({
     super.key,
     required this.contentId,
@@ -607,7 +612,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     if (imageSize.width > 0) {
       final renderedHeight = imageSize.height * (screenWidth / imageSize.width);
-      final totalHeight = renderedHeight + 8.0;
+      final totalHeight = renderedHeight + ReaderScreen.kReaderContinuousGap;
       if (_cachedImageHeights[page] != totalHeight) {
         _cachedImageHeights[page] = totalHeight;
         setState(() {});

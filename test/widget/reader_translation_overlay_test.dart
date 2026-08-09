@@ -59,6 +59,7 @@ void main() {
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
     );
 
     await tester.pumpWidget(

@@ -470,10 +470,6 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     final state = widget.state;
     final showOverlay = !widget.chapterOverlayShown && (state.content != null);
     final isContinuous = state.readingMode == ReadingMode.continuousScroll;
-    // Exit draw mode + hide overlay when entering continue scroll.
-    if (isContinuous) {
-      _translationCubit.onReadingModeChanged(ReadingMode.continuousScroll);
-    }
 
     return BlocProvider<ReaderTranslationCubit>.value(
       value: _translationCubit,
@@ -494,8 +490,10 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           } else if (state is ReaderTranslationRateLimited) {
             messenger.showSnackBar(SnackBar(
               content: Text(state.fallbackName != null
-                  ? l10n.aiRateLimited(l10n.aiUsingFallback(state.fallbackName!))
-                  : l10n.aiRateLimited(l10n.aiWaitCooldown(state.cooldownSeconds))),
+                  ? l10n
+                      .aiRateLimited(l10n.aiUsingFallback(state.fallbackName!))
+                  : l10n.aiRateLimited(
+                      l10n.aiWaitCooldown(state.cooldownSeconds))),
             ));
           }
         },
@@ -520,9 +518,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                           onOpenSettings: () => widget.onShowSettings(state),
                           onTranslate: () => _onTranslatePressed(),
                           onEnterDrawMode: () => _onEnterDrawMode(),
-                          onToggleSkipSfx: () =>
-                              _translationCubit.setSkipSfx(
-                                  !_translationCubit.skipSfx),
+                          onToggleSkipSfx: () => _translationCubit
+                              .setSkipSfx(!_translationCubit.skipSfx),
                         ),
                         bottomBar: state.readingMode !=
                                 ReadingMode.continuousScroll
@@ -586,11 +583,11 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   /// Fetches the active page image bytes and triggers the AI pipeline.
   Future<void> _onTranslatePressed() async {
     final state = widget.state;
-    // Use the VISIBLE page (updated onPageChanged), not state.currentPage
-    // which can lag behind during swipe/zoom.
-    final visible = widget.visiblePageNotifier.value;
-    final pageIndex = (visible > 0 ? visible : 1) - 1;
     final urls = state.content?.imageUrls ?? [];
+    // Continuous scroll → the page under the scroll offset, so the crop
+    // follows the real reading position (may straddle a page boundary).
+    final target = _actionTarget();
+    final pageIndex = target.page;
     if (pageIndex < 0 || pageIndex >= urls.length) return;
 
     final cubit = _translationCubit;
@@ -607,6 +604,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     final page = await _fetchAndCapturePage(
       url: urls[pageIndex],
       pageIndex: pageIndex,
+      // Same offset used for page resolution + crop, so the fetched/cropped
+      // region matches the page we resolve — no drift between the two calls.
+      offsetInItem: target.offsetInItem,
     );
     if (page == null || !mounted) return;
 
@@ -618,6 +618,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       pageIndex: pageIndex,
       imageUrl: urls[pageIndex],
       readingMode: state.readingMode ?? ReadingMode.singlePage,
+      imageUrlCount: urls.length,
+      cropYTop: page.cropYTop,
     );
   }
 
@@ -645,28 +647,82 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   /// (🛰 button), mirroring the example app.
   Future<void> _onEnterDrawMode() async {
     final state = widget.state;
-    final visible = widget.visiblePageNotifier.value;
-    final pageIndex = (visible > 0 ? visible : 1) - 1;
     final urls = state.content?.imageUrls ?? [];
+    final target = _actionTarget();
+    final pageIndex = target.page;
     if (pageIndex < 0 || pageIndex >= urls.length) return;
     // Cache the page so the draw-mode 🛰 Detect button can run ONNX without
     // a prior translate. Detection itself is explicit (button), like example.
-    await _fetchAndCapturePage(url: urls[pageIndex], pageIndex: pageIndex);
+    await _fetchAndCapturePage(
+      url: urls[pageIndex],
+      pageIndex: pageIndex,
+      offsetInItem: target.offsetInItem,
+    );
+  }
+
+  /// Resolves the active page + its in-item scroll offset for the translate /
+  /// draw action. Non-continuous mode → the visible page, offset 0.
+  /// Continuous scroll → picks the page whose item covers the CENTER of the
+  /// viewport (`offset + viewportH/2`), so at a page boundary the page filling
+  /// most of the screen wins. The crop offset is the top of the viewport
+  /// within that page.
+  ({int page, double offsetInItem}) _actionTarget() {
+    final state = widget.state;
+    final urls = state.content?.imageUrls ?? const [];
+    if (urls.isEmpty) return (page: 0, offsetInItem: 0);
+    final visible = widget.visiblePageNotifier.value;
+    final visiblePage = (visible > 0 ? visible : 1) - 1;
+    if ((state.readingMode ?? ReadingMode.singlePage) !=
+            ReadingMode.continuousScroll ||
+        !widget.scrollController.hasClients) {
+      return (page: visiblePage.clamp(0, urls.length - 1), offsetInItem: 0);
+    }
+    final screenH = MediaQuery.of(context).size.height;
+    final heights = [
+      for (var i = 0; i < urls.length; i++)
+        widget.resolveContinuousItemHeight(i + 1, screenH),
+    ];
+    final offset = widget.scrollController.offset;
+    // Page who owns the viewport center — the page the user is actually
+    // reading, not just the one at the top edge.
+    final page = computeScrollPage(
+      offset: offset + screenH / 2,
+      itemHeights: heights,
+    ).page;
+    // Top of the viewport, expressed within that page (screen px). Clamp to
+    // the rendered IMAGE height, not the item height — each item is
+    // image + 8px bottom gap (Padding in _ReaderImageViewer), and the gap is
+    // not part of the image, so cropping into it would shift yTop.
+    var topInPage = offset;
+    for (var i = 0; i < page; i++) {
+      topInPage -= heights[i];
+    }
+    final imageHeightInItem =
+        (heights[page] - ReaderScreen.kReaderContinuousGap)
+            .clamp(1.0, heights[page]);
+    topInPage = topInPage.clamp(0.0, imageHeightInItem);
+    return (page: page, offsetInItem: topInPage);
   }
 
   /// Fetches the page image, caches it in the translation cubit (for
   /// draw-mode detect) and returns bytes + pixel size. Null on failure.
-  Future<({Uint8List bytes, Size size})?> _fetchAndCapturePage({
+  ///
+  /// In continue scroll the visible viewport region is cropped from the
+  /// fetched image so translate + draw map to what the user actually sees —
+  /// for a single strip AND for the page the scroll currently sits on.
+  Future<({Uint8List bytes, Size size, int cropYTop})?> _fetchAndCapturePage({
     required String url,
     required int pageIndex,
+    // When provided, used as the crop offset (matches the page resolved by
+    // the caller). When null, re-resolved here from the live scroll position.
+    double? offsetInItem,
   }) async {
     final bytes = await _fetchPageBytes(url);
     if (bytes == null) {
       widget.logger.w('AI translate: fetch gagal untuk $url');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                AppLocalizations.of(context)!.aiGagalFetch)));
+            content: Text(AppLocalizations.of(context)!.aiGagalFetch)));
       }
       return null;
     }
@@ -677,14 +733,55 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           .w('AI translate: decode ukuran gagal, bytes=${bytes.length}');
       return null;
     }
+    if (!mounted) return null;
+
+    var bytesOut = bytes;
+    var sizeOut = size;
+    var cropYTop = 0;
+    // Continuous scroll → crop the visible viewport region from this page's
+    // image so translate/draw act on what the user sees. The offset is the
+    // in-item scroll position (already resolved to this page).
+    final isContinuous = (widget.state.readingMode ?? ReadingMode.singlePage) ==
+        ReadingMode.continuousScroll;
+    if (isContinuous) {
+      final screen = MediaQuery.of(context).size;
+      final crop = computeViewportCrop(
+        offset: offsetInItem ?? _actionTarget().offsetInItem,
+        full: size,
+        viewport: screen,
+      );
+      if (crop != null) {
+        final decoded = img.decodeImage(bytes);
+        if (decoded != null) {
+          final cropped = img.copyCrop(
+            decoded,
+            x: 0,
+            y: crop.yTop,
+            width: decoded.width,
+            height: crop.cropH,
+          );
+          bytesOut = img.encodeJpg(cropped, quality: 90);
+          sizeOut = Size(
+            decoded.width.toDouble(),
+            crop.cropH.toDouble(),
+          );
+          cropYTop = crop.yTop;
+          widget.logger.d(
+              'AI translate: crop viewport yTop=${crop.yTop} h=${crop.cropH} → ${sizeOut.width.round()}x${sizeOut.height.round()}');
+        }
+      }
+    }
+
     widget.logger.d(
-        'AI translate: page ${size.width.round()}x${size.height.round()}, bytes=${bytes.length}');
+        'AI translate: page ${sizeOut.width.round()}x${sizeOut.height.round()}, bytes=${bytesOut.length}');
     _translationCubit.capturePage(
-      imageBytes: bytes,
-      imageWidth: size.width.round(),
-      imageHeight: size.height.round(),
+      imageBytes: bytesOut,
+      imageWidth: sizeOut.width.round(),
+      imageHeight: sizeOut.height.round(),
     );
-    return (bytes: bytes, size: size);
+    widget.logger.d(
+        'AI translate capture: cropYTop=$cropYTop captured=${_translationCubit.pageWidth}x${_translationCubit.pageHeight}');
+    return (bytes: bytesOut, size: sizeOut, cropYTop: cropYTop);
   }
 
   Future<Uint8List?> _fetchPageBytes(String url) async {
@@ -726,4 +823,49 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       return null;
     }
   }
+}
+
+/// Computes the visible viewport crop of a single-image webtoon strip
+/// rendered `fitWidth` in a scroll view.
+///
+/// `offset` is the scroll position in screen px; `full` is the strip's pixel
+/// size; `viewport` is the screen size. The strip is drawn at
+/// `screenW / imgW` scale, so scroll px → image px is `offset * (imgW / screenW)`.
+/// Returns null when the mapping is degenerate (no viewport). yTop/cropH are
+/// clamped to image bounds.
+({int yTop, int cropH})? computeViewportCrop({
+  required double offset,
+  required Size full,
+  required Size viewport,
+}) {
+  if (full.height <= 0 ||
+      full.width <= 0 ||
+      viewport.height <= 0 ||
+      viewport.width <= 0) {
+    return null;
+  }
+  final scale = full.width / viewport.width;
+  // Intended viewport height in image px, but never exceed the image.
+  final cropH = (viewport.height * scale).round().clamp(1, full.height.toInt());
+  // Center the viewport on the scroll position; clamp to the top edge.
+  final yTop = (offset * scale).round().clamp(0, full.height.toInt() - cropH);
+  return (yTop: yTop, cropH: cropH);
+}
+
+/// Maps a continue-scroll [offset] (screen px) to the page whose vertical
+/// span contains it, plus the offset within that page (screen px). Uses each
+/// item's rendered height. Past the last item → last page's offset.
+({int page, double offsetInItem}) computeScrollPage({
+  required double offset,
+  required List<double> itemHeights,
+}) {
+  var acc = 0.0;
+  for (var i = 0; i < itemHeights.length; i++) {
+    final h = itemHeights[i];
+    if (offset < acc + h) {
+      return (page: i, offsetInItem: (offset - acc).clamp(0.0, h));
+    }
+    acc += h;
+  }
+  return (page: itemHeights.length - 1, offsetInItem: itemHeights.last);
 }
