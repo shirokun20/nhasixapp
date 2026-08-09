@@ -66,6 +66,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// draw mode). Set by [detectBubblesOnly] and after each translate.
   List<BubbleBox> _detectedBoxes = [];
 
+  /// Same content as [_detectedBoxes] — kept as a separate field so future
+  /// translate-specific post-processing (e.g. merging balloons, dropping SFX)
+  /// can diverge from draw-mode without refactoring call-sites.
+  List<BubbleBox> _translationDetectedBoxes = [];
+
   // Current page context (set via capturePage) for detect-only runs.
   Uint8List? _pageBytes;
   int _pageWidth = 0;
@@ -143,6 +148,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     // Keeping stale boxes causes severe overlay drift on the new viewport.
     if (captureChanged) {
       _detectedBoxes.clear();
+      _translationDetectedBoxes.clear();
       _manualBubbles.clear();
       logInfo(
           'capturePage: new capture ${imageWidth}x$imageHeight bytes=${imageBytes.length} -> clear stale boxes');
@@ -177,6 +183,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         'detectBubblesOnly: raw ${raw.length} → post ${postProcessBoxes(raw).length}');
     final boxes = postProcessBoxes(raw);
     _detectedBoxes = boxes;
+    _translationDetectedBoxes = boxes;
     if (state is ReaderTranslationDetecting) {
       _bumpUi();
     }
@@ -259,6 +266,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     _overlayVisible = false;
     _manualBubbles.clear();
     _detectedBoxes.clear();
+    _translationDetectedBoxes.clear();
     _currentImageWidth = 0;
     _currentImageHeight = 0;
     _currentPageIndex = -1;
@@ -304,17 +312,20 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// NMS (IoU 0.45) + false-positive filter — same post-processing as the
   /// example app. ONNX raw output has duplicate/oversized boxes; without
   /// this the blue bubbles look wrong (double boxes, giant false positives).
-  List<BubbleBox> postProcessBoxes(List<BubbleBox> boxes) {
+  List<BubbleBox> postProcessBoxes(List<BubbleBox> boxes,
+      {bool dropTextInBalloon = true}) {
     if (boxes.isEmpty) return [];
     final sorted = List<BubbleBox>.from(boxes)
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
-    // Balloon (cls 2) menang: text (cls 1) yang terserap di dalam balloon
-    // adalah teks asli yang mau ditimpa terjemahan → buang, jangan render
-    // terpisah. Text standalone (thought bubble) tetap. Kalau tak ada
-    // balloon, tak ada yang dibuang (query aman).
-    final balloons = sorted.where((b) => b.kind == 'balloon').toList();
-    sorted.removeWhere(
-        (b) => b.kind == 'text' && balloons.any((bb) => _contains(bb, b)));
+    if (dropTextInBalloon) {
+      // Balloon (cls 2) menang: text (cls 1) yang terserap di dalam balloon
+      // adalah teks asli yang mau ditimpa terjemahan → buang, jangan render
+      // terpisah. Text standalone (thought bubble) tetap. Kalau tak ada
+      // balloon, tak ada yang dibuang (query aman).
+      final balloons = sorted.where((b) => b.kind == 'balloon').toList();
+      sorted.removeWhere(
+          (b) => b.kind == 'text' && balloons.any((bb) => _contains(bb, b)));
+    }
     final keep = <BubbleBox>[];
     while (sorted.isNotEmpty) {
       final best = sorted.removeAt(0);
@@ -470,6 +481,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
           offsetY += chunk.height;
         }
         _detectedBoxes = postProcessBoxes(allBoxes);
+        _translationDetectedBoxes = _detectedBoxes;
         logInfo(
             'translatePage webtoon: rawBoxes=${allBoxes.length} → postProcess=${_detectedBoxes.length}');
         // Use POST-PROCESSED boxes (same as draw mode), NOT the raw detections:
@@ -500,6 +512,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         emit(const ReaderTranslationDetecting());
         final rawBoxes = await _detect(imageBytes, imageWidth, imageHeight);
         _detectedBoxes = postProcessBoxes(rawBoxes);
+        _translationDetectedBoxes = _detectedBoxes;
         logInfo(
             'translatePage: detect ${rawBoxes.length} → ${_detectedBoxes.length} boxes');
         for (final b in _detectedBoxes) {
@@ -770,7 +783,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// region), which made the model merge/swap per-bubble translations.
   List<BubbleBox> _translationBoxes() {
     final manual = List<BubbleBox>.from(_manualBubbles);
-    final detected = List<BubbleBox>.from(_detectedBoxes);
+    final detected = List<BubbleBox>.from(_translationDetectedBoxes);
     if (manual.isEmpty || detected.isEmpty) {
       return [...manual, ...detected];
     }

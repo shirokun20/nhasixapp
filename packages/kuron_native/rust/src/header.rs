@@ -23,9 +23,15 @@ pub fn inspect(data: &[u8]) -> HeaderInfo {
         return inspect_webp(data);
     }
 
-    // Check AVIF: ftyp + avis
-    if &data[8..12] == b"avis" {
-        return inspect_avif(data);
+    // Check AVIF: ftyp with an avif/avis/mif1 major brand. Animated AVIFs
+    // (AVIS "motion" files) often use `avif`/`mif1` as the MAJOR brand with
+    // `avis` as a MINOR brand, so we must not gate on `avis` being the major
+    // brand only — that previously left many animated AVIFs undetected.
+    if &data[4..8] == b"ftyp" {
+        let major = &data[8..12];
+        if major == b"avif" || major == b"avis" || major == b"mif1" {
+            return inspect_avif(data);
+        }
     }
 
     HeaderInfo {
@@ -266,6 +272,27 @@ mod tests {
 
         let info = inspect(&data);
         assert_eq!(info.format.as_deref(), Some("avif"));
+    }
+
+    #[test]
+    fn test_inspect_avif_major_brand_avif() {
+        // Animated AVIF(G) with MAJOR brand `avif` (not `avis`) — must still
+        // be detected as AVIF so the app can route it to WebP conversion.
+        let mut data = Vec::new();
+        data.extend_from_slice(&0u32.to_be_bytes());
+        data.extend_from_slice(b"ftyp");
+        data.extend_from_slice(b"avif");
+        data.extend_from_slice(b"mif1");
+        data.extend_from_slice(b"isis");
+        data.extend_from_slice(b"ispe");
+        data.extend_from_slice(&[0u8; 4]);
+        data.extend_from_slice(&800u32.to_be_bytes());
+        data.extend_from_slice(&600u32.to_be_bytes());
+
+        let info = inspect(&data);
+        assert_eq!(info.format.as_deref(), Some("avif"));
+        assert_eq!(info.width, Some(800));
+        assert_eq!(info.height, Some(600));
     }
 
     #[test]

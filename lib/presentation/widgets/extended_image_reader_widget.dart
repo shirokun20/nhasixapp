@@ -420,13 +420,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _enqueueHeaderInspect(file.path); // seed batch collector
       final size = file.lengthSync();
       final avifInfo = inspectAvifHeaderForRouting(file);
-      final shouldConvertTallAvis = avifInfo.isAvif &&
-          avifInfo.isAvisBrand &&
-          (avifInfo.height ?? 0) > maxNativeAvifHeight;
+      // Any ANIMATED AVIF must be converted to WebP — Flutter/Impeller cannot
+      // decode AVIF sequences, so the old `height > maxNativeAvifHeight` gate
+      // left short animated AVIFs (and non-`avis`-major-brand ones) broken.
+      final shouldConvertAvis = avifInfo.isAvif && avifInfo.isAvisBrand;
 
-      if (shouldConvertTallAvis) {
+      if (shouldConvertAvis) {
         _logger.i(
-          '[NativeWebP] Tall avis detected. Converting to WebP '
+          '[NativeWebP] Animated avis detected. Converting to WebP '
           'page=${widget.pageNumber} height=${avifInfo.height}',
         );
         final convertedPath = await KuronNative.instance.convertAvifToWebP(

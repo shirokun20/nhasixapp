@@ -207,34 +207,6 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
     height: null,
   );
 
-  // Try Rust first
-  final bridge = RustBridge.instance;
-  if (bridge != null) {
-    try {
-      if (!file.existsSync()) return empty;
-      final length = file.lengthSync();
-      if (length < 16) return empty;
-      final sampleLength = length < 4096 ? length : 4096;
-      final raf = file.openSync(mode: FileMode.read);
-      final bytes = raf.readSync(sampleLength);
-      raf.closeSync();
-
-      final result = bridge.headerInspect(bytes);
-      if (result == null) return empty;
-      final format = result['format'] as String?;
-      if (format != 'avif') return empty;
-      return (
-        isAvif: true,
-        isAvisBrand: true, // Rust already checked "avis" at offset 8
-        width: result['width'] as int?,
-        height: result['height'] as int?,
-      );
-    } catch (_) {
-      return empty;
-    }
-  }
-
-  // Dart fallback — only when Rust unavailable (dev platforms)
   RandomAccessFile? raf;
   try {
     raf = file.openSync(mode: FileMode.read);
@@ -242,42 +214,85 @@ bool containsBytes(Uint8List bytes, List<int> needle) {
     if (length < 16) return empty;
     final sampleLength = length < 4096 ? length : 4096;
     final bytes = raf.readSync(sampleLength);
-    if (inferImageExtension(bytes: bytes) != 'avif') return empty;
-    var isAvisBrand = false;
-    if (bytes.length >= 12) {
-      const int kAvis0 = 0x61, kAvis1 = 0x76, kAvis2 = 0x69, kAvis3 = 0x73;
-      isAvisBrand = bytes[8] == kAvis0 &&
-          bytes[9] == kAvis1 &&
-          bytes[10] == kAvis2 &&
-          bytes[11] == kAvis3;
-    }
-    int? parsedWidth;
-    int? parsedHeight;
-    const kIspe = <int>[0x69, 0x73, 0x70, 0x65];
-    for (int i = 0; i <= bytes.length - 16; i++) {
-      if (matchesBytes(bytes, i, kIspe)) {
-        final width = ((bytes[i + 8] & 0xFF) << 24) |
-            ((bytes[i + 9] & 0xFF) << 16) |
-            ((bytes[i + 10] & 0xFF) << 8) |
-            (bytes[i + 11] & 0xFF);
-        final height = ((bytes[i + 12] & 0xFF) << 24) |
-            ((bytes[i + 13] & 0xFF) << 16) |
-            ((bytes[i + 14] & 0xFF) << 8) |
-            (bytes[i + 15] & 0xFF);
-        parsedWidth = width > 0 ? width : null;
-        parsedHeight = height > 0 ? height : null;
-        break;
-      }
-    }
-    return (
-      isAvif: true,
-      isAvisBrand: isAvisBrand,
-      width: parsedWidth,
-      height: parsedHeight,
-    );
+    return inspectAvifBytesForRouting(bytes);
   } catch (_) {
     return empty;
   } finally {
     raf?.closeSync();
   }
+}
+
+/// Bytes-based AVIF brand/animation detection (works for online-cached and
+/// local files alike).
+///
+/// FIX: previous detection (Rust `header.rs`/Dart fallback) only returned an
+/// AVIF when the MAJOR brand (bytes 8–12) was exactly `avis`. Many animated
+/// AVIFs (e.g. manga "motion" CDNs like manga18) use `ftyp` major brand
+/// `avif`/`mif1` with `avis` as a MINOR brand, or signal animation via an
+/// `iref`/`moof` box — so they were never routed to WebP conversion and
+/// Flutter's decoder showed a broken image. Here we treat any AVIF `ftyp` as
+/// `isAvif`, and `isAvisBrand` (needs WebP conversion) as true when `avis`
+/// appears in any brand position OR an `iref`/`moof` box is present.
+({bool isAvif, bool isAvisBrand, int? width, int? height})
+    inspectAvifBytesForRouting(Uint8List bytes) {
+  const empty = (
+    isAvif: false,
+    isAvisBrand: false,
+    width: null,
+    height: null,
+  );
+  if (bytes.length < 12) return empty;
+
+  // ISOBMFF `ftyp` box: [size:4]['ftyp'][major:4][minor:4][compat:4...]
+  const kFtyp = <int>[0x66, 0x74, 0x79, 0x70]; // 'ftyp'
+  const kAvif = <int>[0x61, 0x76, 0x69, 0x66]; // 'avif'
+  const kAvis = <int>[0x61, 0x76, 0x69, 0x73]; // 'avis'
+  const kMif1 = <int>[0x6d, 0x69, 0x66, 0x31]; // 'mif1'
+  const kIref = <int>[0x69, 0x72, 0x65, 0x66]; // 'iref'
+  const kMoof = <int>[0x6d, 0x6f, 0x6f, 0x66]; // 'moof'
+  const kIspe = <int>[0x69, 0x73, 0x70, 0x65]; // 'ispe'
+
+  if (!matchesBytes(bytes, 4, kFtyp)) return empty;
+  final isAvifBrand = matchesBytes(bytes, 8, kAvif) ||
+      matchesBytes(bytes, 8, kAvis) ||
+      matchesBytes(bytes, 8, kMif1);
+  if (!isAvifBrand) return empty;
+
+  var hasAvisBrand = matchesBytes(bytes, 8, kAvis);
+  if (!hasAvisBrand) {
+    // Scan compatible brands (immediately after ftyp header, 4-byte aligned).
+    for (var i = 16; i <= bytes.length - 4; i += 4) {
+      if (matchesBytes(bytes, i, kAvis)) {
+        hasAvisBrand = true;
+        break;
+      }
+    }
+  }
+  final animated = hasAvisBrand ||
+      containsBytes(bytes, kIref) ||
+      containsBytes(bytes, kMoof);
+
+  int? width;
+  int? height;
+  for (var i = 0; i <= bytes.length - 16; i++) {
+    if (matchesBytes(bytes, i, kIspe)) {
+      final w = ((bytes[i + 8] & 0xFF) << 24) |
+          ((bytes[i + 9] & 0xFF) << 16) |
+          ((bytes[i + 10] & 0xFF) << 8) |
+          (bytes[i + 11] & 0xFF);
+      final h = ((bytes[i + 12] & 0xFF) << 24) |
+          ((bytes[i + 13] & 0xFF) << 16) |
+          ((bytes[i + 14] & 0xFF) << 8) |
+          (bytes[i + 15] & 0xFF);
+      width = w > 0 ? w : null;
+      height = h > 0 ? h : null;
+      break;
+    }
+  }
+  return (
+    isAvif: true,
+    isAvisBrand: animated,
+    width: width,
+    height: height,
+  );
 }

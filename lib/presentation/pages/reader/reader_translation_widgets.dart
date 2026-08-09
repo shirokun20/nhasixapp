@@ -264,7 +264,7 @@ class ReaderTranslatedBubble extends StatelessWidget {
             ? Size(effectiveBox!.width, effectiveBox!.height)
             : Size(constraints.maxWidth, constraints.maxHeight);
         return Padding(
-          padding: const EdgeInsets.all(3),
+          padding: hasShape ? const EdgeInsets.all(1) : const EdgeInsets.all(3),
           // Center the whole text block INSIDE the bubble, not just per-line.
           // Without this the Text fills its tight Stack bounds and is painted
           // from the top edge, stranding the (now smaller) fitted text at the
@@ -280,18 +280,20 @@ class ReaderTranslatedBubble extends StatelessWidget {
         );
       },
     );
-    // Safety net: clip the text layer to the bubble outline (same smooth path
-    // as the painted shape) so any residual overflow after font-fit is cut at
-    // the polygon instead of painting past the oval curve.
-    final textLayer = hasShape
-        ? ClipPath(clipper: _PolygonClipper(polygon), child: text)
-        : text;
+    // No clipping: translated text may overflow past the oval outline when it
+    // is longer than the bubble. Clipping it cut off glyphs (bad UX); letting
+    // it spill is preferable to a partially-hidden translation. The white
+    // patch beneath still provides a readable backdrop.
+    final textLayer = text;
 
     return GestureDetector(
       onTap: () => _showEditSheet(context),
       onLongPress: () => _showSaveToGlossarySheet(context),
       child: Stack(
         fit: StackFit.expand,
+        // Allow overflow to paint outside the bubble bounds (the default
+        // Clip.hardEdge would still clip long text at the widget edge).
+        clipBehavior: Clip.none,
         children: [
           if (hasShape)
             // Shape-following: white fill + subtle outline under the text.
@@ -429,10 +431,11 @@ TextStyle _fitText(String text, Size box, String fontFamily,
   final shortSide = box.shortestSide < 40.0 ? box.shortestSide / 40.0 : 1.0;
   final maxSize = (42.0 * shortSide).clamp(6.0, 42.0);
   final minSize = (7.0 * shortSide).clamp(4.0, 7.0);
-  final maxW = box.width * 0.8;
-  // Oval bubbles taper near the top/bottom: when the box already is the
-  // polygon inscribed rect, shave a little extra height for the curved edge.
-  final maxH = box.height * (hasShape ? 0.85 : 0.9);
+  final maxW = box.width * (hasShape ? 0.98 : 0.8);
+  // The inscribed rect already provides the ~0.8× safety margin; with ClipPath
+  // as the safety net we can fill almost the entire inscribed box instead of
+  // shrinking twice (inscribed × font-fit). Box-only keeps a 10 % buffer.
+  final maxH = box.height * (hasShape ? 0.98 : 0.9);
 
   for (var size = maxSize; size >= minSize; size -= 1) {
     final style = _textStyle(size, fontFamily);
@@ -503,22 +506,6 @@ class _BubbleShapePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BubbleShapePainter old) => old.points != points;
-}
-
-/// Safety net: clips the text layer to the bubble polygon. Mirrors the painted
-/// shape via the same smooth bezier path so residual overflow after font-fit
-/// is cut at the outline instead of painting outside the oval.
-class _PolygonClipper extends CustomClipper<Path> {
-  _PolygonClipper(this.points);
-
-  final List<Offset> points;
-
-  @override
-  Path getClip(Size size) =>
-      points.length >= 3 ? _BubbleShapePainter._shapePath(points) : Path();
-
-  @override
-  bool shouldReclip(covariant _PolygonClipper old) => old.points != points;
 }
 
 /// Hitam dengan outline putih tebal (stroke manga) — 8 arah shadow offset

@@ -248,4 +248,88 @@ void main() {
       expect(results[1].format, isNull);
     });
   });
+
+  group('inspectAvifBytesForRouting', () {
+    test('detects animated AVIF with avis MINOR brand (manga18 motion)', () {
+      // ftyp: major=avif, minor=0000, compat=[avis, mif1]
+      final bytes = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x18, // ftyp size 24
+        0x66, 0x74, 0x79, 0x70, // 'ftyp'
+        0x61, 0x76, 0x69, 0x66, // 'avif'
+        0x00, 0x00, 0x00, 0x00, // minor version
+        0x61, 0x76, 0x69, 0x73, // 'avis'
+        0x6d, 0x69, 0x66, 0x31, // 'mif1'
+      ]);
+      final r = inspectAvifBytesForRouting(bytes);
+      expect(r.isAvif, isTrue);
+      expect(r.isAvisBrand, isTrue);
+    });
+
+    test('detects animated AVIF with avis MAJOR brand', () {
+      final bytes = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x14, // ftyp size 20
+        0x66, 0x74, 0x79, 0x70, // 'ftyp'
+        0x61, 0x76, 0x69, 0x73, // 'avis'
+        0x00, 0x00, 0x00, 0x00, // minor version
+        0x6d, 0x69, 0x66, 0x31, // 'mif1'
+      ]);
+      final r = inspectAvifBytesForRouting(bytes);
+      expect(r.isAvif, isTrue);
+      expect(r.isAvisBrand, isTrue);
+    });
+
+    test('static AVIF (no avis/iref/moof) is NOT routed for conversion', () {
+      final bytes = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x14,
+        0x66, 0x74, 0x79, 0x70, // 'ftyp'
+        0x61, 0x76, 0x69, 0x66, // 'avif'
+        0x00, 0x00, 0x00, 0x00,
+        0x6d, 0x69, 0x66, 0x31, // 'mif1'
+      ]);
+      final r = inspectAvifBytesForRouting(bytes);
+      expect(r.isAvif, isTrue);
+      expect(r.isAvisBrand, isFalse);
+    });
+
+    test('detects animation via iref box even when brand is avif', () {
+      final bytes = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x14,
+        0x66, 0x74, 0x79, 0x70, // 'ftyp'
+        0x61, 0x76, 0x69, 0x66, // 'avif'
+        0x00, 0x00, 0x00, 0x00,
+        0x6d, 0x69, 0x66, 0x31, // 'mif1'
+        0x00, 0x00, 0x00, 0x08, // iref box size 8
+        0x69, 0x72, 0x65, 0x66, // 'iref'
+      ]);
+      final r = inspectAvifBytesForRouting(bytes);
+      expect(r.isAvif, isTrue);
+      expect(r.isAvisBrand, isTrue);
+    });
+
+    test('parses ispe dimensions', () {
+      final bytes = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x14,
+        0x66, 0x74, 0x79, 0x70, // 'ftyp'
+        0x61, 0x76, 0x69, 0x73, // 'avis'
+        0x00, 0x00, 0x00, 0x00,
+        0x6d, 0x69, 0x66, 0x31, // 'mif1'
+        0x00, 0x00, 0x00, 0x14, // ispe box size 20
+        0x69, 0x73, 0x70, 0x65, // 'ispe'
+        0x00, 0x00, 0x00, 0x00, // reserved
+        0x00, 0x00, 0x07, 0x80, // width = 1920
+        0x00, 0x00, 0x04, 0x38, // height = 1080
+      ]);
+      final r = inspectAvifBytesForRouting(bytes);
+      expect(r.isAvif, isTrue);
+      expect(r.isAvisBrand, isTrue);
+      expect(r.width, 1920);
+      expect(r.height, 1080);
+    });
+
+    test('returns empty for non-AVIF payloads', () {
+      final r = inspectAvifBytesForRouting(_minimalJpeg);
+      expect(r.isAvif, isFalse);
+      expect(r.isAvisBrand, isFalse);
+    });
+  });
 }

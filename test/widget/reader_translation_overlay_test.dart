@@ -147,7 +147,7 @@ void main() {
   });
 
   testWidgets(
-      'shape bubble sizes text against the inscribed rect and clips to oval',
+      'shape bubble sizes text against the inscribed rect and does not clip',
       (tester) async {
     // Diamond polygon inside a 60×40 box: the oval corners cut deep inside
     // the bounds, so the effective box is only ~48×32. The fitted font must
@@ -175,9 +175,6 @@ void main() {
     );
     await tester.pump();
 
-    // Safety net: the text layer is clipped to the bubble polygon.
-    expect(find.byType(ClipPath), findsOneWidget);
-
     final text = tester.widget<Text>(
       find.descendant(
         of: find.byType(SizedBox),
@@ -185,9 +182,9 @@ void main() {
       ),
     );
     // Re-measure with the same painter setup `_fitText` uses: the chosen
-    // style must fit the 48×32 inscribed box at 0.8 (width) / 0.85 (height).
-    const insW = 48.0 * 0.8;
-    const insH = 32.0 * 0.85;
+    // style must fit the 48×32 inscribed box at 0.98× (width & height).
+    const insW = 48.0 * 0.98;
+    const insH = 32.0 * 0.98;
     final painter = TextPainter(
       text: TextSpan(text: text.data, style: text.style),
       textDirection: TextDirection.ltr,
