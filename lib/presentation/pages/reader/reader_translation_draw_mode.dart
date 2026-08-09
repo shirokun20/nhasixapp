@@ -24,9 +24,17 @@ class ReaderTranslationDrawMode extends StatefulWidget {
       _ReaderTranslationDrawModeState();
 }
 
+/// Screen-space shape entry for one detected bubble.
+class _BubbleDrawEntry {
+  const _BubbleDrawEntry({required this.rect, this.poly, this.kind});
+  final Rect rect; // bounding box (screen px) — used for hit testing
+  final List<Offset>? poly; // polygon in screen px, null = box fallback
+  final String? kind; // "balloon" | "text" | null
+}
+
 class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
   Rect? _dragging;
-  List<Rect> _onnxRects = const [];
+  List<_BubbleDrawEntry> _onnxEntries = const [];
   List<Rect> _manualRects = const [];
 
   void _repaint() => setState(() {});
@@ -47,8 +55,8 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
         return;
       }
     }
-    for (var i = _onnxRects.length - 1; i >= 0; i--) {
-      if (_onnxRects[i].contains(pos)) {
+    for (var i = _onnxEntries.length - 1; i >= 0; i--) {
+      if (_onnxEntries[i].rect.contains(pos)) {
         cubit.removeDetectedBubble(i);
         _repaint();
         return;
@@ -87,16 +95,21 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
             ? (screenSize.height - renderedH) / 2
             : 0.0;
 
-        // ONNX-detected bubbles (blue reference) — live from cubit so a
-        // dedicated "Detect" run renders them pre-translate.
-        _onnxRects = cubit.detectedBoxes
-            .map((b) => Rect.fromLTWH(
-                  b.x * scaleX,
-                  b.y * scaleY + topOffset,
-                  b.w * scaleX,
-                  b.h * scaleY,
-                ))
-            .toList();
+        // ONNX-detected bubbles — polygon shape + kind, mirroring Python output.
+        _onnxEntries = cubit.detectedBoxes.map((b) {
+          final rect = Rect.fromLTWH(
+            b.x * scaleX,
+            b.y * scaleY + topOffset,
+            b.w * scaleX,
+            b.h * scaleY,
+          );
+          final poly = b.shape
+              ?.map(
+                (p) => Offset(p[0] * scaleX, p[1] * scaleY + topOffset),
+              )
+              .toList();
+          return _BubbleDrawEntry(rect: rect, poly: poly, kind: b.kind);
+        }).toList();
 
         return Stack(
           children: [
@@ -132,9 +145,8 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                   child: CustomPaint(
                     painter: _DrawPainter(
                       dragging: showBoxes ? _dragging : null,
-                      onnxColor: colorScheme.tertiary,
                       manualColor: colorScheme.primary,
-                      onnxRects: showBoxes ? _onnxRects : const [],
+                      onnxEntries: showBoxes ? _onnxEntries : const [],
                       manualRects: showBoxes
                           ? (_manualRects = cubit.manualBubbles
                               .map((b) => Rect.fromLTWH(
@@ -333,26 +345,62 @@ class _DrawAction extends StatelessWidget {
 class _DrawPainter extends CustomPainter {
   const _DrawPainter({
     this.dragging,
-    this.onnxRects = const [],
+    this.onnxEntries = const [],
     this.manualRects = const [],
-    this.onnxColor = const Color(0xFFFFFFFF),
     this.manualColor = const Color(0xFFFFFFFF),
   });
 
   final Rect? dragging;
-  final List<Rect> onnxRects; // ONNX-detected (reference)
-  final List<Rect> manualRects; // user-drawn
-  final Color onnxColor;
+  final List<_BubbleDrawEntry> onnxEntries;
+  final List<Rect> manualRects;
   final Color manualColor;
+
+  // Mirror Python seg_fixed.py LINE_COLOR: balloon=green, text=cyan, fallback=orange.
+  static const _balloonColor = Color(0xFF00E000);
+  static const _textColor = Color(0xFF00C8C8);
+  static const _fallbackColor = Color(0xFFFF6000);
+
+  static Path _smoothPath(List<Offset> pts) {
+    final n = pts.length;
+    final path = Path();
+    final start = Offset(
+        (pts[n - 1].dx + pts[0].dx) / 2, (pts[n - 1].dy + pts[0].dy) / 2);
+    path.moveTo(start.dx, start.dy);
+    for (int i = 0; i < n; i++) {
+      final ctrl = pts[i];
+      final next = pts[(i + 1) % n];
+      final mid = Offset((ctrl.dx + next.dx) / 2, (ctrl.dy + next.dy) / 2);
+      path.quadraticBezierTo(ctrl.dx, ctrl.dy, mid.dx, mid.dy);
+    }
+    path.close();
+    return path;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final onnxPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = onnxColor;
-    for (final r in onnxRects) {
-      canvas.drawRect(r, onnxPaint);
+    for (final e in onnxEntries) {
+      final color = e.kind == 'balloon'
+          ? _balloonColor
+          : e.kind == 'text'
+              ? _textColor
+              : _balloonColor;
+      if (e.poly != null && e.poly!.length >= 3) {
+        canvas.drawPath(
+          _smoothPath(e.poly!),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0
+            ..color = color,
+        );
+      } else {
+        canvas.drawRect(
+          e.rect,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5
+            ..color = _fallbackColor,
+        );
+      }
     }
 
     final manualPaint = Paint()
@@ -377,8 +425,7 @@ class _DrawPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DrawPainter oldDelegate) =>
       oldDelegate.dragging != dragging ||
-      oldDelegate.onnxColor != onnxColor ||
       oldDelegate.manualColor != manualColor ||
-      !listEquals(oldDelegate.onnxRects, onnxRects) ||
+      !listEquals(oldDelegate.onnxEntries, onnxEntries) ||
       !listEquals(oldDelegate.manualRects, manualRects);
 }

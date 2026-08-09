@@ -146,7 +146,8 @@ class ReaderTranslationOverlay extends StatelessWidget {
         return Stack(
           children: [
             for (var i = 0; i < result.bubbles.length; i++)
-              _positionedBubble(result.bubbles[i], scaleX, scaleY, topOffset, i),
+              _positionedBubble(
+                  result.bubbles[i], scaleX, scaleY, topOffset, i),
           ],
         );
       },
@@ -171,22 +172,47 @@ Widget _positionedBubble(
     bubble.rect.width * scaleX,
     bubble.rect.height * scaleY,
   );
-  var inflate = 0.0;
-  if (rect.width < minDim || rect.height < minDim) {
-    inflate = (minDim - rect.shortestSide).clamp(0.0, 24.0);
-    rect = rect.inflate(inflate);
+  // Shape-following bubble: keep the box tight (no inflate) so the polygon
+  // maps 1:1; only inflate the box-only fallback for the touch target.
+  final shape = bubble.shape?.map((p) {
+    // orig px → screen px, relative to the screen rect's top-left
+    final sx = p[0] * scaleX - rect.left;
+    final sy = p[1] * scaleY + topOffset - rect.top;
+    return Offset(sx, sy);
+  }).toList();
+  if (shape == null) {
+    if (rect.width < minDim || rect.height < minDim) {
+      final inflate = (minDim - rect.shortestSide).clamp(0.0, 24.0);
+      rect = rect.inflate(inflate);
+    }
   }
-  return Positioned.fromRect(
-    rect: rect,
-    child: ReaderTranslatedBubble(bubble: bubble, index: index),
+  return Positioned(
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    child: ReaderTranslatedBubble(
+      bubble: bubble,
+      index: index,
+      shapeLocal: shape,
+    ),
   );
 }
 
 class ReaderTranslatedBubble extends StatelessWidget {
-  const ReaderTranslatedBubble({super.key, required this.bubble, required this.index});
+  const ReaderTranslatedBubble({
+    super.key,
+    required this.bubble,
+    required this.index,
+    this.shapeLocal,
+  });
 
   final BubbleTranslation bubble;
   final int index;
+
+  /// Polygon in SCREEN coords relative to the bubble rect's top-left.
+  /// Null → box-only fallback (rounded-rect).
+  final List<Offset>? shapeLocal;
 
   /// Manga font pick: Komika Axis (Latin) vs KosugiMaru (CJK/Korean/Unicode).
   static final _cjk = RegExp(r'[぀-ゟ゠-ヿ一-鿿가-힯]');
@@ -195,31 +221,42 @@ class ReaderTranslatedBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shape = shapeLocal;
+    final Widget text = LayoutBuilder(
+      builder: (context, constraints) {
+        final box = Size(constraints.maxWidth, constraints.maxHeight);
+        return Padding(
+          padding: const EdgeInsets.all(3),
+          child: Text(
+            bubble.translated,
+            textAlign: TextAlign.center,
+            style: _fitText(bubble.translated, box, _fontFamily),
+          ),
+        );
+      },
+    );
+
     return GestureDetector(
       onTap: () => _showEditSheet(context),
       onLongPress: () => _showSaveToGlossarySheet(context),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(3),
-        // Bubble flat (teks di atas gambar rumit) → white patch tebal;
-        // bubble normal → tanpa dekorasi, stroke putih teks saja yang
-        // kontras. Tanpa border — kotak outline menimpa gambar balon.
-        decoration: bubble.needsWhitePatch
-            ? BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(4),
-              )
-            : null,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final box = Size(constraints.maxWidth, constraints.maxHeight);
-            return Text(
-              bubble.translated,
-              textAlign: TextAlign.center,
-              style: _fitText(bubble.translated, box, _fontFamily),
-            );
-          },
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (shape != null && shape.length >= 3)
+            // Shape-following: white fill + subtle outline under the text.
+            CustomPaint(painter: _BubbleShapePainter(shape))
+          else
+            // Box fallback: flat bubble → white patch; else transparent.
+            bubble.needsWhitePatch
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          text,
+        ],
       ),
     );
   }
@@ -351,6 +388,58 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
   return _textStyle(minSize, fontFamily);
 }
 
+/// Draws the bubble polygon (white fill + thin outline) beneath translated
+/// text, following the detected bubble shape instead of a rounded rect.
+class _BubbleShapePainter extends CustomPainter {
+  _BubbleShapePainter(this.points);
+
+  final List<Offset> points;
+
+  /// Smooth polygon via midpoint-quadratic-bezier: avoids jagged straight
+  /// segments from approxPolyDP, producing the clean oval look of real bubbles.
+  static Path _smoothPath(List<Offset> pts) {
+    final n = pts.length;
+    final path = Path();
+    // Start at midpoint of last→first edge so every vertex is a control point.
+    final start = Offset(
+      (pts[n - 1].dx + pts[0].dx) / 2,
+      (pts[n - 1].dy + pts[0].dy) / 2,
+    );
+    path.moveTo(start.dx, start.dy);
+    for (int i = 0; i < n; i++) {
+      final ctrl = pts[i];
+      final next = pts[(i + 1) % n];
+      final mid = Offset((ctrl.dx + next.dx) / 2, (ctrl.dy + next.dy) / 2);
+      path.quadraticBezierTo(ctrl.dx, ctrl.dy, mid.dx, mid.dy);
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = points.length >= 3
+        ? _smoothPath(points)
+        : (Path()..addPolygon(points, true));
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = Colors.white.withValues(alpha: 0.92),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = Colors.black.withValues(alpha: 0.65),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleShapePainter old) => old.points != points;
+}
+
 /// Hitam dengan outline putih tebal (stroke manga) — 8 arah shadow offset
 /// membentuk outline tajam penuh mengelilingi glyph (bukan halo blur), jadi
 /// teks tetap terbaca di atas gambar rumit tanpa patch putih.
@@ -364,9 +453,14 @@ TextStyle _textStyle(double size, String fontFamily) {
     height: 1.25,
     shadows: [
       for (final o in const [
-        Offset(-1, -1), Offset(0, -1), Offset(1, -1),
-        Offset(-1, 0), Offset(1, 0),
-        Offset(-1, 1), Offset(0, 1), Offset(1, 1),
+        Offset(-1, -1),
+        Offset(0, -1),
+        Offset(1, -1),
+        Offset(-1, 0),
+        Offset(1, 0),
+        Offset(-1, 1),
+        Offset(0, 1),
+        Offset(1, 1),
       ])
         Shadow(color: Colors.white, offset: o * stroke, blurRadius: 0),
     ],

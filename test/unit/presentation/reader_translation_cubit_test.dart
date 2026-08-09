@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
+import 'package:kuron_native/kuron_native.dart' show BubbleBox;
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
@@ -313,5 +314,75 @@ void main() {
     final at0 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#0');
     final at4000 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#4000');
     expect(at0, isNot(at4000));
+  });
+
+  test('postProcessBoxes drops text inside balloon, keeps standalone text',
+      () {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    // balloon [289,608,421,796]; text [307,641,400,766] fully inside.
+    // standalone text [80,305,190,424] outside any balloon.
+    final out = cubit.postProcessBoxes([
+      const BubbleBox(x: 289, y: 608, w: 132, h: 188, kind: 'balloon'),
+      const BubbleBox(x: 307, y: 641, w: 93, h: 125, kind: 'text'),
+      const BubbleBox(x: 80, y: 305, w: 110, h: 119, kind: 'text'),
+    ]);
+    final kinds = out.map((b) => b.kind).toList();
+    expect(kinds.where((k) => k == 'balloon'), hasLength(1));
+    // text inside balloon dropped; standalone text kept
+    expect(kinds.where((k) => k == 'text'), hasLength(1));
+    expect(out.map((b) => b.x).toSet(), {289, 80});
+  });
+
+  test('polygon shape re-attached to translated bubble by rect (task 4)',
+      () async {
+    // detect returns a bubble WITH shape; provider returns bubble rect == box.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('kuron_native'),
+      (MethodCall call) async {
+        if (call.method == 'detectBubbles') {
+          return [
+            {
+              'x': 10,
+              'y': 10,
+              'w': 50,
+              'h': 30,
+              'confidence': 0.9,
+              'kind': 'balloon',
+              'shape': [
+                [10, 10], [60, 10], [55, 25], [60, 40], [10, 40],
+              ],
+            },
+          ];
+        }
+        return null;
+      },
+    );
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(const MethodChannel('kuron_native'), null);
+    });
+
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    await cubit.translatePage(
+      imageBytes: Uint8List.fromList([1, 2, 3]),
+      imageWidth: 100,
+      imageHeight: 100,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.singlePage,
+      imageUrlCount: 1,
+    );
+
+    final state = cubit.state;
+    expect(state, isA<ReaderTranslationTranslated>());
+    final bubbles =
+        (state as ReaderTranslationTranslated).result.bubbles;
+    expect(bubbles, hasLength(1));
+    expect(bubbles.first.shape, isNotNull);
+    expect(bubbles.first.shape!.first, [10, 10]);
   });
 }

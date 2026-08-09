@@ -224,6 +224,7 @@ class BubbleTranslation extends Equatable {
     this.isUserEdited = false,
     this.isSfxSkipped = false,
     this.needsWhitePatch = false,
+    this.shape,
   });
 
   final Rect rect; // Pixel coordinates in original page space
@@ -240,6 +241,11 @@ class BubbleTranslation extends Equatable {
   /// patch behind the text (cypy "bubble flat" heuristic, computed post-AI).
   final bool needsWhitePatch;
 
+  /// Bubble outline polygon in original image pixel coords ([[x,y],...]).
+  /// Null = box-only fallback (rounded-rect render). Attached post-AI from
+  /// the ONNX detection (shape doesn't survive the mosaic/AI round-trip).
+  final List<List<int>>? shape;
+
   BubbleTranslation copyWith({
     Rect? rect,
     String? original,
@@ -248,6 +254,7 @@ class BubbleTranslation extends Equatable {
     bool? isUserEdited,
     bool? isSfxSkipped,
     bool? needsWhitePatch,
+    List<List<int>>? shape,
   }) {
     return BubbleTranslation(
       rect: rect ?? this.rect,
@@ -257,6 +264,7 @@ class BubbleTranslation extends Equatable {
       isUserEdited: isUserEdited ?? this.isUserEdited,
       isSfxSkipped: isSfxSkipped ?? this.isSfxSkipped,
       needsWhitePatch: needsWhitePatch ?? this.needsWhitePatch,
+      shape: shape ?? this.shape,
     );
   }
 
@@ -275,6 +283,9 @@ class BubbleTranslation extends Equatable {
       isUserEdited: json['isUserEdited'] as bool? ?? false,
       isSfxSkipped: json['isSfxSkipped'] as bool? ?? false,
       needsWhitePatch: json['needsWhitePatch'] as bool? ?? false,
+      shape: (json['shape'] as List<dynamic>?)
+          ?.map((p) => (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
+          .toList(),
     );
   }
 
@@ -292,6 +303,7 @@ class BubbleTranslation extends Equatable {
       'isUserEdited': isUserEdited,
       'isSfxSkipped': isSfxSkipped,
       'needsWhitePatch': needsWhitePatch,
+      if (shape != null) 'shape': shape,
     };
   }
 
@@ -304,6 +316,7 @@ class BubbleTranslation extends Equatable {
         isUserEdited,
         isSfxSkipped,
         needsWhitePatch,
+        shape,
       ];
 }
 

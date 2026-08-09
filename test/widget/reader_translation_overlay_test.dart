@@ -79,6 +79,29 @@ void main() {
     expect(find.byType(Positioned), findsNWidgets(3));
   });
 
+  testWidgets('overlay renders polygon shape when bubble has shape',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 60,
+              height: 40,
+              child: _TranslatedBubbleForTest(shape: [
+                [0, 0], [60, 0], [55, 20], [60, 40], [0, 40],
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Polygon painter present (shape-following), not the box white patch.
+    expect(find.byType(CustomPaint), findsWidgets);
+  });
+
   testWidgets('tiny bubble text stays within bubble (font-fit, no overflow)',
       (tester) async {
     // Render the bubble directly in a 30x20 box — below the 44px min — with
@@ -111,7 +134,9 @@ void main() {
 
 /// Minimal bubble with a long translated string, for font-fit assertions.
 class _TranslatedBubbleForTest extends StatelessWidget {
-  const _TranslatedBubbleForTest();
+  const _TranslatedBubbleForTest({this.shape});
+
+  final List<List<int>>? shape;
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +145,10 @@ class _TranslatedBubbleForTest extends StatelessWidget {
         rect: Rect.fromLTWH(0, 0, 30, 20),
         original: '長い日本語のセリフがこの狭い吹き出しに収まるか確認するためのテストです',
         translated: 'This is a very long translated sentence that must fit',
+        shape: shape,
       ),
       index: 0,
+      shapeLocal: shape?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList(),
     );
   }
 }

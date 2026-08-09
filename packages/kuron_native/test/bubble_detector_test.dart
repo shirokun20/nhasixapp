@@ -13,7 +13,20 @@ void main() {
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
       if (methodCall.method == 'detectBubbles') {
         return [
-          {'x': 10, 'y': 20, 'w': 100, 'h': 50, 'confidence': 0.87},
+          {
+            'x': 10,
+            'y': 20,
+            'w': 100,
+            'h': 50,
+            'confidence': 0.87,
+            'kind': 'balloon',
+            'shape': [
+              [10, 20],
+              [110, 20],
+              [110, 70],
+              [10, 70],
+            ],
+          },
           {'x': 200, 'y': 300, 'w': 80, 'h': 60, 'confidence': 0.31},
         ];
       }
@@ -55,6 +68,14 @@ void main() {
     expect(result, isA<List<BubbleBox>>());
     expect(result![1].confidence, 0.31);
     expect(result[1].toString(), contains('BubbleBox'));
+
+    // shape + kind parsed (task 3.1)
+    expect(result[0].kind, 'balloon');
+    expect(result[0].shape, isNotNull);
+    expect(result[0].shape!.length, 4);
+    expect(result[0].shapeOffsets, isNotNull);
+    expect(result[0].shapeOffsets!.length, 4);
+    expect(result[1].shape, isNull); // no shape → null (box fallback)
   });
 
   test('detectBubbles returns null on platform null response', () async {

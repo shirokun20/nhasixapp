@@ -218,11 +218,16 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   String _bubbleKey(int index, BubbleTranslation b) =>
       '${b.rect.left}_${b.rect.top}_$index';
 
+  /// Translation cache schema version. Bump to invalidate OLD cached results
+  /// when the output shape changes (e.g. box-only → polygon: old entries lack
+  /// `shape`, so re-translate to carry the polygon).
+  static const int _cacheSchemaVersion = 2;
+
   /// Returns the cache key: `SHA256('$contentId:$pageIndex:$urlHash')` (16 hex).
   static String buildCacheKey(
       String contentId, int pageIndex, String imageUrl) {
-    final digest = sha256
-        .convert(utf8.encode('$contentId:$pageIndex:${imageUrl.hashCode}'));
+    final digest = sha256.convert(utf8.encode(
+        'v$_cacheSchemaVersion:$contentId:$pageIndex:${imageUrl.hashCode}'));
     return digest.toString().substring(0, 16);
   }
 
@@ -292,6 +297,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     if (boxes.isEmpty) return [];
     final sorted = List<BubbleBox>.from(boxes)
       ..sort((a, b) => b.confidence.compareTo(a.confidence));
+    // Balloon (cls 2) menang: text (cls 1) yang terserap di dalam balloon
+    // adalah teks asli yang mau ditimpa terjemahan → buang, jangan render
+    // terpisah. Text standalone (thought bubble) tetap. Kalau tak ada
+    // balloon, tak ada yang dibuang (query aman).
+    final balloons = sorted.where((b) => b.kind == 'balloon').toList();
+    sorted.removeWhere(
+        (b) => b.kind == 'text' && balloons.any((bb) => _contains(bb, b)));
     final keep = <BubbleBox>[];
     while (sorted.isNotEmpty) {
       final best = sorted.removeAt(0);
@@ -387,7 +399,9 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       _currentPageIndex = pageIndex;
       _currentContentId = contentId;
       _currentImageUrl = imageUrl;
-      _currentResult = cached;
+      // Re-attach shapes if cache was saved before shape detection existed
+      // and _detectedBoxes is already populated (draw mode ran first).
+      _currentResult = _attachShapes(cached);
       _overlayVisible = true;
       emit(_translatedState());
       logInfo('translatePage: cache hit, ${cached.bubbles.length} bubbles');
@@ -434,10 +448,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
               w: b.w,
               h: b.h,
               confidence: b.confidence,
+              shape: b.shape,
+              kind: b.kind,
             ));
           }
           offsetY += chunk.height;
         }
+        _detectedBoxes = postProcessBoxes(allBoxes);
         final result = await _translateWithBubbles(
           imageBytes: imageBytes,
           imageWidth: imageWidth,
@@ -617,6 +634,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   void _finish(PageTranslation result, String cacheKey, String contentId,
       int pageIndex, int imageWidth, int imageHeight, String imageUrl) {
+    result = _attachShapes(result);
     result = _flagFlatBubbles(result);
     _currentImageWidth = imageWidth;
     _currentImageHeight = imageHeight;
@@ -641,6 +659,36 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     ));
     emit(_translatedState());
   }
+
+  /// Re-attach ONNX polygon `shape` to translated bubbles by matching the
+  /// detection box (same rect). The AI/mosaic round-trip only carries boxes,
+  /// so shape is re-joined here from [_detectedBoxes].
+  PageTranslation _attachShapes(PageTranslation result) {
+    if (_detectedBoxes.isEmpty) {
+      logInfo('_attachShapes: _detectedBoxes kosong, shape kosong');
+      return result;
+    }
+    final byRect = <int, List<List<int>>?>{
+      for (final b in _detectedBoxes) b.rectKey: b.shape,
+    };
+    var attached = 0;
+    final bubbles = <BubbleTranslation>[];
+    for (final b in result.bubbles) {
+      if (b.shape != null) {
+        bubbles.add(b);
+        continue;
+      }
+      final s = byRect[_rectKey(b.rect)];
+      if (s != null) attached++;
+      bubbles.add(b.copyWith(shape: s));
+    }
+    logInfo(
+        '_attachShapes: ${result.bubbles.length} bubble, shape-attached=$attached, detected=${_detectedBoxes.length}');
+    return result.copyWith(bubbles: bubbles);
+  }
+
+  int _rectKey(Rect r) => Object.hash(
+      r.left.round(), r.top.round(), r.width.round(), r.height.round());
 
   AiProviderConfig? _fallbackProvider(
     AiProviderConfig current,
