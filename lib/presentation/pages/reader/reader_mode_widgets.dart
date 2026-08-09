@@ -525,7 +525,6 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                           onToggleKeepScreenOn: widget.cubit.toggleKeepScreenOn,
                           onOpenSettings: () => widget.onShowSettings(state),
                           onTranslate: () => _onTranslatePressed(),
-                          onEnterDrawMode: () => _onEnterDrawMode(),
                           onToggleSkipSfx: () => _translationCubit
                               .setSkipSfx(!_translationCubit.skipSfx),
                         ),
@@ -565,8 +564,10 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                 ),
                 // Manual bubble drawing mode (9.5) — stays interactive while
                 // everything below is absorbed.
-                const Positioned.fill(
-                  child: ReaderTranslationDrawMode(),
+                Positioned.fill(
+                  child: ReaderTranslationDrawMode(
+                    onCaptureNeeded: _captureForDraw,
+                  ),
                 ),
                 if (state.readingMode == ReadingMode.continuousScroll)
                   _ReaderFloatingPageIndicator(
@@ -666,16 +667,16 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     );
   }
 
-  /// Draw-mode entry: fetch + capture current page. Detection is explicit
-  /// (🛰 button), mirroring the example app.
-  Future<void> _onEnterDrawMode() async {
+  /// Captures the current viewport for draw-mode detection. Called LAZILY by the
+  /// draw-mode 🛰 button (ReaderTranslationDrawMode.onCaptureNeeded) — not on
+  /// draw-mode entry, so toggling draw mode repeatedly doesn't re-capture (the
+  /// cause of the perceived lag).
+  Future<void> _captureForDraw() async {
     final state = widget.state;
     final urls = state.content?.imageUrls ?? [];
     final target = _actionTarget();
     final pageIndex = target.page;
     if (pageIndex < 0 || pageIndex >= urls.length) return;
-    // Cache the page so the draw-mode 🛰 Detect button can run ONNX without
-    // a prior translate. Detection itself is explicit (button), like example.
     if (state.readingMode == ReadingMode.continuousScroll) {
       _showCapturingSnackbar();
     }

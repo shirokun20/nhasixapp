@@ -12,7 +12,12 @@ import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.da
 /// emitting identical states is skipped by the bloc, so painter refreshes
 /// must not rely on state changes.
 class ReaderTranslationDrawMode extends StatefulWidget {
-  const ReaderTranslationDrawMode({super.key});
+  const ReaderTranslationDrawMode({super.key, this.onCaptureNeeded});
+
+  /// Called before running detection when no page is captured yet (lazy
+  /// capture). Lets the reader capture the current viewport only on demand,
+  /// instead of on every draw-mode entry (which janks on repeated toggles).
+  final Future<void> Function()? onCaptureNeeded;
 
   @override
   State<ReaderTranslationDrawMode> createState() =>
@@ -149,6 +154,11 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                 child: Center(
                   child: _DrawModeControls(
                     onDetect: () async {
+                      // Always capture the CURRENT viewport first — the user may
+                      // have scrolled since the last capture, so a stale bitmap
+                      // (from another scroll position) would mis-detect bubbles.
+                      await widget.onCaptureNeeded?.call();
+                      if (!mounted) return;
                       await cubit.detectBubblesOnly();
                       _repaint();
                     },

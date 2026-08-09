@@ -92,7 +92,6 @@ class _ReaderTopBar extends StatelessWidget {
     required this.onToggleKeepScreenOn,
     required this.onOpenSettings,
     this.onTranslate,
-    this.onEnterDrawMode,
     this.onToggleSkipSfx,
   });
 
@@ -101,7 +100,6 @@ class _ReaderTopBar extends StatelessWidget {
   final VoidCallback onToggleKeepScreenOn;
   final VoidCallback onOpenSettings;
   final VoidCallback? onTranslate;
-  final VoidCallback? onEnterDrawMode;
   final VoidCallback? onToggleSkipSfx;
 
   @override
@@ -204,7 +202,6 @@ class _ReaderTopBar extends StatelessWidget {
                   readingMode:
                       state.readingMode ?? ReadingMode.singlePage,
                   onTranslate: onTranslate!,
-                  onEnterDrawMode: onEnterDrawMode,
                 ),
               PopupMenuButton<_TopBarAction>(
                 onSelected: (action) {

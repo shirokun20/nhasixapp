@@ -15,15 +15,10 @@ class ReaderTranslationToolbar extends StatelessWidget {
     super.key,
     required this.readingMode,
     required this.onTranslate,
-    this.onEnterDrawMode,
   });
 
   final ReadingMode readingMode;
   final VoidCallback onTranslate;
-
-  /// Called when the user ENABLES draw mode — the reader fetches the page
-  /// and runs ONNX detection so blue reference bubbles appear immediately.
-  final VoidCallback? onEnterDrawMode;
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +90,6 @@ class ReaderTranslationToolbar extends StatelessWidget {
                   cubit.setDrawMode(false);
                 } else {
                   cubit.setDrawMode(true);
-                  // Cache current page so the Detect button can run ONNX
-                  // without a prior translate.
-                  onEnterDrawMode?.call();
                 }
               },
               icon: Icon(

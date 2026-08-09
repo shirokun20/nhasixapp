@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 🐛 Fixed
+
+- **AI translate in continue-scroll now WYSIWYG (viewport-based)**: Replaced scroll-offset math (which drifted) with an actual on-screen viewport capture. Continue-scroll translate/detect now snapshots the visible `RenderRepaintBoundary` (the reader content) and runs the pipeline on that exact bitmap — bubbles align with what the user sees, not the full page image. Lazy capture on the draw-mode 🛰 Detect button (no capture on draw-mode entry, so toggling draw no longer janks). Re-encode to JPG runs on a background isolate. Added capture loading/success/failure snackbars (l10n en/id/zh). Bubbles are now interactive in continue-scroll (tap to edit, long-press save glossary). Files: `reader_mode_widgets.dart`, `reader_translation_cubit.dart`, `reader_image_widgets.dart`, `reader_translation_draw_mode.dart`, `reader_translation_widgets.dart`, `reader_overlay_widgets.dart`, `lib/l10n/*.arb`.
+
 ## [0.9.24+34] - 2026-08-07
 
 ### ✨ Added
