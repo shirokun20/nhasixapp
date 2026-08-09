@@ -352,10 +352,9 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     required int pageIndex,
     required String imageUrl,
     required ReadingMode readingMode,
-    // Single-image webtoon strips are cropped to the visible viewport in the
-    // widget before reaching here, so their passed size is no longer "tall".
-    // imageUrlCount == 1 distinguishes that cropped strip from a multi-image
-    // continue-scroll chapter (which has no well-defined active page).
+    // Total image URLs in the chapter. Kept for diagnostics/logging only — the
+    // continue-scroll gate no longer uses it (the widget sends a WYSIWYG
+    // viewport snapshot, so there is always a well-defined active region).
     required int imageUrlCount,
     // Original-image y of the cropped viewport sent here. Every distinct crop
     // produces its own translated result, so it must be part of the cache key —
@@ -365,19 +364,10 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   }) async {
     logInfo(
         'translatePage input: mode=$readingMode page=$pageIndex size=${imageWidth}x$imageHeight cropYTop=$cropYTop urls=$imageUrlCount');
-    // Blocked in continuous scroll EXCEPT a single-image webtoon strip (which
-    // the widget already cropped to the visible viewport). Gate on the fetched
-    // page's aspect ratio + URL count: a multi-image chapter has no reliable
-    // "active page", so it stays disabled.
-    final isWebtoon = WebtoonDetector.isWebtoon(
-        Size(imageWidth.toDouble(), imageHeight.toDouble()));
-    if (readingMode == ReadingMode.continuousScroll &&
-        !isWebtoon &&
-        imageUrlCount != 1) {
-      emit(const ReaderTranslationError(
-          message: 'AI translate tidak tersedia di continue scroll.'));
-      return;
-    }
+    // Continue-scroll is always allowed now: the widget sends a WYSIWYG
+    // snapshot of the ACTUAL visible viewport, so there is always a well-defined
+    // active region to translate (unlike the old offset-math path, where a
+    // multi-image chapter had no reliable "active page").
     if (isBusy) return;
 
     final targetLang = await _preferencesRepository.getTargetLanguage();

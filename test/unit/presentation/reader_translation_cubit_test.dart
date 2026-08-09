@@ -117,21 +117,25 @@ void main() {
     expect(types.every((t) => t == ReaderTranslationTranslated), true);
   });
 
-  test('continueScroll guard emits error for non-webtoon multi-image',
+  test('continueScroll non-webtoon viewport snapshot runs pipeline',
       () async {
+    // The widget now sends a WYSIWYG viewport snapshot, so continue-scroll is
+    // always allowed regardless of aspect ratio or URL count.
     final cubit = makeCubit();
     addTearDown(cubit.close);
+    final image = img.Image(width: 100, height: 100); // square (viewport crop)
     await cubit.translatePage(
-      imageBytes: Uint8List.fromList([1]),
+      imageBytes: img.encodeJpg(image),
       imageWidth: 100,
-      imageHeight: 100, // square → not webtoon
+      imageHeight: 100,
       contentId: 'c1',
       pageIndex: 0,
       imageUrl: 'u1',
       readingMode: ReadingMode.continuousScroll,
       imageUrlCount: 3,
     );
-    expect(cubit.state, isA<ReaderTranslationError>());
+    await pumpEventQueue();
+    expect(cubit.state, isA<ReaderTranslationTranslated>());
   });
 
   test('continueScroll single-image webtoon (tall image) runs pipeline',

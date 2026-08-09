@@ -172,6 +172,12 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   late final ReaderTranslationCubit _translationCubit =
       getIt<ReaderTranslationCubit>();
 
+  /// RepaintBoundary key wrapping the whole reader content. In continue-scroll
+  /// this snapshots the ACTUAL visible viewport (what the user sees on screen),
+  /// so translated/detected boxes are WYSIWYG relative to the viewport — not to
+  /// the full page image (which is far taller than the screen).
+  final GlobalKey _viewportKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -469,7 +475,6 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final showOverlay = !widget.chapterOverlayShown && (state.content != null);
-    final isContinuous = state.readingMode == ReadingMode.continuousScroll;
 
     return BlocProvider<ReaderTranslationCubit>.value(
       value: _translationCubit,
@@ -508,7 +513,10 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                   absorbing: drawMode,
                   child: Stack(
                     children: [
-                      _buildReaderContent(),
+                      RepaintBoundary(
+                        key: _viewportKey,
+                        child: _buildReaderContent(),
+                      ),
                       _ReaderUIOverlay(
                         isVisible: state.showUI ?? false,
                         topBar: _ReaderTopBar(
@@ -548,12 +556,12 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                     ],
                   ),
                 ),
-                // AI translation overlay layer (above reader image)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    ignoring: isContinuous,
-                    child: const ReaderTranslationOverlay(),
-                  ),
+                // AI translation overlay layer (above reader image). Bubbles are individual
+// hit-testable (tap to edit, long-press to save to glossary); empty overlay
+// area passes taps through to the reader (scroll/zoom). No IgnorePointer — in
+// continue-scroll the translated bubbles must stay interactive.
+                const Positioned.fill(
+                  child: ReaderTranslationOverlay(),
                 ),
                 // Manual bubble drawing mode (9.5) — stays interactive while
                 // everything below is absorbed.
@@ -717,6 +725,47 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     // the caller). When null, re-resolved here from the live scroll position.
     double? offsetInItem,
   }) async {
+    final isContinuous = (widget.state.readingMode ?? ReadingMode.singlePage) ==
+        ReadingMode.continuousScroll;
+
+    // Continuous scroll → WYSIWYG: snapshot the ACTUAL visible viewport (the
+    // RepaintBoundary wrapping all reader content). The snapshot is exactly
+    // what the user sees on screen, so no crop/offset math is needed — boxes
+    // are interpreted relative to this viewport bitmap. cropYTop = scroll
+    // offset keeps the cache key unique per scroll position.
+    if (isContinuous) {
+      final resolvedOffset = offsetInItem ?? _actionTarget().offsetInItem;
+      final captured = await _captureVisibleViewport();
+      if (captured == null) {
+        widget.logger.w('AI translate: viewport capture gagal');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(AppLocalizations.of(context)!.aiGagalFetch)));
+        }
+        return null;
+      }
+      if (!mounted) return null;
+      final snapshotImg = img.decodeImage(captured.bytes);
+      if (snapshotImg == null) {
+        widget.logger.w('AI translate: snapshot decode gagal');
+        return null;
+      }
+      final bytesOut = img.encodeJpg(snapshotImg, quality: 90);
+      final sizeOut = Size(
+        captured.width.toDouble(),
+        captured.height.toDouble(),
+      );
+      widget.logger.d('AI translate: viewport capture ${sizeOut.width.round()}x'
+          '${sizeOut.height.round()} bytes=${bytesOut.length}');
+      _translationCubit.capturePage(
+        imageBytes: bytesOut,
+        imageWidth: sizeOut.width.round(),
+        imageHeight: sizeOut.height.round(),
+      );
+      return (bytes: bytesOut, size: sizeOut, cropYTop: resolvedOffset.round());
+    }
+
+    // Non-continuous: fetch full page, no crop.
     final bytes = await _fetchPageBytes(url);
     if (bytes == null) {
       widget.logger.w('AI translate: fetch gagal untuk $url');
@@ -733,55 +782,39 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           .w('AI translate: decode ukuran gagal, bytes=${bytes.length}');
       return null;
     }
-    if (!mounted) return null;
-
-    var bytesOut = bytes;
-    var sizeOut = size;
-    var cropYTop = 0;
-    // Continuous scroll → crop the visible viewport region from this page's
-    // image so translate/draw act on what the user sees. The offset is the
-    // in-item scroll position (already resolved to this page).
-    final isContinuous = (widget.state.readingMode ?? ReadingMode.singlePage) ==
-        ReadingMode.continuousScroll;
-    if (isContinuous) {
-      final screen = MediaQuery.of(context).size;
-      final crop = computeViewportCrop(
-        offset: offsetInItem ?? _actionTarget().offsetInItem,
-        full: size,
-        viewport: screen,
-      );
-      if (crop != null) {
-        final decoded = img.decodeImage(bytes);
-        if (decoded != null) {
-          final cropped = img.copyCrop(
-            decoded,
-            x: 0,
-            y: crop.yTop,
-            width: decoded.width,
-            height: crop.cropH,
-          );
-          bytesOut = img.encodeJpg(cropped, quality: 90);
-          sizeOut = Size(
-            decoded.width.toDouble(),
-            crop.cropH.toDouble(),
-          );
-          cropYTop = crop.yTop;
-          widget.logger.d(
-              'AI translate: crop viewport yTop=${crop.yTop} h=${crop.cropH} → ${sizeOut.width.round()}x${sizeOut.height.round()}');
-        }
-      }
-    }
-
-    widget.logger.d(
-        'AI translate: page ${sizeOut.width.round()}x${sizeOut.height.round()}, bytes=${bytesOut.length}');
     _translationCubit.capturePage(
-      imageBytes: bytesOut,
-      imageWidth: sizeOut.width.round(),
-      imageHeight: sizeOut.height.round(),
+      imageBytes: bytes,
+      imageWidth: size.width.round(),
+      imageHeight: size.height.round(),
     );
-    widget.logger.d(
-        'AI translate capture: cropYTop=$cropYTop captured=${_translationCubit.pageWidth}x${_translationCubit.pageHeight}');
-    return (bytes: bytesOut, size: sizeOut, cropYTop: cropYTop);
+    widget.logger.d('AI translate: page ${size.width.round()}x'
+        '${size.height.round()} bytes=${bytes.length}');
+    return (bytes: bytes, size: size, cropYTop: 0);
+  }
+
+  /// Snapshot of the RepaintBoundary wrapping all reader content — i.e. the
+  /// ACTUAL visible viewport (WYSIWYG). Returns raw PNG bytes of exactly what
+  /// is on screen. Null when the boundary isn't mounted or capture fails.
+  Future<({Uint8List bytes, int width, int height})?> _captureVisibleViewport()
+      async {
+    final renderObject = _viewportKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderRepaintBoundary) return null;
+    try {
+      // pixelRatio 1 → snapshot at logical device scale (== screen), so the
+      // returned boxes map 1:1 to the on-screen viewport.
+      final image = await renderObject.toImage(pixelRatio: 1.0);
+      final byteData = await image.toByteData(format: ImageByteFormat.png);
+      image.dispose();
+      if (byteData == null) return null;
+      return (
+        bytes: byteData.buffer.asUint8List(),
+        width: renderObject.size.width.round(),
+        height: renderObject.size.height.round(),
+      );
+    } catch (e) {
+      widget.logger.w('AI translate: viewport capture gagal: $e');
+      return null;
+    }
   }
 
   Future<Uint8List?> _fetchPageBytes(String url) async {
