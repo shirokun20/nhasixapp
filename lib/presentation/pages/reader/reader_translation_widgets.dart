@@ -146,23 +146,40 @@ class ReaderTranslationOverlay extends StatelessWidget {
         return Stack(
           children: [
             for (var i = 0; i < result.bubbles.length; i++)
-              Positioned.fromRect(
-                rect: Rect.fromLTWH(
-                  result.bubbles[i].rect.left * scaleX,
-                  result.bubbles[i].rect.top * scaleY + topOffset,
-                  result.bubbles[i].rect.width * scaleX,
-                  result.bubbles[i].rect.height * scaleY,
-                ),
-                child: _TranslatedBubble(
-                  bubble: result.bubbles[i],
-                  index: i,
-                ),
-              ),
+              _positionedBubble(result.bubbles[i], scaleX, scaleY, topOffset, i),
           ],
         );
       },
     );
   }
+}
+
+/// Maps a bubble to its screen rect, inflating tiny bubbles (below the 44px
+/// touch target) outward from center so short text still fits and remains
+/// tappable. Expansion keeps the bubble visually anchored to its position.
+Widget _positionedBubble(
+  BubbleTranslation bubble,
+  double scaleX,
+  double scaleY,
+  double topOffset,
+  int index,
+) {
+  const minDim = 44.0;
+  var rect = Rect.fromLTWH(
+    bubble.rect.left * scaleX,
+    bubble.rect.top * scaleY + topOffset,
+    bubble.rect.width * scaleX,
+    bubble.rect.height * scaleY,
+  );
+  var inflate = 0.0;
+  if (rect.width < minDim || rect.height < minDim) {
+    inflate = (minDim - rect.shortestSide).clamp(0.0, 24.0);
+    rect = rect.inflate(inflate);
+  }
+  return Positioned.fromRect(
+    rect: rect,
+    child: _TranslatedBubble(bubble: bubble, index: index),
+  );
 }
 
 class _TranslatedBubble extends StatelessWidget {
