@@ -333,10 +333,10 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
   // Base range [8,50], scaled down proportionally for small bubbles so the
   // text shrinks instead of overflowing. Bounded ≤ ~40 layout iterations.
   final shortSide = box.shortestSide < 40.0 ? box.shortestSide / 40.0 : 1.0;
-  final maxSize = (50.0 * shortSide).clamp(6.0, 50.0);
-  final minSize = (8.0 * shortSide).clamp(4.0, 8.0);
-  final maxW = box.width * 0.9;
-  final maxH = box.height * 0.9;
+  final maxSize = (42.0 * shortSide).clamp(6.0, 42.0);
+  final minSize = (7.0 * shortSide).clamp(4.0, 7.0);
+  final maxW = box.width * 0.8;
+  final maxH = box.height * 0.8;
 
   for (var size = maxSize; size >= minSize; size -= 1) {
     final style = TextStyle(
