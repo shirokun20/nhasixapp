@@ -414,12 +414,15 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         return;
       }
 
-      // 2. Normal page: ONNX detect
-      emit(const ReaderTranslationDetecting());
-      final detected =
-          postProcessBoxes(await _detect(imageBytes, imageWidth, imageHeight));
-      _detectedBoxes = detected;
-      var boxes = [..._manualBubbles, ...detected];
+      // 2. Normal page: ONNX detect — only if no manual re-run. A prior
+      //    draw-mode Detect (or user deletes) already set _detectedBoxes;
+      //    re-detecting here would resurrect bubbles the user unchecked.
+      if (_detectedBoxes.isEmpty) {
+        emit(const ReaderTranslationDetecting());
+        _detectedBoxes =
+            postProcessBoxes(await _detect(imageBytes, imageWidth, imageHeight));
+      }
+      var boxes = [..._manualBubbles, ..._detectedBoxes];
 
       // 3. Mosaic (≥1 bubble) or full-image fallback (0 bubbles)
       final result = await _translateWithBubbles(
