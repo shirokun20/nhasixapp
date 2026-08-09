@@ -159,6 +159,46 @@ void main() {
     expect(cubit.state, isA<ReaderTranslationTranslated>());
   });
 
+  test('flat-bubble heuristic flags wide/short boxes, not normal ones',
+      () async {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    // 400×1000 image. Mock detectBubbles: one flat box (ratio 2.6, w≥45%,
+    // h≤22%) + one normal box (ratio ~1.7).
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('kuron_native'),
+      (MethodCall call) async {
+        if (call.method == 'detectBubbles') {
+          return [
+            {'x': 50, 'y': 100, 'w': 300, 'h': 115, 'confidence': 0.9},
+            {'x': 50, 'y': 500, 'w': 200, 'h': 115, 'confidence': 0.8},
+          ];
+        }
+        return null;
+      },
+    );
+    final image = img.Image(width: 400, height: 1000);
+    await cubit.translatePage(
+      imageBytes: img.encodeJpg(image),
+      imageWidth: 400,
+      imageHeight: 1000,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.singlePage,
+      imageUrlCount: 1,
+    );
+    await pumpEventQueue();
+
+    final state = cubit.state as ReaderTranslationTranslated;
+    final bubbles = state.result.bubbles;
+    // flat: 300/115 = 2.61 ≥ 2.4, 300 ≥ 180 (45% of 400), 115 ≤ 220 (22% of 1000)
+    expect(bubbles[0].needsWhitePatch, true);
+    // normal: 200/115 = 1.74 < 2.4
+    expect(bubbles[1].needsWhitePatch, false);
+  });
+
   test('continueScroll single-image cropped (square) runs pipeline',
       () async {
     final cubit = makeCubit();

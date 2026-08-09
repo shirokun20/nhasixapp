@@ -223,6 +223,7 @@ class BubbleTranslation extends Equatable {
     this.reading = '',
     this.isUserEdited = false,
     this.isSfxSkipped = false,
+    this.needsWhitePatch = false,
   });
 
   final Rect rect; // Pixel coordinates in original page space
@@ -235,6 +236,10 @@ class BubbleTranslation extends Equatable {
   final bool isUserEdited; // User corrected — AI must not overwrite
   final bool isSfxSkipped;
 
+  /// Flat/wide text box sitting directly on busy artwork — render a white
+  /// patch behind the text (cypy "bubble flat" heuristic, computed post-AI).
+  final bool needsWhitePatch;
+
   BubbleTranslation copyWith({
     Rect? rect,
     String? original,
@@ -242,6 +247,7 @@ class BubbleTranslation extends Equatable {
     String? reading,
     bool? isUserEdited,
     bool? isSfxSkipped,
+    bool? needsWhitePatch,
   }) {
     return BubbleTranslation(
       rect: rect ?? this.rect,
@@ -250,6 +256,7 @@ class BubbleTranslation extends Equatable {
       reading: reading ?? this.reading,
       isUserEdited: isUserEdited ?? this.isUserEdited,
       isSfxSkipped: isSfxSkipped ?? this.isSfxSkipped,
+      needsWhitePatch: needsWhitePatch ?? this.needsWhitePatch,
     );
   }
 
@@ -267,6 +274,7 @@ class BubbleTranslation extends Equatable {
       reading: json['reading'] as String? ?? '',
       isUserEdited: json['isUserEdited'] as bool? ?? false,
       isSfxSkipped: json['isSfxSkipped'] as bool? ?? false,
+      needsWhitePatch: json['needsWhitePatch'] as bool? ?? false,
     );
   }
 
@@ -283,12 +291,20 @@ class BubbleTranslation extends Equatable {
       'reading': reading,
       'isUserEdited': isUserEdited,
       'isSfxSkipped': isSfxSkipped,
+      'needsWhitePatch': needsWhitePatch,
     };
   }
 
   @override
-  List<Object?> get props =>
-      [rect, original, translated, reading, isUserEdited, isSfxSkipped];
+  List<Object?> get props => [
+        rect,
+        original,
+        translated,
+        reading,
+        isUserEdited,
+        isSfxSkipped,
+        needsWhitePatch,
+      ];
 }
 
 /// Full page translation result.

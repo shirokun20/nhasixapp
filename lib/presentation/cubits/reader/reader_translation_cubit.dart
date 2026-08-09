@@ -362,6 +362,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     // stale bubbles from the previous crop (misaligned with the new viewport).
     int cropYTop = 0,
   }) async {
+    // Keep page context for flat-bubble detection even when called without
+    // capturePage (tests, direct callers).
+    _pageBytes = imageBytes;
+    _pageWidth = imageWidth;
+    _pageHeight = imageHeight;
     logInfo(
         'translatePage input: mode=$readingMode page=$pageIndex size=${imageWidth}x$imageHeight cropYTop=$cropYTop urls=$imageUrlCount');
     // Continue-scroll is always allowed now: the widget sends a WYSIWYG
@@ -585,8 +590,34 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     }
   }
 
+  /// Flags flat/wide text boxes (cypy "bubble flat"): ratio ≥ 2.4, at least
+  /// 45% of image width, at most 22% of image height — text sitting directly
+  /// on busy artwork. Such bubbles render a white patch behind the text.
+  PageTranslation _flagFlatBubbles(PageTranslation result) {
+    final imageBytes = _pageBytes;
+    if (imageBytes == null || imageBytes.isEmpty) return result;
+    img.Image? page;
+    try {
+      page = img.decodeImage(imageBytes);
+    } catch (_) {
+      return result;
+    }
+    if (page == null) return result;
+    final w = page.width.toDouble();
+    final h = page.height.toDouble();
+    return result.copyWith(bubbles: [
+      for (final b in result.bubbles)
+        b.copyWith(
+          needsWhitePatch: b.rect.width / b.rect.height >= 2.4 &&
+              b.rect.width >= w * 0.45 &&
+              b.rect.height <= h * 0.22,
+        ),
+    ]);
+  }
+
   void _finish(PageTranslation result, String cacheKey, String contentId,
       int pageIndex, int imageWidth, int imageHeight, String imageUrl) {
+    result = _flagFlatBubbles(result);
     _currentImageWidth = imageWidth;
     _currentImageHeight = imageHeight;
     _currentPageIndex = pageIndex;

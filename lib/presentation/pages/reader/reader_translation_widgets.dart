@@ -201,14 +201,15 @@ class ReaderTranslatedBubble extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary,
-            width: 1.5,
-          ),
-        ),
+        // Bubble flat (teks di atas gambar rumit) → white patch tebal;
+        // bubble normal → tanpa dekorasi, stroke putih teks saja yang
+        // kontras. Tanpa border — kotak outline menimpa gambar balon.
+        decoration: bubble.needsWhitePatch
+            ? BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(4),
+              )
+            : null,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final box = Size(constraints.maxWidth, constraints.maxHeight);
@@ -339,13 +340,7 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
   final maxH = box.height * 0.8;
 
   for (var size = maxSize; size >= minSize; size -= 1) {
-    final style = TextStyle(
-      fontSize: size,
-      color: Colors.black,
-      fontWeight: FontWeight.w600,
-      fontFamily: fontFamily,
-      height: 1.15,
-    );
+    final style = _textStyle(size, fontFamily);
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -353,11 +348,27 @@ TextStyle _fitText(String text, Size box, String fontFamily) {
     )..layout(maxWidth: maxW);
     if (painter.height <= maxH && painter.width <= maxW) return style;
   }
+  return _textStyle(minSize, fontFamily);
+}
+
+/// Hitam dengan outline putih tebal (stroke manga) — 8 arah shadow offset
+/// membentuk outline tajam penuh mengelilingi glyph (bukan halo blur), jadi
+/// teks tetap terbaca di atas gambar rumit tanpa patch putih.
+TextStyle _textStyle(double size, String fontFamily) {
+  final stroke = size * 0.14;
   return TextStyle(
-    fontSize: minSize,
+    fontSize: size,
     color: Colors.black,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,
     height: 1.15,
+    shadows: [
+      for (final o in const [
+        Offset(-1, -1), Offset(0, -1), Offset(1, -1),
+        Offset(-1, 0), Offset(1, 0),
+        Offset(-1, 1), Offset(0, 1), Offset(1, 1),
+      ])
+        Shadow(color: Colors.white, offset: o * stroke, blurRadius: 0),
+    ],
   );
 }

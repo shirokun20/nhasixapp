@@ -62,6 +62,14 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
         final drawMode = cubit.drawMode;
+        // Boxes stay visible while draw mode is active AND while a translate
+        // is running (user sees which bubbles are being processed); they hide
+        // once the translated overlay replaces them.
+        final showBoxes = drawMode ||
+            state is ReaderTranslationDetecting ||
+            state is ReaderTranslationBuildingMosaic ||
+            state is ReaderTranslationTranslating ||
+            state is ReaderTranslationTranslatingBubble;
         final colorScheme = Theme.of(context).colorScheme;
 
         final screenSize = MediaQuery.sizeOf(context);
@@ -96,8 +104,9 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
 
         return Stack(
           children: [
-            // Drag layer — interactive only in draw mode; otherwise just
-            // renders the reference bubbles (locked, non-interactive).
+            // Drag layer — interactive only in draw mode. Reference bubbles
+            // (ONNX blue / manual red) render while [showBoxes]; otherwise
+            // the translated overlay stays clean (no stray boxes over text).
             Positioned.fill(
               child: IgnorePointer(
                 ignoring: !drawMode,
@@ -126,18 +135,20 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                   },
                   child: CustomPaint(
                     painter: _DrawPainter(
-                      dragging: _dragging,
+                      dragging: showBoxes ? _dragging : null,
                       onnxColor: colorScheme.tertiary,
                       manualColor: colorScheme.primary,
-                      onnxRects: _onnxRects,
-                      manualRects: _manualRects = cubit.manualBubbles
-                          .map((b) => Rect.fromLTWH(
-                                b.x * scaleX,
-                                b.y * scaleY + topOffset,
-                                b.w * scaleX,
-                                b.h * scaleY,
-                              ))
-                          .toList(),
+                      onnxRects: showBoxes ? _onnxRects : const [],
+                      manualRects: showBoxes
+                          ? (_manualRects = cubit.manualBubbles
+                              .map((b) => Rect.fromLTWH(
+                                    b.x * scaleX,
+                                    b.y * scaleY + topOffset,
+                                    b.w * scaleX,
+                                    b.h * scaleY,
+                                  ))
+                              .toList())
+                          : const [],
                     ),
                   ),
                 ),
