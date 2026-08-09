@@ -42,6 +42,7 @@ void main() {
         cacheRepository: FakeCacheRepository(),
         mosaicBuilder: FakeMosaicBuilder(),
         fallbackHandler: FallbackImageHandler(),
+        heavyRunner: syncHeavyRunner,
         logger: Logger(level: Level.off),
       );
 

@@ -1,4 +1,3 @@
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -47,6 +46,7 @@ void main() {
       cacheRepository: cache ?? FakeCacheRepository(),
       mosaicBuilder: FakeMosaicBuilder(),
       fallbackHandler: FallbackImageHandler(),
+      heavyRunner: syncHeavyRunner,
       logger: Logger(level: Level.off),
     );
   }
@@ -78,6 +78,36 @@ void main() {
     expect(types, contains(ReaderTranslationBuildingMosaic));
     expect(types, contains(ReaderTranslationTranslating));
     expect(types.last, ReaderTranslationTranslated);
+  });
+
+  test(
+      'manual bubble covering a detected box de-duplicates mosaic input '
+      '(no double-translate of the same text)', () async {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+
+    // Manual correction covers the FIRST detected box (mock detection returns
+    // (10,10,50,30) and (100,100,40,25)). Translate must NOT feed both the
+    // manual copy AND the detected copy of the same text to the AI — that
+    // duplicate chip earlier made the model merge/swap translations.
+    cubit.addManualBubble(Rect.fromLTWH(10, 10, 50, 30));
+
+    await cubit.translatePage(
+      imageBytes: Uint8List.fromList([1, 2, 3]),
+      imageWidth: 200,
+      imageHeight: 200,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.singlePage,
+      imageUrlCount: 1,
+    );
+    await pumpEventQueue();
+
+    expect(cubit.state, isA<ReaderTranslationTranslated>());
+    final translated = cubit.state as ReaderTranslationTranslated;
+    // manual + kept detected (second box) = 2 bubbles, NOT 3.
+    expect(translated.result.bubbles.length, 2);
   });
 
   test('cache hit skips pipeline', () async {
@@ -118,8 +148,7 @@ void main() {
     expect(types.every((t) => t == ReaderTranslationTranslated), true);
   });
 
-  test('continueScroll non-webtoon viewport snapshot runs pipeline',
-      () async {
+  test('continueScroll non-webtoon viewport snapshot runs pipeline', () async {
     // The widget now sends a WYSIWYG viewport snapshot, so continue-scroll is
     // always allowed regardless of aspect ratio or URL count.
     final cubit = makeCubit();
@@ -200,8 +229,7 @@ void main() {
     expect(bubbles[1].needsWhitePatch, false);
   });
 
-  test('continueScroll single-image cropped (square) runs pipeline',
-      () async {
+  test('continueScroll single-image cropped (square) runs pipeline', () async {
     final cubit = makeCubit();
     addTearDown(cubit.close);
     // After viewport crop a webtoon strip becomes normal AR — must still be
@@ -239,8 +267,7 @@ void main() {
     expect(cubit.state, isA<ReaderTranslationNoProvider>());
   });
 
-  test('computeViewportCrop maps scroll offset to image px and clamps',
-      () {
+  test('computeViewportCrop maps scroll offset to image px and clamps', () {
     // 720px-wide strip, 13818 tall; 360px-wide viewport → scale 2.0.
     const full = Size(720, 13818);
     const viewport = Size(360, 800);
@@ -256,8 +283,7 @@ void main() {
     expect(crop.cropH, 1600);
 
     // Bottom: offset beyond image → yTop clamps so crop stays in bounds.
-    crop = computeViewportCrop(
-        offset: 7000, full: full, viewport: viewport)!;
+    crop = computeViewportCrop(offset: 7000, full: full, viewport: viewport)!;
     expect(crop.yTop + crop.cropH, full.height.toInt());
     expect(crop.cropH, 1600);
 
@@ -312,12 +338,12 @@ void main() {
     // Same page + url, different crop y → must NOT hit the same cache entry,
     // else scrolling to a new position shows stale bubbles.
     final at0 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#0');
-    final at4000 = ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#4000');
+    final at4000 =
+        ReaderTranslationCubit.buildCacheKey('c1', 0, 'http://u#4000');
     expect(at0, isNot(at4000));
   });
 
-  test('postProcessBoxes drops text inside balloon, keeps standalone text',
-      () {
+  test('postProcessBoxes drops text inside balloon, keeps standalone text', () {
     final cubit = makeCubit();
     addTearDown(cubit.close);
     // balloon [289,608,421,796]; text [307,641,400,766] fully inside.
@@ -351,7 +377,11 @@ void main() {
               'confidence': 0.9,
               'kind': 'balloon',
               'shape': [
-                [10, 10], [60, 10], [55, 25], [60, 40], [10, 40],
+                [10, 10],
+                [60, 10],
+                [55, 25],
+                [60, 40],
+                [10, 40],
               ],
             },
           ];
@@ -379,8 +409,7 @@ void main() {
 
     final state = cubit.state;
     expect(state, isA<ReaderTranslationTranslated>());
-    final bubbles =
-        (state as ReaderTranslationTranslated).result.bubbles;
+    final bubbles = (state as ReaderTranslationTranslated).result.bubbles;
     expect(bubbles, hasLength(1));
     expect(bubbles.first.shape, isNotNull);
     expect(bubbles.first.shape!.first, [10, 10]);

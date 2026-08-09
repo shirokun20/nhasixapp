@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -5,6 +6,12 @@ import 'package:nhasixapp/data/repositories/ai/ai_provider_factory.dart';
 import 'package:nhasixapp/data/repositories/ai/mosaic_builder.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart';
 import 'package:nhasixapp/domain/repositories/ai_translation_repositories.dart';
+
+/// Runs CPU-bound image prep synchronously on the caller isolate — the test
+/// counterpart of `HeavyRunner` (production uses `Isolate.run`). fake-async
+/// `testWidgets` cannot await real isolate replies, so tests inject this to
+/// avoid hanging while still exercising the full pipeline state machine.
+Future<T> syncHeavyRunner<T>(FutureOr<T> Function() compute) async => compute();
 
 /// In-memory provider repository with Zen built-in semantics.
 class FakeAiProviderRepository implements AiProviderRepository {

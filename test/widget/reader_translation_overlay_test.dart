@@ -47,6 +47,7 @@ void main() {
       cacheRepository: FakeCacheRepository(),
       mosaicBuilder: FakeMosaicBuilder(),
       fallbackHandler: FallbackImageHandler(),
+      heavyRunner: syncHeavyRunner,
       logger: Logger(level: Level.off),
     );
     addTearDown(cubit.close);
@@ -132,6 +133,17 @@ void main() {
     );
     expect(text.style!.fontSize, lessThanOrEqualTo(30));
     expect(text.style!.fontSize, greaterThanOrEqualTo(4));
+
+    // Box-only path also centers the text block (was top-aligned before).
+    final bubble = find.byWidgetPredicate(
+      (w) => w is SizedBox && w.width == 30 && w.height == 20,
+    );
+    final textCenter = tester.getCenter(
+      find.descendant(of: bubble, matching: find.byType(Text)),
+    );
+    final bubbleCenter = tester.getCenter(bubble);
+    expect((textCenter.dx - bubbleCenter.dx).abs(), lessThan(2.0));
+    expect((textCenter.dy - bubbleCenter.dy).abs(), lessThan(2.0));
   });
 
   testWidgets(
@@ -183,6 +195,19 @@ void main() {
     )..layout(maxWidth: insW);
     expect(painter.width, lessThanOrEqualTo(insW));
     expect(painter.height, lessThanOrEqualTo(insH));
+
+    // Regression: the fitted text block is CENTERED inside the bubble — the
+    // old top-aligned layout stranded lines against the oval's top edge with
+    // all the empty space below.
+    final bubble = find.byWidgetPredicate(
+      (w) => w is SizedBox && w.width == 60 && w.height == 40,
+    );
+    final textCenter = tester.getCenter(
+      find.descendant(of: bubble, matching: find.byType(Text)),
+    );
+    final bubbleCenter = tester.getCenter(bubble);
+    expect((textCenter.dx - bubbleCenter.dx).abs(), lessThan(2.0));
+    expect((textCenter.dy - bubbleCenter.dy).abs(), lessThan(2.0));
   });
 }
 

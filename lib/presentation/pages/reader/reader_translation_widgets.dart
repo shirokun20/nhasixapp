@@ -7,6 +7,7 @@ import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
+import '../../../core/utils/polygon_geometry.dart';
 import '../../../domain/entities/ai_translation.dart';
 
 /// Toolbar button group for AI translation: ✨ translate, then overlay toggle.
@@ -264,11 +265,17 @@ class ReaderTranslatedBubble extends StatelessWidget {
             : Size(constraints.maxWidth, constraints.maxHeight);
         return Padding(
           padding: const EdgeInsets.all(3),
-          child: Text(
-            bubble.translated,
-            textAlign: TextAlign.center,
-            style: _fitText(bubble.translated, box, _fontFamily,
-                hasShape: hasShape),
+          // Center the whole text block INSIDE the bubble, not just per-line.
+          // Without this the Text fills its tight Stack bounds and is painted
+          // from the top edge, stranding the (now smaller) fitted text at the
+          // top with the rest of the oval/frame empty below.
+          child: Center(
+            child: Text(
+              bubble.translated,
+              textAlign: TextAlign.center,
+              style: _fitText(bubble.translated, box, _fontFamily,
+                  hasShape: hasShape),
+            ),
           ),
         );
       },
@@ -467,10 +474,17 @@ class _BubbleShapePainter extends CustomPainter {
     return path;
   }
 
+  /// Bubble polygon path: smooth bezier ONLY for oval/jagged bubbles.
+  /// Rect-like shapes (frames, narration boxes, square balloons) keep their
+  /// straight edges and sharp corners — smoothing them turns them into ovals.
+  static Path _shapePath(List<Offset> pts) => isRectLikePolygon(pts)
+      ? (Path()..addPolygon(pts, true))
+      : _smoothPath(pts);
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = points.length >= 3
-        ? _smoothPath(points)
+        ? _shapePath(points)
         : (Path()..addPolygon(points, true));
     canvas.drawPath(
       path,
@@ -501,7 +515,7 @@ class _PolygonClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) =>
-      points.length >= 3 ? _BubbleShapePainter._smoothPath(points) : Path();
+      points.length >= 3 ? _BubbleShapePainter._shapePath(points) : Path();
 
   @override
   bool shouldReclip(covariant _PolygonClipper old) => old.points != points;

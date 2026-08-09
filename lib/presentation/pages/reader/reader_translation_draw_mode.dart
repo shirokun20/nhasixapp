@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
+import '../../../core/utils/polygon_geometry.dart';
+
 /// Manual bubble drawing mode (spec 9.5): pan-drag → red rectangle.
 /// ONNX-detected bubbles shown in BLUE as reference; manual bubbles in RED.
 /// Controls: Undo / Clear / Done.
@@ -385,8 +387,13 @@ class _DrawPainter extends CustomPainter {
               ? _textColor
               : _balloonColor;
       if (e.poly != null && e.poly!.length >= 3) {
+        // Rect-like shapes (frames/narration boxes) keep sharp corners —
+        // smoothing them would render square frames as ovals.
+        final path = isRectLikePolygon(e.poly!)
+            ? (Path()..addPolygon(e.poly!, true))
+            : _smoothPath(e.poly!);
         canvas.drawPath(
-          _smoothPath(e.poly!),
+          path,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.0

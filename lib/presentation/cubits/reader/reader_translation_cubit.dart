@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -18,6 +19,13 @@ import '../base/base_cubit.dart';
 
 part 'reader_translation_state.dart';
 
+/// Executes a CPU-bound computation off the UI isolate (mosaic crop/encode,
+/// full-page compress, webtoon chunking). Production default: [Isolate.run].
+/// Tests inject a synchronous runner because fake-async `testWidgets` cannot
+/// await real isolate replies (they are delivered via real ports, not the
+/// fake event queue).
+typedef HeavyRunner = Future<T> Function<T>(FutureOr<T> Function() computation);
+
 /// Orchestrates the AI translation pipeline for the active reader page:
 /// webtoon detection → ONNX bubble detection → mosaic/fallback → provider →
 /// cache → translated state.
@@ -31,6 +39,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     required TranslationCacheRepository cacheRepository,
     required MosaicBuilder mosaicBuilder,
     required FallbackImageHandler fallbackHandler,
+    HeavyRunner? heavyRunner,
     required super.logger,
   })  : _providerRepository = providerRepository,
         _providerFactory = providerFactory,
@@ -38,6 +47,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         _cacheRepository = cacheRepository,
         _mosaicBuilder = mosaicBuilder,
         _fallbackHandler = fallbackHandler,
+        _heavyRunner = heavyRunner ?? Isolate.run,
         super(initialState: const ReaderTranslationIdle());
 
   final AiProviderRepository _providerRepository;
@@ -46,6 +56,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   final TranslationCacheRepository _cacheRepository;
   final MosaicBuilder _mosaicBuilder;
   final FallbackImageHandler _fallbackHandler;
+  final HeavyRunner _heavyRunner;
 
   PageTranslation? _currentResult;
   bool _overlayVisible = false;
@@ -432,10 +443,14 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     }
 
     try {
-      // 1. Webtoon strip → chunk via ImageSplitter (1280px)
+      // 1. Webtoon strip → chunk via ImageSplitter (1280px). Decoding + crop
+      // + encode per chunk is CPU-bound, so run it in a background isolate —
+      // otherwise the Detecting spinner cannot render until chunking finishes.
       if (WebtoonDetector.isWebtoon(
           Size(imageWidth.toDouble(), imageHeight.toDouble()))) {
-        final chunks = _splitWebtoon(imageBytes, imageWidth, imageHeight);
+        final chunks = await _heavyRunner(
+          () => _splitWebtoonIsolate(imageBytes, imageWidth, imageHeight),
+        );
         final allBoxes = <BubbleBox>[];
         var offsetY = 0;
         for (final chunk in chunks) {
@@ -455,11 +470,18 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
           offsetY += chunk.height;
         }
         _detectedBoxes = postProcessBoxes(allBoxes);
+        logInfo(
+            'translatePage webtoon: rawBoxes=${allBoxes.length} → postProcess=${_detectedBoxes.length}');
+        // Use POST-PROCESSED boxes (same as draw mode), NOT the raw detections:
+        // raw output carries duplicate/oversized boxes that became duplicate
+        // mosaic chips — the model then merged the duplicate-text chips into
+        // one bubble ("translation digabung").
+        final boxes = _translationBoxes();
         final result = await _translateWithBubbles(
           imageBytes: imageBytes,
           imageWidth: imageWidth,
           imageHeight: imageHeight,
-          boxes: allBoxes,
+          boxes: boxes,
           targetLang: targetLang,
           style: style,
           providers: providers,
@@ -476,10 +498,22 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       //    re-detecting here would resurrect bubbles the user unchecked.
       if (_detectedBoxes.isEmpty) {
         emit(const ReaderTranslationDetecting());
-        _detectedBoxes = postProcessBoxes(
-            await _detect(imageBytes, imageWidth, imageHeight));
+        final rawBoxes = await _detect(imageBytes, imageWidth, imageHeight);
+        _detectedBoxes = postProcessBoxes(rawBoxes);
+        logInfo(
+            'translatePage: detect ${rawBoxes.length} → ${_detectedBoxes.length} boxes');
+        for (final b in _detectedBoxes) {
+          logInfo(
+              '  box kind=${b.kind} conf=${b.confidence.toStringAsFixed(2)} ${b.x},${b.y},${b.w}x${b.h} shape=${b.shape?.length}');
+        }
       }
-      var boxes = [..._manualBubbles, ..._detectedBoxes];
+      // Manual bubbles are the user's authoritative correction: drop any
+      // detected box a manual bubble covers, so the same text is NOT sent to
+      // the AI twice. Previously the duplicate chip confused the model into
+      // merging/swapping the per-bubble translations.
+      final boxes = _translationBoxes();
+      logInfo(
+          'translatePage: mosaic input=${boxes.length} box (manual=${_manualBubbles.length}, detected=${_detectedBoxes.length})');
 
       // 3. Mosaic (≥1 bubble) or full-image fallback (0 bubbles)
       final result = await _translateWithBubbles(
@@ -491,6 +525,12 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         style: style,
         providers: providers,
       );
+      // Diagnostic: AI merging/skipping chips (or fallback full-image when
+      // boxes is empty) is the usual cause of "translations look merged".
+      if (boxes.isNotEmpty && result.bubbles.length != boxes.length) {
+        logWarning(
+            'translatePage: AI mengembalikan ${result.bubbles.length}/${boxes.length} bubble — ada chip di-SKIP atau digabung oleh model');
+      }
       _finish(result, cacheKey, contentId, pageIndex, imageWidth, imageHeight,
           imageUrl);
     } on AiTranslationException catch (e) {
@@ -552,8 +592,15 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       try {
         final PageTranslation result;
         if (boxes.isEmpty) {
+          logWarning(
+              'translatePage: FALLBACK full-image (0 bubble) — posisi ditentukan model, bukan bubble detector');
           emit(const ReaderTranslationBuildingMosaic());
-          final compressed = _fallbackHandler.compressPage(imageBytes);
+          final fallback = _fallbackHandler;
+          final pageBytes = imageBytes;
+          // Full-page compress (decode + resize + JPEG85) is CPU-bound — run
+          // on a background isolate so the loading frame renders immediately.
+          final compressed =
+              await _heavyRunner(() => fallback.compressPage(pageBytes));
           result = await impl.translatePage(
             image: compressed,
             imageWidth: imageWidth,
@@ -565,14 +612,21 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
           );
         } else {
           emit(const ReaderTranslationBuildingMosaic());
-          final mosaic = _mosaicBuilder.buildMosaic(
-              imageBytes, boxes.map(_toLike).toList());
+          // Mosaic build (decode page, crop each bubble, 2× scale, composite,
+          // JPEG85 + downscale loop) is CPU-bound — run on a background
+          // isolate so the spinner appears right away instead of after the
+          // bubble cuts finish. Only sendable locals are captured.
+          final mosaicBuilder = _mosaicBuilder;
+          final pageBytes = imageBytes;
+          final likeBoxes = boxes.map(_toLike).toList();
+          final mosaic = await _heavyRunner(
+              () => mosaicBuilder.buildMosaic(pageBytes, likeBoxes));
           emit(ReaderTranslationTranslating(total: boxes.length));
           result = await impl.translatePage(
             image: mosaic,
             imageWidth: imageWidth,
             imageHeight: imageHeight,
-            bubbles: boxes.map(_toLike).toList(),
+            bubbles: likeBoxes,
             targetLang: targetLang,
             style: style,
             skipSfx: skipSfx,
@@ -710,20 +764,34 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   BubbleBoxLike _toLike(BubbleBox b) => BubbleBoxLike(b.x, b.y, b.w, b.h);
 
-  /// Webtoon: slice into ≤1280px chunks.
-  List<_ImageChunk> _splitWebtoon(Uint8List bytes, int width, int height) {
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      return [_ImageChunk(bytes, width, height)];
+  /// Mosaic input boxes: manual bubbles (user-corrected) first, then detected
+  /// boxes NOT already covered by a manual bubble. Prevents the same text from
+  /// being cropped into two mosaic chips (manual + detected duplicates of one
+  /// region), which made the model merge/swap per-bubble translations.
+  List<BubbleBox> _translationBoxes() {
+    final manual = List<BubbleBox>.from(_manualBubbles);
+    final detected = List<BubbleBox>.from(_detectedBoxes);
+    if (manual.isEmpty || detected.isEmpty) {
+      return [...manual, ...detected];
     }
-    const maxHeight = 1280;
-    final chunks = <_ImageChunk>[];
-    for (var y = 0; y < height; y += maxHeight) {
-      final h = (height - y).clamp(0, maxHeight);
-      final crop = img.copyCrop(decoded, x: 0, y: y, width: width, height: h);
-      chunks.add(_ImageChunk(img.encodeJpg(crop, quality: 90), width, h));
+    final kept = <BubbleBox>[];
+    for (final d in detected) {
+      final dRect = Rect.fromLTWH(
+          d.x.toDouble(), d.y.toDouble(), d.w.toDouble(), d.h.toDouble());
+      final coveredByManual = manual.any((m) {
+        final mRect = Rect.fromLTWH(
+            m.x.toDouble(), m.y.toDouble(), m.w.toDouble(), m.h.toDouble());
+        final inter = dRect.intersect(mRect);
+        final interArea = inter.isEmpty ? 0.0 : inter.width * inter.height;
+        final dArea = dRect.width * dRect.height;
+        final mArea = mRect.width * mRect.height;
+        if (dArea <= 0 || mArea <= 0) return false;
+        final smaller = dArea < mArea ? dArea : mArea;
+        return interArea / smaller >= 0.6;
+      });
+      if (!coveredByManual) kept.add(d);
     }
-    return chunks;
+    return [...manual, ...kept];
   }
 }
 
@@ -733,4 +801,22 @@ class _ImageChunk {
   final Uint8List bytes;
   final int width;
   final int height;
+}
+
+/// Webtoon: slice into ≤1280px chunks. Runs inside a background isolate from
+/// [ReaderTranslationCubit.translatePage] — decode + per-chunk crop/encode is
+/// CPU-bound and would otherwise jank the UI and delay the loading state.
+List<_ImageChunk> _splitWebtoonIsolate(Uint8List bytes, int width, int height) {
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) {
+    return [_ImageChunk(bytes, width, height)];
+  }
+  const maxHeight = 1280;
+  final chunks = <_ImageChunk>[];
+  for (var y = 0; y < height; y += maxHeight) {
+    final h = (height - y).clamp(0, maxHeight);
+    final crop = img.copyCrop(decoded, x: 0, y: y, width: width, height: h);
+    chunks.add(_ImageChunk(img.encodeJpg(crop, quality: 90), width, h));
+  }
+  return chunks;
 }
