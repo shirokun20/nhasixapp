@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,7 +88,11 @@ void main() {
               width: 60,
               height: 40,
               child: _TranslatedBubbleForTest(shape: [
-                [0, 0], [60, 0], [55, 20], [60, 40], [0, 40],
+                [0, 0],
+                [60, 0],
+                [55, 20],
+                [60, 40],
+                [0, 40],
               ]),
             ),
           ),
@@ -130,27 +133,99 @@ void main() {
     expect(text.style!.fontSize, lessThanOrEqualTo(30));
     expect(text.style!.fontSize, greaterThanOrEqualTo(4));
   });
+
+  testWidgets(
+      'shape bubble sizes text against the inscribed rect and clips to oval',
+      (tester) async {
+    // Diamond polygon inside a 60×40 box: the oval corners cut deep inside
+    // the bounds, so the effective box is only ~48×32. The fitted font must
+    // be validated against that inscribed area, never the full bounds.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 60,
+              height: 40,
+              child: _TranslatedBubbleForTest(
+                text: 'Halo',
+                shape: [
+                  [30, 0],
+                  [60, 20],
+                  [30, 40],
+                  [0, 20],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Safety net: the text layer is clipped to the bubble polygon.
+    expect(find.byType(ClipPath), findsOneWidget);
+
+    final text = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(SizedBox),
+        matching: find.byType(Text),
+      ),
+    );
+    // Re-measure with the same painter setup `_fitText` uses: the chosen
+    // style must fit the 48×32 inscribed box at 0.8 (width) / 0.85 (height).
+    const insW = 48.0 * 0.8;
+    const insH = 32.0 * 0.85;
+    final painter = TextPainter(
+      text: TextSpan(text: text.data, style: text.style),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout(maxWidth: insW);
+    expect(painter.width, lessThanOrEqualTo(insW));
+    expect(painter.height, lessThanOrEqualTo(insH));
+  });
 }
 
 /// Minimal bubble with a long translated string, for font-fit assertions.
 class _TranslatedBubbleForTest extends StatelessWidget {
-  const _TranslatedBubbleForTest({this.shape});
+  const _TranslatedBubbleForTest({
+    this.shape,
+    this.text = 'This is a very long translated sentence that must fit',
+  });
 
   final List<List<int>>? shape;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
+    final shapeLocal =
+        shape?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList();
     return ReaderTranslatedBubble(
       bubble: BubbleTranslation(
         rect: Rect.fromLTWH(0, 0, 30, 20),
         original: '長い日本語のセリフがこの狭い吹き出しに収まるか確認するためのテストです',
-        translated: 'This is a very long translated sentence that must fit',
+        translated: text,
         shape: shape,
       ),
       index: 0,
-      shapeLocal: shape?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList(),
+      shapeLocal: shapeLocal,
+      // Mirrors the production `_inscribedBox` (bounding rect × 0.8), so the
+      // test exercises the same effective-fit path the overlay uses.
+      effectiveBox: (shapeLocal != null && shapeLocal.length >= 3)
+          ? _inscribedForTest(shapeLocal)
+          : null,
     );
   }
+}
+
+/// Test mirror of `_inscribedBox` in reader_translation_widgets.dart.
+Rect _inscribedForTest(List<Offset> points) {
+  var b = Rect.fromPoints(points.first, points.first);
+  for (final p in points.skip(1)) {
+    b = b.expandToInclude(Rect.fromPoints(p, p));
+  }
+  return Rect.fromLTRB(b.left + b.width * 0.1, b.top + b.height * 0.1,
+      b.right - b.width * 0.1, b.bottom - b.height * 0.1);
 }
 
 /// Mosaic builder that returns minimal bytes (test image decoding not needed

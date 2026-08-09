@@ -186,6 +186,11 @@ Widget _positionedBubble(
       rect = rect.inflate(inflate);
     }
   }
+  // The polygon's bounding rect reaches into corners that sit OUTSIDE the
+  // oval curve. Fit text against the ~0.8× inscribed rect so wrapped lines
+  // stay inside the visible bubble instead of overflowing past its outline.
+  final effectiveBox =
+      shape != null && shape.length >= 3 ? _inscribedBox(shape) : null;
   return Positioned(
     left: rect.left,
     top: rect.top,
@@ -195,8 +200,25 @@ Widget _positionedBubble(
       bubble: bubble,
       index: index,
       shapeLocal: shape,
+      effectiveBox: effectiveBox,
     ),
   );
+}
+
+/// Smallest axis-aligned rect tightly around every polygon point, then shrunk
+/// to its ~0.8× inscribed area (~10% per side). This is a pragmatic stand-in
+/// for the exact ellipse inscribed rect: roomy enough to keep readable font
+/// sizes while staying clear of the oval's corners — where text is most prone
+/// to overflow.
+Rect _inscribedBox(List<Offset> points) {
+  var b = Rect.fromPoints(points.first, points.first);
+  for (final p in points.skip(1)) {
+    b = b.expandToInclude(Rect.fromPoints(p, p));
+  }
+  final shrinkW = b.width * 0.1;
+  final shrinkH = b.height * 0.1;
+  return Rect.fromLTRB(
+      b.left + shrinkW, b.top + shrinkH, b.right - shrinkW, b.bottom - shrinkH);
 }
 
 class ReaderTranslatedBubble extends StatelessWidget {
@@ -205,6 +227,7 @@ class ReaderTranslatedBubble extends StatelessWidget {
     required this.bubble,
     required this.index,
     this.shapeLocal,
+    this.effectiveBox,
   });
 
   final BubbleTranslation bubble;
@@ -214,6 +237,13 @@ class ReaderTranslatedBubble extends StatelessWidget {
   /// Null → box-only fallback (rounded-rect).
   final List<Offset>? shapeLocal;
 
+  /// Inscribed rect of [shapeLocal] (screen coords relative to the bubble
+  /// rect's top-left) — the polygon bounding rect shrunk ~0.8× (`_inscribedBox`).
+  /// Text is fit against this instead of the full `Positioned` bounds so
+  /// wrapped lines stay inside the oval outline. Only honored when
+  /// [shapeLocal] is a valid polygon.
+  final Rect? effectiveBox;
+
   /// Manga font pick: Komika Axis (Latin) vs KosugiMaru (CJK/Korean/Unicode).
   static final _cjk = RegExp(r'[぀-ゟ゠-ヿ一-鿿가-힯]');
   String get _fontFamily =>
@@ -222,19 +252,33 @@ class ReaderTranslatedBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shape = shapeLocal;
+    final polygon = (shape != null && shape.length >= 3) ? shape : null;
+    final hasShape = polygon != null;
     final Widget text = LayoutBuilder(
       builder: (context, constraints) {
-        final box = Size(constraints.maxWidth, constraints.maxHeight);
+        // Shape bubbles: fit against the polygon's inscribed rect (~0.8× of
+        // the bounds) so text stays inside the oval curve. Box-only bubbles
+        // use the full Positioned bounds.
+        final box = hasShape && effectiveBox != null
+            ? Size(effectiveBox!.width, effectiveBox!.height)
+            : Size(constraints.maxWidth, constraints.maxHeight);
         return Padding(
           padding: const EdgeInsets.all(3),
           child: Text(
             bubble.translated,
             textAlign: TextAlign.center,
-            style: _fitText(bubble.translated, box, _fontFamily),
+            style: _fitText(bubble.translated, box, _fontFamily,
+                hasShape: hasShape),
           ),
         );
       },
     );
+    // Safety net: clip the text layer to the bubble outline (same smooth path
+    // as the painted shape) so any residual overflow after font-fit is cut at
+    // the polygon instead of painting past the oval curve.
+    final textLayer = hasShape
+        ? ClipPath(clipper: _PolygonClipper(polygon), child: text)
+        : text;
 
     return GestureDetector(
       onTap: () => _showEditSheet(context),
@@ -242,9 +286,9 @@ class ReaderTranslatedBubble extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (shape != null && shape.length >= 3)
+          if (hasShape)
             // Shape-following: white fill + subtle outline under the text.
-            CustomPaint(painter: _BubbleShapePainter(shape))
+            CustomPaint(painter: _BubbleShapePainter(polygon))
           else
             // Box fallback: flat bubble → white patch; else transparent.
             bubble.needsWhitePatch
@@ -255,7 +299,7 @@ class ReaderTranslatedBubble extends StatelessWidget {
                     ),
                   )
                 : const SizedBox.shrink(),
-          text,
+          textLayer,
         ],
       ),
     );
@@ -367,14 +411,21 @@ class ReaderTranslatedBubble extends StatelessWidget {
 /// Font-fit: largest size (descending) whose wrapped text fits the bubble.
 /// Mirrors cypy `tulis_teks_di_balon` — score `size*10 + fillRatio`; pick
 /// first size that fits (descending order makes it the max).
-TextStyle _fitText(String text, Size box, String fontFamily) {
+///
+/// [hasShape] — for shape-following bubbles, [box] is the polygon's inscribed
+/// rect (see [_inscribedBox]) instead of the full bounding rect, so the
+/// fitted text stays inside the curved outline.
+TextStyle _fitText(String text, Size box, String fontFamily,
+    {bool hasShape = false}) {
   // Base range [8,50], scaled down proportionally for small bubbles so the
   // text shrinks instead of overflowing. Bounded ≤ ~40 layout iterations.
   final shortSide = box.shortestSide < 40.0 ? box.shortestSide / 40.0 : 1.0;
   final maxSize = (42.0 * shortSide).clamp(6.0, 42.0);
   final minSize = (7.0 * shortSide).clamp(4.0, 7.0);
   final maxW = box.width * 0.8;
-  final maxH = box.height * 0.9;
+  // Oval bubbles taper near the top/bottom: when the box already is the
+  // polygon inscribed rect, shave a little extra height for the curved edge.
+  final maxH = box.height * (hasShape ? 0.85 : 0.9);
 
   for (var size = maxSize; size >= minSize; size -= 1) {
     final style = _textStyle(size, fontFamily);
@@ -438,6 +489,22 @@ class _BubbleShapePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BubbleShapePainter old) => old.points != points;
+}
+
+/// Safety net: clips the text layer to the bubble polygon. Mirrors the painted
+/// shape via the same smooth bezier path so residual overflow after font-fit
+/// is cut at the outline instead of painting outside the oval.
+class _PolygonClipper extends CustomClipper<Path> {
+  _PolygonClipper(this.points);
+
+  final List<Offset> points;
+
+  @override
+  Path getClip(Size size) =>
+      points.length >= 3 ? _BubbleShapePainter._smoothPath(points) : Path();
+
+  @override
+  bool shouldReclip(covariant _PolygonClipper old) => old.points != points;
 }
 
 /// Hitam dengan outline putih tebal (stroke manga) — 8 arah shadow offset
