@@ -171,6 +171,11 @@ class _TranslatedBubble extends StatelessWidget {
   final BubbleTranslation bubble;
   final int index;
 
+  /// Manga font pick: Komika Axis (Latin) vs KosugiMaru (CJK/Korean/Unicode).
+  static final _cjk = RegExp(r'[぀-ゟ゠-ヿ一-鿿가-힯]');
+  String get _fontFamily =>
+      _cjk.hasMatch(bubble.translated) ? 'KosugiMaru' : 'Komika';
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -178,7 +183,7 @@ class _TranslatedBubble extends StatelessWidget {
       onLongPress: () => _showSaveToGlossarySheet(context),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(4),
@@ -187,14 +192,15 @@ class _TranslatedBubble extends StatelessWidget {
             width: 1.5,
           ),
         ),
-        child: Text(
-          bubble.translated,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: (bubble.rect.height * 0.18).clamp(8.0, 18.0),
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final box = Size(constraints.maxWidth, constraints.maxHeight);
+            return Text(
+              bubble.translated,
+              textAlign: TextAlign.center,
+              style: _fitText(bubble.translated, box, _fontFamily),
+            );
+          },
         ),
       ),
     );
@@ -301,4 +307,37 @@ class _TranslatedBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Font-fit: largest size (descending) whose wrapped text fits the bubble.
+/// Mirrors cypy `tulis_teks_di_balon` — score `size*10 + fillRatio`; pick
+/// first size that fits (descending order makes it the max).
+TextStyle _fitText(String text, Size box, String fontFamily) {
+  const minSize = 8.0;
+  const maxSize = 50.0;
+  final maxW = box.width * 0.9;
+  final maxH = box.height * 0.9;
+
+  for (var size = maxSize; size >= minSize; size -= 1) {
+    final style = TextStyle(
+      fontSize: size,
+      color: Colors.black,
+      fontWeight: FontWeight.w600,
+      fontFamily: fontFamily,
+      height: 1.15,
+    );
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout(maxWidth: maxW);
+    if (painter.height <= maxH && painter.width <= maxW) return style;
+  }
+  return TextStyle(
+    fontSize: minSize,
+    color: Colors.black,
+    fontWeight: FontWeight.w600,
+    fontFamily: fontFamily,
+    height: 1.15,
+  );
 }

@@ -130,6 +130,14 @@ flutter:
     - assets/configs/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
+  fonts:
+    - family: Komika
+      fonts:
+        - asset: assets/fonts/Komika Axis.ttf
+    - family: KosugiMaru
+      fonts:
+        - asset: assets/fonts/KosugiMaru.ttf
+
 # Flutter Launcher Icons Configuration
 flutter_launcher_icons:
   android: true
