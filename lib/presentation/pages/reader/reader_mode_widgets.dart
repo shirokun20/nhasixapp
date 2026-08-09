@@ -588,6 +588,18 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     );
   }
 
+  /// Lets the user know the on-screen viewport is being captured (continue
+  /// scroll snapshots the visible region before translate/detect).
+  void _showCapturingSnackbar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.aiCapturingViewport),
+        duration: const Duration(seconds: 1),
+      ));
+  }
+
   /// Fetches the active page image bytes and triggers the AI pipeline.
   Future<void> _onTranslatePressed() async {
     final state = widget.state;
@@ -608,6 +620,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       if (ok != true || !mounted) return;
       await prefsRepo.setPrivacyAcknowledged();
     }
+
+    final isCs = state.readingMode == ReadingMode.continuousScroll;
+    if (isCs) _showCapturingSnackbar();
 
     final page = await _fetchAndCapturePage(
       url: urls[pageIndex],
@@ -661,6 +676,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     if (pageIndex < 0 || pageIndex >= urls.length) return;
     // Cache the page so the draw-mode 🛰 Detect button can run ONNX without
     // a prior translate. Detection itself is explicit (button), like example.
+    if (state.readingMode == ReadingMode.continuousScroll) {
+      _showCapturingSnackbar();
+    }
     await _fetchAndCapturePage(
       url: urls[pageIndex],
       pageIndex: pageIndex,
@@ -740,17 +758,20 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         widget.logger.w('AI translate: viewport capture gagal');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(AppLocalizations.of(context)!.aiGagalFetch)));
+              content:
+                  Text(AppLocalizations.of(context)!.aiGagalCapture)));
         }
         return null;
       }
       if (!mounted) return null;
-      final snapshotImg = img.decodeImage(captured.bytes);
-      if (snapshotImg == null) {
+      // Re-encode the PNG snapshot as JPG on a background isolate — decode +
+      // encode are CPU-bound and would otherwise jank the UI (draw-mode entry
+      // and translate both go through here).
+      final bytesOut = await Isolate.run(() => _encodeViewportJpg(captured.bytes));
+      if (bytesOut == null) {
         widget.logger.w('AI translate: snapshot decode gagal');
         return null;
       }
-      final bytesOut = img.encodeJpg(snapshotImg, quality: 90);
       final sizeOut = Size(
         captured.width.toDouble(),
         captured.height.toDouble(),
@@ -762,6 +783,14 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         imageWidth: sizeOut.width.round(),
         imageHeight: sizeOut.height.round(),
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!.aiCapturedViewport),
+            duration: const Duration(seconds: 1),
+          ));
+      }
       return (bytes: bytesOut, size: sizeOut, cropYTop: resolvedOffset.round());
     }
 
@@ -901,4 +930,13 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     acc += h;
   }
   return (page: itemHeights.length - 1, offsetInItem: itemHeights.last);
+}
+
+/// Background-isolate re-encode of a PNG viewport snapshot → JPG. Keeps the
+/// CPU-bound decode/encode off the UI isolate (draw-mode entry + translate
+/// both capture a viewport).
+Uint8List? _encodeViewportJpg(Uint8List pngBytes) {
+  final decoded = img.decodeImage(pngBytes);
+  if (decoded == null) return null;
+  return img.encodeJpg(decoded, quality: 90);
 }

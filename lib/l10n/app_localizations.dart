@@ -9621,8 +9621,26 @@ abstract class AppLocalizations {
   /// No description provided for @aiGagalFetch.
   ///
   /// In en, this message translates to:
-  /// **'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.'**
+  /// **'Failed to load the page image. Try again or check your connection.'**
   String get aiGagalFetch;
+
+  /// No description provided for @aiCapturingViewport.
+  ///
+  /// In en, this message translates to:
+  /// **'Capturing the screen... please wait.'**
+  String get aiCapturingViewport;
+
+  /// No description provided for @aiGagalCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to capture the screen. Try again.'**
+  String get aiGagalCapture;
+
+  /// No description provided for @aiCapturedViewport.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen captured.'**
+  String get aiCapturedViewport;
 
   /// No description provided for @aiSettings.
   ///

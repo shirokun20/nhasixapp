@@ -5475,6 +5475,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiGagalFetch => '获取页面图片失败。请重试或检查网络。';
 
   @override
+  String get aiCapturingViewport => '正在截取屏幕...请稍候。';
+
+  @override
+  String get aiGagalCapture => '截取屏幕失败。请重试。';
+
+  @override
+  String get aiCapturedViewport => '屏幕截取成功。';
+
+  @override
   String get aiSettings => 'AI 设置';
 
   @override

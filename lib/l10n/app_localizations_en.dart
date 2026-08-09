@@ -5625,7 +5625,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiGagalFetch =>
-      'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.';
+      'Failed to load the page image. Try again or check your connection.';
+
+  @override
+  String get aiCapturingViewport => 'Capturing the screen... please wait.';
+
+  @override
+  String get aiGagalCapture => 'Failed to capture the screen. Try again.';
+
+  @override
+  String get aiCapturedViewport => 'Screen captured.';
 
   @override
   String get aiSettings => 'AI Settings';

@@ -5655,6 +5655,15 @@ class AppLocalizationsId extends AppLocalizations {
       'Gagal mengambil gambar halaman. Coba lagi atau cek koneksi.';
 
   @override
+  String get aiCapturingViewport => 'Mengambil gambar layar... mohon tunggu.';
+
+  @override
+  String get aiGagalCapture => 'Gagal mengambil gambar layar. Coba lagi.';
+
+  @override
+  String get aiCapturedViewport => 'Gambar layar berhasil diambil.';
+
+  @override
   String get aiSettings => 'AI Settings';
 
   @override
