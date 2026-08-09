@@ -37,6 +37,8 @@ class BubbleDetector(context: Context) : Closeable {
 
     // Thresholds / pipeline constants (mirror seg_fixed.py)
     private val confThreshold = 0.25f
+    // Narration/thought boxes (cls 1) often score 0.15–0.24; balloon (cls 2) stays strict.
+    private val confThresholdText = 0.15f
     private val maskThreshold = 0.5f
     private val polyEpsilonFrac = 0.015f   // approxPolyDP: fraction of arc length
     private val renderPad = 8              // outward expand polygon (orig px)
@@ -117,8 +119,8 @@ class BubbleDetector(context: Context) : Closeable {
                 val conf = detBuf.get(base + 4)
                 val clsId = detBuf.get(base + 5).toInt()
 
-                if (conf < confThreshold) continue
-                if (clsId == 0) continue            // frame (panel border) — skip
+                val minConf = if (clsId == 1) confThresholdText else confThreshold
+                if (conf < minConf) continue
                 if (x2 - x1 < minBoxDim || y2 - y1 < minBoxDim) continue
 
                 val coeff = FloatArray(32) { c -> detBuf.get(base + 6 + c) }
