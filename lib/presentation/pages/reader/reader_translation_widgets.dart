@@ -426,10 +426,12 @@ class ReaderTranslatedBubble extends StatelessWidget {
 /// fitted text stays inside the curved outline.
 TextStyle _fitText(String text, Size box, String fontFamily,
     {bool hasShape = false}) {
-  // Base range [8,50], scaled down proportionally for small bubbles so the
-  // text shrinks instead of overflowing. Bounded ≤ ~40 layout iterations.
+  // Base range [6,32], scaled down proportionally for small bubbles so the
+  // text shrinks instead of overflowing. Hard cap: a giant bubble must not
+  // balloon the font — manga text stays modest even on page-wide balloons.
+  // Bounded ≤ ~30 layout iterations.
   final shortSide = box.shortestSide < 40.0 ? box.shortestSide / 40.0 : 1.0;
-  final maxSize = (42.0 * shortSide).clamp(6.0, 42.0);
+  final maxSize = (32.0 * shortSide).clamp(6.0, 32.0);
   final minSize = (7.0 * shortSide).clamp(4.0, 7.0);
   final maxW = box.width * (hasShape ? 0.98 : 0.8);
   // The inscribed rect already provides the ~0.8× safety margin; with ClipPath
@@ -449,8 +451,9 @@ TextStyle _fitText(String text, Size box, String fontFamily,
   return _textStyle(minSize, fontFamily);
 }
 
-/// Draws the bubble polygon (white fill + thin outline) beneath translated
-/// text, following the detected bubble shape instead of a rounded rect.
+/// Draws the bubble polygon (feathered white fill) beneath translated text,
+/// following the detected bubble shape instead of a rounded rect. The edge
+/// has NO border line — a blurred white halo fades the bubble into the page.
 class _BubbleShapePainter extends CustomPainter {
   _BubbleShapePainter(this.points);
 
@@ -489,19 +492,53 @@ class _BubbleShapePainter extends CustomPainter {
     final path = points.length >= 3
         ? _shapePath(points)
         : (Path()..addPolygon(points, true));
+    // Soft halo: blurred white border zone — replaces the old hard 1.5px
+    // black stroke. Renders the edge as a gentle fade into the page.
     canvas.drawPath(
       path,
       Paint()
         ..style = PaintingStyle.fill
+        ..color = Colors.white.withValues(alpha: 0.55)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6),
+    );
+    // Solid core: the same shape shrunk ~20% toward its centroid (per-vertex
+    // lerp), so the feather band only covers the outer ring — before the text
+    // area — leaving the interior fully opaque white for text contrast.
+    canvas.drawPath(
+      _deflate(path, 0.8),
+      Paint()
+        ..style = PaintingStyle.fill
         ..color = Colors.white.withValues(alpha: 0.92),
     );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..color = Colors.black.withValues(alpha: 0.65),
-    );
+  }
+
+  /// Shrinks [path] toward its centroid by [scale] (1.0 = unchanged, 0.8 =
+  /// 20% closer to center). Lerp per control point — quadratic curves keep
+  /// their shape.
+  static Path _deflate(Path path, double scale) {
+    final bounds = path.getBounds();
+    final cx = bounds.center.dx;
+    final cy = bounds.center.dy;
+    final dst = Path();
+    for (final metric in path.computeMetrics()) {
+      final pts = <Offset>[];
+      const step = 2.0;
+      for (var d = 0.0; d <= metric.length; d += step) {
+        pts.add(metric.getTangentForOffset(d)!.position);
+      }
+      if (pts.isEmpty) continue;
+      dst.addPolygon(
+        [
+          for (final p in pts)
+            Offset(
+              cx + (p.dx - cx) * scale,
+              cy + (p.dy - cy) * scale,
+            ),
+        ],
+        true,
+      );
+    }
+    return dst;
   }
 
   @override
