@@ -850,6 +850,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         bubbles.add(b);
         continue;
       }
+      // Manual bubble: user drew a RECT, text must fit that box. Never hand it
+      // a detected polygon shape — otherwise the text fits the balloon's
+      // inscribed shape instead of the box the user drew.
+      if (_manualCovers(b.rect)) {
+        bubbles.add(b);
+        continue;
+      }
       final s = _nearestShape(detected, b.rect);
       if (s != null) attached++;
       bubbles.add(b.copyWith(shape: s));
@@ -864,6 +871,22 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// ONNX detection box (model or edit shift). Exact rect match would drop the
   /// polygon → bubble renders as a plain box. Match on closest center + IoU
   /// so shape survives small coord drift but a far frame never steals it.
+  /// True when any manual bubble covers >60% of [rect]'s smaller area.
+  bool _manualCovers(Rect rect) {
+    if (_manualBubbles.isEmpty) return false;
+    final rArea = rect.width * rect.height;
+    if (rArea <= 0) return false;
+    for (final m in _manualBubbles) {
+      final mRect = Rect.fromLTWH(
+          m.x.toDouble(), m.y.toDouble(), m.w.toDouble(), m.h.toDouble());
+      final inter = rect.intersect(mRect);
+      if (inter.isEmpty) continue;
+      final smaller = rArea < m.w * m.h ? rArea : m.w * m.h;
+      if (inter.width * inter.height / smaller >= 0.6) return true;
+    }
+    return false;
+  }
+
   List<List<int>>? _nearestShape(List<BubbleBox> detected, Rect rect) {
     BubbleBox? best;
     var bestScore = double.negativeInfinity;
