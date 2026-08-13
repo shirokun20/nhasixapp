@@ -8,6 +8,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
 import '../../../core/utils/polygon_geometry.dart';
+import 'package:kuron_native/kuron_native.dart';
 import '../../../domain/entities/ai_translation.dart';
 
 /// Toolbar button group for AI translation: ✨ translate, then overlay toggle.
@@ -144,11 +145,18 @@ class ReaderTranslationOverlay extends StatelessWidget {
             ? (screenSize.height - renderedH) / 2
             : 0.0;
 
+        final cubit = context.read<ReaderTranslationCubit>();
         return Stack(
           children: [
             for (var i = 0; i < result.bubbles.length; i++)
               _positionedBubble(
-                  result.bubbles[i], scaleX, scaleY, topOffset, i),
+                result.bubbles[i], scaleX, scaleY, topOffset, i,
+                manualBubbles: cubit.manualBubbles,
+                isFailed: state.failedBubbles.containsKey(i),
+                onRetry: state.failedBubbles.containsKey(i)
+                    ? () => cubit.retryBubble(i)
+                    : null,
+              ),
           ],
         );
       },
@@ -164,8 +172,11 @@ Widget _positionedBubble(
   double scaleX,
   double scaleY,
   double topOffset,
-  int index,
-) {
+  int index, {
+  List<BubbleBox> manualBubbles = const [],
+  bool isFailed = false,
+  VoidCallback? onRetry,
+}) {
   const minDim = 44.0;
   var rect = Rect.fromLTWH(
     bubble.rect.left * scaleX,
@@ -192,6 +203,13 @@ Widget _positionedBubble(
   // stay inside the visible bubble instead of overflowing past its outline.
   final effectiveBox =
       shape != null && shape.length >= 3 ? _inscribedBox(shape) : null;
+
+  // Find tail for manual bubbles at this index
+  final tail = index < manualBubbles.length
+      ? manualBubbles[index].tail
+      : null;
+  final tailPoints = tail?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList();
+
   return Positioned(
     left: rect.left,
     top: rect.top,
@@ -202,6 +220,9 @@ Widget _positionedBubble(
       index: index,
       shapeLocal: shape,
       effectiveBox: effectiveBox,
+      tailPoints: tailPoints,
+      isFailed: isFailed,
+      onRetry: onRetry,
     ),
   );
 }
@@ -229,6 +250,9 @@ class ReaderTranslatedBubble extends StatelessWidget {
     required this.index,
     this.shapeLocal,
     this.effectiveBox,
+    this.tailPoints,
+    this.isFailed = false,
+    this.onRetry,
   });
 
   final BubbleTranslation bubble;
@@ -245,70 +269,80 @@ class ReaderTranslatedBubble extends StatelessWidget {
   /// [shapeLocal] is a valid polygon.
   final Rect? effectiveBox;
 
-  /// Manga font pick: Komika Axis (Latin) vs KosugiMaru (CJK/Korean/Unicode).
+  /// User-drawn tail polygon in screen coords relative to the bubble rect.
+  final List<Offset>? tailPoints;
+
+  /// Whether this bubble's translation failed (tap → retry).
+  final bool isFailed;
+
+  /// Callback when user taps a failed bubble to retry.
+  final VoidCallback? onRetry;
+
+  /// Font family: per-bubble fontFamily (from TranslationStyle map), else
+  /// fallback to CJK detection (KosugiMaru for CJK, Komika for Latin).
   static final _cjk = RegExp(r'[぀-ゟ゠-ヿ一-鿿가-힯]');
   String get _fontFamily =>
-      _cjk.hasMatch(bubble.translated) ? 'KosugiMaru' : 'Komika';
+      bubble.fontFamily ??
+      (_cjk.hasMatch(bubble.translated) ? 'KosugiMaru' : 'Komika');
 
   @override
   Widget build(BuildContext context) {
     final shape = shapeLocal;
     final polygon = (shape != null && shape.length >= 3) ? shape : null;
     final hasShape = polygon != null;
-    final Widget text = LayoutBuilder(
-      builder: (context, constraints) {
-        // Shape bubbles: fit against the polygon's inscribed rect (~0.8× of
-        // the bounds) so text stays inside the oval curve. Box-only bubbles
-        // use the full Positioned bounds.
-        final box = hasShape && effectiveBox != null
-            ? Size(effectiveBox!.width, effectiveBox!.height)
-            : Size(constraints.maxWidth, constraints.maxHeight);
-        return Padding(
-          padding: hasShape ? const EdgeInsets.all(1) : const EdgeInsets.all(3),
-          // Center the whole text block INSIDE the bubble, not just per-line.
-          // Without this the Text fills its tight Stack bounds and is painted
-          // from the top edge, stranding the (now smaller) fitted text at the
-          // top with the rest of the oval/frame empty below.
-          child: Center(
-            child: Text(
-              bubble.translated,
-              textAlign: TextAlign.center,
-              style: _fitText(bubble.translated, box, _fontFamily,
-                  hasShape: hasShape),
-            ),
-          ),
-        );
-      },
-    );
-    // No clipping: translated text may overflow past the oval outline when it
-    // is longer than the bubble. Clipping it cut off glyphs (bad UX); letting
-    // it spill is preferable to a partially-hidden translation. The white
-    // patch beneath still provides a readable backdrop.
-    final textLayer = text;
-
+    final bubbleBg = hasShape
+        ? CustomPaint(
+            painter: _BubbleShapePainter(polygon, tailPoints: tailPoints))
+        : (bubble.needsWhitePatch
+            ? Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              )
+            : const SizedBox.shrink());
     return GestureDetector(
-      onTap: () => _showEditSheet(context),
+      onTap: isFailed && onRetry != null
+          ? onRetry
+          : () => _showEditSheet(context),
       onLongPress: () => _showSaveToGlossarySheet(context),
       child: Stack(
         fit: StackFit.expand,
-        // Allow overflow to paint outside the bubble bounds (the default
-        // Clip.hardEdge would still clip long text at the widget edge).
         clipBehavior: Clip.none,
         children: [
-          if (hasShape)
-            // Shape-following: white fill + subtle outline under the text.
-            CustomPaint(painter: _BubbleShapePainter(polygon))
-          else
-            // Box fallback: flat bubble → white patch; else transparent.
-            bubble.needsWhitePatch
-                ? Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          textLayer,
+          bubbleBg,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Shape bubbles: fit against the polygon's inscribed rect (~0.8× of
+              // the bounds) so text stays inside the oval curve. Box-only bubbles
+              // use the full Positioned bounds.
+              final box = hasShape && effectiveBox != null
+                  ? Size(effectiveBox!.width, effectiveBox!.height)
+                  : Size(constraints.maxWidth, constraints.maxHeight);
+              return Padding(
+                padding: hasShape ? const EdgeInsets.all(1) : const EdgeInsets.all(3),
+                // Center the whole text block INSIDE the bubble, not just per-line.
+                // Without this the Text fills its tight Stack bounds and is painted
+                // from the top edge, stranding the (now smaller) fitted text at the
+                // top with the rest of the oval/frame empty below.
+                child: Center(
+                  child: Text(
+                    bubble.translated,
+                    textAlign: TextAlign.center,
+                    style: _fitText(bubble.translated, box, _fontFamily,
+                        hasShape: hasShape),
+                  ),
+                ),
+              );
+            },
+          ),
+          if (isFailed)
+            // Error indicator: red X icon top-right corner
+            const Positioned(
+              top: 2,
+              right: 2,
+              child: Icon(Icons.error_outline, size: 16, color: Colors.red),
+            ),
         ],
       ),
     );
@@ -455,9 +489,10 @@ TextStyle _fitText(String text, Size box, String fontFamily,
 /// following the detected bubble shape instead of a rounded rect. The edge
 /// has NO border line — a blurred white halo fades the bubble into the page.
 class _BubbleShapePainter extends CustomPainter {
-  _BubbleShapePainter(this.points);
+  _BubbleShapePainter(this.points, {this.tailPoints});
 
   final List<Offset> points;
+  final List<Offset>? tailPoints;
 
   /// Smooth polygon via midpoint-quadratic-bezier: avoids jagged straight
   /// segments from approxPolyDP, producing the clean oval look of real bubbles.
@@ -492,10 +527,14 @@ class _BubbleShapePainter extends CustomPainter {
     final path = points.length >= 3
         ? _shapePath(points)
         : (Path()..addPolygon(points, true));
+    // Merge tail (spec 7.2): append tail triangle to bubble shape
+    final merged = tailPoints != null && tailPoints!.length >= 3
+        ? _mergeTail(path, tailPoints!)
+        : path;
     // Soft halo: blurred white border zone — replaces the old hard 1.5px
     // black stroke. Renders the edge as a gentle fade into the page.
     canvas.drawPath(
-      path,
+      merged,
       Paint()
         ..style = PaintingStyle.fill
         ..color = Colors.white.withValues(alpha: 0.55)
@@ -505,11 +544,20 @@ class _BubbleShapePainter extends CustomPainter {
     // lerp), so the feather band only covers the outer ring — before the text
     // area — leaving the interior fully opaque white for text contrast.
     canvas.drawPath(
-      _deflate(path, 0.8),
+      _deflate(merged, 0.8),
       Paint()
         ..style = PaintingStyle.fill
         ..color = Colors.white.withValues(alpha: 0.92),
     );
+  }
+
+  /// Merge tail polygon into bubble path (spec 7.2).
+  static Path _mergeTail(Path bubble, List<Offset> tail) {
+    final result = Path()..addPath(bubble, Offset.zero);
+    // Find nearest point on bubble edge to tail start, connect
+    final tailStart = tail.first;
+    result.addPolygon([...tail, tailStart], true);
+    return result;
   }
 
   /// Shrinks [path] toward its centroid by [scale] (1.0 = unchanged, 0.8 =

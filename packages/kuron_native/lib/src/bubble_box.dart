@@ -10,6 +10,7 @@ class BubbleBox {
     this.confidence = 1.0,
     this.shape,
     this.kind,
+    this.tail,
   });
 
   /// Top-left X in original image pixel coordinates.
@@ -34,6 +35,10 @@ class BubbleBox {
   /// Bubble class name: "balloon" / "text" / "frame" / "unknown".
   final String? kind;
 
+  /// User-drawn tail polygon [[x,y],...] in original image pixels.
+  /// Null = no tail. Merged with [shape] at render time.
+  final List<List<int>>? tail;
+
   int get cx => x + w ~/ 2;
   int get cy => y + h ~/ 2;
 
@@ -54,6 +59,8 @@ class BubbleBox {
     double? confidence,
     List<List<int>>? shape,
     String? kind,
+    List<List<int>>? tail,
+    bool clearTail = false,
   }) {
     return BubbleBox(
       x: x ?? this.x,
@@ -63,6 +70,7 @@ class BubbleBox {
       confidence: confidence ?? this.confidence,
       shape: shape ?? this.shape,
       kind: kind ?? this.kind,
+      tail: clearTail ? null : (tail ?? this.tail),
     );
   }
 
@@ -74,6 +82,7 @@ class BubbleBox {
         'confidence': confidence,
         if (shape != null) 'shape': shape,
         if (kind != null) 'kind': kind,
+        if (tail != null) 'tail': tail,
       };
 
   factory BubbleBox.fromJson(Map<String, dynamic> json) => BubbleBox(
@@ -86,6 +95,9 @@ class BubbleBox {
             ?.map((p) => (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
             .toList(),
         kind: json['kind'] as String?,
+        tail: (json['tail'] as List<dynamic>?)
+            ?.map((p) => (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
+            .toList(),
       );
 
   factory BubbleBox.fromMap(Map<String, dynamic> map) => BubbleBox.fromJson(map);

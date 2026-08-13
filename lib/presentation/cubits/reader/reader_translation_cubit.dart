@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -61,6 +62,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   PageTranslation? _currentResult;
   bool _overlayVisible = false;
   final List<BubbleBox> _manualBubbles = [];
+  final Map<int, String> _failedBubbles = {};
 
   /// ONNX-detected bubbles from the last detection (blue reference in
   /// draw mode). Set by [detectBubblesOnly] and after each translate.
@@ -79,6 +81,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   final Set<String> _userEditedKeys = {};
   bool _skipSfx = true;
   bool _drawMode = false;
+  bool _rtlReading = false; // manga: right-to-left
+  TranslationStyle? _currentStyle;
 
   // Image/page context of the current translation (for coordinate scaling).
   int _currentImageWidth = 0;
@@ -94,6 +98,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         pageIndex: _currentPageIndex,
         contentId: _currentContentId,
         imageUrl: _currentImageUrl,
+        failedBubbles: Map.unmodifiable(_failedBubbles),
         uiVersion: _uiVersion,
       );
 
@@ -106,6 +111,10 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   void setDrawMode(bool value) {
     _setDrawMode(value);
     _bumpUi();
+  }
+
+  void setReadingDirection(ReadingMode mode) {
+    _rtlReading = mode == ReadingMode.singlePage;
   }
 
   void _setDrawMode(bool value) {
@@ -236,6 +245,17 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   String _bubbleKey(int index, BubbleTranslation b) =>
       '${b.rect.left}_${b.rect.top}_$index';
 
+  /// Style → font family map (spec 6.3). Default: Komika/KosugiMaru.
+  static const _styleFontMap = <TranslationStyle, String>{
+    TranslationStyle.natural: 'Komika',
+    TranslationStyle.genz: 'Komika',
+    TranslationStyle.action: 'Komika',
+    TranslationStyle.romantis: 'Komika',
+    TranslationStyle.formal: 'Komika',
+    TranslationStyle.kasar: 'Komika',
+    TranslationStyle.literal: 'KosugiMaru',
+  };
+
   /// Translation cache schema version. Bump to invalidate OLD cached results
   /// when the output shape changes (e.g. box-only → polygon: old entries lack
   /// `shape`, so re-translate to carry the polygon).
@@ -267,6 +287,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     _manualBubbles.clear();
     _detectedBoxes.clear();
     _translationDetectedBoxes.clear();
+    _failedBubbles.clear();
     _currentImageWidth = 0;
     _currentImageHeight = 0;
     _currentPageIndex = -1;
@@ -290,6 +311,20 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   void undoLastManual() {
     if (_manualBubbles.isNotEmpty) _manualBubbles.removeLast();
+  }
+
+  /// Add a tail polygon to a manual bubble (spec 7.1).
+  void addTailToBubble(int index, List<List<int>> tail) {
+    if (index < 0 || index >= _manualBubbles.length) return;
+    _manualBubbles[index] = _manualBubbles[index].copyWith(tail: tail);
+    _bumpUi();
+  }
+
+  /// Remove the tail from a manual bubble (spec 7.3).
+  void removeTail(int index) {
+    if (index < 0 || index >= _manualBubbles.length) return;
+    _manualBubbles[index] = _manualBubbles[index].copyWith(clearTail: true);
+    _bumpUi();
   }
 
   void clearManualBubbles() {
@@ -326,13 +361,66 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       sorted.removeWhere(
           (b) => b.kind == 'text' && balloons.any((bb) => _contains(bb, b)));
     }
+    // Frame (panel border) bukan bubble — buang dari hasil deteksi.
+    sorted.removeWhere((b) => b.kind == 'frame');
+    final merged = _mergeNearbyBoxes(sorted);
     final keep = <BubbleBox>[];
-    while (sorted.isNotEmpty) {
-      final best = sorted.removeAt(0);
+    final afterMerge = List<BubbleBox>.from(merged);
+    while (afterMerge.isNotEmpty) {
+      final best = afterMerge.removeAt(0);
       keep.add(best);
-      sorted.removeWhere((b) => _iou(best, b) > 0.45);
+      afterMerge.removeWhere((b) => _iou(best, b) > 0.45);
     }
     return _removeFalsePositives(keep);
+  }
+
+  /// Merge nearby text boxes that belong to one balloon (spec 5.1).
+  /// Two boxes merge if: vertical overlap ≥ 0.5×minH AND gap ≤ 0.5×minH.
+  /// Only merges same-kind boxes ('text' or 'balloon').
+  List<BubbleBox> _mergeNearbyBoxes(List<BubbleBox> boxes) {
+    if (boxes.length < 2) return boxes;
+    final sorted = List<BubbleBox>.from(boxes)
+      ..sort((a, b) => a.y.compareTo(b.y));
+    final merged = <BubbleBox>[];
+    var i = 0;
+    while (i < sorted.length) {
+      var current = sorted[i];
+      var j = i + 1;
+      while (j < sorted.length) {
+        final next = sorted[j];
+        if (current.kind != next.kind) break;
+        final minH = current.h < next.h ? current.h : next.h;
+        if (minH <= 0) break;
+        final curBottom = current.y + current.h;
+        final vertOverlap = curBottom > next.y ? (curBottom - next.y) / minH : 0.0;
+        final gap = next.y - curBottom;
+        if (vertOverlap >= 0.5 && math.max(gap, 0) <= minH * 0.5) {
+          final nx = current.x < next.x ? current.x : next.x;
+          final ny = current.y < next.y ? current.y : next.y;
+          final nr = (current.x + current.w) > (next.x + next.w)
+              ? (current.x + current.w)
+              : (next.x + next.w);
+          final nb = (current.y + current.h) > (next.y + next.h)
+              ? (current.y + current.h)
+              : (next.y + next.h);
+          current = BubbleBox(
+            x: nx,
+            y: ny,
+            w: nr - nx,
+            h: nb - ny,
+            confidence: current.confidence > next.confidence ? current.confidence : next.confidence,
+            shape: null, // merged = no shape
+            kind: current.kind,
+          );
+          j++;
+        } else {
+          break;
+        }
+      }
+      merged.add(current);
+      i = j;
+    }
+    return merged;
   }
 
   double _iou(BubbleBox a, BubbleBox b) {
@@ -411,6 +499,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
     final targetLang = await _preferencesRepository.getTargetLanguage();
     final style = await _preferencesRepository.getTranslationStyle();
+    _currentStyle = style;
+    setReadingDirection(readingMode);
 
     // Cache hit → skip pipeline
     final cacheKey = buildCacheKey(contentId, pageIndex, '$imageUrl#$cropYTop');
@@ -703,6 +793,23 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       int pageIndex, int imageWidth, int imageHeight, String imageUrl) {
     result = _attachShapes(result);
     result = _flagFlatBubbles(result);
+    // Track per-bubble failures (empty translation = AI skipped)
+    _failedBubbles.clear();
+    final fontFamily = _currentStyle != null
+        ? _styleFontMap[_currentStyle]
+        : null;
+    if (fontFamily != null) {
+      result = result.copyWith(
+        bubbles: result.bubbles
+            .map((b) => b.fontFamily == null ? b.copyWith(fontFamily: fontFamily) : b)
+            .toList(),
+      );
+    }
+    for (var i = 0; i < result.bubbles.length; i++) {
+      if (result.bubbles[i].translated.trim().isEmpty) {
+        _failedBubbles[i] = 'AI skipped this bubble';
+      }
+    }
     _currentImageWidth = imageWidth;
     _currentImageHeight = imageHeight;
     _currentPageIndex = pageIndex;
@@ -735,9 +842,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       logInfo('_attachShapes: _detectedBoxes kosong, shape kosong');
       return result;
     }
-    final byRect = <int, List<List<int>>?>{
-      for (final b in _detectedBoxes) b.rectKey: b.shape,
-    };
+    final detected = _detectedBoxes;
     var attached = 0;
     final bubbles = <BubbleTranslation>[];
     for (final b in result.bubbles) {
@@ -745,7 +850,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         bubbles.add(b);
         continue;
       }
-      final s = byRect[_rectKey(b.rect)];
+      final s = _nearestShape(detected, b.rect);
       if (s != null) attached++;
       bubbles.add(b.copyWith(shape: s));
     }
@@ -754,8 +859,37 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     return result.copyWith(bubbles: bubbles);
   }
 
-  int _rectKey(Rect r) => Object.hash(
-      r.left.round(), r.top.round(), r.width.round(), r.height.round());
+  /// Best-matching detected bubble's shape for an AI-returned rect. The AI
+  /// round-trip returns per-bubble boxes that may differ by a few px from the
+  /// ONNX detection box (model or edit shift). Exact rect match would drop the
+  /// polygon → bubble renders as a plain box. Match on closest center + IoU
+  /// so shape survives small coord drift but a far frame never steals it.
+  List<List<int>>? _nearestShape(List<BubbleBox> detected, Rect rect) {
+    BubbleBox? best;
+    var bestScore = double.negativeInfinity;
+    for (final d in detected) {
+      final shape = d.shape;
+      if (shape == null || shape.length < 3) continue;
+      final iou = _iou(
+        d,
+        BubbleBox(
+          x: rect.left.round(),
+          y: rect.top.round(),
+          w: rect.width.round(),
+          h: rect.height.round(),
+        ),
+      );
+      // IoU dominates; center distance breaks ties. Normalized by img area.
+      final dx = (d.cx - rect.center.dx).abs();
+      final dy = (d.cy - rect.center.dy).abs();
+      final score = iou - (dx + dy) * 1e-4;
+      if (score > bestScore) {
+        bestScore = score;
+        best = d;
+      }
+    }
+    return best?.shape;
+  }
 
   AiProviderConfig? _fallbackProvider(
     AiProviderConfig current,
@@ -775,8 +909,75 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     return others.isEmpty ? null : others.first;
   }
 
+  /// Re-translate a single failed bubble (spec 3.2). Builds a 1-chip mosaic
+  /// for that bubble, calls the AI provider, and merges the result back.
+  Future<void> retryBubble(int index) async {
+    final result = _currentResult;
+    if (result == null || index < 0 || index >= result.bubbles.length) return;
+    final bubble = result.bubbles[index];
+    final providers = await _providerRepository.getProviders();
+    var provider = providers.where((p) => p.isDefault).firstOrNull ??
+        (providers.isEmpty ? null : providers.first);
+    if (provider == null) return;
+    if (!provider.isVisionCapable) {
+      final vision = providers.where((p) => p.isVisionCapable).firstOrNull;
+      if (vision == null) return;
+      provider = vision;
+    }
+    final impl = _providerFactory.create(provider);
+    final targetLang = await _preferencesRepository.getTargetLanguage();
+    final style = await _preferencesRepository.getTranslationStyle();
+
+    // Build single-bubble mosaic
+    final singleBox = BubbleBoxLike(
+      bubble.rect.left.round(),
+      bubble.rect.top.round(),
+      bubble.rect.width.round(),
+      bubble.rect.height.round(),
+    );
+    final pageBytes = _pageBytes;
+    if (pageBytes == null) return;
+    final mosaic = await _heavyRunner(
+        () => _mosaicBuilder.buildMosaic(pageBytes, [singleBox]));
+    try {
+      final retryResult = await impl.translatePage(
+        image: mosaic,
+        imageWidth: _currentImageWidth,
+        imageHeight: _currentImageHeight,
+        bubbles: [singleBox],
+        targetLang: targetLang,
+        style: style,
+        skipSfx: skipSfx,
+      );
+      if (retryResult.bubbles.isNotEmpty) {
+        final updated = List<BubbleTranslation>.from(_currentResult!.bubbles);
+        updated[index] = retryResult.bubbles.first;
+        _currentResult = _currentResult!.copyWith(bubbles: updated);
+      }
+    } catch (e) {
+      logWarning('retryBubble[$index] failed: $e');
+    }
+    // Clear failed entry regardless of outcome
+    final newFailed = Map<int, String>.from(
+        _translatedState().failedBubbles);
+    newFailed.remove(index);
+    emit(ReaderTranslationTranslated(
+      result: _currentResult!,
+      imageWidth: _currentImageWidth,
+      imageHeight: _currentImageHeight,
+      pageIndex: _currentPageIndex,
+      contentId: _currentContentId,
+      imageUrl: _currentImageUrl,
+      failedBubbles: newFailed,
+    ));
+  }
+
   BubbleBoxLike _toLike(BubbleBox b) => BubbleBoxLike(b.x, b.y, b.w, b.h);
 
+  /// Mosaic input boxes: manual bubbles (user-corrected) first, then detected
+  /// boxes NOT already covered by a manual bubble. Prevents the same text from
+  /// being cropped into two mosaic chips (manual + detected duplicates of one
+  /// region), which made the model merge/swap per-bubble translations.
   /// Mosaic input boxes: manual bubbles (user-corrected) first, then detected
   /// boxes NOT already covered by a manual bubble. Prevents the same text from
   /// being cropped into two mosaic chips (manual + detected duplicates of one
@@ -804,6 +1005,15 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       });
       if (!coveredByManual) kept.add(d);
     }
+    // Sort in reading order: RTL manga = right-to-left, LTR manhwa/webtoon = left-to-right
+    // Both top-to-bottom, X direction flips.
+    kept.sort((a, b) {
+      final ay = a.y.compareTo(b.y);
+      if (ay != 0) return ay;
+      return _rtlReading
+          ? b.x.compareTo(a.x) // RTL: rightmost first
+          : a.x.compareTo(b.x); // LTR: leftmost first
+    });
     return [...manual, ...kept];
   }
 }

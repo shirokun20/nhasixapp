@@ -11,6 +11,8 @@ import '../../../domain/repositories/ai_translation_repositories.dart';
 /// OpenAI-compatible `/chat/completions` provider. Covers OpenCode Go
 /// (all 23 models), OpenAI, OpenRouter, Zen free models, and Custom endpoints.
 class OpenAICompatibleProvider implements AiTranslationProvider {
+  static const _readingDirectionLabel = 'left-to-right';
+
   OpenAICompatibleProvider({
     required this.config,
     required Dio dio,
@@ -89,11 +91,12 @@ Rules:
     bool skipSfx,
   ) {
     return '''
-Translate the manga image. Each bubble has a red number ID on its left.
+Translate the manga/manhwa image. Each bubble has a red number ID on its left.
+Reading order: $_readingDirectionLabel top-to-bottom, left-to-right.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
 {"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
 Rules:
-- Map each number to the text inside that bubble.
+- Map each number to the text inside that bubble, in reading order.
 - "original" = the exact text inside the bubble (for learning/glossary).
 - "reading" = Latin reading of the original text: romaji for Japanese, romanization for Korean/Chinese/other scripts (helps pronunciation). Empty if original is already Latin.
 - "translated" = the translation into $targetLang.
@@ -142,8 +145,7 @@ ${sfxRule(skipSfx)}
     } on DioException catch (e) {
       if (e.response?.statusCode == 429) {
         _logger.w('${config.displayName}: rate limited (429)');
-        throw const AiTranslationException('Rate limited',
-            isRateLimited: true);
+        throw const AiTranslationException('Rate limited', isRateLimited: true);
       }
       final msg = e.response?.data?.toString() ?? e.message ?? 'Request failed';
       _logger.e('${config.displayName}: request failed: $msg');
@@ -204,7 +206,8 @@ ${sfxRule(skipSfx)}
       } else if (raw != null) {
         translated = raw.toString().trim();
       }
-      if (translated == null || translated.isEmpty ||
+      if (translated == null ||
+          translated.isEmpty ||
           translated.toUpperCase() == 'SKIP') {
         continue;
       }

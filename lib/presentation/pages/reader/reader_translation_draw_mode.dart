@@ -357,11 +357,11 @@ class _DrawPainter extends CustomPainter {
   final List<Rect> manualRects;
   final Color manualColor;
 
-  // Mirror Python seg_fixed.py LINE_COLOR: balloon=green, text=cyan, fallback=orange.
+  // Mirror Python seg_fixed.py LINE_COLOR: balloon=green, text=cyan.
   static const _balloonColor = Color(0xFF00E000);
   static const _textColor = Color(0xFF00C8C8);
-  static const _fallbackColor = Color(0xFFFF6000);
 
+  /// Smooth polygon outline via midpoint quadratic curves.
   static Path _smoothPath(List<Offset> pts) {
     final n = pts.length;
     final path = Path();
@@ -381,11 +381,7 @@ class _DrawPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final e in onnxEntries) {
-      final color = e.kind == 'balloon'
-          ? _balloonColor
-          : e.kind == 'text'
-              ? _textColor
-              : _balloonColor;
+      final color = e.kind == 'balloon' ? _balloonColor : _textColor;
       if (e.poly != null && e.poly!.length >= 3) {
         // Rect-like shapes (frames/narration boxes) keep sharp corners —
         // smoothing them would render square frames as ovals.
@@ -400,12 +396,15 @@ class _DrawPainter extends CustomPainter {
             ..color = color,
         );
       } else {
+        // Defensive: polygon collapsed (unreachable post BubbleDetector box
+        // fallback) — draw a thin solid rect so the bubble stays visible,
+        // colored by class (not orange) so text boxes don't stand out.
         canvas.drawRect(
           e.rect,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5
-            ..color = _fallbackColor,
+            ..color = color,
         );
       }
     }

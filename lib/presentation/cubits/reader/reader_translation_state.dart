@@ -75,6 +75,7 @@ class ReaderTranslationTranslated extends ReaderTranslationState {
     required this.pageIndex,
     required this.contentId,
     required this.imageUrl,
+    this.failedBubbles = const {},
     this.uiVersion = 0,
   });
 
@@ -93,6 +94,9 @@ class ReaderTranslationTranslated extends ReaderTranslationState {
   final String contentId;
   final String imageUrl;
 
+  /// Bubble index → error message for bubbles that failed translation.
+  final Map<int, String> failedBubbles;
+
   ReaderTranslationTranslated copyWithUi({int? uiVersion}) {
     return ReaderTranslationTranslated(
       result: result,
@@ -101,6 +105,7 @@ class ReaderTranslationTranslated extends ReaderTranslationState {
       pageIndex: pageIndex,
       contentId: contentId,
       imageUrl: imageUrl,
+      failedBubbles: failedBubbles,
       uiVersion: uiVersion ?? this.uiVersion,
     );
   }
@@ -113,6 +118,7 @@ class ReaderTranslationTranslated extends ReaderTranslationState {
         pageIndex,
         contentId,
         imageUrl,
+        failedBubbles,
         uiVersion,
       ];
 }

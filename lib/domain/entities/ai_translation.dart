@@ -225,6 +225,7 @@ class BubbleTranslation extends Equatable {
     this.isSfxSkipped = false,
     this.needsWhitePatch = false,
     this.shape,
+    this.fontFamily,
   });
 
   final Rect rect; // Pixel coordinates in original page space
@@ -246,6 +247,9 @@ class BubbleTranslation extends Equatable {
   /// the ONNX detection (shape doesn't survive the mosaic/AI round-trip).
   final List<List<int>>? shape;
 
+  /// Font family for this bubble's translation text. Null → default font.
+  final String? fontFamily;
+
   BubbleTranslation copyWith({
     Rect? rect,
     String? original,
@@ -255,6 +259,7 @@ class BubbleTranslation extends Equatable {
     bool? isSfxSkipped,
     bool? needsWhitePatch,
     List<List<int>>? shape,
+    String? fontFamily,
   }) {
     return BubbleTranslation(
       rect: rect ?? this.rect,
@@ -265,6 +270,7 @@ class BubbleTranslation extends Equatable {
       isSfxSkipped: isSfxSkipped ?? this.isSfxSkipped,
       needsWhitePatch: needsWhitePatch ?? this.needsWhitePatch,
       shape: shape ?? this.shape,
+      fontFamily: fontFamily ?? this.fontFamily,
     );
   }
 
@@ -286,6 +292,7 @@ class BubbleTranslation extends Equatable {
       shape: (json['shape'] as List<dynamic>?)
           ?.map((p) => (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
           .toList(),
+      fontFamily: json['fontFamily'] as String?,
     );
   }
 
@@ -304,6 +311,7 @@ class BubbleTranslation extends Equatable {
       'isSfxSkipped': isSfxSkipped,
       'needsWhitePatch': needsWhitePatch,
       if (shape != null) 'shape': shape,
+      if (fontFamily != null) 'fontFamily': fontFamily,
     };
   }
 
@@ -317,6 +325,7 @@ class BubbleTranslation extends Equatable {
         isSfxSkipped,
         needsWhitePatch,
         shape,
+        fontFamily,
       ];
 }
 
