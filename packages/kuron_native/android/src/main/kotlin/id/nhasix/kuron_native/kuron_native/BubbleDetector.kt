@@ -41,7 +41,7 @@ class BubbleDetector(context: Context) : Closeable {
     private val confThresholdText = 0.15f
     private val maskThreshold = 0.5f
     private val polyEpsilonFrac = 0.015f   // approxPolyDP: fraction of arc length
-    private val renderPad = 8              // outward expand polygon (orig px)
+    private val renderPad = 3              // outward expand polygon (orig px)
     private val minBoxDim = 4f
 
     // Letterbox state
