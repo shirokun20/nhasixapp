@@ -376,7 +376,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   /// Merge nearby text boxes that belong to one balloon (spec 5.1).
   /// Two boxes merge if: vertical overlap ≥ 0.5×minH AND gap ≤ 0.5×minH.
-  /// Only merges same-kind boxes ('text' or 'balloon').
+  /// Merges TEXT boxes ONLY — balloons are distinct dialogue units (the old
+  /// same-kind merge unioned two adjacent balloons into one giant flat box).
   List<BubbleBox> _mergeNearbyBoxes(List<BubbleBox> boxes) {
     if (boxes.length < 2) return boxes;
     final sorted = List<BubbleBox>.from(boxes)
@@ -388,7 +389,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       var j = i + 1;
       while (j < sorted.length) {
         final next = sorted[j];
-        if (current.kind != next.kind) break;
+        // Merge ONLY text boxes. Balloons are distinct dialogue units — merging
+        // two adjacent balloons (same kind, vertical overlap, small gap) unions
+        // them into ONE big flat box with shape:null (giant green box). Text
+        // boxes are the lone-merge case (2 boxes = 1 sentence split across lines).
+        if (current.kind != 'text' || current.kind != next.kind) break;
         final minH = current.h < next.h ? current.h : next.h;
         if (minH <= 0) break;
         final curBottom = current.y + current.h;
