@@ -4122,6 +4122,7 @@
   "aiCapturedViewport": "Screen captured.",
   "aiSettings": "AI Settings",
   "aiProvidersSubtitle": "Providers, language, style, translation cache",
+  "aiManageProviders": "AI Providers",
   "aiOpen": "Open",
   "aiTargetLanguage": "Target Language",
   "aiTargetLangSubtitle": "Language AI translates into",

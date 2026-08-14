@@ -5647,6 +5647,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Providers, language, style, translation cache';
 
   @override
+  String get aiManageProviders => 'AI Providers';
+
+  @override
   String get aiOpen => 'Open';
 
   @override

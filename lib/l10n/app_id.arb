@@ -3108,6 +3108,7 @@
   "aiCapturedViewport": "Gambar layar berhasil diambil.",
   "aiSettings": "AI Settings",
   "aiProvidersSubtitle": "Provider, bahasa, gaya, cache terjemahan",
+  "aiManageProviders": "Provider AI",
   "aiOpen": "Buka",
   "aiTargetLanguage": "Bahasa Target",
   "aiTargetLangSubtitle": "Bahasa yang AI terjemahkan ke",

@@ -40,6 +40,7 @@ import 'settings_app_lock_widgets.dart';
 import 'ai_settings_screen.dart';
 
 part 'settings_source_install.dart';
+part 'settings_source_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -52,9 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   late final TagBlacklistService _tagBlacklistService;
   Map<String, dynamic>? _deviceDnsState;
-  final SourceHealthMonitor _healthMonitor = getIt<SourceHealthMonitor>();
-  Map<String, SourceHealthStatus> _sourceHealthStatuses = {};
-  StreamSubscription<Map<String, SourceHealthStatus>>? _healthSub;
 
   void _ensureDownloadBlocInitialized() {
     final downloadBloc = context.read<DownloadBloc>();
@@ -77,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       ]),
     );
     _loadDnsDiagnostics();
-    _runHealthCheck();
   }
 
   Future<void> _loadDnsDiagnostics() async {
@@ -97,29 +94,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _loadDnsDiagnostics();
-      _runHealthCheck();
     }
   }
 
   @override
   void dispose() {
-    _healthSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  void _triggerRebuild() {
-    setState(() {});
-  }
-
-  void _runHealthCheck() {
-    _healthSub?.cancel();
-    _healthSub = _healthMonitor.healthStream.listen(
-      (statuses) {
-        if (mounted) setState(() => _sourceHealthStatuses = statuses);
-      },
-    );
-    unawaited(_healthMonitor.checkAll());
   }
 
   @override
@@ -415,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           SizedBox(height: DesignTokens.spaceXl),
 
           // Available Sources Section
-          _buildAvailableSourcesSection(this, theme, l10n),
+          _buildSourcesShortcut(this, theme, l10n),
 
           SizedBox(height: DesignTokens.spaceXl),
 

@@ -6,9 +6,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:image/image.dart' as img;
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
@@ -32,6 +32,7 @@ import 'package:logger/logger.dart';
 import '../../../core/services/local_image_preloader.dart';
 import '../../../core/services/memory_budget_coordinator.dart';
 import '../../cubits/reader/reader_cubit.dart';
+import '../../cubits/reader/reader_prefetch_cubit.dart';
 import '../../cubits/theme/theme_cubit.dart';
 import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
@@ -108,6 +109,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   late PageController _verticalPageController;
   late ScrollController _scrollController;
   late ReaderCubit _readerCubit;
+  late ReaderPrefetchCubit _prefetchCubit;
 
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
@@ -119,10 +121,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   // the original image height to keep the scroll offset stable.
   final Map<int, double> _cachedImageHeights = {};
 
-  final Set<int> _prefetchedPages = <int>{};
-  final Map<int, CancelToken> _prefetchCancelTokens = <int, CancelToken>{};
-  static const int _prefetchCount = 3;
-  static const int _prefetchBackCount = 1;
+  // Prefetch bookkeeping moved to ReaderPrefetchCubit (download engine).
+  // Widget keeps only the BuildContext-bound decode pre-cache (_decodeQueue).
 
   // Chapter open overlay: shown once per reader session
   bool _chapterOverlayShown = false;
@@ -218,6 +218,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       initialScrollOffset: initialScrollOffset > 0 ? initialScrollOffset : 0,
     );
     _readerCubit = context.read<ReaderCubit>();
+    _prefetchCubit = getIt<ReaderPrefetchCubit>();
     _pageTicker = createTicker(_onPageTick);
 
     // 🚀 OPTIMIZATION: Initialize route extra
@@ -760,10 +761,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _flushReaderProgressBeforeDispose();
 
     // Cancel all in-flight prefetch downloads
-    for (final token in _prefetchCancelTokens.values) {
-      if (!token.isCancelled) token.cancel();
-    }
-    _prefetchCancelTokens.clear();
+    _prefetchCubit.cancelAll();
 
     // Clear pending decode queue so orphan precacheImage tasks stop
     _decodeQueue.clear();
@@ -851,7 +849,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       {String? sourceId}) {
     if (imageUrls.isEmpty) return;
 
-    //  detect fast scroll by page jump, not timer. If user moved
+    // detect fast scroll by page jump, not timer. If user moved
     // >3 pages since last tick, they're flying through — skip prefetch.
     final pageJump = (currentPage - _lastReportedPage).abs();
     if (pageJump > 3) return;
@@ -864,6 +862,18 @@ class _ReaderScreenState extends State<ReaderScreen>
               imageUrl:
                   imageUrls[(currentPage - 1).clamp(0, imageUrls.length - 1)],
             );
+
+    // Network download + bookkeeping lives in ReaderPrefetchCubit (testable,
+    // survives widget rebuild). Widget keeps the BuildContext-bound decode
+    // pre-cache below.
+    _prefetchCubit.prefetchImages(
+      currentPage: currentPage,
+      imageUrls: imageUrls,
+      imageMetadata: imageMetadata,
+      sourceId: sourceId,
+      headers: prefetchHeaders,
+      contentId: widget.contentId,
+    );
 
     //  pre-decode adjacent pages into ImageCache at display width.
     // Online → ExtendedNetworkImageProvider (HTTP → ExtendedImage disk cache).
@@ -906,94 +916,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       }
     }
     _scheduleFrameDecode();
-
-    // HentaiNexus: DISABLE state prefetch (GPU saturation)
-    if (_isHeavyPrefetchSource(sourceId)) {
-      return;
-    }
-
-    for (int i = 1; i <= _prefetchBackCount; i++) {
-      final targetPage = currentPage - i;
-      if (targetPage >= 1 && !_prefetchedPages.contains(targetPage)) {
-        _prefetchedPages.add(targetPage);
-        final imageUrl = imageUrls[targetPage - 1];
-        if (imageUrl.startsWith('http')) {
-          final cancelToken = CancelToken();
-          _prefetchCancelTokens[targetPage] = cancelToken;
-          LocalImagePreloader.downloadAndCacheImage(
-            imageUrl,
-            widget.contentId,
-            targetPage,
-            headers: prefetchHeaders,
-            cancelToken: cancelToken,
-          ).whenComplete(() {
-            _prefetchCancelTokens.remove(targetPage);
-          }).catchError((_) {
-            _prefetchedPages.remove(targetPage);
-            return '';
-          });
-        }
-      }
-    }
-
-    for (int i = 1; i <= _prefetchCount; i++) {
-      final targetPage = currentPage + i;
-
-      if (targetPage <= imageUrls.length &&
-          !_prefetchedPages.contains(targetPage)) {
-        _prefetchedPages.add(targetPage);
-
-        final imageUrl = imageUrls[targetPage - 1];
-
-        // EHentai uses /s/... reader pages that are resolved to real image
-        // URLs lazily per visible page. Skip image prefetch on reader pages.
-        if (_isEhentaiReaderPageUrl(imageUrl, sourceId)) {
-          continue;
-        }
-
-        // 🚀 OPTIMIZATION: Use metadata lookup instead of URL validation for performance
-        bool isValid = true;
-        if (imageMetadata != null && imageMetadata.isNotEmpty) {
-          final metadata = imageMetadata.where((m) {
-            return m.pageNumber == targetPage;
-          }).firstOrNull;
-          if (metadata != null) {
-            // Validate using metadata - much faster than URL parsing
-            isValid = metadata.imageUrl == imageUrl;
-            if (!isValid) {
-              _logger.d(
-                  '⚠️ METADATA MISMATCH: Page $targetPage metadata URL != actual URL');
-              _logger.d('   Metadata URL: ${metadata.imageUrl}');
-              _logger.d('   Actual URL: $imageUrl');
-            }
-          } else {
-            // Fallback to URL validation if no metadata found
-            // We TRUST the URL list from the source. Removing brittle filename parsing validation.
-            // checks that caused false positives (e.g. 0-indexed filenames).
-            isValid = true;
-          }
-        } else {
-          // No metadata available. Trust the URL list order.
-          isValid = true;
-        }
-
-        if (!isValid) {
-          _prefetchedPages.remove(targetPage); // Allow retry later
-          return;
-        }
-
-        if (!imageUrl.startsWith('http') &&
-            (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
-          return;
-        }
-
-        if (mounted) {
-          final status = isValid ? '✅' : '❓';
-          _logger.d(
-              '📥 $status Prefetched page $targetPage (metadata validated: $isValid)');
-        }
-      }
-    }
   }
 
   // Evict excess pages when decoded image budget is exceeded.
@@ -1059,16 +981,6 @@ class _ReaderScreenState extends State<ReaderScreen>
       accumulated += _estimatePageBytes(page);
       if (accumulated >= (_estimatedDecodedBytes - targetBytes)) break;
     }
-  }
-
-  bool _isEhentaiReaderPageUrl(String url, String? sourceId) {
-    if (sourceId != 'ehentai') {
-      return false;
-    }
-
-    final lowered = url.toLowerCase();
-    return lowered.contains('/s/') &&
-        (lowered.contains('e-hentai.org') || lowered.contains('exhentai.org'));
   }
 
   bool _isHeavyPrefetchSource(String? sourceId) {

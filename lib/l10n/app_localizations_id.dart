@@ -5673,6 +5673,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiProvidersSubtitle => 'Provider, bahasa, gaya, cache terjemahan';
 
   @override
+  String get aiManageProviders => 'Provider AI';
+
+  @override
   String get aiOpen => 'Buka';
 
   @override

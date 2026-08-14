@@ -9660,6 +9660,12 @@ abstract class AppLocalizations {
   /// **'Providers, language, style, translation cache'**
   String get aiProvidersSubtitle;
 
+  /// No description provided for @aiManageProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Providers'**
+  String get aiManageProviders;
+
   /// No description provided for @aiOpen.
   ///
   /// In en, this message translates to:

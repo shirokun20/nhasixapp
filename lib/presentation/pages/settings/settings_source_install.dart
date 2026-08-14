@@ -1,13 +1,17 @@
 part of 'settings_screen.dart';
 
 Widget _buildAvailableSourcesSection(
-    _SettingsScreenState state, ThemeData theme, AppLocalizations l10n) {
+    ThemeData theme,
+    AppLocalizations l10n,
+    BuildContext context,
+    Map<String, SourceHealthStatus> healthStatuses,
+    VoidCallback runHealthCheck) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       buildSettingsSectionHeader(
         Icons.download_outlined,
-        AppLocalizations.of(state.context)!.availableSources,
+        l10n.availableSources,
         theme,
       ),
       const SizedBox(height: 12),
@@ -35,7 +39,7 @@ Widget _buildAvailableSourcesSection(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _installSourceFromLink(state, state.context),
+                  onPressed: () => _installSourceFromLink(context),
                   icon: const Icon(Icons.link),
                   label: Text(l10n.settingsAddViaLink),
                 ),
@@ -43,7 +47,7 @@ Widget _buildAvailableSourcesSection(
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _installSourceFromZip(state, state.context),
+                  onPressed: () => _installSourceFromZip(context),
                   icon: const Icon(Icons.folder_zip_outlined),
                   label: Text(l10n.settingsImportZip),
                 ),
@@ -56,9 +60,8 @@ Widget _buildAvailableSourcesSection(
       BlocBuilder<SourceCubit, SourceState>(
         builder: (context, srcState) {
           final reachableCount = srcState.availableSources
-              .where((s) =>
-                  state._sourceHealthStatuses[s.id] ==
-                  SourceHealthStatus.reachable)
+              .where(
+                  (s) => healthStatuses[s.id] == SourceHealthStatus.reachable)
               .length;
           return buildSettingsCard([
             ListTile(
@@ -96,7 +99,7 @@ Widget _buildAvailableSourcesSection(
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: () => state._runHealthCheck(),
+                      onPressed: () => runHealthCheck(),
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Check All'),
                       style: TextButton.styleFrom(
@@ -123,8 +126,8 @@ Widget _buildAvailableSourcesSection(
               ...srcState.availableSources.map((source) {
                 final isActive = srcState.activeSource?.id == source.id;
                 final canUninstall = source.id != 'nhentai';
-                final health = state._sourceHealthStatuses[source.id] ??
-                    SourceHealthStatus.unknown;
+                final health =
+                    healthStatuses[source.id] ?? SourceHealthStatus.unknown;
                 final remoteConfig = getIt<RemoteConfigService>();
                 final sourceInfo = resolveSourceConfigDisplayInfo(
                   remoteConfigService: remoteConfig,
@@ -181,8 +184,8 @@ Widget _buildAvailableSourcesSection(
                         IconButton(
                           tooltip:
                               AppLocalizations.of(context)!.uninstallSource,
-                          onPressed: () => _confirmAndUninstallSource(
-                              state, state.context, source.id),
+                          onPressed: () =>
+                              _confirmAndUninstallSource(context, source.id),
                           icon: Icon(
                             Icons.delete_outline,
                             color: theme.colorScheme.error,
@@ -200,8 +203,48 @@ Widget _buildAvailableSourcesSection(
   );
 }
 
+Widget _buildSourcesShortcut(
+    _SettingsScreenState state, ThemeData theme, AppLocalizations l10n) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      buildSettingsSectionHeader(
+          Icons.download_outlined, l10n.availableSources, theme),
+      const SizedBox(height: 12),
+      BlocBuilder<SourceCubit, SourceState>(
+        builder: (context, srcState) => buildSettingsCard([
+          ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: const Icon(Icons.dns_outlined),
+            title: Text(
+              l10n.settingsCustomSourceTitle,
+              style: TextStyleConst.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Text(
+              l10n.nSourcesInstalled(srcState.availableSources.length),
+              style: TextStyleConst.bodySmall.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                  builder: (_) => const SourceManagerScreen()),
+            ),
+          ),
+        ], theme),
+      ),
+    ],
+  );
+}
+
 Future<void> _registerSourceInRegistry(
-    _SettingsScreenState state, BuildContext context, String sourceId) async {
+    BuildContext context, String sourceId) async {
   final remoteConfig = getIt<RemoteConfigService>();
   final registry = getIt<ContentSourceRegistry>();
   final resolver = getIt<SourceFactoryResolver>();
@@ -235,11 +278,10 @@ Future<void> _registerSourceInRegistry(
   }
 
   context.read<SourceCubit>().refreshSources();
-  state._triggerRebuild();
 }
 
 Future<void> _confirmAndUninstallSource(
-    _SettingsScreenState state, BuildContext context, String sourceId) async {
+    BuildContext context, String sourceId) async {
   if (sourceId == 'nhentai') {
     return;
   }
@@ -291,9 +333,6 @@ Future<void> _confirmAndUninstallSource(
       sourceCubit.clearSwitching();
     }
 
-    if (!state.mounted) return;
-    state._triggerRebuild();
-
     if (!context.mounted) return;
 
     messenger.hideCurrentSnackBar();
@@ -319,8 +358,7 @@ Future<void> _confirmAndUninstallSource(
   }
 }
 
-Future<void> _installSourceFromLink(
-    _SettingsScreenState state, BuildContext context) async {
+Future<void> _installSourceFromLink(BuildContext context) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context)!;
   final controller = TextEditingController();
@@ -363,10 +401,12 @@ Future<void> _installSourceFromLink(
     ),
   );
 
+  if (!context.mounted) return;
+
   try {
     final dio = getIt<Dio>();
     final candidates = await _buildCandidatesFromLinkManifest(
-      state: state,
+      context: context,
       link: link,
       dio: dio,
       l10n: l10n,
@@ -401,7 +441,7 @@ Future<void> _installSourceFromLink(
         await remoteConfig.markSourceInstalled(candidate.sourceId);
 
         if (!context.mounted) return;
-        await _registerSourceInRegistry(state, context, candidate.sourceId);
+        await _registerSourceInRegistry(context, candidate.sourceId);
         installed.add(candidate.sourceId);
       } catch (e, stackTrace) {
         Logger().e(
@@ -453,8 +493,7 @@ Future<void> _installSourceFromLink(
   }
 }
 
-Future<void> _installSourceFromZip(
-    _SettingsScreenState state, BuildContext context) async {
+Future<void> _installSourceFromZip(BuildContext context) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context)!;
 
@@ -477,7 +516,6 @@ Future<void> _installSourceFromZip(
     if (!context.mounted) return;
 
     final candidates = await _buildCandidateFromZip(
-      state: state,
       context: context,
       bytes: bytes,
       l10n: l10n,
@@ -512,7 +550,7 @@ Future<void> _installSourceFromZip(
         await remoteConfig.markSourceInstalled(candidate.sourceId);
 
         if (!context.mounted) return;
-        await _registerSourceInRegistry(state, context, candidate.sourceId);
+        await _registerSourceInRegistry(context, candidate.sourceId);
         installed.add(candidate.sourceId);
       } catch (e, stackTrace) {
         Logger().e(
@@ -565,7 +603,7 @@ Future<void> _installSourceFromZip(
 }
 
 Future<List<_InstallCandidate>> _buildCandidatesFromLinkManifest({
-  required _SettingsScreenState state,
+  required BuildContext context,
   required String link,
   required Dio dio,
   required AppLocalizations l10n,
@@ -610,11 +648,11 @@ Future<List<_InstallCandidate>> _buildCandidatesFromLinkManifest({
   final installableSources =
       _parseGlobalManifestEntries(manifestMap, l10n).toList();
   if (installableSources.isNotEmpty) {
-    if (!state.mounted) {
+    if (!context.mounted) {
       throw StateError('SettingsScreen is no longer mounted');
     }
     final selectedEntries = await _selectGlobalManifestEntries(
-      context: state.context,
+      context: context,
       entries: installableSources,
     );
     if (selectedEntries.isEmpty) {
@@ -856,7 +894,6 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
 }
 
 Future<List<_InstallCandidate>> _buildCandidateFromZip({
-  required _SettingsScreenState state,
   required BuildContext context,
   required List<int> bytes,
   required AppLocalizations l10n,
@@ -884,7 +921,7 @@ Future<List<_InstallCandidate>> _buildCandidateFromZip({
   final installableSources =
       _parseGlobalManifestEntries(manifestMap, l10n).toList(growable: false);
   if (installableSources.isNotEmpty) {
-    if (!state.mounted) {
+    if (!context.mounted) {
       throw StateError('SettingsScreen is no longer mounted');
     }
 

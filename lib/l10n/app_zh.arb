@@ -3704,6 +3704,7 @@
   "aiCapturedViewport": "屏幕截取成功。",
   "aiSettings": "AI 设置",
   "aiProvidersSubtitle": "提供商、语言、风格、翻译缓存",
+  "aiManageProviders": "AI 提供商",
   "aiOpen": "打开",
   "aiTargetLanguage": "目标语言",
   "aiTargetLangSubtitle": "AI 翻译成的语言",

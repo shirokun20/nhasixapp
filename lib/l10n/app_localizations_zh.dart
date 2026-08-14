@@ -5493,6 +5493,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiProvidersSubtitle => '提供商、语言、风格、翻译缓存';
 
   @override
+  String get aiManageProviders => 'AI 提供商';
+
+  @override
   String get aiOpen => '打开';
 
   @override

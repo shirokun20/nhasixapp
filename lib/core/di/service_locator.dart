@@ -10,6 +10,7 @@ import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/data/datasources/local/local_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/cloudflare_bypass_no_webview.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/reader/reader_prefetch_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 
@@ -1200,6 +1201,10 @@ void _setupCubits() {
         remoteConfigService: getIt<RemoteConfigService>(),
         logger: getIt<Logger>(),
       ));
+
+  // ReaderPrefetchCubit - prefetch download engine
+  getIt.registerFactory<ReaderPrefetchCubit>(
+      () => ReaderPrefetchCubit(logger: getIt<Logger>()));
 
   // OfflineSearchCubit - Offline content search (Singleton to persist state)
   getIt.registerLazySingleton<OfflineSearchCubit>(() => OfflineSearchCubit(
