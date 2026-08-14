@@ -422,21 +422,17 @@ void main() {
     // translatePage → provider receives them sorted. Skipping unit test here.
   });
 
-  group('T5 merge nearby boxes', () {
-    test('postProcessBoxes merges two overlapping text boxes', () {
+  group('T5 merge removed (no box merge — giant-box root cause)', () {
+    test('postProcessBoxes does NOT merge two overlapping text boxes', () {
       final cubit = makeCubit();
-      // Box1: y=10,h=20 → bottom=30; Box2: y=20,h=20 → bottom=40
-      // overlap=10px, minH=20 → 0.5≥0.5. IoU=400/(800+800-400)=0.33<0.45 → survives NMS
+      // Merge was killed (it unioned adjacent dialogue into one giant
+      // shape:null box). Overlapping boxes now survive as separate bubbles.
       final boxes = [
         BubbleBox(x: 10, y: 10, w: 40, h: 20, kind: 'text', confidence: 0.9),
         BubbleBox(x: 10, y: 20, w: 40, h: 20, kind: 'text', confidence: 0.8),
       ];
       final result = cubit.postProcessBoxes(boxes);
-      expect(result, hasLength(1));
-      expect(result.first.x, 10);
-      expect(result.first.y, 10);
-      expect(result.first.w, 40);
-      expect(result.first.h, 30); // merged: y=10, bottom=40, h=30
+      expect(result, hasLength(2));
     });
 
     test('postProcessBoxes keeps separate bubbles with large gap', () {
@@ -450,7 +446,7 @@ void main() {
       expect(result, hasLength(2));
     });
 
-    test('postProcessBoxes does not merge different kinds', () {
+    test('postProcessBoxes keeps different kinds separate', () {
       final cubit = makeCubit();
       final boxes = [
         BubbleBox(x: 10, y: 10, w: 40, h: 20, kind: 'text', confidence: 0.9),

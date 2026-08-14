@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
-import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -363,69 +362,18 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     }
     // Frame (panel border) bukan bubble — buang dari hasil deteksi.
     sorted.removeWhere((b) => b.kind == 'frame');
-    final merged = _mergeNearbyBoxes(sorted);
+    // NMS directly on sorted — no box merge. Merging same-kind boxes (incl.
+    // balloons) unioned adjacent dialogue into one giant flat shape:null box
+    // (the "giant green box"). dropTextInBalloon already prunes the split-line
+    // text-in-balloon case T5 was meant to solve, so merge is dead weight here.
     final keep = <BubbleBox>[];
-    final afterMerge = List<BubbleBox>.from(merged);
+    final afterMerge = List<BubbleBox>.from(sorted);
     while (afterMerge.isNotEmpty) {
       final best = afterMerge.removeAt(0);
       keep.add(best);
       afterMerge.removeWhere((b) => _iou(best, b) > 0.45);
     }
     return _removeFalsePositives(keep);
-  }
-
-  /// Merge nearby text boxes that belong to one balloon (spec 5.1).
-  /// Two boxes merge if: vertical overlap ≥ 0.5×minH AND gap ≤ 0.5×minH.
-  /// Merges TEXT boxes ONLY — balloons are distinct dialogue units (the old
-  /// same-kind merge unioned two adjacent balloons into one giant flat box).
-  List<BubbleBox> _mergeNearbyBoxes(List<BubbleBox> boxes) {
-    if (boxes.length < 2) return boxes;
-    final sorted = List<BubbleBox>.from(boxes)
-      ..sort((a, b) => a.y.compareTo(b.y));
-    final merged = <BubbleBox>[];
-    var i = 0;
-    while (i < sorted.length) {
-      var current = sorted[i];
-      var j = i + 1;
-      while (j < sorted.length) {
-        final next = sorted[j];
-        // Merge ONLY text boxes. Balloons are distinct dialogue units — merging
-        // two adjacent balloons (same kind, vertical overlap, small gap) unions
-        // them into ONE big flat box with shape:null (giant green box). Text
-        // boxes are the lone-merge case (2 boxes = 1 sentence split across lines).
-        if (current.kind != 'text' || current.kind != next.kind) break;
-        final minH = current.h < next.h ? current.h : next.h;
-        if (minH <= 0) break;
-        final curBottom = current.y + current.h;
-        final vertOverlap = curBottom > next.y ? (curBottom - next.y) / minH : 0.0;
-        final gap = next.y - curBottom;
-        if (vertOverlap >= 0.5 && math.max(gap, 0) <= minH * 0.5) {
-          final nx = current.x < next.x ? current.x : next.x;
-          final ny = current.y < next.y ? current.y : next.y;
-          final nr = (current.x + current.w) > (next.x + next.w)
-              ? (current.x + current.w)
-              : (next.x + next.w);
-          final nb = (current.y + current.h) > (next.y + next.h)
-              ? (current.y + current.h)
-              : (next.y + next.h);
-          current = BubbleBox(
-            x: nx,
-            y: ny,
-            w: nr - nx,
-            h: nb - ny,
-            confidence: current.confidence > next.confidence ? current.confidence : next.confidence,
-            shape: null, // merged = no shape
-            kind: current.kind,
-          );
-          j++;
-        } else {
-          break;
-        }
-      }
-      merged.add(current);
-      i = j;
-    }
-    return merged;
   }
 
   double _iou(BubbleBox a, BubbleBox b) {
