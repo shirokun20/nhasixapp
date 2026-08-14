@@ -129,6 +129,21 @@ class ReaderTranslationOverlay extends StatelessWidget {
           curr is ReaderTranslationIdle, // reset clears the overlay
       builder: (context, state) {
         if (state is! ReaderTranslationTranslated) {
+          // Show the same busy overlay while any heavy AI step runs, so the
+          // user gets feedback identical to draw-mode Detect instead of a
+          // silent page. refreshOnCropViewport reuses the cached snapshot, so
+          // translation without movement runs fast, but the visual contract
+          // (busy → spinner card) is consistent.
+          if (state is ReaderTranslationDetecting ||
+              state is ReaderTranslationBuildingMosaic ||
+              state is ReaderTranslationTranslating ||
+              state is ReaderTranslationTranslatingBubble) {
+            return AiBusyOverlay(
+              label: state is ReaderTranslationDetecting
+                  ? AppLocalizations.of(context)!.aiDetecting
+                  : AppLocalizations.of(context)!.aiTranslating,
+            );
+          }
           return const SizedBox.shrink();
         }
         final result = state.result;
@@ -618,4 +633,56 @@ TextStyle _textStyle(double size, String fontFamily) {
         Shadow(color: Colors.white, offset: o * stroke, blurRadius: 0),
     ],
   );
+}
+
+/// Full-screen busy overlay with an animated manga-style caption. Blocks
+/// input while a heavy AI pipeline step runs (viewport snapshot, ONNX
+/// detection, mosaic build, translate). Reused by draw-mode Detect and the
+/// translate path so the "is it working?" feedback is consistent everywhere.
+class AiBusyOverlay extends StatelessWidget {
+  const AiBusyOverlay({super.key, required this.label});
+
+  /// Text shown next to the spinner — call site picks the stage-specific
+  /// localised label (draw-mode detect vs translate), never hardcoded.
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: ColoredBox(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26, blurRadius: 12, offset: Offset(0, 3)),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -5,6 +5,7 @@ import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 
 import '../../../core/utils/polygon_geometry.dart';
+import 'reader_translation_widgets.dart';
 
 /// Manual bubble drawing mode (spec 9.5): pan-drag → red rectangle.
 /// ONNX-detected bubbles shown in BLUE as reference; manual bubbles in RED.
@@ -38,6 +39,7 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
   Rect? _dragging;
   List<_BubbleDrawEntry> _onnxEntries = const [];
   List<Rect> _manualRects = const [];
+  bool _detecting = false;
 
   void _repaint() => setState(() {});
 
@@ -164,6 +166,14 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                 ),
               ),
             ),
+            // Busy overlay — shown while the viewport snapshot / ONNX
+            // detection runs (substantial work: toImage → PNG → JPG + YOLO).
+            // Blocks input + visually tells the user work is happening instead
+            // of a silent freeze.
+            if (_detecting)
+              AiBusyOverlay(
+                label: AppLocalizations.of(context)!.aiDetecting,
+              ),
             // Controls — draw mode only. A small pill that expands into the
             // action panel on tap, so it never blocks the reader chrome or
             // the page below.
@@ -178,10 +188,17 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                       // Always capture the CURRENT viewport first — the user may
                       // have scrolled since the last capture, so a stale bitmap
                       // (from another scroll position) would mis-detect bubbles.
-                      await widget.onCaptureNeeded?.call();
-                      if (!mounted) return;
-                      await cubit.detectBubblesOnly();
-                      _repaint();
+                      setState(() => _detecting = true);
+                      try {
+                        await widget.onCaptureNeeded?.call();
+                        if (!mounted) return;
+                        await cubit.detectBubblesOnly();
+                      } finally {
+                        if (mounted) {
+                          setState(() => _detecting = false);
+                          _repaint();
+                        }
+                      }
                     },
                     onUndo: () {
                       cubit.undoLastManual();

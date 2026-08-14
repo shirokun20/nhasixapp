@@ -5546,6 +5546,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiTranslating => 'Translating...';
 
   @override
+  String get aiDetecting => 'Detecting bubbles...';
+
+  @override
   String get aiTranslatePage => 'Translate page';
 
   @override

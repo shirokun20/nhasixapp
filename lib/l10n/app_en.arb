@@ -4092,6 +4092,7 @@
   "aiNotAvailableCS": "AI translate tidak tersedia di continue scroll.",
   "aiHideTranslation": "Hide translation",
   "aiTranslating": "Translating...",
+  "aiDetecting": "Detecting bubbles...",
   "aiTranslatePage": "Translate page",
   "aiClearTranslateBubbles": "Clear translate + bubbles",
   "aiExitDrawMode": "Exit draw mode",

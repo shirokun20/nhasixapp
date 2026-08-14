@@ -178,6 +178,15 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   /// the full page image (which is far taller than the screen).
   final GlobalKey _viewportKey = GlobalKey();
 
+  /// Cached viewport snapshot (+ its signature) so draw-mode "Detect" reuses
+  /// the last capture instead of re-snapping + re-encoding the whole screen
+  /// when nothing scrolled/resized. Resetting the offset to -inf forces the
+  /// first call to capture fresh.
+  Uint8List? _cachedViewportBytes;
+  int _cachedViewportSign = -1;
+  double _cachedViewportOffset = double.negativeInfinity;
+  int _cachedViewportPage = -1;
+
   @override
   void initState() {
     super.initState();
@@ -754,6 +763,31 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     // offset keeps the cache key unique per scroll position.
     if (isContinuous) {
       final resolvedOffset = offsetInItem ?? _actionTarget().offsetInItem;
+      // Reuse last snapshot when viewport size + scroll offset unchanged —
+      // the screen looks identical, so re-snapping/re-encoding (toImage →
+      // PNG → JPG, all CPU/GPU-heavy) just wastes time on every draw Detect.
+      final viewport = _currentViewportSize();
+      final cachedSig = viewport == null
+          ? -1
+          : (viewport.width.round() ^ (viewport.height.round() << 16) ^
+              resolvedOffset.round());
+      if (cachedSig == _cachedViewportSign &&
+          _cachedViewportBytes != null &&
+          resolvedOffset == _cachedViewportOffset &&
+          pageIndex == _cachedViewportPage) {
+        widget.logger.d(
+            'AI translate: reuse cached viewport snapshot (${viewport!.width.round()}x${viewport.height.round()} @$resolvedOffset p$pageIndex)');
+        _translationCubit.capturePage(
+          imageBytes: _cachedViewportBytes!,
+          imageWidth: viewport.width.round(),
+          imageHeight: viewport.height.round(),
+        );
+        return (
+          bytes: _cachedViewportBytes!,
+          size: Size(viewport.width, viewport.height),
+          cropYTop: resolvedOffset.round(),
+        );
+      }
       final captured = await _captureVisibleViewport();
       if (captured == null) {
         widget.logger.w('AI translate: viewport capture gagal');
@@ -779,6 +813,13 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       );
       widget.logger.d('AI translate: viewport capture ${sizeOut.width.round()}x'
           '${sizeOut.height.round()} bytes=${bytesOut.length}');
+      _cachedViewportBytes = bytesOut;
+      _cachedViewportSign = viewport == null
+          ? -1
+          : (viewport.width.round() ^ (viewport.height.round() << 16) ^
+              resolvedOffset.round());
+      _cachedViewportOffset = resolvedOffset;
+      _cachedViewportPage = pageIndex;
       _translationCubit.capturePage(
         imageBytes: bytesOut,
         imageWidth: sizeOut.width.round(),
@@ -845,6 +886,13 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       widget.logger.w('AI translate: viewport capture gagal: $e');
       return null;
     }
+  }
+
+  /// Current rendered viewport size (logical px) WITHOUT rasterizing. Used to
+  /// key the snapshot cache — size + scroll offset fully identify the view.
+  Size? _currentViewportSize() {
+    final renderObject = _viewportKey.currentContext?.findRenderObject();
+    return renderObject is RenderRepaintBoundary ? renderObject.size : null;
   }
 
   Future<Uint8List?> _fetchPageBytes(String url) async {

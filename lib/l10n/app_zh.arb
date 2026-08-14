@@ -3674,6 +3674,7 @@
   "aiNotAvailableCS": "连续滚动模式下不可用 AI 翻译。",
   "aiHideTranslation": "隐藏翻译",
   "aiTranslating": "翻译中...",
+  "aiDetecting": "检测气泡中...",
   "aiTranslatePage": "翻译页面",
   "aiClearTranslateBubbles": "清除翻译 + 气泡",
   "aiExitDrawMode": "退出绘制模式",

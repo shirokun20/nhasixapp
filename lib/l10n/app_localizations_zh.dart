@@ -5395,6 +5395,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiTranslating => '翻译中...';
 
   @override
+  String get aiDetecting => '检测气泡中...';
+
+  @override
   String get aiTranslatePage => '翻译页面';
 
   @override

@@ -9480,6 +9480,12 @@ abstract class AppLocalizations {
   /// **'Translating...'**
   String get aiTranslating;
 
+  /// No description provided for @aiDetecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting bubbles...'**
+  String get aiDetecting;
+
   /// No description provided for @aiTranslatePage.
   ///
   /// In en, this message translates to:

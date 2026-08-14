@@ -3078,6 +3078,7 @@
   "aiNotAvailableCS": "AI translate tidak tersedia di continue scroll.",
   "aiHideTranslation": "Sembunyikan terjemahan",
   "aiTranslating": "Menerjemahkan...",
+  "aiDetecting": "Mendeteksi bubble...",
   "aiTranslatePage": "Translate halaman",
   "aiClearTranslateBubbles": "Bersihkan translate + bubble",
   "aiExitDrawMode": "Keluar mode gambar",

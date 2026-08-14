@@ -5573,6 +5573,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiTranslating => 'Menerjemahkan...';
 
   @override
+  String get aiDetecting => 'Mendeteksi bubble...';
+
+  @override
   String get aiTranslatePage => 'Translate halaman';
 
   @override
