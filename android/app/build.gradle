@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "id.nhasix.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -57,7 +57,6 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_name", "Kuron Dev"
         }
         release {
             // Fallback to debug signing if release keys are missing
@@ -70,7 +69,23 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
-            resValue "string", "app_name", "Kuron"
+        }
+    }
+
+    // Flavor-based app name + applicationId. AGP 9 dropped resValue; use
+    // static-per-flavor manifestPlaceholders (no AGP resource DSL required).
+    // Prod: flavor "prod" → Kuron / id.nhasix.app
+    // Dev:   flavor "dev"  → Kuron Dev / id.nhasix.app.dev (sideload builds)
+    flavorDimensions += "app"
+    productFlavors {
+        prod {
+            dimension "app"
+            manifestPlaceholders = [appName: "Kuron"]
+        }
+        dev {
+            dimension "app"
+            applicationId "id.nhasix.app.dev"
+            manifestPlaceholders = [appName: "Kuron Dev"]
         }
     }
 

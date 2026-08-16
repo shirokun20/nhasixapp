@@ -44,9 +44,9 @@ if [ "$BUILD_TYPE" = "release" ] && [ -z "${KEYSTORE_BASE64:-}" ] && [ -f "andro
 fi
 
 if [ "$BUILD_TYPE" = "release" ]; then
-    flutter build apk --release --split-per-abi --split-debug-info=build/debug-info/
+    flutter build apk --release --split-per-abi --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
 else
-    flutter build apk --debug --split-per-abi
+    flutter build apk --debug --split-per-abi --dart-define=cronetHttpNoPlay=true
 fi
 
 echo ""

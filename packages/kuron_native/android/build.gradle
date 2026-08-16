@@ -5,27 +5,18 @@ plugins {
 // ── Rust FFI: cargo-ndk build ──────────────────────────────
 def jniLibsDir = file("${projectDir}/src/main/jniLibs")
 
-task buildRustLibs {
+task buildRustLibs(type: Exec) {
     description = "Build Rust native libraries for Android via cargo-ndk"
     group = "rust"
-    doLast {
-        def result = exec {
-            workingDir file("${projectDir}/../rust")
-            commandLine 'cargo', 'ndk',
-                '-o', jniLibsDir,
-                '-t', 'arm64-v8a',
-                '-t', 'armeabi-v7a',
-                '-t', 'x86_64',
-                'build', '--release'
-            environment 'ANDROID_NDK_HOME',
-                System.getenv('ANDROID_NDK_HOME') ?: "${project.android.ndkDirectory}"
-        }
-        if (result.exitValue != 0) {
-            throw new GradleException(
-                "Rust build FAILED (exit $result.exitValue). " +
-                "Fix: 'cargo install cargo-ndk' && 'rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android'")
-        }
-    }
+    workingDir file("${projectDir}/../rust")
+    commandLine 'cargo', 'ndk',
+        '-o', jniLibsDir,
+        '-t', 'arm64-v8a',
+        '-t', 'armeabi-v7a',
+        '-t', 'x86_64',
+        'build', '--release'
+    environment 'ANDROID_NDK_HOME',
+        System.getenv('ANDROID_NDK_HOME') ?: "${project.android.ndkDirectory}"
 }
 
 tasks.whenTaskAdded { task ->

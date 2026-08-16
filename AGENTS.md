@@ -39,13 +39,14 @@
 This project uses **FVM** (Flutter Version Management). Always prefix with `fvm`:
 
 - **Build/Run**: `fvm flutter clean && fvm flutter pub get` | `fvm flutter run --debug` | `fvm flutter build apk --release`
-- **Build Optimized**: `./build_optimized.sh debug` | `release`
+- **Build with flavor**: `fvm flutter build apk --release --flavor prod --dart-define=cronetHttpNoPlay=true` | `--flavor dev` (dev label "Kuron Dev", appId `id.nhasix.app.dev`)
+- **Required dart-define**: `--dart-define=cronetHttpNoPlay=true` — Cronet embedded (no Play Services); REQUIRED on AGP 9 for the org.chromium.net namespace conflict. Always pass it. `build_optimized.sh` includes it.
+- **Build Optimized**: `./build_optimized.sh debug` | `release` (adds flavor + dart-define)
 - **Test/Lint**: `fvm flutter test` | `fvm flutter analyze` | `fvm dart run build_runner build`
 - **Codegen**: `fvm flutter pub run build_runner build --delete-conflicting-outputs`
 - **Format**: `fvm dart format .`
 - **Analysis (single file)**: `fvm dart analyze <path>`
-- **Release**: `./build_release.sh` (Custom) | `fvm flutter build ipa` (iOS)
-- **Packages Pub Get**: `./scripts/pub_get_all.sh` | Run `fvm flutter pub get` on all packages
+- **Release**: `./build_release.sh` (Custom) | `fvm flutter build ipa` (iOS)- **Packages Pub Get**: `./scripts/pub_get_all.sh` | Run `fvm flutter pub get` on all packages
 
 ## 📜 Development Scripts
 
