@@ -187,6 +187,10 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   double _cachedViewportOffset = double.negativeInfinity;
   int _cachedViewportPage = -1;
 
+  /// T2 prefetch idle timer: resets on every scroll notification / page
+  /// change; fires 600ms after the last one, when the page has settled.
+  Timer? _prefetchIdleTimer;
+
   @override
   void initState() {
     super.initState();
@@ -233,11 +237,24 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
 
   @override
   void dispose() {
+    _prefetchIdleTimer?.cancel();
     _translationCubit.onDrawModeChanged = null;
     _translationCubit.close();
     super.dispose();
   }
 
+  /// T2 prefetch schedule: reset on activity, fire 600ms after the last
+  /// scroll/page-change when the image has settled (spec 2.2). The cubit
+  /// itself skips when busy / memory-pressured (spec 2.3).
+  void _schedulePrefetchDetection() {
+    _prefetchIdleTimer?.cancel();
+    _prefetchIdleTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      _translationCubit.prefetchDetection();
+    });
+  }
+
+  
   Widget _buildChapterNavigationPage({VoidCallback? onGoToFirstPage}) {
     final hasPrevChapter = widget.cubit.hasPreviousChapter;
     final hasNextChapter = widget.cubit.hasNextChapter;
@@ -278,6 +295,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         widget.animatedPauseNotifier.value = reportPage;
         // New page → clear stale translation overlay
         _translationCubit.resetPage();
+        _schedulePrefetchDetection();
 
         widget.logger.d(
             '📖 VerticalPageView changed to index=$index (reporting page $reportPage)');
@@ -334,6 +352,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         widget.animatedPauseNotifier.value = reportPage;
         // New page → clear stale translation overlay
         _translationCubit.resetPage();
+        _schedulePrefetchDetection();
 
         widget.logger.d(
             '📖 Vertical PageView changed to index=$index (reporting page $reportPage)');
@@ -402,6 +421,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         onNotification: (ScrollNotification notification) {
           if (notification is ScrollUpdateNotification) {
             widget.onScrollNotification(notification, state);
+            _schedulePrefetchDetection();
           }
           return false;
         },
@@ -782,6 +802,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           imageWidth: viewport.width.round(),
           imageHeight: viewport.height.round(),
         );
+        _schedulePrefetchDetection();
         return (
           bytes: _cachedViewportBytes!,
           size: Size(viewport.width, viewport.height),
@@ -825,6 +846,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         imageWidth: sizeOut.width.round(),
         imageHeight: sizeOut.height.round(),
       );
+      _schedulePrefetchDetection();
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
@@ -858,6 +880,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       imageWidth: size.width.round(),
       imageHeight: size.height.round(),
     );
+    _schedulePrefetchDetection();
     widget.logger.d('AI translate: page ${size.width.round()}x'
         '${size.height.round()} bytes=${bytes.length}');
     return (bytes: bytes, size: size, cropYTop: 0);

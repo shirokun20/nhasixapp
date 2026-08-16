@@ -11,7 +11,6 @@ import '../../../domain/repositories/ai_translation_repositories.dart';
 /// OpenAI-compatible `/chat/completions` provider. Covers OpenCode Go
 /// (all 23 models), OpenAI, OpenRouter, Zen free models, and Custom endpoints.
 class OpenAICompatibleProvider implements AiTranslationProvider {
-  static const _readingDirectionLabel = 'left-to-right';
 
   OpenAICompatibleProvider({
     required this.config,
@@ -47,10 +46,11 @@ Rules:
     required String targetLang,
     required TranslationStyle style,
     bool skipSfx = true,
+    String readingDirection = 'left-to-right',
   }) async {
     final isMosaic = bubbles.isNotEmpty;
     final prompt = isMosaic
-        ? buildMosaicPrompt(targetLang, style, skipSfx)
+        ? buildMosaicPrompt(targetLang, style, skipSfx, readingDirection)
         : fullImagePrompt
             .replaceAll('{lang}', targetLang)
             .replaceAll('{style}', style.instruction)
@@ -88,11 +88,12 @@ Rules:
   String buildMosaicPrompt(
     String targetLang,
     TranslationStyle style,
-    bool skipSfx,
-  ) {
+    bool skipSfx, [
+    String readingDirection = 'left-to-right',
+  ]) {
     return '''
 Translate the manga/manhwa image. Each bubble has a red number ID on its left.
-Reading order: $_readingDirectionLabel top-to-bottom, left-to-right.
+Reading order: bubbles numbered $readingDirection, top-to-bottom.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
 {"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
 Rules:

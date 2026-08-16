@@ -4,6 +4,7 @@ import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
 import 'package:kuron_native/kuron_native.dart' show BubbleBox;
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
+import 'package:nhasixapp/domain/entities/ai_translation.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
 import 'package:nhasixapp/presentation/pages/reader/reader_screen.dart';
@@ -13,12 +14,18 @@ import 'fakes.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // T2: counts ONNX detectBubbles invocations — proves the translate path
+  // skips re-detection after a prefetch (reuse = no new call).
+  var detectCalls = 0;
+
   setUp(() {
+    detectCalls = 0;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('kuron_native'),
       (MethodCall call) async {
         if (call.method == 'detectBubbles') {
+          detectCalls++;
           return [
             {'x': 10, 'y': 10, 'w': 50, 'h': 30, 'confidence': 0.9},
             {'x': 100, 'y': 100, 'w': 40, 'h': 25, 'confidence': 0.8},
@@ -478,6 +485,26 @@ void main() {
         expect(b.fontFamily, 'Komika'); // natural → Komika
       }
     });
+
+    test('non-default styles map to their font', () async {
+      final prefs = FakeAiPreferencesRepository()..style = TranslationStyle.formal;
+      final cubit = makeCubit(preferencesRepository: prefs);
+      addTearDown(cubit.close);
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      final state = cubit.state as ReaderTranslationTranslated;
+      for (final b in state.result.bubbles) {
+        expect(b.fontFamily, 'ComicNeue'); // formal → ComicNeue (OFL)
+      }
+    });
   });
 
   group('T7 bubble tail', () {
@@ -508,6 +535,137 @@ void main() {
       );
       cubit.removeTail(0);
       expect(cubit.manualBubbles.first.tail, isNull);
+    });
+  });
+
+  group('T2 detection prefetch', () {
+    test('translatePage reuses prefetched detection (no re-detect)', () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      // Prefetch on the captured page, then translate the SAME image — the
+      // pipeline must skip the ONNX call entirely and use the cached boxes.
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      cubit.capturePage(imageBytes: bytes, imageWidth: 100, imageHeight: 100);
+      await cubit.prefetchDetection();
+      await pumpEventQueue();
+      expect(detectCalls, 1); // prefetch ran ONNX once
+
+      await cubit.translatePage(
+        imageBytes: bytes,
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      // Reuse = NO second detect call; boxes came from the prefetch cache.
+      expect(detectCalls, 1);
+      expect(
+          (cubit.state as ReaderTranslationTranslated).result.bubbles,
+          hasLength(2));
+    });
+
+    test('empty prefetch result is NOT reused — translate re-detects',
+        () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      // ONNX returns nothing (flaky NNAPI / no bubbles) during prefetch.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('kuron_native'),
+        (MethodCall call) async {
+          if (call.method == 'detectBubbles') {
+            detectCalls++;
+            return <Map<String, dynamic>>[];
+          }
+          return null;
+        },
+      );
+
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      cubit.capturePage(imageBytes: bytes, imageWidth: 100, imageHeight: 100);
+      await cubit.prefetchDetection();
+      await pumpEventQueue();
+      expect(detectCalls, 1);
+      expect(cubit.detectedBoxes, isEmpty); // nothing came back
+
+      // Translate must NOT reuse the empty cache: restore a working ONNX
+      // mock, then verify the pipeline re-detects instead of uploading full.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('kuron_native'),
+        (MethodCall call) async {
+          if (call.method == 'detectBubbles') {
+            detectCalls++;
+            return [
+              {'x': 10, 'y': 10, 'w': 50, 'h': 30, 'confidence': 0.9},
+              {'x': 100, 'y': 100, 'w': 40, 'h': 25, 'confidence': 0.8},
+            ];
+          }
+          return null;
+        },
+      );
+
+      await cubit.translatePage(
+        imageBytes: bytes,
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      // Empty prefetch must NOT be reused — fresh ONNX ran (2nd call).
+      expect(detectCalls, 2);
+      expect(
+          (cubit.state as ReaderTranslationTranslated).result.bubbles,
+          hasLength(2));
+    });
+
+    test('different capture signature invalidates prefetch (re-detect)',
+        () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 100,
+          imageHeight: 100);
+      await cubit.prefetchDetection();
+      await pumpEventQueue();
+      expect(detectCalls, 1);
+
+      // New capture (different bytes = different signature) → the old boxes
+      // must not be reused; translate re-detects against the new image.
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([9, 9, 9]),
+          imageWidth: 100,
+          imageHeight: 100);
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([9, 9, 9]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      expect(detectCalls, 2); // stale prefetch → fresh ONNX run
     });
   });
 

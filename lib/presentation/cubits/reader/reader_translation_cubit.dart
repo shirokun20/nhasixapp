@@ -8,6 +8,7 @@ import 'package:crypto/crypto.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:image/image.dart' as img;
 
+import '../../../core/services/memory_budget_coordinator.dart';
 import '../../../core/utils/webtoon_detector.dart';
 import '../../../data/repositories/ai/ai_provider_factory.dart';
 import '../../../data/repositories/ai/fallback_image_handler.dart';
@@ -83,6 +84,42 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   bool _rtlReading = false; // manga: right-to-left
   TranslationStyle? _currentStyle;
 
+  // T2 prefetch: detection run in the background after the page settles, so
+  // the Translate tap skips the 2.6s ONNX wait. Key is the capture signature
+  // (same bytes → same boxes); reused only when translatePage runs on the
+  // exact captured image. A different signature (new page, CS crop scrolled
+  // away) invalidates stale results — the translate path re-detects.
+  List<BubbleBox>? _prefetchedBoxes;
+  String _prefetchKey = '';
+  bool _prefetchRunning = false;
+
+  /// Rough captured-image size in bytes (kept for the low-RAM prefetch gate).
+  int? _imageBytesApprox;
+
+  /// True while the prefetch pipeline is busy (translate, manual editing,
+  /// draw mode) or under memory pressure — the states where a background
+  /// detection would contend with the UI.
+  bool _prefetchBlocked() {
+    if (_prefetchRunning || _drawMode) return true;
+    if (state is ReaderTranslationDetecting ||
+        state is ReaderTranslationBuildingMosaic ||
+        state is ReaderTranslationTranslating ||
+        state is ReaderTranslationTranslatingBubble) {
+      return true;
+    }
+    try {
+      final heap = MemoryBudgetCoordinator().appHeapEstimateMB;
+      if (heap >= 512) return false;
+      // Low-RAM device: only prefetch when the reader's decoded-image budget
+      // is comfortably free; skip under pressure rather than risk OOM.
+      return _imageBytesApprox != null &&
+          _imageBytesApprox! >=
+              MemoryBudgetCoordinator().readerDecodedBudgetBytes ~/ 2;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // Image/page context of the current translation (for coordinate scaling).
   int _currentImageWidth = 0;
   int _currentImageHeight = 0;
@@ -102,6 +139,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       );
 
   bool get drawMode => _drawMode;
+
+  /// Human-readable reading direction for AI prompts (T4.2): manga/RTL →
+  /// right-to-left, manhwa/webtoon/ltr → left-to-right. Matches the bubble
+  /// sort in [_translationBoxes] so the prompt order mirrors chip numbering.
+  String get readingDirectionLabel => _rtlReading ? 'right-to-left' : 'left-to-right';
 
   /// Notified whenever [drawMode] flips. Lets the reader chrome auto-hide
   /// while drawing.
@@ -150,6 +192,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     _pageWidth = imageWidth;
     _pageHeight = imageHeight;
     _capturedPageSignature = newSignature;
+    _imageBytesApprox = imageBytes.length;
 
     // Continuous-scroll viewport crops reuse the same page index, so a new
     // capture must invalidate old box coordinates from previous captures.
@@ -158,6 +201,9 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       _detectedBoxes.clear();
       _translationDetectedBoxes.clear();
       _manualBubbles.clear();
+      // Prefetched boxes were computed for the OLD image — discard (spec 2.4).
+      _prefetchedBoxes = null;
+      _prefetchKey = '';
       logInfo(
           'capturePage: new capture ${imageWidth}x$imageHeight bytes=${imageBytes.length} -> clear stale boxes');
       if (_drawMode) {
@@ -197,6 +243,62 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     }
     logInfo('detectBubblesOnly: ${boxes.length} detections');
     return boxes;
+  }
+
+  /// T2 prefetch: background detection for the CURRENTLY CAPTURED page, run
+  /// after the reader settles (idle timer in the reader widget). Result is
+  /// cached against the capture signature and reused by [translatePage] when
+  /// the same image is still active — the Translate tap then skips the ONNX
+  /// wait entirely.
+  ///
+  /// Skipped (silently) when the pipeline is busy, draw mode is active, or the
+  /// device is under memory pressure (spec 2.3). Never emits — this is a
+  /// fire-and-forget warm-up, not user-facing state.
+  Future<void> prefetchDetection() async {
+    if (_prefetchBlocked()) return;
+    final bytes = _pageBytes;
+    if (bytes == null || _pageWidth <= 0 || _pageHeight <= 0) {
+      logInfo('prefetchDetection: no captured page — skip');
+      return;
+    }
+    final key = _capturedPageSignature;
+    if (key.isEmpty || key == _prefetchKey && _prefetchedBoxes != null) {
+      logInfo('prefetchDetection: cache hit (sig same) — skip');
+      return;
+    }
+    if (_detectedBoxes.isNotEmpty) {
+      // Draw mode / earlier detection already ran on this capture — nothing
+      // to warm up; reuse the existing result for future translates.
+      logInfo('prefetchDetection: existing detection — cache it');
+      _prefetchedBoxes = _detectedBoxes;
+      _prefetchKey = key;
+      return;
+    }
+    _prefetchRunning = true;
+    try {
+      logInfo('prefetchDetection: running (${_pageWidth}x$_pageHeight)...');
+      final raw = await _detect(bytes, _pageWidth, _pageHeight);
+      final boxes = postProcessBoxes(raw);
+      // Cache only non-empty results. An empty prefetch must NOT shadow the
+      // translate path: reusing it would skip the re-detect and fall straight
+      // into full-image upload. Stale key is dropped so translate re-detects.
+      if (boxes.isNotEmpty) {
+        _prefetchedBoxes = boxes;
+        _prefetchKey = key;
+        logInfo('prefetchDetection: done — ${boxes.length} boxes cached');
+      } else {
+        _prefetchedBoxes = null;
+        _prefetchKey = '';
+        logWarning('prefetchDetection: empty result — nothing cached, translate will re-detect');
+      }
+    } catch (e) {
+      logWarning('prefetchDetection failed: $e');
+      // Also drop a stale cache on failure — same re-detect guarantee.
+      _prefetchedBoxes = null;
+      _prefetchKey = '';
+    } finally {
+      _prefetchRunning = false;
+    }
   }
 
   Future<void> setSkipSfx(bool value) async {
@@ -245,12 +347,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       '${b.rect.left}_${b.rect.top}_$index';
 
   /// Style → font family map (spec 6.3). Default: Komika/KosugiMaru.
+  /// Anime Ace → ComicNeue, CC Wild Words → Bangers (OFL substitutes, T6.1).
   static const _styleFontMap = <TranslationStyle, String>{
     TranslationStyle.natural: 'Komika',
     TranslationStyle.genz: 'Komika',
-    TranslationStyle.action: 'Komika',
+    TranslationStyle.action: 'Bangers',
     TranslationStyle.romantis: 'Komika',
-    TranslationStyle.formal: 'Komika',
+    TranslationStyle.formal: 'ComicNeue',
     TranslationStyle.kasar: 'Komika',
     TranslationStyle.literal: 'KosugiMaru',
   };
@@ -473,6 +576,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       return;
     }
 
+    // Show the spinner immediately on tap — provider resolution + prefetch
+    // wait + mosaic build can each take a beat, and the tap must never look
+    // frozen. T2 reuse skips the ONNX wait, but the first frame is the same.
+    emit(const ReaderTranslationDetecting());
+
     // Active provider (must be vision-capable for image translation).
     // Text-only free models (deepseek-v4-flash-free) can't read the page
     // image — prefer any vision-capable provider, else guide to Settings.
@@ -552,15 +660,51 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       //    draw-mode Detect (or user deletes) already set _detectedBoxes;
       //    re-detecting here would resurrect bubbles the user unchecked.
       if (_detectedBoxes.isEmpty) {
-        emit(const ReaderTranslationDetecting());
-        final rawBoxes = await _detect(imageBytes, imageWidth, imageHeight);
-        _detectedBoxes = postProcessBoxes(rawBoxes);
-        _translationDetectedBoxes = _detectedBoxes;
-        logInfo(
-            'translatePage: detect ${rawBoxes.length} → ${_detectedBoxes.length} boxes');
-        for (final b in _detectedBoxes) {
+        // T2 prefetch reuse: background detection already ran for this exact
+        // captured image → skip the 2.6s ONNX wait (spec 2.4).
+        // While a prefetch is MID-RUN, the ONNX session is busy: re-running
+        // `_detect` here competes for the same Kotlin executor AND the same
+        // OrtSession (not thread-safe). Wait for it to finish, then fall
+        // through to the reuse check below — no double inference.
+        if (_prefetchRunning) {
+          logInfo('translatePage: prefetch in-flight — waiting for it...');
+          final keyAtStart = _capturedPageSignature;
+          // Bounded wait: 5s covers the ~2.6s ONNX run; past that, proceed
+          // with our own detect rather than hang forever.
+          for (var i = 0; i < 50 && _prefetchRunning; i++) {
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+          }
+          if (keyAtStart != _capturedPageSignature) {
+            // Page changed while waiting — abort this translate entirely
+            // (the caller will re-invoke for the new page).
+            logInfo('translatePage: page changed during prefetch wait — abort');
+            return;
+          }
+          logInfo('translatePage: prefetch finished (waited)');
+        }
+        final prefetchedMatches = _prefetchedBoxes != null &&
+            _prefetchKey.isNotEmpty &&
+            _prefetchKey == _capturedPageSignature;
+        if (prefetchedMatches) {
+          _detectedBoxes = List.of(_prefetchedBoxes!);
+          _translationDetectedBoxes = _detectedBoxes;
           logInfo(
-              '  box kind=${b.kind} conf=${b.confidence.toStringAsFixed(2)} ${b.x},${b.y},${b.w}x${b.h} shape=${b.shape?.length}');
+              'translatePage: reuse prefetch — ${_detectedBoxes.length} boxes (no re-detect)');
+        } else {
+          if (_prefetchedBoxes != null && _prefetchKey.isNotEmpty) {
+            logInfo(
+                'translatePage: prefetch STALE (sig differs: captures $_capturedPageSignature prefetch $_prefetchKey) — re-detect');
+          }
+          emit(const ReaderTranslationDetecting());
+          final rawBoxes = await _detect(imageBytes, imageWidth, imageHeight);
+          _detectedBoxes = postProcessBoxes(rawBoxes);
+          _translationDetectedBoxes = _detectedBoxes;
+          logInfo(
+              'translatePage: detect ${rawBoxes.length} → ${_detectedBoxes.length} boxes');
+          for (final b in _detectedBoxes) {
+            logInfo(
+                '  box kind=${b.kind} conf=${b.confidence.toStringAsFixed(2)} ${b.x},${b.y},${b.w}x${b.h} shape=${b.shape?.length}');
+          }
         }
       }
       // Manual bubbles are the user's authoritative correction: drop any
@@ -665,6 +809,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
             targetLang: targetLang,
             style: style,
             skipSfx: skipSfx,
+            readingDirection: readingDirectionLabel,
           );
         } else {
           emit(const ReaderTranslationBuildingMosaic());
@@ -686,6 +831,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
             targetLang: targetLang,
             style: style,
             skipSfx: skipSfx,
+            readingDirection: readingDirectionLabel,
           );
         }
         // 9.1 per-bubble partial progress: report parsed bubbles as they land
@@ -924,6 +1070,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         targetLang: targetLang,
         style: style,
         skipSfx: skipSfx,
+        readingDirection: readingDirectionLabel,
       );
       if (retryResult.bubbles.isNotEmpty) {
         final updated = List<BubbleTranslation>.from(_currentResult!.bubbles);

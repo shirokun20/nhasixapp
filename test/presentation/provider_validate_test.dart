@@ -36,6 +36,7 @@ class _ThrowingProvider implements AiTranslationProvider {
     required String targetLang,
     required TranslationStyle style,
     bool skipSfx = true,
+    String readingDirection = 'left-to-right',
   }) {
     throw UnimplementedError();
   }

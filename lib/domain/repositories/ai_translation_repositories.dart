@@ -21,6 +21,9 @@ abstract interface class AiTranslationProvider {
   /// When [bubbles] is empty, the full image is sent and the provider must
   /// return bubbles with absolute pixel rects, mapped from percentage
   /// coordinates using [imageWidth]/[imageHeight] of the ORIGINAL page.
+  /// [readingDirection] is how [bubbles] were ordered — the source dialect
+  /// (manga vs manhwa) determines right-to-left vs left-to-right, and the
+  /// prompt tells the model the reading flow so dialogue context follows it.
   Future<PageTranslation> translatePage({
     required Uint8List image,
     required int imageWidth,
@@ -28,7 +31,8 @@ abstract interface class AiTranslationProvider {
     required List<BubbleBoxLike> bubbles,
     required String targetLang,
     required TranslationStyle style,
-    bool skipSfx,
+    bool skipSfx = true,
+    String readingDirection = 'left-to-right',
   });
 
   /// Sends a minimal test request to validate the API key.

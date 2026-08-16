@@ -137,6 +137,12 @@ flutter:
     - family: KosugiMaru
       fonts:
         - asset: assets/fonts/KosugiMaru.ttf
+    - family: Bangers
+      fonts:
+        - asset: assets/fonts/Bangers.ttf
+    - family: ComicNeue
+      fonts:
+        - asset: assets/fonts/ComicNeue.ttf
 
 # Flutter Launcher Icons Configuration
 flutter_launcher_icons:

@@ -30,6 +30,10 @@ import kotlin.math.min
 class BubbleDetector(context: Context) : Closeable {
 
     private var session: ai.onnxruntime.OrtSession? = null
+    // Pure-CPU backup session. NNAPI output can silently degrade to garbage on
+    // some devices (all confidences below threshold → empty detections), so a
+    // zero-result NNAPI run is re-run on CPU before giving up.
+    private var cpuSession: ai.onnxruntime.OrtSession? = null
     private val env: ai.onnxruntime.OrtEnvironment
     private val inputName: String
     private val modelInputSize: Int = 1280
@@ -49,20 +53,48 @@ class BubbleDetector(context: Context) : Closeable {
     private var padTop: Int = 0
     private var letterScale: Float = 1f
 
+    // Preferred EP: NNAPI delegates to the device GPU/NPU/driver (API 27+;
+    // ORT falls back to CPU automatically below the min feature level). Stock
+    // ORT Android ships no OpenCL/Vulkan EP — NNAPI IS the hardware path.
+    // Falls back to CPU when init fails (spec: silent fallback, no error).
+    private var usesNnapi = false
+
     init {
-        try {
-            env = ai.onnxruntime.OrtEnvironment.getEnvironment()
-            val modelBytes = context.assets.open("bubble_detector.onnx").use { it.readBytes() }
-            val sessionOptions = ai.onnxruntime.OrtSession.SessionOptions()
-            sessionOptions.addCPU(true)
-            session = env.createSession(modelBytes, sessionOptions)
-            val inputNames = session?.inputNames ?: throw RuntimeException("No input names")
-            inputName = inputNames.iterator().next()
-            android.util.Log.i(TAG, "BubbleDetector loaded (seg). Input: $inputName")
+        env = ai.onnxruntime.OrtEnvironment.getEnvironment()
+        val modelBytes = context.assets.open("bubble_detector.onnx").use { it.readBytes() }
+
+        // NNAPI session build can THROW even when addNnapi() succeeds — the
+        // model contains ops NNAPI lacks a kernel for (e.g. Flatten on
+        // MediaTek shims: "Failed to find kernel ... Kernel not found").
+        // When that happens, fall straight to a pure-CPU session instead of
+        // leaving session == null and failing every detect call.
+        val nnapiSession: ai.onnxruntime.OrtSession? = try {
+            val opts = ai.onnxruntime.OrtSession.SessionOptions()
+            opts.addNnapi()
+            opts.addCPU(true)
+            env.createSession(modelBytes, opts)
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "Failed to init BubbleDetector: ${e.message}")
-            throw e
+            android.util.Log.w(TAG, "NNAPI session failed (${e.message}) — using CPU only")
+            null
         }
+
+        if (nnapiSession != null) {
+            usesNnapi = true
+            session = nnapiSession
+            // Pure-CPU backup: used when NNAPI fails at run() time or returns
+            // garbage (zero detections) — see detect().
+            val cpuOptions = ai.onnxruntime.OrtSession.SessionOptions()
+            cpuOptions.addCPU(true)
+            cpuSession = env.createSession(modelBytes, cpuOptions)
+            android.util.Log.i(TAG, "BubbleDetector loaded (seg, nnapi=true, cpuBackup=true)")
+        } else {
+            val cpuOptions = ai.onnxruntime.OrtSession.SessionOptions()
+            cpuOptions.addCPU(true)
+            session = env.createSession(modelBytes, cpuOptions)
+            android.util.Log.i(TAG, "BubbleDetector loaded (seg, nnapi=false, cpu-only)")
+        }
+        val inputNames = session?.inputNames ?: throw RuntimeException("No input names")
+        inputName = inputNames.iterator().next()
     }
 
     /**
@@ -72,11 +104,8 @@ class BubbleDetector(context: Context) : Closeable {
      *   "shape" (List<List<Int>>? [[x,y],...] orig coords; null on box fallback).
      */
     fun detect(imageBytes: ByteArray, origWidth: Int, origHeight: Int): List<Map<String, Any>> {
-        val sess = session ?: return emptyList()
-
+        // 1. Letterbox prep (shared between EP attempts — expensive, do once)
         val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return emptyList()
-
-        // 1. Letterbox
         val scale = minOf(modelInputSize.toFloat() / bitmap.width, modelInputSize.toFloat() / bitmap.height)
         val newW = (bitmap.width * scale).toInt()
         val newH = (bitmap.height * scale).toInt()
@@ -89,12 +118,42 @@ class BubbleDetector(context: Context) : Closeable {
         val canvas = android.graphics.Canvas(letterbox)
         canvas.drawBitmap(resized, padLeft.toFloat(), padTop.toFloat(), null)
         resized.recycle()
-
         val floatBuf = preprocessToBuffer(letterbox)
         letterbox.recycle()
         bitmap.recycle()
 
-        // 2. Inference
+        // 2. Inference — primary EP first, CPU backup on ANY failure/empty output.
+        // NNAPI can throw at run() time (unsupported op kernel, e.g. Flatten
+        // on MediaTek shims) even when addNnapi() succeeded — the session
+        // initializes but execution fails. The CPU session must catch both.
+        val sess = session ?: return emptyList()
+        var primary: List<Map<String, Any>>? = null
+        var primaryError: String? = null
+        try {
+            primary = runInference(sess, floatBuf, origWidth, origHeight, scale, "nnapi")
+        } catch (e: Exception) {
+            primaryError = e.message
+            android.util.Log.w(TAG, "NNAPI inference failed: ${e.message}")
+        }
+        val fallbackToCpu = cpuSession != null && (primary == null || primary.isEmpty())
+        if (fallbackToCpu) {
+            val why = if (primaryError != null) "failed ($primaryError)" else "returned 0 detections"
+            android.util.Log.w(TAG, "NNAPI $why — retrying on CPU")
+            floatBuf.rewind() // runInference consumed the buffer position
+            return runInference(cpuSession!!, floatBuf, origWidth, origHeight, scale, "cpu")
+        }
+        return primary ?: emptyList()
+    }
+
+    /** Runs one inference pass and decodes detections. [epLabel] for logging. */
+    private fun runInference(
+        sess: ai.onnxruntime.OrtSession,
+        floatBuf: FloatBuffer,
+        origWidth: Int,
+        origHeight: Int,
+        scale: Float,
+        epLabel: String,
+    ): List<Map<String, Any>> {
         val shape = longArrayOf(1L, 3L, modelInputSize.toLong(), modelInputSize.toLong())
         val inputOnnx = ai.onnxruntime.OnnxTensor.createTensor(env, floatBuf, shape)
         val results = sess.run(mapOf(inputName to inputOnnx))
@@ -155,6 +214,9 @@ class BubbleDetector(context: Context) : Closeable {
                 detections.add(map)
             }
 
+            if (detections.isEmpty()) {
+                android.util.Log.w(TAG, "Inference ($epLabel): 0 detections above threshold")
+            }
             return detections
         } finally {
             results.close()
@@ -431,6 +493,7 @@ class BubbleDetector(context: Context) : Closeable {
     }
 
     override fun close() {
+        try { cpuSession?.close() } catch (_: Exception) {}
         try { session?.close() } catch (_: Exception) {}
     }
 

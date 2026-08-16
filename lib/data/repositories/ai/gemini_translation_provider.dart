@@ -34,10 +34,11 @@ class GeminiTranslationProvider implements AiTranslationProvider {
     required String targetLang,
     required TranslationStyle style,
     bool skipSfx = true,
+    String readingDirection = 'left-to-right',
   }) async {
     final isMosaic = bubbles.isNotEmpty;
     final prompt = isMosaic
-        ? _mosaicPrompt(targetLang, style, skipSfx)
+        ? _mosaicPrompt(targetLang, style, skipSfx, readingDirection)
         : _fullImagePrompt(targetLang, style, skipSfx);
 
     final base64 = base64Encode(image);
@@ -99,13 +100,15 @@ class GeminiTranslationProvider implements AiTranslationProvider {
   String _mosaicPrompt(
     String targetLang,
     TranslationStyle style,
-    bool skipSfx,
-  ) {
+    bool skipSfx, [
+    String readingDirection = 'left-to-right',
+  ]) {
     final sfxRule = skipSfx
         ? 'Return "SKIP" for any bubble containing only sound effects (ドドド, バキ, ガシャン, etc.).'
         : 'Translate ALL bubbles including sound effects (no SKIP for SFX).';
     return '''
 Translate the manga image. Each bubble has a red number ID on its left.
+Reading order: bubbles numbered $readingDirection, top-to-bottom.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
 {"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
 Rules:

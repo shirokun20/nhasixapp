@@ -126,6 +126,8 @@ class ReaderTranslationOverlay extends StatelessWidget {
           curr is ReaderTranslationTranslated ||
           curr is ReaderTranslationTranslatingBubble ||
           curr is ReaderTranslationTranslating ||
+          curr is ReaderTranslationError ||
+          curr is ReaderTranslationRateLimited ||
           curr is ReaderTranslationIdle, // reset clears the overlay
       builder: (context, state) {
         if (state is! ReaderTranslationTranslated) {
@@ -648,7 +650,7 @@ class AiBusyOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    return SizedBox.expand(
       child: ColoredBox(
         color: Colors.black54,
         child: Center(
