@@ -39,8 +39,8 @@ dependencies:
     path: ./packages/kuron_native
 
   # Code Generation & Immutability
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.9.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
 
   # Networking & Web Scraping
   dio: ^5.9.0
@@ -59,7 +59,7 @@ dependencies:
   path: ^1.9.0
 
   # Image Handling & Caching
-  cached_network_image: ^3.3.1
+  cached_network_image: ^3.4.1
   extended_image: ^10.1.0  # Enhanced image viewer with gesture control
   # extended_image_library: ^5.0.1  # Disk-cache utilities (getCachedImageFile)
   http_client_helper: ^3.0.0  # CancellationToken for ExtendedImage cancellation
@@ -72,7 +72,7 @@ dependencies:
 
   # Background Tasks & Notifications
   flutter_local_notifications: ^22.0.1
-  workmanager: ^0.9.0
+  workmanager: ^0.10.7
   wakelock_plus: ^1.5.2
 
   # File Management & Sharing
@@ -80,15 +80,15 @@ dependencies:
   open_file: ^4.0.0
   share_plus: ^13.2.1
   url_launcher: ^6.3.1
-  flutter_secure_storage: ^10.3.0
-  local_auth: ^2.3.0
+  flutter_secure_storage: ^11.0.0
+  local_auth: ^3.0.2
 
   # WebView for Cloudflare bypass
   webview_flutter: ^4.14.1
 
   # Utilities
   logger: ^2.6.2
-  permission_handler: ^12.0.1
+  permission_handler: ^13.0.1
   intl: ^0.20.2
   device_info_plus: ^13.2.0
   collection: ^1.18.0
