@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.25+35] - 2026-08-16
+
 ### ✨ Added
 
 - **AI translation prefetch detection (T2, openspec: `reader-ai-translate-improvements`)**: When a page settles (600ms no scroll/page change), bubble detection now runs ahead of time in the background and caches the result keyed by a page signature (`w:h:len:head24:tail24` of the captured bytes). Tapping translate reuses the prefetched boxes and skips the ~2.6s ONNX wait (`reuse prefetch — N boxes (no re-detect)`). Stale signature → prefetch dropped, re-detect. A race guard in `translatePage` waits (bounded 5s) for an in-flight prefetch instead of competing for the same non-thread-safe ONNX session. Empty prefetch results are never cached — translate re-detects rather than falling back to full-image upload. Loading overlay now appears on the very first frame of a translate tap (`emit Detecting` before provider resolution).
