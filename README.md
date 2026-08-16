@@ -51,6 +51,16 @@
   </tr>
   <tr>
     <td>
+      <h4>🤖 AI Translation</h4>
+      On-device ONNX bubble detection + BYOK providers (OpenAI-compatible, Gemini). 7 translation styles, per-bubble editing, manual draw mode, glossary, manga-style fonts.
+    </td>
+    <td>
+      <h4>🔐 App Lock</h4>
+      PIN + biometric (fingerprint/face) app lock with 10-min session and auto re-lock. Native Android Private DNS (DoH).
+    </td>
+  </tr>
+  <tr>
+    <td>
       <h4>📖 Immersive Reader</h4>
       Full-screen, 120fps smooth scrolling, dual-rate scroll, tap zones, draggable chrome toggle, auto-bookmark, continuous scroll <i>and</i> single-page modes.
     </td>

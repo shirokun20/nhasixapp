@@ -51,6 +51,16 @@
   </tr>
   <tr>
     <td>
+      <h4>🤖 Terjemahan AI</h4>
+      Deteksi bubble ONNX on-device + provider BYOK (OpenAI-compatible, Gemini). 7 gaya terjemahan, edit per-bubble, draw mode manual, glossary, font gaya manga.
+    </td>
+    <td>
+      <h4>🔐 App Lock</h4>
+      Kunci aplikasi PIN + biometrik (sidik jari/wajah) dengan sesi 10 menit dan auto re-lock. Private DNS (DoH) native Android.
+    </td>
+  </tr>
+  <tr>
+    <td>
       <h4>📖 Pembaca Imersif</h4>
       Layar penuh, 120fps mulus, dual-rate scroll, tap zones, toggle chrome drag, auto-bookmark, continuous scroll <i>dan</i> single-page.
     </td>
