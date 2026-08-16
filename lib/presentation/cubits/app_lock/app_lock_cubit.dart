@@ -142,12 +142,8 @@ class AppLockCubit extends BaseCubit<AppLockState> {
       final authed = await _localAuth!
           .authenticate(
             localizedReason: 'Unlock Kuron',
-            options: const AuthenticationOptions(
-              biometricOnly: true,
-              stickyAuth: false,
-              useErrorDialogs: false,
-              sensitiveTransaction: false,
-            ),
+            biometricOnly: true,
+            sensitiveTransaction: false,
           )
           .timeout(const Duration(seconds: 15), onTimeout: () => false);
       if (authed) {
