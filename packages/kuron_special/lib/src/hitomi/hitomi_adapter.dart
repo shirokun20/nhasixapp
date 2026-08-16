@@ -638,7 +638,7 @@ class HitomiAdapter implements GenericAdapter {
   ) async {
     try {
       final gallery = await _fetchGalleryJson(id, rawConfig);
-      return _toContent(gallery, rawConfig);
+      return await _toContent(gallery, rawConfig);
     } catch (e, stackTrace) {
       _logger.e(
         'Hitomi gallery fetch failed: id=$id',

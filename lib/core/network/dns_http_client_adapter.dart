@@ -30,14 +30,16 @@ class DnsHttpClientAdapter extends IOHttpClientAdapter {
                 final port =
                     uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80);
 
-                return Socket.startConnect(resolvedIp, port);
+                // connectionFactory must not complete before Socket.startConnect
+                // resolves — awaiting guarantees a connected socket is returned.
+                return await Socket.startConnect(resolvedIp, port);
               } catch (e) {
                 logger.e(
                     'DoH resolution failed for ${uri.host}, trying system DNS',
                     error: e);
                 final port =
                     uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80);
-                return Socket.startConnect(uri.host, port);
+                return await Socket.startConnect(uri.host, port);
               }
             };
 

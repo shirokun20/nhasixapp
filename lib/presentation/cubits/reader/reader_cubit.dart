@@ -1718,7 +1718,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         GetContentDetailParams.fromString(content.id, sourceId: sourceId),
       );
       if (pageNumber <= detail.imageUrls.length) {
-        return _normalizeRepairTarget(
+        return await _normalizeRepairTarget(
           sourceId: sourceId,
           candidateUrl: detail.imageUrls[pageNumber - 1],
         );
@@ -1795,7 +1795,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }) async {
     try {
       if (sourceId.toLowerCase() == 'ehentai') {
-        return _resolveEhentaiRepairTarget(
+        return await _resolveEhentaiRepairTarget(
           chapterId: chapterId,
           sourceId: sourceId,
           pageNumber: pageNumber,
@@ -1812,7 +1812,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         return null;
       }
 
-      return _normalizeRepairTarget(
+      return await _normalizeRepairTarget(
         sourceId: sourceId,
         candidateUrl: chapterData.images[pageNumber - 1],
       );

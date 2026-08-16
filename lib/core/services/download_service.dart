@@ -518,7 +518,7 @@ class DownloadService {
       }
 
       // Fallback to DirectoryUtils
-      return DirectoryUtils.getDownloadsDirectory();
+      return await DirectoryUtils.getDownloadsDirectory();
     } catch (e) {
       _logger.e('Error detecting Downloads directory: $e');
       rethrow;

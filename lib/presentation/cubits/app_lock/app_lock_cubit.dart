@@ -137,7 +137,7 @@ class AppLockCubit extends BaseCubit<AppLockState> {
 
   Future<bool> authenticateBiometric() async {
     try {
-      if (_biometricAuth != null) return _biometricAuth();
+      if (_biometricAuth != null) return await _biometricAuth();
       _localAuth ??= LocalAuthentication();
       final authed = await _localAuth!
           .authenticate(

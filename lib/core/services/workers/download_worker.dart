@@ -61,7 +61,7 @@ void callbackDispatcher() {
           return await _handleCheckIncompleteDownloads();
 
         default:
-          return Future.value(false);
+          return false;
       }
     } catch (e) {
       await _logWorkerError(task, e.toString());
