@@ -11,11 +11,11 @@ import 'package:kuron_generic/src/url_builder/generic_url_builder.dart';
 import 'package:logger/logger.dart';
 import 'package:test/test.dart';
 
-const _baseUrl = 'https://be.komikcast.cc';
+const _baseUrl = 'https://api.voratoon.com';
 const _slug = 'atm-ojisan-isekai-de-mote-ki-ga-tomaranai';
 
 const _searchTemplate =
-    '/series?takeChapter=2&includeMeta=true&sort={sort}&sortOrder=desc&take=12&page={page}&filter=title=like="{query}",nativeTitle=like="{query}"';
+    '/series?takeChapter=2&includeMeta=true&sort={sort}&sortOrder=desc&take=12&page={page}&filter=title=ilike="{query}",nativeTitle=ilike="{query}"';
 
 const _config = {
   'source': 'komikcast',
@@ -43,7 +43,7 @@ const _config = {
           'sortOrder': 'desc',
           'take': '12',
           'page': '{page}',
-          'filter': 'title=like="{query}",nativeTitle=like="{query}"',
+          'filter': 'title=ilike="{query}",nativeTitle=ilike="{query}"',
         },
       },
       'tagSearch': {
@@ -264,7 +264,7 @@ void main() {
 
     test('raw text query fills endpoint filter placeholder', () async {
       const expectedUrl =
-          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=popularity';
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dilike%3D%22neko%22%2CnativeTitle%3Dilike%3D%22neko%22&sort=popularity';
 
       dioAdapter.onGet(
         expectedUrl,
@@ -286,7 +286,7 @@ void main() {
 
     test('raw text sort follows filter sort value', () async {
       const expectedUrl =
-          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=rating';
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dilike%3D%22neko%22%2CnativeTitle%3Dilike%3D%22neko%22&sort=rating';
 
       dioAdapter.onGet(
         expectedUrl,
@@ -308,7 +308,7 @@ void main() {
 
     test('stale raw sort is overridden by filter sort', () async {
       const expectedUrl =
-          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dlike%3D%22neko%22%2CnativeTitle%3Dlike%3D%22neko%22&sort=popularity';
+          '$_baseUrl/series?takeChapter=2&includeMeta=true&sortOrder=desc&take=12&page=1&filter=title%3Dilike%3D%22neko%22%2CnativeTitle%3Dilike%3D%22neko%22&sort=popularity';
 
       dioAdapter.onGet(
         expectedUrl,
