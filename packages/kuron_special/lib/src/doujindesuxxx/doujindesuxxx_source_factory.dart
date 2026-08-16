@@ -114,11 +114,7 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
           'Origin': base,
         };
 
-  Future<dynamic> _get(String path) async {
-    final res = await _dio.get<dynamic>(
-      path.startsWith('http') ? path : '$_base$path',
-      options: Options(headers: _headers),
-    );
+  dynamic _decode(Response<dynamic> res) {
     var data = res.data;
     if (data is String) data = jsonDecode(data);
     if (data is Map && data['_enc_resp_'] is String) {
@@ -129,6 +125,23 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
       return dec;
     }
     return data;
+  }
+
+  Future<dynamic> _get(String path) async {
+    final res = await _dio.get<dynamic>(
+      path.startsWith('http') ? path : '$_base$path',
+      options: Options(headers: _headers),
+    );
+    return _decode(res);
+  }
+
+  // Like [_get] but also reads the `x-total-count` header for pagination.
+  Future<(dynamic, int?)> _getWithTotal(String path) async {
+    final res = await _dio.get<dynamic>(
+      path.startsWith('http') ? path : '$_base$path',
+      options: Options(headers: _headers),
+    );
+    return (_decode(res), int.tryParse(res.headers.value('x-total-count') ?? ''));
   }
 
   Map<int, String>? _genreSlugs;
@@ -210,14 +223,23 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
             : '';
     final path = '/api/manga?limit=$pageSize&offset=$offset${
         query.isEmpty ? '' : '&$query'}';
-    final data = await _get(path);
+    final (data, total) = await _getWithTotal(path);
     final items = data is List ? data : const [];
+    // ponytail: when the site omits x-total-count, fall back to the
+    // page-size heuristic; switch to header-only if the API stops sending it.
+    final totalItems = total ?? items.length;
+    final totalPages = totalItems == 0
+        ? 1
+        : (totalItems / pageSize).ceil();
     return AdapterSearchResult(
       items: items
           .whereType<Map>()
           .map((m) => _content(m.cast<String, dynamic>()))
           .toList(),
-      hasNextPage: items.length >= pageSize,
+      hasNextPage:
+          total != null ? offset + items.length < totalItems : items.length >= pageSize,
+      totalPages: totalPages,
+      totalItems: totalItems,
     );
   }
 
