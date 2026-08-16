@@ -131,15 +131,85 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
     return data;
   }
 
+  Map<int, String>? _genreSlugs;
+
+  Future<Map<int, String>> _loadGenreSlugs() async {
+    if (_genreSlugs != null) return _genreSlugs!;
+    final data = await _get('/api/genres?limit=1000');
+    final map = <int, String>{};
+    if (data is List) {
+      for (final g in data.whereType<Map>()) {
+        final id = int.tryParse('${g['id']}');
+        final slug = g['slug']?.toString();
+        if (id != null && slug != null && slug.isNotEmpty) {
+          map[id] = slug;
+        }
+      }
+    }
+    _genreSlugs = map;
+    return map;
+  }
+
   @override
   Future<AdapterSearchResult> search(
     SearchFilter filter,
     Map<String, dynamic> rawConfig,
   ) async {
+    // Genre navigation from a genre tag (numeric genre_id in raw params or
+    // `genre:`/`tag:` prefixed slugs) resolves to the site's `genre=<slug>`.
     final q = filter.query.trim();
-    final path = q.isEmpty
-        ? '/api/manga?limit=30'
-        : '/api/manga?limit=30&search=${Uri.encodeQueryComponent(q)}';
+    var genreSlug = '';
+    var textQuery = '';
+
+    if (includeTagsGenre(filter) != null) {
+      genreSlug = includeTagsGenre(filter)!;
+    } else if (q.startsWith('raw:')) {
+      final params = Uri.splitQueryString(q.substring(4));
+      for (final key in const [
+        'genre_id',
+        'genreId',
+        'tag_id',
+        'tagId',
+        'genre',
+        'tag'
+      ]) {
+        final v = params[key]?.trim() ?? '';
+        if (v.isNotEmpty) {
+          genreSlug = v;
+          break;
+        }
+      }
+      if (genreSlug.isEmpty) {
+        for (final key in const ['search', 'q', 's']) {
+          final v = params[key]?.trim() ?? '';
+          if (v.isNotEmpty) {
+            textQuery = v;
+            break;
+          }
+        }
+      }
+    } else if (q.startsWith('genre:') || q.startsWith('tag:')) {
+      genreSlug = q.substring(q.indexOf(':') + 1).trim();
+    } else if (q.isNotEmpty) {
+      textQuery = q;
+    }
+
+    if (genreSlug.isNotEmpty && int.tryParse(genreSlug) != null) {
+      final slugs = await _loadGenreSlugs();
+      genreSlug = slugs[int.parse(genreSlug)] ?? '';
+    }
+
+    // API pagination: `offset` (0-based) + `limit`; `x-total-count` header
+    // exists but the page-size heuristic below is sufficient.
+    const pageSize = 30;
+    final offset = (filter.page > 1 ? filter.page - 1 : 0) * pageSize;
+    final query = genreSlug.isNotEmpty
+        ? 'genre=${Uri.encodeQueryComponent(genreSlug)}'
+        : textQuery.isNotEmpty
+            ? 'search=${Uri.encodeQueryComponent(textQuery)}'
+            : '';
+    final path = '/api/manga?limit=$pageSize&offset=$offset${
+        query.isEmpty ? '' : '&$query'}';
     final data = await _get(path);
     final items = data is List ? data : const [];
     return AdapterSearchResult(
@@ -147,8 +217,22 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
           .whereType<Map>()
           .map((m) => _content(m.cast<String, dynamic>()))
           .toList(),
-      hasNextPage: false,
+      hasNextPage: items.length >= pageSize,
     );
+  }
+
+  // First genre-type included tag, as a slug (name when no id is available).
+  String? includeTagsGenre(SearchFilter filter) {
+    for (final t in filter.includeTags) {
+      if (t.type == 'genre' || t.type == 'tag') {
+        final slug = t.name
+            .toLowerCase()
+            .replaceAll(RegExp(r'\s+'), '-')
+            .replaceAll(RegExp(r'-+'), '-');
+        return slug;
+      }
+    }
+    return null;
   }
 
   // Builds a Kuron Content from a decoded manga object. `slug` is the content
@@ -162,16 +246,66 @@ class DoujinDesuXxxAdapter implements GenericAdapter {
       'doujinshi' => ContentType.doujinshi,
       _ => ContentType.unknown,
     };
+    final tags = <Tag>[];
+    final artists = <String>[];
+    final characters = <String>[];
+    final parodies = <String>[];
+    final groups = <String>[];
+    final genresRaw = m['manga_genres'];
+    if (genresRaw is List) {
+      for (final g in genresRaw) {
+        if (g is! Map) continue;
+        final genreMap = g['genres'];
+        if (genreMap is! Map) continue;
+        final name = genreMap['name']?.toString() ?? '';
+        if (name.isEmpty || name == 'N/A') continue;
+        tags.add(Tag(
+          id: int.tryParse('${g['genre_id']}') ?? 0,
+          name: name,
+          type: 'genre',
+          count: 0,
+          slug: genreMap['slug']?.toString() ?? '',
+        ));
+      }
+    }
+    for (final term in ((m['term_list'] ?? '').toString().split('|'))) {
+      final parts = term.split(':');
+      if (parts.length < 2) continue;
+      final name = parts[0].trim();
+      final type = parts[1].trim();
+      if (name.isEmpty || name == 'N/A') continue;
+      final slug = parts.length > 2 ? parts[2].trim() : '';
+      switch (type) {
+        case 'character':
+          characters.add(name);
+          break;
+        case 'group':
+          groups.add(name);
+          break;
+        case 'series':
+          parodies.add(name);
+          break;
+        case 'author':
+          artists.add(name);
+          break;
+        default:
+          if (type == 'genre' &&
+              !tags.any((t) => t.name.toLowerCase() == name.toLowerCase())) {
+            tags.add(
+                Tag(id: 0, name: name, type: 'genre', count: 0, slug: slug));
+          }
+      }
+    }
     return Content(
       id: (m['slug'] ?? m['id'] ?? '').toString(),
       sourceId: _sourceId,
       title: (m['title'] ?? '').toString(),
       coverUrl: (m['cover_url'] ?? '').toString(),
-      tags: const [],
-      artists: const [],
-      characters: const [],
-      parodies: const [],
-      groups: const [],
+      tags: tags,
+      artists: artists,
+      characters: characters,
+      parodies: parodies,
+      groups: groups,
       language: 'id',
       pageCount: m['chapter_count'] is int
           ? m['chapter_count'] as int
