@@ -928,25 +928,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     }
     // Remote: use the source's download headers (referer/cookie/user-agent) —
     // most sources reject plain requests, silently killing the pipeline.
-    final headers = _sourceImageHeaders(
-      widget.state.content?.sourceId,
-      url,
-    );
-    try {
-      final response = await getIt<Dio>().get<List<int>>(
-        url,
-        options: Options(
-          responseType: ResponseType.bytes,
-          headers: headers,
-          sendTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 60),
-        ),
-      );
-      return response.data == null ? null : Uint8List.fromList(response.data!);
-    } catch (e) {
-      widget.logger.w('Failed to fetch page for translate: $e');
-      return null;
-    }
+    final sourceId = widget.state.content?.sourceId;
+    if (sourceId == null || sourceId.trim().isEmpty) return null;
+    return getIt<DownloadService>().fetchRemoteImageBytes(sourceId, url);
   }
 
   Future<Size?> _imageSize(Uint8List bytes) async {

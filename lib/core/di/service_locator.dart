@@ -88,6 +88,7 @@ import 'package:nhasixapp/domain/usecases/reader/save_reader_position_usecase.da
 import 'package:nhasixapp/domain/usecases/reader/clear_all_reader_positions_usecase.dart';
 import 'package:nhasixapp/domain/usecases/reader/get_reader_settings_usecase.dart';
 import 'package:nhasixapp/domain/usecases/reader/save_reader_settings_usecase.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_glossary_entry_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_chapter_images_usecase.dart';
 import 'package:nhasixapp/domain/usecases/content/get_comments_usecase.dart';
 import 'package:nhasixapp/domain/usecases/favorites/favorites_usecases.dart';
@@ -927,6 +928,8 @@ void _setupRepositories() {
       () => AiPreferencesRepositoryImpl(prefs: getIt<SharedPreferences>()));
   getIt.registerLazySingleton<GlossaryRepository>(
       () => GlossaryRepositoryImpl(prefs: getIt<SharedPreferences>()));
+  getIt.registerLazySingleton<SaveGlossaryEntryUsecase>(
+      () => SaveGlossaryEntryUsecase(getIt<GlossaryRepository>()));
 
   // Provider factory: builds the right provider implementation for a config.
   getIt.registerLazySingleton<AiProviderFactory>(

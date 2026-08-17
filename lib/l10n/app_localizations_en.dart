@@ -5561,6 +5561,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiDrawBubbles => 'Draw bubbles';
 
   @override
+  String get aiDrawRect => 'Rectangle';
+
+  @override
+  String get aiDrawEllipse => 'Ellipse';
+
+  @override
+  String get aiDrawFreeform => 'Freeform';
+
+  @override
   String get aiExpandDraw => 'Show actions';
 
   @override

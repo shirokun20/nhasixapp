@@ -98,7 +98,15 @@ void main() {
     // (10,10,50,30) and (100,100,40,25)). Translate must NOT feed both the
     // manual copy AND the detected copy of the same text to the AI — that
     // duplicate chip earlier made the model merge/swap translations.
-    cubit.addManualBubble(Rect.fromLTWH(10, 10, 50, 30));
+    // Run draw-mode Detect first so _detectedBoxes exists (manual-only
+    // translate now skips ONNX entirely).
+    cubit.capturePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 200,
+        imageHeight: 200);
+    await cubit.detectBubblesOnly();
+    cubit.addManualBubble(
+        BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
 
     await cubit.translatePage(
       imageBytes: Uint8List.fromList([1, 2, 3]),
@@ -423,6 +431,160 @@ void main() {
     expect(bubbles.first.shape!.first, [10, 10]);
   });
 
+  group('manual bubble shape tools (D1-D3)', () {
+    test('addManualBubble keeps user shape; state bumps uiVersion', () {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      final shape = [
+        [0, 0],
+        [50, 0],
+        [50, 30],
+        [0, 30],
+      ];
+      cubit.addManualBubble(
+          BubbleBox(x: 0, y: 0, w: 50, h: 30, confidence: 1.0, shape: shape));
+
+      expect(cubit.manualBubbles, hasLength(1));
+      expect(cubit.manualBubbles.first.shape, shape);
+      // Draw-mode UI refresh: Idle re-emit with bumped uiVersion.
+      final state = cubit.state as ReaderTranslationIdle;
+      expect(state.uiVersion, greaterThan(0));
+    });
+
+    test('undo/remove/clear each bump uiVersion', () {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      cubit.addManualBubble(
+          BubbleBox(x: 0, y: 0, w: 50, h: 30, confidence: 1.0));
+      final v1 = (cubit.state as ReaderTranslationIdle).uiVersion;
+
+      cubit.undoLastManual();
+      expect((cubit.state as ReaderTranslationIdle).uiVersion, greaterThan(v1));
+
+      cubit.addManualBubble(
+          BubbleBox(x: 0, y: 0, w: 50, h: 30, confidence: 1.0));
+      final v2 = (cubit.state as ReaderTranslationIdle).uiVersion;
+      cubit.removeManualBubble(0);
+      expect((cubit.state as ReaderTranslationIdle).uiVersion, greaterThan(v2));
+
+      cubit.addManualBubble(
+          BubbleBox(x: 0, y: 0, w: 50, h: 30, confidence: 1.0));
+      final v3 = (cubit.state as ReaderTranslationIdle).uiVersion;
+      cubit.clearManualBubbles();
+      expect((cubit.state as ReaderTranslationIdle).uiVersion, greaterThan(v3));
+    });
+
+    test('removeDetectedBubble removes target and bumps uiVersion', () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      cubit.capturePage(
+        imageBytes: Uint8List(4),
+        imageWidth: 200,
+        imageHeight: 200,
+      );
+      await cubit.detectBubblesOnly();
+      expect(cubit.detectedBoxes, hasLength(2));
+      final v1 = (cubit.state as ReaderTranslationIdle).uiVersion;
+      cubit.removeDetectedBubble(0);
+      expect(cubit.detectedBoxes, hasLength(1));
+      expect((cubit.state as ReaderTranslationIdle).uiVersion, greaterThan(v1));
+    });
+
+    test('containment dedup: small rect inside big manual box dropped', () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      // Run draw-mode Detect first so _detectedBoxes exists (manual-only
+      // translate now skips ONNX entirely).
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 200,
+          imageHeight: 200);
+      await cubit.detectBubblesOnly();
+      // Manual covers the first detected box (10,10 50x30) fully.
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
+
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 200,
+        imageHeight: 200,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      final translated = cubit.state as ReaderTranslationTranslated;
+      // manual + second detected = 2, NOT 3.
+      expect(translated.result.bubbles.length, 2);
+    });
+
+    test('manual shape re-attached to translated bubble (D2)', () async {
+      // Manual ellipse over the FIRST detected box; no shape on detected.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('kuron_native'),
+        (MethodCall call) async {
+          if (call.method == 'detectBubbles') {
+            return [
+              {'x': 10, 'y': 10, 'w': 50, 'h': 30, 'confidence': 0.9},
+              {'x': 100, 'y': 100, 'w': 40, 'h': 25, 'confidence': 0.8},
+            ];
+          }
+          return null;
+        },
+      );
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+                const MethodChannel('kuron_native'), null);
+      });
+
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      // Fake ellipse polygon: simple 4-corner diamond is fine for the matcher.
+      final shape = [
+        [35, 10],
+        [60, 25],
+        [35, 40],
+        [10, 25],
+      ];
+      // Run draw-mode Detect first so the manual bubble is deduped against a
+      // real detection (manual-only translate skips ONNX entirely).
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 200,
+          imageHeight: 200);
+      await cubit.detectBubblesOnly();
+      cubit.addManualBubble(BubbleBox(
+          x: 10, y: 10, w: 50, h: 30, confidence: 1.0, shape: shape));
+
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 200,
+        imageHeight: 200,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      final bubbles = (cubit.state as ReaderTranslationTranslated)
+          .result
+          .bubbles;
+      // Manual shape bubble gets the USER polygon (not detected shape).
+      final manualBubble = bubbles.firstWhere((b) => b.rect.left.round() == 10);
+      expect(manualBubble.shape, isNotNull);
+      expect(manualBubble.shape!.first, [35, 10]);
+    });
+  });
+
   group('T4 reading order', () {
     // Sort logic is a 2-line comparator inside _translationBoxes (private).
     // Verified via integration: mock ONNX returns boxes in mixed X order,
@@ -510,7 +672,8 @@ void main() {
   group('T7 bubble tail', () {
     test('addTailToBubble sets tail on manual bubble', () {
       final cubit = makeCubit();
-      cubit.addManualBubble(const Rect.fromLTWH(10, 10, 50, 30));
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
       cubit.addTailToBubble(
         0,
         [
@@ -525,7 +688,8 @@ void main() {
 
     test('removeTail clears tail', () {
       final cubit = makeCubit();
-      cubit.addManualBubble(const Rect.fromLTWH(10, 10, 50, 30));
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
       cubit.addTailToBubble(
         0,
         [
@@ -646,8 +810,9 @@ void main() {
       await pumpEventQueue();
       expect(detectCalls, 1);
 
-      // New capture (different bytes = different signature) → the old boxes
-      // must not be reused; translate re-detects against the new image.
+      // New capture (different bytes = different signature) → the prefetch
+      // cache is stale; translate runs ONNX again (prefetch never populated
+      // _detectedBoxes — it only warms the cache).
       cubit.capturePage(
           imageBytes: Uint8List.fromList([9, 9, 9]),
           imageWidth: 100,
@@ -666,6 +831,177 @@ void main() {
 
       expect(cubit.state, isA<ReaderTranslationTranslated>());
       expect(detectCalls, 2); // stale prefetch → fresh ONNX run
+    });
+
+    test('manual bubbles present bypass cached result (cache too stale)',
+        () async {
+      final cache = FakeCacheRepository();
+      final cubit = makeCubit(cache: cache);
+      addTearDown(cubit.close);
+
+      // Old translation cached WITHOUT manual bubbles.
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      expect(detectCalls, 1); // cached now
+
+      // User draws a manual bubble, translates again — cache must NOT be
+      // reused (the cached result has no manual bubbles); full pipeline runs.
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      // Pipeline ran again (no cache reuse) but ONNX skipped — manual present.
+      expect(detectCalls, 1);
+      final bubbles =
+          (cubit.state as ReaderTranslationTranslated).result.bubbles;
+      expect(bubbles.first.rect.left.round(), 10); // manual bubble translated
+      expect(bubbles.first.translated, isNotEmpty);
+    });
+
+    test('manual bubbles present → translate SKIPS ONNX detect entirely',
+        () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 100,
+          imageHeight: 100);
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
+
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([1, 2, 3]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      expect(detectCalls, 0); // user already provided boxes — no re-detect
+      expect((cubit.state as ReaderTranslationTranslated).result.bubbles,
+          hasLength(1));
+    });
+
+    test('detected boxes survive re-capture (draw-mode 🛰 first)', () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 100,
+          imageHeight: 100);
+      await cubit.detectBubblesOnly();
+      expect(detectCalls, 1);
+      expect(cubit.detectedBoxes, hasLength(2));
+
+      // Translate re-captures (different bytes) → detection must NOT be wiped.
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([4, 5, 6]),
+          imageWidth: 100,
+          imageHeight: 100);
+      expect(cubit.detectedBoxes, hasLength(2));
+
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([4, 5, 6]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      expect(detectCalls, 1); // no second ONNX run — 🛰 result reused
+    });
+  });
+
+  group('T2-D manual bubbles survive re-capture', () {
+    test('manual bubble kept when capturePage re-captures (signature change)',
+        () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      // User draws manual bubble, then translate triggers a fresh capture —
+      // the manual bubble is user-authoritative and must NOT be wiped.
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 100,
+          imageHeight: 100);
+      cubit.addManualBubble(
+          BubbleBox(x: 10, y: 10, w: 50, h: 30, confidence: 1.0));
+
+      // Same logical page, different bytes (re-fetch/encode) → signature change.
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([4, 5, 6]),
+          imageWidth: 100,
+          imageHeight: 100);
+
+      expect(cubit.manualBubbles, hasLength(1));
+    });
+
+    test('manual bubble still translated after re-capture', () async {
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([1, 2, 3]),
+          imageWidth: 100,
+          imageHeight: 100);
+      cubit.addManualBubble(BubbleBox(
+          x: 10, y: 10, w: 50, h: 30, confidence: 1.0, kind: 'balloon'));
+
+      // Translate re-captures the same page (like the real flow) — manual
+      // must still reach the mosaic.
+      cubit.capturePage(
+          imageBytes: Uint8List.fromList([4, 5, 6]),
+          imageWidth: 100,
+          imageHeight: 100);
+
+      await cubit.translatePage(
+        imageBytes: Uint8List.fromList([4, 5, 6]),
+        imageWidth: 100,
+        imageHeight: 100,
+        contentId: 'c1',
+        pageIndex: 0,
+        imageUrl: 'u1',
+        readingMode: ReadingMode.singlePage,
+        imageUrlCount: 1,
+      );
+      await pumpEventQueue();
+
+      expect(cubit.state, isA<ReaderTranslationTranslated>());
+      final translated = cubit.state as ReaderTranslationTranslated;
+      expect(translated.result.bubbles, isNotEmpty);
     });
   });
 

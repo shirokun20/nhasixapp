@@ -5410,6 +5410,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiDrawBubbles => '绘制气泡';
 
   @override
+  String get aiDrawRect => '矩形';
+
+  @override
+  String get aiDrawEllipse => '椭圆';
+
+  @override
+  String get aiDrawFreeform => '自由形状';
+
+  @override
   String get aiExpandDraw => '显示操作';
 
   @override

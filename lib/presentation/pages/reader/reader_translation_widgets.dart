@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/glossary.dart';
+import 'package:nhasixapp/domain/usecases/reader/save_glossary_entry_usecase.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/reader/reader_translation_cubit.dart';
@@ -438,7 +439,7 @@ class ReaderTranslatedBubble extends StatelessWidget {
                 getIt<Logger>().d(
                     'Glossary: saving "${bubble.translated}" from page $pageIndex');
                 try {
-                  await getIt<GlossaryRepository>().save(GlossaryEntry(
+                  await getIt<SaveGlossaryEntryUsecase>().call(GlossaryEntry(
                     id: 'gl_${DateTime.now().millisecondsSinceEpoch}_${bubble.rect.hashCode}',
                     sourceText: bubble.original,
                     translatedText: bubble.translated,

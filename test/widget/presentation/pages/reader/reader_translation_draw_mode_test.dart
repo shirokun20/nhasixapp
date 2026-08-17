@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kuron_native/kuron_native.dart' show BubbleBox;
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -147,9 +148,102 @@ void main() {
     cubit.undoLastManual();
     expect(cubit.manualBubbles, isEmpty);
 
-    cubit.addManualBubble(const Rect.fromLTWH(0, 0, 10, 10));
+    cubit.addManualBubble(const BubbleBox(x: 0, y: 0, w: 10, h: 10, confidence: 1.0));
     cubit.clearManualBubbles();
     expect(cubit.manualBubbles, isEmpty);
+  });
+
+  testWidgets('ellipse tool drags inscribed polygon bubble', (tester) async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    cubit.capturePage(
+      imageBytes: Uint8List(0),
+      imageWidth: 400,
+      imageHeight: 800,
+    );
+    cubit.setDrawMode(true);
+    await pump(tester, cubit);
+
+    // Expand controls → switch to ellipse.
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.circle_outlined));
+    await tester.pump();
+
+    await tester.dragFrom(const Offset(100, 200), const Offset(100, 100));
+    await tester.pump();
+
+    expect(cubit.manualBubbles, hasLength(1));
+    final shape = cubit.manualBubbles.first.shape;
+    expect(shape, isNotNull);
+    // Inscribed ellipse: ~24 points, all inside the drag rect (0..200 x).
+    // Touch slop (~18px) shaves the start corner, so keep the range loose.
+    expect(shape!.length, inInclusiveRange(20, 30));
+    for (final p in shape) {
+      expect(p[0], inInclusiveRange(0, 260));
+      expect(p[1], inInclusiveRange(100, 400));
+    }
+  });
+
+  testWidgets('freeform tool drags traced polygon bubble', (tester) async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    cubit.capturePage(
+      imageBytes: Uint8List(0),
+      imageWidth: 400,
+      imageHeight: 800,
+    );
+    cubit.setDrawMode(true);
+    await pump(tester, cubit);
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.gesture));
+    await tester.pump();
+
+    // A wiggle path: many small moves over 400ms, ends far from start — the
+// pan gesture wins the arena and the traced loop stays open.
+await tester.timedDragFrom(
+  const Offset(50, 100),
+  const Offset(100, 30),
+  const Duration(milliseconds: 400),
+);
+await tester.pump();
+
+    expect(cubit.manualBubbles, hasLength(1));
+    final shape = cubit.manualBubbles.first.shape;
+    expect(shape, isNotNull);
+    expect(shape!.length, greaterThanOrEqualTo(3));
+    // All trace points inside the drag trajectory box (slop-shaved start).
+    for (final p in shape) {
+      expect(p[0], inInclusiveRange(0, 260));
+      expect(p[1], inInclusiveRange(0, 400));
+    }
+  });
+
+  testWidgets('tool buttons show in expanded controls (l10n tooltips)',
+      (tester) async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    cubit.capturePage(
+      imageBytes: Uint8List(0),
+      imageWidth: 400,
+      imageHeight: 800,
+    );
+    cubit.setDrawMode(true);
+    await pump(tester, cubit);
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.crop_square), findsOneWidget);
+    expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.gesture), findsOneWidget);
+
+    // Tooltips resolve to localized labels (default locale = en).
+    final tooltips = find.byTooltip('Ellipse');
+    expect(tooltips, findsOneWidget);
+    final freeform = find.byTooltip('Freeform');
+    expect(freeform, findsOneWidget);
   });
 
   testWidgets('detectBubblesOnly renders reference rects from channel',

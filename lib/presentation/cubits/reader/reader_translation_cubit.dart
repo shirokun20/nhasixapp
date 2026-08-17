@@ -197,10 +197,18 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     // Continuous-scroll viewport crops reuse the same page index, so a new
     // capture must invalidate old box coordinates from previous captures.
     // Keeping stale boxes causes severe overlay drift on the new viewport.
+    // NOTE: _manualBubbles is deliberately NOT cleared here — manual bubbles
+    // are user corrections drawn on THIS viewport; translate re-captures the
+    // same viewport (bytes may differ in encoding/signature) and wiping them
+    // would silently drop every manual bubble. Clear via clearManualBubbles.
     if (captureChanged) {
-      _detectedBoxes.clear();
-      _translationDetectedBoxes.clear();
-      _manualBubbles.clear();
+      // Detected boxes survive too: re-capture of the same logical page
+      // (translate re-fetches/encodes, bytes differ) must not discard a
+      // draw-mode 🛰 detection — re-detecting on translate defeats the
+      // purpose of the user pressing Detect first. resetPage() clears both
+      // on actual page navigation.
+      // _detectedBoxes.clear();
+      // _translationDetectedBoxes.clear();
       // Prefetched boxes were computed for the OLD image — discard (spec 2.4).
       _prefetchedBoxes = null;
       _prefetchKey = '';
@@ -401,18 +409,16 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     emit(ReaderTranslationIdle(uiVersion: _uiVersion));
   }
 
-  void addManualBubble(Rect rect) {
-    _manualBubbles.add(BubbleBox(
-      x: rect.left.round(),
-      y: rect.top.round(),
-      w: rect.width.round(),
-      h: rect.height.round(),
-      confidence: 1.0,
-    ));
+  /// Add a manual bubble (draw mode). [bubble.shape] carries the user-drawn
+  /// polygon (ellipse/freeform); null = plain rect.
+  void addManualBubble(BubbleBox bubble) {
+    _manualBubbles.add(bubble);
+    _bumpUi();
   }
 
   void undoLastManual() {
     if (_manualBubbles.isNotEmpty) _manualBubbles.removeLast();
+    _bumpUi();
   }
 
   /// Add a tail polygon to a manual bubble (spec 7.1).
@@ -431,19 +437,23 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
 
   void clearManualBubbles() {
     _manualBubbles.clear();
+    _bumpUi();
   }
 
   /// Tap on a detected (ONNX) bubble in draw mode removes it — mirrors the
   /// example app (tap bubble → delete).
+  @Deprecated('Only caller is the draw-mode tap handler; keep for now.')
   void removeDetectedBubble(int index) {
     if (index < 0 || index >= _detectedBoxes.length) return;
     _detectedBoxes.removeAt(index);
+    _bumpUi();
   }
 
   /// Tap on a manual bubble removes it.
   void removeManualBubble(int index) {
     if (index < 0 || index >= _manualBubbles.length) return;
     _manualBubbles.removeAt(index);
+    _bumpUi();
   }
 
   /// NMS (IoU 0.45) + false-positive filter — same post-processing as the
@@ -558,9 +568,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     _currentStyle = style;
     setReadingDirection(readingMode);
 
-    // Cache hit → skip pipeline
+    // Cache hit → skip pipeline. BUT: manual bubbles change the mosaic input,
+    // and the cached result was generated without them — reusing it would
+    // show the old translation and silently ignore the user's drawn bubbles.
+    // Any manual bubble present → bypass the cache and run the full pipeline.
     final cacheKey = buildCacheKey(contentId, pageIndex, '$imageUrl#$cropYTop');
-    final cached = await _cacheRepository.get(cacheKey);
+    final cached =
+        _manualBubbles.isEmpty ? await _cacheRepository.get(cacheKey) : null;
     if (cached != null) {
       _currentImageWidth = imageWidth;
       _currentImageHeight = imageHeight;
@@ -656,10 +670,12 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         return;
       }
 
-      // 2. Normal page: ONNX detect — only if no manual re-run. A prior
-      //    draw-mode Detect (or user deletes) already set _detectedBoxes;
-      //    re-detecting here would resurrect bubbles the user unchecked.
-      if (_detectedBoxes.isEmpty) {
+      // 2. Normal page: ONNX detect — only when the user did not already
+      //    provide boxes. A prior draw-mode Detect (or user deletes) set
+      //    _detectedBoxes, and manual bubbles are user-drawn corrections —
+      //    re-detecting would resurrect unchecked bubbles AND (with manual
+      //    boxes only) throw away the user's work in favor of the detector.
+      if (_manualBubbles.isEmpty && _detectedBoxes.isEmpty) {
         // T2 prefetch reuse: background detection already ran for this exact
         // captured image → skip the 2.6s ONNX wait (spec 2.4).
         // While a prefetch is MID-RUN, the ONNX session is busy: re-running
@@ -949,9 +965,19 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         bubbles.add(b);
         continue;
       }
-      // Manual bubble: user drew a RECT, text must fit that box. Never hand it
-      // a detected polygon shape — otherwise the text fits the balloon's
-      // inscribed shape instead of the box the user drew.
+      // Manual bubble:
+      //  - user drew a RECT (no shape) → text must fit that box. Never hand
+      //    it a detected polygon — the text would wrap to the balloon's
+      //    inscribed shape instead.
+      //  - user drew an ellipse/freeform → re-attach THEIR shape (survives
+      //    the AI/mosaic round-trip), detected shape excluded (centers may
+      //    differ, and the user's outline wins over a hit-missed detection).
+      final manualShape = _nearestManualShape(b.rect);
+      if (manualShape != null) {
+        bubbles.add(b.copyWith(shape: manualShape));
+        attached++;
+        continue;
+      }
       if (_manualCovers(b.rect)) {
         bubbles.add(b);
         continue;
@@ -963,6 +989,26 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     logInfo(
         '_attachShapes: ${result.bubbles.length} bubble, shape-attached=$attached, detected=${_detectedBoxes.length}');
     return result.copyWith(bubbles: bubbles);
+  }
+
+  /// Shape of the manual bubble (ellipse/freeform) whose box contains the
+  /// bulk (>60% of its area) of [rect] — the AI-returned box of the same
+  /// region. Null when the user drew a rect (shape null) or nothing covers.
+  List<List<int>>? _nearestManualShape(Rect rect) {
+    if (_manualBubbles.isEmpty) return null;
+    final rArea = rect.width * rect.height;
+    if (rArea <= 0) return null;
+    for (final m in _manualBubbles) {
+      final shape = m.shape;
+      if (shape == null || shape.length < 3) continue;
+      final mRect = Rect.fromLTWH(
+          m.x.toDouble(), m.y.toDouble(), m.w.toDouble(), m.h.toDouble());
+      final inter = rect.intersect(mRect);
+      if (inter.isEmpty) continue;
+      final smaller = rArea < m.w * m.h ? rArea : m.w * m.h;
+      if (inter.width * inter.height / smaller >= 0.6) return shape;
+    }
+    return null;
   }
 
   /// Best-matching detected bubble's shape for an AI-returned rect. The AI

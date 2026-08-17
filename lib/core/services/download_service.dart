@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:path/path.dart' as path;
@@ -372,6 +373,32 @@ class DownloadService {
   // Get headers for source based on source ID
   ///
   // NEW: Uses ContentSource.getImageDownloadHeaders() instead of hardcoded logic
+  /// Fetch remote image bytes with source headers (referer/cookie/UA).
+  /// Used by reader AI pipeline (page capture) — no disk write.
+  Future<Uint8List?> fetchRemoteImageBytes(
+    String sourceId,
+    String imageUrl, {
+    Duration sendTimeout = const Duration(seconds: 30),
+    Duration receiveTimeout = const Duration(seconds: 60),
+  }) async {
+    try {
+      final headers = _getHeadersForSource(sourceId, imageUrl);
+      final response = await _httpClient.get<List<int>>(
+        imageUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: headers,
+          sendTimeout: sendTimeout,
+          receiveTimeout: receiveTimeout,
+        ),
+      );
+      return response.data == null ? null : Uint8List.fromList(response.data!);
+    } catch (e) {
+      _logger.w('Failed to fetch remote image bytes: $e');
+      return null;
+    }
+  }
+
   Map<String, dynamic> _getHeadersForSource(
     String sourceId,
     String imageUrl, {

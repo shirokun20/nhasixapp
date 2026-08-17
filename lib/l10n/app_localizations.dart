@@ -9510,6 +9510,24 @@ abstract class AppLocalizations {
   /// **'Draw bubbles'**
   String get aiDrawBubbles;
 
+  /// No description provided for @aiDrawRect.
+  ///
+  /// In en, this message translates to:
+  /// **'Rectangle'**
+  String get aiDrawRect;
+
+  /// No description provided for @aiDrawEllipse.
+  ///
+  /// In en, this message translates to:
+  /// **'Ellipse'**
+  String get aiDrawEllipse;
+
+  /// No description provided for @aiDrawFreeform.
+  ///
+  /// In en, this message translates to:
+  /// **'Freeform'**
+  String get aiDrawFreeform;
+
   /// No description provided for @aiExpandDraw.
   ///
   /// In en, this message translates to:

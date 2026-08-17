@@ -8,6 +8,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Manual bubble shape tools in AI translate draw mode** (openspec: `improve-reader-translation-draw-and-architecture`): Three drawing tools — Rectangle (legacy behavior), Ellipse (inscribed ~24-point polygon, live `addOval` preview) and Freeform (path trace with terminal backtracking trim + greedy simplification, cap 160 points). Tool row in the draw-mode controls with icons and l10n labels (en/id/zh `aiDrawRect`/`aiDrawEllipse`/`aiDrawFreeform`). Manual bubbles now carry their polygon shape end-to-end: gesture → `BubbleBox.shape` → cubit → reattach post-AI via `_nearestManualShape` (interArea/smaller ≥ 0.6) → shape-aware rendering (smooth midpoint-quadratic bezier for oval/jagged, sharp rect for frame/narration boxes via `isRectLikePolygon` ≥ 0.95). Provider prompt stays rect-only — no model changes. Files: `reader_translation_draw_mode.dart`, `reader_translation_cubit.dart`, `reader_translation_widgets.dart`, `lib/l10n/*.arb`.
+- **`DownloadService.fetchRemoteImageBytes`** (openspec: `improve-reader-translation-draw-and-architecture`): Presentation no longer builds raw `Dio` GETs for capture-time page bytes — `reader_mode_widgets.dart` calls `DownloadService.fetchRemoteImageBytes(sourceId, url)` which reuses the source's header pipeline (`_getHeadersForSource`; send/receive timeouts 30/60s). Removes the direct `getIt<Dio>` dependency from the reader screen.
+- **`SaveGlossaryEntryUsecase`** (openspec: `improve-reader-translation-draw-and-architecture`): New domain use case wrapping `GlossaryRepository.save`, registered in DI; the translated-bubble sheet no longer touches the repository directly.
+
+### 🐛 Fixed
+
+- **Manual bubbles silently dropped when tapping translate** (full-manual draw flow): `capturePage` wiped `_manualBubbles` whenever the capture signature changed, and translate re-captures the page before running — so every manual bubble drawn was deleted the moment the user tapped Translate, and the page fell back to full-image upload. `capturePage` now keeps manual bubbles (user corrections are authoritative for the active page; `resetPage` on page navigation still clears them). New regression tests: manual bubble survives re-capture, manual bubble still reaches the mosaic after re-capture.
+- **Translate re-ran ONNX detection even with user boxes present**: `translatePage` detected again whenever `_detectedBoxes` was empty, ignoring manual bubbles — a full-manual page ran the 2.6s ONNX wait and (with the previous wipe) threw away the user's work. The detect guard is now `_manualBubbles.isEmpty && _detectedBoxes.isEmpty` — user-drawn boxes OR a draw-mode 🛰 detection short-circuit detection entirely. `capturePage` also keeps detected boxes across re-capture of the same logical page (re-detecting after the user pressed Detect first defeats the purpose; `resetPage` clears on real page navigation). New tests: manual-only translate → 0 ONNX calls; 🛰 boxes survive re-capture → 1 ONNX call total.
+- **Translate returned the stale cached result after the user drew manual bubbles**: the translation cache key (`contentId:pageIndex:imageUrl#cropYTop`) does not include manual bubbles — if the page was translated before (or prefetched), tapping translate again replayed the old result and the user's freshly drawn bubbles never reached the AI. `translatePage` now bypasses the cache whenever `_manualBubbles` is non-empty (the cached result was generated without them) and runs the full mosaic pipeline. Regression test: translate → draw manual → translate again must re-run the pipeline and translate the manual bubble.
+- **Equatable cubit state not re-emitting on manual-bubble mutations**: `ReaderTranslationCubit` manual/detected mutators (`addManualBubble`, `undoLastManual`, `removeManualBubble`, `clearManualBubbles`, `removeDetectedBubble`) now bump the internal `uiVersion` so the bloc emits a new state — previously undo/clear could leave the UI stale (e.g. red manual boxes not disappearing) because the state object compared equal.
+
+### 🔧 Changed
+
+- **`addManualBubble` signature** (openspec: `improve-reader-translation-draw-and-architecture`): `addManualBubble(Rect)` → `addManualBubble(BubbleBox)` — the bubble now carries its polygon `shape` (null = rect). Call sites updated; test fixtures use `BubbleBox(x,y,w,h,confidence:1.0)`.
+- **`removeDetectedBubble`** marked `@Deprecated` — kept for the single draw-mode tap-to-delete handler.
+
+### 🧪 Tests
+
+- `reader_translation_cubit_test.dart`: 35/35 pass — new group 'manual bubble shape tools (D1-D3)': shape kept through `addManualBubble` + state bump, undo/remove/clear emit bumps, `removeDetectedBubble`, containment dedup provenance (`_manualCovers` semantics verified unchanged: inner rect dropped, 30% overlap kept), manual shape reattach post-translate. New group 'T2-D manual bubbles survive re-capture': bubble kept through signature-change re-capture, still translated; manual-only translate skips ONNX (0 detect calls); 🛰 boxes survive re-capture (1 call total); manual bubbles present → cache bypassed (stale cached result not replayed, pipeline re-runs, manual bubble translated).
+- `reader_translation_draw_mode_test.dart`: 7/7 pass — ellipse drag → inscribed polygon bubble, freeform `timedDragFrom` → traced polygon, tool buttons + localized tooltips, existing rect/detect flows.
+- Full suite: 16 pre-existing failures at clean HEAD (import_zip, download_content, download_bloc, ehviewer, reader_screen_policy, offline_content_body, end_of_chapter_overlay) — verified unrelated to this change via `git stash`.
+- `fvm flutter analyze` clean.
+
 ## [0.9.25+35] - 2026-08-16
 
 ### ✨ Added

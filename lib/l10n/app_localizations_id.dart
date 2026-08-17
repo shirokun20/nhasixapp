@@ -5588,6 +5588,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get aiDrawBubbles => 'Gambar bubble';
 
   @override
+  String get aiDrawRect => 'Persegi';
+
+  @override
+  String get aiDrawEllipse => 'Elips';
+
+  @override
+  String get aiDrawFreeform => 'Bentuk bebas';
+
+  @override
   String get aiExpandDraw => 'Tampilkan aksi';
 
   @override
