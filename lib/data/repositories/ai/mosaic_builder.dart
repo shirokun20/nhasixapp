@@ -1,11 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
+import 'package:kuron_native/kuron_native.dart';
 
 import '../../../domain/entities/ai_translation.dart';
 
 /// Builds a vertical mosaic image of cropped speech bubbles with red numeric
-/// labels, for AI vision translation. Pure Dart (no FFI).
+/// labels, for AI vision translation. Rust FFI (`image_ops_build_mosaic`)
+/// when available, else pure Dart. Output semantics identical; exact JPEG
+/// bytes may differ.
 class MosaicBuilder {
   MosaicBuilder();
 
@@ -16,6 +19,17 @@ class MosaicBuilder {
     Uint8List pageImage,
     List<BubbleBoxLike> bubbles,
   ) {
+    final bridge = RustBridge.instance;
+    if (bridge != null && bridge.imageOpsAvailable) {
+      try {
+        final native = bridge.imageOpsBuildMosaic(pageImage, [
+          for (final b in bubbles) (x: b.x, y: b.y, w: b.w, h: b.h),
+        ]);
+        if (native != null) return native;
+      } catch (_) {
+        // fall through to Dart
+      }
+    }
     final decoded = img.decodeImage(pageImage);
     if (decoded == null || bubbles.isEmpty) {
       throw ArgumentError('Unable to decode page image or empty bubbles');

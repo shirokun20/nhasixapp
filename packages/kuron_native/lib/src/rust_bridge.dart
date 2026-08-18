@@ -154,6 +154,51 @@ typedef _HeaderInspectBatchDart = Pointer<Uint8> Function(
   Pointer<Uint32> outLen,
 );
 
+// ── New: AI translate image ops FFI signatures ─────────────
+// All return a flat buffer [count:u32][len:u32][data]... and write the
+// total flat-buffer length to outLen (same convention as image_split).
+
+typedef _ImageOpsChunkC = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  Uint32 dataLen,
+  Uint32 maxChunkH,
+  Pointer<Uint32> outLen,
+);
+typedef _ImageOpsChunkDart = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  int dataLen,
+  int maxChunkH,
+  Pointer<Uint32> outLen,
+);
+
+typedef _ImageOpsMosaicC = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  Uint32 dataLen,
+  Pointer<Uint32> boxes,
+  Uint32 boxesLen,
+  Pointer<Uint32> outLen,
+);
+typedef _ImageOpsMosaicDart = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  int dataLen,
+  Pointer<Uint32> boxes,
+  int boxesLen,
+  Pointer<Uint32> outLen,
+);
+
+typedef _ImageOpsCompressC = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  Uint32 dataLen,
+  Uint32 maxDim,
+  Pointer<Uint32> outLen,
+);
+typedef _ImageOpsCompressDart = Pointer<Uint8> Function(
+  Pointer<Uint8> data,
+  int dataLen,
+  int maxDim,
+  Pointer<Uint32> outLen,
+);
+
 // ── Bridge singleton ───────────────────────────────────────
 
 /// Bridge to native Rust library via dart:ffi.
@@ -192,6 +237,11 @@ class RustBridge {
   late final _EhentaiExtractTagsDart _ehentaiExtractTags;
   late final _HeaderInspectDart _headerInspect;
   late final _HeaderInspectBatchDart _headerInspectBatch;
+  late final _ImageOpsChunkDart _imageOpsChunk;
+  late final _ImageOpsMosaicDart _imageOpsMosaic;
+  late final _ImageOpsCompressDart _imageOpsCompress;
+
+  bool? _imageOpsAvailable;
 
   static RustBridge? _load() {
     final DynamicLibrary lib;
@@ -249,6 +299,32 @@ class RustBridge {
         'header_inspect');
     _headerInspectBatch = _lib.lookupFunction<_HeaderInspectBatchC,
         _HeaderInspectBatchDart>('header_inspect_batch');
+
+    // Image ops — lookups happen eagerly; availability decided per-group so a
+    // single missing symbol (older .so) still allows the bridge to load.
+    _imageOpsChunk =
+        _lib.lookupFunction<_ImageOpsChunkC, _ImageOpsChunkDart>(
+            'image_ops_chunk_webtoon');
+    _imageOpsMosaic =
+        _lib.lookupFunction<_ImageOpsMosaicC, _ImageOpsMosaicDart>(
+            'image_ops_build_mosaic');
+    _imageOpsCompress =
+        _lib.lookupFunction<_ImageOpsCompressC, _ImageOpsCompressDart>(
+            'image_ops_compress_page');
+  }
+
+  /// Native AI-translate image ops are usable when the current .so exports
+  /// all three symbols. Lazy, cached; false when unavailable.
+  bool get imageOpsAvailable {
+    imageOpsAvailability();
+    return _imageOpsAvailable ?? false;
+  }
+
+  bool imageOpsAvailability() {
+    _imageOpsAvailable ??= _lib.providesSymbol('image_ops_chunk_webtoon') &&
+        _lib.providesSymbol('image_ops_build_mosaic') &&
+        _lib.providesSymbol('image_ops_compress_page');
+    return _imageOpsAvailable!;
   }
 
   // ── Public API ───────────────────────────────────────────
@@ -355,6 +431,118 @@ class RustBridge {
     _freeBuffer(ptr, totalLen);
     malloc.free(outLen);
     return chunks;
+  }
+
+  // ── New: AI translate image ops methods ──────────────────
+
+  /// Webtoon chunking via Rust. Returns list of JPEG chunks (null on error).
+  List<Uint8List>? imageOpsChunkWebtoon(
+    Uint8List data, {
+    int maxChunkHeight = 1280,
+  }) {
+    if (!imageOpsAvailable) return null;
+    final dataPtr = malloc<Uint8>(data.length);
+    dataPtr.asTypedList(data.length).setAll(0, data);
+    final outLen = malloc<Uint32>();
+
+    final ptr = _imageOpsChunk(dataPtr, data.length, maxChunkHeight, outLen);
+    malloc.free(dataPtr);
+
+    if (ptr == nullptr) {
+      malloc.free(outLen);
+      return null;
+    }
+
+    final totalLen = outLen.value;
+    final allBytes = ptr.asTypedList(totalLen);
+    final count = _readLeUint32(allBytes, 0);
+    final chunks = <Uint8List>[];
+    var offset = 4;
+    for (var i = 0; i < count; i++) {
+      final chunkLen = _readLeUint32(allBytes, offset);
+      offset += 4;
+      chunks.add(allBytes.sublist(offset, offset + chunkLen));
+      offset += chunkLen;
+    }
+    _freeBuffer(ptr, totalLen);
+    malloc.free(outLen);
+    return chunks;
+  }
+
+  /// Mosaic build via Rust. Returns JPEG bytes (null on error).
+  Uint8List? imageOpsBuildMosaic(
+    Uint8List data,
+    List<({int x, int y, int w, int h})> boxes,
+  ) {
+    if (!imageOpsAvailable) return null;
+    final dataPtr = malloc<Uint8>(data.length);
+    dataPtr.asTypedList(data.length).setAll(0, data);
+    final boxesPtr = malloc<Uint32>(boxes.length * 4);
+    for (var i = 0; i < boxes.length; i++) {
+      final b = boxes[i];
+      boxesPtr[i * 4] = b.x;
+      boxesPtr[i * 4 + 1] = b.y;
+      boxesPtr[i * 4 + 2] = b.w;
+      boxesPtr[i * 4 + 3] = b.h;
+    }
+    final outLen = malloc<Uint32>();
+
+    final ptr = _imageOpsMosaic(
+        dataPtr, data.length, boxesPtr, boxes.length, outLen);
+    malloc.free(dataPtr);
+    malloc.free(boxesPtr);
+
+    if (ptr == nullptr) {
+      malloc.free(outLen);
+      return null;
+    }
+
+    final totalLen = outLen.value;
+    final allBytes = ptr.asTypedList(totalLen);
+    final count = _readLeUint32(allBytes, 0);
+    if (count < 1) {
+      _freeBuffer(ptr, totalLen);
+      malloc.free(outLen);
+      return null;
+    }
+    final jpegLen = _readLeUint32(allBytes, 4);
+    final jpeg = allBytes.sublist(8, 8 + jpegLen);
+    _freeBuffer(ptr, totalLen);
+    malloc.free(outLen);
+    return jpeg;
+  }
+
+  /// Full-page compress via Rust. Returns JPEG bytes (null on error).
+  Uint8List? imageOpsCompressPage(
+    Uint8List data, {
+    int maxDimension = 1280,
+  }) {
+    if (!imageOpsAvailable) return null;
+    final dataPtr = malloc<Uint8>(data.length);
+    dataPtr.asTypedList(data.length).setAll(0, data);
+    final outLen = malloc<Uint32>();
+
+    final ptr = _imageOpsCompress(dataPtr, data.length, maxDimension, outLen);
+    malloc.free(dataPtr);
+
+    if (ptr == nullptr) {
+      malloc.free(outLen);
+      return null;
+    }
+
+    final totalLen = outLen.value;
+    final allBytes = ptr.asTypedList(totalLen);
+    final count = _readLeUint32(allBytes, 0);
+    if (count < 1) {
+      _freeBuffer(ptr, totalLen);
+      malloc.free(outLen);
+      return null;
+    }
+    final jpegLen = _readLeUint32(allBytes, 4);
+    final jpeg = allBytes.sublist(8, 8 + jpegLen);
+    _freeBuffer(ptr, totalLen);
+    malloc.free(outLen);
+    return jpeg;
   }
 
   // ── New: Hitomi methods ──────────────────────────────────
