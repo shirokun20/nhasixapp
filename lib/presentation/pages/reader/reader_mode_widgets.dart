@@ -413,6 +413,11 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           final screenHeight = MediaQuery.of(context).size.height;
           final tapY = event.position.dy;
           if (tapY > screenHeight * 0.2 && tapY < screenHeight * 0.8) {
+            // Draw mode owns all taps (drawing / bubble remove) — never
+            // toggle the chrome. Without this, tapping the draw pill
+            // (bottom-center) also fires the middle-tap UI toggle, flashing
+            // the chrome + rebuilding the overlay on every pill tap.
+            if (_translationCubit.drawMode) return;
             widget.cubit.toggleUI();
           }
         }
@@ -598,7 +603,12 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
                     onCaptureNeeded: _captureForDraw,
                   ),
                 ),
-                if (state.readingMode == ReadingMode.continuousScroll)
+                // In draw mode the pill owns the bottom-center spot — the
+                // indicator (opacity 0, but still hit-testable while fading)
+                // would sit on top of it and swallow pill taps. Page number
+                // is useless while drawing; hide it entirely.
+                if (state.readingMode == ReadingMode.continuousScroll &&
+                    !drawMode)
                   _ReaderFloatingPageIndicator(
                     scrollingNotifier: widget.scrollingNotifier,
                     visiblePageNotifier: widget.visiblePageNotifier,
