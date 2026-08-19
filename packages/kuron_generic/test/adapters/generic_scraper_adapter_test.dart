@@ -2069,7 +2069,8 @@ void main() {
       final nicomangaMock =
           DioAdapter(dio: nicomangaDio, matcher: const UrlRequestMatcher());
       final nicomangaAdapter = _buildNicomangaAdapter(nicomangaDio);
-      final html = _readFixtureFile('test/fixtures/nicomanga_chaotic_detail.html');
+      final html =
+          _readFixtureFile('test/fixtures/nicomanga_chaotic_detail.html');
 
       nicomangaMock.onGet(
         '$_nicomangaBaseUrl/manga2122/a189649f.html',
@@ -2084,8 +2085,7 @@ void main() {
       );
 
       expect(result.content.title, contains('WARE NI CHEAT O'));
-      expect(
-          result.content.coverUrl, startsWith('https://s4.ihlv1.xyz/'));
+      expect(result.content.coverUrl, startsWith('https://s4.ihlv1.xyz/'));
       final tagNames = result.content.tags.map((t) => t.name).toList();
       expect(tagNames, containsAll(['Adult', 'Fantasy', 'Seinen']));
       expect(result.content.chapters, isNotNull);
@@ -2205,6 +2205,76 @@ void main() {
   });
 
   //  doujindesu sedang maintenance — enable when site recovers
+  group('Nicomanga live config — grid view list parsing', () {
+    late Dio dio;
+    late DioAdapter dioAdapter;
+    late GenericScraperAdapter adapter;
+    late Map<String, dynamic> config;
+    late String gridHtml;
+
+    setUp(() {
+      dio = _buildNicomangaDio();
+      dioAdapter = DioAdapter(dio: dio, matcher: const UrlRequestMatcher());
+      adapter = _buildNicomangaAdapter(dio);
+      config =
+          _readFixtureJsonMap('informations/configs/nicomanga-config.json');
+      gridHtml = _readFixtureFile('test/fixtures/nicomanga_grid_list.html');
+    });
+
+    test('home list requests v=grid and parses grid cards', () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?p=1&v=grid',
+        (s) => s.reply(200, gridHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(const SearchFilter(page: 1), config);
+
+      expect(result.items, hasLength(3));
+      expect(result.items.first.id, contains('manga6770/395a262c.html'));
+      expect(result.items.first.title, contains('ORE WA GAKUEN'));
+      expect(result.items.first.coverUrl, startsWith('https://s4.ihlv1.xyz/'));
+      expect(result.hasNextPage, isTrue);
+    });
+
+    test('search requests v=grid with query and page', () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?n=isekai&p=1&v=grid',
+        (s) => s.reply(200, gridHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(query: 'isekai', page: 1),
+        config,
+      );
+
+      expect(result.items, hasLength(3));
+      expect(result.items.first.id, contains('manga6770/395a262c.html'));
+    });
+
+    test('genre search requests ?g= slug with v=grid', () async {
+      dioAdapter.onGet(
+        '$_nicomangaBaseUrl/manga-list.html?g=action&v=grid',
+        (s) => s.reply(200, gridHtml, headers: {
+          Headers.contentTypeHeader: ['text/html; charset=utf-8']
+        }),
+      );
+
+      final result = await adapter.search(
+        const SearchFilter(
+          page: 1,
+          includeTags: [FilterItem(id: 1, name: 'Action', type: 'genre')],
+        ),
+        config,
+      );
+
+      expect(result.items, hasLength(3));
+    });
+  });
+
   // ignore: unused_element
   void doujindesuTests() {
     group('DoujinDesu v2 fixtures — scraper config integration', () {
@@ -2431,7 +2501,8 @@ void main() {
       final nicomangaMock =
           DioAdapter(dio: nicomangaDio, matcher: const UrlRequestMatcher());
       final nicomangaAdapter = _buildNicomangaAdapter(nicomangaDio);
-      final html = _readFixtureFile('test/fixtures/nicomanga_chaotic_reader.html');
+      final html =
+          _readFixtureFile('test/fixtures/nicomanga_chaotic_reader.html');
 
       nicomangaMock.onGet(
         '$_nicomangaBaseUrl/manga2122/a189649f/chapter-c75.3i301466.html',
@@ -3129,14 +3200,15 @@ void main() {
 
     test('redirect to foreign host is rejected without fetching target',
         () async {
-      const searchUrl =
-          'https://api.komiku.org/?post_type=manga&s=bleach';
+      const searchUrl = 'https://api.komiku.org/?post_type=manga&s=bleach';
       dioAdapter.onGet(
         searchUrl,
         (s) => s.reply(
           302,
           '',
-          headers: {'Location': ['https://evil.example.com/bleach']},
+          headers: {
+            'Location': ['https://evil.example.com/bleach']
+          },
         ),
       );
 
@@ -3152,14 +3224,15 @@ void main() {
     });
 
     test('redirect within same registrable domain is followed', () async {
-      const searchUrl =
-          'https://api.komiku.org/?post_type=manga&s=bleach';
+      const searchUrl = 'https://api.komiku.org/?post_type=manga&s=bleach';
       dioAdapter.onGet(
         searchUrl,
         (s) => s.reply(
           302,
           '',
-          headers: {'Location': ['https://komiku.org/result/bleach']},
+          headers: {
+            'Location': ['https://komiku.org/result/bleach']
+          },
         ),
       );
       dioAdapter.onGet(
@@ -3167,7 +3240,9 @@ void main() {
         (s) => s.reply(
           200,
           '<html><body><div class="bsx"><a href="/manga/x/"><div class="tt">X</div></a></div></body></html>',
-          headers: {'content-type': ['text/html; charset=utf-8']},
+          headers: {
+            'content-type': ['text/html; charset=utf-8']
+          },
         ),
       );
 
@@ -3180,14 +3255,15 @@ void main() {
     });
 
     test('protocol downgrade https to http is rejected', () async {
-      const searchUrl =
-          'https://api.komiku.org/?post_type=manga&s=bleach';
+      const searchUrl = 'https://api.komiku.org/?post_type=manga&s=bleach';
       dioAdapter.onGet(
         searchUrl,
         (s) => s.reply(
           302,
           '',
-          headers: {'Location': ['http://api.komiku.org/result/bleach']},
+          headers: {
+            'Location': ['http://api.komiku.org/result/bleach']
+          },
         ),
       );
 
