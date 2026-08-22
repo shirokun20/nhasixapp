@@ -11,7 +11,16 @@ import 'package:logger/logger.dart';
 import '../models/source_config_runtime.dart';
 
 // Ordered list of lazy-load image attributes to check as fallbacks.
-const _kImageFallbackAttributes = ['data-src', 'data-lazy-src', 'src'];
+const _kImageFallbackAttributes = [
+  'data-src',
+  'data-lazy-src',
+  'data-pagespeed-lazy-src',
+  'src',
+];
+
+// Placeholder paths served in `src` by image optimizers (e.g. mod_pagespeed)
+// instead of a data: URI — treat them as empty so the fallback chain runs.
+final _kPlaceholderSrcPattern = RegExp('^/pagespeed_static/');
 
 class GenericHtmlParser {
   final Logger _logger;
@@ -248,7 +257,11 @@ class GenericHtmlParser {
 
     if (element.localName != 'img') return value.isEmpty ? null : value;
 
-    if (value.isNotEmpty && !value.startsWith('data:')) return value;
+    if (value.isNotEmpty &&
+        !value.startsWith('data:') &&
+        !_kPlaceholderSrcPattern.hasMatch(value)) {
+      return value;
+    }
 
     for (final fallbackAttr in _kImageFallbackAttributes) {
       if (fallbackAttr == attribute) continue;

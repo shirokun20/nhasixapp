@@ -323,12 +323,17 @@ class GenericScraperAdapter implements GenericAdapter {
       rawMap.remove('patternKey');
     }
 
+    final formParamsCfg =
+        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
+
     final basePatternKey = overridePatternKey ??
+        _resolveFieldDrivenPatternKey(
+          rawMap: rawMap,
+          formParamsCfg: formParamsCfg,
+        ) ??
         (searchFormCfg?['urlPattern'] as String?) ??
         'search';
 
-    final formParamsCfg =
-        (searchFormCfg?['params'] as Map?)?.cast<String, dynamic>() ?? {};
     final queryParamName = ((formParamsCfg['query']
             as Map<String, dynamic>?)?['queryParam'] as String?) ??
         'query';
@@ -429,8 +434,19 @@ class GenericScraperAdapter implements GenericAdapter {
       basePath = basePath.replaceAll(
           '{query}', Uri.encodeQueryComponent(rawQueryValue));
     }
-    if (rawTagValue != null) {
-      final normalizedTag = rawTagValue.toLowerCase().replaceAll(' ', '-');
+    // Tag value for the path: the field whose urlPattern routed us here (e.g.
+    // `genre=action` → genreSearch), else the generic `tag` param. Compare
+    // against the base key so `{pattern}Page` variants still match.
+    final pathTagValue = _pathTagValueForPatternKey(
+          rawMap: rawMap,
+          formParamsCfg: formParamsCfg,
+          patternKey: patternKey.endsWith('Page')
+              ? patternKey.substring(0, patternKey.length - 4)
+              : patternKey,
+        ) ??
+        rawTagValue;
+    if (pathTagValue != null) {
+      final normalizedTag = pathTagValue.toLowerCase().replaceAll(' ', '-');
       basePath =
           basePath.replaceAll('{tag}', Uri.encodeQueryComponent(normalizedTag));
     }
@@ -442,6 +458,19 @@ class GenericScraperAdapter implements GenericAdapter {
     if (tagInPathTemplate) {
       rawMap.remove(tagParamName);
       rawMap.remove('tag');
+    }
+    // The routing field's value now lives in the path — drop it from the
+    // query string so `/genres/{tag}/` is not fetched with a stray
+    // `?genre={tag}` appended. Match on the base key for `{pattern}Page`.
+    final routingBaseKey =
+        patternKey.endsWith('Page') ? patternKey.substring(0, patternKey.length - 4) : patternKey;
+    for (final entry in rawMap.keys.toList()) {
+      final fieldCfg = formParamsCfg[entry];
+      if (fieldCfg is! Map<String, dynamic>) continue;
+      if (fieldCfg['urlPattern']?.toString() == routingBaseKey &&
+          (fieldCfg['type']?.toString() == 'tag')) {
+        rawMap.remove(entry);
+      }
     }
 
     final hasPageInPathTemplate = basePath.contains('{page}');
@@ -479,7 +508,33 @@ class GenericScraperAdapter implements GenericAdapter {
         var value = idx < 0 ? '' : pair.substring(idx + 1);
         final decodedValue = _safeDecodeComponent(value);
         if (decodedValue == '{query}' || decodedValue == '{tag}') {
-          value = '';
+          // Template key (e.g. `q={query}`) may differ from the raw form key
+          // (`query=...`). Re-key the matching raw param onto the template
+          // slot so it flows through the normal merge + encoding path below
+          // (leaving `?q=&query=maid` makes sites ignore the search text).
+          final isQuery = decodedValue == '{query}';
+          final sourceKeys = isQuery
+              ? <String>{queryParamName, 'query'}
+              : <String>{tagParamName, 'tag'};
+          final rawValues = <String>[];
+          for (final k in sourceKeys) {
+            final v = rawMap[k];
+            if (v != null && v.isNotEmpty && v.first.isNotEmpty) {
+              rawValues.add(v.first);
+            }
+          }
+          var resolved = rawValues.isEmpty
+              ? (isQuery ? rawQueryValue : rawTagValue)
+              : rawValues.first;
+          if (!isQuery && resolved != null) {
+            resolved = resolved.toLowerCase().replaceAll(' ', '-');
+          }
+          value = resolved ?? '';
+          for (final k in sourceKeys) {
+            rawMap.remove(k);
+          }
+          mergedParams[key] = <String>[value];
+          continue;
         } else if (decodedValue == '{page}') {
           value = page.toString();
         }
@@ -1182,7 +1237,42 @@ class GenericScraperAdapter implements GenericAdapter {
       // ── Chapters ──────────────────────────────────────────────────────────
       List<Chapter>? chapters;
       final chaptersCfg = detailCfg['chapters'] as Map<String, dynamic>?;
-      if (chaptersCfg != null) {
+      if (chaptersCfg != null &&
+          (chaptersCfg['mode'] as String?) == 'ajaxHtml' &&
+          chaptersCfg['container'] is String) {
+        // Madara-style: chapter list renders only via POST
+        // `{detailUrl}ajax/chapters/` returning an HTML fragment with the
+        // same container/fields markup as the static page.
+        try {
+          final ajaxUrl = '$url' 'ajax/chapters/';
+          final ajaxResponse = await _executeRequest<Response<String>>(
+            () => _dio.post<String>(
+              ajaxUrl,
+              data: '',
+              options: Options(
+                responseType: ResponseType.plain,
+                headers: requestHeaders,
+              ),
+            ),
+          );
+          final ajaxDoc = _parser.parse(ajaxResponse.data ?? '');
+          final chFieldsCfg =
+              (chaptersCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
+          chapters = _parser
+              .selectAll(ajaxDoc, chaptersCfg['container'] as String)
+              .map((el) =>
+                  GenericContentMapper.toChapter(_extractElementFields(
+                      el, chFieldsCfg)))
+              .where((ch) => ch.id.isNotEmpty)
+              .toList();
+          _logger.d(
+              '$_sourceId: ajaxHtml chapters=${chapters.length} for $contentId');
+        } catch (e) {
+          _logger.w('$_sourceId ajaxHtml chapters failed, falling back to DOM',
+              error: e);
+        }
+      }
+      if (chapters == null && chaptersCfg != null) {
         final containerSel = chaptersCfg['container'] as String?;
         final chFieldsCfg =
             (chaptersCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
@@ -2327,7 +2417,13 @@ class GenericScraperAdapter implements GenericAdapter {
 
       final nextPageUrl = _extractEnabledLinkUrl(doc, nextSel, baseUrl: url) ??
           _extractEnabledLinkUrl(doc, altSel, baseUrl: url);
-      final hasNext = nextPageUrl != null ||
+      // `pagination.mode=paged`: URL pattern is page-addressable but the page
+      // renders an AJAX load-more control instead of real links — trust the
+      // pattern while this page yielded items; stop at the first empty page.
+      final forcedPaged = (paginationConfig['mode'] as String?) == 'paged' &&
+          items.isNotEmpty;
+      final hasNext = forcedPaged ||
+          nextPageUrl != null ||
           (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
           (altSel != null && _hasEnabledLink(doc, altSel));
 
@@ -2602,6 +2698,9 @@ class GenericScraperAdapter implements GenericAdapter {
         } else if (transform == 'base64' && value.isNotEmpty) {
           value = _decodeBase64(value) ?? value;
         }
+        if (entry.key == 'coverUrl' && value.isNotEmpty) {
+          value = _sanitizeImageUrl(value);
+        }
         _logger
             .d('$_sourceId: extracted field "${entry.key}" (single): "$value"');
         result[entry.key] = value;
@@ -2638,7 +2737,7 @@ class GenericScraperAdapter implements GenericAdapter {
     final title = strVal(cfg['title'] ?? 'n');
     if (title.isNotEmpty) fields['title'] = title;
     final cover = strVal(cfg['coverUrl'] ?? 'c');
-    if (cover.isNotEmpty) fields['coverUrl'] = cover;
+    if (cover.isNotEmpty) fields['coverUrl'] = _sanitizeImageUrl(cover);
     final author = strVal(cfg['author'] ?? 'a');
     if (author.isNotEmpty) fields['author'] = author;
 
@@ -2756,6 +2855,9 @@ class GenericScraperAdapter implements GenericAdapter {
         if (transform == 'slug' && value.isNotEmpty) {
           value = _extractSlugFromUrl(value);
         }
+        if (entry.key == 'coverUrl' && value.isNotEmpty) {
+          value = _sanitizeImageUrl(value);
+        }
         result[entry.key] = value;
       }
     }
@@ -2770,6 +2872,43 @@ class GenericScraperAdapter implements GenericAdapter {
     if (val is String) return val;
     if (val is Map<String, dynamic>) return val['url'] as String? ?? '';
     return '';
+  }
+
+  // Route to the urlPattern declared on whichever form field carries a value
+  // (e.g. `genre` → `genreSearch`). Sites ignore query-string filters like
+  // `?genre=x`; they expose tag browsing as dedicated paths instead.
+  String? _resolveFieldDrivenPatternKey({
+    required Map<String, List<String>> rawMap,
+    required Map<String, dynamic> formParamsCfg,
+  }) {
+    for (final entry in rawMap.entries) {
+      if (entry.value.isEmpty || entry.value.first.trim().isEmpty) continue;
+      final fieldCfg = formParamsCfg[entry.key];
+      if (fieldCfg is! Map<String, dynamic>) continue;
+      if (fieldCfg['type']?.toString() != 'tag') continue;
+      final pattern = fieldCfg['urlPattern']?.toString();
+      if (pattern != null && pattern.isNotEmpty) return pattern;
+    }
+    return null;
+  }
+
+  // Value for the `{tag}` path placeholder: prefer the tag-typed field whose
+  // urlPattern routed to [patternKey] (e.g. `genre=action`), else null.
+  String? _pathTagValueForPatternKey({
+    required Map<String, List<String>> rawMap,
+    required Map<String, dynamic> formParamsCfg,
+    required String patternKey,
+  }) {
+    for (final entry in rawMap.entries) {
+      if (entry.value.isEmpty || entry.value.first.trim().isEmpty) continue;
+      final fieldCfg = formParamsCfg[entry.key];
+      if (fieldCfg is! Map<String, dynamic>) continue;
+      if (fieldCfg['type']?.toString() != 'tag') continue;
+      if (fieldCfg['urlPattern']?.toString() == patternKey) {
+        return entry.value.first;
+      }
+    }
+    return null;
   }
 
   // Normalise a field definition value to `Map<String, dynamic>`.
