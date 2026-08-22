@@ -1187,13 +1187,17 @@ class GenericScraperAdapter implements GenericAdapter {
           options: Options(
             responseType: ResponseType.plain,
             headers: requestHeaders,
+            // ponytail: permissive like other fetch paths — 5xx (e.g. b36's
+            // intermittent 502) should surface as empty parse result so
+            // callers can retry, not as a hard DioException.
+            validateStatus: (status) => status != null && status < 500,
           ),
         ),
       );
       Logger().i(
           '[$_sourceId] getDetail: response received, status=${response.statusCode}');
       Logger().i(
-          '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, value=${response.data?.substring(1, 10)}');
+          '[$_sourceId] getDetail: response.data type=${response.data.runtimeType}, length=${response.data?.length}');
 
       final selectors = (scraper?['selectors'] as Map<String, dynamic>?) ?? {};
       final detailCfg = (selectors['detail'] as Map<String, dynamic>?) ?? {};
