@@ -643,16 +643,14 @@ class ConfigGenerator {
 
   // ── Language detection ──────────────────────────────────────────────
 
+  // Explicit config wins; otherwise `global` — content language is never
+  // guessed from domain keywords (`.id`/`komik`/`doujin`/`manga`) or site
+  // locale. `<html lang>` may be passed as `defaultLanguage` by the caller
+  // as a HINT but is not treated as proof here either.
   static String _detectLang(String baseUrl, Map<String, String?> a) {
     final lang = a['defaultLanguage'];
     if (lang != null && lang.isNotEmpty) return lang;
-    if (baseUrl.contains('.id') ||
-        baseUrl.contains('komik') ||
-        baseUrl.contains('doujin') ||
-        baseUrl.contains('manga')) {
-      return 'indonesian';
-    }
-    return 'english';
+    return 'global';
   }
 
   // ── Notes ───────────────────────────────────────────────────────────

@@ -125,6 +125,14 @@ const _tagSlugs = <String, String>{
   'beauty3600000': 'japan',
 };
 
+// cosplaytele has TWO live taxonomies: /category/ (genre + cosplayer) and
+// /tag/ (character, series). The engine must route type='tag' includeTags to
+// tagSearch and everything else to genreSearch. Regression for the blank
+// page on tapping Character/Appear-In chips (e.g. /tag/sparkle/).
+const _plainTagSlugs = <String, String>{
+  'cosplaytele': 'sparkle',
+};
+
 void _runSourceTests(String sourceId) {
   group('$sourceId live 5-screen', () {
     late Map<String, Object?> config;
@@ -179,11 +187,25 @@ void _runSourceTests(String sourceId) {
         SearchFilter(
           query: '',
           page: 1,
-          includeTags: [FilterItem(id: 0, name: tagSlug, type: 'tag')],
+          includeTags: [FilterItem(id: 0, name: tagSlug, type: 'genre')],
         ),
         config,
       );
       expect(result.items, isNotEmpty, reason: 'tag "$tagSlug"');
+    }, timeout: _timeout);
+
+    test('plain-tag screen routes to tagSearch taxonomy', () async {
+      final tagSlug = _plainTagSlugs[sourceId];
+      if (tagSlug == null) return; // source has no separate /tag/ taxonomy
+      final result = await adapter.search(
+        SearchFilter(
+          query: '',
+          page: 1,
+          includeTags: [FilterItem(id: 0, name: tagSlug, type: 'tag')],
+        ),
+        config,
+      );
+      expect(result.items, isNotEmpty, reason: 'plain tag "$tagSlug"');
     }, timeout: _timeout);
 
     test('detail screen parses title and images', () async {

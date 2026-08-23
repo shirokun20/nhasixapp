@@ -195,7 +195,8 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     // 1) Prefix pattern (genreSearch / tagSearch / authorSearch / …)
-    // 2) Genre/tag filter via includeTags → genreSearch
+    // 2) Type-aware tag filter: type='tag' → tagSearch when the source has a
+    //    separate tag taxonomy (e.g. WP /tag/ vs /category/); else genreSearch.
     // 3) Non-empty text   → search / searchPage
     // 4) Empty query      → category-routed browse (if configured)
     // 5) Empty query      → home/homePage fallback
@@ -207,10 +208,16 @@ class GenericScraperAdapter implements GenericAdapter {
               : prefixPatternKey.first;
     } else if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
-      patternKey =
-          filter.page > 1 && urlPatternsCfg.containsKey('genreSearchPage')
-              ? 'genreSearchPage'
-              : 'genreSearch';
+      const wantsPlainTag = 'tag';
+      final firstType =
+          filter.includeTags.first.type.toLowerCase().trim();
+      final useTagPattern = firstType == wantsPlainTag &&
+          urlPatternsCfg.containsKey('tagSearch');
+      final baseKey = useTagPattern ? 'tagSearch' : 'genreSearch';
+      final pageKey = '${baseKey}Page';
+      patternKey = filter.page > 1 && urlPatternsCfg.containsKey(pageKey)
+          ? pageKey
+          : baseKey;
     } else if (filter.query.trim().isNotEmpty) {
       patternKey = filter.page > 1 && urlPatternsCfg.containsKey('searchPage')
           ? 'searchPage'

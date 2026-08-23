@@ -1391,7 +1391,10 @@ class GenericRestAdapter implements GenericAdapter {
             }
             lang = (lang != null && lang.isNotEmpty && lang != 'unknown')
                 ? lang
-                : (rawConfig['defaultLanguage'] as String? ?? 'en');
+                : _resolveLanguageCode(
+                    defaultLanguage:
+                        rawConfig['defaultLanguage'] as String?,
+                  );
             chapterUrl = _replaceMultiValueParam(
               chapterUrl,
               paramName: 'translatedLanguage[]',
@@ -2807,10 +2810,13 @@ class GenericRestAdapter implements GenericAdapter {
     String? requestedLanguage,
     String? defaultLanguage,
   }) {
-    final raw = (requestedLanguage ?? defaultLanguage ?? 'en').trim();
-    if (raw.isEmpty) return 'en';
+    final raw = (requestedLanguage ?? defaultLanguage ?? '').trim();
 
     final normalized = raw.toLowerCase().replaceAll('_', '-');
+    // `global` (mixed/unverified content) means no language filter — same
+    // wire semantics as `all`. Never coerced to a specific code.
+    if (normalized.isEmpty || normalized == 'global') return 'all';
+
     if (RegExp(r'^[a-z]{2}(-[a-z0-9]+)?$').hasMatch(normalized)) {
       return normalized;
     }
@@ -2818,7 +2824,6 @@ class GenericRestAdapter implements GenericAdapter {
     const mapping = <String, String>{
       'all': 'all',
       'all languages': 'all',
-      'english': 'en',
       'indonesian': 'id',
       'indonesia': 'id',
       'japanese': 'ja',
@@ -2839,7 +2844,7 @@ class GenericRestAdapter implements GenericAdapter {
       'polish': 'pl',
     };
 
-    return mapping[normalized] ?? 'en';
+    return mapping[normalized] ?? 'all';
   }
 
   Future<List<Chapter>> _fetchChapters(

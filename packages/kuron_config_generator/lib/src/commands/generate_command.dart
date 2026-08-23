@@ -161,7 +161,9 @@ class GenerateCommand extends Command<void> {
           '🔍 Detected Search Form: endpoint="${searchForm['searchEndpoint']}", param="${searchForm['queryParam']}"');
     }
 
-    // Detect language from HTML lang attribute
+    // Surface `<html lang>` as a HINT only — spec: it is not proof of
+    // content language. The wizard lets the user confirm/override before
+    // generation; unverified sources fall back to `global` downstream.
     String? langFromHtml;
     final langMatch =
         RegExp(r'<html[^>]+lang="([^"]+)"').firstMatch(probe.body);

@@ -59,6 +59,11 @@
       "displayName": "All Languages",
       "code": "all"
     },
+    "global": {
+      "displayName": "Global",
+      "code": "global",
+      "flagEmoji": "🌐"
+    },
     "indonesian": {
       "displayName": "Indonesia",
       "code": "id",
