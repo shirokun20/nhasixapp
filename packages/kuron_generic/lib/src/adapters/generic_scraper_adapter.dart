@@ -2112,7 +2112,26 @@ class GenericScraperAdapter implements GenericAdapter {
         if (imagesDef != null) {
           final defMap = _toDefMap(imagesDef);
           if (defMap != null) {
-            final sel = _fieldDefToSelector(defMap);
+            var sel = _fieldDefToSelector(defMap);
+            // Scope the fallback selector to reader.container when the
+            // selector isn't already self-scoped: without this, a series-slug
+            // fetch (detail page, no ts_reader) scrapes every page img —
+            // logos, sidebar thumbs — as fake chapter pages. Regex selectors
+            // scrape <script> content, not DOM elements — never scope those.
+            final containerSel = (readerConfig['container'] as String?)?.trim();
+            if (sel != null &&
+                defMap['regex'] == null &&
+                containerSel != null &&
+                containerSel.isNotEmpty &&
+                !sel.selector.startsWith(containerSel)) {
+              sel = FieldSelector(
+                selector: '$containerSel ${sel.selector}',
+                attribute: sel.attribute,
+                type: sel.type,
+                regex: sel.regex,
+                fallback: sel.fallback,
+              );
+            }
             if (sel != null) {
               imageUrls = _parser.extractList(workingDoc, sel);
             }

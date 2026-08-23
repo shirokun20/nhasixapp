@@ -84,7 +84,7 @@ void main() {
       final selectors = (scraper['selectors'] as Map).cast<String, Object?>();
       final reader = (selectors['reader'] as Map).cast<String, Object?>();
       final images = (reader['images'] as Map).cast<String, Object?>();
-      expect(images['selector'], 'img.loading');
+      expect(images['selector'], '.read-content img.loading');
       expect(images['attribute'], 'data-src');
     });
 
