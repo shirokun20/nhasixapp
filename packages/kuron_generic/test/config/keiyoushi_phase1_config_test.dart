@@ -63,7 +63,10 @@ void main() {
       final Map<String, Object?> list =
           (home['list'] as Map).cast<String, Object?>();
 
-      expect(list['container'], '.listupd .bsx');
+      // Genre/archive pages render plain .bs cards (no "Latest Update"
+      // bixbox heading), so the container must not pin the bixbox wrapper.
+      // Regression: genre page 2 returned zero items (2026-08-23).
+      expect(list['container'], '.listupd .bs .bsx');
 
       final Map<String, Object?> selectors =
           (scraper['selectors'] as Map).cast<String, Object?>();
