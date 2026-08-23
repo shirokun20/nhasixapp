@@ -3059,10 +3059,12 @@ class GenericScraperAdapter implements GenericAdapter {
     while (stripped.startsWith('/')) {
       stripped = stripped.substring(1);
     }
-    // Strip trailing slash so the built URL doesn't end with //path/.
-    if (stripped.endsWith('/')) {
-      stripped = stripped.substring(0, stripped.length - 1);
-    }
+    // Preserve a trailing slash: madara sites (mangaread.org) 301
+    // `/manga/x/chapter-N` → `/manga/x/chapter-N/`, and their redirect chain
+    // loops when followed, so dropping the slash breaks reader/download.
+    // The `//path/` double-slash this once guarded against came from ids that
+    // BOTH started and ended with `/` — leading slashes are already removed
+    // above, so that case can't occur here.
     return stripped;
   }
 
@@ -3665,6 +3667,19 @@ class GenericScraperAdapter implements GenericAdapter {
         !cleaned.startsWith('//') &&
         !_urlBuilder.baseUrl.startsWith('/')) {
       cleaned = '${_urlBuilder.baseUrl}$cleaned';
+    }
+
+    // Android network_security_config blocks cleartext http:// — native
+    // image downloads fail with a transport error. Sites serving page markup
+    // over https but embedding `http://` image srcs (madara themes:
+    // manhwaclub.net) always also answer on https (301 at worst), so upgrade
+    // when the host matches the source baseUrl.
+    if (cleaned.startsWith('http://')) {
+      final baseHost = Uri.tryParse(_urlBuilder.baseUrl)?.host ?? '';
+      final imgHost = Uri.tryParse(cleaned)?.host ?? '';
+      if (baseHost.isNotEmpty && imgHost == baseHost) {
+        cleaned = 'https:${cleaned.substring(5)}';
+      }
     }
 
     return cleaned;
