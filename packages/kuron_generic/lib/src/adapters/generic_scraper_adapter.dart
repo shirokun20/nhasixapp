@@ -1268,6 +1268,43 @@ class GenericScraperAdapter implements GenericAdapter {
                   _extractElementFields(el, chFieldsCfg)))
               .where((ch) => ch.id.isNotEmpty)
               .toList();
+          // Some madara theme builds answer `{detailUrl}ajax/chapters/` with
+          // the FULL page (holder spinner still unresolved) instead of a
+          // fragment — manhwaclub.net, mangaforfree.net. Those load the list
+          // via admin-ajax `manga_get_chapters` keyed by the holder's
+          // data-id. Fall back when the fragment yielded nothing.
+          if (chapters.isEmpty && doc.querySelector('#manga-chapters-holder') != null) {
+            final dataId =
+                doc.querySelector('#manga-chapters-holder')!.attributes['data-id'] ?? '';
+            if (dataId.isNotEmpty) {
+              final baseUri = Uri.parse(url);
+              final adminAjaxUrl = baseUri
+                  .replace(path: '/wp-admin/admin-ajax.php', query: '', fragment: '')
+                  .toString();
+              final adminResponse = await _executeRequest<Response<String>>(
+                () => _dio.post<String>(
+                  adminAjaxUrl,
+                  data: 'action=manga_get_chapters&manga=$dataId',
+                  options: Options(
+                    responseType: ResponseType.plain,
+                    headers: {
+                      ...requestHeaders,
+                      'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                  ),
+                ),
+              );
+              final adminDoc = _parser.parse(adminResponse.data ?? '');
+              chapters = _parser
+                  .selectAll(adminDoc, chaptersCfg['container'] as String)
+                  .map((el) => GenericContentMapper.toChapter(
+                      _extractElementFields(el, chFieldsCfg)))
+                  .where((ch) => ch.id.isNotEmpty)
+                  .toList();
+              _logger.d(
+                  '$_sourceId: madaraAdminAjax chapters=${chapters.length} for $contentId');
+            }
+          }
           _logger.d(
               '$_sourceId: ajaxHtml chapters=${chapters.length} for $contentId');
         } catch (e) {
@@ -3594,6 +3631,14 @@ class GenericScraperAdapter implements GenericAdapter {
 
     if (cleaned.startsWith('//')) {
       cleaned = 'https:$cleaned';
+    }
+
+    // Relative paths (e.g. photos18 `/images/node/...avif`) resolve against
+    // the source baseUrl so list covers are always fetchable.
+    if (cleaned.startsWith('/') &&
+        !cleaned.startsWith('//') &&
+        !_urlBuilder.baseUrl.startsWith('/')) {
+      cleaned = '${_urlBuilder.baseUrl}$cleaned';
     }
 
     return cleaned;

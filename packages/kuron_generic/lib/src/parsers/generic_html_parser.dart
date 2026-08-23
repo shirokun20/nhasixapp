@@ -277,7 +277,9 @@ class GenericHtmlParser {
 
   String? _applyRegex(String input, String pattern) {
     try {
-      final match = RegExp(pattern).firstMatch(input);
+      // dotAll: extracted text commonly spans newlines (badge markup above
+      // the title line); without it `.+`/`$` anchors fail on those values.
+      final match = RegExp(pattern, dotAll: true).firstMatch(input);
       if (match == null) return null;
       return match.groupCount > 0 ? match.group(1) : match.group(0);
     } catch (e) {

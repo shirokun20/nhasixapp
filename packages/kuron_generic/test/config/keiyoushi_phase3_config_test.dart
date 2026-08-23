@@ -111,7 +111,11 @@ void main() {
       final detail = (selectors['detail'] as Map).cast<String, Object?>();
       final chapters = (detail['chapters'] as Map).cast<String, Object?>();
 
-      expect(chapters['container'], '.chapter-item');
+      // Phase-4 fix: chapters load via madara admin-ajax (theme's
+      // `ajax/chapters/` returns a full page, not a fragment), so config
+      // declares ajaxHtml mode with the fragment's wp-manga-chapter markup.
+      expect(chapters['mode'], 'ajaxHtml');
+      expect(chapters['container'], 'li.wp-manga-chapter');
     });
 
     test('mangaforfree baseUrl + madara signature', () {

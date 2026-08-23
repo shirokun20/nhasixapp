@@ -210,6 +210,35 @@ void _runSourceTests(String sourceId) {
       await _expectImage200(detail.imageUrls.first, config);
     }, timeout: _timeout);
   });
+
+  // Regression (Phase-4 task #33): crp_related "Recommend For You"
+  // thumbnails live INSIDE .entry-content.single-page — the old
+  // unscoped reader selector picked them up (100 non-gallery imgs on
+  // sparkle-hanabi-6). Reader selector must stay scoped to .gallery-item.
+  group('cosplaytele gallery purity', () {
+    late Map<String, Object?> config;
+    late GenericScraperAdapter adapter;
+
+    setUpAll(() {
+      config = _loadConfig('cosplaytele-config.json');
+      adapter = _adapter(config);
+    });
+
+    test('reader imgs are all in-post gallery files', () async {
+      // Fixed fixture: post whose related block sits inside the
+      // entry-content div (verified live 2026-08-23).
+      final content = await adapter.fetchChapterImages(
+        'sparkle-hanabi-6',
+        config,
+      );
+      final urls = content!.images;
+      expect(urls, isNotEmpty, reason: 'gallery images');
+      final nonGallery =
+          urls.where((u) => !u.contains('Machi-cosplay-Sparkle')).toList();
+      expect(nonGallery, isEmpty,
+          reason: 'crp_related thumbs leaked into reader: $nonGallery');
+    }, timeout: _timeout);
+  });
 }
 
 void main() {
