@@ -613,7 +613,6 @@ class ContentRepositoryImpl implements ContentRepository {
       final normalizedSlug = rawSlug
           .toLowerCase()
           .replaceAll(RegExp(r'\s+'), '-')
-          .replaceAll(RegExp(r'-+'), '-')
           .replaceAll(RegExp(r'^-|-$'), '');
 
       if (normalizedSlug.isNotEmpty) {
@@ -624,6 +623,30 @@ class ContentRepositoryImpl implements ContentRepository {
           isExcluded: false,
         ));
         mappedQuery = '';
+      }
+    } else {
+      // `<tagPrefix><slug>` queries (e.g. "tag:sparkle") map to a plain-tag
+      // includeTags entry; the scraper routes these via the tagSearch URL
+      // pattern when the source has a separate /tag/ taxonomy.
+      final tagPrefix = navigation is Map<String, dynamic>
+          ? (navigation['tagQueryPrefix'] as String? ?? 'tag:')
+          : 'tag:';
+      if (tagPrefix.isNotEmpty && mappedQuery.startsWith(tagPrefix)) {
+        final rawSlug = mappedQuery.substring(tagPrefix.length).trim();
+        final normalizedSlug = rawSlug
+            .toLowerCase()
+            .replaceAll(RegExp(r'\s+'), '-')
+            .replaceAll(RegExp(r'^-|-$'), '');
+
+        if (normalizedSlug.isNotEmpty) {
+          includeTags.add(core.FilterItem(
+            id: 0,
+            name: normalizedSlug,
+            type: 'tag',
+            isExcluded: false,
+          ));
+          mappedQuery = '';
+        }
       }
     }
 
