@@ -153,6 +153,11 @@ class WebViewSessionAdapter {
   static const _keyPrefix = 'kuron_special_auth_';
   String get _keyEmail => '$_keyPrefix${_baseUrl.hashCode}_email';
 
+  /// cf_clearance is bound to the User-Agent that solved the challenge.
+  /// Persisting the WebView UA lets post-restart probes reuse the clearance
+  /// instead of re-triggering the challenge every cold session.
+  String get _uaKey => '$_keyPrefix${_baseUrl.hashCode}_ua';
+
   WebViewSessionAdapter({
     required Dio dio,
     required PersistCookieJar cookieJar,
@@ -260,8 +265,19 @@ class WebViewSessionAdapter {
       options ??= Options();
       options.headers ??= {};
 
-      // Sync stored dynamically captured UserAgent from previous bypass if available
-      final storedUa = _dio.options.headers['User-Agent'] as String?;
+      // Sync stored dynamically captured UserAgent from previous bypass if
+      // available. Restore from secure storage on cold start — cf_clearance
+      // is UA-bound; probing with a mismatched UA voids the clearance and
+      // re-triggers the challenge every session.
+      var storedUa = _dio.options.headers['User-Agent'] as String?;
+      if (storedUa == null || storedUa.isEmpty) {
+        final persistedUa =
+            await _secureStorage.read(key: _uaKey).catchError((_) => null);
+        if (persistedUa != null && persistedUa.isNotEmpty) {
+          _dio.options.headers['User-Agent'] = persistedUa;
+          storedUa = persistedUa;
+        }
+      }
       if (storedUa != null) {
         options.headers ??= {};
         options.headers?['User-Agent'] = storedUa;
@@ -380,6 +396,9 @@ class WebViewSessionAdapter {
 
         if (userAgent != null && userAgent.isNotEmpty) {
           _dio.options.headers['User-Agent'] = userAgent;
+          // Persist so cold-start probes reuse the UA that minted the
+          // current cf_clearance (challenge is UA-bound).
+          await _secureStorage.write(key: _uaKey, value: userAgent);
           _logger.i('🔄 Synced User-Agent: $userAgent');
         }
 

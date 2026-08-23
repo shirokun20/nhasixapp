@@ -373,9 +373,24 @@ void main() {
       expect(native.lastCaptureRequestPatterns, isNull);
       expect(native.lastAllowRequestPatterns, contains('hentairead.com'));
       // CF jsd oneshot challenge has no cf_clearance — pageFinishedScript
-      // polls title and auto-closes once the challenge resolves.
+      // polls title and auto-closes once the challenge resolves. Reader pages
+      // must ALSO wait for the chapterData payload before closing (title
+      // flips before <body> finishes parsing — closing early lost images).
       expect(native.lastPageFinishedScript, isNotNull);
       expect(native.lastPageFinishedScript, contains('just a moment'));
+      expect(native.lastPageFinishedScript, contains('chapterData'));
+    });
+
+    test('non-reader page script does not wait for chapterData', () {
+      final options = WebViewReaderSourceFactory.buildBypassOptions(
+        'https://hentairead.com/hentai/sample/',
+        const WebViewSessionConfig(bypassEnabled: true),
+        readerPagePattern: '/english/p/',
+        captureHost: 'henread.xyz',
+        previewHost: 'hencover.xyz',
+      );
+      expect(options.pageFinishedScript, isNotNull);
+      expect(options.pageFinishedScript, isNot(contains('chapterData')));
     });
 
     test('hentairead reader bypass prefers captured html over image urls',
