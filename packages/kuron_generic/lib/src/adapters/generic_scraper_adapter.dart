@@ -178,8 +178,7 @@ class GenericScraperAdapter implements GenericAdapter {
     // value that looks like a prefix (e.g. "parody:azur lane" inside
     // "f_search=...") is search TEXT, not a routing prefix. Only apply
     // prefix routing when the source has no searchForm.
-    final usesSearchForm =
-        rawConfig['searchForm'] is Map<String, dynamic>;
+    final usesSearchForm = rawConfig['searchForm'] is Map<String, dynamic>;
 
     var prefixPatternKey = <String>{};
     if (!usesSearchForm) {
@@ -462,8 +461,9 @@ class GenericScraperAdapter implements GenericAdapter {
     // The routing field's value now lives in the path — drop it from the
     // query string so `/genres/{tag}/` is not fetched with a stray
     // `?genre={tag}` appended. Match on the base key for `{pattern}Page`.
-    final routingBaseKey =
-        patternKey.endsWith('Page') ? patternKey.substring(0, patternKey.length - 4) : patternKey;
+    final routingBaseKey = patternKey.endsWith('Page')
+        ? patternKey.substring(0, patternKey.length - 4)
+        : patternKey;
     for (final entry in rawMap.keys.toList()) {
       final fieldCfg = formParamsCfg[entry];
       if (fieldCfg is! Map<String, dynamic>) continue;
@@ -1264,9 +1264,8 @@ class GenericScraperAdapter implements GenericAdapter {
               (chaptersCfg['fields'] as Map?)?.cast<String, dynamic>() ?? {};
           chapters = _parser
               .selectAll(ajaxDoc, chaptersCfg['container'] as String)
-              .map((el) =>
-                  GenericContentMapper.toChapter(_extractElementFields(
-                      el, chFieldsCfg)))
+              .map((el) => GenericContentMapper.toChapter(
+                  _extractElementFields(el, chFieldsCfg)))
               .where((ch) => ch.id.isNotEmpty)
               .toList();
           _logger.d(
@@ -2048,6 +2047,16 @@ class GenericScraperAdapter implements GenericAdapter {
           workingHtmlContent,
           readerConfig: readerConfig,
         );
+
+        // Fallback: when chapterDataScript fails (e.g. Next.js SPA reader),
+        // extract preview images from the detail page and rewrite CDN host.
+        if (imageUrls.isEmpty) {
+          imageUrls = await _extractDetailPreviewImages(
+            rawConfig: rawConfig,
+            readerConfig: readerConfig,
+            chapterHtmlContent: workingHtmlContent,
+          );
+        }
       }
 
       if (imageUrls.isEmpty) {
@@ -2147,7 +2156,7 @@ class GenericScraperAdapter implements GenericAdapter {
           final imagePrefix = (readerConfig['imagePrefix'] as String?) ??
               'hr_'; // legacy default
           final prefixMatches = RegExp(
-            '${RegExp.escape(imagePrefix)}(\\d+)\\.(jpg|jpeg|png|webp)',
+            '${RegExp.escape(imagePrefix)}(\\d{4})\\.(jpg|jpeg|png|webp)',
             caseSensitive: false,
           ).allMatches(workingHtmlContent);
           for (final m in prefixMatches) {
@@ -2173,8 +2182,7 @@ class GenericScraperAdapter implements GenericAdapter {
                   'hr_'; // legacy default
               for (int i = imageUrls.length + 1; i <= maxPage; i++) {
                 final padded = i.toString().padLeft(4, '0');
-                imageUrls.add(
-                    'https://$cdnHost/$realMangaId/$realChapterId/'
+                imageUrls.add('https://$cdnHost/$realMangaId/$realChapterId/'
                     '$imagePrefix$padded.jpg');
               }
             }
@@ -2424,8 +2432,8 @@ class GenericScraperAdapter implements GenericAdapter {
       // `pagination.mode=paged`: URL pattern is page-addressable but the page
       // renders an AJAX load-more control instead of real links — trust the
       // pattern while this page yielded items; stop at the first empty page.
-      final forcedPaged = (paginationConfig['mode'] as String?) == 'paged' &&
-          items.isNotEmpty;
+      final forcedPaged =
+          (paginationConfig['mode'] as String?) == 'paged' && items.isNotEmpty;
       final hasNext = forcedPaged ||
           nextPageUrl != null ||
           (nextSel != null && _hasEnabledLink(doc, nextSel)) ||
@@ -2722,11 +2730,9 @@ class GenericScraperAdapter implements GenericAdapter {
     Map<String, dynamic> payload,
     Map<String, dynamic> detailCfg,
   ) {
-    final manga =
-        (payload['manga'] as Map<String, dynamic>?) ?? const {};
+    final manga = (payload['manga'] as Map<String, dynamic>?) ?? const {};
     final cfg = (detailCfg['chaotic'] as Map<String, dynamic>?) ?? const {};
-    String strVal(String key) =>
-        (manga[key]?.toString() ?? '').trim();
+    String strVal(String key) => (manga[key]?.toString() ?? '').trim();
     List<String> listVal(String key) => strVal(key)
         .split(',')
         .map((s) => s.trim())
@@ -2754,8 +2760,7 @@ class GenericScraperAdapter implements GenericAdapter {
         var slug = '';
         final uri = Uri.tryParse(ur);
         if (uri != null && uri.pathSegments.isNotEmpty) {
-          final segments =
-              uri.pathSegments.where((s) => s.isNotEmpty).toList();
+          final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
           if (segments.length >= 2) {
             type = segments[segments.length - 2].toLowerCase();
             slug = segments.last.toLowerCase();
@@ -2772,7 +2777,9 @@ class GenericScraperAdapter implements GenericAdapter {
       }).toList();
     } else {
       final genreStr = strVal(cfg['genres'] ?? 'genres');
-      if (genreStr.isNotEmpty) fields['tags'] = listVal(cfg['genres'] ?? 'genres');
+      if (genreStr.isNotEmpty) {
+        fields['tags'] = listVal(cfg['genres'] ?? 'genres');
+      }
     }
 
     final description = strVal(cfg['description'] ?? 'description');
@@ -2788,8 +2795,7 @@ class GenericScraperAdapter implements GenericAdapter {
   // the URL is used verbatim as the chapter id (it already includes the
   // full `/manga{id}/{slug}/chapter-...` path).
   List<Chapter>? _chaoticChapters(Map<String, dynamic> payload) {
-    final raw =
-        (payload['chapters_list'] as List?) ?? const [];
+    final raw = (payload['chapters_list'] as List?) ?? const [];
     if (raw.isEmpty) return null;
     final chapters = <Chapter>[];
     for (final entry in raw.whereType<Map<String, dynamic>>()) {
@@ -3426,9 +3432,7 @@ class GenericScraperAdapter implements GenericAdapter {
           r'''localStaticData\s*=\s*\{.*?"currentId"\s*:\s*(\d+).*?"chapterId"\s*:\s*(\d+)''',
           dotAll: true,
         ).firstMatch(htmlContent);
-        if (cdnHost != null &&
-            cdnHost.isNotEmpty &&
-            localStatic != null) {
+        if (cdnHost != null && cdnHost.isNotEmpty && localStatic != null) {
           base64Str = chapterDataNoBaseMatch.group(1);
           baseUrl = 'https://$cdnHost/${localStatic.group(1)}/'
               '${localStatic.group(2)}';
@@ -3945,5 +3949,66 @@ class GenericScraperAdapter implements GenericAdapter {
     }
 
     return comments;
+  }
+
+  // Fallback: when chapterDataScript fails (e.g. Next.js SPA reader),
+  // fetch the detail page and extract preview image URLs from
+  // `hencover.xyz/preview/{mangaId}/{chapterId}/hr_NNNN.jpg`, then
+  // rewrite them to the reader CDN (`henread.xyz`).
+  Future<List<String>> _extractDetailPreviewImages({
+    required Map<String, dynamic> rawConfig,
+    required Map<String, dynamic> readerConfig,
+    required String chapterHtmlContent,
+  }) async {
+    final cdnHost = readerConfig['cdnHost'] as String?;
+    if (cdnHost == null || cdnHost.isEmpty) return const [];
+
+    final previewHost =
+        (readerConfig['previewHost'] as String?)?.trim().isNotEmpty == true
+            ? (readerConfig['previewHost'] as String).trim()
+            : 'hencover.xyz';
+    final imagePrefix = readerConfig['imagePrefix'] as String? ?? 'hr_';
+
+    // Extract preview image URLs from the chapter page HTML.
+    // Pattern: https://hencover.xyz/preview/{mangaId}/{chapterId}/hr_NNNN.jpg
+    // CRITICAL: only match 4-digit page numbers (0001-9999) to avoid
+    // matching cover images like hr_289618.jpg (6-digit manga ID).
+    final previewRegex = RegExp(
+      'https?://${RegExp.escape(previewHost)}/preview/(\\d+)/(\\d+)/'
+      '${RegExp.escape(imagePrefix)}(\\d{4})\\.(jpg|jpeg|png|webp)',
+      caseSensitive: false,
+    );
+
+    final matches = previewRegex.allMatches(chapterHtmlContent).toList();
+    if (matches.isEmpty) {
+      _logger.d(
+          '$_sourceId detailPreviewImages: no preview URLs found in chapter HTML');
+      return const [];
+    }
+
+    // Extract mangaId and chapterId from the first match.
+    final mangaId = matches.first.group(1)!;
+    final chapterId = matches.first.group(2)!;
+    final maxPage = matches
+        .map((m) => int.tryParse(m.group(3)!) ?? 0)
+        .reduce((a, b) => a > b ? a : b);
+
+    _logger
+        .d('$_sourceId detailPreviewImages: found ${matches.length} previews, '
+            'mangaId=$mangaId, chapterId=$chapterId, maxPage=$maxPage');
+
+    // Build reader CDN URLs.
+    final ext = matches.first.group(4)!;
+    const width = 4; // always 4-digit padded
+
+    final urls = <String>[];
+    for (int i = 1; i <= maxPage; i++) {
+      final padded = i.toString().padLeft(width, '0');
+      urls.add(
+        'https://$cdnHost/$mangaId/$chapterId/$imagePrefix$padded.$ext',
+      );
+    }
+
+    return urls;
   }
 }

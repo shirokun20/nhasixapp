@@ -123,13 +123,6 @@ class ReaderTranslationOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     return BlocBuilder<ReaderTranslationCubit, ReaderTranslationState>(
-      buildWhen: (prev, curr) =>
-          curr is ReaderTranslationTranslated ||
-          curr is ReaderTranslationTranslatingBubble ||
-          curr is ReaderTranslationTranslating ||
-          curr is ReaderTranslationError ||
-          curr is ReaderTranslationRateLimited ||
-          curr is ReaderTranslationIdle, // reset clears the overlay
       builder: (context, state) {
         if (state is! ReaderTranslationTranslated) {
           // Show the same busy overlay while any heavy AI step runs, so the
@@ -168,7 +161,11 @@ class ReaderTranslationOverlay extends StatelessWidget {
           children: [
             for (var i = 0; i < result.bubbles.length; i++)
               _positionedBubble(
-                result.bubbles[i], scaleX, scaleY, topOffset, i,
+                result.bubbles[i],
+                scaleX,
+                scaleY,
+                topOffset,
+                i,
                 manualBubbles: cubit.manualBubbles,
                 isFailed: state.failedBubbles.containsKey(i),
                 onRetry: state.failedBubbles.containsKey(i)
@@ -223,10 +220,9 @@ Widget _positionedBubble(
       shape != null && shape.length >= 3 ? _inscribedBox(shape) : null;
 
   // Find tail for manual bubbles at this index
-  final tail = index < manualBubbles.length
-      ? manualBubbles[index].tail
-      : null;
-  final tailPoints = tail?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList();
+  final tail = index < manualBubbles.length ? manualBubbles[index].tail : null;
+  final tailPoints =
+      tail?.map((p) => Offset(p[0].toDouble(), p[1].toDouble())).toList();
 
   return Positioned(
     left: rect.left,
@@ -320,9 +316,8 @@ class ReaderTranslatedBubble extends StatelessWidget {
               )
             : const SizedBox.shrink());
     return GestureDetector(
-      onTap: isFailed && onRetry != null
-          ? onRetry
-          : () => _showEditSheet(context),
+      onTap:
+          isFailed && onRetry != null ? onRetry : () => _showEditSheet(context),
       onLongPress: () => _showSaveToGlossarySheet(context),
       child: Stack(
         fit: StackFit.expand,
@@ -338,7 +333,9 @@ class ReaderTranslatedBubble extends StatelessWidget {
                   ? Size(effectiveBox!.width, effectiveBox!.height)
                   : Size(constraints.maxWidth, constraints.maxHeight);
               return Padding(
-                padding: hasShape ? const EdgeInsets.all(1) : const EdgeInsets.all(3),
+                padding: hasShape
+                    ? const EdgeInsets.all(1)
+                    : const EdgeInsets.all(3),
                 // Center the whole text block INSIDE the bubble, not just per-line.
                 // Without this the Text fills its tight Stack bounds and is painted
                 // from the top edge, stranding the (now smaller) fitted text at the
@@ -662,7 +659,9 @@ class AiBusyOverlay extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
-                  color: Colors.black26, blurRadius: 12, offset: Offset(0, 3)),
+                    color: Colors.black26,
+                    blurRadius: 12,
+                    offset: Offset(0, 3)),
               ],
             ),
             child: Row(

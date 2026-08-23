@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/data/repositories/ai/fallback_image_handler.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
@@ -77,6 +78,52 @@ void main() {
 
     expect(cubit.state, isA<ReaderTranslationTranslated>());
     expect(find.byType(Positioned), findsNWidgets(3));
+  });
+
+  testWidgets('detection rebuild clears stale translated bubbles',
+      (tester) async {
+    final cubit = _TestReaderTranslationCubit(
+      providerRepository: FakeAiProviderRepository()
+        ..addOnly(FakeAiProviderRepository.testProvider),
+      providerFactory: FakeAiProviderFactory(),
+      preferencesRepository: FakeAiPreferencesRepository(),
+      cacheRepository: FakeCacheRepository(),
+      mosaicBuilder: FakeMosaicBuilder(),
+      fallbackHandler: FallbackImageHandler(),
+      heavyRunner: syncHeavyRunner,
+      logger: Logger(level: Level.off),
+    );
+    addTearDown(cubit.close);
+
+    await cubit.translatePage(
+      imageBytes: Uint8List(0),
+      imageWidth: 100,
+      imageHeight: 100,
+      contentId: 'c1',
+      pageIndex: 0,
+      imageUrl: 'u1',
+      readingMode: ReadingMode.singlePage,
+      imageUrlCount: 3,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<ReaderTranslationCubit>.value(
+          value: cubit,
+          child: const Scaffold(body: ReaderTranslationOverlay()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    cubit.showDetecting();
+    await tester.pump();
+    await tester.pump();
+
+    expect(cubit.state, isA<ReaderTranslationDetecting>());
+    expect(find.byType(AiBusyOverlay), findsOneWidget);
+    expect(find.byType(ReaderTranslatedBubble), findsNothing);
   });
 
   testWidgets('overlay renders polygon shape when bubble has shape',
@@ -206,6 +253,21 @@ void main() {
     expect((textCenter.dx - bubbleCenter.dx).abs(), lessThan(2.0));
     expect((textCenter.dy - bubbleCenter.dy).abs(), lessThan(2.0));
   });
+}
+
+class _TestReaderTranslationCubit extends ReaderTranslationCubit {
+  _TestReaderTranslationCubit({
+    required super.providerRepository,
+    required super.providerFactory,
+    required super.preferencesRepository,
+    required super.cacheRepository,
+    required super.mosaicBuilder,
+    required super.fallbackHandler,
+    required super.heavyRunner,
+    required super.logger,
+  });
+
+  void showDetecting() => emit(const ReaderTranslationDetecting());
 }
 
 /// Minimal bubble with a long translated string, for font-fit assertions.

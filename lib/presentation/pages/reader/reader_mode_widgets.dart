@@ -254,7 +254,6 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
     });
   }
 
-  
   Widget _buildChapterNavigationPage({VoidCallback? onGoToFirstPage}) {
     final hasPrevChapter = widget.cubit.hasPreviousChapter;
     final hasNextChapter = widget.cubit.hasNextChapter;
@@ -541,68 +540,63 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
             final drawMode = context.read<ReaderTranslationCubit>().drawMode;
             return Stack(
               children: [
-                // Lock page navigation (PageView swipe + bottom-bar slider /
-                // prev / next) while in draw mode.
+                // Lock page navigation while in draw mode.
                 AbsorbPointer(
                   absorbing: drawMode,
-                  child: Stack(
-                    children: [
-                      RepaintBoundary(
-                        key: _viewportKey,
-                        child: _buildReaderContent(),
-                      ),
-                      _ReaderUIOverlay(
-                        isVisible: state.showUI ?? false,
-                        topBar: _ReaderTopBar(
-                          state: state,
-                          onBack: () => context.pop(),
-                          onToggleKeepScreenOn: widget.cubit.toggleKeepScreenOn,
-                          onOpenSettings: () => widget.onShowSettings(state),
-                          onTranslate: () => _onTranslatePressed(),
-                          onToggleSkipSfx: () => _translationCubit
-                              .setSkipSfx(!_translationCubit.skipSfx),
-                        ),
-                        bottomBar: state.readingMode !=
-                                ReadingMode.continuousScroll
-                            ? _ReaderBottomBar(
-                                state: state,
-                                onPrevPage: widget.cubit.previousPage,
-                                onNextPage: widget.cubit.nextPage,
-                                onJumpToPage: widget.cubit.jumpToPage,
-                                onChangeReadingMode: () {
-                                  final newMode = widget.getNextReadingMode(
-                                    state.readingMode ?? ReadingMode.singlePage,
-                                    disableContinuousScroll:
-                                        widget.isContinuousScrollDisabled(),
-                                  );
-                                  widget.cubit.changeReadingMode(newMode);
-                                },
-                                disableContinuousScroll:
-                                    widget.isContinuousScrollDisabled(),
-                              )
-                            : null,
-                      ),
-                      _ReaderMiniChromeToggle(
-                        isVisible: state.showUI ?? false,
-                        onToggle: widget.cubit.toggleUI,
-                      ),
-                    ],
+                  child: RepaintBoundary(
+                    key: _viewportKey,
+                    child: _buildReaderContent(),
                   ),
                 ),
-                // AI translation overlay layer (above reader image). Bubbles are individual
-// hit-testable (tap to edit, long-press to save to glossary); empty overlay
-// area passes taps through to the reader (scroll/zoom). No IgnorePointer — in
-// continue-scroll the translated bubbles must stay interactive.
-                const Positioned.fill(
-                  child: ReaderTranslationOverlay(),
-                ),
-                // Manual bubble drawing mode (9.5) — stays interactive while
-                // everything below is absorbed.
+                // Draw references stay visible, but below loading and chrome.
                 Positioned.fill(
                   child: ReaderTranslationDrawMode(
                     onCaptureNeeded: _captureForDraw,
                   ),
                 ),
+                // Translation loading/results sit above draw references but
+                // below reader chrome, so header controls stay clickable.
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: drawMode,
+                    child: const ReaderTranslationOverlay(),
+                  ),
+                ),
+                _ReaderUIOverlay(
+                  isVisible: state.showUI ?? false,
+                  topBar: _ReaderTopBar(
+                    state: state,
+                    onBack: () => context.pop(),
+                    onToggleKeepScreenOn: widget.cubit.toggleKeepScreenOn,
+                    onOpenSettings: () => widget.onShowSettings(state),
+                    onTranslate: () => _onTranslatePressed(),
+                    onToggleSkipSfx: () => _translationCubit
+                        .setSkipSfx(!_translationCubit.skipSfx),
+                  ),
+                  bottomBar: state.readingMode != ReadingMode.continuousScroll
+                      ? _ReaderBottomBar(
+                          state: state,
+                          onPrevPage: widget.cubit.previousPage,
+                          onNextPage: widget.cubit.nextPage,
+                          onJumpToPage: widget.cubit.jumpToPage,
+                          onChangeReadingMode: () {
+                            final newMode = widget.getNextReadingMode(
+                              state.readingMode ?? ReadingMode.singlePage,
+                              disableContinuousScroll:
+                                  widget.isContinuousScrollDisabled(),
+                            );
+                            widget.cubit.changeReadingMode(newMode);
+                          },
+                          disableContinuousScroll:
+                              widget.isContinuousScrollDisabled(),
+                        )
+                      : null,
+                ),
+                if (!drawMode)
+                  _ReaderMiniChromeToggle(
+                    isVisible: state.showUI ?? false,
+                    onToggle: widget.cubit.toggleUI,
+                  ),
                 // In draw mode the pill owns the bottom-center spot — the
                 // indicator (opacity 0, but still hit-testable while fading)
                 // would sit on top of it and swallow pill taps. Page number
@@ -799,7 +793,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       final viewport = _currentViewportSize();
       final cachedSig = viewport == null
           ? -1
-          : (viewport.width.round() ^ (viewport.height.round() << 16) ^
+          : (viewport.width.round() ^
+              (viewport.height.round() << 16) ^
               resolvedOffset.round());
       if (cachedSig == _cachedViewportSign &&
           _cachedViewportBytes != null &&
@@ -824,8 +819,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         widget.logger.w('AI translate: viewport capture gagal');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.aiGagalCapture)));
+              content: Text(AppLocalizations.of(context)!.aiGagalCapture)));
         }
         return null;
       }
@@ -833,7 +827,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       // Re-encode the PNG snapshot as JPG on a background isolate — decode +
       // encode are CPU-bound and would otherwise jank the UI (draw-mode entry
       // and translate both go through here).
-      final bytesOut = await Isolate.run(() => _encodeViewportJpg(captured.bytes));
+      final bytesOut =
+          await Isolate.run(() => _encodeViewportJpg(captured.bytes));
       if (bytesOut == null) {
         widget.logger.w('AI translate: snapshot decode gagal');
         return null;
@@ -847,7 +842,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
       _cachedViewportBytes = bytesOut;
       _cachedViewportSign = viewport == null
           ? -1
-          : (viewport.width.round() ^ (viewport.height.round() << 16) ^
+          : (viewport.width.round() ^
+              (viewport.height.round() << 16) ^
               resolvedOffset.round());
       _cachedViewportOffset = resolvedOffset;
       _cachedViewportPage = pageIndex;
@@ -899,8 +895,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
   /// Snapshot of the RepaintBoundary wrapping all reader content — i.e. the
   /// ACTUAL visible viewport (WYSIWYG). Returns raw PNG bytes of exactly what
   /// is on screen. Null when the boundary isn't mounted or capture fails.
-  Future<({Uint8List bytes, int width, int height})?> _captureVisibleViewport()
-      async {
+  Future<({Uint8List bytes, int width, int height})?>
+      _captureVisibleViewport() async {
     final renderObject = _viewportKey.currentContext?.findRenderObject();
     if (renderObject is! RenderRepaintBoundary) return null;
     try {

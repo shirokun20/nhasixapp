@@ -64,7 +64,8 @@ class _FailedPageCard extends StatelessWidget {
             Text(AppLocalizations.of(context)!.pageFailedDownload(pageNumber),
                 style: TextStyleConst.titleSmall),
             const SizedBox(height: 4),
-            Text(AppLocalizations.of(context)!.tapToRetry, style: TextStyleConst.bodySmall),
+            Text(AppLocalizations.of(context)!.tapToRetry,
+                style: TextStyleConst.bodySmall),
             if (canRetry)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -108,7 +109,7 @@ class _ReaderTopBar extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
     final glassBg =
-        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
+        kuron?.readerBg.withValues(alpha: 1) ?? const Color(0xFF000000);
     final iconColor = isDark ? Colors.white : const Color(0xFF2E2722);
     final textColor = isDark ? Colors.white : const Color(0xFF2E2722);
     final subColor = isDark ? Colors.white60 : const Color(0xFF7A6E66);
@@ -144,7 +145,8 @@ class _ReaderTopBar extends StatelessWidget {
                         Expanded(
                           child: Text(
                             state.content?.getDisplayTitle() ??
-                                AppLocalizations.of(context)?.loading ?? '',
+                                AppLocalizations.of(context)?.loading ??
+                                '',
                             style: TextStyleConst.headingMedium.copyWith(
                               color: textColor,
                               fontSize: 14,
@@ -197,10 +199,9 @@ class _ReaderTopBar extends StatelessWidget {
                   ],
                 ),
               ),
-                            if (onTranslate != null)
+              if (onTranslate != null)
                 ReaderTranslationToolbar(
-                  readingMode:
-                      state.readingMode ?? ReadingMode.singlePage,
+                  readingMode: state.readingMode ?? ReadingMode.singlePage,
                   onTranslate: onTranslate!,
                 ),
               PopupMenuButton<_TopBarAction>(
@@ -233,8 +234,7 @@ class _ReaderTopBar extends StatelessWidget {
                               : subColor,
                         ),
                         const SizedBox(width: 12),
-                        Text(AppLocalizations.of(context)!
-                            .keepScreenOnLabel),
+                        Text(AppLocalizations.of(context)!.keepScreenOnLabel),
                       ],
                     ),
                   ),
@@ -244,8 +244,7 @@ class _ReaderTopBar extends StatelessWidget {
                       children: [
                         Icon(Icons.settings, size: 18, color: subColor),
                         const SizedBox(width: 12),
-                        Text(AppLocalizations.of(context)!
-                            .readerSettings),
+                        Text(AppLocalizations.of(context)!.readerSettings),
                       ],
                     ),
                   ),
@@ -304,8 +303,8 @@ class _ReaderBottomBarState extends State<_ReaderBottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isOnNavigationPage =
-        (widget.state.currentPage ?? 1) > (widget.state.content?.pageCount ?? 1);
+    final isOnNavigationPage = (widget.state.currentPage ?? 1) >
+        (widget.state.content?.pageCount ?? 1);
     final totalPages = widget.state.content?.pageCount ?? 1;
     final currentPage = isOnNavigationPage
         ? totalPages
@@ -316,7 +315,7 @@ class _ReaderBottomBarState extends State<_ReaderBottomBar> {
     final displayPage = sliderValue.round().clamp(1, totalPages);
     final kuron = Theme.of(context).extension<KuronColors>();
     final glassBg =
-        kuron?.readerBg.withValues(alpha: 0.88) ?? const Color(0x8C000000);
+        kuron?.readerBg.withValues(alpha: 1) ?? const Color(0xFF000000);
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -331,9 +330,7 @@ class _ReaderBottomBarState extends State<_ReaderBottomBar> {
           child: Row(
             children: [
               IconButton(
-                onPressed: widget.state.isFirstPage
-                    ? null
-                    : widget.onPrevPage,
+                onPressed: widget.state.isFirstPage ? null : widget.onPrevPage,
                 icon: Icon(
                   Icons.navigate_before,
                   color: widget.state.isFirstPage
@@ -563,7 +560,8 @@ class _ReaderMiniChromeToggle extends StatefulWidget {
   final VoidCallback onToggle;
 
   @override
-  State<_ReaderMiniChromeToggle> createState() => _ReaderMiniChromeToggleState();
+  State<_ReaderMiniChromeToggle> createState() =>
+      _ReaderMiniChromeToggleState();
 }
 
 class _ReaderMiniChromeToggleState extends State<_ReaderMiniChromeToggle> {

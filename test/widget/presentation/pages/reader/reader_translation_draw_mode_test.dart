@@ -86,6 +86,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('detected reference lines remain visible outside draw mode',
+      (tester) async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    cubit.capturePage(
+      imageBytes: Uint8List.fromList([1, 2, 3]),
+      imageWidth: 400,
+      imageHeight: 800,
+    );
+    await cubit.detectBubblesOnly();
+    expect(cubit.detectedBoxes, isNotEmpty);
+
+    await pump(tester, cubit);
+    expect(cubit.drawMode, isFalse);
+    expect(
+        find.descendant(
+          of: find.byType(ReaderTranslationDrawMode),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget);
+
+    cubit.setDrawMode(true);
+    await tester.pump();
+    expect(
+        find.descendant(
+          of: find.byType(ReaderTranslationDrawMode),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget);
+  });
+
   testWidgets('draw mode shows control pill; expand/collapse actions',
       (tester) async {
     final cubit = buildCubit();
@@ -148,7 +179,8 @@ void main() {
     cubit.undoLastManual();
     expect(cubit.manualBubbles, isEmpty);
 
-    cubit.addManualBubble(const BubbleBox(x: 0, y: 0, w: 10, h: 10, confidence: 1.0));
+    cubit.addManualBubble(
+        const BubbleBox(x: 0, y: 0, w: 10, h: 10, confidence: 1.0));
     cubit.clearManualBubbles();
     expect(cubit.manualBubbles, isEmpty);
   });
@@ -203,12 +235,12 @@ void main() {
 
     // A wiggle path: many small moves over 400ms, ends far from start — the
 // pan gesture wins the arena and the traced loop stays open.
-await tester.timedDragFrom(
-  const Offset(50, 100),
-  const Offset(100, 30),
-  const Duration(milliseconds: 400),
-);
-await tester.pump();
+    await tester.timedDragFrom(
+      const Offset(50, 100),
+      const Offset(100, 30),
+      const Duration(milliseconds: 400),
+    );
+    await tester.pump();
 
     expect(cubit.manualBubbles, hasLength(1));
     final shape = cubit.manualBubbles.first.shape;

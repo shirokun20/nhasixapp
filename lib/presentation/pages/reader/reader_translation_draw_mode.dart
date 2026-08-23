@@ -195,10 +195,12 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
         return null;
       case DrawShapeTool.ellipse:
         final rect = Rect.fromPoints(screenPts.first, screenPts.last);
-        return _ellipsePolygon(rect).map((o) => [
-              (o.dx / scaleX).round(),
-              ((o.dy - topOffset) / scaleY).round(),
-            ]).toList();
+        return _ellipsePolygon(rect)
+            .map((o) => [
+                  (o.dx / scaleX).round(),
+                  ((o.dy - topOffset) / scaleY).round(),
+                ])
+            .toList();
       case DrawShapeTool.freeform:
         var pts = List<Offset>.from(screenPts);
         // Close the loop: drop terminal backtracking points (finger lift
@@ -255,9 +257,8 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
       builder: (context, state) {
         final cubit = context.read<ReaderTranslationCubit>();
         final drawMode = cubit.drawMode;
-        // Boxes stay visible in draw mode, while a translate runs, and after
-        // Done (draw off, no translate running). They hide ONLY once the
-        // translated overlay replaces them.
+        // Keep reference lines visible outside draw mode; z-order in the
+        // reader keeps them below loading and chrome.
         final showBoxes = state is! ReaderTranslationTranslated;
         final colorScheme = Theme.of(context).colorScheme;
 
@@ -318,22 +319,19 @@ class _ReaderTranslationDrawModeState extends State<ReaderTranslationDrawMode> {
                       manualColor: colorScheme.primary,
                       onnxEntries: showBoxes ? _onnxEntries : const [],
                       manualEntries: showBoxes
-                          ? (_manualEntries = cubit.manualBubbles
-                              .map((b) {
-                                final rect = Rect.fromLTWH(
-                                  b.x * scaleX,
-                                  b.y * scaleY + topOffset,
-                                  b.w * scaleX,
-                                  b.h * scaleY,
-                                );
-                                final poly = b.shape
-                                    ?.map((p) => Offset(p[0] * scaleX,
-                                        p[1] * scaleY + topOffset))
-                                    .toList();
-                                return _BubbleDrawEntry(
-                                    rect: rect, poly: poly);
-                              })
-                              .toList())
+                          ? (_manualEntries = cubit.manualBubbles.map((b) {
+                              final rect = Rect.fromLTWH(
+                                b.x * scaleX,
+                                b.y * scaleY + topOffset,
+                                b.w * scaleX,
+                                b.h * scaleY,
+                              );
+                              final poly = b.shape
+                                  ?.map((p) => Offset(
+                                      p[0] * scaleX, p[1] * scaleY + topOffset))
+                                  .toList();
+                              return _BubbleDrawEntry(rect: rect, poly: poly);
+                            }).toList())
                           : const [],
                     ),
                   ),
@@ -737,9 +735,7 @@ class _DrawToolButtonState extends State<_DrawToolButton> {
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.selected
-                ? colorScheme.primary
-                : Colors.transparent,
+            color: widget.selected ? colorScheme.primary : Colors.transparent,
           ),
           child: Icon(
             widget.tool.icon,
