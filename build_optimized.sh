@@ -23,7 +23,7 @@ echo ""
 
 # Clean project
 echo "🧹 Cleaning project..."
-flutter clean > /dev/null 2>&1
+fvm flutter clean > /dev/null 2>&1
 
 echo "📊 OPTIMIZATION STRATEGIES:"
 echo "✅ Split APK per ABI (arm64, arm, x86_64) - Flutter --split-per-abi"
@@ -44,9 +44,15 @@ if [ "$BUILD_TYPE" = "release" ] && [ -z "${KEYSTORE_BASE64:-}" ] && [ -f "andro
 fi
 
 if [ "$BUILD_TYPE" = "release" ]; then
-    flutter build apk --release --split-per-abi --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
+    FLAVOR="${FLAVOR:-prod}"
 else
-    flutter build apk --debug --split-per-abi --dart-define=cronetHttpNoPlay=true
+    FLAVOR="${FLAVOR:-dev}"
+fi
+# ponytail: single-flavor default keeps build ~50% faster; loop over prod+dev when you need both
+if [ "$BUILD_TYPE" = "release" ]; then
+    fvm flutter build apk --release --flavor "$FLAVOR" --split-per-abi --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
+else
+    fvm flutter build apk --debug --flavor "$FLAVOR" --split-per-abi --dart-define=cronetHttpNoPlay=true
 fi
 
 echo ""
@@ -64,8 +70,8 @@ echo ""
 
 # Find and copy all split APKs
 # Note: Renamed via android/app/build.gradle to kuron_*.apk
-# Location: build/app/outputs/apk/release/ or build/app/outputs/apk/debug/
-APK_SEARCH_PATH="build/app/outputs/apk/$BUILD_TYPE/kuron_*.apk"
+# Location with flavors: build/app/outputs/apk/<flavor>/release/ or .../debug/
+APK_SEARCH_PATH="build/app/outputs/apk/$FLAVOR/$BUILD_TYPE/kuron_*.apk"
 
 FOUND_COUNT=0
 for apk in $APK_SEARCH_PATH; do
@@ -79,8 +85,20 @@ for apk in $APK_SEARCH_PATH; do
 done
 
 if [ $FOUND_COUNT -eq 0 ]; then
+    # fallback: search any flavor subdir (handles old builds without --flavor)
+    for apk in build/app/outputs/apk/*/$BUILD_TYPE/kuron_*.apk; do
+        if [ -f "$apk" ]; then
+            filename=$(basename "$apk")
+            size=$(du -h "$apk" | cut -f1)
+            cp "$apk" "$OUTPUT_DIR/"
+            echo "  📱 $filename - $size"
+            FOUND_COUNT=$((FOUND_COUNT + 1))
+        fi
+    done
+fi
+if [ $FOUND_COUNT -eq 0 ]; then
     echo "❌ Error: No APK files found matching $APK_SEARCH_PATH"
-    echo "Check build output directory!"
+    echo "Check build output directory! Tried also build/app/outputs/apk/*/$BUILD_TYPE/kuron_*.apk"
     exit 1
 fi
 
@@ -89,6 +107,7 @@ echo "📏 SIZE SUMMARY:"
 total_size=$(du -ch $OUTPUT_DIR/kuron_*.apk 2>/dev/null | grep total | cut -f1 || echo '0')
 count=$(ls -1 $OUTPUT_DIR/kuron_*.apk 2>/dev/null | wc -l | tr -d ' ')
 universal_apk_path="build/app/outputs/flutter-apk/app-${BUILD_TYPE}.apk"
+# flavor-aware universal is app-<abi>-<flavor>-<type>.apk; not generated with --split-per-abi anyway
 echo "📦 Total APKs: $count"
 echo "📊 Combined size: $total_size"
 if [ -f "$universal_apk_path" ]; then

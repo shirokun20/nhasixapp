@@ -158,13 +158,14 @@ jobs:
           fi
 
           if [ -f "android/app/upload-keystore.jks" ]; then
-            echo "🔐 Building signed $BUILD_TYPE APK..."
-            ./build_optimized.sh $BUILD_TYPE
+            echo "🔐 Building signed $BUILD_TYPE APK (flavor: prod)..."
+            FLAVOR=prod ./build_optimized.sh $BUILD_TYPE
           else
-            echo "⚠️ No keystore found, building $BUILD_TYPE APK without signing..."
-            flutter build apk --$BUILD_TYPE $SPLIT_FLAG
+            echo "⚠️ No keystore found, building $BUILD_TYPE APK without signing (flavor: prod)..."
+            flutter build apk --$BUILD_TYPE --flavor prod $SPLIT_FLAG --dart-define=cronetHttpNoPlay=true
             mkdir -p apk-output
-            cp build/app/outputs/flutter-apk/*.apk apk-output/ 2>/dev/null || true
+            cp build/app/outputs/apk/prod/$BUILD_TYPE/*.apk apk-output/ 2>/dev/null || true
+            cp build/app/outputs/flutter-apk/*-prod-*.apk apk-output/ 2>/dev/null || true
           fi
 
       # Verify build outputs
@@ -190,7 +191,8 @@ jobs:
           name: kuron-apk-${{ github.sha }}
           path: |
             apk-output/*.apk
-            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/prod/**/*.apk
+            build/app/outputs/flutter-apk/*-prod-*.apk
           if-no-files-found: warn
           retention-days: 30
 
@@ -439,7 +441,8 @@ jobs:
           name: "v${{ env.VERSION }} 🚀"
           files: |
             apk-output/*.apk
-            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/prod/**/*.apk
+            build/app/outputs/flutter-apk/*-prod-*.apk
           body_path: release_notes.md
           draft: false
           prerelease: false
