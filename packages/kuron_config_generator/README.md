@@ -32,7 +32,53 @@ fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
 Prompts: source identity, mode (REST / scraper), features, endpoints, headers.  
 **Output:** `build/generated/{sourceId}-config.json`
 
+### Template Clone (recommended)
+
+Clone a live-proven config from `informations/configs/` as the theme — selectors,
+URL patterns, and reader mode are copied verbatim; only identity fields change.
+Far more reliable than generic CMS guesses.
+
+```bash
+fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
+    generate --template hentaiera --url https://hentaiera.com --validate --live
+```
+
+- `--template <sourceId>` — proven config to clone (e.g. `hentaiera`, `manhwareads`)
+- `--url` — new source's base URL (host becomes the new source id)
+- `--validate --live` — readiness validation + 5-screen live smoke through the
+  real adapter; on success emits golden fixtures + a dual-mode skeleton test
+
+**Live smoke output:**
+```
+[I]  🌐 Live smoke validation via real adapter...
+[I]    ✓ home: OK (25 items)
+[I]    ✓ search: OK (20 items)
+[I]    ✓ detail: OK (0 items)
+[I]    ✓ chapters: OK (182 items)
+[I]    ✓ reader: OK (106 items)
+[I]  ✓ Live smoke passed. Fixtures + skeleton test emitted
+```
+
+Gallery-only sources (hentaifox family, `reader.mode == "hentaifoxCdn"`) skip
+the chapters screen — reader images are probed directly from the detail page.
+
+**Emitted verification test** (`<source>_generated_live_test.dart`) is dual-mode:
+
+```bash
+# Offline replay (CI-safe): replays golden fixtures
+fvm dart test build/generated/<source>_generated_live_test.dart
+
+# Live mode: hits the real site
+LIVE=1 fvm dart test build/generated/<source>_generated_live_test.dart
+```
+
+Fixtures land in `build/generated/fixtures/<source>/{home,search,detail,chapters,reader}.html`
+plus a `manifest.json`.
+
 ### URL-Assisted HTML → Scraper
+
+> ⚠️ Prefer **Template Clone** above when a proven config for the same CMS
+> family exists — generic detection emits guesses that often need manual fixes.
 
 ```bash
 fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \

@@ -35,7 +35,7 @@ class CmsSignature {
         'class="wp-manga',
       ],
       selectors: {
-        'list.item': '.page-item, .grid-item',
+        'list.item': '.page-item-detail, .page-item, .grid-item',
         'list.title': 'a[href*="/manhwa/"], a[title]',
         'list.cover': 'img',
         'detail.title': 'h1',
@@ -464,6 +464,41 @@ class CmsSignature {
       },
     ),
 
+    // Hentairhymes gallery family (hentaiera/hentaizap/hentaienvy/asmhentai).
+    // Selectors + URL patterns lifted from live-proven configs in
+    // informations/configs/ (5-screen verified), not guesses.
+    CmsSignature(
+      id: 'hentairhymes',
+      themeType: 'hentairhymes',
+      hints: [
+        'inner_thumb',
+        'gallery_title',
+        'pgi_itm',
+        '/search/?key=',
+        'galleries_overview',
+      ],
+      selectors: {
+        'list.item': '.thumb, .preview_item, .hz-gallery-card',
+        'list.title': '.gallery_title a, .cpt h2.caption, a[title]',
+        'list.cover': '.inner_thumb img, .image img, img',
+        'detail.title': 'h1',
+        'reader.image': '#gimg, .full_gallery img',
+      },
+      urlPatterns: {
+        'homePage': '/?page={page}',
+        'search': '/search/?key={query}',
+        'searchPage': '/search/?key={query}&page={page}',
+        'genreSearch': '/tag/{tag}/',
+        'genreSearchPage': '/tag/{tag}/?page={page}',
+        'detail': '/gallery/{id}/',
+        'chapter': '/gallery/{id}/',
+      },
+      searchDefaults: {
+        'searchUrl': '/search/?key={query}',
+        'queryParam': 'key',
+      },
+    ),
+
     // Custom manga site (no known CMS)
     CmsSignature(
       id: 'custom',
@@ -564,7 +599,7 @@ Map<String, String>? _fallbackFor(String cmsId, String themeType) {
   }
   if (cmsId == 'madara' && themeType == 'madara-tailwind') {
     return {
-      'list.item': '.page-item, .grid-item',
+      'list.item': '.page-item-detail, .page-item, .grid-item',
       'detail.title': 'h1',
       'reader.image': 'img[class*="page-image"], .reading-content img',
     };

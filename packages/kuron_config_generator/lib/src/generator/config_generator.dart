@@ -237,6 +237,23 @@ class ConfigGenerator {
         'next': '.next, a.next.page-numbers',
         'links': '.hpage a.r, a.page-numbers',
       };
+    } else if (ct == 'hentairhymes') {
+      // From live-proven hentaiera/hentaienvy/asmhentai configs.
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': "a[href*='/gallery/']",
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': '.gallery_title a, .cpt h2.caption, a[title]'},
+        'coverUrl': {
+          'selector': '.inner_thumb img, .image img, img',
+          'attribute': 'data-src',
+        },
+      };
+      pagination = <String, Object?>{
+        'next': ".pagination a[rel='next'], .pagination li:last-child a",
+      };
     } else {
       // Default / Madara
       homeFields = <String, Object?>{
@@ -400,6 +417,9 @@ class ConfigGenerator {
     } else if (ct == 'mangathemesia') {
       urls['detail'] = '/manga/{id}/';
       urls['chapter'] = '/{id}/';
+    } else if (ct == 'hentairhymes') {
+      urls['detail'] = '/gallery/{id}/';
+      urls['chapter'] = '/gallery/{id}/';
     } else {
       urls['detail'] = '/manhwa/{id}/';
       urls['chapter'] = '/manhwa/{id}/{ch}/';
@@ -513,6 +533,21 @@ class ConfigGenerator {
         },
         'status': {'selector': 'span[class*="status"]'},
       };
+    } else if (ct == 'hentairhymes') {
+      // Gallery source: no chapters — detail carries pageCount, reader hits
+      // the gallery's own pages. From live-proven hentaiera config.
+      return {
+        'title': {'selector': 'h1, #gallery_title'},
+        'coverUrl': {
+          'selector': '.left_cover img, img',
+          'attribute': 'data-src',
+        },
+        'pageCount': {'selector': '#pages_btn', 'regex': r'(\d+)'},
+        'tags': {
+          'selector': "a[href*='/tag/']",
+          'multi': true,
+        },
+      };
     }
     // Madara / default
     return {
@@ -528,6 +563,13 @@ class ConfigGenerator {
   }
 
   static Map<String, Object?> _chaptersCfg(String ct) {
+    if (ct == 'hentairhymes') {
+      // Gallery-only: single pseudo-chapter = the gallery itself.
+      return {
+        'container': '#gimg, .full_gallery img',
+        'singleChapterMode': true,
+      };
+    }
     if (ct == 'mangathemesia') {
       return {
         'container': '#chapterlist ul li',
@@ -562,6 +604,20 @@ class ConfigGenerator {
     }
     if (mode == 'ajaxHtmlImages') {
       return {'mode': 'ajaxHtmlImages'};
+    }
+    if (ct == 'hentairhymes') {
+      // Gallery CDN reader — from live-proven hentaiera config.
+      return {
+        'mode': 'hentaifoxCdn',
+        'readerPageUrlPattern': '/view/{id}/1/',
+        'readerImageSelector': '#gimg',
+        'readerImageAttr': 'data-src',
+        'readerPageCountSelector': '#pages',
+        'readerPageCountAttr': 'value',
+        'thumbSelector': '.inner_thumb img',
+        'thumbSrcAttr': 'data-src',
+        'cdnPathRegex': r'(?:https?:)?//([^/]+)/(.+?)/\d+t\.(?:jpg|webp)',
+      };
     }
     if (ct == 'mangathemesia') {
       return {

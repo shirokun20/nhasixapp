@@ -40,27 +40,27 @@ void main() {
       expect(config['source'], 'test_manga_source');
       expect(config['displayName'], 'Test Manga Source');
       expect(config['schemaVersion'], '2.0');
-      expect(config['homeUrl'], 'https://testmanga.example.com');
+      expect(config['baseUrl'], 'https://testmanga.example.com');
 
       // Verify features
       final features = config['features'] as Map;
-      expect(features['home'], {'supported': true});
-      expect(features['search'], {'supported': true});
-      expect(features['chapters'], {'supported': true});
-      expect(features['download'], {'supported': true});
+      expect(features['home'], isTrue);
+      expect(features['search'], isTrue);
+      expect(features['chapters'], isTrue);
+      expect(features['download'], isTrue);
 
       // Verify API block
       final api = config['api'] as Map;
-      expect(api['type'], 'rest_json');
+      expect(api['enabled'], isTrue);
       expect(api['url'], 'https://api.testmanga.example.com');
-      expect(api['listEndpoint'], '/api/manga/list');
-      expect(api['detailEndpoint'], '/api/manga/{id}');
-      expect(api['chaptersEndpoint'], '/chapters/{id}');
+      final endpoints = api['endpoints'] as Map;
+      expect((endpoints['allGalleries'] as Map)['path'], '/api/manga/list');
+      expect((endpoints['detail'] as Map)['path'], '/api/manga/{id}');
 
       // Verify headers
       final network = config['network'] as Map;
       final headers = network['headers'] as Map;
-      expect(headers['Referer'], 'https://testmanga.example.com');
+      expect(headers['Referer'], 'https://testmanga.example.com/');
 
       // Verify primitives
       final primitives = config['requiredPrimitives'] as List;

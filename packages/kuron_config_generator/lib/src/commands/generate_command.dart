@@ -58,6 +58,13 @@ class GenerateCommand extends Command<void> {
         allowed: ['text', 'json', 'markdown'],
         defaultsTo: 'text',
       )
+      ..addOption(
+        'template',
+        abbr: 't',
+        help: 'Clone a live-proven config from informations/configs/ as the '
+            'theme (e.g. --template hentaiera). Selectors/URL patterns are '
+            'copied verbatim; only identity fields change.',
+      )
       ..addFlag(
         'fix-suggestions',
         negatable: false,
@@ -86,6 +93,7 @@ class GenerateCommand extends Command<void> {
     final url = argResults?['url'] as String?;
     final interactive = argResults?['interactive'] as bool? ?? false;
     final output = argResults?['output'] as String;
+    final template = argResults?['template'] as String?;
 
     if (url == null && !interactive) {
       stderr.writeln('Error: Must specify --url or --interactive.');
@@ -95,11 +103,73 @@ class GenerateCommand extends Command<void> {
 
     logger.i('Generate command - output: $output');
 
-    if (interactive) {
+    if (template != null) {
+      await _runTemplateClone(template, url, output, logger);
+    } else if (interactive) {
       await _runInteractiveWizard(output, logger);
     } else {
       await _runUrlAssistedGeneration(url!, output, logger);
     }
+  }
+
+  /// Clones a live-proven config from informations/configs/ and swaps identity
+  /// fields. Selectors, urlPatterns, reader mode — all copied verbatim.
+  Future<void> _runTemplateClone(
+    String templateId,
+    String? url,
+    String output,
+    Logger logger,
+  ) async {
+    final candidates = [
+      'informations/configs/$templateId-config.json',
+      '../../informations/configs/$templateId-config.json',
+    ];
+    File? source;
+    for (final path in candidates) {
+      final f = File(path);
+      if (f.existsSync()) {
+        source = f;
+        break;
+      }
+    }
+    if (source == null) {
+      stderr.writeln('Error: template "$templateId" not found. Searched:');
+      for (final c in candidates) {
+        stderr.writeln('  $c');
+      }
+      exit(66);
+    }
+
+    final config =
+        (jsonDecode(source.readAsStringSync()) as Map).cast<String, dynamic>();
+    final oldBase = config['baseUrl'] as String?;
+
+    if (url != null) {
+      final uri = Uri.tryParse(url);
+      final host = uri?.host.replaceAll(RegExp(r'^www\.'), '') ?? 'unknown';
+      config['source'] = host.replaceAll(RegExp(r'[^a-z0-9]'), '');
+      config['baseUrl'] = '${uri?.scheme}://${uri?.host}';
+      config.remove('configUrl');
+      // Icon path points at the template's asset — drop it.
+      config['ui']?.remove('iconPath');
+      logger.i('📋 Template: $templateId (${oldBase ?? '?'}) → '
+          '${config['baseUrl']}');
+    } else {
+      stderr.writeln('Error: --template requires --url for the new source.');
+      exit(64);
+    }
+
+    final outputDir = Directory(output);
+    if (!outputDir.existsSync()) {
+      outputDir.createSync(recursive: true);
+    }
+    final configFile = File('$output/${config['source']}-config.json');
+    await configFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(config),
+    );
+    logger.i('✓ Config cloned from $templateId: ${configFile.path}');
+
+    await _maybeRunValidation(configFile.path);
   }
 
   Future<void> _runInteractiveWizard(String output, Logger logger) async {

@@ -44,8 +44,8 @@ final _live = Platform.environment['LIVE'] == '1';
 
 Map<String, Object?> _loadConfig() {
   final candidates = [
-    'build/generated/' + _sourceId + '-config.json',
-    '../../informations/configs/' + _sourceId + '-config.json',
+    'build/generated/\$_sourceId-config.json',
+    '../../informations/configs/\$_sourceId-config.json',
   ];
   for (final path in candidates) {
     final f = File(path);
@@ -59,8 +59,8 @@ Map<String, Object?> _loadConfig() {
 String? _fixture(String screen) {
   if (_live) return null;
   final candidates = [
-    'build/generated/fixtures/' + _sourceId + '/' + screen + '.html',
-    'fixtures/' + _sourceId + '/' + screen + '.html',
+    'build/generated/fixtures/\$_sourceId/\$screen.html',
+    'fixtures/\$_sourceId/\$screen.html',
   ];
   for (final path in candidates) {
     final f = File(path);
@@ -151,12 +151,16 @@ void main() {
       final detail = await adapter.fetchDetail(home.items.first.id, config);
       final chapters = detail.content.chapters;
       if (chapters == null || chapters.isEmpty) {
-        markTestSkipped('gallery-only source — no chapters');
+        // Gallery-only source (hentaifoxCdn): reader images come from the
+        // detail page itself — probe reader with the content id.
+        final data =
+            await adapter.fetchChapterImages(home.items.first.id, config);
+        expect(data?.images, isNotEmpty, reason: 'gallery reader images');
+      } else {
+        final data =
+            await adapter.fetchChapterImages(chapters.first.id, config);
+        expect(data?.images, isNotEmpty, reason: 'reader images');
       }
-      expect(chapters, isNotEmpty);
-      final data =
-          await adapter.fetchChapterImages(chapters!.first.id, config);
-      expect(data?.images, isNotEmpty, reason: 'reader images');
     }, timeout: const Timeout(Duration(seconds: 120)));
   });
 }

@@ -200,12 +200,47 @@ class SmokeRunner {
     // ── chapters + reader ───────────────────────────────────────────────────
     final chapters = detail?.content.chapters;
     if (chapters == null || chapters.isEmpty) {
-      results.add(const ScreenResult(
+      // Gallery-only source (hentaifox family etc.): reader images come from
+      // the detail page itself via reader mode (hentaifoxCdn). Probe reader
+      // directly with the content id instead of failing.
+      final readerMode = ((config['scraper'] as Map?)?['selectors']
+          as Map?)?['reader'] as Map?;
+      final isGallery = readerMode?['mode'] == 'hentaifoxCdn';
+      results.add(ScreenResult(
           screen: 'chapters',
-          passed: false,
-          failure: 'no chapters (gallery-only source?)'));
-      results.add(const ScreenResult(
-          screen: 'reader', passed: false, failure: 'skipped — no chapters'));
+          passed: isGallery,
+          failure: isGallery ? null : 'no chapters (gallery-only source?)'));
+      if (!isGallery) {
+        results.add(const ScreenResult(
+            screen: 'reader', passed: false, failure: 'skipped — no chapters'));
+        return SmokeReport(
+            results: results, fixtures: fixtures, findings: findings);
+      }
+      try {
+        final chapterData = await adapter.fetchChapterImages(contentId, config);
+        final images = chapterData?.images ?? const <String>[];
+        final impurityFinding = probeReaderScopeImpurity(images);
+        if (impurityFinding != null) findings.add(impurityFinding);
+        if (images.isEmpty) {
+          results.add(ScreenResult(
+              screen: 'reader', passed: false, failure: '0 images'));
+        } else {
+          final contentType =
+              await _probeContentType(dio, images.first, config);
+          final ok = contentType != null && contentType.startsWith('image/');
+          results.add(ScreenResult(
+              screen: 'reader',
+              passed: ok,
+              itemCount: images.length,
+              failure: ok
+                  ? null
+                  : 'first image content-type "${contentType ?? 'error'}" '
+                      'not image/*'));
+        }
+      } catch (e) {
+        results.add(ScreenResult(
+            screen: 'reader', passed: false, failure: e.toString()));
+      }
       return SmokeReport(
           results: results, fixtures: fixtures, findings: findings);
     }
