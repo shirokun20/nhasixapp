@@ -81,3 +81,5 @@ skills-lock.json
 .obsidian/*
 /.github/agents/*
 /.github/workflows/copilot-setup-steps.yml
+.cline/*
+.clinerules/*
