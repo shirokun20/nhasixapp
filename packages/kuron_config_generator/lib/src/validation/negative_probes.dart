@@ -155,7 +155,7 @@ ProbeFinding? probeTitleBadges(List<String> titles) {
     severity: FindingSeverity.warning,
     message: '$polluted/${titles.length} titles start with a badge prefix',
     suggestion: 'add title transform stripping leading badges '
-        '(e.g. regex ^\\s*(18\\+|NEW|HOT|UPDATE)\\\\s*)',
+        '(e.g. regex ^\\s*(18\\+|NEW|HOT|UPDATE)\\s*)',
   );
 }
 

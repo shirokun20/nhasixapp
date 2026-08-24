@@ -41,8 +41,8 @@ void main() {
     test('unverified source falls back to global, not domain guess', () {
       for (final url in [
         'https://komikindonesia.id', // .id + komik
-        'https://doujin-desu.net',   // doujin
-        'https://mangaku.pro',       // manga
+        'https://doujin-desu.net', // doujin
+        'https://mangaku.pro', // manga
       ]) {
         final config = ConfigGenerator.generateConfig({
           'sourceId': 'x',
@@ -66,9 +66,8 @@ void main() {
 
     test('existing `all` filter value unchanged', () {
       final parsed = _loadLanguagesJson();
-      final all =
-          (parsed['languages'] as Map<String, dynamic>)['all']
-              as Map<String, dynamic>;
+      final all = (parsed['languages'] as Map<String, dynamic>)['all']
+          as Map<String, dynamic>;
       expect(all['displayName'], 'All Languages');
       expect(all['code'], 'all');
     });
