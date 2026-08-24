@@ -122,7 +122,6 @@ flutter:
   assets:
     - assets/
     - assets/images/
-    - assets/images/flags/
     - assets/icons/
     - assets/legal/en/
     - assets/legal/id/
