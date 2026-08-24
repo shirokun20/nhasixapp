@@ -142,20 +142,34 @@ class SmokeRunner {
 
     // ── search ──────────────────────────────────────────────────────────────
     try {
+      // ponytail: single-char queries ('a') are ignored by many WP search
+      // backends (min keyword length) and return a legit empty page. Use a
+      // word from the first home title instead — real-world search behavior.
+      final firstWord = homeItems.isEmpty
+          ? 'a'
+          : (homeItems.first.title
+                      .split(RegExp(r'[^A-Za-z0-9]+'))
+                      .where((w) => w.length >= 4)
+                      .toList()
+                    ..sort((x, y) => y.length.compareTo(x.length)))
+                  .firstOrNull ??
+              'a';
       final result = await adapter.search(
-        SearchFilter(query: 'a', page: 1),
+        SearchFilter(query: firstWord, page: 1),
         config,
       );
       results.add(ScreenResult(
           screen: 'search',
           passed: result.items.isNotEmpty,
           itemCount: result.items.length,
-          failure: result.items.isEmpty ? '0 results for query "a"' : null));
+          failure: result.items.isEmpty
+              ? '0 results for query "$firstWord"'
+              : null));
       if (result.items.isNotEmpty) {
         // Phase 3: verify the search key actually filtered (keiyoushi ?q=
         // trap — wrong param silently returns unfiltered recents).
         final key = verifySearchKey(
-          query: 'a',
+          query: firstWord,
           titles: result.items.map((c) => c.title).toList(),
         );
         if (key.finding != null) findings.add(key.finding!);

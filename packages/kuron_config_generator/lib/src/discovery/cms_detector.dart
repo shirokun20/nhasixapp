@@ -499,6 +499,46 @@ class CmsSignature {
       },
     ),
 
+    // Areakomik custom WordPress theme (areakomik.com family).
+    // Selectors + URL patterns lifted from live-proven areakomik config
+    // (informations/configs/, 5-screen verified), not guesses.
+    CmsSignature(
+      id: 'areakomik',
+      themeType: 'areakomik',
+      hints: [
+        'lin-update-terbaru',
+        'komik-card',
+        'thumb-wrap',
+        'card-title',
+        'chapter-link',
+        'series-sinopsis',
+        'gudangkomik',
+      ],
+      selectors: {
+        'list.item': '.komik-card',
+        'list.title': '.card-title, a[title]',
+        'list.cover': '.thumb-wrap img',
+        'detail.title': 'h1',
+        'detail.cover': "meta[property='og:image']",
+        'detail.genre': '.genre-list a',
+        'chapters.item': '.chapter-grid .chapter-row',
+        'reader.image': "img[src*='gudangkomik'], img[src*='warungkomikcdn']",
+      },
+      urlPatterns: {
+        'homePage': '/page/{page}/',
+        'search': '/?s={query}',
+        'searchPage': '/page/{page}/?s={query}',
+        'genreSearch': '/genre/{tag}/',
+        'genreSearchPage': '/genre/{tag}/page/{page}/',
+        'detail': '/series/{id}/',
+        'chapter': '/chapter/{id}/',
+      },
+      searchDefaults: {
+        'searchUrl': '/?s={query}',
+        'queryParam': 's',
+      },
+    ),
+
     // Custom manga site (no known CMS)
     CmsSignature(
       id: 'custom',

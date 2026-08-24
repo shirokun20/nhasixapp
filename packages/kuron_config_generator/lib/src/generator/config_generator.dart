@@ -254,6 +254,24 @@ class ConfigGenerator {
       pagination = <String, Object?>{
         'next': ".pagination a[rel='next'], .pagination li:last-child a",
       };
+    } else if (ct == 'areakomik') {
+      // From live-proven areakomik config.
+      homeFields = <String, Object?>{
+        'id': {
+          'selector': 'a.thumb-wrap',
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': '.card-title'},
+        'coverUrl': {
+          'selector': '.thumb-wrap img',
+          'attribute': 'src',
+        },
+      };
+      pagination = <String, Object?>{
+        'next': 'a.next.page-numbers',
+        'links': 'a.page-numbers',
+      };
     } else {
       // Default / Madara
       homeFields = <String, Object?>{
@@ -405,6 +423,15 @@ class ConfigGenerator {
         'url': '/artist/{tag}/page/{page}/',
         'inherits': 'home',
       };
+    } else if (ct == 'areakomik') {
+      urls['genreSearch'] = <String, Object?>{
+        'url': '/genre/{tag}/',
+        'inherits': 'home',
+      };
+      urls['genreSearchPage'] = <String, Object?>{
+        'url': '/genre/{tag}/page/{page}/',
+        'inherits': 'home',
+      };
     }
 
     // ── Detail & Chapter ──
@@ -420,6 +447,9 @@ class ConfigGenerator {
     } else if (ct == 'hentairhymes') {
       urls['detail'] = '/gallery/{id}/';
       urls['chapter'] = '/gallery/{id}/';
+    } else if (ct == 'areakomik') {
+      urls['detail'] = '/series/{id}/';
+      urls['chapter'] = '/chapter/{id}/';
     } else {
       urls['detail'] = '/manhwa/{id}/';
       urls['chapter'] = '/manhwa/{id}/{ch}/';
@@ -477,6 +507,20 @@ class ConfigGenerator {
         'title': {'selector': '.tt, a[title]'},
         'coverUrl': {
           'selector': '.limit img, .bsx img',
+          'attribute': 'src',
+        },
+      };
+    } else if (ct == 'areakomik') {
+      // From live-proven areakomik config.
+      return {
+        'id': {
+          'selector': 'a.thumb-wrap',
+          'attribute': 'href',
+          'transform': 'slug',
+        },
+        'title': {'selector': '.card-title'},
+        'coverUrl': {
+          'selector': '.thumb-wrap img',
           'attribute': 'src',
         },
       };
@@ -548,6 +592,17 @@ class ConfigGenerator {
           'multi': true,
         },
       };
+    } else if (ct == 'areakomik') {
+      // From live-proven areakomik config.
+      return {
+        'title': {'selector': 'h1'},
+        'coverUrl': {
+          'selector': "meta[property='og:image']",
+          'attribute': 'content',
+        },
+        'description': {'selector': '.series-sinopsis'},
+        'genres': {'selector': '.genre-list a', 'multi': true},
+      };
     }
     // Madara / default
     return {
@@ -568,6 +623,21 @@ class ConfigGenerator {
       return {
         'container': '#gimg, .full_gallery img',
         'singleChapterMode': true,
+      };
+    }
+    if (ct == 'areakomik') {
+      // From live-proven areakomik config.
+      return {
+        'container': '.chapter-grid .chapter-row',
+        'fields': {
+          'id': {
+            'selector': 'a.chapter-link:not(.lin-bonus-chapter-link)',
+            'attribute': 'href',
+            'transform': 'slug',
+          },
+          'title': {'selector': '.chap-num'},
+          'date': {'selector': '.chap-date'},
+        },
       };
     }
     if (ct == 'mangathemesia') {
@@ -633,6 +703,17 @@ class ConfigGenerator {
         },
       };
     }
+    if (ct == 'areakomik') {
+      // From live-proven areakomik config — images served from
+      // gudangkomik/warungkomikcdn CDNs.
+      return {
+        'container': '.reading-content, .chapter-content',
+        'images': {
+          'selector': "img[src*='gudangkomik'], img[src*='warungkomikcdn']",
+          'attribute': 'src',
+        },
+      };
+    }
     return {
       'container': '.reading-content, .chapter-content',
       'images': {'selector': a['readerImageSel'] ?? 'img'},
@@ -678,6 +759,7 @@ class ConfigGenerator {
     if (ct.startsWith('madara')) return '/manhwa/([^/]+)';
     if (ct == 'zmanga') return '/series/([^/]+)';
     if (ct == 'mangathemesia') return '/manga/([^/]+)';
+    if (ct == 'areakomik') return '/series/([^/]+)';
     if (ct == 'blogger') return r'/(\d{4}/\d{2}/[^/]+)';
     return '/([^/]+)';
   }

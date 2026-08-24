@@ -61,9 +61,9 @@ class GenerateCommand extends Command<void> {
       ..addOption(
         'template',
         abbr: 't',
-        help: 'Clone a live-proven config from informations/configs/ as the '
-            'theme (e.g. --template hentaiera). Selectors/URL patterns are '
-            'copied verbatim; only identity fields change.',
+        help: 'Clone a live-proven config from your local informations/configs/'
+            ' as the theme (e.g. --template hentaiera). Selectors/URL '
+            'patterns are copied verbatim; only identity fields change.',
       )
       ..addFlag(
         'fix-suggestions',
@@ -112,8 +112,11 @@ class GenerateCommand extends Command<void> {
     }
   }
 
-  /// Clones a live-proven config from informations/configs/ and swaps identity
-  /// fields. Selectors, urlPatterns, reader mode — all copied verbatim.
+  /// Clones a live-proven config from local informations/configs/ and swaps
+  /// identity fields. Selectors, urlPatterns, reader mode — copied verbatim.
+  /// ponytail: proven configs stay PRIVATE (gitignored) — no tracked copies.
+  /// Fresh clones get URL-assisted generation instead; --template is a
+  /// local-only convenience for machines that have the private configs.
   Future<void> _runTemplateClone(
     String templateId,
     String? url,
@@ -137,6 +140,11 @@ class GenerateCommand extends Command<void> {
       for (final c in candidates) {
         stderr.writeln('  $c');
       }
+      stderr.writeln(
+        'Proven configs are private (gitignored). Copy one from your private '
+        'backup into informations/configs/, or use URL-assisted generation:\n'
+        '  generate --url <site-url> --validate',
+      );
       exit(66);
     }
 

@@ -32,18 +32,37 @@ fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
 Prompts: source identity, mode (REST / scraper), features, endpoints, headers.  
 **Output:** `build/generated/{sourceId}-config.json`
 
-### Template Clone (recommended)
+### Theme Detection (recommended)
 
-Clone a live-proven config from `informations/configs/` as the theme — selectors,
-URL patterns, and reader mode are copied verbatim; only identity fields change.
-Far more reliable than generic CMS guesses.
+The generator ships a **theme bank** in code: `cms_detector.dart` holds
+signatures (hints + selectors + URL patterns) per CMS theme, and
+`config_generator.dart` emits full configs per theme. Signatures are lifted
+from live-proven configs — not guesses. Proven config files themselves stay
+**private** (`informations/configs/` is gitignored); only the distilled
+patterns live in code.
+
+```bash
+fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
+    generate --url https://areakomik.com --validate --live
+```
+
+- CMS auto-detected from HTML hints (e.g. `areakomik`, `madara`, `zmanga`,
+  `mangathemesia`, `hentairhymes`) → full selector set emitted.
+- `--validate --live` — readiness validation + 5-screen live smoke through the
+  real adapter; on success emits golden fixtures + a dual-mode skeleton test.
+
+### Template Clone (local-only)
+
+On machines that have the private proven configs, `--template` clones one as
+the theme verbatim:
 
 ```bash
 fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
     generate --template hentaiera --url https://hentaiera.com --validate --live
 ```
 
-- `--template <sourceId>` — proven config to clone (e.g. `hentaiera`, `manhwareads`)
+- `--template <sourceId>` — reads `informations/configs/<id>-config.json`
+  (gitignored; fresh clones won't have it — use Theme Detection above)
 - `--url` — new source's base URL (host becomes the new source id)
 - `--validate --live` — readiness validation + 5-screen live smoke through the
   real adapter; on success emits golden fixtures + a dual-mode skeleton test
@@ -77,8 +96,9 @@ plus a `manifest.json`.
 
 ### URL-Assisted HTML → Scraper
 
-> ⚠️ Prefer **Template Clone** above when a proven config for the same CMS
-> family exists — generic detection emits guesses that often need manual fixes.
+> ⚠️ Prefer **Theme Detection** above — the theme bank emits proven selectors.
+> Use **Template Clone** when a private proven config exists for the exact
+> site family. Generic detection is the last resort and often needs fixes.
 
 ```bash
 fvm dart run packages/kuron_config_generator/bin/kuron_config_generator.dart \
