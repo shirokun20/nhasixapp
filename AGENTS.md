@@ -142,42 +142,6 @@ If you need to modify generated code, edit the source file and run `flutter pub 
 ### Auto-Formatting
 All `.dart` files are automatically formatted using `fvm dart format` after write/edit operations.
 
-## 🛠 Skills & Agents
-
-Use these specialized tools to maintain velocity and quality.
-
-### Agents (Use `@` to invoke)
-- **`@planner`**: Creates exploration proposals in `openspec/changes/<name>/proposal.md`.
-- **`@architect`**: Reviews code for Clean Architecture violations.
-- **`@flutter-architect`**: Clean Architecture guidance and reviews.
-- **`@feature-dev`**: Development workflow coordinator.
-- **`@code-reviewer`**: Flutter code quality reviews.
-- **`@ui-designer`**: UI/UX and responsive design guidance.
-- **`@test-engineer`**: Writes comprehensive unit and widget tests.
-- **`@test-writer`**: Writes comprehensive test coverage.
-
-### Skills (cross-platform, loaded automatically when needed)
-
-| Skill | Purpose | Claude Code | OpenCode/Codex |
-|-------|---------|-------------|----------------|
-| **Architecture** | Clean Architecture patterns | `/arch` | `clean-arch` |
-| **State Management** | BLoC/Cubit patterns | `/state` | `bloc-pattern`, `bloc-cubit` |
-| **Create BLoC** | Scaffold BLoC with Freezed | `/bloc` | `create-bloc` |
-| **Create Feature** | Scaffold feature structure | `/feature` | `create-feature` |
-| **API Integration** | Endpoint integration guide | `/api` | `api-integration` |
-| **DI Setup** | GetIt dependency injection | `/di` | `di-setup` |
-| **Test Generation** | Generate unit tests | `/test` | `gen-test` |
-| **Codegen** | Run build_runner | `/codegen` | `run-codegen` |
-| **Project Lifecycle** | 4-phase project management | `/project` | `project-management`, `project-workflow` |
-| **Scraper Debug** | Fix HTML scrapers | `/scraper` | `scraper-debug` |
-| **Native Integration** | Platform Channels + Kotlin | `/native` | `native-integration` |
-| **Git Workflow** | Branching + Conventional Commits | `/git` | `git-workflow` |
-| **Search Tools** | rg, ugrep, semgrep, gitleaks, typos guide | `/search` | `search-tools` |
-| **Security Review** | semgrep + gitleaks + typos on staged changes | `/security-review` | |
-| **Code Review** | Full code review with ecc:code-reviewer agent | `/review` | |
-| **Simplify** | Review changed code for reuse, quality, efficiency | `/simplify` | |
-| **RTK** | Token-optimized CLI proxy | | `rtk` |
-
 ### Skill Source of Truth (priority order)
 1. **Claude Code**: `.claude/commands/*.md` (consolidated, authoritative)
 2. **Codex**: `.codex/skills/*/SKILL.md`

@@ -188,20 +188,6 @@ lib/
 
 ---
 
-## Search Tools
-
-Project uses modern search tools instead of `grep`:
-
-| Tool | Use Case | Command |
-|---|---|---|
-| `rg` (ripgrep) | Fast text search, regex | `rg "pattern" lib/ -t dart` |
-| `ugrep` | Interactive, fuzzy, hex search | `ugrep -Q "pattern" lib/` |
-| `semgrep` | AST-aware Dart patterns | `semgrep --lang dart -e '$PATTERN' lib/` |
-
-> See `smart_search.sh` and `search-tools/SKILL.md` for details.
-
----
-
 ## RTK - Rust Token Killer
 
 Project requires **RTK** for AI token optimization (60-90% savings):
