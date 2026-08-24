@@ -10,7 +10,10 @@ import '../discovery/http_probe.dart';
 import '../discovery/cms_detector.dart';
 import '../discovery/api_detector.dart';
 import '../validation/validation_orchestrator.dart';
+import '../validation/smoke_runner.dart';
+import '../validation/skeleton_test_emitter.dart';
 import 'package:html/parser.dart' show parse;
+import 'package:kuron_config_generator/src/validation/search_key_probe.dart';
 
 // Generate a Kuron source config through interactive questions or URL-assisted discovery.
 class GenerateCommand extends Command<void> {
@@ -43,6 +46,12 @@ class GenerateCommand extends Command<void> {
         negatable: false,
         help: 'Run validation on the generated config.',
       )
+      ..addFlag(
+        'live',
+        negatable: false,
+        help: 'Run live smoke validation through the real adapter '
+            '(requires --validate). Emits fixtures + skeleton test.',
+      )
       ..addOption(
         'validate-format',
         help: 'Output format for validation report.',
@@ -65,7 +74,15 @@ class GenerateCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final logger = Logger(level: Level.info);
+    // ponytail: DevelopmentFilter (logger default) drops ALL output when
+    // asserts are off — plain `dart run` disables them. ProductionFilter
+    // respects the level unconditionally. Swap to PrettyPrinter if this
+    // ever runs inside Flutter debug mode again.
+    final logger = Logger(
+      filter: ProductionFilter(),
+      printer: SimplePrinter(),
+      level: Level.info,
+    );
     final url = argResults?['url'] as String?;
     final interactive = argResults?['interactive'] as bool? ?? false;
     final output = argResults?['output'] as String;
@@ -141,6 +158,18 @@ class GenerateCommand extends Command<void> {
     final cms = detectCms(probe.body);
     logger.i(
         '📋 CMS detected: ${cms.cmsId} (${(cms.confidence * 100).round()}% confidence)');
+    // Phase 3: low-confidence CMS guess → needsReview marker. Selectors are
+    // generic guesses; user must review before import.
+    final cmsConfidence = CmsConfidence(
+      cmsId: cms.cmsId,
+      hits: (cms.confidence * 100).round(),
+      totalHints: 100,
+    );
+    if (!cms.isKnown || !cmsConfidence.confident) {
+      logger.w('⚠️ CMS confidence below '
+          '${(CmsConfidence.confidentThreshold * 100).round()}% — needsReview: '
+          'verify all suggested selectors manually.');
+    }
 
     if (cms.isKnown) {
       logger.i('Suggested selectors for $url (${cms.cmsId}):');
@@ -370,5 +399,62 @@ class GenerateCommand extends Command<void> {
       reportFormat: format,
       showAllSuggestions: showAll,
     );
+
+    await _maybeRunLiveSmoke(configPath);
+  }
+
+  // If --live flag is set, run live smoke validation through the real
+  // adapter and emit fixtures + skeleton test on success.
+  Future<void> _maybeRunLiveSmoke(String configPath) async {
+    final live = argResults?['live'] as bool? ?? false;
+    if (!live) return;
+
+    final logger = Logger(
+      filter: ProductionFilter(),
+      printer: SimplePrinter(),
+      level: Level.info,
+    );
+    final file = File(configPath);
+    if (!file.existsSync()) {
+      logger.e('Live smoke skipped — config not found: $configPath');
+      return;
+    }
+    final config =
+        (jsonDecode(file.readAsStringSync()) as Map).cast<String, dynamic>();
+    final sourceId = config['source'] as String? ??
+        Uri.tryParse(config['baseUrl'] as String? ?? '')
+            ?.host
+            .replaceAll(RegExp(r'^www\.'), '') ??
+        'unknown';
+    final outputDir = File(configPath).parent.path;
+
+    logger.i('🌐 Live smoke validation via real adapter...');
+    final report = await SmokeRunner().run(config);
+
+    for (final r in report.results) {
+      logger.i('  ${r.passed ? "✓" : "✗"} $r');
+    }
+
+    // Phase 2/3: negative-case findings + search-key/CMS confidence.
+    if (report.findings.isNotEmpty) {
+      logger.i('🔎 Probe findings:');
+      for (final f in report.findings) {
+        logger.w('  $f');
+      }
+    }
+
+    if (!report.allPassed) {
+      logger.e(
+          '✗ Live smoke FAILED — ${report.failures.length} screen(s) failing. '
+          'Fix selectors and re-run before importing.');
+      exitCode = 1;
+      return;
+    }
+
+    FixtureEmitter(outputDir: outputDir, sourceId: sourceId)
+        .writeAll(report.fixtures, config);
+    SkeletonTestEmitter(outputDir: outputDir, sourceId: sourceId).write();
+    logger.i('✓ Live smoke passed. Fixtures + skeleton test emitted to '
+        '$outputDir/fixtures/$sourceId and ${sourceId}_generated_live_test.dart');
   }
 }

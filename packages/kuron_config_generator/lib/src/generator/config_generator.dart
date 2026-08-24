@@ -565,6 +565,10 @@ class ConfigGenerator {
     }
     if (ct == 'mangathemesia') {
       return {
+        // ponytail: tsReaderRegex first — images live in the ts_reader.run()
+        // script, DOM #readerarea only holds <noscript> fallback. Drop the
+        // regex key if a themesia variant ever serves plain <img> pages.
+        'tsReaderRegex': r'ts_reader\.run\((.*?)\);',
         'container': '#readerarea',
         'images': {'selector': 'img', 'attribute': 'src'},
         'nav': {
