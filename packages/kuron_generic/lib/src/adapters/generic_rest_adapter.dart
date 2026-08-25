@@ -468,6 +468,31 @@ class GenericRestAdapter implements GenericAdapter {
       final data = response.data is String
           ? jsonDecode(response.data as String)
           : response.data;
+
+      // New schema: `api.related` block with `items` + `fields` (e.g. MangaDex
+      // /recommendation returns wrapper objects whose manga lives in
+      // relationships). Falls back to flat top-level `selectors`.
+      final apiRelated = (api?['related'] as Map<String, dynamic>?);
+      if (apiRelated != null) {
+        final itemsPath = apiRelated['items'] as String?;
+        if (itemsPath == null) return const [];
+        final rawItems =
+            _parser.extractItems(data, FieldSelector(selector: itemsPath));
+        final fieldsConfig =
+            (apiRelated['fields'] as Map<String, dynamic>?) ?? {};
+        return rawItems
+            .map((item) {
+              final fields = _extractRestFields(item, fieldsConfig);
+              final mapped = GenericContentMapper.toListItem(
+                fields,
+                sourceId: _sourceId,
+              );
+              return _applyDefaultLanguageIfMissing(mapped, rawConfig);
+            })
+            .where((c) => c.id.isNotEmpty && c.id != contentId)
+            .toList();
+      }
+
       final selectors = (rawConfig['selectors'] as Map<String, dynamic>?) ?? {};
       return _parseItemList(data, selectors, rawConfig);
     } catch (e) {
@@ -1392,8 +1417,7 @@ class GenericRestAdapter implements GenericAdapter {
             lang = (lang != null && lang.isNotEmpty && lang != 'unknown')
                 ? lang
                 : _resolveLanguageCode(
-                    defaultLanguage:
-                        rawConfig['defaultLanguage'] as String?,
+                    defaultLanguage: rawConfig['defaultLanguage'] as String?,
                   );
             chapterUrl = _replaceMultiValueParam(
               chapterUrl,

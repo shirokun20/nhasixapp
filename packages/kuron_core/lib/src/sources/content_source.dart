@@ -149,6 +149,12 @@ abstract class ContentSource {
   // If true, bookmark buttons will be shown in detail screens.
   bool get supportsBookmarks => false;
 
+  // Whether this source implements getRelated with real data.
+  ///
+  // Default false — sources opt in by overriding. Used to skip useless
+  // related-content API calls on detail screens.
+  bool get supportsRelated => false;
+
   // ============ NEW: FilterList & Global Search Support ============
 
   // Filters available for this source (for advanced search UI).

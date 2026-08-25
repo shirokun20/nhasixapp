@@ -422,6 +422,15 @@ class GenericHttpSource implements ContentSource {
   }
 
   @override
+  bool get supportsRelated {
+    final related = _rawConfig['related'] as Map<String, dynamic>?;
+    if (related != null && related['enabled'] == true) return true;
+    // Legacy: features.related flag (nhentai config)
+    final features = _rawConfig['features'] as Map<String, dynamic>?;
+    return features?['related'] == true;
+  }
+
+  @override
   bool get showsPageCountInList => true;
 
   // ── URL building ───────────────────────────────────────────────────────────

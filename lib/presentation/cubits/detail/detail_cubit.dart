@@ -257,12 +257,20 @@ class DetailCubit extends BaseCubit<DetailState> {
       return;
     }
 
-    // Only load related content for Nhentai
-    // Crotpedia's implementation is inefficient (calls getDetail again)
-    // and can cause state issues
-    if (currentState.content.sourceId != SourceType.nhentai.id) {
+    // Skip when related content already present (embedded or parallel fetch).
+    if ((currentState.content.relatedContent.isNotEmpty) ||
+        ((currentState.relatedContent ?? const <Content>[]).isNotEmpty)) {
       logInfo(
-          'Skipping related content for source: ${currentState.content.sourceId}');
+          'Related content already available for: ${currentState.content.id}');
+      return;
+    }
+
+    // Skip sources without a related implementation to avoid useless calls.
+    final source =
+        _contentSourceRegistry.getSource(currentState.content.sourceId);
+    if (source == null || !source.supportsRelated) {
+      logInfo(
+          'Source does not support related content: ${currentState.content.sourceId}');
       return;
     }
 

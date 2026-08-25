@@ -63,10 +63,20 @@ void main() {
       final Map<String, Object?> list =
           (home['list'] as Map).cast<String, Object?>();
 
+      // Home/homePage MUST scope to the "Latest Update" bixbox: the page
+      // renders 7 bixbox sections and unscoped containers pull in Popular
+      // Today / Project Update / Recommendation items.
+      expect(list['container'],
+          'div.bixbox:contains(Latest Update) .listupd .bs .bsx');
+
       // Genre/archive pages render plain .bs cards (no "Latest Update"
-      // bixbox heading), so the container must not pin the bixbox wrapper.
-      // Regression: genre page 2 returned zero items (2026-08-23).
-      expect(list['container'], '.listupd .bs .bsx');
+      // bixbox heading), so search/genreSearch must NOT pin the bixbox
+      // wrapper. Regression: genre page 2 returned zero items (2026-08-23).
+      final Map<String, Object?> search =
+          (urlPatterns['search'] as Map).cast<String, Object?>();
+      final Map<String, Object?> searchList =
+          (search['list'] as Map).cast<String, Object?>();
+      expect(searchList['container'], '.listupd .bsx');
 
       final Map<String, Object?> selectors =
           (scraper['selectors'] as Map).cast<String, Object?>();
