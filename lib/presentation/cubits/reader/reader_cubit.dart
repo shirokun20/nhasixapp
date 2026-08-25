@@ -158,8 +158,21 @@ class ReaderCubit extends Cubit<ReaderState> {
       // Cold-start bridge: seed static bypass header caches from persisted
       // cookie jars so image requests carry a still-valid cf_clearance even
       // when the reader is the first screen after an app restart.
+      // Iterates ALL loaded sources — not just hardcoded list — so any source
+      // with bypass enabled (network.requiresBypass || cloudflare.bypassEnabled)
+      // gets its clearance seeded automatically.
       try {
-        for (final sourceId in ['mangaforfree', 'beauty3600000']) {
+        final configService = getIt<RemoteConfigService>();
+        for (final cfg in configService.getAllSourceConfigs()) {
+          final sourceId = cfg.source;
+          final raw = configService.getRawConfig(sourceId);
+          if (raw == null) continue;
+          final network = raw['network'] as Map<String, dynamic>?;
+          if (network == null) continue;
+          final cf = network['cloudflare'] as Map<String, dynamic>?;
+          final requiresBypass = network['requiresBypass'] == true;
+          final cloudflareBypass = cf?['bypassEnabled'] == true;
+          if (!requiresBypass && !cloudflareBypass) continue;
           if (getIt.isRegistered<WebViewSessionAdapter>(
               instanceName: 'cf_$sourceId')) {
             await getIt<WebViewSessionAdapter>(instanceName: 'cf_$sourceId')
