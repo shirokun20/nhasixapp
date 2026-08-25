@@ -135,12 +135,33 @@ class _BypassDioInterceptor with DioMixin implements Dio {
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
   }) async {
+    // cf_clearance is UA-bound and the site challenges every endpoint —
+    // inject the cached clearance + matching UA BEFORE the first attempt so a
+    // valid session never trips the challenge (and never voids the clearance
+    // by sending it under a mismatched UA).
+    var effectiveOptions = options;
+    final bypassCookie =
+        WebViewSessionAdapter.getCachedCookieHeaderForUrl(path);
+    final bypassUa = WebViewSessionAdapter.getCachedUserAgentForUrl(path);
+    if ((bypassCookie?.isNotEmpty ?? false) || (bypassUa?.isNotEmpty ?? false)) {
+      final preHeaders = Map<String, dynamic>.from(options?.headers ?? {});
+      if ((bypassCookie?.isNotEmpty ?? false) &&
+          !(preHeaders['Cookie']?.toString().contains('cf_clearance') ??
+              false)) {
+        preHeaders['Cookie'] = bypassCookie;
+      }
+      if (bypassUa?.isNotEmpty ?? false) {
+        preHeaders['User-Agent'] = bypassUa;
+      }
+      effectiveOptions = (options ?? Options()).copyWith(headers: preHeaders);
+    }
+
     try {
       return await _baseDio.post<T>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: effectiveOptions,
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,

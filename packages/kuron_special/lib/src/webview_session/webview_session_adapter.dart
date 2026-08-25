@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -302,31 +303,36 @@ class WebViewSessionAdapter {
       options ??= Options();
       options.headers ??= {};
 
-      // Sync stored dynamically captured UserAgent from previous bypass if
-      // available. Restore from secure storage on cold start — cf_clearance
-      // is UA-bound; probing with a mismatched UA voids the clearance and
-      // re-triggers the challenge every session.
-      var storedUa = _dio.options.headers['User-Agent'] as String?;
-      if (storedUa == null || storedUa.isEmpty) {
+      // Resolve the UA for this request. Priority: cached bypass UA >
+      // persisted bypass UA > caller/config UA. cf_clearance is UA-bound
+      // (live-proven: clearance + mismatched UA = 403), so once a WebView UA
+      // exists it MUST win over any config UA for this host — otherwise every
+      // request voids the clearance and re-triggers the challenge. Never fall
+      // back to the shared Dio default (app identity UA).
+      var requestUa = _cachedUserAgents[_baseUrl];
+      try {
+        requestUa ??= _cachedUserAgents[Uri.tryParse(url)?.host ?? ''];
+      } catch (_) {}
+      if (requestUa == null || requestUa.isEmpty) {
         final persistedUa =
             await _secureStorage.read(key: _uaKey).catchError((_) => null);
         if (persistedUa != null && persistedUa.isNotEmpty) {
-          _dio.options.headers['User-Agent'] = persistedUa;
-          storedUa = persistedUa;
-          _cachedUserAgents[_baseUrl] = persistedUa;
-          try {
-            _cachedUserAgents[Uri.parse(_baseUrl).host] = persistedUa;
-          } catch (_) {}
+          requestUa = persistedUa;
         }
-      } else {
-        _cachedUserAgents[_baseUrl] = storedUa;
-        try {
-          _cachedUserAgents[Uri.parse(_baseUrl).host] = storedUa;
-        } catch (_) {}
       }
-      if (storedUa != null) {
-        options.headers ??= {};
-        options.headers?['User-Agent'] = storedUa;
+      if (requestUa == null || requestUa.isEmpty) {
+        requestUa =
+            (options.headers?['User-Agent'] as String?)?.trim().isNotEmpty ==
+                    true
+                ? options.headers!['User-Agent'] as String
+                : null;
+      }
+      if (requestUa != null && requestUa.isNotEmpty) {
+        options.headers?['User-Agent'] = requestUa;
+        _cachedUserAgents[_baseUrl] = requestUa;
+        try {
+          _cachedUserAgents[Uri.parse(_baseUrl).host] = requestUa;
+        } catch (_) {}
       }
 
       if (_config.bypassEnabled && bypassOptions.skipInitialRequest) {
@@ -344,6 +350,7 @@ class WebViewSessionAdapter {
       // 1. First attempt
       final response = await _dio.get<T>(url, options: options);
       if (!shouldTriggerBypass(response) || !_config.bypassEnabled) {
+        unawaited(_seedImageHeaderCache(url));
         return response;
       }
 
@@ -366,6 +373,7 @@ class WebViewSessionAdapter {
       }
 
       _logger.i('✅ Site protection bypassed. Using verified response.');
+      unawaited(_seedImageHeaderCache(url));
       return bypassResponse;
     } on DioException catch (e) {
       if (!shouldTriggerBypass(e.response) || !_config.bypassEnabled) {
@@ -395,6 +403,7 @@ class WebViewSessionAdapter {
       }
 
       _logger.i('✅ Cloudflare bypassed. Using verified response.');
+      unawaited(_seedImageHeaderCache(url));
       return bypassResponse;
     }
   }
@@ -444,7 +453,9 @@ class WebViewSessionAdapter {
           _dio.options.headers['User-Agent'] = userAgent;
           // Persist so cold-start probes reuse the UA that minted the
           // current cf_clearance (challenge is UA-bound).
-          await _secureStorage.write(key: _uaKey, value: userAgent);
+          await _secureStorage
+              .write(key: _uaKey, value: userAgent)
+              .catchError((_) {});
           _cachedUserAgents[_baseUrl] = userAgent;
           try {
             _cachedUserAgents[Uri.parse(_baseUrl).host] = userAgent;
@@ -602,6 +613,61 @@ class WebViewSessionAdapter {
           // Best-effort purge; jar may not have written anything.
         }
       }
+    }
+  }
+
+  // Cold-start bridge: after app restart the static image-header caches are
+  // empty even though the cookie jar still holds a valid cf_clearance.
+  // Seed them from the jar so reader image requests (raw HttpClient, no
+  // CookieManager interceptor) carry the clearance without re-running bypass.
+  Future<void> _seedImageHeaderCache(String url) async {
+    try {
+      final host = Uri.parse(url).host;
+      if (host.isEmpty) return;
+      if (_cachedCookieHeaders[host] != null &&
+          _cachedUserAgents[_baseUrl] != null) {
+        return;
+      }
+      final cookies = await _cookieJar.loadForRequest(Uri.parse(url));
+      if (!cookies.any((c) => c.name == 'cf_clearance')) return;
+      final header = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      _cachedCookieHeaders[_baseUrl] = header;
+      _cachedCookieHeaders[host] = header;
+      await seedBypassHeaderCacheFromJar();
+    } catch (_) {
+      // Best-effort; next successful bypass repopulates caches anyway.
+    }
+  }
+
+  /// Public cold-start bridge: re-seeds the static image-header caches from
+  /// this adapter's persisted cookie jar + UA. Callers (e.g. download/reader
+  /// entry points) invoke it before building image headers so a valid
+  /// cf_clearance survives an app restart without opening a WebView first.
+  Future<void> seedBypassHeaderCacheFromJar() async {
+    try {
+      if (_cachedUserAgents[_baseUrl] == null ||
+          _cachedUserAgents[_baseUrl]!.isEmpty) {
+        final persistedUa =
+            await _secureStorage.read(key: _uaKey).catchError((_) => null);
+        if (persistedUa != null && persistedUa.isNotEmpty) {
+          _cachedUserAgents[_baseUrl] = persistedUa;
+          try {
+            _cachedUserAgents[Uri.parse(_baseUrl).host] = persistedUa;
+          } catch (_) {}
+        }
+      }
+      if (_cachedCookieHeaders[_baseUrl] != null &&
+          _cachedCookieHeaders[_baseUrl]!.isNotEmpty) {
+        return;
+      }
+      final uri = Uri.parse(_baseUrl);
+      final cookies = await _cookieJar.loadForRequest(uri);
+      if (!cookies.any((c) => c.name == 'cf_clearance')) return;
+      final header = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      _cachedCookieHeaders[_baseUrl] = header;
+      _cachedCookieHeaders[uri.host] = header;
+    } catch (_) {
+      // Best-effort; next successful bypass repopulates caches anyway.
     }
   }
 

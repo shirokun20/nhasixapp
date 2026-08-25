@@ -1095,19 +1095,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           }
         }
 
-        // Keep download headers aligned with Reader behavior: if source-specific
-        // headers are missing/incomplete in config, fallback to source-provided
-        // `getImageDownloadHeaders(...)` (works for GenericHttpSource too).
-        final hasReferer = networkHeaders != null &&
-            networkHeaders.keys.any((k) => k.toLowerCase() == 'referer') &&
-            (networkHeaders.entries
-                .firstWhere(
-                  (e) => e.key.toLowerCase() == 'referer',
-                  orElse: () => const MapEntry('', ''),
-                )
-                .value
-                .isNotEmpty);
-        if (networkHeaders == null || networkHeaders.isEmpty || !hasReferer) {
+        // Keep download headers aligned with Reader behavior: always overlay
+        // source-provided `getImageDownloadHeaders(...)` on top of config
+        // headers. For bypass sources this carries the runtime Cookie header
+        // (cf_clearance) and WebView UA that static config can never hold —
+        // cf_clearance is UA-bound, so the native worker MUST send both.
+        {
           final sampleUrl = content.imageUrls.isNotEmpty
               ? content.imageUrls.first
               : (content.url ?? content.coverUrl);
@@ -1120,7 +1113,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
               networkHeaders ??= <String, String>{};
               networkHeaders.addAll(sourceHeaders);
               _logger.i(
-                  '🌐 Fallback headers loaded from source for ${content.sourceId}: ${sourceHeaders.keys.join(", ")}');
+                  '🌐 Source headers merged for ${content.sourceId}: ${sourceHeaders.keys.join(", ")}');
             }
           }
         }

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kuron_generic/kuron_generic.dart'
     show PageResolutionPipeline, PageResolutionInput;
+import 'package:kuron_special/kuron_special.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -24,6 +25,7 @@ import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
 import '../../../core/utils/offline_content_manager.dart';
+import '../../../core/di/service_locator.dart';
 import '../../../core/utils/chapter_id_classifier.dart';
 import '../../../core/utils/reader_image_repair_utils.dart';
 import '../../../core/models/image_metadata.dart';
@@ -152,6 +154,21 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       _parentContent = parentContent;
       _allChapters = allChapters;
+
+      // Cold-start bridge: seed static bypass header caches from persisted
+      // cookie jars so image requests carry a still-valid cf_clearance even
+      // when the reader is the first screen after an app restart.
+      try {
+        for (final sourceId in ['mangaforfree', 'beauty3600000']) {
+          if (getIt.isRegistered<WebViewSessionAdapter>(
+              instanceName: 'cf_$sourceId')) {
+            await getIt<WebViewSessionAdapter>(instanceName: 'cf_$sourceId')
+                .seedBypassHeaderCacheFromJar();
+          }
+        }
+      } catch (_) {
+        // Best-effort — bypass flow repopulates caches on first challenge.
+      }
 
       // 🔍 DEBUG LOGGING
       _logger.i('📥 ReaderCubit.loadContent - Received:');

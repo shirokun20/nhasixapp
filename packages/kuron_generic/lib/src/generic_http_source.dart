@@ -697,6 +697,10 @@ class GenericHttpSource implements ContentSource {
         _logger.d('$_id: added bypass Cookie header for $imageUrl');
       }
     }
+    // Bypass UA must WIN over any config/default UA — cf_clearance is
+    // UA-bound (clearance + mismatched UA = 403, live-proven on
+    // mangaforfree). Only a caller-supplied exact WebView UA could override,
+    // and none exists on the image path.
     if (_bypassUaProvider != null) {
       final bypassUa = _bypassUaProvider.call(imageUrl);
       if (bypassUa != null && bypassUa.isNotEmpty) {
