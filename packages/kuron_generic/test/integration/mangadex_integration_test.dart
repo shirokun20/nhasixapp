@@ -63,7 +63,7 @@ const _config = {
         'coverUrl': {
           'type': 'coverBuilder',
           'template':
-              'https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg',
+              'https://mangadex.org/covers/{mangaId}/{fileName}.512.jpg',
           'mangaIdPath': r'$.id',
           'filenamePath':
               r"$.relationships[?(@.type=='cover_art')].attributes.fileName",
@@ -111,7 +111,7 @@ const _config = {
         'coverUrl': {
           'type': 'coverBuilder',
           'template':
-              'https://uploads.mangadex.org/covers/{mangaId}/{fileName}.256.jpg',
+              'https://mangadex.org/covers/{mangaId}/{fileName}.512.jpg',
           'mangaIdPath': r'$.data.id',
           'filenamePath':
               r"$.data.relationships[?(@.type=='cover_art')].attributes.fileName",
@@ -448,7 +448,7 @@ void main() {
       expect(result.items.first.title, 'Solo Leveling');
       expect(
         result.items.first.coverUrl,
-        'https://uploads.mangadex.org/covers/$_mangaId/e90bdc47-cover.jpg.256.jpg',
+        'https://mangadex.org/covers/$_mangaId/e90bdc47-cover.jpg.512.jpg',
       );
       expect(result.items.first.status, ContentStatus.completed);
       expect(result.items.first.totalChapters, 200);
@@ -600,7 +600,7 @@ void main() {
       expect(result.content.subTitle, '10 years ago...');
       expect(
         result.content.coverUrl,
-        'https://uploads.mangadex.org/covers/$_mangaId/e90bdc47-cover.jpg.256.jpg',
+        'https://mangadex.org/covers/$_mangaId/e90bdc47-cover.jpg.512.jpg',
       );
     });
 

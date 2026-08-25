@@ -450,6 +450,16 @@ class GenericRestAdapter implements GenericAdapter {
     Map<String, dynamic> rawConfig,
   ) async {
     final api = rawConfig['api'] as Map<String, dynamic>?;
+
+    // Batch two-phase mode short-circuits before any `endpoints.related`
+    // request: phase 1 fetches target ids (thin /recommendation wrapper),
+    // phase 2 resolves full item data (incl. cover) via multi-value ids[].
+    final apiRelatedSniff = (api?['related'] as Map<String, dynamic>?);
+    final batchCfg = apiRelatedSniff?['batch'] as Map<String, dynamic>?;
+    if (batchCfg != null) {
+      return _fetchRelatedBatch(contentId, rawConfig, api!, batchCfg);
+    }
+
     final rawEndpoints = (api?['endpoints'] as Map<String, dynamic>?) ?? {};
     final endpoints = <String, String>{
       for (final e in rawEndpoints.entries) e.key: _getEndpointPath(e.value),
@@ -499,6 +509,132 @@ class GenericRestAdapter implements GenericAdapter {
       _logger.w('$_sourceId: fetchRelated failed for $contentId', error: e);
       return const [];
     }
+  }
+
+  // Batch two-phase related (see config `api.related.batch`):
+  //   Phase 1  — fetch `/manga/{id}/recommendation` (wrapper with target ids)
+  //   Phase 2  — fetch `/manga?ids[]=...&includes[]=cover_art&...` resolving
+  //              the recommended manga in a single multi-value request, parsed
+  //              with the source's list fields (cover via coverBuilder),
+  //              reordered back to the phase-1 (score) id order.
+  Future<List<Content>> _fetchRelatedBatch(
+    String contentId,
+    Map<String, dynamic> rawConfig,
+    Map<String, dynamic> api,
+    Map<String, dynamic> batch,
+  ) async {
+    final idEndpoint = _getEndpointPath(batch['idEndpoint']);
+    if (idEndpoint.isEmpty) return const [];
+    final idItems = batch['idItems'] as String?;
+    if (idItems == null || idItems.isEmpty) return const [];
+    final idField = batch['idField'] as Map<String, dynamic>?;
+    if (idField == null) return const [];
+
+    // ── Phase 1: resolve ordered, de-duplicated target ids ───────────────
+    final orderedIds = <String>[];
+    try {
+      final idUrl = _urlBuilder.buildDetailUrl(idEndpoint, contentId);
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+      _logger.d('$_sourceId REST related (batch phase1): $idUrl');
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(idUrl));
+      final data = response.data is String
+          ? jsonDecode(response.data as String)
+          : response.data;
+      final rawItems =
+          _parser.extractItems(data, FieldSelector(selector: idItems));
+      final idSelector = FieldSelector.fromMap(idField);
+      final seen = <String>{};
+      for (final item in rawItems) {
+        final ids = _parser.extractList(item, idSelector);
+        for (final raw in ids) {
+          final id = raw.toString().trim();
+          if (id.isNotEmpty && id != contentId && seen.add(id)) {
+            orderedIds.add(id);
+          }
+        }
+      }
+    } catch (e) {
+      _logger.w('$_sourceId: related batch phase1 failed for $contentId',
+          error: e);
+      return const [];
+    }
+
+    // Graceful degradation: nothing to resolve → no phase-2 request.
+    if (orderedIds.isEmpty) return const [];
+
+    // ── Phase 2: batch detail via ids[] ──────────────────────────────────
+    final itemsEndpoint = _getEndpointPath(batch['itemsEndpoint']);
+    if (itemsEndpoint.isEmpty) return const [];
+    final itemsPath = batch['items'] as String?;
+    if (itemsPath == null || itemsPath.isEmpty) return const [];
+
+    // `{ids}` → repeated `ids[]=id&ids[]=id…` (relative to `api.list.fields`).
+    final fieldsConfig = _resolveBatchFields(batch['fields'], rawConfig);
+    if (fieldsConfig.isEmpty) return const [];
+
+    final idsSegment = orderedIds.join('&ids[]=');
+    final itemsUrl = _urlBuilder
+        .resolve(itemsEndpoint.replaceAll('{ids}', idsSegment), const {});
+
+    try {
+      await _prepareRequest(rawConfig, referer: _getBaseUrl(rawConfig));
+      _logger.d('$_sourceId REST related (batch phase2): $itemsUrl');
+      final response =
+          await _executeRequest<dynamic>(() => _dio.get<dynamic>(itemsUrl));
+      final data = response.data is String
+          ? jsonDecode(response.data as String)
+          : response.data;
+      final rawItems =
+          _parser.extractItems(data, FieldSelector(selector: itemsPath));
+      final byId = <String, Content>{};
+      for (final item in rawItems) {
+        final fields = _extractRestFields(item, fieldsConfig);
+        final mapped = GenericContentMapper.toListItem(
+          fields,
+          sourceId: _sourceId,
+        );
+        final content = _applyDefaultLanguageIfMissing(mapped, rawConfig);
+        if (content.id.isNotEmpty) {
+          byId[content.id] = content;
+        }
+      }
+      // Preserve phase-1 (score) order; drop ids the phase-2 response omitted.
+      final result = <Content>[];
+      for (final id in orderedIds) {
+        final content = byId[id];
+        if (content != null) result.add(content);
+      }
+      return result;
+    } catch (e) {
+      _logger.w('$_sourceId: related batch phase2 failed for $contentId',
+          error: e);
+      return const [];
+    }
+  }
+
+  // Resolves `api.related.batch.fields`, supporting the `"@list.fields"`
+  // reference token that reuses the source's `api.list.fields` block.
+  Map<String, dynamic> _resolveBatchFields(
+    dynamic fieldsDef,
+    Map<String, dynamic> rawConfig,
+  ) {
+    if (fieldsDef is Map<String, dynamic>) return fieldsDef;
+    if (fieldsDef is String) {
+      final token = fieldsDef.trim();
+      if (token.startsWith('@')) {
+        var cursor = rawConfig['api'];
+        for (final part in token.substring(1).split('.')) {
+          if (cursor is Map && cursor[part] is Map) {
+            cursor = cursor[part];
+          } else {
+            return const {};
+          }
+        }
+        return (cursor as Map<String, dynamic>?) ?? const {};
+      }
+    }
+    return const {};
   }
 
   @override
