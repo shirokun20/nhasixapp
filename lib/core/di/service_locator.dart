@@ -553,12 +553,12 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
         bypassOptionsBuilder: (url, config) =>
             WebViewReaderSourceFactory.buildBypassOptions(
-              url,
-              config,
-              readerPagePattern: '/english/p/',
-              captureHost: 'henread.xyz',
-              previewHost: 'hencover.xyz',
-            ),
+          url,
+          config,
+          readerPagePattern: '/english/p/',
+          captureHost: 'henread.xyz',
+          previewHost: 'hencover.xyz',
+        ),
       );
     },
   );
@@ -578,12 +578,12 @@ void _setupDataSources() {
         logger: getIt<Logger>(),
         bypassOptionsBuilder: (url, config) =>
             WebViewReaderSourceFactory.buildBypassOptions(
-              url,
-              config,
-              readerPagePattern: '/chapter-',
-              captureHost: 'manread.xyz',
-              previewHost: 'mancover.xyz',
-            ),
+          url,
+          config,
+          readerPagePattern: '/chapter-',
+          captureHost: 'manread.xyz',
+          previewHost: 'mancover.xyz',
+        ),
       );
     },
   );
@@ -652,7 +652,7 @@ void _setupDataSources() {
       final rawConfig =
           getIt<RemoteConfigService>().getRawConfig('mangaforfree') ?? {};
       final baseUrl =
-          rawConfig['baseUrl']?.toString() ?? 'https://mangaforfree.net';
+          rawConfig['baseUrl']?.toString() ?? 'https://mangaforfree.com';
       final cookieJar = secureCookieJar('cf_mangaforfree');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
@@ -660,6 +660,10 @@ void _setupDataSources() {
         config: WebViewSessionConfig.fromJson(rawConfig),
         baseUrl: baseUrl,
         logger: getIt<Logger>(),
+        bypassOptionsBuilder: (url, config) => const WebViewBypassOptions(
+          autoCloseOnCookie: 'cf_clearance',
+          preferCapturedHtml: true,
+        ),
       );
     },
   );
@@ -669,8 +673,7 @@ void _setupDataSources() {
     () {
       final rawConfig =
           getIt<RemoteConfigService>().getRawConfig('beauty3600000') ?? {};
-      final baseUrl =
-          rawConfig['baseUrl']?.toString() ?? 'https://3600000.xyz';
+      final baseUrl = rawConfig['baseUrl']?.toString() ?? 'https://3600000.xyz';
       final cookieJar = secureCookieJar('cf_beauty3600000');
       return WebViewSessionAdapter(
         dio: getIt<Dio>(),
@@ -678,6 +681,10 @@ void _setupDataSources() {
         config: WebViewSessionConfig.fromJson(rawConfig),
         baseUrl: baseUrl,
         logger: getIt<Logger>(),
+        bypassOptionsBuilder: (url, config) => const WebViewBypassOptions(
+          autoCloseOnCookie: 'cf_clearance',
+          preferCapturedHtml: true,
+        ),
       );
     },
   );
@@ -801,8 +808,8 @@ void _setupDataSources() {
         GenericBypassSourceFactory(
           sourceId: 'beauty3600000',
           dio: getIt<Dio>(),
-          sessionAdapter: getIt<WebViewSessionAdapter>(
-              instanceName: 'cf_beauty3600000'),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_beauty3600000'),
           logger: getIt<Logger>(),
         ),
         ViHentaiSourceFactory(

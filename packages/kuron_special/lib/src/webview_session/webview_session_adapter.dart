@@ -149,6 +149,42 @@ class WebViewSessionAdapter {
   // URLs bypass independently (no cross-source blocking).
   final Set<String> _bypassingUrls = {};
 
+  // Sync cache for bypass cookies per baseUrl host — used by GenericHttpSource
+  // to add Cookie header to image requests without async.
+  static final Map<String, String> _cachedCookieHeaders = {};
+  static final Map<String, String> _cachedUserAgents = {};
+  static String? getCachedCookieHeaderForUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host;
+      if (host.isEmpty) return null;
+      for (final entry in _cachedCookieHeaders.entries) {
+        final baseUri = Uri.tryParse(entry.key);
+        if (baseUri != null && baseUri.host == host) return entry.value;
+        if (entry.key.contains(host)) return entry.value;
+      }
+      return _cachedCookieHeaders[host] ?? _cachedCookieHeaders[url];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? getCachedUserAgentForUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host;
+      if (host.isEmpty) return null;
+      for (final entry in _cachedUserAgents.entries) {
+        final baseUri = Uri.tryParse(entry.key);
+        if (baseUri != null && baseUri.host == host) return entry.value;
+        if (entry.key.contains(host)) return entry.value;
+      }
+      return _cachedUserAgents[host] ?? _cachedUserAgents[url];
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Secure storage keys
   static const _keyPrefix = 'kuron_special_auth_';
   String get _keyEmail => '$_keyPrefix${_baseUrl.hashCode}_email';
@@ -191,6 +227,7 @@ class WebViewSessionAdapter {
   String? get username => _username;
   String? get email => _email;
   String get registerUrl => _config.registerUrl;
+  String get baseUrl => _baseUrl;
 
   Future<Map<String, String>> getCookiesForDomain(String url) async {
     try {
@@ -276,7 +313,16 @@ class WebViewSessionAdapter {
         if (persistedUa != null && persistedUa.isNotEmpty) {
           _dio.options.headers['User-Agent'] = persistedUa;
           storedUa = persistedUa;
+          _cachedUserAgents[_baseUrl] = persistedUa;
+          try {
+            _cachedUserAgents[Uri.parse(_baseUrl).host] = persistedUa;
+          } catch (_) {}
         }
+      } else {
+        _cachedUserAgents[_baseUrl] = storedUa;
+        try {
+          _cachedUserAgents[Uri.parse(_baseUrl).host] = storedUa;
+        } catch (_) {}
       }
       if (storedUa != null) {
         options.headers ??= {};
@@ -399,6 +445,11 @@ class WebViewSessionAdapter {
           // Persist so cold-start probes reuse the UA that minted the
           // current cf_clearance (challenge is UA-bound).
           await _secureStorage.write(key: _uaKey, value: userAgent);
+          _cachedUserAgents[_baseUrl] = userAgent;
+          try {
+            _cachedUserAgents[Uri.parse(_baseUrl).host] = userAgent;
+            _cachedUserAgents[Uri.parse(targetUrl).host] = userAgent;
+          } catch (_) {}
           _logger.i('🔄 Synced User-Agent: $userAgent');
         }
 
@@ -568,6 +619,9 @@ class WebViewSessionAdapter {
     }).toList();
 
     await _cookieJar.saveFromResponse(uri, cookiesToSave);
+    final cookieHeader = cookiesToSave.map((c) => '${c.name}=${c.value}').join('; ');
+    _cachedCookieHeaders[_baseUrl] = cookieHeader;
+    _cachedCookieHeaders[uri.host] = cookieHeader;
     _logger.d('Saved ${cookiesToSave.length} cookies to jar for ${uri.host}');
   }
 

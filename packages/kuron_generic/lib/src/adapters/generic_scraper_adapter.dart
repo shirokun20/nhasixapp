@@ -209,10 +209,9 @@ class GenericScraperAdapter implements GenericAdapter {
     } else if (filter.includeTags.isNotEmpty &&
         urlPatternsCfg.containsKey('genreSearch')) {
       const wantsPlainTag = 'tag';
-      final firstType =
-          filter.includeTags.first.type.toLowerCase().trim();
-      final useTagPattern = firstType == wantsPlainTag &&
-          urlPatternsCfg.containsKey('tagSearch');
+      final firstType = filter.includeTags.first.type.toLowerCase().trim();
+      final useTagPattern =
+          firstType == wantsPlainTag && urlPatternsCfg.containsKey('tagSearch');
       final baseKey = useTagPattern ? 'tagSearch' : 'genreSearch';
       final pageKey = '${baseKey}Page';
       patternKey = filter.page > 1 && urlPatternsCfg.containsKey(pageKey)
@@ -1277,16 +1276,20 @@ class GenericScraperAdapter implements GenericAdapter {
               .toList();
           // Some madara theme builds answer `{detailUrl}ajax/chapters/` with
           // the FULL page (holder spinner still unresolved) instead of a
-          // fragment — manhwaclub.net, mangaforfree.net. Those load the list
+          // fragment — manhwaclub.net, mangaforfree.com. Those load the list
           // via admin-ajax `manga_get_chapters` keyed by the holder's
           // data-id. Fall back when the fragment yielded nothing.
-          if (chapters.isEmpty && doc.querySelector('#manga-chapters-holder') != null) {
-            final dataId =
-                doc.querySelector('#manga-chapters-holder')!.attributes['data-id'] ?? '';
+          if (chapters.isEmpty &&
+              doc.querySelector('#manga-chapters-holder') != null) {
+            final dataId = doc
+                    .querySelector('#manga-chapters-holder')!
+                    .attributes['data-id'] ??
+                '';
             if (dataId.isNotEmpty) {
               final baseUri = Uri.parse(url);
               final adminAjaxUrl = baseUri
-                  .replace(path: '/wp-admin/admin-ajax.php', query: '', fragment: '')
+                  .replace(
+                      path: '/wp-admin/admin-ajax.php', query: '', fragment: '')
                   .toString();
               final adminResponse = await _executeRequest<Response<String>>(
                 () => _dio.post<String>(

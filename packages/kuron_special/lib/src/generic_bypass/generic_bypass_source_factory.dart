@@ -46,12 +46,15 @@ class GenericBypassSourceFactory implements SourceFactory {
     final interceptingDio = _BypassDioInterceptor(
       baseDio: _dio,
       sessionAdapter: _sessionAdapter,
+      logger: _logger,
     );
 
     return GenericHttpSource(
       rawConfig: config,
       dio: interceptingDio,
       logger: _logger,
+      bypassCookieProvider: WebViewSessionAdapter.getCachedCookieHeaderForUrl,
+      bypassUaProvider: WebViewSessionAdapter.getCachedUserAgentForUrl,
     );
   }
 }
@@ -61,12 +64,15 @@ class GenericBypassSourceFactory implements SourceFactory {
 class _BypassDioInterceptor with DioMixin implements Dio {
   final Dio _baseDio;
   final WebViewSessionAdapter _sessionAdapter;
+  final Logger _logger;
 
   _BypassDioInterceptor({
     required Dio baseDio,
     required WebViewSessionAdapter sessionAdapter,
+    required Logger logger,
   })  : _baseDio = baseDio,
-        _sessionAdapter = sessionAdapter {
+        _sessionAdapter = sessionAdapter,
+        _logger = logger {
     options = baseDio.options;
     interceptors.addAll(baseDio.interceptors);
     httpClientAdapter = baseDio.httpClientAdapter;
@@ -128,16 +134,46 @@ class _BypassDioInterceptor with DioMixin implements Dio {
     CancelToken? cancelToken,
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
-  }) {
-    return _baseDio.post<T>(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
+  }) async {
+    try {
+      return await _baseDio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 403) rethrow;
+      _logger.w('POST 403, triggering WebView bypass for $path');
+      // Refresh cf_clearance for the base domain via GET, then retry POST
+      await _sessionAdapter.requestWithBypass<dynamic>(
+        _sessionAdapter.baseUrl,
+        options: Options(headers: options?.headers),
+      );
+      final freshCookie = WebViewSessionAdapter.getCachedCookieHeaderForUrl(path);
+      final freshUa = WebViewSessionAdapter.getCachedUserAgentForUrl(path);
+      final retryHeaders = Map<String, dynamic>.from(options?.headers ?? {});
+      if (freshCookie != null && freshCookie.isNotEmpty) {
+        retryHeaders['Cookie'] = freshCookie;
+      }
+      if (freshUa != null && freshUa.isNotEmpty) {
+        retryHeaders['User-Agent'] = freshUa;
+      }
+      final retryOptions = (options ?? Options()).copyWith(headers: retryHeaders);
+      // Retry POST with fresh cookies/UA after bypass
+      return await _baseDio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: retryOptions,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+    }
   }
 
   @override

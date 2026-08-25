@@ -22,6 +22,9 @@ import 'url_builder/generic_url_builder.dart';
 // No Dart code changes are required to add a new provider — only a new JSON
 // config file is needed. The config must contain either an `api` block
 // (REST/JSON) or a `scraper` block (HTML scraping).
+typedef BypassCookieProvider = String? Function(String url);
+typedef BypassUaProvider = String? Function(String url);
+
 class GenericHttpSource implements ContentSource {
   final Map<String, dynamic> _rawConfig;
   final Dio _dio;
@@ -32,6 +35,8 @@ class GenericHttpSource implements ContentSource {
   // ignore: unused_field — will be used in Phase 2 when filter UI is wired up
   final GenericFilterTransformer _filterTransformer;
   final Logger _logger;
+  final BypassCookieProvider? _bypassCookieProvider;
+  final BypassUaProvider? _bypassUaProvider;
 
   // Cached values from config
   final String _id;
@@ -50,12 +55,16 @@ class GenericHttpSource implements ContentSource {
     DelayApplier? delayApplier,
     RateLimiter? rateLimiter,
     GenericAdapter? adapterOverride,
+    BypassCookieProvider? bypassCookieProvider,
+    BypassUaProvider? bypassUaProvider,
   })  : _rawConfig = rawConfig,
         _dio = dio,
         _headersGenerator = headersGenerator,
         _delayApplier = delayApplier,
         _rateLimiter = rateLimiter,
         _logger = logger,
+        _bypassCookieProvider = bypassCookieProvider,
+        _bypassUaProvider = bypassUaProvider,
         _filterTransformer = const GenericFilterTransformer(),
         _id = rawConfig['source'] as String? ?? 'unknown',
         _displayName = _resolveDisplayName(rawConfig),
@@ -617,6 +626,17 @@ class GenericHttpSource implements ContentSource {
     final headers = Map<String, String>.from(_defaultHeaders);
     headers['Referer'] = refererHeader;
 
+    // 🔥 HOTFIX: mangaforfree images are CF-protected and need full browser headers + bypass cookie/UA
+    if (_id == 'mangaforfree') {
+      headers['Accept'] =
+          'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
+      headers['Accept-Language'] = 'en-US,en;q=0.9';
+      headers['Sec-Fetch-Dest'] = 'image';
+      headers['Sec-Fetch-Mode'] = 'no-cors';
+      headers['Sec-Fetch-Site'] = 'same-origin';
+      // Referer already set above
+    }
+
     // 🔥 HOTFIX: HentaiNexus throttles requests with minimal headers
     // Add full browser headers to bypass server-side rate limiting
     if (_id == 'hentainexus') {
@@ -662,6 +682,27 @@ class GenericHttpSource implements ContentSource {
     if (cookies != null && cookies.isNotEmpty) {
       headers['Cookie'] =
           cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+    }
+
+    // Cloudflare bypass cookie for generic bypass sources (mangaforfree, beauty, etc.)
+    if (_bypassCookieProvider != null) {
+      final bypassCookie = _bypassCookieProvider.call(imageUrl);
+      if (bypassCookie != null && bypassCookie.isNotEmpty) {
+        final existing = headers['Cookie'];
+        if (existing == null || existing.isEmpty) {
+          headers['Cookie'] = bypassCookie;
+        } else if (!existing.contains(bypassCookie.split('=').first)) {
+          headers['Cookie'] = '$existing; $bypassCookie';
+        }
+        _logger.d('$_id: added bypass Cookie header for $imageUrl');
+      }
+    }
+    if (_bypassUaProvider != null) {
+      final bypassUa = _bypassUaProvider.call(imageUrl);
+      if (bypassUa != null && bypassUa.isNotEmpty) {
+        headers['User-Agent'] = bypassUa;
+        _logger.d('$_id: using bypass User-Agent for $imageUrl');
+      }
     }
 
     if (_id == 'hitomi') {

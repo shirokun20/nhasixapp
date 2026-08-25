@@ -120,7 +120,7 @@ void main() {
 
     test('mangaforfree baseUrl + madara signature', () {
       final config = loadConfig('mangaforfree-config.json');
-      expect(config['baseUrl'], 'https://mangaforfree.net');
+      expect(config['baseUrl'], 'https://mangaforfree.com');
 
       final scraper = (config['scraper'] as Map).cast<String, Object?>();
       final selectors = (scraper['selectors'] as Map).cast<String, Object?>();
