@@ -646,6 +646,42 @@ void _setupDataSources() {
     },
   );
 
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_mangaforfree',
+    () {
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig('mangaforfree') ?? {};
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://mangaforfree.net';
+      final cookieJar = secureCookieJar('cf_mangaforfree');
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
+  getIt.registerLazySingleton<WebViewSessionAdapter>(
+    instanceName: 'cf_beauty3600000',
+    () {
+      final rawConfig =
+          getIt<RemoteConfigService>().getRawConfig('beauty3600000') ?? {};
+      final baseUrl =
+          rawConfig['baseUrl']?.toString() ?? 'https://3600000.xyz';
+      final cookieJar = secureCookieJar('cf_beauty3600000');
+      return WebViewSessionAdapter(
+        dio: getIt<Dio>(),
+        cookieJar: cookieJar,
+        config: WebViewSessionConfig.fromJson(rawConfig),
+        baseUrl: baseUrl,
+        logger: getIt<Logger>(),
+      );
+    },
+  );
+
   // Generic Source Factory — catch-all factory for config-driven providers
   getIt.registerLazySingleton<GenericSourceFactory>(() => GenericSourceFactory(
         dio: getIt<Dio>(),
@@ -753,6 +789,20 @@ void _setupDataSources() {
           dio: getIt<Dio>(),
           sessionAdapter:
               getIt<WebViewSessionAdapter>(instanceName: 'cf_spyfakku'),
+          logger: getIt<Logger>(),
+        ),
+        GenericBypassSourceFactory(
+          sourceId: 'mangaforfree',
+          dio: getIt<Dio>(),
+          sessionAdapter:
+              getIt<WebViewSessionAdapter>(instanceName: 'cf_mangaforfree'),
+          logger: getIt<Logger>(),
+        ),
+        GenericBypassSourceFactory(
+          sourceId: 'beauty3600000',
+          dio: getIt<Dio>(),
+          sessionAdapter: getIt<WebViewSessionAdapter>(
+              instanceName: 'cf_beauty3600000'),
           logger: getIt<Logger>(),
         ),
         ViHentaiSourceFactory(
