@@ -75,6 +75,8 @@ lib/
 
 ### Archived (in `openspec/changes/archive/`) — Newest first
 - `2026-08-21-update-nicomanga-config`
+- `2026-08-21-improve-config-generator-validation-loop-2`
+- `2026-08-21-update-nicomanga-config`
 - `2026-08-21-rust-image-pipeline-migration`
 - `2026-08-21-improve-reader-translation-draw-and-architecture`
 - `2026-08-16-reader-ai-translate-improvements`
