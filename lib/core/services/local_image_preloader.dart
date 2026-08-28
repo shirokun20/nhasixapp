@@ -562,6 +562,85 @@ class LocalImagePreloader {
     }
   }
 
+  // Streaming download variant (memory-friendly, download-first pipeline).
+  //
+  // Unlike [downloadAndCacheImage] (which buffers the whole file in memory via
+  // `ResponseType.bytes`), this streams bytes straight to the canonical disk
+  // location and atomically renames a `.part` temp file. Memory per download is
+  // bounded regardless of image size, and the result is immediately found by
+  // [getLocalImagePath] on the next pass (no duplicated network fetch).
+  static Future<String?> downloadAndCacheImageStreaming(
+    String networkUrl,
+    String contentId,
+    int pageNumber, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+    void Function(int received, int total)? onProgress,
+  }) async {
+    try {
+      final existingPath = await getLocalImagePath(contentId, pageNumber);
+      if (existingPath != null) {
+        _logger.d('🐛 [stream] Image already exists locally: $existingPath');
+        return existingPath;
+      }
+
+      if (!networkUrl.startsWith('http') &&
+          (networkUrl.startsWith('/') || networkUrl.startsWith('file://'))) {
+        final p = networkUrl.replaceFirst('file://', '');
+        if (await File(p).exists()) {
+          _logger.d('🐛 [stream] Provided URL is a local file: $p');
+          return p;
+        }
+      }
+
+      final imagesDir = Directory(await getImagesFolderPath(contentId));
+      await imagesDir.create(recursive: true);
+      final targetPath = path.join(imagesDir.path, _pageFilePatterns(pageNumber).first);
+      final tmpPath = '$targetPath.part';
+
+      final dio = getIt<Dio>();
+      await dio.download(
+        networkUrl,
+        tmpPath,
+        onReceiveProgress: onProgress,
+        cancelToken: cancelToken,
+        options: Options(
+          headers: {
+            'User-Agent': 'AppleWebKit/537.36',
+            'Referer': 'https://nhentai.net/',
+            ...?headers,
+          },
+        ),
+      );
+
+      if (!await File(tmpPath).exists() || await File(tmpPath).length() == 0) {
+        _logger.w('🐛 [stream] Empty download: $networkUrl');
+        return null;
+      }
+      // Atomic publish: replace any existing target before rename.
+      if (await File(targetPath).exists()) {
+        await File(targetPath).delete();
+      }
+      await File(tmpPath).rename(targetPath);
+
+      _logger.d('🐛 [stream] Cached image to canonical path: $targetPath');
+      return targetPath;
+    } catch (e) {
+      // Best-effort cleanup of the partial file.
+      try {
+        final partial = path.join(
+          await getImagesFolderPath(contentId),
+          '${_pageFilePatterns(pageNumber).first}.part',
+        );
+        if (await File(partial).exists()) {
+          await File(partial).delete();
+        }
+      } catch (_) {}
+      _logger.e('🐛 [stream] Error streaming image $networkUrl: $e');
+      return null;
+    }
+  }
+
   // Get all downloaded content IDs
   static Future<List<String>> getDownloadedContentIds() async {
     try {

@@ -9,6 +9,7 @@ export 'package:nhasixapp/domain/extensions/tag_extensions.dart';
 
 // App-specific entities (not in kuron_core)
 export 'search_filter.dart';
+export 'page_image_result.dart';
 export 'user_preferences.dart';
 export 'download_status.dart';
 export 'history.dart';

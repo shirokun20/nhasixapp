@@ -1,16 +1,20 @@
 import 'dart:async';
 
 // Prefetch download engine for the reader. Owns which pages are prefetched /
-// in-flight and the per-page cancel tokens, so the bookkeeping that used to
-// live in _ReaderScreenState is testable and survives widget rebuild/dispose.
+// in-flight, so the bookkeeping that used to live in _ReaderScreenState is
+// testable and survives widget rebuild/dispose.
 //
 // ponytail: decode-pre-caching (precacheImage → ImageCache) needs a
 // BuildContext, so it stays in the widget. This cubit only owns the
-// context-free part: the network download + policy.
+// context-free part: the window policy + delegation to the unified
+// ReaderImageRepository (download-first). It no longer implements its own
+// network download when a repository is injected.
 
 import 'package:dio/dio.dart';
 import 'package:nhasixapp/core/models/image_metadata.dart';
 import 'package:nhasixapp/core/services/local_image_preloader.dart';
+import 'package:nhasixapp/domain/entities/page_image_result.dart';
+import 'package:nhasixapp/domain/repositories/reader_image_repository.dart';
 
 import '../base/base_cubit.dart';
 
@@ -46,9 +50,6 @@ class ReaderPrefetchState extends BaseCubitState {
 
 /// Owns prefetch downloads + policy that used to live in `_ReaderScreenState`.
 class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
-  ReaderPrefetchCubit({required super.logger})
-      : super(initialState: const ReaderPrefetchState());
-
   static const int _prefetchCount = 3;
   static const int _prefetchBackCount = 1;
 
@@ -58,6 +59,14 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
   };
 
   final Map<int, CancelToken> _cancelTokens = <int, CancelToken>{};
+
+  /// Unified download-first resolver. When injected, prefetch delegates its
+  /// network download here (streaming + dedup). When null (e.g. some tests), a
+  /// legacy Dio path is kept as fallback.
+  final ReaderImageRepository? repository;
+
+  ReaderPrefetchCubit({required super.logger, this.repository})
+      : super(initialState: const ReaderPrefetchState());
 
   /// Number of pages ahead (+1) and behind (−1) that are currently prefetched
   /// or in-flight — exposed for tests/config.
@@ -102,12 +111,14 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
 
   Future<void> _prefetchBack(
       int currentPage, List<String> imageUrls, String contentId,
-      Map<String, String>? headers) async {
+      Map<String, String>? headers,
+      [String? sourceId]) async {
     final futures = <Future<void>>[];
     for (int i = 1; i <= _prefetchBackCount; i++) {
       final targetPage = currentPage - i;
       if (targetPage >= 1 && !_isPrefetched(targetPage)) {
-        futures.add(_downloadPage(targetPage, imageUrls[targetPage - 1], contentId, headers));
+        futures.add(_downloadPage(
+            targetPage, imageUrls[targetPage - 1], contentId, headers, sourceId));
       }
     }
     await Future.wait(futures);
@@ -147,18 +158,44 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
       if (!_isHttp(imageUrl) && (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
         continue;
       }
-      futures.add(_downloadPage(targetPage, imageUrl, contentId, headers));
+      futures.add(
+          _downloadPage(targetPage, imageUrl, contentId, headers, sourceId));
     }
     await Future.wait(futures);
   }
 
   Future<void> _downloadPage(int targetPage, String imageUrl, String contentId,
-      Map<String, String>? headers) async {
+      Map<String, String>? headers, [String? sourceId]) async {
     if (!_isHttp(imageUrl)) {
       // non-http (local/file) — nothing to download; mark prefetched.
       _markPrefetched(targetPage);
       return;
     }
+
+    // Download-first: delegate to the unified (streaming + deduplicating)
+    // resolver when present.
+    final repo = repository;
+    if (repo != null) {
+      final result = await repo.resolvePage(
+        url: imageUrl,
+        contentId: contentId,
+        pageNumber: targetPage,
+        sourceId: sourceId,
+        headers: headers,
+      );
+      if (result is ReadyFromDisk || result is ReadyFresh) {
+        _markPrefetched(targetPage);
+      } else {
+        // FailedPage — allow retry later.
+        final reason =
+            result is FailedPage ? result.reason.toString() : 'unknown';
+        logDebug('prefetch fail page $targetPage: $reason');
+        _unmarkPrefetched(targetPage);
+      }
+      return;
+    }
+
+    // Legacy Dio fallback (only when no repository injected).
     final cancelToken = CancelToken();
     _cancelTokens[targetPage] = cancelToken;
     _setInflight(targetPage, true);

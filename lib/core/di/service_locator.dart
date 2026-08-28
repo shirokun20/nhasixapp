@@ -47,6 +47,7 @@ import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
 import 'package:nhasixapp/data/repositories/ai_provider_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/reader_image_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/glossary_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/ai/mosaic_builder.dart';
@@ -922,6 +923,14 @@ void _setupRepositories() {
         localDataSource: getIt<LocalDataSource>(),
       ));
 
+  // Reader Image Repository (download-first resolver)
+  getIt.registerLazySingleton<ReaderImageRepository>(() =>
+      ReaderImageRepositoryImpl(
+        logger: getIt<Logger>(),
+        dedup: getIt<RequestDeduplicationService>(),
+      ));
+
+
   // Settings Repository
   // Settings Repository
   getIt.registerLazySingleton<SettingsRepository>(() => SettingsRepositoryImpl(
@@ -1263,8 +1272,10 @@ void _setupCubits() {
       ));
 
   // ReaderPrefetchCubit - prefetch download engine
-  getIt.registerFactory<ReaderPrefetchCubit>(
-      () => ReaderPrefetchCubit(logger: getIt<Logger>()));
+  getIt.registerFactory<ReaderPrefetchCubit>(() => ReaderPrefetchCubit(
+        logger: getIt<Logger>(),
+        repository: getIt<ReaderImageRepository>(),
+      ));
 
   // OfflineSearchCubit - Offline content search (Singleton to persist state)
   getIt.registerLazySingleton<OfflineSearchCubit>(() => OfflineSearchCubit(

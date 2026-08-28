@@ -462,5 +462,57 @@ void main() {
         expect(tags, ['fantasy', 'action']);
       });
     });
+
+    group('Lazy-load placeholder resolution (mangaforfree _result.jpg)', () {
+      // Regression: reader chapter images on mangaforfree resolve to the
+      // image-optimizer placeholder `…_result.jpg` in `src`; the real chapter
+      // image lives in `data-src`. The parser must treat `_result.*` as a
+      // placeholder and fall back to `data-src` / lazy attrs so the reader
+      // actually renders (blank bug had been traced to this).
+      test('img[src ends with _result.jpg] with data-src resolves to real data-src URL',
+          () {
+        const html = '''
+          <div class="reading-content">
+            <img class="wp-manga-chapter-img"
+                 src="https://mangaforfree.net/wp-content/uploads/WP-manga/data/manga_6a7f029ee471e/953927f582fa0ff66cfe79285bedb324/Ideal-(1)_result.jpg"
+                 data-src="https://mangaforfree.net/wp-content/uploads/WP-manga/data/manga_6a7f029ee471e/953927f582fa0ff66cfe79285bedb324/Ideal-(1).jpg">
+          </div>
+        ''';
+        final doc = html_parser.parse(html);
+        const selector = FieldSelector(
+          selector: '.reading-content img',
+          type: 'css',
+          attribute: 'src',
+        );
+
+        final urls = parser.extractList(doc, selector);
+
+        expect(urls, hasLength(1));
+        expect(
+          urls.first,
+          'https://mangaforfree.net/wp-content/uploads/WP-manga/data/manga_6a7f029ee471e/953927f582fa0ff66cfe79285bedb324/Ideal-(1).jpg',
+          reason: '_result.jpg placeholder must fall back to the real data-src URL',
+        );
+        expect(urls.first.contains('_result.jpg'), isFalse);
+      });
+
+      test('real (non-placeholder) src is kept as-is', () {
+        const html = '''
+          <div class="reading-content">
+            <img src="https://cdn.example.com/pages/0001/page_1.jpg">
+          </div>
+        ''';
+        final doc = html_parser.parse(html);
+        const selector = FieldSelector(
+          selector: '.reading-content img',
+          type: 'css',
+          attribute: 'src',
+        );
+
+        final urls = parser.extractList(doc, selector);
+
+        expect(urls, ['https://cdn.example.com/pages/0001/page_1.jpg']);
+      });
+    });
   });
 }

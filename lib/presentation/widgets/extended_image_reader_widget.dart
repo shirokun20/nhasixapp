@@ -13,7 +13,9 @@ import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
 import '../../core/utils/header_inspector.dart';
+import '../../../domain/entities/page_image_result.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
+import '../../../domain/repositories/reader_image_repository.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
@@ -300,6 +302,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   final GlobalKey<ExtendedImageGestureState> _gestureKey = GlobalKey();
   Future<String?>? _ehentaiResolvedImageFuture;
   Future<Uint8List?>? _mangaFireResolvedImageFuture;
+  Future<PageImageResult?>? _pageResolveFuture;
 
   bool _isHeavyImage = false;
 
@@ -923,6 +926,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     if (sourceChanged || imageChanged) {
       _ehentaiResolveRetries = 0;
+      _pageResolveFuture = null;
       _prepareEhentaiResolveFuture();
       _prepareMangaFireImageFuture();
 
@@ -1273,7 +1277,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
           final bytes = snapshot.data;
           if (bytes == null || bytes.isEmpty) {
-            return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl,
+            return _buildResolvedOrNetworkImage(
+                context, rawUrl, url, fallbackUrl,
                 headers: headers);
           }
 
@@ -1282,8 +1287,126 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       );
     }
 
-    return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl,
+    return _buildResolvedOrNetworkImage(context, rawUrl, url, fallbackUrl,
         headers: headers);
+  }
+
+  /// Resolves the page image through the unified download-first repository
+  /// (same transport as downloads: Dio source + bypass + rate-limit) and
+  /// returns a local file path on success. Returns null when the repository is
+  /// unavailable or resolution failed, so the caller can fall back.
+  Future<PageImageResult?> _resolvePageToFile(String url) {
+    if (getIt.isRegistered<ReaderImageRepository>()) {
+      return getIt<ReaderImageRepository>().resolvePage(
+        url: url,
+        contentId: widget.contentId,
+        pageNumber: widget.pageNumber,
+        sourceId: widget.sourceId,
+        headers: widget.httpHeaders,
+      );
+    }
+    return Future.value(null);
+  }
+
+  /// Builds the reader page by resolving to a local file first (download-first).
+  /// Falls back to the legacy network path only when the repository is absent.
+  Widget _buildResolvedOrNetworkImage(
+    BuildContext context,
+    String rawUrl,
+    String url,
+    String? fallbackUrl, {
+    Map<String, String>? headers,
+  }) {
+    _pageResolveFuture ??= _resolvePageToFile(url);
+
+    return FutureBuilder<PageImageResult?>(
+      future: _pageResolveFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _buildLoadingIndicator(context);
+        }
+
+        final result = snapshot.data;
+        final String? path = result is ReadyFromDisk
+            ? result.path
+            : result is ReadyFresh
+                ? result.path
+                : null;
+        if (path != null) {
+          // Heavy/animated routing still runs from the local file (unchanged).
+          if (_shouldUseNativeAnimatedView(path)) {
+            return _buildNativeAnimatedWebP(path, headers);
+          }
+          return ExtendedImage.file(
+            File(path),
+            key: ValueKey(
+                'extended_image_${widget.contentId}_${widget.pageNumber}'),
+            fit: _getAdaptiveBoxFit(),
+            cacheWidth: _targetDecodeWidth(context, imageUrl: path),
+            mode: widget.enableZoom &&
+                    widget.readingMode != ReadingMode.continuousScroll
+                ? ExtendedImageMode.gesture
+                : ExtendedImageMode.none,
+            enableLoadState: true,
+            extendedImageGestureKey: _gestureKey,
+            initGestureConfigHandler: (state) {
+              return GestureConfig(
+                minScale: 0.5,
+                maxScale: 5.0,
+                animationMinScale: 0.4,
+                animationMaxScale: 5.5,
+                speed: 1.0,
+                inertialSpeed: 100.0,
+                initialScale: 1.0,
+                inPageView:
+                    widget.readingMode != ReadingMode.continuousScroll,
+                cacheGesture: false,
+                initialAlignment: InitialAlignment.center,
+              );
+            },
+            onDoubleTap: widget.enableZoom
+                ? (ExtendedImageGestureState g) {
+                    if (widget.onDoubleTapGesture != null) {
+                      widget.onDoubleTapGesture!();
+                    } else {
+                      _handleDoubleTap(g);
+                    }
+                  }
+                : null,
+            loadStateChanged: (state) {
+              switch (state.extendedImageLoadState) {
+                case LoadState.completed:
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final image = state.extendedImageInfo?.image;
+                    if (mounted && image != null) {
+                      widget.onImageLoaded?.call(
+                        widget.pageNumber,
+                        Size(
+                            image.width.toDouble(), image.height.toDouble()),
+                      );
+                    }
+                  });
+                  return _buildCompletedImage(
+                      context, state, imageUrl: path);
+                case LoadState.failed:
+                  return _buildErrorWidget(context,
+                      failedSource: path,
+                      onRetry: () {
+                        setState(() => _pageResolveFuture = null);
+                      });
+                case LoadState.loading:
+                  return _buildLoadingIndicator(context, state: state);
+              }
+            },
+          );
+        }
+
+        // Resolve failed or repo absent → keep the existing network path.
+        return _buildStandardNetworkImage(
+            context, rawUrl, url, fallbackUrl,
+            headers: headers);
+      },
+    );
   }
 
   Widget _buildStandardNetworkImage(

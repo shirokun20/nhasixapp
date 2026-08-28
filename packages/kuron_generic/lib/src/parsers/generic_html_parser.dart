@@ -18,9 +18,20 @@ const _kImageFallbackAttributes = [
   'src',
 ];
 
-// Placeholder paths served in `src` by image optimizers (e.g. mod_pagespeed)
-// instead of a data: URI — treat them as empty so the fallback chain runs.
-final _kPlaceholderSrcPattern = RegExp('^/pagespeed_static/');
+// Placeholder / lazy-load src values that image optimizers (mod_pagespeed,
+// WP-Manga "result" variant, etc.) serve in `src` in place of the real image.
+// When a value matches, we treat it as empty so the fallback chain runs and we
+// pick up the true image URL from `data-src`/`data-lazy-src`.
+//
+// Patterns:
+//   - `^/pagespeed_static/`  — mod_pagespeed placeholder bundle.
+//   - `…_result.<ext>`       — WP-Manga image-optimizer placeholder (e.g.
+//                               `Ideal-(1)_result.jpg` on mangaforfree). The
+//                               real chapter image lives in `data-src`.
+final _kPlaceholderSrcPattern = RegExp(
+  r'^(/pagespeed_static/|.*[-_]result\.(?:jpe?g|png|webp|gif)$)',
+  caseSensitive: false,
+);
 
 class GenericHtmlParser {
   final Logger _logger;
