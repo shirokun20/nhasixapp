@@ -12,6 +12,7 @@ import 'package:nhasixapp/core/utils/native_theme_helper.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
+import '../../core/services/local_image_preloader.dart';
 import '../../core/utils/header_inspector.dart';
 import '../../../domain/entities/page_image_result.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
@@ -417,126 +418,136 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // Async disk-cache check: if a cached .webp file ≥ threshold exists,
   // seed the static maps and rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
+    // 1. Check flutter_cache_manager (legacy cache location).
     getCachedImageFile(widget.imageUrl).then((file) async {
       if (!mounted) return;
-      if (file == null) return;
-      _enqueueHeaderInspect(file.path); // seed batch collector
-      final size = file.lengthSync();
-      final avifInfo = inspectAvifHeaderForRouting(file);
-      // Any ANIMATED AVIF must be converted to WebP — Flutter/Impeller cannot
-      // decode AVIF sequences, so the old `height > maxNativeAvifHeight` gate
-      // left short animated AVIFs (and non-`avis`-major-brand ones) broken.
-      final shouldConvertAvis = avifInfo.isAvif && avifInfo.isAvisBrand;
-
-      if (shouldConvertAvis) {
-        _logger.i(
-          '[NativeWebP] Animated avis detected. Converting to WebP '
-          'page=${widget.pageNumber} height=${avifInfo.height}',
-        );
-        final convertedPath = await KuronNative.instance.convertAvifToWebP(
-          inputPath: file.path,
-        );
-        if (convertedPath != null) {
-          final convertedFile = File(convertedPath);
-          final convertedExists = convertedFile.existsSync();
-          final convertedSize =
-              convertedExists ? convertedFile.lengthSync() : 0;
-          if (convertedExists && convertedSize > 0) {
-            _markHeavyNativeAnimatedImage(
-              cacheKey: widget.imageUrl,
-              cachedFilePath: convertedPath,
-              confirmedAnimatedWebP: true,
-            );
-            if (!mounted) return;
-            final webpInfo =
-                _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
-            final nativeSize =
-                (webpInfo.width != null && webpInfo.height != null)
-                    ? Size(
-                        webpInfo.width!.toDouble(),
-                        webpInfo.height!.toDouble(),
-                      )
-                    : (avifInfo.width != null && avifInfo.height != null)
-                        ? Size(
-                            avifInfo.width!.toDouble(),
-                            avifInfo.height!.toDouble(),
-                          )
-                        : null;
-            setState(() {
-              _isHeavyImage = true;
-              _isConfirmedAnimatedWebP = true;
-              _cachedFilePath = convertedPath;
-              _awaitingNativeCheck = false;
-              if (nativeSize != null) _nativeImageSize = nativeSize;
-            });
-            updateKeepAlive();
-            _maybeNotifyHeavyImageDetected();
-            if (nativeSize != null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
-                }
-              });
-            }
-            _logger.i(
-              '[NativeWebP] Tall avis converted to WebP '
-              'page=${widget.pageNumber} '
-              'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
-              'out=${(convertedSize / 1024 / 1024).toStringAsFixed(1)} MB',
-            );
-            return;
-          }
-        }
-        _logger.w(
-          '[NativeWebP] Tall avis conversion failed, keep existing fallback path '
-          'page=${widget.pageNumber}',
-        );
+      if (file != null) {
+        await _processAndMaybeConvertHeavyFile(file.path);
         return;
       }
-
-      final (:format, :width, :height) =
-          _inferNativeAnimatedCapableExtensionFromFileSync(file);
-      if (format != null) {
-        _markHeavyNativeAnimatedImage(
-          cacheKey: widget.imageUrl,
-          cachedFilePath: file.path,
-          confirmedAnimatedWebP: true,
-        );
-        if (!mounted) return;
-        final nativeSize = (width != null && height != null)
-            ? Size(width.toDouble(), height.toDouble())
-            : null;
-        setState(() {
-          _isHeavyImage = true;
-          _isConfirmedAnimatedWebP = true;
-          _cachedFilePath = file.path;
-          _awaitingNativeCheck = false;
-          if (nativeSize != null) _nativeImageSize = nativeSize;
-        });
-        updateKeepAlive();
-        _logger.i(
-          '[NativeWebP] Pre-check HIT: heavy $format from disk cache '
-          'page=${widget.pageNumber} '
-          'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
-        );
-        _maybeNotifyHeavyImageDetected();
-        if (nativeSize != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
-            }
-          });
+      // 2. File not in flutter_cache_manager — check canonical location
+      // (download-first resolver stores files there, not in cache_manager).
+      final localPath = await LocalImagePreloader.getLocalImagePath(
+        widget.contentId,
+        widget.pageNumber,
+      );
+      if (localPath != null && mounted) {
+        final f = File(localPath);
+        if (f.existsSync() && f.lengthSync() > 0) {
+          await _processAndMaybeConvertHeavyFile(localPath);
         }
       }
     }).catchError((Object e) {
       _logger.w('[NativeWebP] Pre-check error: $e');
     }).whenComplete(() {
-      // Always unblock the render, whether the file was found, not found,
-      // or not animated. ExtendedImage will take over for static AVIF.
       if (mounted && _awaitingNativeCheck) {
         setState(() => _awaitingNativeCheck = false);
       }
     });
+  }
+
+  /// Shared logic: inspect a file header, convert animated AVIF→WebP or
+  /// mark heavy animated WebP, then setState to route to native view.
+  Future<void> _processAndMaybeConvertHeavyFile(String filePath) async {
+    _enqueueHeaderInspect(filePath);
+    final file = File(filePath);
+    final size = file.lengthSync();
+    final avifInfo = inspectAvifHeaderForRouting(file);
+    final shouldConvertAvis = avifInfo.isAvif && avifInfo.isAvisBrand;
+
+    if (shouldConvertAvis) {
+      _logger.i(
+        '[NativeWebP] Animated avis detected. Converting to WebP '
+        'page=${widget.pageNumber} height=${avifInfo.height}',
+      );
+      final convertedPath = await KuronNative.instance.convertAvifToWebP(
+        inputPath: filePath,
+      );
+      if (convertedPath != null) {
+        final convertedFile = File(convertedPath);
+        if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
+          _markHeavyNativeAnimatedImage(
+            cacheKey: widget.imageUrl,
+            cachedFilePath: convertedPath,
+            confirmedAnimatedWebP: true,
+          );
+          if (!mounted) return;
+          final webpInfo =
+              _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
+          final nativeSize =
+              (webpInfo.width != null && webpInfo.height != null)
+                  ? Size(webpInfo.width!.toDouble(),
+                      webpInfo.height!.toDouble())
+                  : (avifInfo.width != null && avifInfo.height != null)
+                      ? Size(avifInfo.width!.toDouble(),
+                          avifInfo.height!.toDouble())
+                      : null;
+          setState(() {
+            _isHeavyImage = true;
+            _isConfirmedAnimatedWebP = true;
+            _cachedFilePath = convertedPath;
+            _awaitingNativeCheck = false;
+            if (nativeSize != null) _nativeImageSize = nativeSize;
+          });
+          updateKeepAlive();
+          _maybeNotifyHeavyImageDetected();
+          if (nativeSize != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+              }
+            });
+          }
+          _logger.i(
+            '[NativeWebP] Tall avis converted to WebP '
+            'page=${widget.pageNumber} '
+            'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
+            'out=${(convertedFile.lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB',
+          );
+          return;
+        }
+      }
+      _logger.w(
+        '[NativeWebP] Tall avis conversion failed, keep existing fallback path '
+        'page=${widget.pageNumber}',
+      );
+      return;
+    }
+
+    final (:format, :width, :height) =
+        _inferNativeAnimatedCapableExtensionFromFileSync(file);
+    if (format != null) {
+      _markHeavyNativeAnimatedImage(
+        cacheKey: widget.imageUrl,
+        cachedFilePath: filePath,
+        confirmedAnimatedWebP: true,
+      );
+      if (!mounted) return;
+      final nativeSize = (width != null && height != null)
+          ? Size(width.toDouble(), height.toDouble())
+          : null;
+      setState(() {
+        _isHeavyImage = true;
+        _isConfirmedAnimatedWebP = true;
+        _cachedFilePath = filePath;
+        _awaitingNativeCheck = false;
+        if (nativeSize != null) _nativeImageSize = nativeSize;
+      });
+      updateKeepAlive();
+      _logger.i(
+        '[NativeWebP] Pre-check HIT: heavy $format from disk cache '
+        'page=${widget.pageNumber} '
+        'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
+      );
+      _maybeNotifyHeavyImageDetected();
+      if (nativeSize != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+          }
+        });
+      }
+    }
   }
 
   bool _shouldConvertTallAvisLocalFile(String localPath) {
@@ -1333,6 +1344,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 ? result.path
                 : null;
         if (path != null) {
+          // If an AVIF→WebP conversion is in-flight, show loading instead
+          // of letting Flutter try to decode the animated AVIF (which fails).
+          if (_awaitingNativeCheck) {
+            return _buildLoadingIndicator(context);
+          }
+          // Fire-and-forget post-processing: animated detection + conversion.
+          // Only runs when _preCheckDiskCacheForHeavy did not already find
+          // the file (i.e. _awaitingNativeCheck is false and file is not yet
+          // marked as heavy). This prevents double conversion.
+          if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
+            _postProcessResolvedFile(path);
+          }
           // Heavy/animated routing still runs from the local file (unchanged).
           if (_shouldUseNativeAnimatedView(path)) {
             return _buildNativeAnimatedWebP(path, headers);
@@ -1407,6 +1430,127 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             headers: headers);
       },
     );
+  }
+
+  /// Post-process a resolved local file for animated AVIF→WebP conversion
+  /// and animated WebP detection. Mirrors _preCheckDiskCacheForHeavy logic.
+  /// Fire-and-forget (no await in build); updates state via setState.
+  Future<void> _postProcessResolvedFile(String path) async {
+    final file = File(path);
+    if (!file.existsSync() || _isHeavyImage) return;
+
+    _enqueueHeaderInspect(path);
+    final size = file.lengthSync();
+    final avifInfo = inspectAvifHeaderForRouting(file);
+    final shouldConvertAvis = avifInfo.isAvif && avifInfo.isAvisBrand;
+
+    if (shouldConvertAvis) {
+      // Animated AVIF: block rendering while converting (Flutter cannot
+      // decode animated AVIF). Only set the flag now — after confirming
+      // conversion is actually needed — so normal JPG/PNG/static AVIF
+      // files never hit the loading spinner.
+      if (mounted && !_awaitingNativeCheck) {
+        setState(() => _awaitingNativeCheck = true);
+      }
+      _logger.i(
+        '[NativeWebP] Animated avis detected (post-resolve). '
+        'Converting to WebP page=${widget.pageNumber} '
+        'height=${avifInfo.height}',
+      );
+      try {
+        final convertedPath = await KuronNative.instance.convertAvifToWebP(
+          inputPath: path,
+        );
+        if (convertedPath != null) {
+          final convertedFile = File(convertedPath);
+          if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
+            _markHeavyNativeAnimatedImage(
+              cacheKey: widget.imageUrl,
+              cachedFilePath: convertedPath,
+              confirmedAnimatedWebP: true,
+            );
+            final webpInfo =
+                _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
+            final nativeSize =
+                (webpInfo.width != null && webpInfo.height != null)
+                    ? Size(webpInfo.width!.toDouble(),
+                        webpInfo.height!.toDouble())
+                    : (avifInfo.width != null && avifInfo.height != null)
+                        ? Size(avifInfo.width!.toDouble(),
+                            avifInfo.height!.toDouble())
+                        : null;
+            if (mounted) {
+              setState(() {
+                _isHeavyImage = true;
+                _isConfirmedAnimatedWebP = true;
+                _cachedFilePath = convertedPath;
+                _awaitingNativeCheck = false;
+                if (nativeSize != null) _nativeImageSize = nativeSize;
+              });
+              updateKeepAlive();
+              _maybeNotifyHeavyImageDetected();
+              if (nativeSize != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    widget.onImageLoaded?.call(
+                        widget.pageNumber, nativeSize);
+                  }
+                });
+              }
+            }
+            _logger.i(
+              '[NativeWebP] Avis converted to WebP '
+              'page=${widget.pageNumber} '
+              'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
+              'out=${(convertedFile.lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB',
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        _logger.w('[NativeWebP] Avis conversion failed: $e');
+      }
+      // Conversion failed: unblock render so ExtendedImage can show error.
+      if (mounted && _awaitingNativeCheck) {
+        setState(() => _awaitingNativeCheck = false);
+      }
+      return;
+    }
+
+    // Non-AVIF or static AVIF: check for animated WebP (no conversion
+    // needed — ExtendedImage.file decodes WebP fine; native routing is
+    // only for performance/auto-pause).
+    final (:format, :width, :height) =
+        _inferNativeAnimatedCapableExtensionFromFileSync(file);
+    if (format != null) {
+      _markHeavyNativeAnimatedImage(
+        cacheKey: widget.imageUrl,
+        cachedFilePath: path,
+        confirmedAnimatedWebP: true,
+      );
+      final nativeSize = (width != null && height != null)
+          ? Size(width.toDouble(), height.toDouble())
+          : null;
+      if (mounted) {
+        setState(() {
+          _isHeavyImage = true;
+          _isConfirmedAnimatedWebP = true;
+          _cachedFilePath = path;
+          _awaitingNativeCheck = false;
+          if (nativeSize != null) _nativeImageSize = nativeSize;
+        });
+        updateKeepAlive();
+        _maybeNotifyHeavyImageDetected();
+        if (nativeSize != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+            }
+          });
+        }
+      }
+    }
+    // Normal file (JPG/PNG/static AVIF): no flag ever set, no spinner.
   }
 
   Widget _buildStandardNetworkImage(
