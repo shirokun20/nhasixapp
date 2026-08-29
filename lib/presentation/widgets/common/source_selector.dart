@@ -167,214 +167,225 @@ class SourceSelector extends StatelessWidget {
               return name.contains(normalizedQuery) ||
                   id.contains(normalizedQuery);
             }).toList();
+            final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
 
-            return SafeArea(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colorScheme.outline.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(99),
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: SafeArea(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: (MediaQuery.of(sheetContext).size.height -
+                            bottomInset) *
+                        0.75,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colorScheme.outline.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary
-                                      .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(
-                                      DesignTokens.radiusMd),
-                                ),
-                                child: Icon(
-                                  Icons.hub_outlined,
-                                  size: 16,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                l10n.sourceSelectorSelectSource,
-                                style: TextStyleConst.headingSmall.copyWith(
-                                  color: colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.sourceSelectorDescription,
-                            style: TextStyleConst.bodySmall.copyWith(
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color:
-                                    colorScheme.outline.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Row(
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: colorScheme.primary
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(
+                                        DesignTokens.radiusMd),
                                   ),
-                                  child: _buildSourceIconWidget(
-                                    iconPath: activeSource?.iconPath,
+                                  child: Icon(
+                                    Icons.hub_outlined,
+                                    size: 16,
                                     color: colorScheme.primary,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        activeSource?.displayName ??
-                                            l10n.sourceSelectorNoSourceSelected,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style:
-                                            TextStyleConst.bodyMedium.copyWith(
-                                          color: colorScheme.onSurface,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        activeSourceInfo == null
-                                            ? l10n.sourceSelectorActiveSource
-                                            : '${activeSourceInfo.idWithVersion} • ${l10n.sourceSelectorActiveSource}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style:
-                                            TextStyleConst.bodySmall.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
+                                Text(
+                                  l10n.sourceSelectorSelectSource,
+                                  style: TextStyleConst.headingSmall.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                ),
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 20,
-                                  color: colorScheme.primary,
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            onChanged: (value) {
-                              setSheetState(() {
-                                searchQuery = value;
-                              });
-                            },
-                            style: TextStyleConst.bodyMedium.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l10n.sourceSelectorSearchHint,
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                              filled: true,
-                              fillColor: colorScheme.surface,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                    DesignTokens.radiusLg),
-                                borderSide: BorderSide.none,
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.sourceSelectorDescription,
+                              style: TextStyleConst.bodySmall.copyWith(
+                                color: colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.9),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Flexible(
-                      child: filteredSources.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Text(
-                                  l10n.sourceSelectorNoResults,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyleConst.bodyMedium.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: colorScheme.outline
+                                      .withValues(alpha: 0.2),
                                 ),
                               ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              padding:
-                                  const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                              itemCount: filteredSources.length,
-                              itemBuilder: (context, index) {
-                                final source = filteredSources[index];
-                                final isActive =
-                                    source.id == state.activeSource?.id;
-                                final isUnderMaintenance =
-                                    sourceLoader.isUnderMaintenance(source.id);
-                                final sourceInfo =
-                                    resolveSourceConfigDisplayInfo(
-                                  remoteConfigService: remoteConfig,
-                                  sourceId: source.id,
-                                );
-
-                                return _buildSourceSheetItem(
-                                  context: sheetContext,
-                                  colorScheme: colorScheme,
-                                  source: source,
-                                  sourceInfo: sourceInfo,
-                                  isActive: isActive,
-                                  isUnderMaintenance: isUnderMaintenance,
-                                  underMaintenanceLabel:
-                                      l10n.sourceSelectorUnderMaintenance,
-                                  currentlySelectedLabel:
-                                      l10n.sourceSelectorCurrentlySelected,
-                                  tapToSwitchLabel:
-                                      l10n.sourceSelectorTapToSwitch,
-                                  onTap: isUnderMaintenance
-                                      ? null
-                                      : () => Navigator.of(sheetContext)
-                                          .pop(source.id),
-                                );
-                              },
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: _buildSourceIconWidget(
+                                      iconPath: activeSource?.iconPath,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          activeSource?.displayName ??
+                                              l10n.sourceSelectorNoSourceSelected,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyleConst.bodyMedium
+                                              .copyWith(
+                                            color: colorScheme.onSurface,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          activeSourceInfo == null
+                                              ? l10n.sourceSelectorActiveSource
+                                              : '${activeSourceInfo.idWithVersion} • ${l10n.sourceSelectorActiveSource}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style:
+                                              TextStyleConst.bodySmall.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 20,
+                                    color: colorScheme.primary,
+                                  ),
+                                ],
+                              ),
                             ),
-                    ),
-                  ],
+                            const SizedBox(height: 10),
+                            TextField(
+                              onChanged: (value) {
+                                setSheetState(() {
+                                  searchQuery = value;
+                                });
+                              },
+                              style: TextStyleConst.bodyMedium.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: l10n.sourceSelectorSearchHint,
+                                prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                filled: true,
+                                fillColor: colorScheme.surface,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      DesignTokens.radiusLg),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Flexible(
+                        child: filteredSources.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Text(
+                                    l10n.sourceSelectorNoResults,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyleConst.bodyMedium.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                padding:
+                                    const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                                itemCount: filteredSources.length,
+                                itemBuilder: (context, index) {
+                                  final source = filteredSources[index];
+                                  final isActive =
+                                      source.id == state.activeSource?.id;
+                                  final isUnderMaintenance = sourceLoader
+                                      .isUnderMaintenance(source.id);
+                                  final sourceInfo =
+                                      resolveSourceConfigDisplayInfo(
+                                    remoteConfigService: remoteConfig,
+                                    sourceId: source.id,
+                                  );
+
+                                  return _buildSourceSheetItem(
+                                    context: sheetContext,
+                                    colorScheme: colorScheme,
+                                    source: source,
+                                    sourceInfo: sourceInfo,
+                                    isActive: isActive,
+                                    isUnderMaintenance: isUnderMaintenance,
+                                    underMaintenanceLabel:
+                                        l10n.sourceSelectorUnderMaintenance,
+                                    currentlySelectedLabel:
+                                        l10n.sourceSelectorCurrentlySelected,
+                                    tapToSwitchLabel:
+                                        l10n.sourceSelectorTapToSwitch,
+                                    onTap: isUnderMaintenance
+                                        ? null
+                                        : () => Navigator.of(sheetContext)
+                                            .pop(source.id),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
