@@ -17,6 +17,19 @@ bool _isEhentaiSource(String? sourceId) {
   return sourceId.toLowerCase() == _ehentaiSourceId;
 }
 
+bool _hasPaginationConfig(String? sourceId) {
+  if (sourceId == null || sourceId.isEmpty) return false;
+  final rawConfig = getIt<RemoteConfigService>().getRawConfig(sourceId);
+  if (rawConfig == null) return false;
+  final scraper = rawConfig['scraper'];
+  if (scraper is! Map<String, dynamic>) return false;
+  final selectors = scraper['selectors'];
+  if (selectors is! Map<String, dynamic>) return false;
+  final reader = selectors['reader'];
+  if (reader is! Map<String, dynamic>) return false;
+  return reader.containsKey('pagination') && reader['pagination'] != null;
+}
+
 bool _isEhentaiChunkId(String chapterId) {
   return chapterId.startsWith(_ehentaiChunkPrefix);
 }

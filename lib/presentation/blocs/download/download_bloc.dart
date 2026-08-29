@@ -878,8 +878,9 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       final effectiveSourceId = updatedDownload.sourceId ?? content.sourceId;
-      final shouldFetchChapterImages =
-          content.imageUrls.isEmpty || _isEhentaiSource(effectiveSourceId);
+      final shouldFetchChapterImages = content.imageUrls.isEmpty ||
+          _isEhentaiSource(effectiveSourceId) ||
+          _hasPaginationConfig(effectiveSourceId);
 
       // Fallback chapter image logic
       if (shouldFetchChapterImages) {
