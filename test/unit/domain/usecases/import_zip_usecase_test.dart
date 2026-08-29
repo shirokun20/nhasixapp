@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kuron_native/kuron_native.dart';
+import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/app_constants.dart';
@@ -35,19 +36,23 @@ void main() {
         state: DownloadState.completed,
       ),
     );
+    SharedPreferences.setMockInitialValues({});
   });
 
   setUp(() async {
     kuronNative = MockKuronNative();
     userDataRepository = MockUserDataRepository();
     remoteConfigService = MockRemoteConfigService();
+
+    if (!getIt.isRegistered<Logger>()) {
+      getIt.registerSingleton<Logger>(Logger());
+    }
     useCase = ImportZipUseCase(
       kuronNative: kuronNative,
       userDataRepository: userDataRepository,
     );
     tempRoot = await Directory.systemTemp.createTemp('import-zip-usecase-test');
 
-    SharedPreferences.setMockInitialValues({});
     await StorageSettings.clearCustomRoot();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('custom_storage_root', tempRoot.path);

@@ -41,12 +41,18 @@ class EndOfChapterOverlay extends StatelessWidget {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(24),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
               // Icon
               Icon(
                 Icons.check_circle_outline,
@@ -155,7 +161,9 @@ class EndOfChapterOverlay extends StatelessWidget {
           ),
         ),
       ),
-    );
+      ),
+    ),
+  );
   }
 
   Widget _buildSupportSection(BuildContext context) {

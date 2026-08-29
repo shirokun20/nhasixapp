@@ -10,7 +10,7 @@ import 'package:logger/logger.dart';
 
 Future<void> main() async {
   final config = (jsonDecode(
-          File('../../informations/configs/sektedoujin-config.json')
+          File('informations/configs/sektedoujin-config.json')
               .readAsStringSync()) as Map)
       .cast<String, dynamic>();
   final baseUrl = config['baseUrl'] as String;

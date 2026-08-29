@@ -47,6 +47,10 @@ void main() {
       logger: logger,
     );
 
+    if (!getIt.isRegistered<Logger>()) {
+      getIt.registerSingleton<Logger>(logger);
+    }
+
     if (getIt.isRegistered<RemoteConfigService>()) {
       getIt.unregister<RemoteConfigService>();
     }
@@ -75,7 +79,6 @@ void main() {
         enableNotifications: any(named: 'enableNotifications'),
         backupFolderName: any(named: 'backupFolderName'),
         maxParallelImages: any(named: 'maxParallelImages'),
-        imageTimeoutMs: any(named: 'imageTimeoutMs'),
       ),
     ).thenAnswer((_) async => 'work-1');
   });

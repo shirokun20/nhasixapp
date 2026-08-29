@@ -87,11 +87,9 @@ class ReaderScreen extends StatefulWidget {
   @visibleForTesting
   static bool shouldSkipHeavyImageAutoSwitchForSource(String? sourceId) {
     final normalized = (sourceId ?? '').toLowerCase();
-    // ganti ke switch case if more sources need to be added in the future
     switch (normalized) {
       case 'manga18.club':
       case 'komiktap':
-      case 'ehentai':
         return true;
       default:
         return false;

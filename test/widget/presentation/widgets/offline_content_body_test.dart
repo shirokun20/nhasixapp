@@ -80,6 +80,10 @@ void main() {
     final registry = ContentSourceRegistry();
     final languageService = LanguageService(logger: Logger());
 
+    if (!getIt.isRegistered<Logger>()) {
+      getIt.registerSingleton<Logger>(Logger());
+    }
+
     when(() => mockContentSource.id).thenReturn('nhentai');
     when(
       () => mockContentSource.getImageDownloadHeaders(

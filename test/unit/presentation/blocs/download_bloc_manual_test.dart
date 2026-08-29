@@ -9,6 +9,7 @@ import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kuron_core/kuron_core.dart';
 
 // Corrected Imports based on error logs and file structure
 import 'package:nhasixapp/domain/usecases/downloads/download_content_usecase.dart';
@@ -133,9 +134,14 @@ void main() {
   SharedPreferences.setMockInitialValues({});
 
   setUp(() {
-    // Register MockRemoteConfigService for AppLimits usage
+    if (!GetIt.I.isRegistered<Logger>()) {
+      GetIt.I.registerSingleton<Logger>(MockLogger());
+    }
     if (!GetIt.I.isRegistered<RemoteConfigService>()) {
       GetIt.I.registerSingleton<RemoteConfigService>(MockRemoteConfigService());
+    }
+    if (!GetIt.I.isRegistered<ContentSourceRegistry>()) {
+      GetIt.I.registerSingleton<ContentSourceRegistry>(ContentSourceRegistry());
     }
   });
 
