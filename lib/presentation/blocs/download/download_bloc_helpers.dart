@@ -129,9 +129,13 @@ Future<int> _countDownloadedImages({
     if (directCount > 0) return directCount;
   }
 
-  final resolvedPaths = await DownloadStorageUtils.getDownloadedImagePaths(
-    contentId,
-    sourceId: sourceId,
-  );
-  return resolvedPaths.length;
+  try {
+    final resolvedPaths = await DownloadStorageUtils.getDownloadedImagePaths(
+      contentId,
+      sourceId: sourceId,
+    );
+    return resolvedPaths.length;
+  } catch (e) {
+    return 0;
+  }
 }

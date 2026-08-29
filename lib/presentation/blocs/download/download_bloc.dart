@@ -999,7 +999,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       );
       _activeTasks[event.contentId] = task;
 
-      DownloadManager().registerTask(task);
+      _downloadManager.registerTask(task);
 
       _updateDownloadGroupNotification();
 
@@ -1040,7 +1040,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
           _logger.e('❌ Download blocked: No custom storage root selected.');
 
           _activeTasks.remove(event.contentId);
-          DownloadManager().unregisterTask(event.contentId);
+          _downloadManager.unregisterTask(event.contentId);
 
           emit(DownloadError(
             message:
@@ -2121,7 +2121,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       task.cancel('Download cancelled by user');
       _activeTasks.remove(contentId);
 
-      DownloadManager().unregisterTask(contentId);
+            _downloadManager.unregisterTask(contentId);
       _logger.d('DownloadBloc: Cancelled task for $contentId');
     }
   }
@@ -2811,7 +2811,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       if (!task.isCancelled) {
         task.cancel('BLoC is closing');
       }
-      DownloadManager().unregisterTask(task.contentId);
+          _downloadManager.unregisterTask(task.contentId);
     }
     _activeTasks.clear();
 

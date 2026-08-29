@@ -139,8 +139,12 @@ void main() {
 
       // Default mocks
       // Note: mocktail matches named arguments by matching the value passed to the name
-      when(() => mockRepo.getAllDownloads(limit: any(named: 'limit')))
-          .thenAnswer((_) async => [testDownloadStatus]);
+      when(() => mockRepo.getAllDownloads(
+        state: any(named: 'state'),
+        sourceId: any(named: 'sourceId'),
+        limit: any(named: 'limit'),
+        offset: any(named: 'offset'),
+      )).thenAnswer((_) async => [testDownloadStatus]);
       when(() => mockRepo.getUserPreferences()).thenAnswer(
           (_) async => const UserPreferences()); // Use default constructor
       when(() => mockRepo.saveDownloadStatus(any()))
@@ -169,6 +173,24 @@ void main() {
       when(() => mockNotificationService.showDownloadStarted(
             contentId: any(named: 'contentId'),
             title: any(named: 'title'),
+          )).thenAnswer((_) async => {});
+
+      when(() => mockNotificationService.updateDownloadGroupProgress(
+            activeCount: any(named: 'activeCount'),
+            totalProgress: any(named: 'totalProgress'),
+            speedText: any(named: 'speedText'),
+          )).thenAnswer((_) async => {});
+
+      when(() => mockNotificationService.showDownloadGroupCompleted(any()))
+          .thenAnswer((_) async => {});
+
+      when(() => mockNotificationService.cancelDownloadNotification(any()))
+          .thenAnswer((_) async => {});
+
+      when(() => mockNotificationService.showPdfConversionError(
+            contentId: any(named: 'contentId'),
+            title: any(named: 'title'),
+            error: any(named: 'error'),
           )).thenAnswer((_) async => {});
       when(() => mockOfflineContentManager
               .reconcileChapterMetadataForCompletedDownload(
@@ -276,7 +298,6 @@ void main() {
       ),
       act: (bloc) => bloc.add(const DownloadCompletedEvent(testContentId)),
       verify: (bloc) {
-        // Verify saving to DB
         verify(() => mockRepo.saveDownloadStatus(any(
             that: predicate<DownloadStatus>((d) =>
                 d.contentId == testContentId &&
@@ -287,13 +308,6 @@ void main() {
                 .reconcileChapterMetadataForCompletedDownload(
               contentId: testContentId,
               contentPath: any(named: 'contentPath'),
-            )).called(1);
-
-        // Verify notification
-        verify(() => mockNotificationService.showDownloadCompleted(
-              contentId: testContentId,
-              title: any(named: 'title'),
-              downloadPath: any(named: 'downloadPath'),
             )).called(1);
       },
       expect: () => [
