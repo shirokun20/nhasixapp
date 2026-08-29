@@ -2142,6 +2142,121 @@ class GenericScraperAdapter implements GenericAdapter {
         }
       }
 
+      // ── Paginated detail galleries (WP <!--nextpage--> / ?page=) ──
+      // e.g. misskon /{id}/2/, xiutaku ?page=2, beauty3600000 /2/
+      // Config: reader.pagination.next = CSS selector for pagination links, maxPages guard.
+      // Aggregates images from all sub-pages when selector present and first page had images.
+      final paginationCfg = readerConfig['pagination'] as Map<String, dynamic>?;
+      if (paginationCfg != null && imageUrls.isNotEmpty) {
+        final pagNextSel = (paginationCfg['next'] as String?)?.trim();
+        final maxPagesRaw = paginationCfg['maxPages'];
+        final maxPages = maxPagesRaw is int
+            ? maxPagesRaw
+            : int.tryParse(maxPagesRaw?.toString() ?? '') ?? 8;
+        if (pagNextSel != null && pagNextSel.isNotEmpty) {
+          try {
+            // Build selector for image extraction on sub-pages (same as above with container prefix)
+            FieldSelector? pagImageSel;
+            final pagImagesDef = readerConfig['images'];
+            if (pagImagesDef != null) {
+              final pagDefMap = _toDefMap(pagImagesDef);
+              if (pagDefMap != null) {
+                var s = _fieldDefToSelector(pagDefMap);
+                final cSel = (readerConfig['container'] as String?)?.trim();
+                if (s != null &&
+                    pagDefMap['regex'] == null &&
+                    cSel != null &&
+                    cSel.isNotEmpty &&
+                    !s.selector.startsWith(cSel)) {
+                  s = FieldSelector(
+                    selector: '$cSel ${s.selector}',
+                    attribute: s.attribute,
+                    type: s.type,
+                    regex: s.regex,
+                    fallback: s.fallback,
+                  );
+                }
+                pagImageSel = s;
+              }
+            }
+            if (pagImageSel != null) {
+              final visited = <String>{workingUrl};
+              final pagEls = _parser.selectAll(workingDoc, pagNextSel);
+              final pendingUrls = <String>[];
+              for (final el in pagEls) {
+                final href = (el.attributes['href'] ?? '').trim();
+                if (href.isEmpty || href == '#') continue;
+                final resolved = Uri.parse(workingUrl).resolve(href).toString();
+                if (!visited.contains(resolved) &&
+                    !pendingUrls.contains(resolved)) {
+                  pendingUrls.add(resolved);
+                }
+              }
+              // respect maxPages (first page counts as 1)
+              final toFetch = pendingUrls.take(maxPages - 1).toList();
+              // fetch each sub-page sequentially (respects rate limit via _executeRequest)
+              for (final extraUrl in toFetch) {
+                if (visited.length >= maxPages) break;
+                try {
+                  final extraResp = await _executeRequest<Response<String>>(
+                    () => _dio.get<String>(
+                      extraUrl,
+                      options: Options(
+                        responseType: ResponseType.plain,
+                        headers: _resolveRequestHeaders(
+                          rawConfig,
+                          fallbackReferer: extraUrl,
+                        ),
+                      ),
+                    ),
+                  );
+                  final extraHtml = extraResp.data ?? '';
+                  if (extraHtml.isEmpty) continue;
+                  final extraDoc = _parser.parse(extraHtml);
+                  final extraImages =
+                      _parser.extractList(extraDoc, pagImageSel);
+                  if (extraImages.isNotEmpty) {
+                    imageUrls.addAll(extraImages);
+                  }
+                  visited.add(extraUrl);
+                  // discover further pagination from this page if truncated (e.g. 1..3 but actual 5)
+                  if (toFetch.length < maxPages - 1) {
+                    final furtherEls = _parser.selectAll(extraDoc, pagNextSel);
+                    for (final el in furtherEls) {
+                      final href = (el.attributes['href'] ?? '').trim();
+                      if (href.isEmpty) continue;
+                      final resolved =
+                          Uri.parse(extraUrl).resolve(href).toString();
+                      if (!visited.contains(resolved) &&
+                          !pendingUrls.contains(resolved) &&
+                          !toFetch.contains(resolved) &&
+                          visited.length + toFetch.length < maxPages) {
+                        toFetch.add(resolved);
+                      }
+                    }
+                  }
+                } catch (e) {
+                  _logger.w(
+                    '$_sourceId reader pagination fetch failed $extraUrl',
+                    error: e,
+                  );
+                }
+              }
+              if (toFetch.isNotEmpty) {
+                // dedup preserve order
+                final seen = <String>{};
+                imageUrls = imageUrls.where((u) => seen.add(u)).toList();
+                _logger.i(
+                  '$_sourceId reader pagination: aggregated ${imageUrls.length} images from ${visited.length} pages (first + ${toFetch.length} sub-pages)',
+                );
+              }
+            }
+          } catch (e) {
+            _logger.w('$_sourceId reader pagination failed', error: e);
+          }
+        }
+      }
+
       if (imageUrls.isEmpty &&
           (readerConfig['cdnHost'] as String?)?.isNotEmpty == true) {
         imageUrls = _extractPreviewCdnImageUrls(workingHtmlContent);

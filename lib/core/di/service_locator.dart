@@ -136,6 +136,7 @@ import 'package:nhasixapp/core/services/request_deduplication_service.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/image_cache_service.dart';
 import 'package:nhasixapp/core/services/memory_budget_coordinator.dart';
+import 'package:nhasixapp/core/services/header_inspector_service.dart';
 import 'package:nhasixapp/core/services/image_metadata_service.dart';
 import 'package:nhasixapp/core/services/export_service.dart';
 import 'package:nhasixapp/core/services/legal_content_service.dart';
@@ -327,6 +328,10 @@ void _setupServices() {
   // Memory Budget Coordinator - Device-aware resource governor
   getIt.registerLazySingleton<MemoryBudgetCoordinator>(
       () => MemoryBudgetCoordinator());
+
+  // Header Inspector Service - centralized dedup + cache for file header inspect
+  getIt.registerLazySingleton<HeaderInspectorService>(
+      () => HeaderInspectorService());
 
   // Global reader-active notifier — used by coordinator + DownloadManager
   getIt.registerLazySingleton<ValueNotifier<bool>>(

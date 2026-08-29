@@ -141,10 +141,12 @@ class _ReaderScreenState extends State<ReaderScreen>
   DateTime _lastHeavyOpsAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   // 🚀 OPTIMIZATION: Frame-aligned decode throttle
-  // Queues prefetch decode requests and processes max 2 per frame tick.
+  // Queues prefetch decode requests and processes max 2 per frame tick (1 for heavy sources).
   // Visible page decodes bypass the queue (priority path).
   final List<void Function()> _decodeQueue = [];
   static const int _maxDecodePerFrame = 2;
+  static const int _maxDecodePerFrameHeavy = 1;
+  int _currentMaxDecodePerFrame = _maxDecodePerFrame;
   bool _isDecodeTickScheduled = false;
 
   // Debounce mechanism to prevent onPageChanged loops
@@ -848,7 +850,9 @@ class _ReaderScreenState extends State<ReaderScreen>
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       _isDecodeTickScheduled = false;
       if (!mounted || _scopeToken.isCancelled || _decodeQueue.isEmpty) return;
-      for (int i = 0; i < _maxDecodePerFrame && _decodeQueue.isNotEmpty; i++) {
+      for (int i = 0;
+          i < _currentMaxDecodePerFrame && _decodeQueue.isNotEmpty;
+          i++) {
         if (_scopeToken.isCancelled || !mounted) break;
         final task = _decodeQueue.removeAt(0);
         task();
@@ -898,6 +902,10 @@ class _ReaderScreenState extends State<ReaderScreen>
     // Offline → ExtendedFileImageProvider from LocalImagePreloader's file.
     // Both wrapped in ExtendedResizeImage — same wrapper ExtendedImage
     // (network/file) uses internally via cacheWidth param.
+    // Throttle: heavy source (ehentai/hentainexus) → 1/frame, normal → 2/frame for N±1
+    final isHeavySource = _isHeavyPrefetchSource(sourceId);
+    _currentMaxDecodePerFrame =
+        isHeavySource ? _maxDecodePerFrameHeavy : _maxDecodePerFrame;
     final decodeWidth = (MediaQuery.of(context).size.width *
             MediaQuery.of(context).devicePixelRatio)
         .round();

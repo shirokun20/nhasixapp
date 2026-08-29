@@ -14,6 +14,7 @@ import '../../core/utils/offline_content_manager.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
 import '../../core/services/local_image_preloader.dart';
 import '../../core/utils/header_inspector.dart';
+import '../../core/services/header_inspector_service.dart';
 import '../../../domain/entities/page_image_result.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
 import '../../../domain/repositories/reader_image_repository.dart';
@@ -250,44 +251,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  static final List<String> _pendingHeaderPaths = <String>[];
-  static bool _headerBatchInProgress = false;
-  static const int _headerBatchThreshold = 10;
-  static Future<Map<String, FileHeaderResult>>? _headerBatchFuture;
-
-  // Enqueue a file path for header inspection.
-  static Future<FileHeaderResult> _enqueueHeaderInspect(String path) async {
-    if (_pendingHeaderPaths.isEmpty && _headerBatchFuture == null) {
-      return inspectFileHeader(path);
-    }
-
-    _pendingHeaderPaths.add(path);
-    if (_pendingHeaderPaths.length >= _headerBatchThreshold &&
-        !_headerBatchInProgress) {
-      _flushHeaderBatch();
-    }
-
-    if (_headerBatchFuture != null) {
-      final results = await _headerBatchFuture!;
-      if (results.containsKey(path)) return results[path]!;
-    }
-    return inspectFileHeader(path);
-  }
-
-  static void _flushHeaderBatch() {
-    if (_pendingHeaderPaths.isEmpty) return;
-    _headerBatchInProgress = true;
-    final batch = List<String>.from(_pendingHeaderPaths);
-    _pendingHeaderPaths.clear();
-    _headerBatchFuture = compute(batchInspectHeaders, batch).then((results) {
-      _headerBatchInProgress = false;
-      _headerBatchFuture = null;
-      final map = <String, FileHeaderResult>{};
-      for (int i = 0; i < batch.length && i < results.length; i++) {
-        map[batch[i]] = results[i];
+  // Centralized dedup via HeaderInspectorService (singleton).
+  // Widget no longer keeps per-state pending batch — single service owns dedup+cache.
+  // ponytail: service uses compute(inspectFileHeader) + inFlight map, bounded cache 100
+  static Future<FileHeaderResult> _enqueueHeaderInspect(String path) {
+    try {
+      if (getIt.isRegistered<HeaderInspectorService>()) {
+        return getIt<HeaderInspectorService>().inspect(path);
       }
-      return map;
-    });
+    } catch (_) {}
+    return Future.value(inspectFileHeader(path));
   }
 
   // Files ≥ 10 MB get a more aggressive native target width because the
