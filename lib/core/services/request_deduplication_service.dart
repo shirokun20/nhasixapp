@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 
@@ -16,6 +17,7 @@ class RequestDeduplicationService {
     String requestKey,
     Future<T> Function() requestFunction, {
     Duration? timeout,
+    CancelToken? cancelToken,
   }) async {
     final timeoutDuration = timeout ?? _defaultTimeout;
 
@@ -31,10 +33,35 @@ class RequestDeduplicationService {
             .w('Request $requestKey timed out, removing from pending requests');
         _pendingRequests.remove(requestKey);
       } else {
+        // Propagate caller cancel to shared future
+        if (cancelToken != null) {
+          cancelToken.whenCancel.then((_) {
+            if (!pendingRequest.completer.isCompleted) {
+              pendingRequest.completer.completeError(
+                DioException(
+                  requestOptions: RequestOptions(path: requestKey),
+                  type: DioExceptionType.cancel,
+                  error: 'Cancelled via dedup waiter token',
+                ),
+              );
+              // Cancel the first-mover token if we track it
+              pendingRequest.cancelToken?.cancel('Cancelled via waiter');
+            }
+          });
+        }
         _logger.d(
             'Request $requestKey already in progress, reusing existing future');
         return pendingRequest.completer.future;
       }
+    }
+
+    // Early exit if caller already cancelled
+    if (cancelToken?.isCancelled == true) {
+      throw DioException(
+        requestOptions: RequestOptions(path: requestKey),
+        type: DioExceptionType.cancel,
+        error: 'Cancelled before start',
+      );
     }
 
     // Create new request
@@ -44,17 +71,31 @@ class RequestDeduplicationService {
     _pendingRequests[requestKey] = _PendingRequest<T>(
       completer: completer,
       startTime: startTime,
+      cancelToken: cancelToken,
     );
+
+    // Wire cancelToken → fail the shared completer
+    cancelToken?.whenCancel.then((_) {
+      if (!completer.isCompleted) {
+        completer.completeError(
+          DioException(
+            requestOptions: RequestOptions(path: requestKey),
+            type: DioExceptionType.cancel,
+            error: 'Cancelled',
+          ),
+        );
+      }
+    });
 
     try {
       _logger.d('Starting new request: $requestKey');
       final result = await requestFunction().timeout(timeoutDuration);
 
-      completer.complete(result);
+      if (!completer.isCompleted) completer.complete(result);
       _logger.d('Request $requestKey completed successfully');
     } catch (error, stackTrace) {
       _logger.w('Request $requestKey failed: $error');
-      completer.completeError(error, stackTrace);
+      if (!completer.isCompleted) completer.completeError(error, stackTrace);
     } finally {
       // Clean up the pending request
       _pendingRequests.remove(requestKey);
@@ -135,8 +176,10 @@ class _PendingRequest<T> {
   _PendingRequest({
     required this.completer,
     required this.startTime,
+    this.cancelToken,
   });
 
   final Completer<T> completer;
   final DateTime startTime;
+  final CancelToken? cancelToken;
 }

@@ -32,8 +32,7 @@ class ReaderPrefetchState extends BaseCubitState {
   final int totalPrefetched;
 
   @override
-  List<Object?> get props =>
-      [prefetchedPages, inflightPages, totalPrefetched];
+  List<Object?> get props => [prefetchedPages, inflightPages, totalPrefetched];
 
   ReaderPrefetchState _mutate({
     Set<int>? prefetchedPages,
@@ -85,17 +84,21 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
     String? sourceId,
     required String contentId,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
     if (imageUrls.isEmpty) return;
 
     if (_isHeavySource(sourceId)) {
       // Only back-prefetch (recent pages) for heavy sources — forward would
       // saturate GPU.
-      await _prefetchBack(currentPage, imageUrls, contentId, headers);
+      await _prefetchBack(
+          currentPage, imageUrls, contentId, headers, sourceId, cancelToken);
     } else {
       await Future.wait([
-        _prefetchBack(currentPage, imageUrls, contentId, headers),
-        _prefetchForward(currentPage, imageUrls, imageMetadata, sourceId, contentId, headers),
+        _prefetchBack(
+            currentPage, imageUrls, contentId, headers, sourceId, cancelToken),
+        _prefetchForward(currentPage, imageUrls, imageMetadata, sourceId,
+            contentId, headers, cancelToken),
       ]);
     }
   }
@@ -110,15 +113,19 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
   }
 
   Future<void> _prefetchBack(
-      int currentPage, List<String> imageUrls, String contentId,
-      Map<String, String>? headers,
-      [String? sourceId]) async {
+    int currentPage,
+    List<String> imageUrls,
+    String contentId,
+    Map<String, String>? headers, [
+    String? sourceId,
+    CancelToken? cancelToken,
+  ]) async {
     final futures = <Future<void>>[];
     for (int i = 1; i <= _prefetchBackCount; i++) {
       final targetPage = currentPage - i;
       if (targetPage >= 1 && !_isPrefetched(targetPage)) {
-        futures.add(_downloadPage(
-            targetPage, imageUrls[targetPage - 1], contentId, headers, sourceId));
+        futures.add(_downloadPage(targetPage, imageUrls[targetPage - 1],
+            contentId, headers, sourceId, cancelToken));
       }
     }
     await Future.wait(futures);
@@ -131,6 +138,7 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
     String? sourceId,
     String contentId,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   ) async {
     final futures = <Future<void>>[];
     for (int i = 1; i <= _prefetchCount; i++) {
@@ -155,17 +163,19 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
           continue; // allow retry next tick (don't mark prefetched)
         }
       }
-      if (!_isHttp(imageUrl) && (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
+      if (!_isHttp(imageUrl) &&
+          (imageUrl.startsWith('/') || imageUrl.startsWith('file://'))) {
         continue;
       }
-      futures.add(
-          _downloadPage(targetPage, imageUrl, contentId, headers, sourceId));
+      futures.add(_downloadPage(
+          targetPage, imageUrl, contentId, headers, sourceId, cancelToken));
     }
     await Future.wait(futures);
   }
 
   Future<void> _downloadPage(int targetPage, String imageUrl, String contentId,
-      Map<String, String>? headers, [String? sourceId]) async {
+      Map<String, String>? headers,
+      [String? sourceId, CancelToken? cancelToken]) async {
     if (!_isHttp(imageUrl)) {
       // non-http (local/file) — nothing to download; mark prefetched.
       _markPrefetched(targetPage);
@@ -176,12 +186,17 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
     // resolver when present.
     final repo = repository;
     if (repo != null) {
+      if (cancelToken?.isCancelled == true) {
+        _unmarkPrefetched(targetPage);
+        return;
+      }
       final result = await repo.resolvePage(
         url: imageUrl,
         contentId: contentId,
         pageNumber: targetPage,
         sourceId: sourceId,
         headers: headers,
+        cancelToken: cancelToken,
       );
       if (result is ReadyFromDisk || result is ReadyFresh) {
         _markPrefetched(targetPage);
@@ -196,8 +211,8 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
     }
 
     // Legacy Dio fallback (only when no repository injected).
-    final cancelToken = CancelToken();
-    _cancelTokens[targetPage] = cancelToken;
+    final legacyToken = CancelToken();
+    _cancelTokens[targetPage] = legacyToken;
     _setInflight(targetPage, true);
     try {
       await LocalImagePreloader.downloadAndCacheImage(
@@ -205,7 +220,7 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
         contentId,
         targetPage,
         headers: headers,
-        cancelToken: cancelToken,
+        cancelToken: legacyToken,
       );
       _markPrefetched(targetPage);
     } catch (e) {
@@ -232,7 +247,8 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
   void _unmarkPrefetched(int page) {
     emit(state._mutate(
       prefetchedPages: {...state.prefetchedPages}..remove(page),
-      totalPrefetched: state.totalPrefetched > 0 ? state.totalPrefetched - 1 : 0,
+      totalPrefetched:
+          state.totalPrefetched > 0 ? state.totalPrefetched - 1 : 0,
     ));
   }
 
@@ -246,7 +262,8 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
     emit(state._mutate(inflightPages: next));
   }
 
-  bool _isHttp(String url) => url.startsWith('http://') || url.startsWith('https://');
+  bool _isHttp(String url) =>
+      url.startsWith('http://') || url.startsWith('https://');
 
   bool _isEhentaiReaderPageUrl(String url, String? sourceId) {
     // EHentai /s/... reader pages — resolved lazily. Only meaningful for that
@@ -260,7 +277,10 @@ class ReaderPrefetchCubit extends BaseCubit<ReaderPrefetchState> {
 
   /// Cancel all in-flight downloads (e.g. on dispose). Cancelled pages are
   /// cleared from bookkeeping so they can be re-attempted next time.
-  void cancelAll() {
+  void cancelAll([CancelToken? scopeToken]) {
+    if (scopeToken != null && !scopeToken.isCancelled) {
+      scopeToken.cancel('Reader dispose');
+    }
     for (final token in _cancelTokens.values) {
       if (!token.isCancelled) token.cancel();
     }

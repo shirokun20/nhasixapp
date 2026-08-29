@@ -155,32 +155,38 @@ class ReaderCubit extends Cubit<ReaderState> {
       _parentContent = parentContent;
       _allChapters = allChapters;
 
-      // Cold-start bridge: seed static bypass header caches from persisted
-      // cookie jars so image requests carry a still-valid cf_clearance even
-      // when the reader is the first screen after an app restart.
-      // Iterates ALL loaded sources — not just hardcoded list — so any source
-      // with bypass enabled (network.requiresBypass || cloudflare.bypassEnabled)
-      // gets its clearance seeded automatically.
-      try {
-        final configService = getIt<RemoteConfigService>();
-        for (final cfg in configService.getAllSourceConfigs()) {
-          final sourceId = cfg.source;
-          final raw = configService.getRawConfig(sourceId);
-          if (raw == null) continue;
-          final network = raw['network'] as Map<String, dynamic>?;
-          if (network == null) continue;
-          final cf = network['cloudflare'] as Map<String, dynamic>?;
-          final requiresBypass = network['requiresBypass'] == true;
-          final cloudflareBypass = cf?['bypassEnabled'] == true;
-          if (!requiresBypass && !cloudflareBypass) continue;
-          if (getIt.isRegistered<WebViewSessionAdapter>(
-              instanceName: 'cf_$sourceId')) {
-            await getIt<WebViewSessionAdapter>(instanceName: 'cf_$sourceId')
-                .seedBypassHeaderCacheFromJar();
+      // Fast-path: preloaded already has imageUrls → defer heavy sync work.
+      // Spec reader-coldstart-fastpath: emit loaded without awaiting offline scan + bypass seeding.
+      final fastPathEligible =
+          preloadedContent != null && preloadedContent.imageUrls.isNotEmpty;
+      if (fastPathEligible) {
+        unawaited(_backgroundSeedBypassCaches());
+      } else {
+        // Cold-start bridge: seed static bypass header caches from persisted
+        // cookie jars so image requests carry a still-valid cf_clearance even
+        // when the reader is the first screen after an app restart.
+        // Only for non-fast-path (fast-path does it in background).
+        try {
+          final configService = getIt<RemoteConfigService>();
+          for (final cfg in configService.getAllSourceConfigs()) {
+            final sourceId = cfg.source;
+            final raw = configService.getRawConfig(sourceId);
+            if (raw == null) continue;
+            final network = raw['network'] as Map<String, dynamic>?;
+            if (network == null) continue;
+            final cf = network['cloudflare'] as Map<String, dynamic>?;
+            final requiresBypass = network['requiresBypass'] == true;
+            final cloudflareBypass = cf?['bypassEnabled'] == true;
+            if (!requiresBypass && !cloudflareBypass) continue;
+            if (getIt.isRegistered<WebViewSessionAdapter>(
+                instanceName: 'cf_$sourceId')) {
+              await getIt<WebViewSessionAdapter>(instanceName: 'cf_$sourceId')
+                  .seedBypassHeaderCacheFromJar();
+            }
           }
+        } catch (_) {
+          // Best-effort — bypass flow repopulates caches on first challenge.
         }
-      } catch (_) {
-        // Best-effort — bypass flow repopulates caches on first challenge.
       }
 
       // 🔍 DEBUG LOGGING
@@ -212,8 +218,12 @@ class ReaderCubit extends Cubit<ReaderState> {
       final isCrotpediaChapter =
           _isCrotpediaChapterId(contentId, sourceId: sourceHint);
 
-      final isOfflineAvailable =
-          await offlineContentManager.isContentAvailableOffline(contentId);
+      // Fast-path: skip offline scan, assume remote for now, background check updates badge later
+      bool? isOfflineAvailable;
+      if (!fastPathEligible) {
+        isOfflineAvailable =
+            await offlineContentManager.isContentAvailableOffline(contentId);
+      }
 
       final localResults = await Future.wait([
         _loadReaderSettingsEntityOptimized(),
@@ -255,7 +265,7 @@ class ReaderCubit extends Cubit<ReaderState> {
           final hasRemoteUrls =
               preloadedContent.imageUrls.any((url) => url.startsWith('http'));
 
-          if (isOfflineAvailable && hasRemoteUrls) {
+          if (isOfflineAvailable == true && hasRemoteUrls) {
             _logger.i(
                 '💾 Strategy A2: Found offline available, loading from local storage');
             content =
@@ -266,6 +276,10 @@ class ReaderCubit extends Cubit<ReaderState> {
                 '✅ Strategy A3: Using preloaded content with remote URLs: $contentId');
             content = preloadedContent;
             isOfflineMode = !isConnected;
+            // Fast-path: schedule background offline check to update badge without blocking
+            if (fastPathEligible && isOfflineAvailable == null) {
+              unawaited(_backgroundOfflineCheck(contentId));
+            }
           }
         }
       }
@@ -277,7 +291,7 @@ class ReaderCubit extends Cubit<ReaderState> {
             '✅ Strategy A4: Using preloaded no-chapters content shell: $contentId');
         content = preloadedContent;
         isOfflineMode = !isConnected;
-        if (isOfflineAvailable) {
+        if (isOfflineAvailable == true) {
           final offlineContent =
               await offlineContentManager.createOfflineContent(contentId);
           if (offlineContent != null) {
@@ -288,7 +302,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       }
 
       // Strategy B: Offline Content
-      if (content == null && isOfflineAvailable) {
+      if (content == null && isOfflineAvailable == true) {
         _logger.i(
             '💾 Strategy B: Loading content from offline storage: $contentId');
         content = await offlineContentManager.createOfflineContent(contentId);
@@ -436,6 +450,40 @@ class ReaderCubit extends Cubit<ReaderState> {
             .copyWithMessage('failedLoadContentError'));
       }
     }
+  }
+
+  Future<void> _backgroundSeedBypassCaches() async {
+    try {
+      final configService = getIt<RemoteConfigService>();
+      for (final cfg in configService.getAllSourceConfigs()) {
+        final sourceId = cfg.source;
+        final raw = configService.getRawConfig(sourceId);
+        if (raw == null) continue;
+        final network = raw['network'] as Map<String, dynamic>?;
+        if (network == null) continue;
+        final cf = network['cloudflare'] as Map<String, dynamic>?;
+        final requiresBypass = network['requiresBypass'] == true;
+        final cloudflareBypass = cf?['bypassEnabled'] == true;
+        if (!requiresBypass && !cloudflareBypass) continue;
+        if (getIt.isRegistered<WebViewSessionAdapter>(
+            instanceName: 'cf_$sourceId')) {
+          await getIt<WebViewSessionAdapter>(instanceName: 'cf_$sourceId')
+              .seedBypassHeaderCacheFromJar();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _backgroundOfflineCheck(String contentId) async {
+    try {
+      final available =
+          await offlineContentManager.isContentAvailableOffline(contentId);
+      if (available && !isClosed && state.content?.id == contentId) {
+        // Update badge only, don't reload content while reading
+        _logger
+            .i('🔄 Background offline check: $contentId is offline available');
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchOnlineDetailsInBackground(String contentId) async {

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
@@ -33,6 +34,7 @@ void main() {
         required String contentId,
         required int pageNumber,
         Map<String, String>? headers,
+        CancelToken? cancelToken,
       }) {
         return download(url, contentId, pageNumber);
       },

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path/path.dart' as p;
@@ -16,6 +17,7 @@ typedef ReaderImageNetworkDownload = Future<String?> Function({
   required String contentId,
   required int pageNumber,
   Map<String, String>? headers,
+  CancelToken? cancelToken,
 });
 
 /// Signature for a legacy-cache lookup that returns a file path or null.
@@ -29,12 +31,14 @@ Future<String?> _defaultStreamingDownload({
   required String contentId,
   required int pageNumber,
   Map<String, String>? headers,
+  CancelToken? cancelToken,
 }) {
   return LocalImagePreloader.downloadAndCacheImageStreaming(
     url,
     contentId,
     pageNumber,
     headers: headers,
+    cancelToken: cancelToken,
   );
 }
 
@@ -47,6 +51,7 @@ Future<String?> _defaultLegacyLookup(String url) async {
   } catch (_) {}
   return null;
 }
+
 /// Download-first resolver for reader page images.
 ///
 /// Deterministic resolution order (mode-agnostic, no cross-session in-memory
@@ -78,7 +83,11 @@ class ReaderImageRepositoryImpl implements ReaderImageRepository {
     required int pageNumber,
     String? sourceId,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
+    if (cancelToken?.isCancelled == true) {
+      return FailedPage(reason: 'cancelled', originalUrl: url);
+    }
     // 0) The URL is already a local file path — nothing to resolve.
     if (!url.startsWith('http') &&
         (url.startsWith('/') || url.startsWith('file://'))) {
@@ -122,14 +131,17 @@ class ReaderImageRepositoryImpl implements ReaderImageRepository {
 
     // 3) Network download (deduped + streamed to canonical).
     final requestKey = 'pageimg:$url';
-    final deduped = _dedup.deduplicate<String?>(requestKey, () {
-      return _networkDownload(
+    final deduped = _dedup.deduplicate<String?>(
+      requestKey,
+      () => _networkDownload(
         url: url,
         contentId: contentId,
         pageNumber: pageNumber,
         headers: headers,
-      );
-    });
+        cancelToken: cancelToken,
+      ),
+      cancelToken: cancelToken,
+    );
 
     try {
       final path = await deduped.timeout(const Duration(seconds: 45));

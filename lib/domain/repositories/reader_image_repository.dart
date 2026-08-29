@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../entities/page_image_result.dart';
 
 /// Single resolver for reader page images (download-first).
@@ -23,5 +25,6 @@ abstract class ReaderImageRepository {
     required int pageNumber,
     String? sourceId,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   });
 }

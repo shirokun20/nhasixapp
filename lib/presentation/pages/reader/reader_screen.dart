@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'package:dio/dio.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:io';
 import 'dart:ui';
@@ -110,6 +111,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   late ScrollController _scrollController;
   late ReaderCubit _readerCubit;
   late ReaderPrefetchCubit _prefetchCubit;
+  final CancelToken _scopeToken = CancelToken();
 
   // Debouncing for scroll updates
   int _lastReportedPage = 1;
@@ -179,6 +181,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   Chapter? _preloadedCurrentChapter;
   String? _preloadedActiveChapterLanguage;
   bool _isPreloading = false;
+  bool _didInitRouteExtra = false;
 
   //  batch height updates during initial image load stampede.
   // 🏎️ Ticker for 120 FPS page indicator (vsync-aligned, not Timer)
@@ -221,8 +224,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _prefetchCubit = getIt<ReaderPrefetchCubit>();
     _pageTicker = createTicker(_onPageTick);
 
-    // 🚀 OPTIMIZATION: Initialize route extra
-    // This is handled in build() now.
+    // 🚀 OPTIMIZATION: Initialize route extra handled in didChangeDependencies (once)
 
     // Defer GoRouterState access until after widget is mounted (for any additional processing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -248,15 +250,24 @@ class _ReaderScreenState extends State<ReaderScreen>
     // _startPreloading();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitRouteExtra) {
+      _didInitRouteExtra = true;
+      _initializeFromRouteExtra();
+    }
+  }
+
   void _initializeFromRouteExtra() {
     if (_preloadedContent != null) return;
 
     final rawRouteExtra = GoRouterState.of(context).extra;
     final routeExtra = asReaderRouteExtra(rawRouteExtra);
 
-    // 🔍 DEBUG LOGGING - What did we receive from router?
-    _logger.i('📥 ReaderScreen._initializeFromRouteExtra - Received:');
-    _logger.i('  routeExtra type: ${rawRouteExtra.runtimeType}');
+    // Only log once (not on every build)
+    _logger.i(
+        '📥 ReaderScreen._initializeFromRouteExtra - Received: ${rawRouteExtra.runtimeType}');
 
     if (routeExtra != null) {
       _logger.i('  Map keys: ${routeExtra.keys.toList()}');
@@ -407,6 +418,7 @@ class _ReaderScreenState extends State<ReaderScreen>
         state.content!.imageUrls,
         state.imageMetadata,
         sourceId: state.content?.sourceId,
+        contentId: state.content!.id,
       );
     }
 
@@ -760,8 +772,10 @@ class _ReaderScreenState extends State<ReaderScreen>
     WidgetsBinding.instance.removeObserver(this);
     _flushReaderProgressBeforeDispose();
 
-    // Cancel all in-flight prefetch downloads
-    _prefetchCubit.cancelAll();
+    // Cancel all in-flight prefetch downloads (repo-path via scope token + legacy)
+    if (!_scopeToken.isCancelled) _scopeToken.cancel('Reader dispose');
+    _prefetchCubit.cancelAll(_scopeToken);
+    _heavyImageBudgetTimer?.cancel();
 
     // Clear pending decode queue so orphan precacheImage tasks stop
     _decodeQueue.clear();
@@ -833,12 +847,13 @@ class _ReaderScreenState extends State<ReaderScreen>
     _isDecodeTickScheduled = true;
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       _isDecodeTickScheduled = false;
-      if (!mounted || _decodeQueue.isEmpty) return;
+      if (!mounted || _scopeToken.isCancelled || _decodeQueue.isEmpty) return;
       for (int i = 0; i < _maxDecodePerFrame && _decodeQueue.isNotEmpty; i++) {
+        if (_scopeToken.isCancelled || !mounted) break;
         final task = _decodeQueue.removeAt(0);
         task();
       }
-      if (_decodeQueue.isNotEmpty) {
+      if (_decodeQueue.isNotEmpty && !_scopeToken.isCancelled && mounted) {
         _scheduleFrameDecode();
       }
     });
@@ -846,7 +861,7 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   void _prefetchImages(int currentPage, List<String> imageUrls,
       List<ImageMetadata>? imageMetadata,
-      {String? sourceId}) {
+      {String? sourceId, String? contentId}) {
     if (imageUrls.isEmpty) return;
 
     // detect fast scroll by page jump, not timer. If user moved
@@ -866,13 +881,16 @@ class _ReaderScreenState extends State<ReaderScreen>
     // Network download + bookkeeping lives in ReaderPrefetchCubit (testable,
     // survives widget rebuild). Widget keeps the BuildContext-bound decode
     // pre-cache below.
+    if (_scopeToken.isCancelled) return;
+    final effectiveContentId = contentId ?? widget.contentId;
     _prefetchCubit.prefetchImages(
       currentPage: currentPage,
       imageUrls: imageUrls,
       imageMetadata: imageMetadata,
       sourceId: sourceId,
       headers: prefetchHeaders,
-      contentId: widget.contentId,
+      contentId: effectiveContentId,
+      cancelToken: _scopeToken,
     );
 
     //  pre-decode adjacent pages into ImageCache at display width.
@@ -889,13 +907,14 @@ class _ReaderScreenState extends State<ReaderScreen>
         final rawUrl = imageUrls[targetPage - 1];
         final url = rawUrl.split('|').first;
         if (!url.startsWith('http')) continue;
+        final effectiveContentIdForDecode = contentId ?? widget.contentId;
         _decodeQueue.add(() {
-          if (!mounted) return;
+          if (!mounted || _scopeToken.isCancelled) return;
           LocalImagePreloader.getLocalImagePath(
-            widget.contentId,
+            effectiveContentIdForDecode,
             targetPage,
           ).then((localPath) {
-            if (!mounted) return;
+            if (!mounted || _scopeToken.isCancelled) return;
             final ImageProvider provider;
             if (localPath != null && File(localPath).existsSync()) {
               provider = ExtendedFileImageProvider(File(localPath));
@@ -941,24 +960,41 @@ class _ReaderScreenState extends State<ReaderScreen>
       _estimatedDecodedBytes = 0;
     });
 
-    _estimatedDecodedBytes += _estimatePageBytes(currentPage);
+    // Real byte estimator: sum of window visible ± keepRadius (not tick accumulation)
+    const keepRadius = 4;
+    int windowBytes = 0;
+    for (int p = currentPage - keepRadius; p <= currentPage + keepRadius; p++) {
+      if (p >= 1 && p <= imageUrls.length) {
+        windowBytes += _estimatePageBytes(p);
+      }
+    }
+    _estimatedDecodedBytes = windowBytes;
 
     if (_estimatedDecodedBytes < budget) return;
 
     // Budget exceeded: evict farthest pages until ≤ 80% of budget.
     final target = (budget * 0.8).round();
     _evictFarthestBytes(currentPage, imageUrls, target);
-    _estimatedDecodedBytes = 0;
+    _estimatedDecodedBytes = target;
   }
 
   int _estimatePageBytes(int page) {
     final h = _cachedImageHeights[page];
     if (h == null || h <= 0) return 0;
-    //  assumes screen-width image. Actual decode width is viewport-based.
-    // Estimate screen width from first non-null height's aspect ratio, or fallback 1080.
-    final w = 1080; // typical phone width in logical px
-    final pixelBytes = (w * h * 4).round(); // RGBA
-    return pixelBytes;
+    // Real decode width: viewport logical width * dpr capped like ExtendedImage cacheWidth.
+    // Fallback 1080 only when MediaQuery not available (tests).
+    double viewportWidth;
+    try {
+      viewportWidth = MediaQuery.of(context).size.width;
+    } catch (_) {
+      viewportWidth = 1080;
+    }
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final cacheWidth = (viewportWidth * dpr).clamp(360, 900).toDouble();
+    // h is rendered height (logical px) at screen width; pixel height = h * dpr
+    final pixelW = cacheWidth;
+    final pixelH = h * dpr;
+    return (pixelW * pixelH * 4).round(); // RGBA
   }
 
   void _evictFarthestBytes(
@@ -1007,6 +1043,17 @@ class _ReaderScreenState extends State<ReaderScreen>
     // Prevents stale heights from previous chapter in continuous scroll.
     if (contentChanged) {
       _cachedImageHeights.clear();
+      // Prefetch bookkeeping is per-chapter (page numbers collide across chapters)
+      // Without clearing, _isPrefetched(page) returns true for new chapter's same page numbers
+      // and skips download, causing stale images to be shown.
+      _prefetchCubit.cancelAll();
+      _decodeQueue.clear();
+      _isDecodeTickScheduled = false;
+      _lastReportedPage = state.currentPage ?? 1;
+      _lastSavedPage = 0;
+      _visiblePageNotifier.value = state.currentPage ?? 1;
+      _animatedPauseNotifier.value = state.currentPage ?? 1;
+      _scrollingNotifier.value = false;
     }
 
     // 🚀 OPTIMIZATION: Skip sync for continuous scroll when same content
@@ -1123,7 +1170,7 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
-    _initializeFromRouteExtra();
+    // _initializeFromRouteExtra now handled once in didChangeDependencies
 
     return BlocProvider<ReaderCubit>(
       create: (context) {
@@ -1194,6 +1241,7 @@ class _ReaderScreenState extends State<ReaderScreen>
               state.content!.imageUrls,
               state.imageMetadata,
               sourceId: state.content?.sourceId,
+              contentId: state.content!.id,
             );
           }
         },

@@ -151,7 +151,7 @@ class _ReaderContentWidget extends StatefulWidget {
   final void Function(ReaderState) onShowSettings;
   final VoidCallback onDismissChapterOverlay;
   final void Function(int, List<String>, List<ImageMetadata>?,
-      {String? sourceId}) prefetchImages;
+      {String? sourceId, String? contentId}) prefetchImages;
   final void Function(int, List<String>, {bool isOffline}) evictDistantPages;
   final double Function(int, double) resolveContinuousItemHeight;
   final bool Function(String?) isHeavyPrefetchSource;
@@ -284,7 +284,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         '📖 SinglePageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
     return PageView.builder(
-      key: const ValueKey('horizontal_page_view'),
+      key: ValueKey('horizontal_page_view_${state.content?.id}'),
       controller: widget.pageController,
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
@@ -304,7 +304,8 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           if (state.readingMode != ReadingMode.singlePage &&
               state.readingMode != ReadingMode.verticalPage) {
             widget.prefetchImages(reportPage, imageUrls, state.imageMetadata,
-                sourceId: state.content?.sourceId);
+                sourceId: state.content?.sourceId,
+                contentId: state.content?.id);
           }
         }
 
@@ -321,7 +322,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         return _ReaderImageViewer(
           imageUrl: imageUrl,
           pageNumber: pageNumber,
-          contentId: widget.contentId,
+          contentId: state.content?.id ?? widget.contentId,
           visiblePageNotifier: widget.animatedPauseNotifier,
           cubit: widget.cubit,
           onHeavyImageDetected: widget.onHeavyImageDetected,
@@ -341,7 +342,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         '📖 VerticalPageReader: pageCount=$pageCount, showNavigation=$showNavigation, totalItems=$totalItems');
 
     return PageView.builder(
-      key: const ValueKey('vertical_page_view'),
+      key: ValueKey('vertical_page_view_${state.content?.id}'),
       controller: widget.verticalPageController,
       scrollDirection: Axis.vertical,
       clipBehavior: Clip.none,
@@ -359,7 +360,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         final imageUrls = state.content?.imageUrls ?? [];
         if (index < pageCount) {
           widget.prefetchImages(reportPage, imageUrls, state.imageMetadata,
-              sourceId: state.content?.sourceId);
+              sourceId: state.content?.sourceId, contentId: state.content?.id);
           widget.evictDistantPages(reportPage, imageUrls,
               isOffline: state.isOfflineMode ?? false);
         }
@@ -378,7 +379,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
         return _ReaderImageViewer(
           imageUrl: imageUrl,
           pageNumber: pageNumber,
-          contentId: widget.contentId,
+          contentId: state.content?.id ?? widget.contentId,
           visiblePageNotifier: widget.animatedPauseNotifier,
           cubit: widget.cubit,
           sourceId: state.content?.sourceId,
@@ -430,8 +431,9 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
           return false;
         },
         child: ListView.builder(
+          key: ValueKey('continuous_list_${state.content?.id}'),
           scrollCacheExtent: ScrollCacheExtent.pixels(
-              isHeavySource ? viewportHeight * 0.25 : 2500.0),
+              isHeavySource ? viewportHeight * 0.25 : viewportHeight * 1.0),
           controller: widget.scrollController,
           physics: isHeavySource
               ? const ClampingScrollPhysics()
@@ -461,7 +463,7 @@ class _ReaderContentWidgetState extends State<_ReaderContentWidget> {
             return _ReaderImageViewer(
               imageUrl: imageUrl,
               pageNumber: pageNumber,
-              contentId: widget.contentId,
+              contentId: state.content?.id ?? widget.contentId,
               visiblePageNotifier: widget.animatedPauseNotifier,
               cubit: widget.cubit,
               isContinuous: true,

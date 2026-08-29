@@ -296,6 +296,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       10 * 1024 * 1024; // 10 MB
 
   CancellationToken? _cancelToken;
+  CancelToken? _resolveCancelToken;
 
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
@@ -332,13 +333,17 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
   // Size? _loadedImageSize;
 
-  // Keep widget state alive for heavy/native images, but let normal pages in
-  // continuous scroll recycle so long chapter scrolling stays lightweight.
+  // Keep widget state alive for heavy/native images, but only for visible ±1
+  // in continuous scroll so long chapter scrolling stays lightweight and GPU
+  // texture count is bounded.
   @override
-  bool get wantKeepAlive => ExtendedImageReaderWidget.shouldKeepAliveForTesting(
-        readingMode: widget.readingMode,
-        isHeavy: _isHeavyImage,
-      );
+  bool get wantKeepAlive {
+    if (widget.readingMode != ReadingMode.continuousScroll) return true;
+    if (!_isHeavyImage) return false;
+    final visible = widget.visiblePageNotifier?.value;
+    if (visible == null) return true; // before first layout, keep
+    return (visible - widget.pageNumber).abs() <= 1;
+  }
 
   bool _isLocalFilePath(String value) {
     return value.startsWith('/') ||
@@ -358,6 +363,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   void initState() {
     super.initState();
     _cancelToken = CancellationToken();
+    _resolveCancelToken = CancelToken();
     _zoomController = AnimationController(
       duration: DesignTokens.durationPageTurn,
       vsync: this,
@@ -474,14 +480,12 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           if (!mounted) return;
           final webpInfo =
               _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
-          final nativeSize =
-              (webpInfo.width != null && webpInfo.height != null)
-                  ? Size(webpInfo.width!.toDouble(),
-                      webpInfo.height!.toDouble())
-                  : (avifInfo.width != null && avifInfo.height != null)
-                      ? Size(avifInfo.width!.toDouble(),
-                          avifInfo.height!.toDouble())
-                      : null;
+          final nativeSize = (webpInfo.width != null && webpInfo.height != null)
+              ? Size(webpInfo.width!.toDouble(), webpInfo.height!.toDouble())
+              : (avifInfo.width != null && avifInfo.height != null)
+                  ? Size(
+                      avifInfo.width!.toDouble(), avifInfo.height!.toDouble())
+                  : null;
           setState(() {
             _isHeavyImage = true;
             _isConfirmedAnimatedWebP = true;
@@ -934,10 +938,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
 
     final sourceChanged = oldWidget.sourceId != widget.sourceId;
     final imageChanged = oldWidget.imageUrl != widget.imageUrl;
+    final contentChanged = oldWidget.contentId != widget.contentId;
 
-    if (sourceChanged || imageChanged) {
+    if (sourceChanged || imageChanged || contentChanged) {
       _ehentaiResolveRetries = 0;
       _pageResolveFuture = null;
+      if (_resolveCancelToken != null && !_resolveCancelToken!.isCancelled) {
+        _resolveCancelToken!.cancel('Widget updated');
+      }
+      _resolveCancelToken = CancelToken();
       _prepareEhentaiResolveFuture();
       _prepareMangaFireImageFuture();
 
@@ -1002,6 +1011,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   @override
   void dispose() {
     _cancelToken?.cancel();
+    if (_resolveCancelToken != null && !_resolveCancelToken!.isCancelled) {
+      _resolveCancelToken!.cancel('Widget dispose');
+    }
     _pinchHintController.dispose();
     _zoomController.dispose();
     super.dispose();
@@ -1308,12 +1320,18 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   /// unavailable or resolution failed, so the caller can fall back.
   Future<PageImageResult?> _resolvePageToFile(String url) {
     if (getIt.isRegistered<ReaderImageRepository>()) {
+      // Reuse per-widget Dio CancelToken so dispose can abort download-first streaming
+      _resolveCancelToken ??= CancelToken();
+      if (_resolveCancelToken!.isCancelled) {
+        _resolveCancelToken = CancelToken();
+      }
       return getIt<ReaderImageRepository>().resolvePage(
         url: url,
         contentId: widget.contentId,
         pageNumber: widget.pageNumber,
         sourceId: widget.sourceId,
         headers: widget.httpHeaders,
+        cancelToken: _resolveCancelToken,
       );
     }
     return Future.value(null);
@@ -1381,8 +1399,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 speed: 1.0,
                 inertialSpeed: 100.0,
                 initialScale: 1.0,
-                inPageView:
-                    widget.readingMode != ReadingMode.continuousScroll,
+                inPageView: widget.readingMode != ReadingMode.continuousScroll,
                 cacheGesture: false,
                 initialAlignment: InitialAlignment.center,
               );
@@ -1404,19 +1421,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                     if (mounted && image != null) {
                       widget.onImageLoaded?.call(
                         widget.pageNumber,
-                        Size(
-                            image.width.toDouble(), image.height.toDouble()),
+                        Size(image.width.toDouble(), image.height.toDouble()),
                       );
                     }
                   });
-                  return _buildCompletedImage(
-                      context, state, imageUrl: path);
+                  return _buildCompletedImage(context, state, imageUrl: path);
                 case LoadState.failed:
-                  return _buildErrorWidget(context,
-                      failedSource: path,
+                  return _buildErrorWidget(context, failedSource: path,
                       onRetry: () {
-                        setState(() => _pageResolveFuture = null);
-                      });
+                    setState(() => _pageResolveFuture = null);
+                  });
                 case LoadState.loading:
                   return _buildLoadingIndicator(context, state: state);
               }
@@ -1425,8 +1439,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         }
 
         // Resolve failed or repo absent → keep the existing network path.
-        return _buildStandardNetworkImage(
-            context, rawUrl, url, fallbackUrl,
+        return _buildStandardNetworkImage(context, rawUrl, url, fallbackUrl,
             headers: headers);
       },
     );
@@ -1471,14 +1484,13 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             );
             final webpInfo =
                 _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
-            final nativeSize =
-                (webpInfo.width != null && webpInfo.height != null)
-                    ? Size(webpInfo.width!.toDouble(),
-                        webpInfo.height!.toDouble())
-                    : (avifInfo.width != null && avifInfo.height != null)
-                        ? Size(avifInfo.width!.toDouble(),
-                            avifInfo.height!.toDouble())
-                        : null;
+            final nativeSize = (webpInfo.width != null &&
+                    webpInfo.height != null)
+                ? Size(webpInfo.width!.toDouble(), webpInfo.height!.toDouble())
+                : (avifInfo.width != null && avifInfo.height != null)
+                    ? Size(
+                        avifInfo.width!.toDouble(), avifInfo.height!.toDouble())
+                    : null;
             if (mounted) {
               setState(() {
                 _isHeavyImage = true;
@@ -1492,8 +1504,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               if (nativeSize != null) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
-                    widget.onImageLoaded?.call(
-                        widget.pageNumber, nativeSize);
+                    widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
                   }
                 });
               }
