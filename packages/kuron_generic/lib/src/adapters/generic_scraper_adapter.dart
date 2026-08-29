@@ -1338,14 +1338,27 @@ class GenericScraperAdapter implements GenericAdapter {
                   !ch.title.startsWith('Read First') &&
                   !ch.title.startsWith('Read Last'))
               .toList();
-          _logger.d(
-              '$_sourceId: extracted ${chapters.length} chapters for $contentId');
-        }
-        // If chapters were extracted but current page is not among them,
-        // add it as chapter 1 so the detail page itself is readable.
-        // Requires explicit opt-in via chapters.addCurrentPageAsChapter=true.
-        final addCurrentPageAsChapter =
-            (chaptersCfg['addCurrentPageAsChapter'] as bool?) ?? false;
+           _logger.d(
+               '$_sourceId: extracted ${chapters.length} chapters for $contentId');
+         }
+         // Deduplicate chapters by url/id (handles duplicate pagination blocks
+         // like xiutaku top+bottom nav, or misskon repeated page-link).
+         if (chapters != null && chapters.isNotEmpty) {
+           final seen = <String>{};
+           final deduped = <Chapter>[];
+           for (final ch in chapters) {
+             final key = ch.url.isNotEmpty ? ch.url : ch.id;
+             if (seen.add(key)) deduped.add(ch);
+           }
+           chapters = deduped;
+           _logger.d(
+               '$_sourceId: deduped to ${chapters.length} chapters for $contentId');
+         }
+         // If chapters were extracted but current page is not among them,
+         // add it as chapter 1 so the detail page itself is readable.
+         // Requires explicit opt-in via chapters.addCurrentPageAsChapter=true.
+         final addCurrentPageAsChapter =
+             (chaptersCfg['addCurrentPageAsChapter'] as bool?) ?? false;
         if (addCurrentPageAsChapter &&
             chapters != null &&
             chapters.isNotEmpty) {
