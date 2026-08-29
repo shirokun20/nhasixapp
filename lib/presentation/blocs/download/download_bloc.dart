@@ -827,12 +827,12 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       ));
 
       late Content content;
+      final detailContentId = _normalizeDetailContentId(
+        sourceId: updatedDownload.sourceId ?? '',
+        contentId: event.contentId,
+      );
+      final isCompositeChapterDownload = detailContentId != event.contentId;
       try {
-        final detailContentId = _normalizeDetailContentId(
-          sourceId: updatedDownload.sourceId ?? '',
-          contentId: event.contentId,
-        );
-        final isCompositeChapterDownload = detailContentId != event.contentId;
         content = await _getContentDetailUseCase.call(
           GetContentDetailParams.fromString(
             detailContentId,
@@ -880,7 +880,8 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final effectiveSourceId = updatedDownload.sourceId ?? content.sourceId;
       final shouldFetchChapterImages = content.imageUrls.isEmpty ||
           _isEhentaiSource(effectiveSourceId) ||
-          _hasPaginationConfig(effectiveSourceId);
+          _hasPaginationConfig(effectiveSourceId) ||
+          isCompositeChapterDownload;
 
       // Fallback chapter image logic
       if (shouldFetchChapterImages) {
