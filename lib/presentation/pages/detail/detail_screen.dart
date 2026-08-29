@@ -1556,6 +1556,15 @@ class _DetailScreenState extends State<DetailScreen> {
     final imageMetadata =
         currentState is DetailLoaded ? currentState.imageMetadata : null;
 
+    final rawConfig =
+        getIt<RemoteConfigService>().getRawConfig(content.sourceId);
+    final hasPagination = rawConfig != null &&
+        (((rawConfig['scraper'] as Map?)?.cast<String, dynamic>()['selectors']
+                        as Map?)
+                    ?.cast<String, dynamic>()['reader'] as Map?)
+                ?.containsKey('pagination') ==
+            true;
+
     final launchPayload = ReaderLaunchPayloadBuilder.build(
       content: content,
       imageMetadata: imageMetadata,
@@ -1564,6 +1573,7 @@ class _DetailScreenState extends State<DetailScreen> {
       currentChapter: currentChapter,
       allChapters:
           allChapters ?? _detailCubit.chaptersByLang(currentChapter?.language),
+      hasPagination: hasPagination,
     );
 
     Logger().w('Content to pass: ${launchPayload.content}');

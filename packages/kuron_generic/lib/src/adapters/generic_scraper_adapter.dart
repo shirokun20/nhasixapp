@@ -2227,6 +2227,10 @@ class GenericScraperAdapter implements GenericAdapter {
             final pagEls = _parser.selectAll(workingDoc, pagNextSel);
             final pendingUrls = <String>[];
             for (final el in pagEls) {
+              if (el.classes.contains('is-current') ||
+                  el.classes.contains('current')) {
+                continue;
+              }
               final href = (el.attributes['href'] ?? '').trim();
               if (href.isEmpty || href == '#') continue;
               final resolved = Uri.parse(workingUrl).resolve(href).toString();

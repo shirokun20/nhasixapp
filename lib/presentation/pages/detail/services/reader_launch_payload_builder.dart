@@ -20,6 +20,7 @@ class ReaderLaunchPayloadBuilder {
     Content? parentContent,
     Chapter? currentChapter,
     List<Chapter>? allChapters, // Expanded list from bottom-sheet load more
+    bool hasPagination = false, // NEW: paginated reader needs full fetch
   }) {
     final availableChapters =
         allChapters ?? parentContent?.chapters ?? content.chapters;
@@ -31,8 +32,9 @@ class ReaderLaunchPayloadBuilder {
           availableChapters: availableChapters,
         );
     final isSeriesChapterLaunch = availableChapters?.isNotEmpty == true;
-    final shouldReuseDetailContent = content.imageUrls.isNotEmpty ||
-        (!isSeriesChapterLaunch && chapterData == null);
+    final shouldReuseDetailContent = !hasPagination &&
+        (content.imageUrls.isNotEmpty ||
+            (!isSeriesChapterLaunch && chapterData == null));
 
     return (
       content: shouldReuseDetailContent ? content : null,
