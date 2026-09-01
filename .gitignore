@@ -83,3 +83,5 @@ skills-lock.json
 /.github/workflows/copilot-setup-steps.yml
 .cline/*
 .clinerules/*
+# Widget Preview related
+.widget_preview/
