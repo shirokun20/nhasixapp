@@ -684,6 +684,17 @@ class GenericRestAdapter implements GenericAdapter {
       final endpoint = imagesCfg['atHomeEndpoint'] as String?;
       if (endpoint == null) return null;
 
+      // Defensive guard: if the caller passed an external URL as the
+      // chapterId (e.g. a Comikey link), skip at-home entirely. The
+      // primary guard lives in DetailCubit.openChapter; this is a
+      // safety net for any other caller.
+      if (chapterId.startsWith('http://') || chapterId.startsWith('https://')) {
+        _logger.d(
+          '$_sourceId fetchChapterImages (atHome) skipped: chapterId is an external URL',
+        );
+        return null;
+      }
+
       final baseApiUrl = _getBaseUrl(rawConfig);
       final fullPath = endpoint.startsWith('/') ? endpoint : '/$endpoint';
       final url = '$baseApiUrl${fullPath.replaceAll('{chapterId}', chapterId)}';
@@ -713,15 +724,23 @@ class GenericRestAdapter implements GenericAdapter {
           final useDataSaver = dataFiles.isEmpty && dataSaverFiles.isNotEmpty;
           final fileNames = useDataSaver ? dataSaverFiles : dataFiles;
 
-          if (hash != null && fileNames.isNotEmpty) {
-            final imagePathSegment = useDataSaver ? 'data-saver' : 'data';
-            final images = fileNames
-                .map((fn) => '$baseUrl/$imagePathSegment/$hash/$fn')
-                .toList();
-            return ChapterData(
-              images: images,
+          // Defensive guard: empty at-home payload indicates an external
+          // or unavailable chapter. Return null without retrying so the
+          // caller can surface a clear error instead of retrying 3x.
+          if (hash == null || hash.isEmpty || fileNames.isEmpty) {
+            _logger.w(
+              '$_sourceId fetchChapterImages (atHome) returned empty payload for $chapterId — likely external or unavailable chapter',
             );
+            return null;
           }
+
+          final imagePathSegment = useDataSaver ? 'data-saver' : 'data';
+          final images = fileNames
+              .map((fn) => '$baseUrl/$imagePathSegment/$hash/$fn')
+              .toList();
+          return ChapterData(
+            images: images,
+          );
         }
       } catch (e) {
         _logger.e('$_sourceId fetchChapterImages (atHome) failed', error: e);

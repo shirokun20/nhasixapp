@@ -709,7 +709,14 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                   favorites: 0,
                 );
 
+                final isExternal = chapter.isExternal;
+                final externalHost = isExternal
+                    ? (Uri.tryParse(chapter.externalUrl!.trim())?.host ?? '')
+                    : '';
                 final subtitleParts = [
+                  if (isExternal && externalHost.isNotEmpty)
+                    AppLocalizations.of(context)!
+                        .externalChapterBadge(externalHost),
                   if ((chapter.scanGroup ?? '').trim().isNotEmpty)
                     chapter.scanGroup!.trim(),
                   if (isRead)
@@ -901,9 +908,11 @@ class _DetailChapterSectionState extends State<DetailChapterSection> {
                                 FilledButton.tonalIcon(
                                   onPressed: () => widget.onChapterTap(chapter),
                                   icon: Icon(
-                                    isCompleted
-                                        ? Icons.replay
-                                        : Icons.menu_book_outlined,
+                                    isExternal
+                                        ? Icons.open_in_new
+                                        : isCompleted
+                                            ? Icons.replay
+                                            : Icons.menu_book_outlined,
                                     size: 16,
                                   ),
                                   label: Text(

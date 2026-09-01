@@ -7650,6 +7650,30 @@ abstract class AppLocalizations {
   /// **'Failed to open chapter: {message}'**
   String failedOpenChapter(String message);
 
+  /// No description provided for @externalChapterBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'External • {host}'**
+  String externalChapterBadge(String host);
+
+  /// No description provided for @externalChapterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'All chapters are available on the official site'**
+  String get externalChapterHint;
+
+  /// No description provided for @externalChapterOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open external link'**
+  String get externalChapterOpenFailed;
+
+  /// No description provided for @externalChapterDownloadBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'External chapters cannot be downloaded, open in browser'**
+  String get externalChapterDownloadBlocked;
+
   /// No description provided for @failedInitFilterData.
   ///
   /// In en, this message translates to:

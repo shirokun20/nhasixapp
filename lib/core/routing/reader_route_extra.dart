@@ -146,6 +146,9 @@ Chapter? readReaderChapter(Object? value) {
     uploadDate: _readDateTime(map['uploadDate']),
     scanGroup: _readString(map['scanGroup']),
     language: _readString(map['language']),
+    externalUrl: _readString(map['externalUrl']),
+    pages: _readInt(map['pages']),
+    isUnavailable: map['isUnavailable'] == true,
   );
 }
 
@@ -177,6 +180,9 @@ Map<String, dynamic>? _serializeChapter(Chapter? chapter) {
     'uploadDate': chapter.uploadDate?.toIso8601String(),
     'scanGroup': chapter.scanGroup,
     'language': chapter.language,
+    'externalUrl': chapter.externalUrl,
+    'pages': chapter.pages,
+    'isUnavailable': chapter.isUnavailable,
   };
 }
 
@@ -233,5 +239,12 @@ DateTime? _readDateTime(Object? value) {
     return DateTime.tryParse(value);
   }
 
+  return null;
+}
+
+int? _readInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
   return null;
 }

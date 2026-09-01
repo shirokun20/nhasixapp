@@ -4462,6 +4462,21 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String externalChapterBadge(String host) {
+    return 'Eksternal • $host';
+  }
+
+  @override
+  String get externalChapterHint => 'Semua chapter tersedia di situs resmi';
+
+  @override
+  String get externalChapterOpenFailed => 'Tidak bisa membuka link eksternal';
+
+  @override
+  String get externalChapterDownloadBlocked =>
+      'Chapter eksternal tidak bisa di-download, buka di browser';
+
+  @override
   String failedInitFilterData(String error) {
     return 'Gagal menginisialisasi data filter: $error';
   }

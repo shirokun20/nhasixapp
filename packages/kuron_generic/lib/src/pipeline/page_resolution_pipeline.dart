@@ -28,6 +28,7 @@ class PageResolutionInput {
     this.referer,
     this.pageMimeHint,
     this.filenamePrefix,
+    this.isExternalChapter = false,
   });
 
   final String sourceId;
@@ -48,6 +49,11 @@ class PageResolutionInput {
 
   // Optional filename prefix for download hints (e.g. `c001_`).
   final String? filenamePrefix;
+
+  // True when the chapter is hosted externally (e.g. MangaDex externalUrl).
+  // When true, the pipeline emits an `externalChapter` diagnostic instead of
+  // treating empty imageUrls as a download failure.
+  final bool isExternalChapter;
 }
 
 // Result of running the pipeline.
@@ -85,6 +91,21 @@ class PageResolutionPipeline {
   // - Runs download-readiness checks and emits diagnostics for failures.
   PageResolutionResult resolve(PageResolutionInput input) {
     final List<ValidationDiagnostic> diags = <ValidationDiagnostic>[];
+
+    // External chapters have no in-app images; emit a distinct diagnostic
+    // so callers can distinguish "external" from "download failure".
+    if (input.isExternalChapter) {
+      diags.add(ValidationDiagnostic(
+        severity: DiagnosticSeverity.info,
+        code: 'externalChapter',
+        message:
+            'Chapter ${input.chapterId ?? input.contentId} is hosted externally and cannot be downloaded in-app.',
+        context: <String, Object?>{
+          'chapterId': input.chapterId,
+          'contentId': input.contentId,
+        },
+      ));
+    }
 
     // Merge static config headers with adapter-supplied global headers.
     final Map<String, String> merged = <String, String>{

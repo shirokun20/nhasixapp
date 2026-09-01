@@ -4327,6 +4327,20 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String externalChapterBadge(String host) {
+    return '外部 • $host';
+  }
+
+  @override
+  String get externalChapterHint => '所有章节均可在官方网站上查看';
+
+  @override
+  String get externalChapterOpenFailed => '无法打开外部链接';
+
+  @override
+  String get externalChapterDownloadBlocked => '外部章节无法下载，请在浏览器中打开';
+
+  @override
   String failedInitFilterData(String error) {
     return '初始化筛选数据失败：$error';
   }

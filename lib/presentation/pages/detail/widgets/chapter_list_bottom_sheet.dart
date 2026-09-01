@@ -51,10 +51,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     if (widget.allChapters != null) {
       _chapters = widget.initialScanGroup == 'Volume'
           ? [...widget.allChapters!]
-          : [
-              ...widget.allChapters!
-                  .where((c) => c.scanGroup != 'Volume')
-            ];
+          : [...widget.allChapters!.where((c) => c.scanGroup != 'Volume')];
     } else if (widget.initialScanGroup == 'Volume') {
       _chapters = [...?widget.content.chapters];
     } else {
@@ -305,7 +302,16 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                           favorites: 0,
                         );
 
+                        final isExternal = chapter.isExternal;
+                        final externalHost = isExternal
+                            ? (Uri.tryParse(chapter.externalUrl!.trim())
+                                    ?.host ??
+                                '')
+                            : '';
                         final subtitleParts = [
+                          if (isExternal && externalHost.isNotEmpty)
+                            AppLocalizations.of(context)!
+                                .externalChapterBadge(externalHost),
                           if ((chapter.scanGroup ?? '').trim().isNotEmpty)
                             chapter.scanGroup!.trim(),
                         ];
@@ -499,7 +505,8 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           if (subtitleParts.isNotEmpty) ...[
-                                            const SizedBox(height: DesignTokens.spaceXs),
+                                            const SizedBox(
+                                                height: DesignTokens.spaceXs),
                                             Row(
                                               children: [
                                                 Icon(
@@ -554,7 +561,9 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                           ),
                                         const SizedBox(width: 8),
                                         Icon(
-                                          Icons.arrow_forward_ios,
+                                          isExternal
+                                              ? Icons.open_in_new
+                                              : Icons.arrow_forward_ios,
                                           size: 16,
                                           color: Theme.of(context)
                                               .colorScheme
@@ -571,6 +580,18 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                       },
                     ),
                   ),
+                  if (_chapters.isNotEmpty &&
+                      _chapters.every((c) => c.isExternal))
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Text(
+                        AppLocalizations.of(context)!.externalChapterHint,
+                        style: TextStyleConst.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   if (canLoadMore)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

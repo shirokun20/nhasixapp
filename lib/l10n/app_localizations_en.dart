@@ -4441,6 +4441,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String externalChapterBadge(String host) {
+    return 'External • $host';
+  }
+
+  @override
+  String get externalChapterHint =>
+      'All chapters are available on the official site';
+
+  @override
+  String get externalChapterOpenFailed => 'Cannot open external link';
+
+  @override
+  String get externalChapterDownloadBlocked =>
+      'External chapters cannot be downloaded, open in browser';
+
+  @override
   String failedInitFilterData(String error) {
     return 'Failed to initialize filter data: $error';
   }

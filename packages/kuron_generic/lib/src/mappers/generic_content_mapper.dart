@@ -208,7 +208,9 @@ class GenericContentMapper {
 
   // Build a [Chapter] entity from extracted fields.
   ///
-  // Supported keys: `id`, `title`, `url`, `date`.
+  // Supported keys: `id`, `title`, `url`, `date`, `externalUrl`, `pages`,
+  // `isUnavailable`. All optional fields are nullable for backward compat
+  // with sources that don't expose them.
   static Chapter toChapter(Map<String, dynamic> fields) {
     final id = _str(fields, 'id');
     final url = _str(fields, 'url');
@@ -219,6 +221,10 @@ class GenericContentMapper {
         ? scanGroup
         : (scanlator.isNotEmpty ? scanlator : null);
 
+    final externalUrl = _nullableString(fields['externalUrl']);
+    final pages = _intOrNull(fields, 'pages');
+    final isUnavailable = fields['isUnavailable'] == true;
+
     return Chapter(
       id: id.isNotEmpty ? id : url,
       title: _buildChapterTitle(fields),
@@ -226,6 +232,9 @@ class GenericContentMapper {
       uploadDate: _dateNullable(fields, 'date'),
       scanGroup: finalScanGroup,
       language: language.isNotEmpty ? language : null,
+      externalUrl: externalUrl,
+      pages: pages,
+      isUnavailable: isUnavailable,
     );
   }
 

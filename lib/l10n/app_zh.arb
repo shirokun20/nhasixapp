@@ -3208,6 +3208,17 @@
       }
     }
   },
+  "externalChapterBadge": "外部 • {host}",
+  "@externalChapterBadge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "externalChapterHint": "所有章节均可在官方网站上查看",
+  "externalChapterOpenFailed": "无法打开外部链接",
+  "externalChapterDownloadBlocked": "外部章节无法下载，请在浏览器中打开",
   "failedInitFilterData": "初始化筛选数据失败：{error}",
   "@failedInitFilterData": {
     "placeholders": {

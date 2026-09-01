@@ -9,6 +9,9 @@ class Chapter extends Equatable {
     this.uploadDate,
     this.scanGroup,
     this.language,
+    this.externalUrl,
+    this.pages,
+    this.isUnavailable = false,
   });
 
   // Unique identifier (usually slug or ID)
@@ -29,8 +32,39 @@ class Chapter extends Equatable {
   // Chapter translation language code (optional, e.g. "en", "id", "ja")
   final String? language;
 
+  // External URL when the chapter is hosted on a third-party site
+  // (e.g. MangaDex chapters that redirect to comikey.com). When set,
+  // [isExternal] is true and the chapter is not readable in-app.
+  final String? externalUrl;
+
+  // Declared page count from the source (e.g. MangaDex `attributes.pages`).
+  // 0 or null for external chapters; used to determine in-app readability.
+  final int? pages;
+
+  // Source-declared unavailability flag (e.g. MangaDex `isUnavailable`).
+  final bool isUnavailable;
+
+  /// True when the chapter is hosted on a third-party site and the app
+  /// must redirect via [externalUrl] instead of fetching images.
+  bool get isExternal => externalUrl != null && externalUrl!.trim().isNotEmpty;
+
+  /// True when the chapter can be read in-app (not external, not
+  /// unavailable, and declared page count > 0 when known).
+  bool get isReadableInApp =>
+      !isExternal && !isUnavailable && (pages == null || pages! > 0);
+
   @override
-  List<Object?> get props => [id, title, url, uploadDate, scanGroup, language];
+  List<Object?> get props => [
+        id,
+        title,
+        url,
+        uploadDate,
+        scanGroup,
+        language,
+        externalUrl,
+        pages,
+        isUnavailable,
+      ];
 
   Chapter copyWith({
     String? id,
@@ -39,6 +73,9 @@ class Chapter extends Equatable {
     DateTime? uploadDate,
     String? scanGroup,
     String? language,
+    String? externalUrl,
+    int? pages,
+    bool? isUnavailable,
   }) {
     return Chapter(
       id: id ?? this.id,
@@ -47,6 +84,9 @@ class Chapter extends Equatable {
       uploadDate: uploadDate ?? this.uploadDate,
       scanGroup: scanGroup ?? this.scanGroup,
       language: language ?? this.language,
+      externalUrl: externalUrl ?? this.externalUrl,
+      pages: pages ?? this.pages,
+      isUnavailable: isUnavailable ?? this.isUnavailable,
     );
   }
 }

@@ -435,6 +435,20 @@ class DownloadButtonWidget extends StatelessWidget {
   void _startDownload(BuildContext context) {
     if (!_checkStorageAndProceed(context)) return;
 
+    // External chapters (e.g. MangaDex externalUrl) cannot be downloaded.
+    final chapters = content.chapters;
+    if (chapters != null &&
+        chapters.isNotEmpty &&
+        chapters.every((c) => c.isExternal)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              AppLocalizations.of(context)!.externalChapterDownloadBlocked),
+        ),
+      );
+      return;
+    }
+
     // Check if download feature is enabled
     final remoteConfig = getIt<RemoteConfigService>();
     if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {

@@ -520,6 +520,62 @@ void main() {
       expect(result.title, 'Oneshot');
       expect(result.uploadDate, isNull);
     });
+
+    test('external chapter maps externalUrl/pages/isUnavailable', () {
+      final result = GenericContentMapper.toChapter({
+        'id': 'db996812-7984-4d1d-bd8b-af76c5b083b3',
+        'title': 'Ch.1.5',
+        'url': 'db996812-7984-4d1d-bd8b-af76c5b083b3',
+        'externalUrl':
+            'https://comikey.com/read/isekai-returnee-is-too-op-manga/kj2PPk/chapter-1-5/',
+        'pages': 0,
+        'isUnavailable': false,
+      });
+      expect(result.externalUrl,
+          'https://comikey.com/read/isekai-returnee-is-too-op-manga/kj2PPk/chapter-1-5/');
+      expect(result.pages, isNull);
+      expect(result.isUnavailable, isFalse);
+      expect(result.isExternal, isTrue);
+      expect(result.isReadableInApp, isFalse);
+    });
+
+    test('internal chapter maps pages and isReadableInApp true', () {
+      final result = GenericContentMapper.toChapter({
+        'id': 'fb164cb9-0d50-4ffd-9763-968d7862e209',
+        'title': 'Ch.34',
+        'url': 'fb164cb9-0d50-4ffd-9763-968d7862e209',
+        'pages': 19,
+      });
+      expect(result.externalUrl, isNull);
+      expect(result.pages, 19);
+      expect(result.isExternal, isFalse);
+      expect(result.isReadableInApp, isTrue);
+    });
+
+    test('missing externalUrl/pages fields default to null/false', () {
+      final result = GenericContentMapper.toChapter({
+        'id': 'legacy',
+        'title': 'Ch.1',
+        'url': '/legacy/',
+      });
+      expect(result.externalUrl, isNull);
+      expect(result.pages, isNull);
+      expect(result.isUnavailable, isFalse);
+      expect(result.isExternal, isFalse);
+      expect(result.isReadableInApp, isTrue);
+    });
+
+    test('isUnavailable=true is propagated', () {
+      final result = GenericContentMapper.toChapter({
+        'id': 'x',
+        'title': 'Ch.1',
+        'url': '/x/',
+        'pages': 10,
+        'isUnavailable': true,
+      });
+      expect(result.isUnavailable, isTrue);
+      expect(result.isReadableInApp, isFalse);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────

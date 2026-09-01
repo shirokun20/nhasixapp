@@ -239,10 +239,14 @@ Use this when the site exposes a JSON API.
       "endpoint": "/manga/{id}/chapters?limit=100",
       "items": "$.data[*]",
       "fields": {
-        "id":       { "selector": "$.id" },
-        "chapterNum": { "selector": "$.attributes.chapter" },
-        "language": { "selector": "$.attributes.translatedLanguage" },
-        "date":     { "selector": "$.attributes.publishAt" }
+        "id":          { "selector": "$.id" },
+        "chapterNum":  { "selector": "$.attributes.chapter" },
+        "title":       { "selector": "$.attributes.title" },
+        "language":    { "selector": "$.attributes.translatedLanguage" },
+        "externalUrl": { "selector": "$.attributes.externalUrl" },
+        "pages":       { "selector": "$.attributes.pages" },
+        "isUnavailable": { "selector": "$.attributes.isUnavailable" },
+        "date":        { "selector": "$.attributes.publishAt" }
       }
     }
   },
@@ -255,6 +259,8 @@ Use this when the site exposes a JSON API.
   }
 }
 ```
+
+> **MangaDex external chapters**: When `externalUrl` is non-empty the chapter is hosted on a third-party site (e.g. `comikey.com`) and `pages` is `0`. The app opens `externalUrl` in the external browser instead of calling `/at-home/server/{chapterId}`. `includeExternalUrl=1` in `queryRules.chapters.ensureParams` keeps both internal and external chapters in the feed.
 
 ---
 

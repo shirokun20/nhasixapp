@@ -2612,6 +2612,17 @@
       }
     }
   },
+  "externalChapterBadge": "Eksternal • {host}",
+  "@externalChapterBadge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "externalChapterHint": "Semua chapter tersedia di situs resmi",
+  "externalChapterOpenFailed": "Tidak bisa membuka link eksternal",
+  "externalChapterDownloadBlocked": "Chapter eksternal tidak bisa di-download, buka di browser",
   "failedInitFilterData": "Gagal menginisialisasi data filter: {error}",
   "@failedInitFilterData": {
     "placeholders": {

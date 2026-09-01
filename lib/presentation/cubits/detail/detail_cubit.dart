@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../domain/value_objects/value_objects.dart';
 import '../../../domain/usecases/content/content_usecases.dart';
 import '../../../domain/usecases/favorites/favorites_usecases.dart';
@@ -586,6 +588,28 @@ class DetailCubit extends BaseCubit<DetailState> {
     // Prevent double opening
     if (currentState is DetailOpeningChapter) return;
 
+    // External chapters are hosted on third-party sites (e.g. MangaDex
+    // chapters that redirect to comikey.com). Open them in the external
+    // browser instead of fetching images.
+    if (chapter.isExternal) {
+      final rawUrl = chapter.externalUrl!.trim();
+      final uri = Uri.tryParse(rawUrl);
+      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        try {
+          final launched = await _launchExternalUrl(uri);
+          if (!launched) {
+            logWarning('Failed to launch external chapter URL: $rawUrl');
+          }
+          return;
+        } catch (e) {
+          logWarning('Error launching external chapter URL: $e');
+          return;
+        }
+      }
+      logWarning('Invalid external chapter URL: $rawUrl');
+      return;
+    }
+
     try {
       logInfo('Opening chapter: ${chapter.title} (${chapter.id})');
       emit(DetailOpeningChapter(
@@ -723,6 +747,13 @@ class DetailCubit extends BaseCubit<DetailState> {
   }
 
   // Refresh chapter history from database
+  Future<bool> _launchExternalUrl(Uri uri) async {
+    if (await canLaunchUrl(uri)) {
+      return launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    return false;
+  }
+
   // Call this when returning from reader to update read indicators
   Future<void> refreshChapterHistory() async {
     final currentState = state;

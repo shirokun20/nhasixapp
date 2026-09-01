@@ -287,6 +287,10 @@ class ContentModel extends Content {
                         ? DateTime.fromMillisecondsSinceEpoch(c['upload_date'])
                         : null,
                     scanGroup: c['scan_group'],
+                    language: c['language'] as String?,
+                    externalUrl: c['external_url'] as String?,
+                    pages: c['pages'] as int?,
+                    isUnavailable: c['is_unavailable'] as bool? ?? false,
                   ))
               .toList()
           : null,
@@ -331,6 +335,10 @@ class ContentModel extends Content {
                 'url': c.url,
                 'upload_date': c.uploadDate?.millisecondsSinceEpoch,
                 'scan_group': c.scanGroup,
+                'language': c.language,
+                'external_url': c.externalUrl,
+                'pages': c.pages,
+                'is_unavailable': c.isUnavailable,
               })
           .toList(),
       'cached_at': cachedAt?.millisecondsSinceEpoch ??

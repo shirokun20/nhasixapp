@@ -239,10 +239,14 @@ Gunakan ini saat situs menyediakan JSON API.
       "endpoint": "/manga/{id}/chapters?limit=100",
       "items": "$.data[*]",
       "fields": {
-        "id":         { "selector": "$.id" },
-        "chapterNum": { "selector": "$.attributes.chapter" },
-        "language":   { "selector": "$.attributes.translatedLanguage" },
-        "date":       { "selector": "$.attributes.publishAt" }
+        "id":            { "selector": "$.id" },
+        "chapterNum":    { "selector": "$.attributes.chapter" },
+        "title":         { "selector": "$.attributes.title" },
+        "language":      { "selector": "$.attributes.translatedLanguage" },
+        "externalUrl":   { "selector": "$.attributes.externalUrl" },
+        "pages":         { "selector": "$.attributes.pages" },
+        "isUnavailable": { "selector": "$.attributes.isUnavailable" },
+        "date":          { "selector": "$.attributes.publishAt" }
       }
     }
   },
@@ -255,6 +259,8 @@ Gunakan ini saat situs menyediakan JSON API.
   }
 }
 ```
+
+> **Chapter eksternal MangaDex**: Jika `externalUrl` tidak kosong, chapter di-host di situs pihak ketiga (mis. `comikey.com`) dan `pages` bernilai `0`. Aplikasi membuka `externalUrl` di browser eksternal, bukan memanggil `/at-home/server/{chapterId}`. `includeExternalUrl=1` di `queryRules.chapters.ensureParams` menjaga kedua tipe chapter tetap ada di feed.
 
 ---
 

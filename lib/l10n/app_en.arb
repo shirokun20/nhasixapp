@@ -3233,6 +3233,17 @@
       }
     }
   },
+  "externalChapterBadge": "External • {host}",
+  "@externalChapterBadge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "externalChapterHint": "All chapters are available on the official site",
+  "externalChapterOpenFailed": "Cannot open external link",
+  "externalChapterDownloadBlocked": "External chapters cannot be downloaded, open in browser",
   "failedInitFilterData": "Failed to initialize filter data: {error}",
   "@failedInitFilterData": {
     "placeholders": {
