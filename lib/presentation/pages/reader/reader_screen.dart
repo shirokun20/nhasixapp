@@ -89,6 +89,7 @@ class ReaderScreen extends StatefulWidget {
     final normalized = (sourceId ?? '').toLowerCase();
     switch (normalized) {
       case 'manga18.club':
+      case 'ehentai':
       case 'komiktap':
         return true;
       default:
