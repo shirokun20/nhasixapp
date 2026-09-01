@@ -260,7 +260,7 @@ Gunakan ini saat situs menyediakan JSON API.
 }
 ```
 
-> **Chapter eksternal MangaDex**: Jika `externalUrl` tidak kosong, chapter di-host di situs pihak ketiga (mis. `comikey.com`) dan `pages` bernilai `0`. Aplikasi membuka `externalUrl` di browser eksternal, bukan memanggil `/at-home/server/{chapterId}`. `includeExternalUrl=1` di `queryRules.chapters.ensureParams` menjaga kedua tipe chapter tetap ada di feed.
+> **Chapter eksternal MangaDex**: Jika `externalUrl` tidak kosong, chapter di-host di situs pihak ketiga (mis. `comikey.com`) dan `pages` bernilai `0`. Aplikasi membuka `externalUrl` di browser eksternal, bukan memanggil `/at-home/server/{chapterId}`. Jangan set `includeExternalUrl` — tanpa param ini API mengembalikan kedua tipe chapter (dengan `externalUrl` tetap ada); `includeExternalUrl=1` justru filter ke *hanya* eksternal dan bikin manga tanpa chapter eksternal jadi 0.
 
 ---
 

@@ -260,7 +260,7 @@ Use this when the site exposes a JSON API.
 }
 ```
 
-> **MangaDex external chapters**: When `externalUrl` is non-empty the chapter is hosted on a third-party site (e.g. `comikey.com`) and `pages` is `0`. The app opens `externalUrl` in the external browser instead of calling `/at-home/server/{chapterId}`. `includeExternalUrl=1` in `queryRules.chapters.ensureParams` keeps both internal and external chapters in the feed.
+> **MangaDex external chapters**: When `externalUrl` is non-empty the chapter is hosted on a third-party site (e.g. `comikey.com`) and `pages` is `0`. The app opens `externalUrl` in the external browser instead of calling `/at-home/server/{chapterId}`. Do **not** set `includeExternalUrl` — without it the API returns both internal and external chapters (with `externalUrl` still present); `includeExternalUrl=1` filters to *only* external and breaks manga with no external chapters.
 
 ---
 
