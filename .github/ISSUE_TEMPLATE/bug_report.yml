@@ -1,0 +1,160 @@
+name: "🐛 Bug Report"
+description: "Laporan bug — bantu kami perbaiki Kuron dengan cepat"
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🙏 **Terima kasih sudah meluangkan waktu lapor bug!** Laporanmu sangat berarti — kami baca semua dengan serius dan balas secepat mungkin.
+        💡 **Tips:** Satu issue = satu bug. Kalau ada beberapa bug, buat issue terpisah biar mudah di-track.
+        > Tidak perlu laporan sempurna — cukup ceritakan apa yang terjadi, kami akan bantu follow-up dengan ramah.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "🐞 Describe the bug / Deskripsi Bug"
+      description: "Jelaskan bug dengan bahasa santai — seperti cerita ke teman. What happened?"
+      placeholder: 'Contoh: Saat buka chapter X, gambar tidak muncul dan loading terus...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "🔁 Steps to Reproduce / Langkah Reproduksi"
+      description: "Bagaimana kami bisa mengulang bug ini? Tulis langkah 1, 2, 3..."
+      placeholder: |
+        1. Go to '...'
+        2. Tap on '...'
+        3. Scroll to '...'
+        4. See error: '...'
+      value: "1. Go to '...'\n2. Tap on '...'\n3. Scroll to '...'\n4. See error: '...'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "✅ Expected behavior / Harapan"
+      description: "Apa yang seharusnya terjadi?"
+      placeholder: "Contoh: Gambar seharusnya muncul dalam 2 detik"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: "📦 Source / Provider"
+      description: "Bug terkait source mana? (jika terkait konten)"
+      options:
+        - "Tidak terkait source / Not related"
+        - nhentai
+        - e-hentai / exhentai
+        - hitomi
+        - komiku
+        - mangadex
+        - komikcast
+        - rawdevart
+        - "lain / other"
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "📱 Kuron Version"
+      description: "Lihat di Settings → About atau pubspec.yaml → version"
+      placeholder: "v0.9.25+35"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: android
+    attributes:
+      label: "🤖 Android Version"
+      description: "Versi Android perangkatmu"
+      options:
+        - Android 15
+        - Android 14
+        - Android 13
+        - Android 12
+        - Android 11
+        - Android 10 or older
+        - "Other / Lain"
+      default: 1
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: "📱 Device"
+      description: "Contoh: Samsung Galaxy A54, Xiaomi Redmi Note 12"
+      placeholder: "e.g. Samsung Galaxy A54"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: install_source
+    attributes:
+      label: "📥 Install Source"
+      options:
+        - APK dari GitHub Releases
+        - Build dari source
+        - "Other / Lain"
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "📸 Screenshots / Video"
+      description: "Drag & drop screenshot / screen recording di sini. Sangat membantu!"
+      placeholder: "Drop images here or paste error message..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "📋 Logs (jika ada)"
+      description: "Jika app crash, sertakan log. Cara: adb logcat | grep flutter"
+      placeholder: "Paste logs here..."
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "➕ Additional context / Konteks Tambahan"
+      description: "Info lain? Mis. hanya di mode offline / dark mode / setelah update v0.9.25"
+      placeholder: "Apakah bug bisa diulang terus atau kadang-kadang saja?"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "☑️ Checklist"
+      description: "Bantu kami lebih cepat — centang yang sudah kamu lakukan"
+      options:
+        - label: "Saya sudah cek Issues lain — belum ada yang lapor bug yang sama"
+          required: true
+        - label: "Saya sudah coba update ke versi Kuron terbaru"
+          required: false
+        - label: "Saya sudah coba clear cache / restart app (jika relevan)"
+          required: false
+        - label: "Saya bersedia bantu tes fix jika diperlukan 🙌"
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        💙 **Privasi:** Jangan sertakan data pribadi, token, atau cookie. Blur/sensor jika ada di screenshot.
+        🔒 **Keamanan?** Jika ini celah keamanan, jangan lapor di sini — gunakan [Private Security Advisory](https://github.com/shirokun20/nhasixapp/security/advisories/new).

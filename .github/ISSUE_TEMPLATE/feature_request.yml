@@ -1,0 +1,109 @@
+name: "✨ Feature Request"
+description: "Punya ide keren? Bagikan — kami dengarkan dengan senang hati"
+title: "[Feature] "
+labels: ["enhancement", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        💙 **Terima kasih sudah peduli dengan Kuron!** Setiap ide — besar atau kecil — kami baca dengan serius.
+        💡 **Tips:** Satu issue = satu ide. Biar diskusi fokus dan mudah di-track.
+        > Tidak perlu proposal sempurna — cukup ceritakan masalah & harapanmu, kami bantu matangkan bersama.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "😣 Is your feature request related to a problem? / Apakah terkait masalah?"
+      description: "Ceritakan masalah atau rasa frustrasi yang kamu alami. Kosongkan jika tidak terkait masalah spesifik."
+      placeholder: 'Contoh: Saya sering kesulitan mencari manga yang sudah dibaca karena tidak ada filter history...'
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "💡 Describe the solution you'd like / Solusi yang kamu bayangkan"
+      description: "Seperti apa solusi ideal menurutmu? Jelaskan dengan santai, seperti cerita ke teman."
+      placeholder: 'Contoh: Saya ingin ada tombol filter "Sudah dibaca" di halaman history agar...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "🔄 Describe alternatives you've considered / Alternatif yang terpikirkan"
+      description: "Pernah kepikiran cara lain? Atau workaround yang sekarang kamu pakai?"
+      placeholder: 'Contoh: Saat ini saya workaround dengan scroll manual... / Alternatif: bisa juga dengan tab terpisah...'
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: "🏷️ Category / Kategori"
+      description: "Kategori yang paling sesuai untuk ide ini"
+      options:
+        - "UI/UX — Tampilan & pengalaman pengguna"
+        - "Reader — Pengalaman membaca"
+        - "Library / History / Download"
+        - "Search / Filter / Discovery"
+        - "Privacy / Security"
+        - "Performance / Offline"
+        - "Source / Provider baru"
+        - "Other / Lainnya"
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "⭐ How important is this to you? / Seberapa penting?"
+      description: "Bantu kami prioritas — tidak mempengaruhi apakah ide diterima, hanya untuk sorting"
+      options:
+        - "Nice to have — Kapan-kapan saja"
+        - "Useful — Akan sangat membantu"
+        - "Important — Saya butuh ini sering"
+        - "Critical — Tanpa ini workflow saya terganggu"
+      default: 1
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: "🎨 Mockups / Screenshots / References"
+      description: "Jika ada sketsa, screenshot, atau link referensi (app lain / desain), drag & drop di sini"
+      placeholder: "Drop images or paste links here..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "➕ Additional context / Konteks Tambahan"
+      description: "Info lain yang relevan? Seberapa sering kamu butuh fitur ini?"
+      placeholder: "Contoh: Fitur ini akan sangat membantu karena saya baca offline setiap hari..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "☑️ Checklist"
+      description: "Bantu kami lebih cepat — centang yang sudah kamu lakukan"
+      options:
+        - label: "Saya sudah cek Issues & Discussions — belum ada ide serupa"
+          required: true
+        - label: "Saya sudah pakai versi Kuron terbaru dan ide ini belum ada"
+          required: false
+        - label: "Saya bersedia bantu tes / kasih feedback jika fitur ini dikerjakan 🙌"
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        🙏 **Tidak ada ide yang terlalu kecil.** Bahkan typo di UI atau wording yang membingungkan layak dilaporkan!
+        🔒 **Keamanan?** Jika ide terkait celah keamanan, gunakan [Private Security Advisory](https://github.com/shirokun20/nhasixapp/security/advisories/new) ya, bukan issue publik.
