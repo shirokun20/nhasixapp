@@ -3,7 +3,8 @@
 set -euo pipefail
 
 # Build optimized APK dengan ukuran minimal
-# Usage: ./build_optimized.sh [release|debug]
+# Usage: ./scripts/build_optimized.sh [release|debug]
+#        (or from repo root: scripts/build_optimized.sh)
 
 BUILD_TYPE=${1:-release}
 
@@ -17,6 +18,10 @@ fi
 
 echo "🚀 Building OPTIMIZED $BUILD_TYPE APK..."
 echo "📱 App: $APP_NAME ($APP_ID)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
 echo "📦 Version: $(grep 'version:' pubspec.yaml | sed 's/version: //')"
 echo "📅 Date: $(date +%Y%m%d)"
 echo ""

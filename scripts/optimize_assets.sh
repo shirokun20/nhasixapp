@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Script untuk optimize tags.json yang 4.9MB
-# Usage: ./optimize_assets.sh
+# Usage: ./scripts/optimize_assets.sh
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
 
 echo "🔍 APK Size Optimization - Asset Analysis"
 echo ""
@@ -98,7 +102,7 @@ fi
 echo ""
 echo "📱 NEXT STEPS:"
 echo "1. 🗜️ Implement compressed JSON loading (if chosen)"
-echo "2. 🏗️ Build with optimized script: ./build_optimized.sh"
+echo "2. 🏗️ Build with optimized script: ./scripts/build_optimized.sh"
 echo "3. 📏 Verify APK size reduction"
 echo "4. 🧪 Test app functionality"
 echo ""

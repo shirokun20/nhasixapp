@@ -133,7 +133,7 @@ jobs:
 
       # Make build script executable
       - name: Prepare Build Script
-        run: chmod +x build_optimized.sh
+        run: chmod +x scripts/build_optimized.sh
 
       # Build optimized APK
       # Respects workflow_dispatch inputs for build type and ABI splitting
@@ -159,7 +159,7 @@ jobs:
 
           if [ -f "android/app/upload-keystore.jks" ]; then
             echo "🔐 Building signed $BUILD_TYPE APK (flavor: prod)..."
-            FLAVOR=prod ./build_optimized.sh $BUILD_TYPE
+            FLAVOR=prod ./scripts/build_optimized.sh $BUILD_TYPE
           else
             echo "⚠️ No keystore found, building $BUILD_TYPE APK without signing (flavor: prod)..."
             flutter build apk --$BUILD_TYPE --flavor prod $SPLIT_FLAG --dart-define=cronetHttpNoPlay=true
