@@ -751,6 +751,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lastUpdatedLabel => '更新于:';
 
   @override
+  String get releasedLabel => '发布于:';
+
+  @override
+  String get updatedLabel => '更新于:';
+
+  @override
   String get rangeLabel => '范围:';
 
   @override

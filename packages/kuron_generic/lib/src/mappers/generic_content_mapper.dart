@@ -618,11 +618,48 @@ class GenericContentMapper {
         .replaceFirst(RegExp(r'^(posted|uploaded|upload date|date)\s*:\s*'), '')
         .trim();
 
-    if (normalized == 'just now' || normalized == 'today') {
+    if (normalized == 'just now' ||
+        normalized == 'today' ||
+        normalized == 'baru saja' ||
+        normalized == 'hari ini') {
       return now;
     }
-    if (normalized == 'yesterday') {
+    if (normalized == 'yesterday' || normalized == 'kemarin') {
       return now.subtract(const Duration(days: 1));
+    }
+
+    // Indonesian: "7 menit lalu", "2 jam lalu", "3 hari lalu", "1 minggu lalu", "2 bulan lalu", "1 tahun lalu"
+    final idMatch = RegExp(
+      r'^(\d+|a|an|satu|se)\s+(detik|menit|jam|hari|minggu|bulan|tahun)s?\s+lalu$',
+    ).firstMatch(normalized);
+    if (idMatch != null) {
+      final quantityRaw = idMatch.group(1) ?? '0';
+      final unit = idMatch.group(2) ?? '';
+      final quantity = (quantityRaw == 'a' ||
+              quantityRaw == 'an' ||
+              quantityRaw == 'satu' ||
+              quantityRaw == 'se')
+          ? 1
+          : (int.tryParse(quantityRaw) ?? 0);
+      if (quantity <= 0) return null;
+      switch (unit) {
+        case 'detik':
+          return now.subtract(Duration(seconds: quantity));
+        case 'menit':
+          return now.subtract(Duration(minutes: quantity));
+        case 'jam':
+          return now.subtract(Duration(hours: quantity));
+        case 'hari':
+          return now.subtract(Duration(days: quantity));
+        case 'minggu':
+          return now.subtract(Duration(days: quantity * 7));
+        case 'bulan':
+          return now.subtract(Duration(days: quantity * 30));
+        case 'tahun':
+          return now.subtract(Duration(days: quantity * 365));
+        default:
+          return null;
+      }
     }
 
     final match = RegExp(

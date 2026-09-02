@@ -115,6 +115,12 @@ class EHentaiScraperAdapter implements GenericAdapter {
         updated = updated.copyWith(language: language);
       }
 
+      // Set uploadDate from list posted date if available
+      final postedDate = data['postedDate'] as DateTime?;
+      if (postedDate != null) {
+        updated = updated.copyWith(uploadDate: postedDate);
+      }
+
       enriched.add(updated);
     }
 
@@ -1090,8 +1096,12 @@ class EHentaiScraperAdapter implements GenericAdapter {
         if (rustTags != null) {
           return rustTags.map((t) {
             return Tag(
-              id: 0, name: t, type: TagType.tag,
-              count: 0, url: '', slug: t,
+              id: 0,
+              name: t,
+              type: TagType.tag,
+              count: 0,
+              url: '',
+              slug: t,
             );
           }).toList();
         }
@@ -1358,10 +1368,16 @@ class EHentaiScraperAdapter implements GenericAdapter {
         // Extract language for this ID
         final language = _extractLanguageFromRow(row);
 
+        // Extract posted date for this ID (e.g. "2026-09-02 12:29")
+        final postedRaw = _extractPostedDateFromRow(row);
+        final postedDate = _parsePostedDate(postedRaw);
+
         // Store combined data
         result[idValue] = {
           'cover': cover,
           'language': language,
+          'postedRaw': postedRaw,
+          'postedDate': postedDate,
         };
       }
 
@@ -1684,6 +1700,34 @@ class EHentaiScraperAdapter implements GenericAdapter {
       }
     }
     return cleaned;
+  }
+
+  String _extractPostedDateFromRow(dom.Element row) {
+    // E-Hentai list row date: <div id="posted_123">2026-09-02 12:29</div>
+    // or <div id="postedpop_123">2026-09-02 12:29</div>
+    final posted = row.querySelector('[id^="posted_"]') ??
+        row.querySelector('[id^="postedpop_"]');
+    if (posted != null) {
+      final text = posted.text.trim();
+      if (text.isNotEmpty) return text;
+    }
+    // Fallback: search for date pattern in row text
+    final match =
+        RegExp(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})').firstMatch(row.text);
+    return match?.group(1) ?? '';
+  }
+
+  DateTime? _parsePostedDate(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    // Format: "2026-09-02 12:29" or "2026-09-02 12:29:00"
+    final normalized = trimmed.replaceFirst(' ', 'T');
+    // Try with seconds, then without
+    var parsed = DateTime.tryParse(normalized);
+    if (parsed != null) return parsed;
+    // Try adding seconds
+    parsed = DateTime.tryParse('$normalized:00');
+    return parsed;
   }
 }
 

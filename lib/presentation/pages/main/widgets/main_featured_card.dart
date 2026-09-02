@@ -14,6 +14,7 @@ import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:nhasixapp/core/utils/relative_time_utils.dart';
 import 'package:kuron_core/kuron_core.dart';
 
 // Horizontal featured card widget: Image left (40%), Content info right (60%)
@@ -391,6 +392,51 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
                                       ),
                                       const SizedBox(height: 8),
                                     ],
+                                    // Last update / release time (hidden when epoch/future)
+                                    Builder(
+                                      builder: (context) {
+                                        final label = RelativeTimeUtils.format(
+                                          content.uploadDate,
+                                          context,
+                                        );
+                                        if (label == null) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 6),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.schedule,
+                                                size: 10,
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant
+                                                    .withValues(alpha: 0.7),
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Flexible(
+                                                child: Text(
+                                                  label,
+                                                  style: TextStyleConst
+                                                      .labelSmall
+                                                      .copyWith(
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant
+                                                        .withValues(alpha: 0.7),
+                                                    fontSize: 10,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                     // Language flag
                                     Row(
                                       children: [

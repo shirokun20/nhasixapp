@@ -424,6 +424,8 @@
     }
   },
   "lastUpdatedLabel": "更新于:",
+  "releasedLabel": "发布于:",
+  "updatedLabel": "更新于:",
   "rangeLabel": "范围:",
   "ofWord": "/",
   "waitAndTry": "请等待 {minutes} 分钟后再试",

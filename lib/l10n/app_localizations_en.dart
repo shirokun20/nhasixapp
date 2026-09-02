@@ -784,6 +784,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lastUpdatedLabel => 'Updated:';
 
   @override
+  String get releasedLabel => 'Released:';
+
+  @override
+  String get updatedLabel => 'Updated:';
+
+  @override
   String get rangeLabel => 'Range:';
 
   @override

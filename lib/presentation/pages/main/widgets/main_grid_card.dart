@@ -14,6 +14,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
+import 'package:nhasixapp/core/utils/relative_time_utils.dart';
 import 'package:logger/logger.dart';
 
 // Grid card widget for 2-column layout with ripple effect
@@ -262,6 +263,46 @@ class _MainGridCardState extends State<MainGridCard> {
                                       language: content.language, theme: theme),
                                 ],
                               ],
+                            ),
+                            // Last update / release time (hidden when epoch/future)
+                            Builder(
+                              builder: (context) {
+                                final label = RelativeTimeUtils.format(
+                                  content.uploadDate,
+                                  context,
+                                );
+                                if (label == null) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.schedule,
+                                        size: 10,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.7),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Flexible(
+                                        child: Text(
+                                          label,
+                                          style:
+                                              TextStyleConst.overline.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.7),
+                                            fontSize: 9,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

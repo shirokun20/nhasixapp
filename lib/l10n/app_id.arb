@@ -462,6 +462,8 @@
     }
   },
   "lastUpdatedLabel": "Diperbarui:",
+  "releasedLabel": "Rilis:",
+  "updatedLabel": "Diperbarui:",
   "rangeLabel": "Rentang:",
   "ofWord": "dari",
   "waitAndTry": "Tunggu {minutes} menit dan coba lagi",

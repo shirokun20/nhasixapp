@@ -393,6 +393,8 @@
     }
   },
   "lastUpdatedLabel": "Updated:",
+  "releasedLabel": "Released:",
+  "updatedLabel": "Updated:",
   "rangeLabel": "Range:",
   "ofWord": "of",
   "waitAndTry": "Wait {minutes} minutes and try again",

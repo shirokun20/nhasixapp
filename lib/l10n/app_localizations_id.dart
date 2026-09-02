@@ -786,6 +786,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get lastUpdatedLabel => 'Diperbarui:';
 
   @override
+  String get releasedLabel => 'Rilis:';
+
+  @override
+  String get updatedLabel => 'Diperbarui:';
+
+  @override
   String get rangeLabel => 'Rentang:';
 
   @override

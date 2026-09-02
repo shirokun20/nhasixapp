@@ -1504,6 +1504,18 @@ abstract class AppLocalizations {
   /// **'Updated:'**
   String get lastUpdatedLabel;
 
+  /// No description provided for @releasedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Released:'**
+  String get releasedLabel;
+
+  /// No description provided for @updatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated:'**
+  String get updatedLabel;
+
   /// No description provided for @rangeLabel.
   ///
   /// In en, this message translates to:
