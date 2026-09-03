@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart';
+import 'package:nhasixapp/domain/repositories/ai_translation_repositories.dart';
 import 'package:nhasixapp/presentation/cubits/ai_settings/ai_settings_cubit.dart';
 
 import 'fakes.dart';
@@ -8,32 +9,37 @@ import 'fakes.dart';
 void main() {
   late FakeAiProviderRepository providerRepo;
   late FakeAiPreferencesRepository prefsRepo;
+  late FakeAiModelCatalogRepository catalogRepo;
   late AiSettingsCubit cubit;
 
   setUp(() {
     providerRepo = FakeAiProviderRepository();
     prefsRepo = FakeAiPreferencesRepository();
+    catalogRepo = FakeAiModelCatalogRepository();
     cubit = AiSettingsCubit(
       providerRepository: providerRepo,
       preferencesRepository: prefsRepo,
       providerFactory: FakeAiProviderFactory(),
       cacheRepository: FakeCacheRepository(),
+      modelCatalog: catalogRepo,
       logger: Logger(level: Level.off),
     );
   });
 
-  tearDown(() => cubit.close());
+  tearDown(() async {
+    await pumpEventQueue();
+    await cubit.close();
+  });
 
-  test('loads providers with Zen built-in always present', () async {
+  test('loads providers empty when none stored (no built-in)', () async {
     await pumpEventQueue();
     final state = cubit.state;
     expect(state, isA<AiSettingsLoaded>());
     final loaded = state as AiSettingsLoaded;
-    expect(loaded.providers.any((p) => p.id == 'zen-builtin'), true);
-    expect(loaded.providers.length, 1); // zen only by default
+    expect(loaded.providers, isEmpty);
   });
 
-  test('addProvider then deleteProvider: Zen cannot be deleted', () async {
+  test('addProvider then deleteProvider', () async {
     await pumpEventQueue();
     final newProvider = AiProviderConfig(
       id: 'p1',
@@ -45,18 +51,25 @@ void main() {
     await cubit.addProvider(newProvider);
     await pumpEventQueue();
     var loaded = cubit.state as AiSettingsLoaded;
-    expect(loaded.providers.length, 2);
+    expect(loaded.providers.length, 1);
+    expect(loaded.providers.any((p) => p.id == 'p1'), true);
 
-    await cubit.deleteProvider('zen-builtin');
+    await cubit.addProvider(AiProviderConfig(
+      id: 'p2',
+      displayName: 'OpenAI',
+      type: AiProviderType.openAi,
+      model: 'gpt-4o',
+      apiKey: 'k2',
+    ));
     await pumpEventQueue();
     loaded = cubit.state as AiSettingsLoaded;
-    expect(loaded.providers.any((p) => p.id == 'zen-builtin'), true);
-    expect(loaded.providers.length, 2); // Zen survives delete
+    expect(loaded.providers.length, 2);
 
     await cubit.deleteProvider('p1');
     await pumpEventQueue();
     loaded = cubit.state as AiSettingsLoaded;
     expect(loaded.providers.any((p) => p.id == 'p1'), false);
+    expect(loaded.providers.length, 1);
   });
 
   test('setDefault marks the right provider active', () async {
@@ -82,5 +95,23 @@ void main() {
     final loaded = cubit.state as AiSettingsLoaded;
     expect(loaded.targetLang, 'Japanese');
     expect(loaded.style, TranslationStyle.action);
+  });
+
+  test('fetchModels delegates to catalog', () async {
+    await pumpEventQueue();
+    catalogRepo.models = [
+      const AiModelOption(id: 'model-a', isVision: true),
+      const AiModelOption(id: 'model-b', isVision: null),
+    ];
+    final models = await cubit.fetchModels(type: AiProviderType.zen);
+    expect(models.length, 2);
+    expect(models.first.id, 'model-a');
+  });
+
+  test('fetchModels throws on failure (no fallback)', () async {
+    await pumpEventQueue();
+    catalogRepo.shouldThrow = true;
+    expect(() => cubit.fetchModels(type: AiProviderType.openRouter),
+        throwsA(isA<AiTranslationException>()));
   });
 }

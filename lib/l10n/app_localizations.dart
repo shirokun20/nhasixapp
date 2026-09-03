@@ -9924,6 +9924,78 @@ abstract class AppLocalizations {
   /// **'Default: {model}'**
   String aiDefaultModel(Object model);
 
+  /// No description provided for @aiLoadModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Load models'**
+  String get aiLoadModels;
+
+  /// No description provided for @aiReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get aiReload;
+
+  /// No description provided for @aiManualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual entry'**
+  String get aiManualEntry;
+
+  /// No description provided for @aiUseLov.
+  ///
+  /// In en, this message translates to:
+  /// **'Use list'**
+  String get aiUseLov;
+
+  /// No description provided for @aiEnterApiKeyFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter API key first'**
+  String get aiEnterApiKeyFirst;
+
+  /// No description provided for @aiAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get aiAll;
+
+  /// No description provided for @aiVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision'**
+  String get aiVision;
+
+  /// No description provided for @aiTextOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Text only'**
+  String get aiTextOnly;
+
+  /// No description provided for @aiSearchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get aiSearchModels;
+
+  /// No description provided for @aiSelectModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Select model'**
+  String get aiSelectModel;
+
+  /// No description provided for @aiStaleModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved model \"{model}\" not in current list'**
+  String aiStaleModel(Object model);
+
+  /// No description provided for @aiModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a model from the live list, or use manual entry'**
+  String get aiModelHint;
+
   /// No description provided for @aiClearCacheCleared.
   ///
   /// In en, this message translates to:

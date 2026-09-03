@@ -50,10 +50,24 @@ abstract interface class AiProviderRepository {
   Future<AiProviderConfig?> getDefault();
 }
 
+/// Lists available models per provider type for the settings LOV.
+///
+/// Live-only: no curated lists. Throws [AiTranslationException] when the
+/// fetch fails so the UI shows error + retry + manual entry. `custom`
+/// always throws (manual entry only). Implementations must never persist
+/// results and must never log API keys.
+abstract interface class AiModelCatalogRepository {
+  Future<List<AiModelOption>> getModels({
+    required AiProviderType type,
+    String? apiKey,
+  });
+}
+
 /// Caches page translations keyed by deterministic content/page hash.
 abstract interface class TranslationCacheRepository {
   Future<PageTranslation?> get(String key);
-  Future<void> put(String key, PageTranslation result, {String? contentId, int? pageIndex});
+  Future<void> put(String key, PageTranslation result,
+      {String? contentId, int? pageIndex});
   Future<void> clear();
 }
 

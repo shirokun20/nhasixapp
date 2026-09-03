@@ -20,6 +20,9 @@ enum AiProviderType {
   gemini,
   openAi,
   openRouter,
+  metaAi,
+  clinePass,
+  cohere,
   custom;
 
   String get displayName {
@@ -34,6 +37,12 @@ enum AiProviderType {
         return 'OpenAI';
       case AiProviderType.openRouter:
         return 'OpenRouter';
+      case AiProviderType.metaAi:
+        return 'Meta AI';
+      case AiProviderType.clinePass:
+        return 'ClinePass';
+      case AiProviderType.cohere:
+        return 'Cohere';
       case AiProviderType.custom:
         return 'Custom';
     }
@@ -57,28 +66,89 @@ enum AiProviderType {
         return 'https://api.openai.com/v1/chat/completions';
       case AiProviderType.openRouter:
         return 'https://openrouter.ai/api/v1/chat/completions';
+      case AiProviderType.metaAi:
+        return 'https://api.meta.ai/v1/chat/completions';
+      case AiProviderType.clinePass:
+        return 'https://api.clinepass.com/v1/chat/completions';
+      case AiProviderType.cohere:
+        return 'https://api.cohere.com/compatibility/v1/chat/completions';
       case AiProviderType.custom:
         return null; // User must supply
     }
   }
 
-  /// Default model per type (July 2026).
-  String? get defaultModel {
+  /// List-models endpoint per type (null = no listing, manual entry).
+  ///
+  /// Verified via curl 2026-09-03:
+  /// - zen/go/openRouter: no key, `{object, data:[{id}]}`.
+  /// - openAi: Bearer key required (401 without).
+  /// - gemini: `?key=` required (403 without), native shape
+  ///   `{models:[{name, supportedGenerationMethods}]}`.
+  String? get modelsUrl {
     switch (this) {
       case AiProviderType.zen:
-        return 'deepseek-v4-flash-free'; // $0 text-only, no key
+        return 'https://opencode.ai/zen/v1/models';
       case AiProviderType.openCodeGo:
-        return 'kimi-k2.6'; // vision, most token-efficient
-      case AiProviderType.gemini:
-        return 'gemini-2.5-flash';
+        return 'https://opencode.ai/zen/go/v1/models';
       case AiProviderType.openAi:
-        return 'gpt-4o-mini';
+        return 'https://api.openai.com/v1/models';
       case AiProviderType.openRouter:
-        return 'google/gemma-4-27b-it:free';
+        return 'https://openrouter.ai/api/v1/models';
+      case AiProviderType.gemini:
+        return 'https://generativelanguage.googleapis.com/v1beta/models';
+      case AiProviderType.metaAi:
+        return 'https://api.meta.ai/v1/models';
+      case AiProviderType.clinePass:
+        return 'https://api.clinepass.com/v1/models';
+      case AiProviderType.cohere:
+        return 'https://api.cohere.com/v1/models';
       case AiProviderType.custom:
-        return null; // User must supply
+        return null; // Excluded from fetching — manual entry only.
     }
   }
+
+  /// Whether this type needs an API key before listing models.
+  bool get needsKeyForListing {
+    switch (this) {
+      case AiProviderType.openAi:
+      case AiProviderType.gemini:
+      case AiProviderType.metaAi:
+      case AiProviderType.clinePass:
+      case AiProviderType.cohere:
+        return true;
+      case AiProviderType.zen:
+      case AiProviderType.openCodeGo:
+      case AiProviderType.openRouter:
+      case AiProviderType.custom:
+        return false;
+    }
+  }
+}
+
+/// One selectable model entry for the provider LOV.
+///
+/// [isVision] is null when the list API exposes no capability flag —
+/// the UI shows no badge and the Test button decides.
+class AiModelOption extends Equatable {
+  const AiModelOption({
+    required this.id,
+    this.isVision,
+    this.label,
+  });
+
+  /// Model ID as returned by the provider list API.
+  final String id;
+
+  /// Human label; defaults to [id] when null.
+  final String? label;
+
+  /// True = vision, false = text-only, null = unknown (API gave no flag).
+  final bool? isVision;
+
+  String get displayLabel => label ?? id;
+
+  @override
+  List<Object?> get props => [id, label, isVision];
 }
 
 /// AI provider configuration (BYOK).
@@ -91,28 +161,31 @@ class AiProviderConfig extends Equatable {
     this.apiKey,
     this.baseUrl,
     this.isDefault = false,
+    this.modelIsVision,
   });
 
   final String id; // UUID
   final String displayName;
   final AiProviderType type;
   final String model;
-  final String? apiKey; // Optional: deepseek-v4-flash-free needs no key
+  final String? apiKey; // Optional: some types list models without a key
   final String? baseUrl; // Custom only; auto-detected from type otherwise
   final bool isDefault;
 
+  /// Vision flag captured from the live model LOV at selection time.
+  /// Null = unknown (legacy stored config or manual entry) — the Test
+  /// button decides instead of any name-based guessing.
+  final bool? modelIsVision;
+
   /// Whether this provider can read page images for translation.
   ///
-  /// Vision capability follows the ENDPOINT/type, not a model-name heuristic:
-  /// OpenRouter free vision models (`google/gemma-4-27b-it:free`) ARE
-  /// vision-capable. Only the known text-only DeepSeek flash models are
-  /// excluded (free tier serves no vision models — verified: vision 500).
+  /// Fully dynamic: stored LOV flag wins; empty model is never capable;
+  /// unknown falls back to capable so new vision models keep working
+  /// (Test validates before save).
   bool get isVisionCapable {
-    if (type == AiProviderType.custom) return model.isNotEmpty;
-    if (model == 'deepseek-v4-flash-free' || model == 'deepseek-v4-flash') {
-      return false;
-    }
-    return type != AiProviderType.custom;
+    if (model.isEmpty) return false;
+    if (modelIsVision != null) return modelIsVision!;
+    return true;
   }
 
   AiProviderConfig copyWith({
@@ -123,6 +196,7 @@ class AiProviderConfig extends Equatable {
     String? apiKey,
     String? baseUrl,
     bool? isDefault,
+    bool? modelIsVision,
   }) {
     return AiProviderConfig(
       id: id ?? this.id,
@@ -132,6 +206,7 @@ class AiProviderConfig extends Equatable {
       apiKey: apiKey ?? this.apiKey,
       baseUrl: baseUrl ?? this.baseUrl,
       isDefault: isDefault ?? this.isDefault,
+      modelIsVision: modelIsVision ?? this.modelIsVision,
     );
   }
 
@@ -144,6 +219,7 @@ class AiProviderConfig extends Equatable {
       apiKey: json['apiKey'] as String?,
       baseUrl: json['baseUrl'] as String?,
       isDefault: json['isDefault'] as bool? ?? false,
+      modelIsVision: json['modelIsVision'] as bool?,
     );
   }
 
@@ -156,12 +232,13 @@ class AiProviderConfig extends Equatable {
       'apiKey': apiKey,
       'baseUrl': baseUrl,
       'isDefault': isDefault,
+      if (modelIsVision != null) 'modelIsVision': modelIsVision,
     };
   }
 
   @override
   List<Object?> get props =>
-      [id, displayName, type, model, apiKey, baseUrl, isDefault];
+      [id, displayName, type, model, apiKey, baseUrl, isDefault, modelIsVision];
 }
 
 /// Translation tone/style — injected into the AI prompt.
@@ -290,7 +367,8 @@ class BubbleTranslation extends Equatable {
       isSfxSkipped: json['isSfxSkipped'] as bool? ?? false,
       needsWhitePatch: json['needsWhitePatch'] as bool? ?? false,
       shape: (json['shape'] as List<dynamic>?)
-          ?.map((p) => (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
+          ?.map((p) =>
+              (p as List<dynamic>).map((e) => (e as num).toInt()).toList())
           .toList(),
       fontFamily: json['fontFamily'] as String?,
     );

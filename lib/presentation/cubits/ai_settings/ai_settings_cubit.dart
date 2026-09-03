@@ -13,12 +13,14 @@ class AiSettingsCubit extends BaseCubit<AiSettingsState> {
     required AiPreferencesRepository preferencesRepository,
     required AiProviderFactory providerFactory,
     required TranslationCacheRepository cacheRepository,
+    required AiModelCatalogRepository modelCatalog,
     required super.logger,
     this.localizations,
   })  : _providerRepository = providerRepository,
         _preferencesRepository = preferencesRepository,
         _providerFactory = providerFactory,
         _cacheRepository = cacheRepository,
+        _modelCatalog = modelCatalog,
         super(initialState: const AiSettingsInitial()) {
     loadProviders();
   }
@@ -27,6 +29,7 @@ class AiSettingsCubit extends BaseCubit<AiSettingsState> {
   final AiPreferencesRepository _preferencesRepository;
   final AiProviderFactory _providerFactory;
   final TranslationCacheRepository _cacheRepository;
+  final AiModelCatalogRepository _modelCatalog;
   final AppLocalizations? localizations;
 
   static const List<String> supportedLanguages = [
@@ -106,6 +109,15 @@ class AiSettingsCubit extends BaseCubit<AiSettingsState> {
     } catch (e) {
       return 'Validation failed: $e';
     }
+  }
+
+  /// Live model LOV for the provider form. Throws [AiTranslationException]
+  /// on failure (UI shows error + retry + manual entry). No fallback lists.
+  Future<List<AiModelOption>> fetchModels({
+    required AiProviderType type,
+    String? apiKey,
+  }) {
+    return _modelCatalog.getModels(type: type, apiKey: apiKey);
   }
 
   /// Round-robin fallback: same-type keys first, then different providers.

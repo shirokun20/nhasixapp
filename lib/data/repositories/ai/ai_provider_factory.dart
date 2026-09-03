@@ -32,6 +32,9 @@ class AiProviderFactoryImpl implements AiProviderFactory {
       case AiProviderType.openCodeGo:
       case AiProviderType.openAi:
       case AiProviderType.openRouter:
+      case AiProviderType.metaAi:
+      case AiProviderType.clinePass:
+      case AiProviderType.cohere:
       case AiProviderType.custom:
         return OpenAICompatibleProvider(
           config: config,

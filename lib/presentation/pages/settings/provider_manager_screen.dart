@@ -19,6 +19,7 @@ class ProviderManagerScreen extends StatelessWidget {
         preferencesRepository: getIt(),
         providerFactory: getIt(),
         cacheRepository: getIt(),
+        modelCatalog: getIt(),
         logger: getIt(),
         localizations: AppLocalizations.of(context),
       ),
@@ -95,7 +96,6 @@ class _ProviderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isZen = provider.id == 'zen-builtin';
     final cubit = context.read<AiSettingsCubit>();
     return Material(
       color: Colors.transparent,
@@ -117,8 +117,7 @@ class _ProviderTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          '${provider.type.displayName} • ${provider.model}'
-          '${isZen ? ' • ${AppLocalizations.of(context)!.aiNoKeyNeeded}' : ''}',
+          '${provider.type.displayName} • ${provider.model.isEmpty ? '—' : provider.model}',
           style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(Icons.edit_outlined, size: 18),
@@ -156,7 +155,14 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
   late AiProviderType _type;
   bool _isTesting = false;
   String? _testResult;
-  bool _testRan = false; // distinguishes "valid (null)" from "not yet tested"
+  bool _testRan = false;
+  List<AiModelOption>? _models;
+  String? _modelsError;
+  bool _isLoadingModels = false;
+  bool _manualMode = false;
+  bool? _selectedVision;
+  String _modelFilter = 'all';
+  String _searchQuery = '';
 
   bool get _isEditing => widget.provider != null;
 
@@ -167,8 +173,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
     _type = p?.type ?? AiProviderType.openCodeGo;
     _nameController = TextEditingController(text: p?.displayName ?? '');
     _keyController = TextEditingController(text: p?.apiKey ?? '');
-    _modelController =
-        TextEditingController(text: p?.model ?? p?.type.defaultModel ?? '');
+    _modelController = TextEditingController(text: p?.model ?? '');
     _baseUrlController = TextEditingController(text: p?.baseUrl ?? '');
   }
 
@@ -189,9 +194,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
           ? _type.displayName
           : _nameController.text.trim(),
       type: _type,
-      model: _modelController.text.trim().isEmpty
-          ? (_type.defaultModel ?? '')
-          : _modelController.text.trim(),
+      model: _modelController.text.trim(),
       apiKey: _keyController.text.trim().isEmpty
           ? null
           : _keyController.text.trim(),
@@ -201,6 +204,302 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
               : _baseUrlController.text.trim())
           : existing?.baseUrl,
       isDefault: existing?.isDefault ?? false,
+      modelIsVision: _selectedVision,
+    );
+  }
+
+  Future<void> _loadModels() async {
+    if (_type == AiProviderType.custom) return;
+    setState(() {
+      _isLoadingModels = true;
+      _modelsError = null;
+    });
+    try {
+      final apiKey = _keyController.text.trim().isEmpty
+          ? null
+          : _keyController.text.trim();
+      final models = await context
+          .read<AiSettingsCubit>()
+          .fetchModels(type: _type, apiKey: apiKey);
+      if (!mounted) return;
+      setState(() {
+        _models = models;
+        _isLoadingModels = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _modelsError = e.toString();
+        _isLoadingModels = false;
+      });
+    }
+  }
+
+  Widget _buildModelField(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    if (_type == AiProviderType.custom) {
+      return TextField(
+        controller: _modelController,
+        decoration: InputDecoration(
+            labelText: l10n.aiModel, hintText: 'e.g. gpt-4o-mini'),
+      );
+    }
+    if (_manualMode) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _modelController,
+            decoration: InputDecoration(labelText: l10n.aiModel),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () => setState(() => _manualMode = false),
+            icon: const Icon(Icons.list, size: 16),
+            label: Text(l10n.aiUseLov),
+          ),
+        ],
+      );
+    }
+    if (_isLoadingModels) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.all(12), child: CircularProgressIndicator()));
+    }
+    if (_modelsError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_modelsError!,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 12)),
+          const SizedBox(height: 8),
+          Row(children: [
+            OutlinedButton(onPressed: _loadModels, child: Text(l10n.aiReload)),
+            const SizedBox(width: 8),
+            TextButton(
+                onPressed: () => setState(() => _manualMode = true),
+                child: Text(l10n.aiManualEntry)),
+          ]),
+        ],
+      );
+    }
+    if (_models == null) {
+      final needsKey =
+          _type.needsKeyForListing && _keyController.text.trim().isEmpty;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OutlinedButton.icon(
+            onPressed: needsKey ? null : _loadModels,
+            icon: const Icon(Icons.cloud_download, size: 16),
+            label: Text(l10n.aiLoadModels),
+          ),
+          if (needsKey)
+            Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(l10n.aiEnterApiKeyFirst,
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.orange))),
+          Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                  onPressed: () => setState(() => _manualMode = true),
+                  child: Text(l10n.aiManualEntry))),
+        ],
+      );
+    }
+    final filtered = _models!.where((m) {
+      if (_modelFilter == 'vision' && m.isVision != true) {
+        return false;
+      }
+      if (_modelFilter == 'text' && m.isVision != false) {
+        return false;
+      }
+      if (_searchQuery.isNotEmpty &&
+          !m.id.toLowerCase().contains(_searchQuery.toLowerCase())) {
+        return false;
+      }
+      return true;
+    }).toList();
+    final isLarge = _models!.length > 80;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          ChoiceChip(
+              label: Text(l10n.aiAll),
+              selected: _modelFilter == 'all',
+              onSelected: (_) => setState(() => _modelFilter = 'all')),
+          const SizedBox(width: 6),
+          ChoiceChip(
+              label: Text(l10n.aiVision),
+              selected: _modelFilter == 'vision',
+              onSelected: (_) => setState(() => _modelFilter = 'vision')),
+          const SizedBox(width: 6),
+          ChoiceChip(
+              label: Text(l10n.aiTextOnly),
+              selected: _modelFilter == 'text',
+              onSelected: (_) => setState(() => _modelFilter = 'text')),
+          const Spacer(),
+          IconButton(
+              icon: const Icon(Icons.refresh, size: 18),
+              onPressed: _loadModels,
+              tooltip: l10n.aiReload),
+        ]),
+        const SizedBox(height: 8),
+        if (isLarge)
+          TextField(
+            decoration: InputDecoration(
+                hintText: l10n.aiSearchModels,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                isDense: true),
+            onChanged: (v) => setState(() => _searchQuery = v),
+          ),
+        if (isLarge) const SizedBox(height: 8),
+        if (isLarge)
+          OutlinedButton.icon(
+            onPressed: () => _showModelPicker(context, filtered),
+            icon: const Icon(Icons.list),
+            label: Text(_modelController.text.isEmpty
+                ? l10n.aiSelectModel
+                : _modelController.text),
+          )
+        else
+          DropdownButtonFormField<String>(
+            initialValue:
+                _modelController.text.isEmpty ? null : _modelController.text,
+            decoration: InputDecoration(labelText: l10n.aiModel),
+            isExpanded: true,
+            items: filtered
+                .map((m) => DropdownMenuItem(
+                    value: m.id,
+                    child: Row(children: [
+                      Expanded(
+                          child: Text(m.id,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13))),
+                      if (m.isVision != null) ...[
+                        const SizedBox(width: 6),
+                        Icon(m.isVision! ? Icons.visibility : Icons.text_fields,
+                            size: 14,
+                            color: m.isVision! ? Colors.green : Colors.grey)
+                      ]
+                    ])))
+                .toList(),
+            onChanged: (v) {
+              if (v == null) return;
+              final opt = filtered.firstWhere((e) => e.id == v);
+              setState(() {
+                _modelController.text = v;
+                _selectedVision = opt.isVision;
+              });
+            },
+          ),
+        const SizedBox(height: 4),
+        TextButton(
+            onPressed: () => setState(() => _manualMode = true),
+            child: Text(l10n.aiManualEntry)),
+        if (_models != null &&
+            widget.provider != null &&
+            widget.provider!.model.isNotEmpty &&
+            !_models!.any((m) => m.id == widget.provider!.model))
+          Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(l10n.aiStaleModel(widget.provider!.model),
+                  style:
+                      TextStyle(color: Colors.orange.shade700, fontSize: 11))),
+      ],
+    );
+  }
+
+  void _showModelPicker(BuildContext context, List<AiModelOption> options) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        String q = _searchQuery;
+        String filter = _modelFilter;
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          final filtered = options.where((m) {
+            if (filter == 'vision' && m.isVision != true) {
+              return false;
+            }
+            if (filter == 'text' && m.isVision != false) {
+              return false;
+            }
+            if (q.isNotEmpty &&
+                !m.id.toLowerCase().contains(q.toLowerCase())) {
+              return false;
+            }
+            return true;
+          }).toList();
+          return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.7,
+              maxChildSize: 0.9,
+              builder: (_, ctrl) => Column(children: [
+                    Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: TextField(
+                            decoration: InputDecoration(
+                                hintText: l10n.aiSearchModels,
+                                prefixIcon: const Icon(Icons.search)),
+                            onChanged: (v) => setSheet(() => q = v))),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(children: [
+                          ChoiceChip(
+                              label: Text(l10n.aiAll),
+                              selected: filter == 'all',
+                              onSelected: (_) =>
+                                  setSheet(() => filter = 'all')),
+                          const SizedBox(width: 6),
+                          ChoiceChip(
+                              label: Text(l10n.aiVision),
+                              selected: filter == 'vision',
+                              onSelected: (_) =>
+                                  setSheet(() => filter = 'vision')),
+                          const SizedBox(width: 6),
+                          ChoiceChip(
+                              label: Text(l10n.aiTextOnly),
+                              selected: filter == 'text',
+                              onSelected: (_) =>
+                                  setSheet(() => filter = 'text')),
+                        ])),
+                    Expanded(
+                        child: ListView.builder(
+                            controller: ctrl,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final m = filtered[i];
+                              return ListTile(
+                                  title: Text(m.id,
+                                      style: const TextStyle(fontSize: 13)),
+                                  trailing: m.isVision == null
+                                      ? null
+                                      : Icon(
+                                          m.isVision!
+                                              ? Icons.visibility
+                                              : Icons.text_fields,
+                                          size: 16,
+                                          color: m.isVision!
+                                              ? Colors.green
+                                              : Colors.grey),
+                                  onTap: () {
+                                    setState(() {
+                                      _modelController.text = m.id;
+                                      _selectedVision = m.isVision;
+                                      _searchQuery = q;
+                                      _modelFilter = filter;
+                                    });
+                                    Navigator.pop(ctx);
+                                  });
+                            })),
+                  ]));
+        });
+      },
     );
   }
 
@@ -238,7 +537,11 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                   if (v == null) return;
                   setState(() {
                     _type = v;
-                    _modelController.text = v.defaultModel ?? '';
+                    _modelController.clear();
+                    _models = null;
+                    _modelsError = null;
+                    _isLoadingModels = false;
+                    _selectedVision = null;
                   });
                 },
               ),
@@ -249,21 +552,16 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
               decoration: InputDecoration(labelText: l10n.aiDisplayName),
             ),
             const SizedBox(height: 12),
-            if (!_isEditing || widget.provider!.id != 'zen-builtin') ...[
-              TextField(
-                controller: _keyController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: l10n.aiApiKey,
-                  hintText: l10n.aiApiKeyHint,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
             TextField(
-              controller: _modelController,
-              decoration: InputDecoration(labelText: l10n.aiModel),
+              controller: _keyController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: l10n.aiApiKey,
+                hintText: l10n.aiApiKeyHint,
+              ),
             ),
+            const SizedBox(height: 12),
+            _buildModelField(context),
             if (_type == AiProviderType.custom) ...[
               const SizedBox(height: 12),
               TextField(
@@ -304,7 +602,7 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (_isEditing && !_isEditingZenOnly)
+                if (_isEditing)
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
@@ -346,19 +644,16 @@ class _ProviderFormSheetState extends State<_ProviderFormSheet> {
                 ),
               ),
             ],
-            if (!_isEditing) ...[
-              const SizedBox(height: 12),
-              Text(
-                l10n.aiDefaultModel(_type.defaultModel ?? l10n.aiCustomTypeDefault),
-                style: theme.textTheme.bodySmall,
-              ),
+            if (_type != AiProviderType.custom &&
+                !_manualMode &&
+                _models == null &&
+                _modelsError == null) ...[
+              const SizedBox(height: 8),
+              Text(l10n.aiModelHint, style: theme.textTheme.bodySmall),
             ],
           ],
         ),
       ),
     );
   }
-
-  bool get _isEditingZenOnly =>
-      _isEditing && widget.provider!.id == 'zen-builtin';
 }

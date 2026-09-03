@@ -5635,6 +5635,44 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get aiLoadModels => '加载模型';
+
+  @override
+  String get aiReload => '重新加载';
+
+  @override
+  String get aiManualEntry => '手动输入';
+
+  @override
+  String get aiUseLov => '使用列表';
+
+  @override
+  String get aiEnterApiKeyFirst => '请先输入 API 密钥';
+
+  @override
+  String get aiAll => '全部';
+
+  @override
+  String get aiVision => '视觉';
+
+  @override
+  String get aiTextOnly => '仅文本';
+
+  @override
+  String get aiSearchModels => '搜索模型';
+
+  @override
+  String get aiSelectModel => '选择模型';
+
+  @override
+  String aiStaleModel(Object model) {
+    return '已保存的模型“$model”不在当前列表中';
+  }
+
+  @override
+  String get aiModelHint => '从实时列表中选择模型，或使用手动输入';
+
+  @override
   String get aiClearCacheCleared => '翻译缓存已清除';
 
   @override

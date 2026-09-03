@@ -51,6 +51,7 @@ void main() {
       preferencesRepository: FakeAiPreferencesRepository(),
       providerFactory: FakeAiProviderFactory(),
       cacheRepository: FakeCacheRepository(),
+      modelCatalog: FakeAiModelCatalogRepository(),
       logger: Logger(level: Level.off),
     );
     await pumpEventQueue();
@@ -65,6 +66,7 @@ void main() {
       preferencesRepository: FakeAiPreferencesRepository(),
       providerFactory: _ThrowingProviderFactory(),
       cacheRepository: FakeCacheRepository(),
+      modelCatalog: FakeAiModelCatalogRepository(),
       logger: Logger(level: Level.off),
     );
     await pumpEventQueue();

@@ -5820,6 +5820,45 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get aiLoadModels => 'Muat model';
+
+  @override
+  String get aiReload => 'Muat ulang';
+
+  @override
+  String get aiManualEntry => 'Input manual';
+
+  @override
+  String get aiUseLov => 'Pakai daftar';
+
+  @override
+  String get aiEnterApiKeyFirst => 'Masukkan API key dulu';
+
+  @override
+  String get aiAll => 'Semua';
+
+  @override
+  String get aiVision => 'Vision';
+
+  @override
+  String get aiTextOnly => 'Teks saja';
+
+  @override
+  String get aiSearchModels => 'Cari model';
+
+  @override
+  String get aiSelectModel => 'Pilih model';
+
+  @override
+  String aiStaleModel(Object model) {
+    return 'Model tersimpan \"$model\" tidak ada di daftar saat ini';
+  }
+
+  @override
+  String get aiModelHint =>
+      'Pilih model dari daftar live, atau pakai input manual';
+
+  @override
   String get aiClearCacheCleared => 'Cache terjemahan dibersihkan';
 
   @override

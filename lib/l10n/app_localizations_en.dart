@@ -5793,6 +5793,45 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get aiLoadModels => 'Load models';
+
+  @override
+  String get aiReload => 'Reload';
+
+  @override
+  String get aiManualEntry => 'Manual entry';
+
+  @override
+  String get aiUseLov => 'Use list';
+
+  @override
+  String get aiEnterApiKeyFirst => 'Enter API key first';
+
+  @override
+  String get aiAll => 'All';
+
+  @override
+  String get aiVision => 'Vision';
+
+  @override
+  String get aiTextOnly => 'Text only';
+
+  @override
+  String get aiSearchModels => 'Search models';
+
+  @override
+  String get aiSelectModel => 'Select model';
+
+  @override
+  String aiStaleModel(Object model) {
+    return 'Saved model \"$model\" not in current list';
+  }
+
+  @override
+  String get aiModelHint =>
+      'Pick a model from the live list, or use manual entry';
+
+  @override
   String get aiClearCacheCleared => 'Translation cache cleared';
 
   @override

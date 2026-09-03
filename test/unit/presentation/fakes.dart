@@ -13,7 +13,7 @@ import 'package:nhasixapp/domain/repositories/ai_translation_repositories.dart';
 /// avoid hanging while still exercising the full pipeline state machine.
 Future<T> syncHeavyRunner<T>(FutureOr<T> Function() compute) async => compute();
 
-/// In-memory provider repository with Zen built-in semantics.
+/// In-memory provider repository — no hardcoded built-ins (dynamic LOV).
 class FakeAiProviderRepository implements AiProviderRepository {
   /// A default vision-capable provider for pipeline tests.
   static final testProvider = AiProviderConfig(
@@ -28,13 +28,6 @@ class FakeAiProviderRepository implements AiProviderRepository {
   FakeAiProviderRepository({bool withVisionProvider = false})
       : _providers = [
           if (withVisionProvider) testProvider,
-          AiProviderConfig(
-            id: 'zen-builtin',
-            displayName: 'Zen (Free)',
-            type: AiProviderType.zen,
-            model: 'deepseek-v4-flash-free',
-            isDefault: !withVisionProvider,
-          ),
         ];
 
   final List<AiProviderConfig> _providers;
@@ -73,7 +66,6 @@ class FakeAiProviderRepository implements AiProviderRepository {
 
   @override
   Future<void> deleteProvider(String id) async {
-    if (id == 'zen-builtin') return; // Zen cannot be deleted
     _providers.removeWhere((p) => p.id == id);
   }
 
@@ -82,6 +74,24 @@ class FakeAiProviderRepository implements AiProviderRepository {
     for (var i = 0; i < _providers.length; i++) {
       _providers[i] = _providers[i].copyWith(isDefault: _providers[i].id == id);
     }
+  }
+}
+
+class FakeAiModelCatalogRepository implements AiModelCatalogRepository {
+  List<AiModelOption> models = [];
+  bool shouldThrow = false;
+  String throwMessage = 'fetch failed';
+
+  @override
+  Future<List<AiModelOption>> getModels({
+    required AiProviderType type,
+    String? apiKey,
+  }) async {
+    if (shouldThrow) throw AiTranslationException(throwMessage);
+    if (type == AiProviderType.custom) {
+      throw const AiTranslationException('Custom provider uses manual entry');
+    }
+    return List.of(models);
   }
 }
 

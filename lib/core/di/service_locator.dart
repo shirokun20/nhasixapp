@@ -47,6 +47,7 @@ import 'package:nhasixapp/data/datasources/local/tag_data_source.dart';
 import 'package:nhasixapp/data/datasources/remote/request_rate_manager.dart';
 import 'package:nhasixapp/data/datasources/local/doujin_list_dao.dart';
 import 'package:nhasixapp/data/repositories/ai_provider_repository_impl.dart';
+import 'package:nhasixapp/data/repositories/ai/ai_model_catalog.dart';
 import 'package:nhasixapp/data/repositories/reader_image_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
 import 'package:nhasixapp/data/repositories/glossary_repository_impl.dart';
@@ -929,12 +930,11 @@ void _setupRepositories() {
       ));
 
   // Reader Image Repository (download-first resolver)
-  getIt.registerLazySingleton<ReaderImageRepository>(() =>
-      ReaderImageRepositoryImpl(
-        logger: getIt<Logger>(),
-        dedup: getIt<RequestDeduplicationService>(),
-      ));
-
+  getIt.registerLazySingleton<ReaderImageRepository>(
+      () => ReaderImageRepositoryImpl(
+            logger: getIt<Logger>(),
+            dedup: getIt<RequestDeduplicationService>(),
+          ));
 
   // Settings Repository
   // Settings Repository
@@ -1005,6 +1005,12 @@ void _setupRepositories() {
   // Provider factory: builds the right provider implementation for a config.
   getIt.registerLazySingleton<AiProviderFactory>(
       () => AiProviderFactoryImpl(dio: getIt<Dio>(), logger: getIt<Logger>()));
+  // Model catalog: live GET /models LOV for the provider settings form.
+  getIt.registerLazySingleton<AiModelCatalogRepository>(
+      () => AiModelCatalogRepositoryImpl(
+            dio: getIt<Dio>(),
+            logger: getIt<Logger>(),
+          ));
   getIt.registerLazySingleton<MosaicBuilder>(() => MosaicBuilder());
   getIt.registerLazySingleton<FallbackImageHandler>(
       () => FallbackImageHandler());

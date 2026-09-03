@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/domain/entities/ai_translation.dart' show TranslationStyle;
+import 'package:nhasixapp/domain/entities/ai_translation.dart'
+    show TranslationStyle;
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/ai_settings/ai_settings_cubit.dart';
 import 'settings_theme_widgets.dart';
@@ -21,6 +22,7 @@ class AiSettingsScreen extends StatelessWidget {
         preferencesRepository: getIt(),
         providerFactory: getIt(),
         cacheRepository: getIt(),
+        modelCatalog: getIt(),
         logger: getIt(),
         localizations: AppLocalizations.of(context),
       ),
