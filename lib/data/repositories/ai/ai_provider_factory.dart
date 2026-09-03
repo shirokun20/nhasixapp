@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 
 import '../../../domain/entities/ai_translation.dart';
 import '../../../domain/repositories/ai_translation_repositories.dart';
+import 'cohere_translation_provider.dart';
 import 'gemini_translation_provider.dart';
 import 'openai_compatible_provider.dart';
 
@@ -28,13 +29,18 @@ class AiProviderFactoryImpl implements AiProviderFactory {
           dio: _dio,
           logger: _logger,
         );
+      case AiProviderType.cohere:
+        return CohereTranslationProvider(
+          config: config,
+          dio: _dio,
+          logger: _logger,
+        );
       case AiProviderType.zen:
       case AiProviderType.openCodeGo:
       case AiProviderType.openAi:
       case AiProviderType.openRouter:
       case AiProviderType.metaAi:
       case AiProviderType.clinePass:
-      case AiProviderType.cohere:
       case AiProviderType.custom:
         return OpenAICompatibleProvider(
           config: config,

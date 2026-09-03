@@ -71,7 +71,7 @@ enum AiProviderType {
       case AiProviderType.clinePass:
         return 'https://api.clinepass.com/v1/chat/completions';
       case AiProviderType.cohere:
-        return 'https://api.cohere.com/compatibility/v1/chat/completions';
+        return 'https://api.cohere.com/v2/chat';
       case AiProviderType.custom:
         return null; // User must supply
     }

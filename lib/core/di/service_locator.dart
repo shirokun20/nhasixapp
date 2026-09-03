@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -207,6 +208,24 @@ void _setupCore() {
     // dnsResolver: getIt<DnsResolver>(),  // DISABLED - incompatible with HTTPS
   );
   getIt.registerSingleton<Dio>(dio);
+
+  // AI Dio — clean instance without browser headers (Accept: text/html etc.)
+  // Used only for AI provider APIs (chat completions + model listing).
+  // Keeps AI requests fast and avoids content-negotiation overhead.
+  // Timeouts: 30s connect, 90s receive (Cohere can be slow on cold start).
+  final aiDio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 90),
+      sendTimeout: const Duration(seconds: 30),
+      responseType: ResponseType.json,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    ),
+  )..httpClientAdapter = NativeAdapter();
+  getIt.registerSingleton<Dio>(aiDio, instanceName: 'aiDio');
 
   // Source Health Monitor - per-source reachability checks
   getIt.registerLazySingleton<SourceHealthMonitor>(() => SourceHealthMonitor(
@@ -1003,12 +1022,14 @@ void _setupRepositories() {
       () => SaveGlossaryEntryUsecase(getIt<GlossaryRepository>()));
 
   // Provider factory: builds the right provider implementation for a config.
-  getIt.registerLazySingleton<AiProviderFactory>(
-      () => AiProviderFactoryImpl(dio: getIt<Dio>(), logger: getIt<Logger>()));
+  getIt.registerLazySingleton<AiProviderFactory>(() => AiProviderFactoryImpl(
+        dio: getIt<Dio>(instanceName: 'aiDio'),
+        logger: getIt<Logger>(),
+      ));
   // Model catalog: live GET /models LOV for the provider settings form.
   getIt.registerLazySingleton<AiModelCatalogRepository>(
       () => AiModelCatalogRepositoryImpl(
-            dio: getIt<Dio>(),
+            dio: getIt<Dio>(instanceName: 'aiDio'),
             logger: getIt<Logger>(),
           ));
   getIt.registerLazySingleton<MosaicBuilder>(() => MosaicBuilder());

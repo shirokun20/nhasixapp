@@ -11,7 +11,6 @@ import '../../../domain/repositories/ai_translation_repositories.dart';
 /// OpenAI-compatible `/chat/completions` provider. Covers OpenCode Go
 /// (all 23 models), OpenAI, OpenRouter, Zen free models, and Custom endpoints.
 class OpenAICompatibleProvider implements AiTranslationProvider {
-
   OpenAICompatibleProvider({
     required this.config,
     required Dio dio,
@@ -134,8 +133,8 @@ ${sfxRule(skipSfx)}
         options: Options(
           headers: headers,
           responseType: ResponseType.json,
-          sendTimeout: const Duration(seconds: 120),
-          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 90),
+          receiveTimeout: const Duration(seconds: 90),
         ),
       );
       if (res.statusCode == 429) {

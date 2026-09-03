@@ -144,7 +144,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// Human-readable reading direction for AI prompts (T4.2): manga/RTL →
   /// right-to-left, manhwa/webtoon/ltr → left-to-right. Matches the bubble
   /// sort in [_translationBoxes] so the prompt order mirrors chip numbering.
-  String get readingDirectionLabel => _rtlReading ? 'right-to-left' : 'left-to-right';
+  String get readingDirectionLabel =>
+      _rtlReading ? 'right-to-left' : 'left-to-right';
 
   /// Notified whenever [drawMode] flips. Lets the reader chrome auto-hide
   /// while drawing.
@@ -298,7 +299,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       } else {
         _prefetchedBoxes = null;
         _prefetchKey = '';
-        logWarning('prefetchDetection: empty result — nothing cached, translate will re-detect');
+        logWarning(
+            'prefetchDetection: empty result — nothing cached, translate will re-detect');
       }
     } catch (e) {
       logWarning('prefetchDetection failed: $e');
@@ -753,12 +755,14 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       _finish(result, cacheKey, contentId, pageIndex, imageWidth, imageHeight,
           imageUrl);
     } on AiTranslationException catch (e) {
+      if (isClosed) return;
       if (e.isRateLimited) {
         emit(ReaderTranslationRateLimited(cooldownSeconds: 60));
       } else {
         emit(ReaderTranslationError(message: e.message));
       }
     } catch (e) {
+      if (isClosed) return;
       logWarning('translatePage failed: $e');
       emit(ReaderTranslationError(message: e.toString()));
     }
@@ -913,13 +917,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     result = _flagFlatBubbles(result);
     // Track per-bubble failures (empty translation = AI skipped)
     _failedBubbles.clear();
-    final fontFamily = _currentStyle != null
-        ? _styleFontMap[_currentStyle]
-        : null;
+    final fontFamily =
+        _currentStyle != null ? _styleFontMap[_currentStyle] : null;
     if (fontFamily != null) {
       result = result.copyWith(
         bubbles: result.bubbles
-            .map((b) => b.fontFamily == null ? b.copyWith(fontFamily: fontFamily) : b)
+            .map((b) =>
+                b.fontFamily == null ? b.copyWith(fontFamily: fontFamily) : b)
             .toList(),
       );
     }
@@ -949,6 +953,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       contentId: contentId,
       pageIndex: pageIndex,
     ));
+    if (isClosed) return;
     emit(_translatedState());
   }
 
@@ -1130,8 +1135,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       logWarning('retryBubble[$index] failed: $e');
     }
     // Clear failed entry regardless of outcome
-    final newFailed = Map<int, String>.from(
-        _translatedState().failedBubbles);
+    final newFailed = Map<int, String>.from(_translatedState().failedBubbles);
     newFailed.remove(index);
     emit(ReaderTranslationTranslated(
       result: _currentResult!,
