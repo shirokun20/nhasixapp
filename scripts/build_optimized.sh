@@ -27,8 +27,16 @@ echo "📅 Date: $(date +%Y%m%d)"
 echo ""
 
 # Clean project
+# Detect flutter command (fvm locally, plain flutter on CI)
+if command -v fvm >/dev/null 2>&1; then
+    FLUTTER_CMD="fvm flutter"
+else
+    FLUTTER_CMD="flutter"
+fi
+echo "🔧 Flutter command: $FLUTTER_CMD"
+
 echo "🧹 Cleaning project..."
-fvm flutter clean > /dev/null 2>&1
+$FLUTTER_CMD clean > /dev/null 2>&1
 
 echo "📊 OPTIMIZATION STRATEGIES:"
 echo "✅ Split APK per ABI (arm64, arm, x86_64) - Flutter --split-per-abi"
@@ -54,10 +62,16 @@ else
     FLAVOR="${FLAVOR:-dev}"
 fi
 # ponytail: single-flavor default keeps build ~50% faster; loop over prod+dev when you need both
+# Respect SPLIT_ABI env (from CI workflow); default true for local builds
+SPLIT_ABI_FLAG="--split-per-abi"
+if [ "${SPLIT_ABI:-true}" = "false" ]; then
+    SPLIT_ABI_FLAG=""
+    echo "📦 Split per ABI disabled (universal APK)"
+fi
 if [ "$BUILD_TYPE" = "release" ]; then
-    fvm flutter build apk --release --flavor "$FLAVOR" --split-per-abi --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
+    $FLUTTER_CMD build apk --release --flavor "$FLAVOR" $SPLIT_ABI_FLAG --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
 else
-    fvm flutter build apk --debug --flavor "$FLAVOR" --split-per-abi --dart-define=cronetHttpNoPlay=true
+    $FLUTTER_CMD build apk --debug --flavor "$FLAVOR" $SPLIT_ABI_FLAG --dart-define=cronetHttpNoPlay=true
 fi
 
 echo ""
