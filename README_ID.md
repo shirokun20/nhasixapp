@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Batasan_Usia-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.25%2B35-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.26%2B36-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](#)
 [![Code Quality](https://img.shields.io/badge/code_quality-A+-blueviolet?style=for-the-badge)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
@@ -26,12 +26,11 @@
 
 ## 📥 **Download Rilis Terbaru**
 
-[📦 **Download v0.9.25+35**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.25%2B35)
+[📦 **Download v0.9.26+36**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.26%2B36)
 
 | Varian | Ukuran | Cocok Untuk | Status |
 |:-------|:----:|:---------|:------:|
-| **ARM64** | 80MB | HP Modern (2019+) | ✅ Tersedia |
-| **ARM32** | 69MB | HP Lama (2015-2018) | ✅ Tersedia |
+| **Universal** | 1 file | Semua HP (ARM64 / ARM32 / x86_64) — nggak perlu pilih-pilih | ✅ Tersedia |
 
 ---
 
@@ -203,7 +202,7 @@ Sistem source Kuron sepenuhnya berbasis config — tidak perlu mengubah kode apa
 ## 🆘 **Bantuan**
 
 **FAQ**
-- **Gagal Install?** Aktifkan "Sumber Tak Dikenal" dan pastikan varian CPU benar (ARM64 vs ARM32).
+- **Gagal Install?** Aktifkan "Sumber Tak Dikenal". Satu APK universal muat di semua HP.
 - **Gambar Hilang?** Cek koneksi internet atau hapus cache aplikasi.
 - **Download Tidak Muncul?** Memang didesain privat agar tidak memenuhi galeri.
 - **Cara tambah source baru?** Buka Pengaturan → Sources → Add via Link (tempel URL manifest) atau Import ZIP.

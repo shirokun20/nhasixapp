@@ -39,15 +39,15 @@ echo "🧹 Cleaning project..."
 $FLUTTER_CMD clean > /dev/null 2>&1
 
 echo "📊 OPTIMIZATION STRATEGIES:"
-echo "✅ Split APK per ABI (arm64, arm, x86_64) - Flutter --split-per-abi"
+echo "✅ Universal APK single file (all ABIs) — SPLIT_ABI=true for per-ABI"
 echo "✅ Enable Android R8 obfuscation + minify"
 echo "✅ Compress native libraries"
 echo "✅ Remove debug symbols"
 echo "✅ Shrink resources"
 echo ""
 
-# Build with Flutter's --split-per-abi flag (generates all ABIs in one command)
-echo "🔨 Building optimized APKs (automatic split per architecture)..."
+# Build universal APK by default (single file, no per-ABI hassle)
+echo "🔨 Building APK (universal by default)..."
 
 # Auto-export KEYSTORE_BASE64 for release builds if local file exists.
 if [ "$BUILD_TYPE" = "release" ] && [ -z "${KEYSTORE_BASE64:-}" ] && [ -f "android/keystore_base64.txt" ]; then
@@ -62,11 +62,13 @@ else
     FLAVOR="${FLAVOR:-dev}"
 fi
 # ponytail: single-flavor default keeps build ~50% faster; loop over prod+dev when you need both
-# Respect SPLIT_ABI env (from CI workflow); default true for local builds
-SPLIT_ABI_FLAG="--split-per-abi"
-if [ "${SPLIT_ABI:-true}" = "false" ]; then
-    SPLIT_ABI_FLAG=""
-    echo "📦 Split per ABI disabled (universal APK)"
+# Universal by default (single APK); opt in to per-ABI with SPLIT_ABI=true
+SPLIT_ABI_FLAG=""
+if [ "${SPLIT_ABI:-false}" = "true" ]; then
+    SPLIT_ABI_FLAG="--split-per-abi"
+    echo "📦 Split per ABI enabled"
+else
+    echo "📦 Universal APK (single file, all ABIs)"
 fi
 if [ "$BUILD_TYPE" = "release" ]; then
     $FLUTTER_CMD build apk --release --flavor "$FLAVOR" $SPLIT_ABI_FLAG --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
@@ -116,6 +118,18 @@ if [ $FOUND_COUNT -eq 0 ]; then
     done
 fi
 if [ $FOUND_COUNT -eq 0 ]; then
+    # fallback: flutter-apk dir (universal builds land here)
+    for apk in build/app/outputs/flutter-apk/kuron_*.apk; do
+        if [ -f "$apk" ]; then
+            filename=$(basename "$apk")
+            size=$(du -h "$apk" | cut -f1)
+            cp "$apk" "$OUTPUT_DIR/"
+            echo "  📱 $filename - $size"
+            FOUND_COUNT=$((FOUND_COUNT + 1))
+        fi
+    done
+fi
+if [ $FOUND_COUNT -eq 0 ]; then
     echo "❌ Error: No APK files found matching $APK_SEARCH_PATH"
     echo "Check build output directory! Tried also build/app/outputs/apk/*/$BUILD_TYPE/kuron_*.apk"
     exit 1
@@ -141,10 +155,8 @@ echo ""
 
 echo ""
 echo "🎯 RECOMMENDATIONS:"
-echo "📱 Use ARM64 APK for modern devices (95% of users)"
-echo "📱 Use ARM APK for older devices (compatibility)"
-echo "📱 x86_64 APK also generated (for emulators/ChromeOS)"
+echo "📱 Universal APK works on all devices (ARM64/ARM32/x86_64) — no variant picking"
 echo "🚀 Upload to Google Play as App Bundle for automatic optimization"
-echo "⚡ Single Flutter command generates all ABIs automatically"
+echo "⚡ Set SPLIT_ABI=true only if you need per-ABI files"
 echo ""
-echo "🎉 Optimization complete! All APKs ready in $OUTPUT_DIR/"
+echo "🎉 Optimization complete! APK ready in $OUTPUT_DIR/"

@@ -26,9 +26,9 @@ on:
           - release
           - debug
       split_abi:
-        description: 'Split APK per ABI (smaller files, architecture-specific)'
+        description: 'Split APK per ABI (OFF = single universal APK, recommended)'
         required: true
-        default: true
+        default: false
         type: boolean
       upload_artifact:
         description: 'Upload APK as GitHub Artifact (downloadable from Actions tab)'
@@ -45,11 +45,11 @@ jobs:
 
     steps:
       # Checkout repository
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Setup Java environment
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -135,9 +135,9 @@ jobs:
       - name: Prepare Build Script
         run: chmod +x scripts/build_optimized.sh
 
-      # Build optimized APK
+      # Build optimized APK (universal single-file by default)
       # Respects workflow_dispatch inputs for build type and ABI splitting
-      # Tag-triggered builds always use release + split-per-abi
+      # Tag-triggered builds always use release + universal
       # Falls back to debug build if no keystore secrets configured
       - name: Build APK
         env:
@@ -146,15 +146,17 @@ jobs:
           ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
           KEYSTORE_PATH: "upload-keystore.jks" # Relative to android/app/
           BUILD_TYPE: ${{ github.event.inputs.build_type || 'release' }}
-          SPLIT_ABI: ${{ github.event.inputs.split_abi || 'true' }}
+          SPLIT_ABI: ${{ github.event.inputs.split_abi || 'false' }}
         run: |
           echo "📋 Build config: type=$BUILD_TYPE, split_abi=$SPLIT_ABI"
 
-          # Determine split flag
+          # Determine split flag (default OFF = single universal APK)
           SPLIT_FLAG=""
           if [ "$SPLIT_ABI" = "true" ]; then
             SPLIT_FLAG="--split-per-abi"
             echo "📦 Split per ABI enabled"
+          else
+            echo "📦 Universal APK (single file, all ABIs)"
           fi
 
           if [ -f "android/app/upload-keystore.jks" ]; then
@@ -164,8 +166,8 @@ jobs:
             echo "⚠️ No keystore found, building $BUILD_TYPE APK without signing (flavor: prod)..."
             flutter build apk --$BUILD_TYPE --flavor prod $SPLIT_FLAG --dart-define=cronetHttpNoPlay=true
             mkdir -p apk-output
-            cp build/app/outputs/apk/prod/$BUILD_TYPE/*.apk apk-output/ 2>/dev/null || true
-            cp build/app/outputs/flutter-apk/*-prod-*.apk apk-output/ 2>/dev/null || true
+            cp build/app/outputs/apk/prod/$BUILD_TYPE/kuron_*.apk apk-output/ 2>/dev/null || true
+            cp build/app/outputs/flutter-apk/kuron_*.apk apk-output/ 2>/dev/null || true
           fi
 
       # Verify build outputs
@@ -180,7 +182,7 @@ jobs:
           echo "=== All APK Files ==="
           find build/ -name "*.apk" -exec ls -lh {} \; 2>/dev/null || echo "No APK files found"
 
-      # Upload APK as GitHub Artifact
+      # Upload APK as GitHub Artifact (kuron_* universal only)
       # Available for download from the Actions tab (even without a release)
       # Retained for 30 days — useful for testing and CI verification
       # Controlled by workflow_dispatch input (always enabled for tag builds)
@@ -190,13 +192,13 @@ jobs:
         with:
           name: kuron-apk-${{ github.sha }}
           path: |
-            apk-output/*.apk
-            build/app/outputs/apk/prod/**/*.apk
-            build/app/outputs/flutter-apk/*-prod-*.apk
+            apk-output/kuron_*.apk
+            build/app/outputs/apk/prod/**/kuron_*.apk
+            build/app/outputs/flutter-apk/kuron_*.apk
           if-no-files-found: warn
           retention-days: 30
 
-      # Notify on build failure to Telegram Channel
+      # Notify on build failure to Telegram Channel (message only, no APK upload)
       # Only sends if TELEGRAM_BOT_TOKEN secret is configured
       - name: Notify Build Failure
         if: failure()
@@ -204,21 +206,26 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
+          # ponytail: big-picker — 1 pesan random biar nggak template, tambah varian di sini aja
+          FAIL_MSGS=(
+            "Yah bos, build-nya ambyar nih 😭"
+            "Duh bos, build gagal lagi, ampun dah 🙏"
+            "Bosss, CI-nya merah nih, tolong dilirik 🔴"
+            "Waduh bos, build-nya nyungsep, cek gih 🛠️"
+            "Hadehh bos, build rungkad, meluncur ke logs yak 🏃"
+            "Bos, build-nya zonk nih, jangan sedih, kita benerin 💪"
+          )
+          PICK=${FAIL_MSGS[$RANDOM % ${#FAIL_MSGS[@]}]}
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHANNEL_ID" \
             -d parse_mode="Markdown" \
             -d text="
-          ❌ *Build Failed*
-          
-          📦 Project: Kuro-N
-          🔗 Commit: \`${GITHUB_SHA::8}\`
-          🌿 Branch: ${GITHUB_REF_NAME}
-          👤 Author: ${GITHUB_ACTOR}
-          
-          🔍 [View Details](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+          ${PICK}
+
+          commit \`${GITHUB_SHA::8}\` @ ${GITHUB_REF_NAME} oleh ${GITHUB_ACTOR} — [intip logs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
           "
 
-      # Notify on build success to Telegram Channel
+      # Notify on build success to Telegram Channel (message only, no APK upload)
       # Only sends if TELEGRAM_BOT_TOKEN secret is configured
       - name: Notify Build Success
         if: success()
@@ -226,38 +233,40 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
-          # Collect APK information
-          APK_INFO=""
-          APK_COUNT=0
-          TOTAL_SIZE=0
-          for apk in apk-output/*.apk build/app/outputs/flutter-apk/*.apk; do
+          # ponytail: big-picker — 1 pesan random biar nggak template, tambah varian di sini aja
+          OK_MSGS=(
+            "Gas bos, build kelar, ijo semua 🟢"
+            "Cihuy bos, build-nya jadi nih, gaskeun 🎉"
+            "Anjay bos, build sukses, mantap jiwa 🔥"
+            "Beres bos, APK universal udah mateng, tinggal sikat 🚀"
+            "Sabi bos, build lolos tanpa drama, download gih 😎"
+            "Wih bos, build-nya mulus kayak jalan tol, mantap 🛣️"
+          )
+          PICK=${OK_MSGS[$RANDOM % ${#OK_MSGS[@]}]}
+          APK_LINE="APK universal siap"
+          for apk in apk-output/kuron_*.apk build/app/outputs/flutter-apk/kuron_*.apk; do
             if [ -f "$apk" ]; then
-              size=$(stat -c%s "$apk" 2>/dev/null || stat -f%z "$apk" 2>/dev/null || echo "0")
-              size_mb=$((size / 1024 / 1024))
-              TOTAL_SIZE=$((TOTAL_SIZE + size_mb))
-              APK_COUNT=$((APK_COUNT + 1))
-              
-              # Extract ABI from filename (e.g., arm64-v8a, armeabi-v7a, x86_64)
-              filename=$(basename "$apk")
-              # Escape underscores for Markdown
-              filename_escaped=$(echo "$filename" | sed 's/_/\\_/g')
-              APK_INFO="${APK_INFO}
-              📱 ${filename_escaped} (${size_mb}MB)"
+              size=$(du -h "$apk" | cut -f1)
+              APK_LINE="$(basename "$apk") (${size})"
+              break
             fi
           done
+          # Escape underscores so Telegram Markdown doesn't choke on filenames
+          APK_LINE=$(echo "$APK_LINE" | sed 's/_/\\_/g')
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            DL_LINE="[comot di sini](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME})"
+          else
+            DL_LINE="[cek hasil build](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+          fi
 
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHANNEL_ID" \
             -d parse_mode="Markdown" \
             -d text="
-          🎉 *Cihuyy ada update baru nih!*
-          
-          📦 Kuro-N
-          📦 APK tersedia: ${APK_COUNT}
-          💾 Total: ~${TOTAL_SIZE}MB
-          ${APK_INFO}
-          
-          ⬇️ [Download APK di GitHub Releases](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME})
+          ${PICK}
+
+          ${APK_LINE} — ${DL_LINE}
           "
 
       # Extract version from pubspec.yaml for release naming
@@ -398,10 +407,10 @@ jobs:
                 echo ""
               fi
 
-              # 📦 APK Info
+              # 📦 APK Info (universal kuron_* only)
               echo "### 📦 Build Artifacts"
               APK_COUNT=0
-              for apk in apk-output/*.apk build/app/outputs/flutter-apk/*.apk; do
+              for apk in apk-output/kuron_*.apk build/app/outputs/flutter-apk/kuron_*.apk; do
                 if [ -f "$apk" ]; then
                   filename=$(basename "$apk")
                   size=$(du -h "$apk" | cut -f1)
@@ -430,21 +439,18 @@ jobs:
       #   if: success()
       #   ... (disabled)
 
-      # Create Release & Upload APK to GitHub
+      # Create Release & Upload APK to GitHub (kuron_* universal only — single file, no duplicates)
       # Only triggered when a version tag (v*) is pushed
-      # Uses CHANGELOG.md content if available, otherwise formatted commit notes
-      # Both paths produce consistent, emoji-rich markdown release notes
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: "v${{ env.VERSION }} 🚀"
           files: |
-            apk-output/*.apk
-            build/app/outputs/apk/prod/**/*.apk
-            build/app/outputs/flutter-apk/*-prod-*.apk
+            apk-output/kuron_*.apk
           body_path: release_notes.md
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -30,8 +30,7 @@
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
-| **ARM64** | 80MB | Modern Devices (2019+) | ✅ Available |
-| **ARM32** | 69MB | Older Devices (2015-2018) | ✅ Available |
+| **Universal** | 1 file | All devices (ARM64 / ARM32 / x86_64) — no need to pick | ✅ Available |
 
 ---
 
@@ -203,7 +202,7 @@ Kuron's source system is fully config-driven — no code changes required. Each 
 ## 🆘 **Support**
 
 **FAQ**
-- **Can't Install?** Enable "Unknown Sources" and check your architecture (ARM64 vs ARM32).
+- **Can't Install?** Enable "Unknown Sources". One universal APK fits all devices.
 - **Missing Images?** Check your internet or clear cache.
 - **Hidden Downloads?** They are private by design. View them inside the app.
 - **How to add new source?** Go to Settings → Sources → Add via Link (paste manifest URL) or Import ZIP.
