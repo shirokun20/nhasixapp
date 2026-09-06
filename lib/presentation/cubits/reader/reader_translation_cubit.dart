@@ -9,12 +9,14 @@ import 'package:kuron_native/kuron_native.dart';
 import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../core/services/memory_budget_coordinator.dart';
 import '../../../core/utils/webtoon_detector.dart';
 import '../../../data/repositories/ai/ai_provider_factory.dart';
 import '../../../data/repositories/ai/fallback_image_handler.dart';
 import '../../../data/repositories/ai/mosaic_builder.dart';
 import '../../../domain/entities/ai_translation.dart';
+import '../../../domain/entities/glossary.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
 import '../../../domain/repositories/ai_translation_repositories.dart';
 import '../base/base_cubit.dart';
@@ -42,6 +44,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     required MosaicBuilder mosaicBuilder,
     required FallbackImageHandler fallbackHandler,
     HeavyRunner? heavyRunner,
+    GlossaryRepository? glossaryRepository,
     required super.logger,
   })  : _providerRepository = providerRepository,
         _providerFactory = providerFactory,
@@ -50,6 +53,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         _mosaicBuilder = mosaicBuilder,
         _fallbackHandler = fallbackHandler,
         _heavyRunner = heavyRunner ?? Isolate.run,
+        _glossaryRepository = glossaryRepository,
         super(initialState: const ReaderTranslationIdle());
 
   final AiProviderRepository _providerRepository;
@@ -59,6 +63,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   final MosaicBuilder _mosaicBuilder;
   final FallbackImageHandler _fallbackHandler;
   final HeavyRunner _heavyRunner;
+
+  /// Optional glossary source for prompt enrichment. Null in production DI
+  /// falls back to `getIt<GlossaryRepository>` (best-effort: unregistered in
+  /// tests → no glossary block, prompt unchanged).
+  final GlossaryRepository? _glossaryRepository;
 
   PageTranslation? _currentResult;
   bool _overlayVisible = false;
@@ -374,6 +383,67 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
   /// `shape`, so re-translate to carry the polygon).
   static const int _cacheSchemaVersion = 2;
 
+  /// Max glossary entries injected into a single AI prompt.
+  static const int glossaryMaxEntries = 5;
+
+  /// Selects glossary entries relevant to the given bubble texts: entries
+  /// whose [GlossaryEntry.sourceText] appears as a case-insensitive
+  /// substring of any text, most-recently saved first, at most [limit].
+  /// Empty texts or no match → empty (prompt stays unchanged).
+  static List<GlossaryEntry> selectRelevantGlossaryEntries(
+    List<GlossaryEntry> entries,
+    List<String> bubbleTexts, {
+    int limit = glossaryMaxEntries,
+  }) {
+    if (entries.isEmpty || bubbleTexts.isEmpty) return [];
+    final haystacks = [
+      for (final t in bubbleTexts)
+        if (t.trim().isNotEmpty) t.toLowerCase(),
+    ];
+    if (haystacks.isEmpty) return [];
+    final matched = entries.where((e) {
+      final needle = e.sourceText.trim().toLowerCase();
+      if (needle.isEmpty) return false;
+      return haystacks.any((h) => h.contains(needle));
+    }).toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return matched.take(limit).toList();
+  }
+
+  /// Renders selected entries as prompt context lines:
+  /// `Glossary:\n"src" -> "dst"\n...`. Embedded in the SAME AI request —
+  /// never an extra call.
+  static String buildGlossaryBlock(List<GlossaryEntry> entries) {
+    final lines =
+        entries.map((e) => '"${e.sourceText}" -> "${e.translatedText}"');
+    return 'Glossary:\n${lines.join('\n')}';
+  }
+
+  /// Loads stored glossary and builds the prompt block for [bubbleTexts].
+  ///
+  /// Known bubble texts (same-content previous result, single-bubble retry)
+  /// are substring-matched; with no known texts yet (fresh page) the most
+  /// recent entries are used as the relevance proxy — the model ignores
+  /// irrelevant lines. Empty glossary or a true no-match with known texts
+  /// → null (prompt unchanged). Never throws.
+  Future<String?> _glossaryContextFor(List<String> bubbleTexts) async {
+    try {
+      final repo = _glossaryRepository ?? getIt<GlossaryRepository>();
+      final entries = await repo.getAll();
+      if (entries.isEmpty) return null;
+      var relevant = selectRelevantGlossaryEntries(entries, bubbleTexts);
+      if (relevant.isEmpty && bubbleTexts.isEmpty) {
+        final recent = List<GlossaryEntry>.of(entries)
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        relevant = recent.take(glossaryMaxEntries).toList();
+      }
+      if (relevant.isEmpty) return null;
+      return buildGlossaryBlock(relevant);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Returns the cache key: `SHA256('$contentId:$pageIndex:$urlHash')` (16 hex).
   static String buildCacheKey(
       String contentId, int pageIndex, String imageUrl) {
@@ -621,6 +691,23 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
       }
     }
 
+    // Glossary enrichment (no extra AI request): known bubble texts from a
+    // previous same-content result are substring-matched; fresh pages fall
+    // back to the most recent entries. Null → prompt unchanged.
+    final previousOriginals = _currentContentId == contentId
+        ? [
+            for (final b
+                in _currentResult?.bubbles ?? const <BubbleTranslation>[])
+              if (b.original.trim().isNotEmpty) b.original,
+          ]
+        : const <String>[];
+    final glossaryContext = await _glossaryContextFor(previousOriginals);
+
+    // Mosaic quality tier (default high = legacy behavior).
+    final mosaicQuality = await _preferencesRepository.getMosaicQuality();
+    logInfo('translatePage: provider=${active.displayName}, '
+        'mosaic=${mosaicQuality.name}, glossary=${glossaryContext == null ? 'off' : 'on'}');
+
     try {
       // 1. Webtoon strip → chunk via ImageSplitter (1280px). Decoding + crop
       // + encode per chunk is CPU-bound, so run it in a background isolate —
@@ -667,6 +754,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
           targetLang: targetLang,
           style: style,
           providers: providers,
+          glossaryContext: glossaryContext,
+          mosaicQuality: mosaicQuality,
         );
         _finish(result, cacheKey, contentId, pageIndex, imageWidth, imageHeight,
             imageUrl);
@@ -745,6 +834,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         targetLang: targetLang,
         style: style,
         providers: providers,
+        glossaryContext: glossaryContext,
+        mosaicQuality: mosaicQuality,
       );
       // Diagnostic: AI merging/skipping chips (or fallback full-image when
       // boxes is empty) is the usual cause of "translations look merged".
@@ -791,6 +882,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     required String targetLang,
     required TranslationStyle style,
     required List<AiProviderConfig> providers,
+    String? glossaryContext,
+    MosaicQuality mosaicQuality = MosaicQuality.high,
   }) async {
     var provider = providers.where((p) => p.isDefault).firstOrNull ??
         (providers.isEmpty ? null : providers.first);
@@ -812,6 +905,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     final usedIds = <String>{};
     while (true) {
       final impl = _providerFactory.create(current);
+      logInfo('_translateWithBubbles: attempt via ${current.displayName} '
+          '(${current.model}, ${boxes.length} bubbles)');
       try {
         final PageTranslation result;
         if (boxes.isEmpty) {
@@ -843,8 +938,8 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
           final mosaicBuilder = _mosaicBuilder;
           final pageBytes = imageBytes;
           final likeBoxes = boxes.map(_toLike).toList();
-          final mosaic = await _heavyRunner(
-              () => mosaicBuilder.buildMosaic(pageBytes, likeBoxes));
+          final mosaic = await _heavyRunner(() => mosaicBuilder
+              .buildMosaic(pageBytes, likeBoxes, quality: mosaicQuality));
           emit(ReaderTranslationTranslating(total: boxes.length));
           result = await impl.translatePage(
             image: mosaic,
@@ -855,6 +950,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
             style: style,
             skipSfx: skipSfx,
             readingDirection: readingDirectionLabel,
+            glossaryContext: glossaryContext,
           );
         }
         // 9.1 per-bubble partial progress: report parsed bubbles as they land
@@ -866,7 +962,13 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         }
         return result;
       } on AiTranslationException catch (e) {
-        if (!e.isRateLimited) rethrow;
+        if (!e.isRateLimited) {
+          logWarning('_translateWithBubbles: ${current.displayName} failed: '
+              '${e.message}');
+          rethrow;
+        }
+        logWarning('_translateWithBubbles: ${current.displayName} '
+            'rate-limited — trying fallback');
         usedIds.add(current.id);
         final next = _fallbackProvider(current, providers, usedIds);
         if (next == null) {
@@ -1113,8 +1215,12 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     );
     final pageBytes = _pageBytes;
     if (pageBytes == null) return;
-    final mosaic = await _heavyRunner(
-        () => _mosaicBuilder.buildMosaic(pageBytes, [singleBox]));
+    final mosaicQuality = await _preferencesRepository.getMosaicQuality();
+    // The retried bubble's own original text is known — match glossary
+    // against it so the retry reuses the user's saved terminology.
+    final glossaryContext = await _glossaryContextFor([bubble.original]);
+    final mosaic = await _heavyRunner(() => _mosaicBuilder
+        .buildMosaic(pageBytes, [singleBox], quality: mosaicQuality));
     try {
       final retryResult = await impl.translatePage(
         image: mosaic,
@@ -1125,6 +1231,7 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
         style: style,
         skipSfx: skipSfx,
         readingDirection: readingDirectionLabel,
+        glossaryContext: glossaryContext,
       );
       if (retryResult.bubbles.isNotEmpty) {
         final updated = List<BubbleTranslation>.from(_currentResult!.bubbles);

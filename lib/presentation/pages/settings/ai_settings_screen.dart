@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart'
-    show TranslationStyle;
+    show MosaicQuality, TranslationStyle;
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/ai_settings/ai_settings_cubit.dart';
 import 'settings_theme_widgets.dart';
@@ -122,6 +122,28 @@ class _AiSettingsBody extends StatelessWidget {
                 subtitle: Text(l10n.aiSkipSfxSubtitle),
                 value: state.skipSfx,
                 onChanged: (v) => cubit.setSkipSfx(v),
+              ),
+              buildSettingsDivider(theme),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                title: Text(l10n.aiMosaicQuality,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  l10n.aiMosaicQualitySubtitle,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: DropdownButton<MosaicQuality>(
+                  value: state.mosaicQuality,
+                  underline: const SizedBox(),
+                  items: MosaicQuality.values
+                      .map((q) =>
+                          DropdownMenuItem(value: q, child: Text(q.label)))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) cubit.setMosaicQuality(v);
+                  },
+                ),
               ),
             ], theme),
             const SizedBox(height: 24),

@@ -450,6 +450,49 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         final remoteConfig = getIt<RemoteConfigService>();
         final sourceConfigs = remoteConfig.getAllSourceConfigs();
 
+        // Source buckets: prefer the actual store buckets exposed by the
+        // cubit (All + per-sourceId present offline); fall back to the
+        // remote-config source list before the first load completes.
+        List<String> bucketIds;
+        if (state is OfflineSearchLoaded &&
+            state.availableSourceIds.isNotEmpty) {
+          bucketIds = state.availableSourceIds;
+        } else {
+          bucketIds = [
+            'local',
+            for (final config in sourceConfigs) config.source,
+          ];
+        }
+        bucketIds = bucketIds.toSet().toList();
+
+        String bucketLabel(String sourceId) {
+          if (sourceId == 'local') {
+            return AppLocalizations.of(context)!.statusLocal;
+          }
+          for (final config in sourceConfigs) {
+            if (config.source == sourceId) {
+              return config.ui?.displayName ?? sourceId;
+            }
+          }
+          return sourceId;
+        }
+
+        Color? bucketColor(String sourceId) {
+          for (final config in sourceConfigs) {
+            if (config.source == sourceId) {
+              final themeColor = config.ui?.activeColor;
+              if (themeColor == null) return null;
+              try {
+                return Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
+              } catch (e) {
+                // Fallback if color parsing fails
+                return null;
+              }
+            }
+          }
+          return null;
+        }
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -463,35 +506,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                   if (selected) _offlineSearchCubit.filterBySource(null);
                 },
               ),
-              const SizedBox(width: 8),
-              _buildFilterChip(
-                context,
-                label: AppLocalizations.of(context)!.statusLocal,
-                isSelected: selectedSourceId == 'local',
-                onSelected: (selected) {
-                  if (selected) _offlineSearchCubit.filterBySource('local');
-                },
-              ),
-              ...sourceConfigs.map((config) {
-                final sourceId = config.source;
-                final displayName = config.ui?.displayName ?? sourceId;
-                final themeColor = config.ui?.activeColor;
-
-                Color? chipColor;
-                if (themeColor != null) {
-                  try {
-                    chipColor =
-                        Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
-                  } catch (e) {
-                    // Fallback if color parsing fails
-                  }
-                }
-
+              ...bucketIds.map((sourceId) {
+                final chipColor = bucketColor(sourceId);
                 return Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: _buildFilterChip(
                     context,
-                    label: displayName,
+                    label: bucketLabel(sourceId),
                     isSelected: selectedSourceId == sourceId,
                     onSelected: (selected) {
                       if (selected) {

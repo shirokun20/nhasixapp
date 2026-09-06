@@ -6,8 +6,7 @@ import 'package:nhasixapp/data/repositories/ai/mosaic_builder.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart';
 
 void main() {
-  test('buildMosaic produces non-empty JPEG with labels for each box',
-      () {
+  test('buildMosaic produces non-empty JPEG with labels for each box', () {
     // 100x100 white test page
     final page = img.Image(width: 100, height: 100);
     img.fill(page, color: img.ColorRgb8(255, 255, 255));
@@ -38,5 +37,30 @@ void main() {
       () => builder.buildMosaic(bytes, const []),
       throwsArgumentError,
     );
+  });
+
+  test('low tier stays under 1MB, high under 2MB (default high)', () {
+    final page = img.Image(width: 100, height: 100);
+    img.fill(page, color: img.ColorRgb8(255, 255, 255));
+    final pageBytes = Uint8List.fromList(img.encodeJpg(page, quality: 90));
+    const boxes = [
+      BubbleBoxLike(10, 10, 30, 20),
+      BubbleBoxLike(50, 50, 25, 15),
+    ];
+
+    final builder = MosaicBuilder();
+    final low =
+        builder.buildMosaic(pageBytes, boxes, quality: MosaicQuality.low);
+    final high =
+        builder.buildMosaic(pageBytes, boxes, quality: MosaicQuality.high);
+    final legacy = builder.buildMosaic(pageBytes, boxes);
+
+    for (final bytes in [low, high, legacy]) {
+      expect(bytes, isNotEmpty);
+      expect(img.decodeImage(bytes), isNotNull);
+    }
+    expect(low.length, lessThan(1 * 1024 * 1024));
+    expect(high.length, lessThan(2 * 1024 * 1024));
+    expect(legacy.length, lessThan(2 * 1024 * 1024));
   });
 }

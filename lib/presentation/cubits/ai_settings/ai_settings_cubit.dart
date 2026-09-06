@@ -47,11 +47,13 @@ class AiSettingsCubit extends BaseCubit<AiSettingsState> {
       final targetLang = await _preferencesRepository.getTargetLanguage();
       final style = await _preferencesRepository.getTranslationStyle();
       final skipSfx = await _preferencesRepository.getSkipSfx();
+      final mosaicQuality = await _preferencesRepository.getMosaicQuality();
       emit(AiSettingsLoaded(
         providers: providers,
         targetLang: targetLang,
         style: style,
         skipSfx: skipSfx,
+        mosaicQuality: mosaicQuality,
       ));
     } catch (e, st) {
       handleError(e, st, 'load AI settings');
@@ -165,6 +167,14 @@ class AiSettingsCubit extends BaseCubit<AiSettingsState> {
     final s = state;
     if (s is AiSettingsLoaded) {
       emit(s.copyWith(skipSfx: value));
+    }
+  }
+
+  Future<void> setMosaicQuality(MosaicQuality quality) async {
+    await _preferencesRepository.setMosaicQuality(quality);
+    final s = state;
+    if (s is AiSettingsLoaded) {
+      emit(s.copyWith(mosaicQuality: quality));
     }
   }
 

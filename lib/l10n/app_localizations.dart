@@ -9756,6 +9756,30 @@ abstract class AppLocalizations {
   /// **'Skip sound-effect-only bubbles (default on)'**
   String get aiSkipSfxSubtitle;
 
+  /// No description provided for @aiMosaicQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Mosaic quality'**
+  String get aiMosaicQuality;
+
+  /// No description provided for @aiMosaicQualitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Low saves tokens (JPEG 75, 1 MB); High preserves detail (JPEG 85, 2 MB)'**
+  String get aiMosaicQualitySubtitle;
+
+  /// No description provided for @aiSwitchModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch model'**
+  String get aiSwitchModel;
+
+  /// No description provided for @aiModelSwitched.
+  ///
+  /// In en, this message translates to:
+  /// **'Model switched to {name}'**
+  String aiModelSwitched(Object name);
+
   /// No description provided for @aiPrivacyDisclosure.
   ///
   /// In en, this message translates to:

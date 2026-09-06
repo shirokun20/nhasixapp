@@ -14,20 +14,30 @@ class MosaicBuilder {
 
   /// Crops each bubble (20% extra padding each side), scales 2×, stacks
   /// vertically with 10px gaps, and draws a red numeric label beside each
-  /// chip. Returns JPEG 85% bytes, downscaled to stay under 2MB.
+  /// chip. Returns JPEG bytes, downscaled to stay under the tier cap.
+  ///
+  /// [quality] selects JPEG quality + size cap: `high` (85%, 2 MB, legacy
+  /// behavior) or `low` (75%, 1 MB). The Rust fast path has fixed quality,
+  /// so `low` always uses the Dart encoder to guarantee the smaller payload.
   Uint8List buildMosaic(
     Uint8List pageImage,
-    List<BubbleBoxLike> bubbles,
-  ) {
-    final bridge = RustBridge.instance;
-    if (bridge != null && bridge.imageOpsAvailable) {
-      try {
-        final native = bridge.imageOpsBuildMosaic(pageImage, [
-          for (final b in bubbles) (x: b.x, y: b.y, w: b.w, h: b.h),
-        ]);
-        if (native != null) return native;
-      } catch (_) {
-        // fall through to Dart
+    List<BubbleBoxLike> bubbles, {
+    MosaicQuality quality = MosaicQuality.high,
+  }) {
+    final jpegQuality = quality == MosaicQuality.low ? 75 : 85;
+    final capBytes =
+        quality == MosaicQuality.low ? 1 * 1024 * 1024 : 2 * 1024 * 1024;
+    if (quality == MosaicQuality.high) {
+      final bridge = RustBridge.instance;
+      if (bridge != null && bridge.imageOpsAvailable) {
+        try {
+          final native = bridge.imageOpsBuildMosaic(pageImage, [
+            for (final b in bubbles) (x: b.x, y: b.y, w: b.w, h: b.h),
+          ]);
+          if (native != null) return native;
+        } catch (_) {
+          // fall through to Dart
+        }
       }
     }
     final decoded = img.decodeImage(pageImage);
@@ -95,12 +105,14 @@ class MosaicBuilder {
       y += chips[i].height + gap;
     }
 
-    // JPEG 85, cap at 2MB (downscale proportionally if over)
-    var jpeg = img.encodeJpg(mosaic, quality: 85);
+    // Tier JPEG quality, downscale proportionally until under tier cap
+    // (or width reaches 64px — smallest achievable payload is still sent).
+    var jpeg = img.encodeJpg(mosaic, quality: jpegQuality);
     var width = mosaic.width;
-    while (jpeg.length > 2 * 1024 * 1024 && width > 64) {
+    while (jpeg.length > capBytes && width > 64) {
       width = (width * 0.75).round();
-      jpeg = img.encodeJpg(img.copyResize(mosaic, width: width), quality: 85);
+      jpeg = img.encodeJpg(img.copyResize(mosaic, width: width),
+          quality: jpegQuality);
     }
 
     return jpeg;

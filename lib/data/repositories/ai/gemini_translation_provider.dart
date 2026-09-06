@@ -7,6 +7,8 @@ import 'package:logger/logger.dart';
 
 import '../../../domain/entities/ai_translation.dart';
 import '../../../domain/repositories/ai_translation_repositories.dart';
+import 'model_json_parser.dart';
+import 'openai_compatible_provider.dart';
 
 /// Google Gemini REST provider (`generateContent`).
 class GeminiTranslationProvider implements AiTranslationProvider {
@@ -35,10 +37,18 @@ class GeminiTranslationProvider implements AiTranslationProvider {
     required TranslationStyle style,
     bool skipSfx = true,
     String readingDirection = 'left-to-right',
+    String? glossaryContext,
   }) async {
     final isMosaic = bubbles.isNotEmpty;
+    final hasGlossary =
+        glossaryContext != null && glossaryContext.trim().isNotEmpty;
+    _logger.d('${config.displayName}: translate start '
+        '(model=${config.model}, mosaic=$isMosaic, bubbles=${bubbles.length}, '
+        'image=${image.length}B, glossary=$hasGlossary)');
+    final sw = Stopwatch()..start();
     final prompt = isMosaic
-        ? _mosaicPrompt(targetLang, style, skipSfx, readingDirection)
+        ? _mosaicPrompt(
+            targetLang, style, skipSfx, readingDirection, glossaryContext)
         : _fullImagePrompt(targetLang, style, skipSfx);
 
     final base64 = base64Encode(image);
@@ -81,15 +91,31 @@ class GeminiTranslationProvider implements AiTranslationProvider {
       }
       final data = Map<String, dynamic>.from(res.data as Map);
       final text = _extractText(data);
+      _logger.d('${config.displayName}: raw response '
+          '(${text.length} chars, ${sw.elapsedMilliseconds}ms): '
+          '${ModelJsonParser.preview(text)}');
 
-      if (isMosaic) {
-        return _mapMosaicResult(_parseJson(text), bubbles, targetLang);
+      try {
+        if (isMosaic) {
+          final result =
+              _mapMosaicResult(_parseJson(text), bubbles, targetLang);
+          _logger.i('${config.displayName}: mapped '
+              '${result.bubbles.length}/${bubbles.length} bubbles');
+          return result;
+        }
+        final result =
+            _mapFullImageResult(text, imageWidth, imageHeight, targetLang);
+        _logger.i('${config.displayName}: mapped '
+            '${result.bubbles.length} full-image bubbles');
+        return result;
+      } on AiTranslationException catch (e) {
+        _logger.e('${config.displayName}: translate failed: ${e.message} '
+            '| raw(${text.length}): ${ModelJsonParser.preview(text)}');
+        rethrow;
       }
-      return _mapFullImageResult(text, imageWidth, imageHeight, targetLang);
     } on DioException catch (e) {
       if (e.response?.statusCode == 429) {
-        throw const AiTranslationException('Rate limited',
-            isRateLimited: true);
+        throw const AiTranslationException('Rate limited', isRateLimited: true);
       }
       final msg = e.response?.data?.toString() ?? e.message ?? 'Request failed';
       _logger.e('${config.displayName}: request failed: $msg');
@@ -102,15 +128,16 @@ class GeminiTranslationProvider implements AiTranslationProvider {
     TranslationStyle style,
     bool skipSfx, [
     String readingDirection = 'left-to-right',
+    String? glossaryContext,
   ]) {
     final sfxRule = skipSfx
         ? 'Return "SKIP" for any bubble containing only sound effects (ドドド, バキ, ガシャン, etc.).'
         : 'Translate ALL bubbles including sound effects (no SKIP for SFX).';
-    return '''
+    final prompt = '''
 Translate the manga image. Each bubble has a red number ID on its left.
 Reading order: bubbles numbered $readingDirection, top-to-bottom.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
-{"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
+{"1": {"original": "<text in bubble 1>", "reading": "<latin reading 1>", "translated": "<translation 1>"}, "2": "SKIP", "3": {"original": "<text in bubble 3>", "reading": "<latin reading 3>", "translated": "<translation 3>"}}
 Rules:
 - Map each number to the text inside that bubble.
 - "original" = the exact text inside the bubble (for learning/glossary).
@@ -119,9 +146,11 @@ Rules:
 - SKIP if a bubble contains only sound effects (ドドド, バキ, etc.).
 - Keep honorifics (-san, -kun, -chan) as-is.
 - Return ALL visible IDs.
+- Output ONLY that JSON for the visible numbered bubbles — never output "...", placeholders like <...>, or explanations.
 - Style: ${style.instruction}
 $sfxRule
 ''';
+    return OpenAICompatibleProvider.appendGlossary(prompt, glossaryContext);
   }
 
   String _fullImagePrompt(
@@ -155,18 +184,11 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
   }
 
   Map<String, dynamic> _parseJson(String text) {
-    final trimmed = text.trim();
-    final start = trimmed.indexOf('{');
-    final end = trimmed.lastIndexOf('}');
-    if (start == -1 || end <= start) {
-      throw const AiTranslationException('Model did not return JSON');
-    }
-    try {
-      return Map<String, dynamic>.from(
-          jsonDecode(trimmed.substring(start, end + 1)) as Map);
-    } catch (e) {
-      throw AiTranslationException('Failed to parse model JSON: $e');
-    }
+    return ModelJsonParser.parseMosaicJson(
+      text,
+      logger: _logger,
+      tag: config.displayName,
+    );
   }
 
   PageTranslation _mapFullImageResult(
@@ -175,13 +197,11 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
     int imageHeight,
     String lang,
   ) {
-    final start = text.indexOf('[');
-    final end = text.lastIndexOf(']');
-    if (start == -1 || end <= start) {
-      throw const AiTranslationException(
-          'Full-image fallback: model did not return a coordinate array');
-    }
-    final list = jsonDecode(text.substring(start, end + 1)) as List<dynamic>;
+    final list = ModelJsonParser.parseJsonArray(
+      text,
+      logger: _logger,
+      tag: config.displayName,
+    );
     final out = <BubbleTranslation>[];
     for (final item in list.cast<Map<String, dynamic>>()) {
       final translated = (item['translated'] as String? ?? '').trim();
@@ -206,6 +226,7 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
     String lang,
   ) {
     final out = <BubbleTranslation>[];
+    var placeholderSkips = 0;
     for (var i = 0; i < bubbles.length; i++) {
       final box = bubbles[i];
       final raw = parsed['${i + 1}'];
@@ -220,8 +241,15 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
       } else if (raw != null) {
         translated = raw.toString().trim();
       }
-      if (translated == null || translated.isEmpty ||
+      if (translated == null ||
+          translated.isEmpty ||
           translated.toUpperCase() == 'SKIP') {
+        continue;
+      }
+      // Weak models echo the template ("<terjemahan>", "...") instead of
+      // translating — never surface placeholders as translations.
+      if (ModelJsonParser.looksLikePlaceholder(translated)) {
+        placeholderSkips++;
         continue;
       }
       out.add(BubbleTranslation(
@@ -236,6 +264,15 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
         reading: reading,
       ));
     }
+    if (placeholderSkips > 0) {
+      _logger.w('${config.displayName}: skipped $placeholderSkips '
+          'placeholder echo(s)');
+    }
+    if (out.isEmpty && placeholderSkips > 0) {
+      throw const AiTranslationException(
+        'Model echoed the format instead of translating. Retry, or switch to a stronger vision model.',
+      );
+    }
     return PageTranslation(bubbles: out, detectedLang: lang);
   }
 
@@ -248,7 +285,11 @@ ${skipSfx ? 'Return "SKIP" for any bubble containing only sound effects.' : 'Tra
         url,
         data: {
           'contents': [
-            {'parts': [{'text': 'ping'}]},
+            {
+              'parts': [
+                {'text': 'ping'}
+              ]
+            },
           ],
         },
         options: Options(

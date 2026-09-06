@@ -5725,6 +5725,21 @@ class AppLocalizationsId extends AppLocalizations {
       'Lewati bubble berisi efek suara saja (default nyala)';
 
   @override
+  String get aiMosaicQuality => 'Kualitas mosaic';
+
+  @override
+  String get aiMosaicQualitySubtitle =>
+      'Rendah hemat token (JPEG 75, 1 MB); Tinggi menjaga detail (JPEG 85, 2 MB)';
+
+  @override
+  String get aiSwitchModel => 'Ganti model';
+
+  @override
+  String aiModelSwitched(Object name) {
+    return 'Model diganti ke $name';
+  }
+
+  @override
   String get aiPrivacyDisclosure => 'Pemberitahuan Privasi';
 
   @override

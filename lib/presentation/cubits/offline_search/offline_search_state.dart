@@ -36,6 +36,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.selectedSourceId,
+    this.availableSourceIds = const [],
     this.orderBy = 'created_at',
     this.descending = true,
     this.isListMode = false,
@@ -57,6 +58,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
   // NEW: Filter field
   final String? selectedSourceId;
 
+  /// Distinct source buckets present in the offline store (unfiltered),
+  /// driving the All + per-source FilterChip row.
+  final List<String> availableSourceIds;
+
   // NEW: Sorting fields
   final String orderBy;
   final bool descending;
@@ -77,6 +82,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
         hasMore,
         isLoadingMore,
         selectedSourceId,
+        availableSourceIds,
         orderBy,
         descending,
         isListMode,
@@ -124,6 +130,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     bool? hasMore,
     bool? isLoadingMore,
     String? selectedSourceId,
+    List<String>? availableSourceIds,
     String? orderBy,
     bool? descending,
     bool? isListMode,
@@ -143,6 +150,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       selectedSourceId:
           clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
+      availableSourceIds: availableSourceIds ?? this.availableSourceIds,
       orderBy: orderBy ?? this.orderBy,
       descending: descending ?? this.descending,
       isListMode: isListMode ?? this.isListMode,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
@@ -37,11 +38,21 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
   final Map<String, int> _sizeBytesByContentId = {};
-  int _dbOffset = 0; //  raw DB offset, immune to skip-on-null-image
-  int _searchDbOffset = 0;
+
+  /// Groups consumed from the front of the full grouped list (pagination
+  /// cursor). May exceed visible results when groups are dropped for
+  /// missing covers; reset on every fresh (non-loadMore) load.
+  int _consumedGroupCount = 0;
   static const String _keySelectedSourceFilter =
       'offline_selected_source_filter';
   static const String _keyIsListMode = 'offline_is_list_mode';
+
+  /// Groups shown per page (group-level pagination).
+  static const int groupPageSize = 20;
+
+  /// Max rows fetched per load for in-memory group-then-slice. Offline
+  /// libraries are typically < 2k rows; a warning is logged when truncated.
+  static const int fetchLimit = 10000;
 
   Future<int> _getDirectorySize(Directory directory) async {
     int size = 0;
@@ -180,8 +191,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         return;
       }
 
-      const pageSize = 20;
-
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
         effectiveSourceId = (state as OfflineSearchLoaded).selectedSourceId;
@@ -223,65 +232,59 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit(const OfflineSearchLoading());
       }
 
-      final offset = loadMore ? _searchDbOffset : 0;
-      if (!loadMore) _searchDbOffset = 0;
-
+      // Group-level pagination: fetch all filtered rows, group in memory,
+      // then slice groupPageSize groups per page. Counts are group-based.
       final searchResults = await _userDataRepository.searchDownloads(
         query: query,
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
-        limit: pageSize,
-        offset: offset,
+        limit: fetchLimit,
+        offset: 0,
         orderBy: currentOrderBy,
         descending: currentDescending,
       );
 
       if (isClosed) return;
 
-      final totalCount = await _userDataRepository.getSearchCount(
-        query: query,
-        state: DownloadState.completed,
-        sourceId: effectiveSourceId,
-      );
+      if (searchResults.length >= fetchLimit) {
+        logWarning(
+            'searchOfflineContent: rows truncated at $fetchLimit; group pages may be incomplete');
+      }
 
-      final newContents = <Content>[];
-      final newOfflineSizes = <String, String>{};
-      final newSizeBytes = <String, int>{};
-      int newStorageUsage = 0;
+      final previousBuckets = state is OfflineSearchLoaded
+          ? (state as OfflineSearchLoaded).availableSourceIds
+          : const <String>[];
+
+      // Phase 1 (cheap, all rows): lightweight conversion + full grouping.
+      // Cover resolution and reader positions are file/DB I/O — deferred to
+      // phase 2 for the visible window only (3000+ row libraries).
+      final pathById = <String, String?>{};
+      final lightContents = <Content>[];
+      final allOfflineSizes = <String, String>{};
+      final allSizeBytes = <String, int>{};
+      var totalStorageUsage = 0;
 
       for (final row in searchResults) {
-        if (isClosed) return;
-
         final contentId = row['id'] as String;
         final sourceId = row['source_id'] as String? ?? 'nhentai';
         final title = row['title'] as String? ?? contentId;
-        // coverUrl from DB not used - we use local first image instead
+        // coverUrl from DB not used - resolved per visible item in phase 2
         final fileSize = row['file_size'] as int? ?? 0;
-        final totalPages = row['total_pages'] as int? ?? 0;
-        final downloadPath = row['download_path'] as String?;
+        final pageCount = row['total_pages'] as int? ?? 0;
+        pathById[contentId] = row['download_path'] as String?;
 
-        // OPTIMIZED: Get only first image for cover (fast pattern matching)
-        // Full image URLs will be loaded on-demand when entering reader
-        final firstImagePath =
-            await _offlineContentManager.getOfflineFirstImagePath(
-          contentId,
-          downloadPath: downloadPath,
-        );
-
-        if (firstImagePath == null) continue;
-
-        newContents.add(Content(
+        lightContents.add(Content(
           sourceId: sourceId,
           id: contentId,
           title: title,
-          coverUrl: firstImagePath,
+          coverUrl: '',
           tags: [],
           artists: [],
           characters: [],
           parodies: [],
           groups: [],
           language: '',
-          pageCount: totalPages,
+          pageCount: pageCount,
           imageUrls: [], // Empty - loaded on-demand in reader
           uploadDate: DateTime.now(),
           favorites: 0,
@@ -289,47 +292,58 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           japaneseTitle: null,
         ));
 
-        newOfflineSizes[contentId] =
+        allOfflineSizes[contentId] =
             OfflineContentManager.formatStorageSize(fileSize);
-        newSizeBytes[contentId] = fileSize;
-        newStorageUsage += fileSize;
+        allSizeBytes[contentId] = fileSize;
+        totalStorageUsage += fileSize;
       }
 
       if (isClosed) return;
 
-      final List<Content> finalResultsFlat;
-      final Map<String, String> finalSizes;
-      final int finalStorageUsage;
+      _sizeBytesByContentId
+        ..clear()
+        ..addAll(allSizeBytes);
 
-      if (loadMore && state is OfflineSearchLoaded) {
-        final currentState = state as OfflineSearchLoaded;
-        final flatItems = currentState.results.expand((g) => g.items).toList();
-        finalResultsFlat = [...flatItems, ...newContents];
-        finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
-        finalStorageUsage = currentState.storageUsage + newStorageUsage;
-      } else {
-        finalResultsFlat = newContents;
-        finalSizes = newOfflineSizes;
-        finalStorageUsage = newStorageUsage;
-      }
-
-      if (!loadMore) {
-        _sizeBytesByContentId.clear();
-        _searchDbOffset = 0;
-      }
-      _sizeBytesByContentId.addAll(newSizeBytes);
-      _searchDbOffset += searchResults.length; // track raw fetched count
-
-      final List<ContentGroup> groupedResults = await _groupContent(
-        finalResultsFlat,
+      final List<ContentGroup> allGroups = await _groupContent(
+        lightContents,
         itemSizes: _sizeBytesByContentId,
+        includeReaderPositions: false,
       );
 
-      final currentPage = (finalResultsFlat.length / pageSize).ceil();
-      final totalPages = (totalCount / pageSize).ceil();
-      final hasMore = finalResultsFlat.length < totalCount;
+      // Phase 2 (I/O, visible window only): resolve covers + reader
+      // positions. loadMore continues from the consumed cursor so visible
+      // groups are never re-resolved.
+      final startIndex = loadMore && state is OfflineSearchLoaded
+          ? max(_consumedGroupCount,
+              (state as OfflineSearchLoaded).results.length)
+          : 0;
+      final window = await _enrichGroupWindow(
+        allGroups,
+        startIndex,
+        groupPageSize,
+        downloadPathOf: (id) => pathById[id],
+      );
+      _consumedGroupCount = startIndex + window.consumed;
 
-      if (groupedResults.isEmpty && offset == 0) {
+      final groupedResults = loadMore && state is OfflineSearchLoaded
+          ? [...(state as OfflineSearchLoaded).results, ...window.groups]
+          : window.groups;
+
+      final currentPage = _consumedGroupCount == 0
+          ? 1
+          : ((_consumedGroupCount - 1) ~/ groupPageSize) + 1;
+      final totalPages =
+          allGroups.isEmpty ? 1 : ((allGroups.length - 1) ~/ groupPageSize) + 1;
+      final hasMore = _consumedGroupCount < allGroups.length;
+
+      // Buckets reflect the whole store: refresh on unfiltered loads,
+      // otherwise keep the previously known buckets.
+      final availableSourceIds = effectiveSourceId == null
+          ? _distinctBucketIds(searchResults
+              .map((r) => (r['source_id'] as String?) ?? 'nhentai'))
+          : previousBuckets;
+
+      if (groupedResults.isEmpty && !loadMore) {
         emit(OfflineSearchEmpty(query: query));
         return;
       }
@@ -337,23 +351,24 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       emit(OfflineSearchLoaded(
         query: query,
         results: groupedResults,
-        totalResults: totalCount,
-        offlineSizes: finalSizes,
-        storageUsage: finalStorageUsage,
+        totalResults: allGroups.length,
+        offlineSizes: allOfflineSizes,
+        storageUsage: totalStorageUsage,
         formattedStorageUsage:
-            OfflineContentManager.formatStorageSize(finalStorageUsage),
+            OfflineContentManager.formatStorageSize(totalStorageUsage),
         currentPage: currentPage,
         totalPages: totalPages,
         hasMore: hasMore,
         isLoadingMore: false,
         selectedSourceId: effectiveSourceId,
+        availableSourceIds: availableSourceIds,
         orderBy: currentOrderBy,
         descending: currentDescending,
         isListMode: _prefs.getBool(_keyIsListMode) ?? false,
       ));
 
       logInfo(
-          'Search complete: ${groupedResults.length} groups / ${finalResultsFlat.length} items for "$query" (source: $effectiveSourceId) '
+          'Search complete: ${groupedResults.length}/${allGroups.length} groups for "$query" (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;
@@ -422,8 +437,6 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     String? sourceId,
   }) async {
     try {
-      const pageSize = 20;
-
       String? effectiveSourceId = sourceId;
       if (effectiveSourceId == null && state is OfflineSearchLoaded) {
         // If in loaded state, preserve current filter
@@ -462,26 +475,29 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         emit(const OfflineSearchLoading());
       }
 
-      final offset = loadMore ? _dbOffset : 0;
-      if (!loadMore) _dbOffset = 0;
-
+      // Group-level pagination: fetch all filtered rows, group in memory,
+      // then slice groupPageSize groups per page. Counts are group-based.
       final downloads = await _userDataRepository.getAllDownloads(
         state: DownloadState.completed,
         sourceId: effectiveSourceId,
-        limit: pageSize,
-        offset: offset,
+        limit: fetchLimit,
+        offset: 0,
         orderBy: currentOrderBy,
         descending: currentDescending,
       );
 
       if (isClosed) return;
 
-      final totalCount = await _userDataRepository.getDownloadsCount(
-        state: DownloadState.completed,
-        sourceId: effectiveSourceId,
-      );
+      if (downloads.length >= fetchLimit) {
+        logWarning(
+            'getAllOfflineContent: rows truncated at $fetchLimit; group pages may be incomplete');
+      }
 
-      if (downloads.isEmpty && offset == 0) {
+      final previousBuckets = state is OfflineSearchLoaded
+          ? (state as OfflineSearchLoaded).availableSourceIds
+          : const <String>[];
+
+      if (downloads.isEmpty && !loadMore) {
         // Only trigger empty if NO source filter is applied.
         // If filter is applied, just show empty (filtered) state, don't fallback to FS
         if (effectiveSourceId == null) {
@@ -493,29 +509,23 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         }
       }
 
-      final newContents = <Content>[];
-      final newOfflineSizes = <String, String>{};
-      final newSizeBytes = <String, int>{};
-      int newStorageUsage = 0;
+      // Phase 1 (cheap, all rows): lightweight conversion + full grouping.
+      // Cover resolution and reader positions are file/DB I/O — deferred to
+      // phase 2 for the visible window only (3000+ row libraries).
+      final rowById = <String, DownloadStatus>{
+        for (final d in downloads) d.contentId: d,
+      };
+      final lightContents = <Content>[];
+      final allOfflineSizes = <String, String>{};
+      final allSizeBytes = <String, int>{};
+      var totalStorageUsage = 0;
 
       for (final download in downloads) {
-        if (isClosed) return;
-
-        // OPTIMIZED: Get only first image for cover (fast pattern matching)
-        // Full image URLs will be loaded on-demand when entering reader
-        final firstImagePath =
-            await _offlineContentManager.getOfflineFirstImagePath(
-          download.contentId,
-          downloadPath: download.downloadPath,
-        );
-
-        if (firstImagePath == null) continue;
-
-        newContents.add(Content(
+        lightContents.add(Content(
           sourceId: download.sourceId ?? 'nhentai',
           id: download.contentId,
           title: download.title ?? download.contentId,
-          coverUrl: firstImagePath,
+          coverUrl: '', // Resolved per visible item in phase 2
           tags: [],
           artists: [],
           characters: [],
@@ -530,44 +540,54 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           japaneseTitle: null,
         ));
 
-        newOfflineSizes[download.contentId] = download.formattedFileSize;
-        newSizeBytes[download.contentId] = download.fileSize;
-        newStorageUsage += download.fileSize;
+        allOfflineSizes[download.contentId] = download.formattedFileSize;
+        allSizeBytes[download.contentId] = download.fileSize;
+        totalStorageUsage += download.fileSize;
       }
 
       if (isClosed) return;
 
-      final List<Content> finalResultsFlat;
-      final Map<String, String> finalSizes;
-      final int finalStorageUsage;
+      _sizeBytesByContentId
+        ..clear()
+        ..addAll(allSizeBytes);
 
-      if (loadMore && state is OfflineSearchLoaded) {
-        final currentState = state as OfflineSearchLoaded;
-        final flatItems = currentState.results.expand((g) => g.items).toList();
-        finalResultsFlat = [...flatItems, ...newContents];
-        finalSizes = {...currentState.offlineSizes, ...newOfflineSizes};
-        finalStorageUsage = currentState.storageUsage + newStorageUsage;
-      } else {
-        finalResultsFlat = newContents;
-        finalSizes = newOfflineSizes;
-        finalStorageUsage = newStorageUsage;
-      }
-
-      if (!loadMore) {
-        _sizeBytesByContentId.clear();
-        _dbOffset = 0;
-      }
-      _sizeBytesByContentId.addAll(newSizeBytes);
-      _dbOffset += downloads.length; // track raw fetched count
-
-      final List<ContentGroup> groupedResults = await _groupContent(
-        finalResultsFlat,
+      final List<ContentGroup> allGroups = await _groupContent(
+        lightContents,
         itemSizes: _sizeBytesByContentId,
+        includeReaderPositions: false,
       );
 
-      final currentPage = (finalResultsFlat.length / pageSize).ceil();
-      final totalPages = (totalCount / pageSize).ceil();
-      final hasMore = finalResultsFlat.length < totalCount;
+      // Phase 2 (I/O, visible window only): resolve covers + reader
+      // positions. loadMore continues from the consumed cursor so visible
+      // groups are never re-resolved.
+      final startIndex = loadMore && state is OfflineSearchLoaded
+          ? max(_consumedGroupCount,
+              (state as OfflineSearchLoaded).results.length)
+          : 0;
+      final window = await _enrichGroupWindow(
+        allGroups,
+        startIndex,
+        groupPageSize,
+        downloadPathOf: (id) => rowById[id]?.downloadPath,
+      );
+      _consumedGroupCount = startIndex + window.consumed;
+
+      final groupedResults = loadMore && state is OfflineSearchLoaded
+          ? [...(state as OfflineSearchLoaded).results, ...window.groups]
+          : window.groups;
+
+      final currentPage = _consumedGroupCount == 0
+          ? 1
+          : ((_consumedGroupCount - 1) ~/ groupPageSize) + 1;
+      final totalPages =
+          allGroups.isEmpty ? 1 : ((allGroups.length - 1) ~/ groupPageSize) + 1;
+      final hasMore = _consumedGroupCount < allGroups.length;
+
+      // Buckets reflect the whole store: refresh on unfiltered loads,
+      // otherwise keep the previously known buckets.
+      final availableSourceIds = effectiveSourceId == null
+          ? _distinctBucketIds(downloads.map((d) => d.sourceId ?? 'nhentai'))
+          : previousBuckets;
 
       if (groupedResults.isEmpty) {
         // If filtered and empty, we should still show the filtered state, not generic empty
@@ -583,6 +603,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           hasMore: false,
           isLoadingMore: false,
           selectedSourceId: effectiveSourceId,
+          availableSourceIds: availableSourceIds,
           isListMode: _prefs.getBool(_keyIsListMode) ?? false,
         ));
         return;
@@ -591,23 +612,24 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       emit(OfflineSearchLoaded(
         query: '',
         results: groupedResults,
-        totalResults: totalCount,
-        offlineSizes: finalSizes,
-        storageUsage: finalStorageUsage,
+        totalResults: allGroups.length,
+        offlineSizes: allOfflineSizes,
+        storageUsage: totalStorageUsage,
         formattedStorageUsage:
-            OfflineContentManager.formatStorageSize(finalStorageUsage),
+            OfflineContentManager.formatStorageSize(totalStorageUsage),
         currentPage: currentPage,
         totalPages: totalPages,
         hasMore: hasMore,
         isLoadingMore: false,
         selectedSourceId: effectiveSourceId,
+        availableSourceIds: availableSourceIds,
         orderBy: currentOrderBy,
         descending: currentDescending,
         isListMode: _prefs.getBool(_keyIsListMode) ?? false,
       ));
 
       logInfo(
-          'Loaded ${groupedResults.length} groups / ${finalResultsFlat.length} offline items (source: $effectiveSourceId) '
+          'Loaded ${groupedResults.length}/${allGroups.length} groups (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;
@@ -934,10 +956,65 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
   }
 
-  // Groups a flat list of Content into ContentGroup based on sourceId + baseTitle
+  /// Distinct, sorted source buckets from fetched rows. Empty/blank ids
+  /// are dropped; callers pass unfiltered rows so the buckets reflect the
+  /// whole store rather than the active filter.
+  List<String> _distinctBucketIds(Iterable<String?> sourceIds) {
+    final ids = <String>{};
+    for (final id in sourceIds) {
+      final normalized = (id ?? '').trim();
+      if (normalized.isNotEmpty) ids.add(normalized);
+    }
+    return ids.toList()..sort();
+  }
+
+  /// Enriches a window of lightweight groups starting at [startIndex]:
+  /// resolves covers (file I/O) and reader positions (DB) for up to
+  /// [targetCount] displayable groups. Groups whose items all lack covers
+  /// are skipped and the window tops up from later groups.
+  ///
+  /// Returns the enriched groups plus how many input groups were consumed
+  /// ([consumed] >= groups.length when drops occurred).
+  Future<({List<ContentGroup> groups, int consumed})> _enrichGroupWindow(
+    List<ContentGroup> allGroups,
+    int startIndex,
+    int targetCount, {
+    required String? Function(String contentId) downloadPathOf,
+  }) async {
+    final visible = <ContentGroup>[];
+    var cursor = startIndex.clamp(0, allGroups.length);
+    while (visible.length < targetCount && cursor < allGroups.length) {
+      if (isClosed) break;
+      final light = allGroups[cursor];
+      cursor++;
+      final enrichedItems = <Content>[];
+      for (final item in light.items) {
+        if (isClosed) break;
+        final cover = await _offlineContentManager.getOfflineFirstImagePath(
+          item.id,
+          downloadPath: downloadPathOf(item.id),
+        );
+        if (cover == null) continue;
+        enrichedItems.add(item.copyWith(coverUrl: cover));
+      }
+      if (enrichedItems.isEmpty) continue;
+      final enriched = await _groupContent(
+        enrichedItems,
+        itemSizes: _sizeBytesByContentId,
+      );
+      visible.addAll(enriched);
+    }
+    return (groups: visible, consumed: cursor - startIndex);
+  }
+
+  // Groups a flat list of Content into ContentGroup based on sourceId + baseTitle.
+  // Reader positions are per-item DB reads — pass [includeReaderPositions]
+  // false for the cheap full-library grouping pass, true when enriching the
+  // visible window only.
   Future<List<ContentGroup>> _groupContent(
     List<Content> flatItems, {
     Map<String, int> itemSizes = const {},
+    bool includeReaderPositions = true,
   }) async {
     final Map<String, List<Content>> groupedMap = {};
     for (final item in flatItems) {
@@ -947,9 +1024,11 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
     }
 
     dynamic readerPosRepo;
-    try {
-      readerPosRepo = getIt<ReaderRepository>();
-    } catch (_) {}
+    if (includeReaderPositions) {
+      try {
+        readerPosRepo = getIt<ReaderRepository>();
+      } catch (_) {}
+    }
 
     final List<ContentGroup> groups = [];
     for (final entry in groupedMap.entries) {
@@ -968,23 +1047,25 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       bool isRead = false;
       bool isReading = false;
 
-      for (final item in items) {
-        try {
-          if (readerPosRepo != null) {
-            final position = await readerPosRepo.getReaderPosition(item.id);
-            if (position != null && position.totalPages > 0) {
-              final double progress =
-                  position.currentPage / position.totalPages;
-              if (progress > maxProgress) maxProgress = progress;
-              if (position.currentPage >= position.totalPages - 1) {
-                isRead = true;
-              } else if (position.currentPage > 1) {
-                isReading = true;
+      if (includeReaderPositions) {
+        for (final item in items) {
+          try {
+            if (readerPosRepo != null) {
+              final position = await readerPosRepo.getReaderPosition(item.id);
+              if (position != null && position.totalPages > 0) {
+                final double progress =
+                    position.currentPage / position.totalPages;
+                if (progress > maxProgress) maxProgress = progress;
+                if (position.currentPage >= position.totalPages - 1) {
+                  isRead = true;
+                } else if (position.currentPage > 1) {
+                  isReading = true;
+                }
               }
             }
+          } catch (e) {
+            logInfo('Error getting reader position for ${item.id}: $e');
           }
-        } catch (e) {
-          logInfo('Error getting reader position for ${item.id}: $e');
         }
       }
 

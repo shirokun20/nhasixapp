@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 
 import '../../../domain/entities/ai_translation.dart';
 import '../../../domain/repositories/ai_translation_repositories.dart';
+import 'model_json_parser.dart';
 
 /// OpenAI-compatible `/chat/completions` provider. Covers OpenCode Go
 /// (all 23 models), OpenAI, OpenRouter, Zen free models, and Custom endpoints.
@@ -46,10 +47,18 @@ Rules:
     required TranslationStyle style,
     bool skipSfx = true,
     String readingDirection = 'left-to-right',
+    String? glossaryContext,
   }) async {
     final isMosaic = bubbles.isNotEmpty;
+    final hasGlossary =
+        glossaryContext != null && glossaryContext.trim().isNotEmpty;
+    _logger.d('${config.displayName}: translate start '
+        '(model=${config.model}, mosaic=$isMosaic, bubbles=${bubbles.length}, '
+        'image=${image.length}B, glossary=$hasGlossary)');
+    final sw = Stopwatch()..start();
     final prompt = isMosaic
-        ? buildMosaicPrompt(targetLang, style, skipSfx, readingDirection)
+        ? buildMosaicPrompt(
+            targetLang, style, skipSfx, readingDirection, glossaryContext)
         : fullImagePrompt
             .replaceAll('{lang}', targetLang)
             .replaceAll('{style}', style.instruction)
@@ -76,12 +85,28 @@ Rules:
     final response = await _post(payload);
 
     final content = _extractContent(response);
+    _logger.d('${config.displayName}: raw response '
+        '(${content.length} chars, ${sw.elapsedMilliseconds}ms): '
+        '${ModelJsonParser.preview(content)}');
 
-    if (isMosaic) {
-      final parsed = _parseJson(content);
-      return _mapMosaicResult(parsed, bubbles, targetLang);
+    try {
+      if (isMosaic) {
+        final parsed = _parseJson(content);
+        final result = _mapMosaicResult(parsed, bubbles, targetLang);
+        _logger.i('${config.displayName}: mapped '
+            '${result.bubbles.length}/${bubbles.length} bubbles');
+        return result;
+      }
+      final result =
+          _mapFullImageResult(content, imageWidth, imageHeight, targetLang);
+      _logger.i('${config.displayName}: mapped '
+          '${result.bubbles.length} full-image bubbles');
+      return result;
+    } on AiTranslationException catch (e) {
+      _logger.e('${config.displayName}: translate failed: ${e.message} '
+          '| raw(${content.length}): ${ModelJsonParser.preview(content)}');
+      rethrow;
     }
-    return _mapFullImageResult(content, imageWidth, imageHeight, targetLang);
   }
 
   String buildMosaicPrompt(
@@ -89,12 +114,39 @@ Rules:
     TranslationStyle style,
     bool skipSfx, [
     String readingDirection = 'left-to-right',
+    String? glossaryContext,
   ]) {
-    return '''
+    return _mosaicPromptWithGlossary(
+      targetLang,
+      style,
+      skipSfx,
+      readingDirection,
+      glossaryContext,
+    );
+  }
+
+  /// Appends a pre-rendered glossary block (e.g. `Glossary:\n"a" -> "b"`)
+  /// to the mosaic prompt. Null/empty leaves the prompt unchanged and no
+  /// extra AI request is ever made for glossary context.
+  static String appendGlossary(String prompt, String? glossaryContext) {
+    final block = glossaryContext?.trim() ?? '';
+    if (block.isEmpty) return prompt;
+    final base = prompt.endsWith('\n') ? prompt : '$prompt\n';
+    return '$base$block\n';
+  }
+
+  String _mosaicPromptWithGlossary(
+    String targetLang,
+    TranslationStyle style,
+    bool skipSfx,
+    String readingDirection,
+    String? glossaryContext,
+  ) {
+    final prompt = '''
 Translate the manga/manhwa image. Each bubble has a red number ID on its left.
 Reading order: bubbles numbered $readingDirection, top-to-bottom.
 Return STRICT JSON (no markdown, no comments) with numeric string keys:
-{"1": {"original": "<text in bubble>", "reading": "<latin reading>", "translated": "<translation>"}, "2": "SKIP", ...}
+{"1": {"original": "<text in bubble 1>", "reading": "<latin reading 1>", "translated": "<translation 1>"}, "2": "SKIP", "3": {"original": "<text in bubble 3>", "reading": "<latin reading 3>", "translated": "<translation 3>"}}
 Rules:
 - Map each number to the text inside that bubble, in reading order.
 - "original" = the exact text inside the bubble (for learning/glossary).
@@ -103,9 +155,11 @@ Rules:
 - SKIP if a bubble is a sound effect (ドドド, バキ, etc.).
 - Keep honorifics (-san, -kun, -chan) as-is.
 - Return ALL visible IDs.
+- Output ONLY that JSON for the visible numbered bubbles — never output "...", placeholders like <...>, or explanations.
 - Style: ${style.instruction}
 ${sfxRule(skipSfx)}
 ''';
+    return appendGlossary(prompt, glossaryContext);
   }
 
   String sfxRule(bool skipSfx) {
@@ -170,20 +224,14 @@ ${sfxRule(skipSfx)}
     return '';
   }
 
-  /// Extracts the first JSON object/array from model text output.
+  /// Extracts the mosaic JSON object from model text output, tolerating
+  /// fences, echoed `...` markers, trailing commas, and brace chatter.
   Map<String, dynamic> _parseJson(String content) {
-    final text = content.trim();
-    final start = text.indexOf('{');
-    final end = text.lastIndexOf('}');
-    if (start == -1 || end <= start) {
-      throw const AiTranslationException('Model did not return JSON');
-    }
-    try {
-      return Map<String, dynamic>.from(
-          jsonDecode(text.substring(start, end + 1)) as Map);
-    } catch (e) {
-      throw AiTranslationException('Failed to parse model JSON: $e');
-    }
+    return ModelJsonParser.parseMosaicJson(
+      content,
+      logger: _logger,
+      tag: config.displayName,
+    );
   }
 
   PageTranslation _mapMosaicResult(
@@ -192,6 +240,7 @@ ${sfxRule(skipSfx)}
     String lang,
   ) {
     final out = <BubbleTranslation>[];
+    var placeholderSkips = 0;
     for (var i = 0; i < bubbles.length; i++) {
       final box = bubbles[i];
       final raw = parsed['${i + 1}'];
@@ -211,6 +260,12 @@ ${sfxRule(skipSfx)}
           translated.toUpperCase() == 'SKIP') {
         continue;
       }
+      // Weak models echo the template ("<terjemahan>", "...") instead of
+      // translating — never surface placeholders as translations.
+      if (ModelJsonParser.looksLikePlaceholder(translated)) {
+        placeholderSkips++;
+        continue;
+      }
       out.add(BubbleTranslation(
         rect: Rect.fromLTWH(
           box.x.toDouble(),
@@ -223,6 +278,15 @@ ${sfxRule(skipSfx)}
         reading: reading,
       ));
     }
+    if (placeholderSkips > 0) {
+      _logger.w('${config.displayName}: skipped $placeholderSkips '
+          'placeholder echo(s)');
+    }
+    if (out.isEmpty && placeholderSkips > 0) {
+      throw const AiTranslationException(
+        'Model echoed the format instead of translating. Retry, or switch to a stronger vision model.',
+      );
+    }
     return PageTranslation(bubbles: out, detectedLang: lang);
   }
 
@@ -232,13 +296,11 @@ ${sfxRule(skipSfx)}
     int imageHeight,
     String lang,
   ) {
-    final start = content.indexOf('[');
-    final end = content.lastIndexOf(']');
-    if (start == -1 || end <= start) {
-      throw const AiTranslationException(
-          'Full-image fallback: model did not return a coordinate array');
-    }
-    final list = jsonDecode(content.substring(start, end + 1)) as List<dynamic>;
+    final list = ModelJsonParser.parseJsonArray(
+      content,
+      logger: _logger,
+      tag: config.displayName,
+    );
     final out = <BubbleTranslation>[];
     for (final item in list.cast<Map<String, dynamic>>()) {
       final translated = (item['translated'] as String? ?? '').trim();

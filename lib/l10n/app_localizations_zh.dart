@@ -5543,6 +5543,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiSkipSfxSubtitle => '跳过仅含音效的气泡（默认开）';
 
   @override
+  String get aiMosaicQuality => '马赛克质量';
+
+  @override
+  String get aiMosaicQualitySubtitle =>
+      '低画质省 token（JPEG 75，1 MB）；高画质保留细节（JPEG 85，2 MB）';
+
+  @override
+  String get aiSwitchModel => '切换模型';
+
+  @override
+  String aiModelSwitched(Object name) {
+    return '模型已切换为 $name';
+  }
+
+  @override
   String get aiPrivacyDisclosure => '隐私声明';
 
   @override

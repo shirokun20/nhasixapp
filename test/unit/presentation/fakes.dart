@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:nhasixapp/data/repositories/ai/ai_provider_factory.dart';
 import 'package:nhasixapp/data/repositories/ai/mosaic_builder.dart';
 import 'package:nhasixapp/domain/entities/ai_translation.dart';
+import 'package:nhasixapp/domain/entities/glossary.dart';
 import 'package:nhasixapp/domain/repositories/ai_translation_repositories.dart';
 
 /// Runs CPU-bound image prep synchronously on the caller isolate — the test
@@ -99,6 +100,7 @@ class FakeAiPreferencesRepository implements AiPreferencesRepository {
   String lang = 'Indonesian';
   TranslationStyle style = TranslationStyle.natural;
   bool ack = false;
+  MosaicQuality mosaicQuality = MosaicQuality.high;
 
   @override
   Future<String> getTargetLanguage() async => lang;
@@ -133,6 +135,14 @@ class FakeAiPreferencesRepository implements AiPreferencesRepository {
 
   @override
   Future<void> markAiTutorialSeen() async => aiTutorialSeen = true;
+
+  @override
+  Future<MosaicQuality> getMosaicQuality() async => mosaicQuality;
+
+  @override
+  Future<void> setMosaicQuality(MosaicQuality quality) async {
+    mosaicQuality = quality;
+  }
 }
 
 class FakeCacheRepository implements TranslationCacheRepository {
@@ -164,6 +174,12 @@ class FakeProvider implements AiTranslationProvider {
   @override
   final AiProviderConfig config;
 
+  /// Last glossary block received (for prompt-enrichment assertions).
+  String? lastGlossaryContext;
+
+  /// Number of translatePage calls (glossary must not add extra requests).
+  int translateCalls = 0;
+
   @override
   Future<PageTranslation> translatePage({
     required Uint8List image,
@@ -174,7 +190,10 @@ class FakeProvider implements AiTranslationProvider {
     required TranslationStyle style,
     bool skipSfx = true,
     String readingDirection = 'left-to-right',
+    String? glossaryContext,
   }) async {
+    translateCalls++;
+    lastGlossaryContext = glossaryContext;
     return PageTranslation(
       bubbles: [
         for (var i = 0; i < bubbles.length; i++)
@@ -196,10 +215,41 @@ class FakeProvider implements AiTranslationProvider {
   Future<void> validate() async {}
 }
 
+/// In-memory glossary repository for prompt-enrichment tests.
+class FakeGlossaryRepository implements GlossaryRepository {
+  FakeGlossaryRepository([List<GlossaryEntry>? entries])
+      : _entries = List.of(entries ?? const []);
+
+  final List<GlossaryEntry> _entries;
+
+  @override
+  Future<List<GlossaryEntry>> getAll() async => List.of(_entries);
+
+  @override
+  Future<void> save(GlossaryEntry entry) async {
+    _entries
+      ..removeWhere((e) => e.id == entry.id)
+      ..insert(0, entry);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _entries.removeWhere((e) => e.id == id);
+  }
+}
+
 /// Mosaic builder stub — returns minimal bytes (ONNX + provider are mocked).
 class FakeMosaicBuilder extends MosaicBuilder {
+  /// Last quality tier received (for tier-propagation assertions).
+  MosaicQuality lastQuality = MosaicQuality.high;
+
   @override
-  Uint8List buildMosaic(Uint8List pageImage, List<BubbleBoxLike> bubbles) {
+  Uint8List buildMosaic(
+    Uint8List pageImage,
+    List<BubbleBoxLike> bubbles, {
+    MosaicQuality quality = MosaicQuality.high,
+  }) {
+    lastQuality = quality;
     return Uint8List(4);
   }
 }

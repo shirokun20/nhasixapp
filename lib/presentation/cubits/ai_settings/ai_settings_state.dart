@@ -24,6 +24,7 @@ class AiSettingsLoaded extends AiSettingsState {
     required this.targetLang,
     required this.style,
     this.skipSfx = true,
+    this.mosaicQuality = MosaicQuality.high,
     this.isSaving = false,
   });
 
@@ -31,6 +32,7 @@ class AiSettingsLoaded extends AiSettingsState {
   final String targetLang;
   final TranslationStyle style;
   final bool skipSfx;
+  final MosaicQuality mosaicQuality;
   final bool isSaving;
 
   AiProviderConfig? get activeProvider {
@@ -45,6 +47,7 @@ class AiSettingsLoaded extends AiSettingsState {
     String? targetLang,
     TranslationStyle? style,
     bool? skipSfx,
+    MosaicQuality? mosaicQuality,
     bool? isSaving,
   }) {
     return AiSettingsLoaded(
@@ -52,13 +55,14 @@ class AiSettingsLoaded extends AiSettingsState {
       targetLang: targetLang ?? this.targetLang,
       style: style ?? this.style,
       skipSfx: skipSfx ?? this.skipSfx,
+      mosaicQuality: mosaicQuality ?? this.mosaicQuality,
       isSaving: isSaving ?? this.isSaving,
     );
   }
 
   @override
   List<Object?> get props =>
-      [providers, targetLang, style, skipSfx, isSaving];
+      [providers, targetLang, style, skipSfx, mosaicQuality, isSaving];
 }
 
 class AiSettingsError extends AiSettingsState {

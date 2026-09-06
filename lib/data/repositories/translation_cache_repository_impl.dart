@@ -98,6 +98,7 @@ class AiPreferencesRepositoryImpl implements AiPreferencesRepository {
   static const String _privacyKey = 'ai_privacy_acknowledged';
   static const String _skipSfxKey = 'ai_skip_sfx';
   static const String _tutorialKey = 'ai_reader_tutorial_seen';
+  static const String _mosaicQualityKey = 'ai_mosaic_quality';
 
   @override
   Future<String> getTargetLanguage() async {
@@ -149,5 +150,17 @@ class AiPreferencesRepositoryImpl implements AiPreferencesRepository {
   @override
   Future<void> markAiTutorialSeen() async {
     await _prefs.setBool(_tutorialKey, true);
+  }
+
+  @override
+  Future<MosaicQuality> getMosaicQuality() async {
+    final raw = _prefs.getString(_mosaicQualityKey);
+    return MosaicQuality.values.where((q) => q.name == raw).firstOrNull ??
+        MosaicQuality.high;
+  }
+
+  @override
+  Future<void> setMosaicQuality(MosaicQuality quality) async {
+    await _prefs.setString(_mosaicQualityKey, quality.name);
   }
 }

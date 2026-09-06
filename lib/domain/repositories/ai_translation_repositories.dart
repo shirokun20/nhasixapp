@@ -33,6 +33,11 @@ abstract interface class AiTranslationProvider {
     required TranslationStyle style,
     bool skipSfx = true,
     String readingDirection = 'left-to-right',
+
+    /// Pre-rendered glossary context lines (e.g. `Glossary:\n"a" -> "b"`),
+    /// appended to the mosaic prompt. Null/empty = prompt unchanged.
+    /// Sent inside the single translation request (no extra AI calls).
+    String? glossaryContext,
   });
 
   /// Sends a minimal test request to validate the API key.
@@ -83,4 +88,6 @@ abstract interface class AiPreferencesRepository {
   Future<void> setSkipSfx(bool value);
   Future<bool> isAiTutorialSeen();
   Future<void> markAiTutorialSeen();
+  Future<MosaicQuality> getMosaicQuality();
+  Future<void> setMosaicQuality(MosaicQuality quality);
 }

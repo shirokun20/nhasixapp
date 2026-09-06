@@ -5699,6 +5699,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiSkipSfxSubtitle => 'Skip sound-effect-only bubbles (default on)';
 
   @override
+  String get aiMosaicQuality => 'Mosaic quality';
+
+  @override
+  String get aiMosaicQualitySubtitle =>
+      'Low saves tokens (JPEG 75, 1 MB); High preserves detail (JPEG 85, 2 MB)';
+
+  @override
+  String get aiSwitchModel => 'Switch model';
+
+  @override
+  String aiModelSwitched(Object name) {
+    return 'Model switched to $name';
+  }
+
+  @override
   String get aiPrivacyDisclosure => 'Privacy Disclosure';
 
   @override

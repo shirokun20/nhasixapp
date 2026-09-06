@@ -84,7 +84,7 @@ class _FailedPageCard extends StatelessWidget {
 
 // ───── Top bar ─────
 
-enum _TopBarAction { keepScreenOn, settings, skipSfx }
+enum _TopBarAction { keepScreenOn, settings, skipSfx, switchModel }
 
 class _ReaderTopBar extends StatelessWidget {
   const _ReaderTopBar({
@@ -213,6 +213,8 @@ class _ReaderTopBar extends StatelessWidget {
                       onOpenSettings();
                     case _TopBarAction.skipSfx:
                       onToggleSkipSfx?.call();
+                    case _TopBarAction.switchModel:
+                      showReaderModelSwitcherSheet(context);
                   }
                 },
                 icon: Icon(Icons.more_vert, color: subColor),
@@ -262,6 +264,17 @@ class _ReaderTopBar extends StatelessWidget {
                           Text(skipSfx
                               ? AppLocalizations.of(context)!.aiSkipSfxOn
                               : AppLocalizations.of(context)!.aiSkipSfxOff),
+                        ],
+                      ),
+                    ),
+                  if (onTranslate != null)
+                    PopupMenuItem(
+                      value: _TopBarAction.switchModel,
+                      child: Row(
+                        children: [
+                          Icon(Icons.swap_horiz, size: 18, color: subColor),
+                          const SizedBox(width: 12),
+                          Text(AppLocalizations.of(context)!.aiSwitchModel),
                         ],
                       ),
                     ),

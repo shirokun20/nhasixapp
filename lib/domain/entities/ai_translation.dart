@@ -291,6 +291,25 @@ enum TranslationStyle {
   }
 }
 
+/// Mosaic image quality tier for AI vision translation.
+///
+/// [high] preserves the legacy behavior (JPEG 85, cap 2 MB).
+/// [low] saves tokens/bandwidth (JPEG 75, cap 1 MB). Bubble crops are still
+/// scaled 2× before compression in both tiers so readability is preserved.
+enum MosaicQuality {
+  low,
+  high;
+
+  String get label {
+    switch (this) {
+      case MosaicQuality.low:
+        return 'Low';
+      case MosaicQuality.high:
+        return 'High';
+    }
+  }
+}
+
 /// One translated speech bubble with its position on the page.
 class BubbleTranslation extends Equatable {
   const BubbleTranslation({

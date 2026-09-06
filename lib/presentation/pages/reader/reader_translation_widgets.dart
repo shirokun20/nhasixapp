@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/glossary.dart';
+import 'package:nhasixapp/domain/repositories/ai_translation_repositories.dart';
 import 'package:nhasixapp/domain/usecases/reader/save_glossary_entry_usecase.dart';
 import 'package:nhasixapp/domain/entities/reader_settings_entity.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
@@ -107,6 +108,83 @@ class ReaderTranslationToolbar extends StatelessWidget {
       },
     );
   }
+}
+
+/// Model switcher sheet (opened from the reader ⋮ menu): picks the active AI
+/// provider from the already-configured list (vision-capable only). No
+/// add/manage here — that lives in Settings → AI Translation. Takes effect
+/// on next translate.
+Future<void> showReaderModelSwitcherSheet(BuildContext context) async {
+  final repository = getIt<AiProviderRepository>();
+  final providers = await repository.getProviders();
+  if (!context.mounted) return;
+  // Outer context survives the sheet pop — used for SnackBar.
+  final outerContext = context;
+  final l10n = AppLocalizations.of(context)!;
+  final vision = providers.where((p) => p.isVisionCapable).toList();
+  if (vision.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.aiNeedVisionProvider)),
+    );
+    return;
+  }
+  var defaultId = vision.first.id;
+  for (final p in vision) {
+    if (p.isDefault) defaultId = p.id;
+  }
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) {
+      final sheetL10n = AppLocalizations.of(sheetContext)!;
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(
+                sheetL10n.aiSwitchModel,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Flexible(
+              child: RadioGroup<String>(
+                groupValue: defaultId,
+                onChanged: (id) async {
+                  if (id == null) return;
+                  final selected = vision.firstWhere((p) => p.id == id);
+                  await repository.setDefault(selected.id);
+                  if (sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                  if (outerContext.mounted) {
+                    ScaffoldMessenger.of(outerContext).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text(l10n.aiModelSwitched(selected.displayName)),
+                      ),
+                    );
+                  }
+                },
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: vision.length,
+                  itemBuilder: (_, i) {
+                    final p = vision[i];
+                    return RadioListTile<String>(
+                      value: p.id,
+                      title: Text(p.displayName),
+                      subtitle: Text(p.model),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 /// Overlay layer: positions translated bubbles over the reader image.
