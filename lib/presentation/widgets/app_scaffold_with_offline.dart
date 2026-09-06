@@ -56,39 +56,16 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
             return;
           }
 
-          // If we are at the root/home, show exit confirmation
-          // Check if we can pop the navigator
+          // Pop nested routes; drawer is handled above.
           if (context.canPop()) {
             context.pop();
             return;
           }
 
-          // Show exit confirmation dialog
-          final shouldExit = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(AppLocalizations.of(context)?.exitApp ?? 'Exit App'),
-              content: Text(AppLocalizations.of(context)?.areYouSureExit ??
-                  AppLocalizations.of(context)!.confirmExit),
-              actions: [
-                TextButton(
-                  onPressed: () => context.pop(false),
-                  child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => context.pop(true),
-                  child: Text(AppLocalizations.of(context)?.exit ?? 'Exit'),
-                ),
-              ],
-            ),
-          );
-
-          if (shouldExit == true) {
-            if (context.mounted) {
-              // Actually exit the app using SystemNavigator
-              await SystemNavigator.pop();
-            }
-          }
+          // At root: do nothing here. Root exit UX is owned solely by the
+          // main screen's double-press snackbar — a second exit dialog here
+          // fired together with the snackbar on a single back press (and a
+          // cancelled dialog still left the snackbar timer armed).
         },
         child: StreamBuilder<bool>(
           // Listen to offline mode changes from AppStateManager
