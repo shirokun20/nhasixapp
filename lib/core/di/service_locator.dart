@@ -1300,6 +1300,7 @@ void _setupBlocs() {
         offlineContentManager: getIt<OfflineContentManager>(),
         logger: getIt<Logger>(),
         connectivity: getIt<Connectivity>(),
+        networkCubit: getIt<NetworkCubit>(),
         notificationService: getIt<NotificationService>(),
         pdfConversionService: getIt<PdfConversionService>(),
         pdfConversionQueueManager: getIt<PdfConversionQueueManager>(),

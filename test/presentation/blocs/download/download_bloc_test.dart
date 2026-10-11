@@ -16,6 +16,7 @@ import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
 import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/core/services/pdf_conversion_service.dart';
+import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/core/services/download_manager.dart'; // Import DownloadManager
@@ -37,6 +38,8 @@ class MockUserDataRepository extends Mock implements UserDataRepository {}
 class MockLogger extends Mock implements Logger {}
 
 class MockConnectivity extends Mock implements Connectivity {}
+
+class MockNetworkCubit extends Mock implements NetworkCubit {}
 
 class MockNotificationService extends Mock implements NotificationService {}
 
@@ -63,6 +66,7 @@ void main() {
     late MockGetChapterImagesUseCase mockGetChapterImagesUseCase;
     late MockUserDataRepository mockRepo;
     late MockConnectivity mockConnectivity;
+    late MockNetworkCubit mockNetworkCubit;
     late MockNotificationService mockNotificationService;
     late MockPdfConversionService mockPdfConversionService;
     late MockRemoteConfigService mockRemoteConfigService;
@@ -91,6 +95,7 @@ void main() {
       mockGetChapterImagesUseCase = MockGetChapterImagesUseCase();
       mockRepo = MockUserDataRepository();
       mockConnectivity = MockConnectivity();
+      mockNetworkCubit = MockNetworkCubit();
       mockNotificationService = MockNotificationService();
       mockPdfConversionService = MockPdfConversionService();
       mockRemoteConfigService = MockRemoteConfigService();
@@ -218,6 +223,7 @@ void main() {
         offlineContentManager: mockOfflineContentManager,
         logger: mockLogger,
         connectivity: mockConnectivity,
+        networkCubit: mockNetworkCubit,
         notificationService: mockNotificationService,
         pdfConversionService: mockPdfConversionService,
         remoteConfigService: mockRemoteConfigService,
@@ -759,6 +765,89 @@ void main() {
       wait: const Duration(milliseconds: 30),
       verify: (_) {
         verifyNever(() => mockDownloadContentUseCase.call(any()));
+      },
+    );
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'defers queued downloads without starting when wifi-only and off wifi',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: 'wifi-slug/1',
+            state: DownloadState.queued,
+            totalPages: 0,
+            title: 'Wifi Ch.1',
+            sourceId: 'komikcast',
+            downloadPath: '/tmp/wifi-chapter',
+          ),
+        ],
+        settings: const DownloadSettings(
+          wifiOnly: true,
+          autoRetry: false,
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 10, 11),
+      ),
+      setUp: () {
+        when(() => mockNetworkCubit.isSuitableForHeavyOperations)
+            .thenReturn(false);
+      },
+      act: (bloc) => bloc.add(const DownloadRefreshEvent()),
+      wait: const Duration(milliseconds: 30),
+      verify: (_) {
+        verifyNever(() => mockDownloadContentUseCase.call(any()));
+      },
+    );
+
+    blocTest<DownloadBloc, DownloadBlocState>(
+      'parks start as waiting-for-wifi without starting when off wifi',
+      build: () => downloadBloc,
+      seed: () => DownloadLoaded(
+        downloads: const [
+          DownloadStatus(
+            contentId: 'wifi-slug/2',
+            state: DownloadState.failed,
+            totalPages: 0,
+            title: 'Wifi Ch.2',
+            sourceId: 'komikcast',
+            downloadPath: '/tmp/wifi-chapter',
+          ),
+        ],
+        settings: const DownloadSettings(
+          wifiOnly: true,
+          autoRetry: false,
+          enableNotifications: false,
+          customStorageRoot: '/tmp/downloads',
+        ),
+        lastUpdated: DateTime(2026, 10, 11),
+      ),
+      setUp: () {
+        when(() => mockNetworkCubit.isSuitableForHeavyOperations)
+            .thenReturn(false);
+      },
+      act: (bloc) => bloc.add(const DownloadStartEvent('wifi-slug/2')),
+      wait: const Duration(milliseconds: 30),
+      expect: () => [
+        predicate<DownloadBlocState>(
+          (state) =>
+              state is DownloadLoaded &&
+              state.getDownload('wifi-slug/2')?.state == DownloadState.queued,
+        ),
+      ],
+      verify: (_) {
+        verifyNever(() => mockDownloadContentUseCase.call(any()));
+        verify(
+          () => mockRepo.saveDownloadStatus(
+            any(
+              that: predicate<DownloadStatus>(
+                (status) =>
+                    status.contentId == 'wifi-slug/2' &&
+                    status.state == DownloadState.queued,
+              ),
+            ),
+          ),
+        ).called(1);
       },
     );
   });

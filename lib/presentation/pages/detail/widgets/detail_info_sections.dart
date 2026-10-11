@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:nhasixapp/presentation/widgets/ehentai_download_strategy.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 
 class DetailTitleSection extends StatelessWidget {
   const DetailTitleSection({super.key, required this.content});
@@ -248,6 +249,7 @@ class DetailMetadataItem {
   /// (e.g. multiple artists) instead of plain text.
   final List<DetailMetadataLink>? links;
 }
+
 class DetailMetadataRow extends StatelessWidget {
   const DetailMetadataRow(this.item, {super.key});
 
@@ -294,8 +296,7 @@ class DetailMetadataRow extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (final link in item.links!)
-                        _CreatorChip(link: link),
+                      for (final link in item.links!) _CreatorChip(link: link),
                     ],
                   )
                 : Text(
@@ -310,6 +311,7 @@ class DetailMetadataRow extends StatelessWidget {
     );
   }
 }
+
 /// Creator chip — same construction as [DetailTagSection] chips: 1px
 /// type-colored border, tinted fill, no underline. One visual language for
 /// everything tappable on this screen.
@@ -339,6 +341,7 @@ class _CreatorChip extends StatelessWidget {
     );
   }
 }
+
 class DetailSynopsisSection extends StatelessWidget {
   const DetailSynopsisSection({super.key, required this.text});
 
@@ -1338,15 +1341,7 @@ class DetailRelatedSection extends StatelessWidget {
                                   memCacheWidth: 320,
                                   memCacheHeight: 400,
                                   httpHeaders: resolveHeaders(relatedContent),
-                                  placeholder: Container(
-                                    color: colorScheme.surfaceContainer,
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        color: colorScheme.primary,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
+                                  placeholder: const KuroThumbPlaceholder(),
                                   errorWidget: Container(
                                     color: colorScheme.surfaceContainer,
                                     child: Center(

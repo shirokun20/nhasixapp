@@ -3,6 +3,7 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/utils/app_animations.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 
 class DetailContentView extends StatelessWidget {
   const DetailContentView({
@@ -107,14 +108,7 @@ class DetailContentView extends StatelessWidget {
                           memCacheWidth: 800,
                           memCacheHeight: 1200,
                           httpHeaders: imageHeaders,
-                          placeholder: Container(
-                            color: colorScheme.surfaceContainer,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
+                          placeholder: const KuroThumbPlaceholder(),
                           errorWidget: Container(
                             color: colorScheme.surfaceContainer,
                             child: Center(

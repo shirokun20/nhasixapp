@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 // Kuro mascot, moods A–F (mirrors prototype/kuro-mascot-prototype.html).
 //
@@ -601,4 +602,103 @@ class KuroLoading extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Thumbnail placeholder: static waiting-Kuro (no tickers — grid cells
+/// would each cost a ticker pair) crisp over a shimmer wash. Kuro sits
+/// OUTSIDE the ShaderMask on purpose: KuronShimmer tints its child via
+/// srcIn, which would turn the black cat into a grey silhouette.
+class KuroThumbPlaceholder extends StatelessWidget {
+  const KuroThumbPlaceholder({super.key, this.borderRadius});
+
+  final BorderRadiusGeometry? borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: borderRadius ?? BorderRadius.zero,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          KuronShimmer(
+            baseColor: colorScheme.surfaceContainerHighest,
+            highlightColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+            child: Container(color: colorScheme.surfaceContainerHighest),
+          ),
+          const Center(
+            child: SizedBox.square(
+              dimension: 48,
+              child: CustomPaint(
+                size: Size.square(48),
+                painter: _KuroThumbPainter(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Static subset of [_KuroPainter]: head + waiting eyes + coral mouth.
+/// Eye scale 1.0 (open), glance centered — the honest idle pose.
+class _KuroThumbPainter extends CustomPainter {
+  const _KuroThumbPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 200;
+    canvas.save();
+    canvas.scale(s);
+    final w = Paint()..color = Colors.white;
+    final ink = Paint()..color = Colors.black;
+
+    for (final left in [true, false]) {
+      final x = left ? 42.0 : 158.0;
+      canvas.drawPath(
+        Path()
+          ..moveTo(x, 70)
+          ..lineTo(left ? x + 10 : x - 10, 28)
+          ..lineTo(left ? x + 40 : x - 40, 52)
+          ..close(),
+        ink,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(left ? 48.0 : 152.0, 62)
+          ..lineTo(left ? 54.0 : 146.0, 40)
+          ..lineTo(left ? 72.0 : 128.0, 52)
+          ..close(),
+        Paint()..color = const Color(0xFFF1958E),
+      );
+    }
+
+    canvas.drawRRect(
+      RRect.fromLTRBR(40, 50, 160, 166, const Radius.circular(58)),
+      ink,
+    );
+
+    // Waiting eyes: open white ovals, pupils centered + down 3.
+    final pupil = Paint()..color = Colors.black;
+    for (final cx in [72.0, 128.0]) {
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(cx, 106), width: 36, height: 40),
+        w,
+      );
+      canvas.drawCircle(Offset(cx, 109), 9, pupil);
+      canvas.drawCircle(Offset(cx + 2, 106), 3, w);
+    }
+    final mouth = Paint()
+      ..color = const Color(0xFFF1958E)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(const Offset(94, 135), const Offset(106, 135), mouth);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_KuroThumbPainter oldDelegate) => false;
 }

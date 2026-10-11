@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 import 'package:logger/logger.dart';
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -734,22 +734,14 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     );
   }
 
-  // Build shimmer placeholder
+  // Static waiting-Kuro over a shimmer wash (no tickers: grid cells each
+  // cost an AnimationController pair, jank on scroll). Custom `placeholder`
+  // callers override this per-card; prefer KuroThumbPlaceholder there too.
   Widget _buildPlaceholder() {
-    return KuronShimmer(
-      baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      highlightColor: Theme.of(context)
-          .colorScheme
-          .surfaceContainerHighest
-          .withValues(alpha: 0.8),
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: widget.borderRadius,
-        ),
-      ),
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: KuroThumbPlaceholder(borderRadius: widget.borderRadius),
     );
   }
 

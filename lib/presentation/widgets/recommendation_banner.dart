@@ -8,6 +8,7 @@ import 'package:nhasixapp/domain/entities/recommendation.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/presentation/widgets/recommendation_card.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 
 // Full-width hero banner carousel for home recommendations.
 // Auto-advances every 5s, pauses while the user drags, manual swipe anytime.
@@ -271,9 +272,7 @@ class _BannerSlide extends StatelessWidget {
                     fit: BoxFit.cover,
                     memCacheWidth: 800,
                     memCacheHeight: 450,
-                    placeholder: Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                    ),
+                    placeholder: const KuroThumbPlaceholder(),
                     errorWidget: Container(
                       color: theme.colorScheme.surfaceContainerHighest,
                       child: Icon(

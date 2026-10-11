@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../cubits/network/network_cubit.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -49,6 +50,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     required OfflineContentManager offlineContentManager,
     required Logger logger,
     required Connectivity connectivity,
+    NetworkCubit? networkCubit,
     required NotificationService notificationService,
     required PdfConversionService pdfConversionService,
     required PdfConversionQueueManager pdfConversionQueueManager,
@@ -62,6 +64,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _offlineContentManager = offlineContentManager,
         _logger = logger,
         _connectivity = connectivity,
+        _networkCubit = networkCubit,
         _notificationService = notificationService,
         // _pdfConversionService = pdfConversionService,
         _pdfConversionQueueManager = pdfConversionQueueManager,
@@ -107,6 +110,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   final OfflineContentManager _offlineContentManager;
   final Logger _logger;
   final Connectivity _connectivity;
+  final NetworkCubit? _networkCubit;
   final NotificationService _notificationService;
   // final PdfConversionService _pdfConversionService;
   final PdfConversionQueueManager _pdfConversionQueueManager;
@@ -498,6 +502,17 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     }
   }
 
+  // ponytail: single sync read of NetworkCubit instead of per-event
+  // checkConnectivity platform-channel calls. Null (tests/legacy callers)
+  // falls back to a direct Connectivity check.
+  Future<bool> _isOnUnmeteredLink() async {
+    final network = _networkCubit;
+    if (network != null) return network.isSuitableForHeavyOperations;
+    final results = await _connectivity.checkConnectivity();
+    return results.contains(ConnectivityResult.wifi) ||
+        results.contains(ConnectivityResult.ethernet);
+  }
+
   Future<void> _processQueue() async {
     if (state is! DownloadLoaded) return;
     final currentState = state as DownloadLoaded;
@@ -515,6 +530,14 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         return;
       }
 
+      // ponytail: single Wi-Fi gate here so N queued items cost one lookup;
+      // per-item gate in _onStart stays as fallback.
+      if (currentState.settings.wifiOnly && !await _isOnUnmeteredLink()) {
+        _logger.d(
+            'DownloadBloc: Wi-Fi only enabled, deferring ${queuedDownloads.length} queued download(s) until Wi-Fi');
+        return;
+      }
+
       final maxConcurrent = currentState.settings.maxConcurrentDownloads;
 
       if (activeDownloads.length >= maxConcurrent) {
@@ -529,7 +552,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       final toStart = sortedQueue.take(availableSlots).toList();
 
       _logger
-          .i('DownloadBloc: Starting ${toStart.length} downloads from queue');
+          .d('DownloadBloc: Starting ${toStart.length} downloads from queue');
 
       for (final download in toStart) {
         add(DownloadStartEvent(download.contentId));
@@ -768,33 +791,44 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
       }
 
       if (download.isInProgress) {
-        _logger.i(
+        _logger.d(
             'DownloadBloc: Download already in progress: ${event.contentId}');
         return;
       }
 
-      if (currentState.settings.wifiOnly) {
-        final connectivityResults = await _connectivity.checkConnectivity();
-        final connectivityResult = connectivityResults.isNotEmpty
-            ? connectivityResults.first
-            : ConnectivityResult.none;
-
-        if (connectivityResult != ConnectivityResult.wifi) {
-          _logger.i(
-              'DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
-
-          final waitingDownload = download.copyWith(
-            state: DownloadState.queued,
-            error: _getLocalizedString(
-              (l10n) => l10n.waitingForWifiConnection,
-              'Waiting for WiFi connection',
-            ),
-          );
-
-          await _userDataRepository.saveDownloadStatus(waitingDownload);
-          add(const DownloadRefreshEvent());
+      if (currentState.settings.wifiOnly && !await _isOnUnmeteredLink()) {
+        final waitingError = _getLocalizedString(
+          (l10n) => l10n.waitingForWifiConnection,
+          'Waiting for WiFi connection',
+        );
+        // Already parked: skip DB write + event to break the
+        // Start -> Refresh -> Queue -> Start loop on metered/slow links.
+        if (download.state == DownloadState.queued &&
+            download.error == waitingError) {
+          _logger.d(
+              'DownloadBloc: WiFi required, download already queued: ${event.contentId}');
           return;
         }
+        _logger.d(
+            'DownloadBloc: WiFi required but not connected, queuing download for ${event.contentId}');
+
+        final waitingDownload = download.copyWith(
+          state: DownloadState.queued,
+          error: waitingError,
+        );
+
+        await _userDataRepository.saveDownloadStatus(waitingDownload);
+        final latestState = state;
+        if (latestState is DownloadLoaded) {
+          emit(latestState.copyWith(
+            downloads: latestState.downloads
+                .map(
+                    (d) => d.contentId == event.contentId ? waitingDownload : d)
+                .toList(),
+            lastUpdated: DateTime.now(),
+          ));
+        }
+        return;
       }
 
       var updatedDownload = DownloadStatus(
@@ -1664,7 +1698,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
     final currentState = state;
 
     try {
-      _logger.i('DownloadBloc: Refreshing download list');
+      _logger.d('DownloadBloc: Refreshing download list');
 
       // 🔄 CRITICAL: Reload customStorageRoot from StorageSettings
       // This ensures UI always shows correct storage location even if:
@@ -1694,7 +1728,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         ));
       }
 
-      _logger.i('DownloadBloc: Refreshed with ${downloads.length} downloads');
+      _logger.d('DownloadBloc: Refreshed with ${downloads.length} downloads');
 
       await _processQueue();
     } catch (e, stackTrace) {

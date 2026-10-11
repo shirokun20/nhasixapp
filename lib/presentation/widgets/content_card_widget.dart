@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
 import '../../core/constants/colors_const.dart' show AppColors, KuronColors;
 import '../../core/constants/text_style_const.dart';
@@ -13,6 +12,7 @@ import 'package:kuron_core/kuron_core.dart';
 import '../../l10n/app_localizations.dart';
 
 import 'progressive_image_widget.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 import 'highlighted_text_widget.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 
@@ -906,15 +906,7 @@ class ContentCard extends StatelessWidget {
       memCacheWidth: memCacheWidth ?? 400,
       memCacheHeight: memCacheHeight ?? 600,
       httpHeaders: httpHeaders,
-      placeholder: KuronShimmer(
-        baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        highlightColor: Theme.of(context).colorScheme.surfaceContainer,
-        child: Container(
-          width: width,
-          height: height,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        ),
-      ),
+      placeholder: const KuroThumbPlaceholder(),
       errorWidget: Container(
         width: width,
         height: height,
@@ -1095,16 +1087,7 @@ class CompactContentCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     width: 60,
                     height: 80,
-                    placeholder: Container(
-                      color:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    ),
+                    placeholder: const KuroThumbPlaceholder(),
                     errorWidget: Container(
                       color:
                           Theme.of(context).colorScheme.surfaceContainerHighest,

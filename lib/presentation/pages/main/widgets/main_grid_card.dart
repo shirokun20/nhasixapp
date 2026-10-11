@@ -10,6 +10,7 @@ import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
@@ -446,19 +447,7 @@ class _MainGridCardState extends State<MainGridCard> {
       fit: BoxFit.cover,
       memCacheWidth: 400,
       memCacheHeight: 600,
-      placeholder: Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Center(
-          child: Icon(
-            Icons.image_outlined,
-            size: 40,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurfaceVariant
-                .withValues(alpha: 0.5),
-          ),
-        ),
-      ),
+      placeholder: const KuroThumbPlaceholder(),
       errorWidget:
           // Try fallback URL if available
           (fallbackUrl != null && fallbackUrl != coverUrl)
@@ -470,16 +459,7 @@ class _MainGridCardState extends State<MainGridCard> {
                   fit: BoxFit.cover,
                   memCacheWidth: 400,
                   memCacheHeight: 600,
-                  placeholder: Container(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
+                  placeholder: const KuroThumbPlaceholder(),
                   errorWidget: _buildErrorPlaceholder(context),
                 )
               : _buildErrorPlaceholder(context),

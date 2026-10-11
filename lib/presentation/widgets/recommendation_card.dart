@@ -5,6 +5,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/domain/entities/recommendation.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
+import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 
 // Compact recommendation card: cover + title + reason badge.
 // Deliberately NOT a MainGridCard: no Hero (avoids tag collision when the
@@ -35,81 +36,73 @@ class RecommendationCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           onTap: onTap,
-          onLongPress: onDismiss == null
-              ? null
-              : () => _confirmDismiss(context),
+          onLongPress:
+              onDismiss == null ? null : () => _confirmDismiss(context),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 0.7,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.radiusLg),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.35),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 0.7,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.35),
+                    ),
                   ),
-                ),
-                child: ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.radiusLg),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (content != null)
-                        ProgressiveImageWidget(
-                          networkUrl: content.coverUrl,
-                          httpHeaders:
-                              getIt<ContentSourceRegistry>()
-                                  .getSource(content.sourceId)
-                                  ?.getImageDownloadHeaders(
-                                      imageUrl: content.coverUrl),
-                          fit: BoxFit.cover,
-                          memCacheWidth: 300,
-                          memCacheHeight: 430,
-                          placeholder: Container(
-                            color: theme.colorScheme
-                                .surfaceContainerHighest,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (content != null)
+                          ProgressiveImageWidget(
+                            networkUrl: content.coverUrl,
+                            httpHeaders: getIt<ContentSourceRegistry>()
+                                .getSource(content.sourceId)
+                                ?.getImageDownloadHeaders(
+                                    imageUrl: content.coverUrl),
+                            fit: BoxFit.cover,
+                            memCacheWidth: 300,
+                            memCacheHeight: 430,
+                            placeholder: const KuroThumbPlaceholder(),
+                            errorWidget: Icon(
+                              Icons.image_outlined,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
+                            ),
+                          )
+                        else
+                          Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.image_outlined,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
+                            ),
                           ),
-                          errorWidget: Icon(
-                            Icons.image_outlined,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                        )
-                      else
-                        Container(
-                          color:
-                              theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.image_outlined,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                          ),
+                        Positioned(
+                          left: 6,
+                          right: 6,
+                          bottom: 6,
+                          child: _ReasonBadge(item: item),
                         ),
-                      Positioned(
-                        left: 6,
-                        right: 6,
-                        bottom: 6,
-                        child: _ReasonBadge(item: item),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              content?.title ?? item.contentId,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                content?.title ?? item.contentId,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -146,13 +139,10 @@ class _ReasonBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final title = RecommendationCard.shortTitle(
-      item.contributorTitle.isNotEmpty
-          ? item.contributorTitle
-          : item.contentId,
+      item.contributorTitle.isNotEmpty ? item.contributorTitle : item.contentId,
     );
     final text = switch (item.contributorRelation) {
-      RecommendationRelation.favorite =>
-        l10n.recommendedReasonFavorite(title),
+      RecommendationRelation.favorite => l10n.recommendedReasonFavorite(title),
       // Explore items show the origin source as the badge — the title
       // already appears on the card, so no "Jelajahi:" prefix is needed.
       RecommendationRelation.similar => item.sourceId,
