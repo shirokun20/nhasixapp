@@ -107,6 +107,7 @@ import 'package:nhasixapp/domain/usecases/favorites/add_to_favorite_collection_u
 import 'package:nhasixapp/domain/usecases/downloads/downloads_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/add_to_history_usecase.dart';
 import 'package:nhasixapp/domain/usecases/reader_identity/reader_identity_usecases.dart';
+import 'package:nhasixapp/presentation/cubits/streak/streak_cubit.dart';
 import 'package:nhasixapp/domain/usecases/recommendations/recommendations_usecases.dart';
 import 'package:nhasixapp/domain/usecases/history/get_all_chapter_history_usecase.dart';
 import 'package:nhasixapp/domain/usecases/history/get_history_usecase.dart';
@@ -1254,6 +1255,10 @@ void _setupUseCases() {
             userDataRepository: getIt(),
             sourceRegistry: getIt(),
           ));
+
+  // Reading Streak Use Case — streak card + launcher widget share one read path
+  getIt.registerLazySingleton<GetReadingStreakUseCase>(
+      () => GetReadingStreakUseCase(userDataRepository: getIt()));
 }
 
 // Setup BLoCs
@@ -1470,6 +1475,11 @@ void _setupCubits() {
   // AppLockCubit — init() runs from AppLockGate after splash.
   getIt.registerLazySingleton<AppLockCubit>(() => AppLockCubit(
         appLockRepository: getIt<AppLockRepository>(),
+        logger: getIt<Logger>(),
+      ));
+  // StreakCubit — per-StreakCard instance (card owns and closes it)
+  getIt.registerFactory<StreakCubit>(() => StreakCubit(
+        getReadingStreakUseCase: getIt<GetReadingStreakUseCase>(),
         logger: getIt<Logger>(),
       ));
 }

@@ -188,8 +188,9 @@ class LocalDataSource {
         [contentId, sid, value],
       );
       // Keep the table bounded: drop rows fully older than 30 days.
-      final cutoff =
-          DateTime.now().subtract(const Duration(days: 30)).millisecondsSinceEpoch;
+      final cutoff = DateTime.now()
+          .subtract(const Duration(days: 30))
+          .millisecondsSinceEpoch;
       await db.delete(
         _recTable,
         where:
@@ -252,8 +253,7 @@ class LocalDataSource {
         where: sourceId == null
             ? 'content_id = ?'
             : 'content_id = ? AND source_id = ?',
-        whereArgs:
-            sourceId == null ? [contentId] : [contentId, sourceId],
+        whereArgs: sourceId == null ? [contentId] : [contentId, sourceId],
       );
       return {for (final r in rows) r['name'] as String};
     } catch (e) {
@@ -1220,6 +1220,27 @@ class LocalDataSource {
     } catch (e) {
       _logger.e('Error getting history count: $e');
       return 0;
+    }
+  }
+
+  // Most recently viewed history content id (null when history is empty).
+  Future<String?> getLatestHistoryContentId() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return null;
+
+      final result = await db.query(
+        'history',
+        orderBy: 'last_viewed DESC',
+        limit: 1,
+      );
+
+      if (result.isEmpty) return null;
+      final id = result.first['id'];
+      return id is String && id.isNotEmpty ? id : null;
+    } catch (e) {
+      _logger.e('Error getting latest history content id: $e');
+      return null;
     }
   }
 

@@ -18,5 +18,6 @@ export 'reader_position.dart';
 export 'favorite_collection.dart';
 export 'ai_translation.dart';
 export 'content_tag.dart';
+export 'kuro_mood.dart';
 export 'reader_badge.dart';
 export 'recommendation.dart';

@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:nhasixapp/domain/entities/kuro_mood.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 
-// Kuro mascot, moods A–F (mirrors prototype/kuro-mascot-prototype.html).
+export 'package:nhasixapp/domain/entities/kuro_mood.dart';
+
+// Kuro mascot, moods A–G (mirrors prototype/kuro-mascot-prototype.html).
 //
 // CSS -> Dart mapping (timings copied from the prototype):
 // - blink 4.2s  -> [_idle], eyes scaleY 1 -> 0.08 at the tail Interval.
@@ -15,16 +18,8 @@ import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 // F (frozenCry) = F static design (pools + wail + -8deg tilt) + D motion.
 // RemoteViews widgets can't animate, so export F frames as PNG for home;
 // this widget is the in-app animated source of truth.
-enum KuroMood {
-  happy, // A — Blob Cat
-  reader, // B — Ninja Reader (book)
-  ghost, // C — Ghost Hood
-  cry, // D — Nangis (tears + sob)
-  tsundere, // E — seminggu gak buka
-  frozenCry, // F — beku design + cry motion
-  waiting, // G — sedang menunggu (loading): noleh kiri-kanan lambat
-}
-
+// The [KuroMood] enum itself lives in domain/entities/kuro_mood.dart so the
+// streak mapping can be tested without Flutter.
 class KuroMascot extends StatefulWidget {
   final KuroMood mood;
   final double size;

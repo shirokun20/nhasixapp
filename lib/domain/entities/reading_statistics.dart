@@ -13,7 +13,30 @@ class ReadingStatistics extends Equatable {
     required this.completedContent,
     required this.readingStreak,
     this.lastReadDate,
+    this.readDays,
   });
+
+  factory ReadingStatistics.streak({
+    required int readingStreak,
+    DateTime? lastReadDate,
+    List<DateTime>? readDays,
+    int totalContentRead = 0,
+    int completedContent = 0,
+  }) {
+    return ReadingStatistics(
+      totalContentRead: totalContentRead,
+      totalPagesRead: 0,
+      totalTimeSpent: Duration.zero,
+      favoriteArtists: const {},
+      favoriteTags: const {},
+      favoriteLanguages: const {},
+      averageReadingTime: Duration.zero,
+      completedContent: completedContent,
+      readingStreak: readingStreak,
+      lastReadDate: lastReadDate,
+      readDays: readDays,
+    );
+  }
 
   // Total number of content items read
   final int totalContentRead;
@@ -44,6 +67,9 @@ class ReadingStatistics extends Equatable {
 
   // Date of last reading session
   final DateTime? lastReadDate;
+
+  // Distinct local calendar dates read in the recent window (for Sn-Mn checklist)
+  final List<DateTime>? readDays;
 
   // Get completion rate as percentage
   double get completionRate {
@@ -112,6 +138,7 @@ class ReadingStatistics extends Equatable {
     int? completedContent,
     int? readingStreak,
     DateTime? lastReadDate,
+    List<DateTime>? readDays,
   }) {
     return ReadingStatistics(
       totalContentRead: totalContentRead ?? this.totalContentRead,
@@ -124,6 +151,7 @@ class ReadingStatistics extends Equatable {
       completedContent: completedContent ?? this.completedContent,
       readingStreak: readingStreak ?? this.readingStreak,
       lastReadDate: lastReadDate ?? this.lastReadDate,
+      readDays: readDays ?? this.readDays,
     );
   }
 
@@ -139,6 +167,7 @@ class ReadingStatistics extends Equatable {
         completedContent,
         readingStreak,
         lastReadDate,
+        readDays,
       ];
 
   @override

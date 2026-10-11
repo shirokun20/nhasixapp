@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:logger/logger.dart';
 
 import '../../domain/entities/entities.dart';
@@ -6,6 +9,7 @@ import '../datasources/local/local_data_source.dart';
 import '../models/download_status_model.dart';
 import '../models/history_model.dart';
 import '../../core/utils/storage_settings.dart';
+import '../../core/services/streak_widget_sync_service.dart';
 
 // Implementation of UserDataRepository for local data management (simplified)
 class UserDataRepositoryImpl implements UserDataRepository {
@@ -16,6 +20,12 @@ class UserDataRepositoryImpl implements UserDataRepository {
 
   final LocalDataSource localDataSource;
   final Logger _logger;
+
+  static const _kStreakCount = 'reading_streak_count';
+  static const _kStreakLastDate = 'reading_last_date';
+  static const _kStreakReadDays = 'reading_read_days';
+  static const _kStreakLastContentId = 'reading_last_content_id';
+  static const _kMaxReadDays = 30;
 
   // ==================== FAVORITES ====================
 
@@ -240,8 +250,7 @@ class UserDataRepositoryImpl implements UserDataRepository {
     String contentId, {
     String? sourceId,
   }) async {
-    return localDataSource.getTagNamesForContent(contentId,
-        sourceId: sourceId);
+    return localDataSource.getTagNamesForContent(contentId, sourceId: sourceId);
   }
 
   // ==================== RECOMMENDATION HISTORY ====================
@@ -639,6 +648,155 @@ class UserDataRepositoryImpl implements UserDataRepository {
       return null;
     }
   }
+
+  // ==================== READING STREAK ====================
+
+  @override
+  Future<ReadingStatistics> getReadingStatistics({DateTime? now}) async {
+    final ref = now ?? DateTime.now();
+    final today = DateTime(ref.year, ref.month, ref.day);
+
+    final storedStreak = int.tryParse(
+            await localDataSource.getPreference(_kStreakCount) ?? '') ??
+        0;
+    final last =
+        _parseDay(await localDataSource.getPreference(_kStreakLastDate));
+    final readDays =
+        _parseDays(await localDataSource.getPreference(_kStreakReadDays));
+    // Streak survives only when the last read is today or yesterday.
+    final readingStreak =
+        (last == null || _dayDiff(today, last) > 1) ? 0 : storedStreak;
+
+    final monday =
+        DateTime(today.year, today.month, today.day - (today.weekday - 1));
+    final sunday = DateTime(monday.year, monday.month, monday.day + 6);
+    final weekDays = readDays
+        .where((d) => !d.isBefore(monday) && !d.isAfter(sunday))
+        .toList()
+      ..sort();
+
+    final totalContentRead = await localDataSource.getHistoryCount();
+    final completedContent = await localDataSource.getCompletedHistoryCount();
+
+    return ReadingStatistics.streak(
+      readingStreak: readingStreak,
+      lastReadDate: last,
+      readDays: weekDays,
+      totalContentRead: totalContentRead,
+      completedContent: completedContent,
+    );
+  }
+
+  @override
+  Future<ReadingStatistics> recordReadingDay({
+    DateTime? date,
+    String? contentId,
+  }) async {
+    final ref = date ?? DateTime.now();
+    final today = DateTime(ref.year, ref.month, ref.day);
+
+    final storedStreak = int.tryParse(
+            await localDataSource.getPreference(_kStreakCount) ?? '') ??
+        0;
+    var lastReadDate =
+        _parseDay(await localDataSource.getPreference(_kStreakLastDate));
+    var readDays =
+        _parseDays(await localDataSource.getPreference(_kStreakReadDays));
+
+    // Drop future dates so a clock reset / backdated record recovers cleanly.
+    readDays = readDays.where((d) => !d.isAfter(today)).toList();
+    if (lastReadDate != null && lastReadDate.isAfter(today)) {
+      lastReadDate = readDays.isEmpty
+          ? null
+          : readDays.reduce((a, b) => a.isAfter(b) ? a : b);
+    }
+
+    int newStreak;
+    if (lastReadDate == null) {
+      newStreak = 1;
+    } else {
+      final diffDays = _dayDiff(today, lastReadDate);
+      if (diffDays == 0) {
+        newStreak = storedStreak > 0 ? storedStreak : 1;
+      } else if (diffDays == 1) {
+        newStreak = storedStreak + 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+
+    readDays =
+        readDays.where((d) => _formatDay(d) != _formatDay(today)).toList()
+          ..add(today)
+          ..sort();
+    if (readDays.length > _kMaxReadDays) {
+      readDays = readDays.sublist(readDays.length - _kMaxReadDays);
+    }
+
+    await localDataSource.savePreference(_kStreakCount, newStreak.toString());
+    await localDataSource.savePreference(_kStreakLastDate, _formatDay(today));
+    await localDataSource.savePreference(
+        _kStreakReadDays, jsonEncode(readDays.map(_formatDay).toList()));
+    if (contentId != null && contentId.trim().isNotEmpty) {
+      await localDataSource.savePreference(_kStreakLastContentId, contentId);
+    }
+
+    _logger.d('Recorded reading day: streak=$newStreak contentId=$contentId');
+    final stats = await getReadingStatistics(now: today);
+    // The launcher widget and the in-app card both read from this one write.
+    StreakWidgetSyncService.notifyStreakChanged();
+    unawaited(StreakWidgetSyncService.syncWidget(stats, now: today));
+    return stats;
+  }
+
+  @override
+  Future<String?> getLastReadContentId() async {
+    try {
+      final stored = await localDataSource.getPreference(_kStreakLastContentId);
+      if (stored != null && stored.trim().isNotEmpty) return stored;
+      return await localDataSource.getLatestHistoryContentId();
+    } catch (e, stackTrace) {
+      _logger.e('Failed to get last read content id',
+          error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  static int _dayDiff(DateTime a, DateTime b) =>
+      DateTime.utc(a.year, a.month, a.day)
+          .difference(DateTime.utc(b.year, b.month, b.day))
+          .inDays;
+
+  static DateTime? _parseDay(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final parts = value.trim().split('-');
+    if (parts.length != 3) return null;
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d);
+  }
+
+  static List<DateTime> _parseDays(String? value) {
+    if (value == null || value.trim().isEmpty) return [];
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is! List) return [];
+      return decoded
+          .whereType<String>()
+          .map(_parseDay)
+          .whereType<DateTime>()
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static String _formatDay(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 
   // ==================== SEARCH HISTORY ====================
 

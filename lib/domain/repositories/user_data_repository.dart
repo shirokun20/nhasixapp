@@ -165,6 +165,19 @@ abstract class UserDataRepository {
 
   Future<String?> getPreference(String key);
 
+  // ==================== READING STREAK ====================
+
+  /// Current streak + read days (filtered to the current Mon-Sun week).
+  Future<ReadingStatistics> getReadingStatistics({DateTime? now});
+
+  /// Marks one calendar day as read and returns the refreshed stats.
+  Future<ReadingStatistics> recordReadingDay({
+    DateTime? date,
+    String? contentId,
+  });
+
+  Future<String?> getLastReadContentId();
+
   // ==================== SEARCH HISTORY ====================
 
   Future<void> addSearchHistory(String query);

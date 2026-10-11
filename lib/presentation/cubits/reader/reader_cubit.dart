@@ -24,6 +24,7 @@ import '../../../domain/usecases/history/add_to_history_usecase.dart';
 import '../../../domain/repositories/reader_settings_repository.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
+import '../../../domain/repositories/user_data_repository.dart';
 import '../../../core/utils/offline_content_manager.dart';
 import '../../../core/di/service_locator.dart';
 import '../recommendations/recommendation_refresh_bus.dart';
@@ -76,6 +77,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.ehentaiCookieJar,
     required this.remoteConfigService,
     required Logger logger,
+    this.userDataRepository,
   })  : _logger = logger,
         super(const ReaderState());
 
@@ -96,6 +98,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final ContentSourceRegistry contentSourceRegistry;
   final PersistCookieJar ehentaiCookieJar;
   final RemoteConfigService remoteConfigService;
+  final UserDataRepository? userDataRepository;
   final Logger _logger;
 
   Timer? _readingTimer;
@@ -469,6 +472,7 @@ class ReaderCubit extends Cubit<ReaderState> {
       _logImageUrlMapping(content);
       emit(_withStatus(ReaderStatus.loaded));
 
+      unawaited(_recordReadingStreak(content.id));
       await _handlePostLoadSetup(savedSettings);
     } catch (e, stackTrace) {
       _logger.e('Reader Cubit Error: $e', error: e, stackTrace: stackTrace);
@@ -550,6 +554,18 @@ class ReaderCubit extends Cubit<ReaderState> {
     } catch (e) {
       _logger.w('Failed to load reader settings, using defaults: $e');
       return const ReaderSettingsEntity();
+    }
+  }
+
+  Future<void> _recordReadingStreak(String contentId) async {
+    try {
+      final repo = userDataRepository ??
+          (getIt.isRegistered<UserDataRepository>()
+              ? getIt<UserDataRepository>()
+              : null);
+      await repo?.recordReadingDay(contentId: contentId);
+    } catch (e) {
+      _logger.w('Failed to record reading streak: $e');
     }
   }
 

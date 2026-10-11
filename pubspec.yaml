@@ -73,6 +73,7 @@ dependencies:
   flutter_local_notifications: ^22.0.1
   workmanager: ^0.10.7
   wakelock_plus: ^1.5.2
+  home_widget: ^0.7.0
 
   # File Management & Sharing
   archive: ^4.0.7
@@ -129,6 +130,7 @@ flutter:
     - assets/legal/en/
     - assets/legal/id/
     - assets/configs/
+    - assets/widget/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
   fonts:

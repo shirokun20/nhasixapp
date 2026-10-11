@@ -10,6 +10,8 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import id.nhasix.app.widget.KuroStreakGlanceWidget
+import id.nhasix.app.widget.StreakWidgetWorker
 
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "app_disguise"
@@ -25,11 +27,19 @@ class MainActivity: FlutterFragmentActivity() {
         
         // Check for notification tap intent
         handleNotificationIntent(intent)
+        
+        // Keep the launcher streak widget fresh (hourly worker + refresh on app close)
+        StreakWidgetWorker.enqueuePeriodic(this)
     }
 
     override fun onResume() {
         super.onResume()
         configureRecentsPrivacy()
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        KuroStreakGlanceWidget.updateAllWidgets(applicationContext)
     }
     
     override fun onNewIntent(intent: Intent) {
