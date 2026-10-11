@@ -31,7 +31,7 @@ class StreakCard extends StatefulWidget {
 }
 
 class _StreakCardState extends State<StreakCard> with WidgetsBindingObserver {
-  static const double _mascotSize = 84;
+  static const double _mascotSize = 68;
   late final StreakCubit _cubit;
 
   @override
@@ -144,13 +144,13 @@ class _StreakCardState extends State<StreakCard> with WidgetsBindingObserver {
                       children: [
                         Icon(
                           Icons.local_fire_department_rounded,
-                          size: DesignTokens.spaceXl,
+                          size: DesignTokens.spaceLg,
                           color: isCry ? AppColors.info : colorScheme.primary,
                         ),
                         const SizedBox(width: DesignTokens.spaceXs),
                         Text(
                           '${state.readingStreak}',
-                          style: TextStyleConst.headingLarge.copyWith(
+                          style: TextStyleConst.contentTitle.copyWith(
                             color: isCry ? AppColors.info : colorScheme.primary,
                           ),
                         ),
@@ -158,7 +158,7 @@ class _StreakCardState extends State<StreakCard> with WidgetsBindingObserver {
                         Flexible(
                           child: Text(
                             l10n?.streakDaysConsecutive ?? 'hari beruntun',
-                            style: TextStyleConst.headingLarge.copyWith(
+                            style: TextStyleConst.contentTitle.copyWith(
                               color: colorScheme.onSurface,
                             ),
                           ),
