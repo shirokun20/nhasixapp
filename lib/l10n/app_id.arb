@@ -3318,5 +3318,29 @@
         "type": "int"
       }
     }
-  }
+  },
+  "streakDaysConsecutive": "hari beruntun",
+  "streakWeekProgress": "Minggu ini: {checked}/7 hari",
+  "@streakWeekProgress": {
+    "placeholders": {
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "streakContinueReading": "Lanjutkan Baca",
+  "streakMoodHappy": "Kuro senang kamu baca hari ini. Pertahankan!",
+  "streakMoodReader": "Kuro tenggelam di bacaan bareng kamu!",
+  "streakMoodGhost": "Kuro diam-diam nemenin kamu baca hari ini.",
+  "streakMoodCry": "Kuro nangis nungguin kamu baca...",
+  "streakMoodTsundere": "Bukan berarti Kuro kangen, tapi udah lama gak buka!",
+  "streakMoodFrozen": "Kuro membeku kesepian. Yuk lanjut baca!",
+  "streakMoodWaiting": "Kuro nunggu kamu buka bacaan.",
+  "streakDayMon": "Sn",
+  "streakDayTue": "Sl",
+  "streakDayWed": "Rb",
+  "streakDayThu": "Km",
+  "streakDayFri": "Jm",
+  "streakDaySat": "Sb",
+  "streakDaySun": "Mn"
 }

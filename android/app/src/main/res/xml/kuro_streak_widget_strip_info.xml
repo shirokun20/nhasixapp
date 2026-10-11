@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="56dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="3600000"
+    android:initialLayout="@layout/kuro_streak_widget_strip"
+    android:previewLayout="@layout/kuro_streak_widget_strip"
+    android:description="@string/widget_desc_4x1"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen" />

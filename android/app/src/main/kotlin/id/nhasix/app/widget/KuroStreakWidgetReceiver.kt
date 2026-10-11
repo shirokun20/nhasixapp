@@ -3,12 +3,21 @@ package id.nhasix.app.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
+import androidx.annotation.LayoutRes
 import HomeWidgetGlanceWidgetReceiver
+import id.nhasix.app.R
 
-class KuroStreakWidgetReceiver : HomeWidgetGlanceWidgetReceiver<KuroStreakGlanceWidget>() {
+/**
+ * Base receiver for fixed-size Kuro streak launcher widget variants.
+ * Each subclass binds one dedicated layout (4x2 Design A, 4x1 Strip, 2x2 Mini)
+ * with resizeMode="none" so launcher grids never distort or clip the card.
+ */
+abstract class BaseKuroStreakWidgetReceiver(
+    @LayoutRes private val layoutRes: Int,
+) : HomeWidgetGlanceWidgetReceiver<KuroStreakGlanceWidget>() {
 
-    override val glanceAppWidget = KuroStreakGlanceWidget()
+    override val glanceAppWidget = KuroStreakGlanceWidget(layoutRes)
+
     override fun onEnabled(context: Context) {
         StreakWidgetWorker.enqueuePeriodic(context)
         KuroStreakGlanceWidget.updateAllWidgets(context)
@@ -20,23 +29,10 @@ class KuroStreakWidgetReceiver : HomeWidgetGlanceWidgetReceiver<KuroStreakGlance
         appWidgetIds: IntArray,
     ) {
         StreakWidgetWorker.enqueuePeriodic(context)
+        val views = KuroStreakGlanceWidget.buildRemoteViewsForLayout(context, layoutRes)
         for (id in appWidgetIds) {
-            KuroStreakGlanceWidget.updateWidget(context, appWidgetManager, id)
+            appWidgetManager.updateAppWidget(id, views)
         }
-    }
-
-    override fun onAppWidgetOptionsChanged(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: Bundle,
-    ) {
-        KuroStreakGlanceWidget.updateWidget(
-            context = context,
-            manager = appWidgetManager,
-            appWidgetId = appWidgetId,
-            options = newOptions,
-        )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -47,18 +43,6 @@ class KuroStreakWidgetReceiver : HomeWidgetGlanceWidgetReceiver<KuroStreakGlance
                 val ids = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
                 if (ids != null && ids.isNotEmpty()) {
                     onUpdate(context, manager, ids)
-                } else {
-                    KuroStreakGlanceWidget.updateAllWidgets(context)
-                }
-            }
-            AppWidgetManager.ACTION_APPWIDGET_OPTIONS_CHANGED -> {
-                val id = intent.getIntExtra(
-                    AppWidgetManager.EXTRA_APPWIDGET_ID,
-                    AppWidgetManager.INVALID_APPWIDGET_ID,
-                )
-                val options = intent.getBundleExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS)
-                if (id != AppWidgetManager.INVALID_APPWIDGET_ID && options != null) {
-                    onAppWidgetOptionsChanged(context, manager, id, options)
                 } else {
                     KuroStreakGlanceWidget.updateAllWidgets(context)
                 }
@@ -74,3 +58,15 @@ class KuroStreakWidgetReceiver : HomeWidgetGlanceWidgetReceiver<KuroStreakGlance
         }
     }
 }
+
+/** 4x2 Full Design A widget receiver. */
+class KuroStreakWidgetReceiver :
+    BaseKuroStreakWidgetReceiver(R.layout.kuro_streak_widget)
+
+/** 4x1 Compact horizontal strip widget receiver. */
+class KuroStreakStripWidgetReceiver :
+    BaseKuroStreakWidgetReceiver(R.layout.kuro_streak_widget_strip)
+
+/** 2x2 Mini square tile widget receiver. */
+class KuroStreakSmallWidgetReceiver :
+    BaseKuroStreakWidgetReceiver(R.layout.kuro_streak_widget_small)

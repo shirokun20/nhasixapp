@@ -6069,4 +6069,58 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get recommendationDismissed => 'Rekomendasi disembunyikan';
+
+  @override
+  String get streakDaysConsecutive => 'hari beruntun';
+
+  @override
+  String streakWeekProgress(int checked) {
+    return 'Minggu ini: $checked/7 hari';
+  }
+
+  @override
+  String get streakContinueReading => 'Lanjutkan Baca';
+
+  @override
+  String get streakMoodHappy => 'Kuro senang kamu baca hari ini. Pertahankan!';
+
+  @override
+  String get streakMoodReader => 'Kuro tenggelam di bacaan bareng kamu!';
+
+  @override
+  String get streakMoodGhost => 'Kuro diam-diam nemenin kamu baca hari ini.';
+
+  @override
+  String get streakMoodCry => 'Kuro nangis nungguin kamu baca...';
+
+  @override
+  String get streakMoodTsundere =>
+      'Bukan berarti Kuro kangen, tapi udah lama gak buka!';
+
+  @override
+  String get streakMoodFrozen => 'Kuro membeku kesepian. Yuk lanjut baca!';
+
+  @override
+  String get streakMoodWaiting => 'Kuro nunggu kamu buka bacaan.';
+
+  @override
+  String get streakDayMon => 'Sn';
+
+  @override
+  String get streakDayTue => 'Sl';
+
+  @override
+  String get streakDayWed => 'Rb';
+
+  @override
+  String get streakDayThu => 'Km';
+
+  @override
+  String get streakDayFri => 'Jm';
+
+  @override
+  String get streakDaySat => 'Sb';
+
+  @override
+  String get streakDaySun => 'Mn';
 }

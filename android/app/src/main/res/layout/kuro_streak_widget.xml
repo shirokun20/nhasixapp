@@ -1,285 +1,353 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Kuro streak launcher widget (4x2).
-  Privacy-safe: streak count, generic read count and mood mascot only.
-  Never render content title, cover, tag or source name here.
+  Kuro streak launcher widget — Full Design A (4x2 / 4x3 / 4x4).
+  3-tier layout matching Design A from the HTML prototype:
+  1. Top row: Flame + "N day streak" + mood subtitle on left, Kuro mascot on right.
+  2. Middle row: Full-width rounded capsule with 7-day checklist (Mo..Su / Sn..Mn).
+  3. Bottom row: "This week: X/7 days" ("Minggu ini: X/7 hari") on left + "▶ Continue" pill on right.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:gravity="center_vertical"
-    android:baselineAligned="false"
     android:background="@drawable/kuro_widget_bg"
     android:paddingHorizontal="14dp"
     android:paddingVertical="10dp">
 
+    <!-- Tier 1: Headline + Subtitle on left, Kuro Mascot on right -->
     <LinearLayout
-        android:id="@+id/widget_left_column"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:orientation="vertical">
+        android:baselineAligned="false">
+
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/widget_left_column"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/widget_flame_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="5dp"
+                    android:src="@drawable/ic_streak_flame"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_streak_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:includeFontPadding="false"
+                    android:text="0"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#F1958E" />
+
+                <TextView
+                    android:id="@+id/widget_streak_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:includeFontPadding="false"
+                    android:text="@string/streak_days_unit"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#F5EDE4"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/widget_streak_count"
-                android:layout_width="wrap_content"
+                android:id="@+id/widget_mood_subtitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                android:textColor="#F1958E" />
-
-            <TextView
-                android:id="@+id/widget_streak_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text=" hari streak"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
+                android:layout_marginTop="2dp"
+                android:text="@string/streak_mood_tsundere"
+                android:textSize="12sp"
+                android:textColor="#D4CCC4"
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/widget_mood_subtitle"
-            android:layout_width="match_parent"
+        <FrameLayout
+            android:id="@+id/widget_mascot_container"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/widget_kuro_mood"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/kuro_tsundere"
+                android:contentDescription="Kuro mood" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- Tier 2: Full-width 7-day capsule (Sn..Mn / Mo..Su) -->
+    <LinearLayout
+        android:id="@+id/widget_week_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:background="@drawable/kuro_week_capsule_bg"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp"
+        android:orientation="horizontal"
+        android:weightSum="7"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Yuk mulai baca hari ini!"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_1"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_1"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_2"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_2"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_3"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_3"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_4"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_4"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_5"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_5"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_6"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_6"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:id="@+id/day_label_7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/streak_day_7"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#D4CCC4" />
+
+            <TextView
+                android:id="@+id/day_dot_7"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/kuro_day_unchecked_bg"
+                android:gravity="center"
+                android:text=""
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#9E948C" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Tier 3: Design A Footer ("Minggu ini: X/7 hari" + "▶ Lanjutkan Baca") -->
+    <LinearLayout
+        android:id="@+id/widget_footer_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_week_summary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Minggu ini: 0/7 hari"
             android:textSize="11sp"
+            android:textStyle="bold"
             android:textColor="#9E948C"
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <LinearLayout
-            android:id="@+id/widget_week_row"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/widget_cta_pill"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:weightSum="7"
-            android:baselineAligned="false">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_1"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Sn"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_2"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Sl"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_3"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Rb"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_4"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Km"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_5"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Jm"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_6"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Sb"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/day_dot_7"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/kuro_day_unchecked_bg"
-                    android:gravity="center"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:textColor="#9E948C" />
-
-                <TextView
-                    android:id="@+id/day_label_7"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Mn"
-                    android:textSize="9sp"
-                    android:textColor="#9E948C" />
-            </LinearLayout>
-        </LinearLayout>
+            android:background="@drawable/kuro_cta_pill_bg"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:text="@string/streak_continue_cta"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1F" />
     </LinearLayout>
-
-    <FrameLayout
-        android:id="@+id/widget_mascot_container"
-        android:layout_width="76dp"
-        android:layout_height="match_parent"
-        android:layout_marginStart="8dp">
-
-        <ImageView
-            android:id="@+id/widget_kuro_mood"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:src="@drawable/kuro_tsundere"
-            android:contentDescription="Kuro mood" />
-    </FrameLayout>
 </LinearLayout>

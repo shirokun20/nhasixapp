@@ -4346,5 +4346,29 @@
   "recommendedColdStart": "Start reading to get personalized recommendations",
   "recommendedBrowse": "Browse content",
   "notInterested": "Not interested",
-  "recommendationDismissed": "Recommendation dismissed"
+  "recommendationDismissed": "Recommendation dismissed",
+  "streakDaysConsecutive": "day streak",
+  "streakWeekProgress": "This week: {checked}/7 days",
+  "@streakWeekProgress": {
+    "placeholders": {
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "streakContinueReading": "Continue reading",
+  "streakMoodHappy": "Kuro is happy you read today. Keep it up!",
+  "streakMoodReader": "Kuro is lost in a good read with you!",
+  "streakMoodGhost": "Kuro is quietly keeping you company today.",
+  "streakMoodCry": "Kuro is crying waiting for you to read...",
+  "streakMoodTsundere": "It's not like Kuro missed you, but it's been a while!",
+  "streakMoodFrozen": "Kuro is freezing from loneliness. Let's read!",
+  "streakMoodWaiting": "Kuro is waiting for you to open a read.",
+  "streakDayMon": "Mo",
+  "streakDayTue": "Tu",
+  "streakDayWed": "We",
+  "streakDayThu": "Th",
+  "streakDayFri": "Fr",
+  "streakDaySat": "Sa",
+  "streakDaySun": "Su"
 }

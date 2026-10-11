@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_label_4x2">Kuro Streak (4×2)</string>
+    <string name="widget_desc_4x2">完整阅读连续打卡卡片与每周进度</string>
+    <string name="widget_label_4x1">Kuro Streak Strip (4×1)</string>
+    <string name="widget_desc_4x1">紧凑单行阅读打卡横条</string>
+    <string name="widget_label_2x2">Kuro Streak Mini (2×2)</string>
+    <string name="widget_desc_2x2">迷你方形阅读打卡小组件</string>
+    <string name="streak_days_unit">&#160;连续阅读天</string>
+    <string name="streak_days_short">&#160;天</string>
+    <string name="streak_week_progress">本周：%1$d/7 天</string>
+    <string name="streak_continue_cta">▶ 继续阅读</string>
+    <string name="streak_mood_happy">Kuro 很高兴你今天阅读了，继续保持！</string>
+    <string name="streak_mood_cry">Kuro 哭着等你回来阅读……</string>
+    <string name="streak_mood_tsundere">才不是想你了呢，只是你太久没打开了！</string>
+    <string name="streak_day_1">一</string>
+    <string name="streak_day_2">二</string>
+    <string name="streak_day_3">三</string>
+    <string name="streak_day_4">四</string>
+    <string name="streak_day_5">五</string>
+    <string name="streak_day_6">六</string>
+    <string name="streak_day_7">日</string>
+</resources>

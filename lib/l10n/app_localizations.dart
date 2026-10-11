@@ -10349,6 +10349,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recommendation dismissed'**
   String get recommendationDismissed;
+
+  /// No description provided for @streakDaysConsecutive.
+  ///
+  /// In en, this message translates to:
+  /// **'day streak'**
+  String get streakDaysConsecutive;
+
+  /// No description provided for @streakWeekProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'This week: {checked}/7 days'**
+  String streakWeekProgress(int checked);
+
+  /// No description provided for @streakContinueReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue reading'**
+  String get streakContinueReading;
+
+  /// No description provided for @streakMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is happy you read today. Keep it up!'**
+  String get streakMoodHappy;
+
+  /// No description provided for @streakMoodReader.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is lost in a good read with you!'**
+  String get streakMoodReader;
+
+  /// No description provided for @streakMoodGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is quietly keeping you company today.'**
+  String get streakMoodGhost;
+
+  /// No description provided for @streakMoodCry.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is crying waiting for you to read...'**
+  String get streakMoodCry;
+
+  /// No description provided for @streakMoodTsundere.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s not like Kuro missed you, but it\'s been a while!'**
+  String get streakMoodTsundere;
+
+  /// No description provided for @streakMoodFrozen.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is freezing from loneliness. Let\'s read!'**
+  String get streakMoodFrozen;
+
+  /// No description provided for @streakMoodWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro is waiting for you to open a read.'**
+  String get streakMoodWaiting;
+
+  /// No description provided for @streakDayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mo'**
+  String get streakDayMon;
+
+  /// No description provided for @streakDayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tu'**
+  String get streakDayTue;
+
+  /// No description provided for @streakDayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'We'**
+  String get streakDayWed;
+
+  /// No description provided for @streakDayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Th'**
+  String get streakDayThu;
+
+  /// No description provided for @streakDayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fr'**
+  String get streakDayFri;
+
+  /// No description provided for @streakDaySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sa'**
+  String get streakDaySat;
+
+  /// No description provided for @streakDaySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Su'**
+  String get streakDaySun;
 }
 
 class _AppLocalizationsDelegate

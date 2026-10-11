@@ -96,9 +96,10 @@
             android:configChanges="orientation|screenSize"
             android:exported="false" />
 
-        <!-- Kuro streak launcher widget (privacy-safe: streak count + mood only) -->
+        <!-- Kuro streak launcher widgets: 3 fixed-size variants (4x2, 4x1, 2x2) -->
         <receiver
             android:name=".widget.KuroStreakWidgetReceiver"
+            android:label="@string/widget_label_4x2"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -110,6 +111,38 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/kuro_streak_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.KuroStreakStripWidgetReceiver"
+            android:label="@string/widget_label_4x1"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/kuro_streak_widget_strip_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.KuroStreakSmallWidgetReceiver"
+            android:label="@string/widget_label_2x2"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/kuro_streak_widget_small_info" />
         </receiver>
 
         <!-- Don't delete the meta-data below.

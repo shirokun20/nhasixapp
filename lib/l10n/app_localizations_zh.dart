@@ -5879,4 +5879,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recommendationDismissed => '已隐藏该推荐';
+
+  @override
+  String get streakDaysConsecutive => '连续阅读天';
+
+  @override
+  String streakWeekProgress(int checked) {
+    return '本周：$checked/7 天';
+  }
+
+  @override
+  String get streakContinueReading => '继续阅读';
+
+  @override
+  String get streakMoodHappy => 'Kuro 很高兴你今天阅读了，继续保持！';
+
+  @override
+  String get streakMoodReader => 'Kuro 正和你一起沉浸在阅读中！';
+
+  @override
+  String get streakMoodGhost => 'Kuro 今天正悄悄陪你阅读。';
+
+  @override
+  String get streakMoodCry => 'Kuro 哭着等你回来阅读……';
+
+  @override
+  String get streakMoodTsundere => '才不是想你了呢，只是你太久没打开了！';
+
+  @override
+  String get streakMoodFrozen => 'Kuro 孤单得快冻僵了，快来阅读吧！';
+
+  @override
+  String get streakMoodWaiting => 'Kuro 正在等你打开阅读。';
+
+  @override
+  String get streakDayMon => '一';
+
+  @override
+  String get streakDayTue => '二';
+
+  @override
+  String get streakDayWed => '三';
+
+  @override
+  String get streakDayThu => '四';
+
+  @override
+  String get streakDayFri => '五';
+
+  @override
+  String get streakDaySat => '六';
+
+  @override
+  String get streakDaySun => '日';
 }

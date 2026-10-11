@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_label_4x2">Kuro Streak (4×2)</string>
+    <string name="widget_desc_4x2">Kartu streak lengkap + jadwal mingguan Sn–Mn</string>
+    <string name="widget_label_4x1">Kuro Streak Strip (4×1)</string>
+    <string name="widget_desc_4x1">Pita streak ringkas 1 baris</string>
+    <string name="widget_label_2x2">Kuro Streak Mini (2×2)</string>
+    <string name="widget_desc_2x2">Kotak streak mini + maskot Kuro</string>
+    <string name="streak_days_unit">&#160;hari beruntun</string>
+    <string name="streak_days_short">&#160;hari</string>
+    <string name="streak_week_progress">Minggu ini: %1$d/7 hari</string>
+    <string name="streak_continue_cta">▶ Lanjutkan Baca</string>
+    <string name="streak_mood_happy">Kuro senang kamu baca hari ini. Pertahankan!</string>
+    <string name="streak_mood_cry">Kuro nangis nungguin kamu baca…</string>
+    <string name="streak_mood_tsundere">Bukan berarti Kuro kangen, tapi udah lama gak buka!</string>
+    <string name="streak_day_1">Sn</string>
+    <string name="streak_day_2">Sl</string>
+    <string name="streak_day_3">Rb</string>
+    <string name="streak_day_4">Km</string>
+    <string name="streak_day_5">Jm</string>
+    <string name="streak_day_6">Sb</string>
+    <string name="streak_day_7">Mn</string>
+</resources>

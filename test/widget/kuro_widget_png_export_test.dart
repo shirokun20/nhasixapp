@@ -52,9 +52,15 @@ void main() {
             body: Center(
               child: RepaintBoundary(
                 key: key,
-                child: SizedBox.square(
-                  dimension: 160,
-                  child: Center(child: KuroMascot(mood: mood, size: 140)),
+                child: ClipRect(
+                  child: SizedBox.square(
+                    dimension: 160,
+                    child: OverflowBox(
+                      maxWidth: 208,
+                      maxHeight: 208,
+                      child: KuroMascot(mood: mood, size: 208),
+                    ),
+                  ),
                 ),
               ),
             ),

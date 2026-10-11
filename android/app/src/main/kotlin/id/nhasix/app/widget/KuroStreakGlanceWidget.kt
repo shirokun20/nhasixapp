@@ -7,16 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
-import android.os.Bundle
-import android.util.TypedValue
-import android.view.View
 import android.widget.RemoteViews
+import androidx.annotation.LayoutRes
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.layout.fillMaxSize
 import HomeWidgetGlanceStateDefinition
@@ -28,30 +24,29 @@ import java.time.temporal.ChronoUnit
 import org.json.JSONArray
 
 /**
- * Kuro streak launcher widget.
+ * Kuro streak launcher widget supporting 3 dedicated fixed-size variants:
+ * - 4x2 Full Design A (`R.layout.kuro_streak_widget`)
+ * - 4x1 Compact Strip (`R.layout.kuro_streak_widget_strip`)
+ * - 2x2 Mini Square (`R.layout.kuro_streak_widget_small`)
  *
  * Privacy-safe by construction: renders streak count, the Sn-Mn weekly checklist and the
  * mood mascot only. No content title, cover, tag or source name is ever read or shown.
  */
-class KuroStreakGlanceWidget : GlanceAppWidget() {
+class KuroStreakGlanceWidget(
+    @LayoutRes private val layoutRes: Int = R.layout.kuro_streak_widget,
+) : GlanceAppWidget() {
 
     override val stateDefinition = HomeWidgetGlanceStateDefinition()
 
-    override val sizeMode: SizeMode = SizeMode.Exact
-
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            val size = LocalSize.current
             AndroidRemoteViews(
-                remoteViews = buildRemoteViews(
-                    context = context,
-                    widthDp = size.width.value.toInt(),
-                    heightDp = size.height.value.toInt(),
-                ),
+                remoteViews = buildRemoteViewsForLayout(context, layoutRes),
                 modifier = GlanceModifier.fillMaxSize(),
             )
         }
     }
+
     companion object {
 
         private const val KEY_STREAK_COUNT = "streak_count"
@@ -77,15 +72,35 @@ class KuroStreakGlanceWidget : GlanceAppWidget() {
             R.id.day_dot_7,
         )
 
+        private val DAY_LABEL_IDS = intArrayOf(
+            R.id.day_label_1,
+            R.id.day_label_2,
+            R.id.day_label_3,
+            R.id.day_label_4,
+            R.id.day_label_5,
+            R.id.day_label_6,
+            R.id.day_label_7,
+        )
+
+        private val CORAL_COLOR = Color.parseColor("#F1958E")
+        private val TEAR_COLOR = Color.parseColor("#7DD3FC")
         private val CHECK_COLOR = Color.parseColor("#1A1A1F")
         private val UNCHECK_COLOR = Color.parseColor("#9E948C")
 
-        fun buildRemoteViews(
+        private val VARIANT_RECEIVERS: List<Pair<Class<*>, Int>> = listOf(
+            KuroStreakWidgetReceiver::class.java to R.layout.kuro_streak_widget,
+            KuroStreakStripWidgetReceiver::class.java to R.layout.kuro_streak_widget_strip,
+            KuroStreakSmallWidgetReceiver::class.java to R.layout.kuro_streak_widget_small,
+        )
+
+        fun buildRemoteViews(context: Context): RemoteViews =
+            buildRemoteViewsForLayout(context, R.layout.kuro_streak_widget)
+
+        fun buildRemoteViewsForLayout(
             context: Context,
-            widthDp: Int = 250,
-            heightDp: Int = 110,
+            @LayoutRes layoutRes: Int,
         ): RemoteViews {
-            val views = RemoteViews(context.packageName, R.layout.kuro_streak_widget)
+            val views = RemoteViews(context.packageName, layoutRes)
             val prefs = HomeWidgetPlugin.getData(context)
             val flutterPrefs =
                 context.getSharedPreferences(FLUTTER_PREFS, Context.MODE_PRIVATE)
@@ -108,30 +123,45 @@ class KuroStreakGlanceWidget : GlanceAppWidget() {
             val moodRes: Int
             val effectiveStreak: Int
             val subtitle: String
+            val isCry: Boolean
             when {
                 diffDays != null && diffDays <= 0L -> {
                     moodRes = R.drawable.kuro_happy
                     effectiveStreak = maxOf(storedStreak, 1)
-                    subtitle = "Kuro senang kamu baca hari ini!"
+                    subtitle = context.getString(R.string.streak_mood_happy)
+                    isCry = false
                 }
                 diffDays != null && diffDays in 1L..7L -> {
                     moodRes = R.drawable.kuro_frozen_cry
                     effectiveStreak = if (diffDays == 1L) storedStreak else 0
-                    subtitle = "Kuro nangis, yuk lanjut baca!"
+                    subtitle = context.getString(R.string.streak_mood_cry)
+                    isCry = true
                 }
                 else -> {
                     moodRes = R.drawable.kuro_tsundere
                     effectiveStreak = 0
-                    subtitle = "H-hmph, udah lama gak buka Kuron!"
+                    subtitle = context.getString(R.string.streak_mood_tsundere)
+                    isCry = false
                 }
             }
 
+            val accentColor = if (isCry) TEAR_COLOR else CORAL_COLOR
+            views.setInt(
+                R.id.widget_root,
+                "setBackgroundResource",
+                if (isCry) R.drawable.kuro_widget_cry_bg else R.drawable.kuro_widget_bg,
+            )
+            views.setInt(R.id.widget_flame_icon, "setColorFilter", accentColor)
+            views.setTextColor(R.id.widget_streak_count, accentColor)
             views.setTextViewText(R.id.widget_streak_count, effectiveStreak.toString())
             views.setTextViewText(R.id.widget_mood_subtitle, subtitle)
             views.setImageViewResource(R.id.widget_kuro_mood, moodRes)
 
-            applyWeek(views, parseReadDays(readDaysRaw), today)
-            applyResponsiveSizing(views, widthDp, heightDp)
+            val checkedCount = applyWeek(views, parseReadDays(readDaysRaw), today, accentColor)
+            views.setTextViewText(
+                R.id.widget_week_summary,
+                context.getString(R.string.streak_week_progress, checkedCount),
+            )
 
             views.setOnClickPendingIntent(
                 R.id.widget_root,
@@ -147,84 +177,13 @@ class KuroStreakGlanceWidget : GlanceAppWidget() {
             return views
         }
 
-        private fun applyResponsiveSizing(
-            views: RemoteViews,
-            widthDp: Int,
-            heightDp: Int,
-        ) {
-            val isNarrow = widthDp in 1..205
-            val isShort = heightDp in 1..95
-            val isTall = heightDp >= 165
-
-            // Narrow (e.g. 2x1 / 2x2): hide 7-column week strip so text + mascot fit cleanly.
-            views.setViewVisibility(
-                R.id.widget_week_row,
-                if (isNarrow) View.GONE else View.VISIBLE,
-            )
-
-            // Short 1-row strip (e.g. 3x1 / 4x1): hide subtitle when week strip is visible.
-            views.setViewVisibility(
-                R.id.widget_mood_subtitle,
-                if (isShort && !isNarrow) View.GONE else View.VISIBLE,
-            )
-
-            val countSp = when {
-                isShort -> 20f
-                isTall -> 30f
-                else -> 26f
-            }
-            val labelSp = when {
-                isShort -> 11f
-                isTall -> 14f
-                else -> 13f
-            }
-            val subSp = if (isTall) 12f else 11f
-
-            views.setTextViewTextSize(
-                R.id.widget_streak_count,
-                TypedValue.COMPLEX_UNIT_SP,
-                countSp,
-            )
-            views.setTextViewTextSize(
-                R.id.widget_streak_label,
-                TypedValue.COMPLEX_UNIT_SP,
-                labelSp,
-            )
-            views.setTextViewTextSize(
-                R.id.widget_mood_subtitle,
-                TypedValue.COMPLEX_UNIT_SP,
-                subSp,
-            )
-        }
-
-        fun updateWidget(
-            context: Context,
-            manager: AppWidgetManager,
-            appWidgetId: Int,
-            options: Bundle? = null,
-        ) {
-            val effectiveOptions = options ?: manager.getAppWidgetOptions(appWidgetId)
-            val widthDp = effectiveOptions.getInt(
-                AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
-                250,
-            )
-            val heightDp = effectiveOptions.getInt(
-                AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,
-                110,
-            )
-            manager.updateAppWidget(
-                appWidgetId,
-                buildRemoteViews(context, widthDp = widthDp, heightDp = heightDp),
-            )
-        }
-
         fun updateAllWidgets(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(
-                ComponentName(context, KuroStreakWidgetReceiver::class.java)
-            )
-            for (id in ids) {
-                updateWidget(context, manager, id)
+            for ((receiverClass, layoutRes) in VARIANT_RECEIVERS) {
+                val ids = manager.getAppWidgetIds(ComponentName(context, receiverClass))
+                if (ids.isNotEmpty()) {
+                    manager.updateAppWidget(ids, buildRemoteViewsForLayout(context, layoutRes))
+                }
             }
         }
 
@@ -233,12 +192,21 @@ class KuroStreakGlanceWidget : GlanceAppWidget() {
             views: RemoteViews,
             readDays: Set<LocalDate>,
             today: LocalDate,
-        ) {
-            val monday = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            accentColor: Int,
+        ): Int {
+            val todayIndex = today.dayOfWeek.value - 1
+            val monday = today.minusDays(todayIndex.toLong())
+            var checkedCount = 0
             for (index in 0 until WEEKDAYS) {
                 val date = monday.plusDays(index.toLong())
                 val dotId = DAY_DOT_IDS[index]
+                val labelId = DAY_LABEL_IDS[index]
+                views.setTextColor(
+                    labelId,
+                    if (index == todayIndex) accentColor else UNCHECK_COLOR,
+                )
                 if (date in readDays) {
+                    checkedCount++
                     views.setInt(dotId, "setBackgroundResource", R.drawable.kuro_day_checked_bg)
                     views.setTextViewText(dotId, "✓")
                     views.setTextColor(dotId, CHECK_COLOR)
@@ -252,6 +220,7 @@ class KuroStreakGlanceWidget : GlanceAppWidget() {
                     views.setTextColor(dotId, UNCHECK_COLOR)
                 }
             }
+            return checkedCount
         }
 
         private fun parseReadDays(raw: String?): Set<LocalDate> {

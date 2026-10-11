@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/domain/entities/reading_statistics.dart';
 import 'package:nhasixapp/domain/usecases/reader_identity/get_reading_streak_usecase.dart';
+import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/streak/streak_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 import 'package:nhasixapp/presentation/widgets/streak_card.dart';
@@ -71,8 +73,8 @@ void main() {
       await _pump(tester, cubit);
 
       expect(find.text('4'), findsOneWidget);
-      expect(find.text('Hari Streak'), findsOneWidget);
-      // Friday, Saturday, Sunday read out of seven day dots.
+      expect(find.text('hari beruntun'), findsOneWidget);
+      expect(find.text('Minggu ini: 3/7 hari'), findsOneWidget);
       expect(find.byIcon(Icons.check_rounded), findsNWidgets(3));
       expect(isCeriaMood(_moodOf(tester)), isTrue);
     });
@@ -147,6 +149,44 @@ void main() {
         find.widgetWithText(FilledButton, 'Lanjutkan Baca'),
       );
       expect(button.onPressed, isNull);
+    });
+
+    testWidgets('renders localized strings via AppLocalizations (en)',
+        (tester) async {
+      final cubit = _cubitFor(
+        ReadingStatistics.streak(
+          readingStreak: 5,
+          lastReadDate: DateTime(2026, 10, 11),
+          readDays: [
+            DateTime(2026, 10, 10),
+            DateTime(2026, 10, 11),
+          ],
+        ),
+        'content-99',
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: StreakCard(cubit: cubit)),
+        ),
+      );
+      await cubit.loadStreak();
+      await tester.pump();
+
+      expect(find.text('day streak'), findsOneWidget);
+      expect(find.text('This week: 2/7 days'), findsOneWidget);
+      expect(find.text('Continue reading'), findsOneWidget);
+      expect(find.text('Mo'), findsOneWidget);
+      expect(find.text('Su'), findsOneWidget);
     });
   });
 }

@@ -21,6 +21,11 @@ class StreakWidgetSyncService {
   static const String qualifiedReceiverName =
       'id.nhasix.app.widget.KuroStreakWidgetReceiver';
 
+  static const List<String> variantReceiverNames = [
+    'KuroStreakWidgetReceiver',
+    'KuroStreakStripWidgetReceiver',
+    'KuroStreakSmallWidgetReceiver',
+  ];
   static const String keyStreakCount = 'streak_count';
   static const String keyStreakLastDate = 'streak_last_date';
   static const String keyStreakReadDays = 'streak_read_days';
@@ -55,11 +60,13 @@ class StreakWidgetSyncService {
           keyStreakTotalRead, stats.totalContentRead);
       await HomeWidget.saveWidgetData<String>(
           keyStreakMood, resolveKuroMood(stats.lastReadDate, ref).name);
-      await HomeWidget.updateWidget(
-        name: receiverName,
-        androidName: receiverName,
-        qualifiedAndroidName: qualifiedReceiverName,
-      );
+      for (final variant in variantReceiverNames) {
+        await HomeWidget.updateWidget(
+          name: variant,
+          androidName: variant,
+          qualifiedAndroidName: 'id.nhasix.app.widget.$variant',
+        );
+      }
     } catch (_) {
       // Launcher view keeps its last snapshot; the streak itself is unaffected.
     }

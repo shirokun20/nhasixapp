@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_label_4x2">Kuro Streak (4×2)</string>
+    <string name="widget_desc_4x2">Full reading streak card with weekly checklist</string>
+    <string name="widget_label_4x1">Kuro Streak Strip (4×1)</string>
+    <string name="widget_desc_4x1">Compact 1-row reading streak strip</string>
+    <string name="widget_label_2x2">Kuro Streak Mini (2×2)</string>
+    <string name="widget_desc_2x2">Mini square reading streak tile</string>
+    <string name="streak_days_unit">&#160;day streak</string>
+    <string name="streak_days_short">&#160;days</string>
+    <string name="streak_week_progress">This week: %1$d/7 days</string>
+    <string name="streak_continue_cta">▶ Continue</string>
+    <string name="streak_mood_happy">Kuro is happy you read today. Keep it up!</string>
+    <string name="streak_mood_cry">Kuro is crying waiting for you to read…</string>
+    <string name="streak_mood_tsundere">It\'s not like Kuro missed you, but it\'s been a while!</string>
+    <string name="streak_day_1">Mo</string>
+    <string name="streak_day_2">Tu</string>
+    <string name="streak_day_3">We</string>
+    <string name="streak_day_4">Th</string>
+    <string name="streak_day_5">Fr</string>
+    <string name="streak_day_6">Sa</string>
+    <string name="streak_day_7">Su</string>
+</resources>
