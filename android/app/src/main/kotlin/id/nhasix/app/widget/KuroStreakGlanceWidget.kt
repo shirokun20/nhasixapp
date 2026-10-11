@@ -82,6 +82,16 @@ class KuroStreakGlanceWidget(
             R.id.day_label_7,
         )
 
+        private val DAY_STRING_RES = intArrayOf(
+            R.string.streak_day_1,
+            R.string.streak_day_2,
+            R.string.streak_day_3,
+            R.string.streak_day_4,
+            R.string.streak_day_5,
+            R.string.streak_day_6,
+            R.string.streak_day_7,
+        )
+
         private val CORAL_COLOR = Color.parseColor("#F1958E")
         private val TEAR_COLOR = Color.parseColor("#7DD3FC")
         private val CHECK_COLOR = Color.parseColor("#1A1A1F")
@@ -151,13 +161,20 @@ class KuroStreakGlanceWidget(
                 "setBackgroundResource",
                 if (isCry) R.drawable.kuro_widget_cry_bg else R.drawable.kuro_widget_bg,
             )
-            views.setInt(R.id.widget_flame_icon, "setColorFilter", accentColor)
+            if (layoutRes == R.layout.kuro_streak_widget) {
+                views.setInt(R.id.widget_flame_icon, "setColorFilter", accentColor)
+            }
             views.setTextColor(R.id.widget_streak_count, accentColor)
+            views.setTextViewText(
+                R.id.widget_streak_label,
+                context.getString(R.string.streak_days_unit).trim(),
+            )
             views.setTextViewText(R.id.widget_streak_count, effectiveStreak.toString())
             views.setTextViewText(R.id.widget_mood_subtitle, subtitle)
             views.setImageViewResource(R.id.widget_kuro_mood, moodRes)
 
-            val checkedCount = applyWeek(views, parseReadDays(readDaysRaw), today, accentColor)
+            val readDays = parseReadDays(readDaysRaw)
+            val checkedCount = applyWeek(context, views, layoutRes, readDays, today, accentColor)
             views.setTextViewText(
                 R.id.widget_week_summary,
                 context.getString(R.string.streak_week_progress, checkedCount),
@@ -189,7 +206,9 @@ class KuroStreakGlanceWidget(
 
         /** Monday..Sunday of the current week, oldest first. */
         private fun applyWeek(
+            context: Context,
             views: RemoteViews,
+            @LayoutRes layoutRes: Int,
             readDays: Set<LocalDate>,
             today: LocalDate,
             accentColor: Int,
@@ -199,25 +218,48 @@ class KuroStreakGlanceWidget(
             var checkedCount = 0
             for (index in 0 until WEEKDAYS) {
                 val date = monday.plusDays(index.toLong())
+                val isRead = date in readDays
+                if (isRead) checkedCount++
+
+                if (layoutRes == R.layout.kuro_streak_widget_small) {
+                    // 2x2 Bento Hero Tile has no 7-day dot strip (matches HTML prototype w2x2).
+                    continue
+                }
+
                 val dotId = DAY_DOT_IDS[index]
-                val labelId = DAY_LABEL_IDS[index]
-                views.setTextColor(
-                    labelId,
-                    if (index == todayIndex) accentColor else UNCHECK_COLOR,
-                )
-                if (date in readDays) {
-                    checkedCount++
-                    views.setInt(dotId, "setBackgroundResource", R.drawable.kuro_day_checked_bg)
-                    views.setTextViewText(dotId, "✓")
-                    views.setTextColor(dotId, CHECK_COLOR)
+                if (layoutRes == R.layout.kuro_streak_widget_strip) {
+                    // 4x1 Strip: each chip holds the day name (Mo..Su / Sn..Mn) inside the pill.
+                    views.setTextViewText(dotId, context.getString(DAY_STRING_RES[index]))
+                    if (isRead) {
+                        views.setInt(dotId, "setBackgroundResource", R.drawable.kuro_chip_checked_bg)
+                        views.setTextColor(dotId, CHECK_COLOR)
+                    } else {
+                        views.setInt(dotId, "setBackgroundResource", R.drawable.kuro_chip_unchecked_bg)
+                        views.setTextColor(
+                            dotId,
+                            if (index == todayIndex) accentColor else UNCHECK_COLOR,
+                        )
+                    }
                 } else {
-                    views.setInt(
-                        dotId,
-                        "setBackgroundResource",
-                        R.drawable.kuro_day_unchecked_bg
+                    // 4x2 Full Design A: label above circle dot.
+                    val labelId = DAY_LABEL_IDS[index]
+                    views.setTextColor(
+                        labelId,
+                        if (index == todayIndex) accentColor else UNCHECK_COLOR,
                     )
-                    views.setTextViewText(dotId, "")
-                    views.setTextColor(dotId, UNCHECK_COLOR)
+                    if (isRead) {
+                        views.setInt(dotId, "setBackgroundResource", R.drawable.kuro_day_checked_bg)
+                        views.setTextViewText(dotId, "✓")
+                        views.setTextColor(dotId, CHECK_COLOR)
+                    } else {
+                        views.setInt(
+                            dotId,
+                            "setBackgroundResource",
+                            R.drawable.kuro_day_unchecked_bg
+                        )
+                        views.setTextViewText(dotId, "")
+                        views.setTextColor(dotId, UNCHECK_COLOR)
+                    }
                 }
             }
             return checkedCount

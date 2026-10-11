@@ -1,307 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Kuro streak launcher widget — Compact Square Tile (2x2 / 2x1).
-  Vertical stack so 2-column width never squishes text or mascot.
+  Kuro streak launcher widget — 2x2 Mini Tile (Exact match to HTML prototype w2x2):
+  Top-Left: Giant 42sp streak count + "day streak" label + weekly summary.
+  Bottom-Right: Large 92dp Kuro mascot peeking from the corner.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_vertical"
     android:background="@drawable/kuro_widget_bg"
-    android:padding="12dp">
+    android:padding="16dp">
 
-    <!-- Top row: Flame + count + short unit on left, 52dp Kuro on right -->
     <LinearLayout
+        android:id="@+id/widget_left_column"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:baselineAligned="false">
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/widget_left_column"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/widget_streak_count"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:fontFamily="sans-serif-black"
+            android:includeFontPadding="false"
+            android:text="0"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:textColor="#F1958E" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+        <TextView
+            android:id="@+id/widget_streak_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/streak_days_unit"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#9E948C"
+            android:maxLines="1" />
 
-                <ImageView
-                    android:id="@+id/widget_flame_icon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="3dp"
-                    android:src="@drawable/ic_streak_flame"
-                    android:contentDescription="@null" />
+        <TextView
+            android:id="@+id/widget_week_summary"
+            android:layout_width="104dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Minggu ini: 0/7"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#D4CCC4"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
-                <TextView
-                    android:id="@+id/widget_streak_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-black"
-                    android:includeFontPadding="false"
-                    android:text="0"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#F1958E" />
-
-                <TextView
-                    android:id="@+id/widget_streak_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-black"
-                    android:includeFontPadding="false"
-                    android:text="@string/streak_days_short"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#F5EDE4"
-                    android:maxLines="1" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/widget_week_summary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Minggu ini: 0/7"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/widget_mood_subtitle"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:visibility="gone" />
-        </LinearLayout>
-
-        <FrameLayout
-            android:id="@+id/widget_mascot_container"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="4dp">
-
-            <ImageView
-                android:id="@+id/widget_kuro_mood"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:adjustViewBounds="true"
-                android:scaleType="fitCenter"
-                android:src="@drawable/kuro_tsundere"
-                android:contentDescription="Kuro mood" />
-        </FrameLayout>
+        <TextView
+            android:id="@+id/widget_mood_subtitle"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
     </LinearLayout>
 
-    <!-- Bottom full-width compact 7-day capsule -->
-    <LinearLayout
-        android:id="@+id/widget_week_row"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/kuro_week_capsule_bg"
-        android:paddingHorizontal="4dp"
-        android:paddingVertical="4dp"
-        android:orientation="horizontal"
-        android:weightSum="7"
-        android:baselineAligned="false">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_1"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_1"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_2"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_2"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_3"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_3"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_4"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_4"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_5"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_5"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_6"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_6"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-            <TextView
-                android:id="@+id/day_label_7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/streak_day_7"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#D4CCC4" />
-            <TextView
-                android:id="@+id/day_dot_7"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/kuro_day_unchecked_bg"
-                android:gravity="center"
-                android:text=""
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:textColor="#9E948C" />
-        </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
+    <ImageView
+        android:id="@+id/widget_kuro_mood"
+        android:layout_width="90dp"
+        android:layout_height="90dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="-6dp"
+        android:layout_marginBottom="-6dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/kuro_tsundere"
+        android:contentDescription="Kuro mood" />
+</RelativeLayout>
