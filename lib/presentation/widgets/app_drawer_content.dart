@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/network/network_cubit.dart';
@@ -18,6 +17,7 @@ import 'common/source_selector.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'reader_avatar.dart';
+import 'streak_card.dart';
 
 class _SourceAuthIdentity {
   final bool authenticated;
@@ -43,7 +43,6 @@ class AppDrawerContent extends StatefulWidget {
 
 class _AppDrawerContentState extends State<AppDrawerContent>
     with SingleTickerProviderStateMixin {
-  String _appVersion = '';
   ReaderBadge? _badge;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -52,7 +51,6 @@ class _AppDrawerContentState extends State<AppDrawerContent>
   void initState() {
     super.initState();
     _checkConnectivity();
-    _loadAppVersion();
     _loadReaderBadge();
 
     // Setup pulse animation for logo
@@ -80,15 +78,6 @@ class _AppDrawerContentState extends State<AppDrawerContent>
 
   Future<void> _checkConnectivity() async {
     await Connectivity().checkConnectivity();
-  }
-
-  Future<void> _loadAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() {
-        _appVersion = 'v${packageInfo.version}';
-      });
-    }
   }
 
   // Reader identity is local-only (SQLite aggregates) — cheap enough to
@@ -505,8 +494,11 @@ class _AppDrawerContentState extends State<AppDrawerContent>
                 ),
               ),
 
-              // 3. Footer Card
-              _buildDrawerFooter(theme, l10n),
+              // 3. Docked streak card (thumb zone, variant C)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: StreakCard(),
+              ),
             ],
           ),
         ),
@@ -781,58 +773,6 @@ class _AppDrawerContentState extends State<AppDrawerContent>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerFooter(ThemeData theme, AppLocalizations l10n) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.verified,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.appTitle,
-                  style: TextStyleConst.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  _appVersion,
-                  style: TextStyleConst.caption.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

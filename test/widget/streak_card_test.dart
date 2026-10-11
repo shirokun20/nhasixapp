@@ -13,7 +13,7 @@ import 'package:nhasixapp/presentation/widgets/streak_card.dart';
 class _MockGetReadingStreakUseCase extends Mock
     implements GetReadingStreakUseCase {}
 
-// Sunday 2026-10-11, so the Mon–Sun checklist is fully inside one week.
+// Sunday 2026-10-11.
 final _now = DateTime(2026, 10, 11, 20, 30);
 
 StreakCubit _cubitFor(
@@ -32,16 +32,10 @@ StreakCubit _cubitFor(
   return cubit;
 }
 
-Future<void> _pump(
-  WidgetTester tester,
-  StreakCubit cubit, {
-  Future<void> Function(BuildContext, String)? onContinueReading,
-}) async {
+Future<void> _pump(WidgetTester tester, StreakCubit cubit) async {
   await tester.pumpWidget(
     MaterialApp(
-      home: Scaffold(
-        body: StreakCard(cubit: cubit, onContinueReading: onContinueReading),
-      ),
+      home: Scaffold(body: StreakCard(cubit: cubit)),
     ),
   );
   await cubit.loadStreak();
@@ -53,7 +47,7 @@ KuroMood _moodOf(WidgetTester tester) =>
 
 void main() {
   group('StreakCard', () {
-    testWidgets('read today: shows streak, marks checklist, ceria mascot',
+    testWidgets('read today: shows streak and ceria mascot, no checklist',
         (tester) async {
       final cubit = _cubitFor(
         ReadingStatistics.streak(
@@ -74,9 +68,10 @@ void main() {
 
       expect(find.text('4'), findsOneWidget);
       expect(find.text('hari beruntun'), findsOneWidget);
-      expect(find.text('Minggu ini: 3/7 hari'), findsOneWidget);
-      expect(find.byIcon(Icons.check_rounded), findsNWidgets(3));
       expect(isCeriaMood(_moodOf(tester)), isTrue);
+      // Slim card: no weekly dots and no CTA button.
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
     });
 
     testWidgets('absent 3 days: cry mascot', (tester) async {
@@ -108,47 +103,6 @@ void main() {
 
       expect(_moodOf(tester), KuroMood.tsundere);
       expect(find.text('0'), findsOneWidget);
-    });
-
-    testWidgets('tapping CTA resumes last content id', (tester) async {
-      String? resumed;
-      final cubit = _cubitFor(
-        ReadingStatistics.streak(
-          readingStreak: 1,
-          lastReadDate: DateTime(2026, 10, 11),
-        ),
-        'content-42',
-      );
-      addTearDown(cubit.close);
-
-      await _pump(
-        tester,
-        cubit,
-        onContinueReading: (context, contentId) async => resumed = contentId,
-      );
-
-      await tester.tap(find.text('Lanjutkan Baca'));
-      await tester.pump();
-
-      expect(resumed, 'content-42');
-    });
-
-    testWidgets('CTA disabled without a last content id', (tester) async {
-      final cubit = _cubitFor(
-        ReadingStatistics.streak(
-          readingStreak: 1,
-          lastReadDate: DateTime(2026, 10, 11),
-        ),
-        null,
-      );
-      addTearDown(cubit.close);
-
-      await _pump(tester, cubit);
-
-      final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Lanjutkan Baca'),
-      );
-      expect(button.onPressed, isNull);
     });
 
     testWidgets('renders localized strings via AppLocalizations (en)',
@@ -183,10 +137,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('day streak'), findsOneWidget);
-      expect(find.text('This week: 2/7 days'), findsOneWidget);
-      expect(find.text('Continue reading'), findsOneWidget);
-      expect(find.text('Mo'), findsOneWidget);
-      expect(find.text('Su'), findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
     });
   });
 }

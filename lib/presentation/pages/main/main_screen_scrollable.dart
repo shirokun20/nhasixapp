@@ -36,7 +36,6 @@ import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 
 import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/pagination_widget.dart';
-import 'package:nhasixapp/presentation/widgets/streak_card.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_grid_card.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/recommended_section.dart';
@@ -825,20 +824,6 @@ class _MainScreenScrollableState extends State<MainScreenScrollable>
                         : null,
                   );
                 },
-              ),
-            ),
-
-          // Streak card (Fase 1) — home tab only, above the grid.
-          if (!_isShowingSearchResults)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  DesignTokens.spaceMd,
-                  DesignTokens.spaceSm,
-                  DesignTokens.spaceMd,
-                  DesignTokens.spaceXs,
-                ),
-                child: StreakCard(),
               ),
             ),
 
