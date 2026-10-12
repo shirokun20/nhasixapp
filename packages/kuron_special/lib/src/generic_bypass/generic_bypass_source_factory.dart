@@ -43,7 +43,7 @@ class GenericBypassSourceFactory implements SourceFactory {
       _logger.w('$_sourceId: Failed to attach NativeAdapter: $e');
     }
 
-    final interceptingDio = _BypassDioInterceptor(
+    final interceptingDio = BypassDioInterceptor(
       baseDio: _dio,
       sessionAdapter: _sessionAdapter,
       logger: _logger,
@@ -61,15 +61,20 @@ class GenericBypassSourceFactory implements SourceFactory {
 
 // Dio wrapper that routes GET through [WebViewSessionAdapter.requestWithBypass]
 // so Cloudflare 403 triggers native WebView bypass.
-class _BypassDioInterceptor with DioMixin implements Dio {
+//
+// Set [forwardSessionCookie] to forward a session cookie already present in
+// `options.headers` (e.g. vihentai `laravel_session`) alongside cf_clearance.
+class BypassDioInterceptor with DioMixin implements Dio {
   final Dio _baseDio;
   final WebViewSessionAdapter _sessionAdapter;
   final Logger _logger;
+  final bool forwardSessionCookie;
 
-  _BypassDioInterceptor({
+  BypassDioInterceptor({
     required Dio baseDio,
     required WebViewSessionAdapter sessionAdapter,
     required Logger logger,
+    this.forwardSessionCookie = false,
   })  : _baseDio = baseDio,
         _sessionAdapter = sessionAdapter,
         _logger = logger {
@@ -94,9 +99,18 @@ class _BypassDioInterceptor with DioMixin implements Dio {
 
     // Force 4xx to throw so WebViewSessionAdapter can detect CF 403
     // Redirects (3xx) remain non-throwing.
-    final passthroughOptions = (options ?? Options()).copyWith(
+    var passthroughOptions = (options ?? Options()).copyWith(
       validateStatus: (status) => status != null && status < 400,
     );
+
+    // Forward a session cookie already present in options.headers (e.g.
+    // vihentai laravel_session) so the bypass sends it alongside cf_clearance.
+    if (forwardSessionCookie && this.options.headers.containsKey('Cookie')) {
+      final withCookie = Map<String, dynamic>.from(
+          passthroughOptions.headers ?? <String, dynamic>{});
+      withCookie['Cookie'] = this.options.headers['Cookie'];
+      passthroughOptions = passthroughOptions.copyWith(headers: withCookie);
+    }
 
     return _sessionAdapter.requestWithBypass<T>(
       path,
@@ -106,7 +120,7 @@ class _BypassDioInterceptor with DioMixin implements Dio {
 
   @override
   Future<Response<T>> request<T>(
-    String url, {
+    String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
@@ -115,7 +129,7 @@ class _BypassDioInterceptor with DioMixin implements Dio {
     void Function(int, int)? onReceiveProgress,
   }) {
     return _baseDio.request<T>(
-      url,
+      path,
       data: data,
       queryParameters: queryParameters,
       cancelToken: cancelToken,

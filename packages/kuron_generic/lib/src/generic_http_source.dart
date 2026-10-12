@@ -15,6 +15,7 @@ import 'adapters/generic_scraper_adapter.dart';
 import 'filters/generic_filter_transformer.dart';
 import 'parsers/generic_html_parser.dart';
 import 'parsers/generic_json_parser.dart';
+import 'plugins/source_plugin.dart';
 import 'url_builder/generic_url_builder.dart';
 
 // A [ContentSource] that is entirely driven by a JSON config map.
@@ -369,7 +370,29 @@ class GenericHttpSource implements ContentSource {
 
   @override
   Future<ChapterData?> getChapterImages(String chapterId) async {
-    return _adapter.fetchChapterImages(chapterId, _rawConfig);
+    final data = await _adapter.fetchChapterImages(chapterId, _rawConfig);
+    if (data == null) return null;
+    // Plugin seam (conformance-loop 4.2): a registered
+    // ImageUrlTransformPlugin for this source post-processes raw image
+    // URLs (e.g. HentaiNexus decryption). Absent = pass-through.
+    final plugin = SourcePluginRegistry.instance
+        .getAs<ImageUrlTransformPlugin>('plugin.$_id.imageTransform');
+    if (plugin == null || data.images.isEmpty) return data;
+    final transformed = await plugin.transformImageUrls(
+      rawUrls: data.images,
+      rawConfig: _rawConfig.cast<String, Object?>(),
+      sessionHeaders: _defaultHeaders,
+    );
+    return ChapterData(
+      images: transformed,
+      videoUrls: data.videoUrls,
+      videoIndex: data.videoIndex,
+      videoReferer: data.videoReferer,
+      prevChapterId: data.prevChapterId,
+      nextChapterId: data.nextChapterId,
+      prevChapterTitle: data.prevChapterTitle,
+      nextChapterTitle: data.nextChapterTitle,
+    );
   }
 
   @override

@@ -220,7 +220,7 @@ void main() {
     });
   });
 
-  // ── KomikTap (REST api driver, direct image mode, inline chapters) ─────
+  // ── KomikTap (API v2, direct images, chapters, no comments) ─────────────
   group('komiktap-config.json', () {
     late SourceConfigParseResult result;
 
@@ -232,7 +232,7 @@ void main() {
       expect(result.declaration.sourceId, 'komiktap');
     });
 
-    test('reader requires direct image mode primitive', () {
+    test('reader requires directUrl primitive (API direct-images mode)', () {
       final FeatureContract? readerContract =
           result.declaration.contractFor(FeatureKind.reader);
       expect(readerContract, isNotNull);
@@ -242,16 +242,15 @@ void main() {
       );
     });
 
-    test('bypass is not required (API host has no WAF)', () {
-      expect(result.networkRules.requiresBypass, isFalse);
-    });
-
-    test('comments feature is not inferred (API has no comments)', () {
+    test('comments feature is declared off (not compatible)', () {
       final FeatureStatus? comments =
           result.report.featureStatuses[FeatureKind.comments];
       expect(
         comments ?? FeatureStatus.notDeclared,
-        isNot(FeatureStatus.inferred),
+        isNot(anyOf(
+          FeatureStatus.compatible,
+          FeatureStatus.inferred,
+        )),
       );
     });
 

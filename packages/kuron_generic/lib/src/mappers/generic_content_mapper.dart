@@ -316,74 +316,28 @@ class GenericContentMapper {
       if (objects.isNotEmpty) return splitTagObjects(objects);
     }
 
-    // Priority 2: List<Tag> already resolved — under `tags` or any taxonomy
-    // key (`extractTagObjects` on genres/author/artist fields keeps the
-    // original href slug + url per item, so taps hit the exact archive
-    // instead of a re-slugified guess). Bucketed by type like
-    // splitTagObjects so creator rows and fallbacks stay clean.
-    final tagged = <Tag>[];
-    for (final key in const [
-      'tags',
-      'tag',
-      'genres',
-      'genre',
-      'authors',
-      'author',
-      'artists',
-      'artist',
-    ]) {
-      final v = fields[key];
-      if (v is List) tagged.addAll(v.whereType<Tag>());
-    }
-    if (tagged.isNotEmpty) {
-      final artists = <String>[];
-      final characters = <String>[];
-      final parodies = <String>[];
-      final groups = <String>[];
-      String language = '';
-      for (final t in tagged) {
-        switch (t.type) {
-          case 'artist':
-            artists.add(t.name);
-          case 'character':
-            characters.add(t.name);
-          case 'parody':
-            parodies.add(t.name);
-          case 'group':
-          case 'publisher':
-            groups.add(t.name);
-          case 'language':
-            if (t.name != 'translated' && language.isEmpty) {
-              language = t.name;
-            }
-        }
-      }
+    // Priority 2: List<Tag> already resolved (e.g. from detail page)
+    final rawTags = fields['tags'];
+    if (rawTags is List<Tag>) {
       return TagSplit(
-        tags: tagged,
-        artists: artists,
-        characters: characters,
-        parodies: parodies,
-        groups: groups,
-        language: language,
+        tags: rawTags,
+        artists: const [],
+        characters: const [],
+        parodies: const [],
+        groups: const [],
+        language: '',
       );
     }
 
-    // Priority 3: List<String> tag names. `genre`/`genres` keep their own
-    // type so tag taps route to genreSearch instead of tagSearch
-    // (hentai4free has separate /hentai-genre/ vs /hentai-tag/ archives;
-    // previously both flattened to `tag` and every tap hit genreSearch).
-    // Also additive: _strListAny used to return only the first non-empty
-    // key, silently dropping `genres` whenever `tags` existed.
-    final resolved = _strListAny(fields, const ['tags', 'tag'])
-        .map((n) => Tag(id: 0, name: n, type: 'tag', count: 0))
-        .toList();
-    resolved.addAll(
-      _strListAny(fields, const ['genre', 'genres']).map(
-        (n) => Tag(id: 0, name: n, type: 'genre', count: 0),
-      ),
+    // Priority 3: List<String> tag names
+    final tagNames = _strListAny(
+      fields,
+      const ['tags', 'tag', 'genre', 'genres'],
     );
     return TagSplit(
-      tags: resolved,
+      tags: tagNames
+          .map((n) => Tag(id: 0, name: n, type: 'tag', count: 0))
+          .toList(),
       artists: const [],
       characters: const [],
       parodies: const [],
@@ -650,71 +604,13 @@ class GenericContentMapper {
 
   static DateTime? _parseNamedMonthDate(String raw) {
     if (raw.isEmpty) return null;
-    final text = raw.trim();
 
-    // Day-first with month abbreviation: "11 Sep 2026".
-    final dmy = RegExp(
-      r'^(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})$',
-      caseSensitive: false,
-    ).firstMatch(text);
-    if (dmy != null) {
-      const shortMonths = {
-        'jan': 1,
-        'feb': 2,
-        'mar': 3,
-        'apr': 4,
-        'may': 5,
-        'jun': 6,
-        'jul': 7,
-        'aug': 8,
-        'sep': 9,
-        'oct': 10,
-        'nov': 11,
-        'dec': 12,
-      };
-      final month = shortMonths[dmy.group(2)!.toLowerCase()];
-      final day = int.tryParse(dmy.group(1)!);
-      final year = int.tryParse(dmy.group(3)!);
-      if (month != null && day != null && year != null) {
-        return DateTime(year, month, day);
-      }
-    }
-
-
-    // Compact day-first with two-digit year: "06 Oct 26".
-    final compact = RegExp(
-      r'^(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{2})$',
-      caseSensitive: false,
-    ).firstMatch(text);
-    if (compact != null) {
-      const shortMonths = {
-        'jan': 1,
-        'feb': 2,
-        'mar': 3,
-        'apr': 4,
-        'may': 5,
-        'jun': 6,
-        'jul': 7,
-        'aug': 8,
-        'sep': 9,
-        'oct': 10,
-        'nov': 11,
-        'dec': 12,
-      };
-      final month = shortMonths[compact.group(2)!.toLowerCase()];
-      final day = int.tryParse(compact.group(1)!);
-      final year = int.tryParse(compact.group(3)!);
-      if (month != null && day != null && year != null) {
-        final fullYear = year >= 70 ? 1900 + year : 2000 + year;
-        return DateTime(fullYear, month, day);
-      }
-    }
-    // Month-first US style: "September 11, 2026".
     final match = RegExp(
       r'^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s*(\d{4})$',
       caseSensitive: false,
-    ).firstMatch(text);
+    ).firstMatch(raw.trim());
     if (match == null) return null;
+
     const months = {
       'january': 1,
       'february': 2,

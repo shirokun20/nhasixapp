@@ -9,6 +9,7 @@ import 'package:kuron_generic/kuron_generic.dart';
 import 'package:logger/logger.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 
+import '../generic_bypass/generic_bypass_source_factory.dart';
 import '../webview_session/webview_session_adapter.dart';
 import 'vihentai_adapter.dart';
 
@@ -57,10 +58,13 @@ class ViHentaiSourceFactory implements SourceFactory {
       } catch (_) {}
     }
 
-    // Bypass interceptor — routes GET through WebViewSessionAdapter for CF
-    final bypassDio = _BypassDioInterceptor(
+    // Bypass interceptor — shared master (POST gains 403-retry; previously
+    // plain passthrough). Session cookie forwarding preserved via flag.
+    final bypassDio = BypassDioInterceptor(
       baseDio: vihentaiDio,
       sessionAdapter: _sessionAdapter,
+      logger: _logger,
+      forwardSessionCookie: true,
     );
 
     final urlBuilder = GenericUrlBuilder(
@@ -89,154 +93,5 @@ class ViHentaiSourceFactory implements SourceFactory {
       logger: _logger,
       adapterOverride: vihentaiAdapter,
     );
-  }
-}
-
-// Dio interceptor that routes GET through WebViewSessionAdapter bypass.
-class _BypassDioInterceptor with DioMixin implements Dio {
-  final Dio _baseDio;
-  final WebViewSessionAdapter _sessionAdapter;
-
-  _BypassDioInterceptor({
-    required Dio baseDio,
-    required WebViewSessionAdapter sessionAdapter,
-  })  : _baseDio = baseDio,
-        _sessionAdapter = sessionAdapter {
-    options = baseDio.options;
-    httpClientAdapter = baseDio.httpClientAdapter;
-  }
-
-  @override
-  Future<Response<T>> get<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    void Function(int, int)? onReceiveProgress,
-  }) async {
-    if (queryParameters != null && queryParameters.isNotEmpty) {
-      final uri = Uri.parse(path).replace(queryParameters: queryParameters);
-      path = uri.toString();
-    }
-    final passthroughOptions = (options ?? Options()).copyWith(
-      validateStatus: (status) => status != null && status < 400,
-    );
-    // Forward session cookie from shared options.headers so that
-    // WebViewSessionAdapter sends laravel_session alongside cf_clearance.
-    if (this.options.headers.containsKey('Cookie')) {
-      passthroughOptions.headers ??= <String, dynamic>{};
-      passthroughOptions.headers!['Cookie'] = this.options.headers['Cookie'];
-    }
-    return _sessionAdapter.requestWithBypass<T>(
-      path,
-      options: passthroughOptions,
-    );
-  }
-
-  @override
-  Future<Response<T>> post<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    void Function(int, int)? onSendProgress,
-    void Function(int, int)? onReceiveProgress,
-  }) {
-    return _baseDio.post<T>(path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress);
-  }
-
-  @override
-  Future<Response<T>> request<T>(
-    String url, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    CancelToken? cancelToken,
-    Options? options,
-    void Function(int, int)? onSendProgress,
-    void Function(int, int)? onReceiveProgress,
-  }) {
-    return _baseDio.request<T>(url,
-        data: data,
-        queryParameters: queryParameters,
-        cancelToken: cancelToken,
-        options: options,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress);
-  }
-
-  @override
-  Future<Response<T>> put<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    void Function(int, int)? onSendProgress,
-    void Function(int, int)? onReceiveProgress,
-  }) {
-    return _baseDio.put<T>(path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress);
-  }
-
-  @override
-  Future<Response<T>> head<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-  }) {
-    return _baseDio.head<T>(path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken);
-  }
-
-  @override
-  Future<Response<T>> delete<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-  }) {
-    return _baseDio.delete<T>(path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken);
-  }
-
-  @override
-  Future<Response<T>> patch<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    void Function(int, int)? onSendProgress,
-    void Function(int, int)? onReceiveProgress,
-  }) {
-    return _baseDio.patch<T>(path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress);
   }
 }

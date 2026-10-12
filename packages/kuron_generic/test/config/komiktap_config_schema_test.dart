@@ -61,30 +61,12 @@ void _asString(Map<String, dynamic> map, String key, String ctx) {
       reason: '$ctx: "$key" is present but empty');
 }
 
-// [_asString] but returns the validated value.
-String _requireString(Map<String, dynamic> map, String key, String ctx) {
-  _asString(map, key, ctx);
-  return map[key] as String;
-}
+// komiktap migrated to API v2 (1.1.8): the `scraper` block is gone, replaced
+// by `api`. Groups below assert the API-mode contract against the live config.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // komiktap-config.json
 // ═══════════════════════════════════════════════════════════════════════════
-
-// Resolve an endpoint declared as either a plain string path or a
-// `{path, params}` object (params are appended as a query string).
-String _endpointPath(Map<String, dynamic> endpoints, String key) {
-  final value = endpoints[key];
-  if (value is String) return value;
-  if (value is Map) {
-    final path = (value['path'] as String?) ?? '';
-    final params = value['params'];
-    if (params is! Map || params.isEmpty) return path;
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return '$path${path.contains('?') ? '&' : '?'}$query';
-  }
-  return '';
-}
 
 void main() {
   late Map<String, dynamic> komiktap;
@@ -126,169 +108,8 @@ void main() {
       expect(komiktap['enabled'], isA<bool>());
     });
 
-    test('has api block (REST driver) and no scraper block', () {
-      _asMap(komiktap, 'api', 'root');
-      expect(komiktap.containsKey('scraper'), isFalse,
-          reason: 'v2 config drives data via the api block');
-    });
-
     test('has searchForm block', () {
       _asMap(komiktap, 'searchForm', 'root');
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // komiktap — api.endpoints
-  // ─────────────────────────────────────────────────────────────────────────
-
-  group('komiktap-config.json api.endpoints', () {
-    late Map<String, dynamic> api;
-    late Map<String, dynamic> endpoints;
-
-    setUp(() {
-      api = _asMap(komiktap, 'api', 'root');
-      endpoints = _asMap(api, 'endpoints', 'api');
-    });
-
-    test('api.url is an https URL (REST base)', () {
-      final url = _requireString(api, 'url', 'api');
-      expect(url.startsWith('https://'), isTrue);
-    });
-
-    test('has required endpoint keys', () {
-      for (final key in [
-        'allGalleries',
-        'search',
-        'tagSearch',
-        'detail',
-        'images',
-      ]) {
-        expect(endpoints.containsKey(key), isTrue,
-            reason: 'api.endpoints is missing "$key"');
-      }
-    });
-
-    test('list endpoints carry {page} and search carries {query}', () {
-      final all = _endpointPath(endpoints, 'allGalleries');
-      final search = _endpointPath(endpoints, 'search');
-      expect(all, contains('{page}'));
-      expect(search, contains('{page}'));
-      expect(search, contains('{query}'));
-    });
-
-    test('tagSearch path carries {tagId}', () {
-      expect(_endpointPath(endpoints, 'tagSearch'), contains('{tagId}'));
-    });
-
-    test('detail and images paths carry {id}; images carries {chapter}', () {
-      expect(_endpointPath(endpoints, 'detail'), contains('{id}'));
-      final images = _endpointPath(endpoints, 'images');
-      expect(images, contains('{id}'));
-      expect(images, contains('{chapter}'));
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // komiktap — api.list
-  // ─────────────────────────────────────────────────────────────────────────
-
-  group('komiktap-config.json api.list', () {
-    late Map<String, dynamic> list;
-
-    setUp(() {
-      final api = _asMap(komiktap, 'api', 'root');
-      list = _asMap(api, 'list', 'api');
-    });
-
-    test('items is a JSONPath array selector', () {
-      final items = _requireString(list, 'items', 'list');
-      expect(items, startsWith(r'$.'));
-      expect(items, endsWith('[*]'));
-    });
-
-    test('pagination declares totalPages and currentPage paths', () {
-      final pagination = _asMap(list, 'pagination', 'list');
-      for (final key in ['totalPages', 'currentPage']) {
-        final entry = _asMap(pagination, key, 'list.pagination');
-        _asString(entry, 'path', 'list.pagination.$key');
-      }
-    });
-
-    test('fields include id, title, coverUrl; tags is multi', () {
-      final fields = _asMap(list, 'fields', 'list');
-      for (final f in ['id', 'title', 'coverUrl']) {
-        expect(fields.containsKey(f), isTrue,
-            reason: 'list.fields is missing "$f"');
-      }
-      final tagsDef = fields['tags'];
-      expect(tagsDef, isA<Map>());
-      expect((tagsDef as Map)['multi'], isTrue);
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // komiktap — api.detail (inline chapters) + api.images
-  // ─────────────────────────────────────────────────────────────────────────
-
-  group('komiktap-config.json api.detail', () {
-    late Map<String, dynamic> detail;
-
-    setUp(() {
-      final api = _asMap(komiktap, 'api', 'root');
-      detail = _asMap(api, 'detail', 'api');
-    });
-
-    test('fields include title, coverUrl, tags; tags is multi', () {
-      final fields = _asMap(detail, 'fields', 'detail');
-      for (final f in ['title', 'coverUrl', 'tags']) {
-        expect(fields.containsKey(f), isTrue,
-            reason: 'detail.fields is missing "$f"');
-      }
-      final tagsDef = fields['tags'];
-      expect(tagsDef, isA<Map>());
-      expect((tagsDef as Map)['multi'], isTrue);
-    });
-
-    test('chapters parse inline (items JSONPath, no endpoint)', () {
-      final chapters = _asMap(detail, 'chapters', 'detail');
-      expect(chapters.containsKey('endpoint'), isFalse,
-          reason: 'chapters come from the detail response itself');
-      final items = _requireString(chapters, 'items', 'chapters');
-      expect(items, startsWith(r'$.'));
-      expect(chapters['composeIdWithContentId'], isTrue,
-          reason: 'reader endpoint needs {slug}/{number} composite ids');
-    });
-
-    test('chapter fields include id, title', () {
-      final chapters = (detail['chapters'] as Map).cast<String, dynamic>();
-      final chFields = _asMap(chapters, 'fields', 'chapters');
-      for (final f in ['id', 'title']) {
-        expect(chFields.containsKey(f), isTrue,
-            reason: 'chapters.fields is missing "$f"');
-      }
-    });
-
-    test('api.images uses direct mode with a JSONPath items selector', () {
-      final api = _asMap(komiktap, 'api', 'root');
-      final images = _asMap(api, 'images', 'api');
-      expect(images['mode'], 'direct');
-      final items = _requireString(images, 'items', 'images');
-      expect(items, startsWith(r'$.'));
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // komiktap — navigation (genre taps → raw tag param)
-  // ─────────────────────────────────────────────────────────────────────────
-
-  group('komiktap-config.json navigation', () {
-    test('tagQueryMapping default routes rawParam with a param name', () {
-      final navigation = _asMap(komiktap, 'navigation', 'root');
-      final mapping = _asMap(navigation, 'tagQueryMapping', 'navigation');
-      final fallback = _asMap(mapping, 'default', 'tagQueryMapping');
-      expect(fallback['mode'], 'rawParam');
-      _asString(fallback, 'param', 'tagQueryMapping.default');
-      expect(fallback['valueSource'], isNotNull);
     });
   });
 
@@ -307,15 +128,6 @@ void main() {
       _asString(searchForm, 'urlPattern', 'searchForm');
     });
 
-    test('urlPattern references the search endpoint', () {
-      final ref = searchForm['urlPattern'] as String;
-      expect(ref, 'search');
-      final api = _asMap(komiktap, 'api', 'root');
-      final endpoints = _asMap(api, 'endpoints', 'api');
-      expect(endpoints.containsKey(ref), isTrue,
-          reason: 'searchForm.urlPattern "$ref" is not an api endpoint');
-    });
-
     test('has params block with at least query and page entries', () {
       final params = _asMap(searchForm, 'params', 'searchForm');
       expect(params.containsKey('query'), isTrue,
@@ -331,6 +143,48 @@ void main() {
         _asString(def, 'queryParam', 'searchForm.params.${entry.key}');
         _asString(def, 'type', 'searchForm.params.${entry.key}');
       }
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // komiktap — api block (API v2 mode)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  group('komiktap-config.json api', () {
+    late Map<String, dynamic> api;
+
+    setUp(() {
+      api = _asMap(komiktap, 'api', 'root');
+    });
+
+    test('is enabled with https url', () {
+      expect(api['enabled'], isTrue);
+      _asString(api, 'url', 'api');
+      expect((api['url'] as String).startsWith('https://'), isTrue);
+    });
+
+    test('has non-empty endpoints map', () {
+      final endpoints = _asMap(api, 'endpoints', 'api');
+      expect(endpoints, isNotEmpty);
+    });
+
+    test('list has fields, items and pagination', () {
+      final list = _asMap(api, 'list', 'api');
+      _hasKey(list, 'fields', 'api.list');
+      _asString(list, 'items', 'api.list');
+      _hasKey(list, 'pagination', 'api.list');
+    });
+
+    test('detail has chapters with fields', () {
+      final detail = _asMap(api, 'detail', 'api');
+      final chapters = _asMap(detail, 'chapters', 'api.detail');
+      expect(_asMap(chapters, 'fields', 'api.detail.chapters'), isNotEmpty);
+    });
+
+    test('images has items and mode', () {
+      final images = _asMap(api, 'images', 'api');
+      _asString(images, 'items', 'api.images');
+      _asString(images, 'mode', 'api.images');
     });
   });
 

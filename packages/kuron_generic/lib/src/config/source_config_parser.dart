@@ -485,10 +485,10 @@ class SourceConfigParser {
     // ── Feature: chapters ───────────────────────────────────────────────
     final bool chaptersPresent = urlPatterns.containsKey('chapter') ||
         apiEndpoints.containsKey('chapters') ||
-        (api['detail'] is Map &&
-            (api['detail']! as Map).containsKey('chapters')) ||
         (selectors['detail'] is Map &&
-            (selectors['detail']! as Map).containsKey('chapters'));
+            (selectors['detail']! as Map).containsKey('chapters')) ||
+        (api['detail'] is Map &&
+            (api['detail']! as Map).containsKey('chapters'));
     addFeature(
       feature: FeatureKind.chapters,
       declared: features['chapters'] is bool,

@@ -19,7 +19,9 @@ void main() {
     final urlPatterns = (scraper['urlPatterns'] as Map).cast<String, Object?>();
 
     expect((urlPatterns['home'] as Map)['url'], '/');
-    expect((urlPatterns['search'] as Map)['url'], '/search/{query}');
+    // v1.0.6: site moved search to a query-action URL (still {query}-based).
+    expect((urlPatterns['search'] as Map)['url'],
+        '/?act=search&f[status]=all&f[sortby]=lastest-chap&f[keyword]={query}');
     expect(urlPatterns['detail'], '/{id}/');
     expect(urlPatterns['chapter'], '/{id}');
   });
@@ -29,9 +31,8 @@ void main() {
     final selectors = (scraper['selectors'] as Map).cast<String, Object?>();
     final reader = (selectors['reader'] as Map).cast<String, Object?>();
     final features = (config['features'] as Map).cast<String, Object?>();
-    final chapters =
-        ((selectors['detail'] as Map)['chapters'] as Map)
-            .cast<String, Object?>();
+    final chapters = ((selectors['detail'] as Map)['chapters'] as Map)
+        .cast<String, Object?>();
 
     expect(features['chapters'], isTrue);
     expect(chapters['container'], '#nt_listchapter');

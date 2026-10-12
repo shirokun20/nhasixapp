@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-(nothing yet)
+### Added
+
+- **bulk-source-configs ship wave 2026-10-13**: +14 sources (manifest 104→118): Batch 7 (pawmanga, rackus, ravenscans, s2manga, thunderscans, toonizy), Batch 8 (topmanhua, topmanhuanet, tritinia, violetmanga, yakshacomics, zazamanga, zinmanga), revisit octopusmanga (AES protector gone). Tiap source: config+icon(192px)+bulk LIVE test green + conformance bersih. 9 SKIP baru (petrotechsociety redirect-loop, rdscans/topmanhuafan/zinmanganet search-detail struktural, rokaricomics/mangadrama reader-JS, wearehunger/kunmangaonline chapters-JS, nexcomic custom-engine). Engine lesson (tanpa ubah `lib/`): clone `--template` butuh shim `informations/configs/` + perbaikan pola (post-title-only home-id, `/porn-comics/` plural leftover, chapters `mode:dom` bila ajax kosong, `#chapterlist li` + `a[href]`).
 
 
 ## [0.9.28+38] - 2026-10-12

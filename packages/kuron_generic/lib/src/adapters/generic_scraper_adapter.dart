@@ -241,10 +241,22 @@ class GenericScraperAdapter implements GenericAdapter {
               ? prefixPatternKey.last
               : prefixPatternKey.first;
     } else if (filter.includeTags.isNotEmpty &&
-        _taxonomyBaseKey(urlPatternsCfg, filter.includeTags.first.type) !=
-            null) {
-      final baseKey = _taxonomyBaseKey(
-          urlPatternsCfg, filter.includeTags.first.type)!;
+        urlPatternsCfg.containsKey('genreSearch')) {
+      const wantsPlainTag = 'tag';
+      final firstType = filter.includeTags.first.type.toLowerCase().trim();
+      final useTagPattern =
+          firstType == wantsPlainTag && urlPatternsCfg.containsKey('tagSearch');
+      final useAuthorPattern =
+          firstType == 'author' && urlPatternsCfg.containsKey('authorSearch');
+      final useArtistPattern =
+          firstType == 'artist' && urlPatternsCfg.containsKey('artistSearch');
+      final baseKey = useTagPattern
+          ? 'tagSearch'
+          : useAuthorPattern
+              ? 'authorSearch'
+              : useArtistPattern
+                  ? 'artistSearch'
+                  : 'genreSearch';
       final pageKey = '${baseKey}Page';
       patternKey = filter.page > 1 && urlPatternsCfg.containsKey(pageKey)
           ? pageKey
@@ -893,24 +905,20 @@ class GenericScraperAdapter implements GenericAdapter {
   }
 
   /// Build a `Cookie` header value from a `reader.cookies` declaration.
-  /// Templates support `{id}` / `{contentId}` (normalized chapter id) and
-  /// `{slug}` (last path segment — hentaikun cookie name is the bare slug,
-  /// e.g. `{"{slug}/read": "2"}` → `my-slug-18117/read=2`, while the chapter
-  /// id carries the category prefix). Returns null when the declaration is
-  /// absent or yields no pairs.
-  String? _readerCookiesHeader(
-      dynamic cookiesDef, String idValue, String slugValue) {
+  /// Both names and values support `{id}` / `{contentId}` substitution
+  /// with the normalized chapter id (hentaikun: slug, e.g.
+  /// `{"{id}/read": "2"}` → `my-slug-18117/read=2`). Returns null when
+  /// the declaration is absent or yields no pairs.
+  String? _readerCookiesHeader(dynamic cookiesDef, String idValue) {
     if (cookiesDef is! Map || cookiesDef.isEmpty) return null;
     final pairs = <String>[];
     for (final entry in cookiesDef.entries) {
       final name = entry.key
           .toString()
-          .replaceAll('{slug}', slugValue)
           .replaceAll('{id}', idValue)
           .replaceAll('{contentId}', idValue);
       final value = entry.value
           .toString()
-          .replaceAll('{slug}', slugValue)
           .replaceAll('{id}', idValue)
           .replaceAll('{contentId}', idValue);
       if (name.isEmpty) continue;
@@ -939,11 +947,9 @@ class GenericScraperAdapter implements GenericAdapter {
     // (hentaikun `{slug}/read=2` all-pages mode). Scoped to reader fetches
     // only; never clobbers an explicit config `Cookie`.
     if (cookieId != null) {
-      final slug = cookieId.split('/').where((s) => s.isNotEmpty).toList();
       final cookieValue = _readerCookiesHeader(
         readerConfig?['cookies'],
         cookieId,
-        slug.isEmpty ? cookieId : slug.last,
       );
       if (cookieValue != null && cookieValue.isNotEmpty) {
         final existing = headers['Cookie']?.toString();
@@ -2358,8 +2364,6 @@ class GenericScraperAdapter implements GenericAdapter {
           return replaced;
         }).toList();
 
-
-
         // Extrapolate missing image URLs if lazy-loading only provided a few
         if (imageUrls.isNotEmpty) {
           int maxPage = imageUrls.length;
@@ -2416,28 +2420,6 @@ class GenericScraperAdapter implements GenericAdapter {
             }
           }
         }
-      }
-      // 3c. Re-write dead image hosts (madarascans `madascans.com` → live
-      // `madarascans.net`: same path serves 200 on the new host, 520 on the
-      // old). Config: `reader.imageHostRewrite: {old: new}`. Skipped when
-      // absent — no other reader affected.
-      final hostRewrite = readerConfig['imageHostRewrite'];
-      if (hostRewrite is Map && hostRewrite.isNotEmpty) {
-        final rewriteLower = <String, String>{
-          for (final e in hostRewrite.entries)
-            e.key.toString().toLowerCase(): e.value.toString(),
-        };
-        imageUrls = imageUrls.map((url) {
-          try {
-            final uri = Uri.tryParse(url);
-            if (uri == null || uri.host.isEmpty) return url;
-            final replacement = rewriteLower[uri.host.toLowerCase()];
-            if (replacement == null || replacement.isEmpty) return url;
-            return uri.replace(host: replacement).toString();
-          } catch (_) {
-            return url;
-          }
-        }).toList();
       }
 
       // 4. DOM fallback for navigation via reader.nav.{next,prev}.
@@ -2534,36 +2516,6 @@ class GenericScraperAdapter implements GenericAdapter {
           .replaceAll(RegExp(r'\s+'), '-')
           .replaceAll(RegExp(r'^-|-$'), ''),
     };
-  }
-  /// Resolve the taxonomy URL pattern for an includeTags entry, or null
-  /// when the config declares no usable route for its type (caller falls
-  /// through to text search). Type-specific archives win; genre archive is
-  /// the legacy fallback only when it exists.
-  String? _taxonomyBaseKey(
-      Map<String, dynamic> urlPatternsCfg, String rawType) {
-    final type = rawType.toLowerCase().trim();
-    // `tag` and `genre` are separate archives when both routes exist
-    // (hentai4free /hentai-tag/ vs /hentai-genre/). Plain tags fall back to
-    // the genre archive only on single-taxonomy sources (legacy WP style).
-    if (type == 'tag' && urlPatternsCfg.containsKey('tagSearch')) {
-      return 'tagSearch';
-    }
-    if (type == 'genre' && urlPatternsCfg.containsKey('genreSearch')) {
-      return 'genreSearch';
-    }
-    if (type == 'tag' && urlPatternsCfg.containsKey('genreSearch')) {
-      return 'genreSearch';
-    }
-    if (type == 'author' && urlPatternsCfg.containsKey('authorSearch')) {
-      return 'authorSearch';
-    }
-    if (type == 'artist' && urlPatternsCfg.containsKey('artistSearch')) {
-      return 'artistSearch';
-    }
-    if (urlPatternsCfg.containsKey('genreSearch')) {
-      return 'genreSearch';
-    }
-    return null;
   }
 
   (String, Map<String, dynamic>?) _resolvePattern(
@@ -2879,20 +2831,7 @@ class GenericScraperAdapter implements GenericAdapter {
       final sel = _readerImages.fieldDefToSelector(defMap);
       if (sel == null) continue;
 
-      // Any taxonomy key (`tags/genre/author/artist`, singular or plural)
-      // can request full Tag objects with href slug + url preserved.
-      const taxonomyKeys = {
-        'tags',
-        'tag',
-        'genres',
-        'genre',
-        'authors',
-        'author',
-        'artists',
-        'artist',
-      };
-      if (taxonomyKeys.contains(entry.key) &&
-          defMap['extractTagObjects'] == true) {
+      if (entry.key == 'tags' && defMap['extractTagObjects'] == true) {
         final elements = _parser.selectAll(doc, sel.selector);
         final tagObjects = <Tag>[];
         for (final el in elements) {
@@ -2905,38 +2844,26 @@ class GenericScraperAdapter implements GenericAdapter {
           String name = nameEl.text.replaceAll(RegExp(r'\s+'), ' ').trim();
           if (name.isEmpty) continue;
 
-          // Resolve the app tag type from config — never from hardcoded site
-          // segments. `extractTagObjects` accepts:
-          // - `tagType: "genre"` — fixed type (field selector already
-          //   isolates one taxonomy, e.g. hentai4free `.genres-content a`).
-          //   (`type` is taken: FieldSelector kind, e.g. `css`/`regex`.)
-          // - `tagTypeMap: {segment: type}` — per-segment mapping for mixed
-          //   lists (e.g. `{"category": "tag", "circle": "publisher"}`).
-          // - `tagTypeRegex` — first capture group is the type (exotic hrefs).
-          // Fallback chain: tagType > tagTypeRegex > tagTypeMap[segment] >
-          // raw `segment` > 'tag'. Legacy default: bare `circle` →
-          // `publisher` (doujin circles); overridable via tagTypeMap.
           String type = 'tag';
           String slug = '';
-          String tagUrl = '';
           final href = el.attributes['href'] ?? '';
-          String segment = '';
           if (href.isNotEmpty) {
-            tagUrl = href;
             final uri = Uri.tryParse(href);
             if (uri != null && uri.pathSegments.isNotEmpty) {
               final segments =
                   uri.pathSegments.where((s) => s.isNotEmpty).toList();
               if (segments.length >= 2) {
-                segment = segments[segments.length - 2].toLowerCase();
+                type = segments[segments.length - 2].toLowerCase();
                 slug = segments.last.toLowerCase();
               } else if (segments.isNotEmpty) {
                 slug = segments.last.toLowerCase();
               }
             }
           }
-          type = _resolveTaxonomyType(defMap, segment);
 
+          // Map source-specific path segments to standard app tag types if necessary
+          if (type == 'circle') type = 'publisher';
+          if (type == 'author') type = 'artist'; // fallback normalization
 
           int count = 0;
           if (spans.length > 1) {
@@ -2980,9 +2907,8 @@ class GenericScraperAdapter implements GenericAdapter {
             }
           }
 
-          tagObjects.add(Tag(
-              id: 0, name: name, type: type, slug: slug, count: count,
-              url: tagUrl));
+          tagObjects.add(
+              Tag(id: 0, name: name, type: type, slug: slug, count: count));
         }
 
         final seenValues = <String>{};
@@ -3251,44 +3177,6 @@ class GenericScraperAdapter implements GenericAdapter {
     return null;
   }
 
-  // Resolve an `extractTagObjects` item's app tag type from its field
-  // declaration — never from hardcoded site path segments. `segment` is the
-  // href's second-to-last path segment (lowercased, may be empty).
-  // Precedence: `tagType` > `tagTypeRegex` (first capture) >
-  // `tagTypeMap[segment]` > raw `segment` > `'tag'`. Legacy: bare `circle`
-  // → `publisher` unless a `tagTypeMap` says otherwise.
-  String _resolveTaxonomyType(Map<String, dynamic> defMap, String segment) {
-    final fixed = defMap['tagType']?.toString().trim().toLowerCase();
-    if (fixed != null && fixed.isNotEmpty) return fixed;
-
-    final typeRegex = defMap['tagTypeRegex']?.toString();
-    if (typeRegex != null && typeRegex.isNotEmpty && segment.isNotEmpty) {
-      try {
-        final match = RegExp(typeRegex).firstMatch(segment);
-        final captured = (match != null && match.groupCount >= 1)
-            ? (match.group(1) ?? '')
-            : '';
-        if (captured.trim().isNotEmpty) return captured.trim().toLowerCase();
-      } catch (_) {}
-    }
-
-    final rawMap = defMap['tagTypeMap'];
-    if (rawMap is Map && segment.isNotEmpty) {
-      for (final entry in rawMap.entries) {
-        if (entry.key.toString().toLowerCase() == segment) {
-          final mapped = entry.value.toString().trim().toLowerCase();
-          if (mapped.isNotEmpty) return mapped;
-        }
-      }
-    }
-
-    if (segment.isNotEmpty) {
-      if (segment == 'circle') return 'publisher';
-      return segment;
-    }
-    return 'tag';
-  }
-
   // Normalise a field definition value to `Map<String, dynamic>`.
   Map<String, dynamic>? _toDefMap(dynamic def) {
     if (def is Map<String, dynamic>) return def;
@@ -3378,10 +3266,6 @@ class GenericScraperAdapter implements GenericAdapter {
     if (url.isEmpty) return '';
 
     final patterns = <RegExp>[
-      // Two-segment `/manga/<slug>/<chapter>` chapter URLs must win over the
-      // single-segment pattern below, otherwise reader navigation resolves to
-      // the series slug instead of the chapter id.
-      RegExp(r'/manga/([^/?#]+/[^/?#]+)'),
       RegExp(r'/manga/([^/?#]+)'),
       RegExp(r'/manhwa/([^/?#]+(?:/[^/?#]+)?)'),
       RegExp(r'/([^/?#]+?-chapter-[\d.-]+)(?:/|[?#]|$)'),

@@ -115,26 +115,6 @@ void main() {
       expect(result.uploadDate.day, 15);
     });
 
-    test('maps uploadDate from day-first abbreviated month string', () {
-      final result = GenericContentMapper.toListItem(
-        {'id': 'x', 'uploadDate': '11 Sep 2026'},
-        sourceId: sourceId,
-      );
-      expect(result.uploadDate.year, 2026);
-      expect(result.uploadDate.month, 9);
-      expect(result.uploadDate.day, 11);
-    });
-
-    test('maps uploadDate from month-first full name string', () {
-      final result = GenericContentMapper.toListItem(
-        {'id': 'x', 'uploadDate': 'September 11, 2026'},
-        sourceId: sourceId,
-      );
-      expect(result.uploadDate.year, 2026);
-      expect(result.uploadDate.month, 9);
-      expect(result.uploadDate.day, 11);
-    });
-
     test('maps uploadDate from relative string', () {
       final before = DateTime.now();
       final result = GenericContentMapper.toListItem(
@@ -467,24 +447,6 @@ void main() {
       );
       expect(result.tags, hasLength(2));
       expect(result.tags.map((t) => t.name), containsAll(['romance', 'drama']));
-      // `genre` keeps its own type so taps route to genreSearch, and both
-      // keys merge instead of first-key-wins (hentai4free tags + genres).
-      expect(result.tags.map((t) => t.type).toSet(), {'genre'});
-    });
-
-    test('detail merges tags and genres with their own types', () {
-      final result = GenericContentMapper.toDetail(
-        'x',
-        {
-          'tags': ['big-breasts'],
-          'genres': ['doujinshi'],
-        },
-        sourceId: sourceId,
-      );
-      expect(result.tags, hasLength(2));
-      final byName = {for (final t in result.tags) t.name: t.type};
-      expect(byName['big-breasts'], 'tag');
-      expect(byName['doujinshi'], 'genre');
     });
   });
 

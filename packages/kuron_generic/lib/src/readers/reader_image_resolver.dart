@@ -737,10 +737,8 @@ class ReaderImageResolver {
     return ranks;
   }
 
-  // ponytail: `(?![A-Za-z0-9])` rejects prefix-matches like `.webmanifest`
-  // (hentai4free PWA link produced a ghost `.webm` card → 404).
   final _videoUrlPattern = RegExp(
-    r'''["'(]\s*((?:https?:)?//[^"' <>\s]+\.(?:m3u8|mp4|webm|mov)(?![A-Za-z0-9])(?:\?[^"' <>\s]*)?)''',
+    r'''["'(]\s*((?:https?:)?//[^"' <>\s]+\.(?:m3u8|mp4|webm|mov)(?:\?[^"' <>\s]*)?)''',
     caseSensitive: false,
   );
 
