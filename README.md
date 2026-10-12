@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
 [![18+](https://img.shields.io/badge/Age_Restriction-18%2B-red?style=for-the-badge&logo=warning&logoColor=white)](#)
-[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.27%2B37-green?style=for-the-badge&logo=android&logoColor=white)](#)
+[![RELEASE](https://img.shields.io/badge/Status-RELEASE_v0.9.28%2B38-green?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](#)
 [![Code Quality](https://img.shields.io/badge/code_quality-A+-blueviolet?style=for-the-badge)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4?style=for-the-badge)](#)
@@ -26,7 +26,7 @@
 
 ## 📥 **Download Latest Release**
 
-[📦 **Get v0.9.27+37**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.27%2B37)
+[📦 **Get v0.9.28+38**](https://github.com/shirokun20/nhasixapp/releases/tag/v0.9.28%2B38)
 
 | Variant | Size | Best For | Status |
 |:-------|:----:|:---------|:------:|
@@ -86,6 +86,16 @@
     <td>
       <h4>⚡ Performance</h4>
       70% faster than browser — smart preloading, image caching, GPU memory budget, battery-efficient with Wakelock control.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🔥 Reading Streak</h4>
+      Daily streak + Kuro mood mascot, drawer card + launcher widget (4×2 / 4×1 / 2×2). 100% local — no title, cover, tag, or source ever leaves the app.
+    </td>
+    <td>
+      <h4>👆 Tappable Creators</h4>
+      Artist/author rows on detail open the same internal by-tag search — no more dead text, no garbage URLs.
     </td>
   </tr>
 </table>
