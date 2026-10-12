@@ -2717,10 +2717,10 @@
   "sourceImportPreviewVerifiedYes": "Verified",
   "sourceImportPreviewVerifiedNo": "Unverified",
   "sourceImportConfirmInstall": "Install",
-  "sourceImportConfirmUpdate": "Update",
-  "sourceImportStatusUpdate": "Update",
-  "sourceImportStatusDowngrade": "Downgrade",
-  "sourceImportStatusNew": "New",
+  "sourceImportConfirmUpdate": "🔄 Update",
+  "sourceImportStatusUpdate": "🔄 Update",
+  "sourceImportStatusDowngrade": "⬇️ Downgrade",
+  "sourceImportStatusNew": "🆕 New",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

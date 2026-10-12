@@ -2710,10 +2710,10 @@
   "sourceImportPreviewVerifiedYes": "已验证",
   "sourceImportPreviewVerifiedNo": "未验证",
   "sourceImportConfirmInstall": "安装",
-  "sourceImportConfirmUpdate": "更新",
-  "sourceImportStatusUpdate": "有更新",
-  "sourceImportStatusDowngrade": "降级",
-  "sourceImportStatusNew": "新增",
+  "sourceImportConfirmUpdate": "🔄 更新",
+  "sourceImportStatusUpdate": "🔄 有更新",
+  "sourceImportStatusDowngrade": "⬇️ 降级",
+  "sourceImportStatusNew": "🆕 新增",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

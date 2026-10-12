@@ -3541,16 +3541,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceImportConfirmInstall => '安装';
 
   @override
-  String get sourceImportConfirmUpdate => '更新';
+  String get sourceImportConfirmUpdate => '🔄 更新';
 
   @override
-  String get sourceImportStatusUpdate => '有更新';
+  String get sourceImportStatusUpdate => '🔄 有更新';
 
   @override
-  String get sourceImportStatusDowngrade => '降级';
+  String get sourceImportStatusDowngrade => '⬇️ 降级';
 
   @override
-  String get sourceImportStatusNew => '新增';
+  String get sourceImportStatusNew => '🆕 新增';
 
   @override
   String sourceImportVersionDiff(String installed, String candidate) {

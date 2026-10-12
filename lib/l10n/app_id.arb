@@ -2171,10 +2171,10 @@
   "sourceImportPreviewVerifiedYes": "Terverifikasi",
   "sourceImportPreviewVerifiedNo": "Tidak terverifikasi",
   "sourceImportConfirmInstall": "Pasang",
-  "sourceImportConfirmUpdate": "Perbarui",
-  "sourceImportStatusUpdate": "Pembaruan",
-  "sourceImportStatusDowngrade": "Turun versi",
-  "sourceImportStatusNew": "Baru",
+  "sourceImportConfirmUpdate": "🔄 Perbarui",
+  "sourceImportStatusUpdate": "🔄 Pembaruan",
+  "sourceImportStatusDowngrade": "⬇️ Turun versi",
+  "sourceImportStatusNew": "🆕 Baru",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

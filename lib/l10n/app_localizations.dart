@@ -6273,25 +6273,25 @@ abstract class AppLocalizations {
   /// No description provided for @sourceImportConfirmUpdate.
   ///
   /// In en, this message translates to:
-  /// **'Update'**
+  /// **'🔄 Update'**
   String get sourceImportConfirmUpdate;
 
   /// No description provided for @sourceImportStatusUpdate.
   ///
   /// In en, this message translates to:
-  /// **'Update'**
+  /// **'🔄 Update'**
   String get sourceImportStatusUpdate;
 
   /// No description provided for @sourceImportStatusDowngrade.
   ///
   /// In en, this message translates to:
-  /// **'Downgrade'**
+  /// **'⬇️ Downgrade'**
   String get sourceImportStatusDowngrade;
 
   /// No description provided for @sourceImportStatusNew.
   ///
   /// In en, this message translates to:
-  /// **'New'**
+  /// **'🆕 New'**
   String get sourceImportStatusNew;
 
   /// No description provided for @sourceImportVersionDiff.
