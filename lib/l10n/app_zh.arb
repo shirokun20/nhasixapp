@@ -2710,6 +2710,32 @@
   "sourceImportPreviewVerifiedYes": "已验证",
   "sourceImportPreviewVerifiedNo": "未验证",
   "sourceImportConfirmInstall": "安装",
+  "sourceImportConfirmUpdate": "更新",
+  "sourceImportStatusUpdate": "有更新",
+  "sourceImportStatusDowngrade": "降级",
+  "sourceImportStatusNew": "新增",
+  "sourceImportVersionDiff": "{installed} → {candidate}",
+  "@sourceImportVersionDiff": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportDowngradeWarning": "此版本 ({candidate}) 比已安装版本 ({installed}) 更旧。安装将会降级此来源。",
+  "@sourceImportDowngradeWarning": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
   "sourceImportManifestInvalid": "来源清单格式无效。",
   "sourceImportConfigEmpty": "下载的来源配置为空。",
   "sourceImportZipManifestRequired": "ZIP 必须包含 manifest.json。",

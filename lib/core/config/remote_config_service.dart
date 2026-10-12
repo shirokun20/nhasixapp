@@ -151,6 +151,18 @@ class RemoteConfigService {
 
   SourceConfig? getConfig(String source) => _sourceConfigs[source];
 
+  // Installed version for [source], or `null` when not installed.
+  //
+  // Sync read from in-memory maps (typed config preferred, raw fallback) so
+  // install UI can diff against manifest candidates without async prefs.
+  String? getInstalledVersion(String source) {
+    final typed = getConfig(source)?.version.trim();
+    if (typed != null && typed.isNotEmpty) return typed;
+    final raw = _rawSourceConfigs[source]?['version'] as String?;
+    final fallback = raw?.trim();
+    return (fallback != null && fallback.isNotEmpty) ? fallback : null;
+  }
+
   // Returns the cached static [ValidationReport] for [source], or `null`
   // when the source is not loaded or is a non-source config (app, tags).
   ValidationReport? getValidationReport(String source) =>

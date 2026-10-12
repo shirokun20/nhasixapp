@@ -123,7 +123,11 @@ Widget _buildAvailableSourcesSection(
                 ),
               )
             else
-              ...srcState.availableSources.map((source) {
+              ..._sortSourcesUpdateFirst(
+                  getIt<RemoteConfigService>(),
+                  srcState.availableSources,
+                  (source) => source.id).map((ranked) {
+                final source = ranked.source;
                 final isActive = srcState.activeSource?.id == source.id;
                 final canUninstall = source.id != 'nhentai';
                 final health =
@@ -133,6 +137,8 @@ Widget _buildAvailableSourcesSection(
                   remoteConfigService: remoteConfig,
                   sourceId: source.id,
                 );
+                final hasUpdate =
+                    ranked.status == SourceVersionStatus.updateAvailable;
                 final description = sourceInfo.description;
                 final subtitle = (description != null && description.isNotEmpty)
                     ? '$description\n${sourceInfo.idWithVersion}'
@@ -159,6 +165,27 @@ Widget _buildAvailableSourcesSection(
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (hasUpdate)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.18),
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusMd),
+                          ),
+                          child: Text(
+                            l10n.sourceImportStatusUpdate,
+                            style: TextStyleConst.bodySmall.copyWith(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      if (hasUpdate && (isActive || canUninstall))
+                        const SizedBox(width: 4),
                       if (isActive)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -319,8 +346,8 @@ Future<void> _confirmAndUninstallSource(
   try {
     final remoteConfig = getIt<RemoteConfigService>();
     final registry = getIt<ContentSourceRegistry>();
+    _forgetCandidateVersion(sourceId);
     final wasActive = registry.currentSourceId == sourceId;
-
     await remoteConfig.uninstallSourceConfig(sourceId);
     if (registry.hasSource(sourceId)) {
       registry.unregister(sourceId);
@@ -416,6 +443,9 @@ Future<void> _installSourceFromLink(BuildContext context) async {
       messenger.hideCurrentSnackBar();
       return;
     }
+    _rememberCandidateVersions(
+      candidates.map((c) => (id: c.sourceId, version: c.version)),
+    );
 
     if (!context.mounted) return;
     final shouldInstall = candidates.length == 1
@@ -525,6 +555,9 @@ Future<void> _installSourceFromZip(BuildContext context) async {
       messenger.hideCurrentSnackBar();
       return;
     }
+    _rememberCandidateVersions(
+      candidates.map((c) => (id: c.sourceId, version: c.version)),
+    );
 
     if (!context.mounted) return;
     final shouldInstall = candidates.length == 1
@@ -806,131 +839,230 @@ Iterable<_GlobalManifestEntry> _parseGlobalManifestEntries(
   }
 }
 
+// Session-only candidate versions from the last opened manifest (link/ZIP).
+// Powers the Update badge/sort in the installed list. In-memory only by
+// design: cleared on restart (P0, no prefs).
+final Map<String, String> _lastSeenCandidateVersions = <String, String>{};
+
+void _rememberCandidateVersions(Iterable<({String id, String version})> items) {
+  for (final item in items) {
+    final version = item.version.trim();
+    if (version.isNotEmpty) {
+      _lastSeenCandidateVersions[item.id] = version;
+    }
+  }
+}
+
+void _forgetCandidateVersion(String sourceId) {
+  _lastSeenCandidateVersions.remove(sourceId);
+}
+
+int _statusRank(SourceVersionStatus status) =>
+    status == SourceVersionStatus.updateAvailable ? 0 : 1;
+
+String _sourceVersionStatusLabel(
+    AppLocalizations l10n, SourceVersionStatus status) {
+  return switch (status) {
+    SourceVersionStatus.updateAvailable => l10n.sourceImportStatusUpdate,
+    SourceVersionStatus.upToDate => l10n.upToDate,
+    SourceVersionStatus.downgrade => l10n.sourceImportStatusDowngrade,
+    SourceVersionStatus.notInstalled => l10n.sourceImportStatusNew,
+    SourceVersionStatus.unknown => '',
+  };
+}
+
+List<_GlobalManifestEntry> _sortEntriesUpdateFirst(
+  RemoteConfigService remoteConfig,
+  List<_GlobalManifestEntry> entries,
+) =>
+    sortUpdateFirst(
+      entries,
+      installedVersionOf: (entry) => remoteConfig.getInstalledVersion(entry.id),
+      candidateVersionOf: (entry) => entry.version,
+    );
+
+List<({T source, SourceVersionStatus status})> _sortSourcesUpdateFirst<T>(
+  RemoteConfigService remoteConfig,
+  Iterable<T> sources,
+  String Function(T source) idOf,
+) {
+  final ranked = sources.map((source) {
+    final id = idOf(source);
+    return (
+      source: source,
+      status: resolveSourceVersionStatus(
+        installedVersion: remoteConfig.getInstalledVersion(id),
+        candidateVersion: _lastSeenCandidateVersions[id],
+      ),
+    );
+  }).toList();
+  final indexed = ranked.asMap().entries.toList();
+  indexed.sort((a, b) {
+    final rank = _statusRank(a.value.status).compareTo(
+      _statusRank(b.value.status),
+    );
+    return rank != 0 ? rank : a.key.compareTo(b.key);
+  });
+  return [for (final entry in indexed) entry.value];
+}
+
+String _manifestEntrySubtitle(
+  AppLocalizations l10n,
+  _GlobalManifestEntry entry,
+  String? installed,
+  SourceVersionStatus status,
+) {
+  final label = _sourceVersionStatusLabel(l10n, status);
+  return switch (status) {
+    SourceVersionStatus.updateAvailable ||
+    SourceVersionStatus.upToDate ||
+    SourceVersionStatus.downgrade =>
+      '${entry.id} • ${l10n.sourceImportVersionDiff(installed ?? '?', entry.version)} • $label',
+    SourceVersionStatus.notInstalled =>
+      '${entry.id} • v${entry.version} • $label',
+    SourceVersionStatus.unknown => '${entry.id} • v${entry.version}',
+  };
+}
+
 Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
   required BuildContext context,
   required List<_GlobalManifestEntry> entries,
 }) async {
-  if (entries.length == 1) {
-    return entries;
+  final remoteConfig = getIt<RemoteConfigService>();
+  // Remember for the session-scoped Update badge/sort in the installed list.
+  _rememberCandidateVersions(
+    entries.map((entry) => (id: entry.id, version: entry.version)),
+  );
+  final sorted = _sortEntriesUpdateFirst(remoteConfig, entries);
+  if (sorted.length == 1) {
+    return sorted;
   }
-
   final selected = <_GlobalManifestEntry>{};
   var searchQuery = '';
   final result = await showModalBottomSheet<List<_GlobalManifestEntry>>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setModalState) {
-        final theme = Theme.of(ctx);
-        final query = searchQuery.trim().toLowerCase();
-        final filtered = query.isEmpty
-            ? entries
-            : entries.where((entry) {
-                final name =
-                    (entry.displayName ?? entry.id).toLowerCase();
-                return name.contains(query) ||
-                    entry.id.toLowerCase().contains(query);
-              }).toList(growable: false);
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.75,
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(
-                      AppLocalizations.of(context)!.selectSourceFromManifest),
-                  subtitle: Text(
-                      AppLocalizations.of(context)!.chooseMultipleSources),
-                  // ponytail: filtered-scoped toggle; select-all installs
-                  // everything visible, tap again clears just that scope.
-                  trailing: TextButton(
-                    onPressed: filtered.isEmpty
-                        ? null
-                        : () => setModalState(() {
-                              if (filtered.every(selected.contains)) {
-                                selected.removeAll(filtered);
-                              } else {
-                                selected.addAll(filtered);
-                              }
-                            }),
-                    child: Text(filtered.isNotEmpty &&
-                            filtered.every(selected.contains)
-                        ? AppLocalizations.of(context)!.clearSelection
-                        : AppLocalizations.of(context)!.selectAll),
-                  ),
+    builder: (ctx) => StatefulBuilder(builder: (ctx, setModalState) {
+      final theme = Theme.of(ctx);
+      final query = searchQuery.trim().toLowerCase();
+      final filtered = query.isEmpty
+          ? sorted
+          : sorted.where((entry) {
+              final name = (entry.displayName ?? entry.id).toLowerCase();
+              return name.contains(query) ||
+                  entry.id.toLowerCase().contains(query);
+            }).toList(growable: false);
+      return SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.75,
+          child: Column(
+            children: [
+              ListTile(
+                title: Text(
+                    AppLocalizations.of(context)!.selectSourceFromManifest),
+                subtitle:
+                    Text(AppLocalizations.of(context)!.chooseMultipleSources),
+                // ponytail: filtered-scoped toggle; select-all installs
+                // everything visible, tap again clears just that scope.
+                trailing: TextButton(
+                  onPressed: filtered.isEmpty
+                      ? null
+                      : () => setModalState(() {
+                            if (filtered.every(selected.contains)) {
+                              selected.removeAll(filtered);
+                            } else {
+                              selected.addAll(filtered);
+                            }
+                          }),
+                  child: Text(
+                      filtered.isNotEmpty && filtered.every(selected.contains)
+                          ? AppLocalizations.of(context)!.clearSelection
+                          : AppLocalizations.of(context)!.selectAll),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: TextField(
-                    onChanged: (value) {
-                      setModalState(() {
-                        searchQuery = value;
-                      });
-                    },
-                    style: TextStyleConst.bodyMedium.copyWith(
-                      color: theme.colorScheme.onSurface,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: TextField(
+                  onChanged: (value) {
+                    setModalState(() {
+                      searchQuery = value;
+                    });
+                  },
+                  style: TextStyleConst.bodyMedium.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        AppLocalizations.of(context)!.sourceSelectorSearchHint,
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!
-                          .sourceSelectorSearchHint,
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                            DesignTokens.radiusLg),
-                        borderSide: BorderSide.none,
-                      ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
-                Expanded(
-                  child: filtered.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              AppLocalizations.of(context)!
-                                  .sourceSelectorNoResults,
-                              textAlign: TextAlign.center,
-                              style: TextStyleConst.bodyMedium.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            AppLocalizations.of(context)!
+                                .sourceSelectorNoResults,
+                            textAlign: TextAlign.center,
+                            style: TextStyleConst.bodyMedium.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        )
-                      : ListView.separated(
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
-                          itemBuilder: (_, index) {
-                            final entry = filtered[index];
-                            final isSelected = selected.contains(entry);
-                            return CheckboxListTile(
-                              value: isSelected,
-                              title: Text(entry.displayName ?? entry.id),
-                              subtitle:
-                                  Text('${entry.id} • v${entry.version}'),
-                              onChanged: (value) {
-                                setModalState(() {
-                                  if (value == true) {
-                                    selected.add(entry);
-                                  } else {
-                                    selected.remove(entry);
-                                  }
-                                });
-                              },
-                            );
-                          },
                         ),
-                ),
+                      )
+                    : ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, index) {
+                          final entry = filtered[index];
+                          final isSelected = selected.contains(entry);
+                          final remoteConfig = getIt<RemoteConfigService>();
+                          final installed =
+                              remoteConfig.getInstalledVersion(entry.id);
+                          final status = resolveSourceVersionStatus(
+                            installedVersion: installed,
+                            candidateVersion: entry.version,
+                          );
+                          return CheckboxListTile(
+                            value: isSelected,
+                            title: Text(entry.displayName ?? entry.id),
+                            subtitle: Text(
+                              _manifestEntrySubtitle(
+                                  AppLocalizations.of(context)!,
+                                  entry,
+                                  installed,
+                                  status),
+                            ),
+                            onChanged: (value) {
+                              setModalState(() {
+                                if (value == true) {
+                                  selected.add(entry);
+                                } else {
+                                  selected.remove(entry);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: Row(
@@ -947,7 +1079,7 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
                         onPressed: selected.isEmpty
                             ? null
                             : () => ctx.pop(
-                                  entries
+                                  sorted
                                       .where(
                                           (entry) => selected.contains(entry))
                                       .toList(growable: false),
@@ -962,8 +1094,8 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
             ],
           ),
         ),
-        );
-      }),
+      );
+    }),
   );
 
   return result ?? const [];
@@ -1327,6 +1459,15 @@ Future<bool> _showInstallPreviewDialog(
   final theme = Theme.of(context);
   final cs = theme.colorScheme;
   final l10n = AppLocalizations.of(context)!;
+  final remoteConfig = getIt<RemoteConfigService>();
+  final installed = remoteConfig.getInstalledVersion(candidate.sourceId);
+  final status = resolveSourceVersionStatus(
+    installedVersion: installed,
+    candidateVersion: candidate.version,
+  );
+  final versionLine = installed == null
+      ? 'v${candidate.version}'
+      : l10n.sourceImportVersionDiff(installed, candidate.version);
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -1340,8 +1481,14 @@ Future<bool> _showInstallPreviewDialog(
           Text('${l10n.sourceImportPreviewSourceId}: ${candidate.sourceId}',
               style: TextStyle(color: cs.onSurface)),
           const SizedBox(height: 6),
-          Text('${l10n.sourceImportPreviewVersion}: ${candidate.version}',
+          Text('${l10n.sourceImportPreviewVersion}: $versionLine',
               style: TextStyle(color: cs.onSurface)),
+          if (_sourceVersionStatusLabel(l10n, status).isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(_sourceVersionStatusLabel(l10n, status),
+                style:
+                    TextStyle(color: cs.primary, fontWeight: FontWeight.w700)),
+          ],
           if (candidate.displayName != null &&
               candidate.displayName!.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -1354,6 +1501,13 @@ Future<bool> _showInstallPreviewDialog(
             '${l10n.sourceImportPreviewVerified}: ${candidate.isVerified ? l10n.sourceImportPreviewVerifiedYes : l10n.sourceImportPreviewVerifiedNo}',
             style: TextStyle(color: cs.onSurface),
           ),
+          if (status == SourceVersionStatus.downgrade && installed != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.sourceImportDowngradeWarning(installed, candidate.version),
+              style: TextStyle(color: cs.error),
+            ),
+          ],
         ],
       ),
       actions: [
@@ -1363,7 +1517,9 @@ Future<bool> _showInstallPreviewDialog(
         ),
         FilledButton(
           onPressed: () => ctx.pop(true),
-          child: Text(l10n.sourceImportConfirmInstall),
+          child: Text(status == SourceVersionStatus.updateAvailable
+              ? l10n.sourceImportConfirmUpdate
+              : l10n.sourceImportConfirmInstall),
         ),
       ],
     ),
@@ -1400,9 +1556,32 @@ Future<bool> _showBatchInstallPreviewDialog(
                 separatorBuilder: (_, __) => const SizedBox(height: 4),
                 itemBuilder: (_, index) {
                   final candidate = candidates[index];
-                  return Text(
-                    '- ${candidate.displayName ?? candidate.sourceId} (v${candidate.version})',
-                    style: TextStyle(color: cs.onSurface),
+                  final installed = getIt<RemoteConfigService>()
+                      .getInstalledVersion(candidate.sourceId);
+                  final status = resolveSourceVersionStatus(
+                    installedVersion: installed,
+                    candidateVersion: candidate.version,
+                  );
+                  final versionText = installed == null
+                      ? 'v${candidate.version}'
+                      : l10n.sourceImportVersionDiff(
+                          installed, candidate.version);
+                  final label = _sourceVersionStatusLabel(l10n, status);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '- ${candidate.displayName ?? candidate.sourceId} ($versionText${label.isEmpty ? '' : ' • $label'})',
+                        style: TextStyle(color: cs.onSurface),
+                      ),
+                      if (status == SourceVersionStatus.downgrade &&
+                          installed != null)
+                        Text(
+                          l10n.sourceImportDowngradeWarning(
+                              installed, candidate.version),
+                          style: TextStyle(color: cs.error, fontSize: 12),
+                        ),
+                    ],
                   );
                 },
               ),

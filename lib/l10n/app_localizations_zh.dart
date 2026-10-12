@@ -3541,6 +3541,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceImportConfirmInstall => '安装';
 
   @override
+  String get sourceImportConfirmUpdate => '更新';
+
+  @override
+  String get sourceImportStatusUpdate => '有更新';
+
+  @override
+  String get sourceImportStatusDowngrade => '降级';
+
+  @override
+  String get sourceImportStatusNew => '新增';
+
+  @override
+  String sourceImportVersionDiff(String installed, String candidate) {
+    return '$installed → $candidate';
+  }
+
+  @override
+  String sourceImportDowngradeWarning(String installed, String candidate) {
+    return '此版本 ($candidate) 比已安装版本 ($installed) 更旧。安装将会降级此来源。';
+  }
+
+  @override
   String get sourceImportManifestInvalid => '来源清单格式无效。';
 
   @override

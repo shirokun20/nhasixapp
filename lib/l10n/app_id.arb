@@ -2171,6 +2171,32 @@
   "sourceImportPreviewVerifiedYes": "Terverifikasi",
   "sourceImportPreviewVerifiedNo": "Tidak terverifikasi",
   "sourceImportConfirmInstall": "Pasang",
+  "sourceImportConfirmUpdate": "Perbarui",
+  "sourceImportStatusUpdate": "Pembaruan",
+  "sourceImportStatusDowngrade": "Turun versi",
+  "sourceImportStatusNew": "Baru",
+  "sourceImportVersionDiff": "{installed} → {candidate}",
+  "@sourceImportVersionDiff": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportDowngradeWarning": "Versi ini ({candidate}) lebih lama dari yang terpasang ({installed}). Memasang akan menurunkan versi sumber ini.",
+  "@sourceImportDowngradeWarning": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
   "sourceImportManifestInvalid": "Format manifest sumber tidak valid.",
   "sourceImportConfigEmpty": "Konfigurasi sumber yang diunduh kosong.",
   "sourceImportZipManifestRequired": "ZIP harus berisi manifest.json.",

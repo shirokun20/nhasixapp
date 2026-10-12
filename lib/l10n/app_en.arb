@@ -2717,6 +2717,32 @@
   "sourceImportPreviewVerifiedYes": "Verified",
   "sourceImportPreviewVerifiedNo": "Unverified",
   "sourceImportConfirmInstall": "Install",
+  "sourceImportConfirmUpdate": "Update",
+  "sourceImportStatusUpdate": "Update",
+  "sourceImportStatusDowngrade": "Downgrade",
+  "sourceImportStatusNew": "New",
+  "sourceImportVersionDiff": "{installed} → {candidate}",
+  "@sourceImportVersionDiff": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceImportDowngradeWarning": "This version ({candidate}) is older than the installed version ({installed}). Installing will downgrade this source.",
+  "@sourceImportDowngradeWarning": {
+    "placeholders": {
+      "installed": {
+        "type": "String"
+      },
+      "candidate": {
+        "type": "String"
+      }
+    }
+  },
   "sourceImportManifestInvalid": "Invalid source manifest format.",
   "sourceImportConfigEmpty": "Downloaded source config is empty.",
   "sourceImportZipManifestRequired": "ZIP must contain manifest.json.",

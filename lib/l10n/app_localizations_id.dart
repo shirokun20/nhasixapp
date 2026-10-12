@@ -3657,6 +3657,28 @@ class AppLocalizationsId extends AppLocalizations {
   String get sourceImportConfirmInstall => 'Pasang';
 
   @override
+  String get sourceImportConfirmUpdate => 'Perbarui';
+
+  @override
+  String get sourceImportStatusUpdate => 'Pembaruan';
+
+  @override
+  String get sourceImportStatusDowngrade => 'Turun versi';
+
+  @override
+  String get sourceImportStatusNew => 'Baru';
+
+  @override
+  String sourceImportVersionDiff(String installed, String candidate) {
+    return '$installed → $candidate';
+  }
+
+  @override
+  String sourceImportDowngradeWarning(String installed, String candidate) {
+    return 'Versi ini ($candidate) lebih lama dari yang terpasang ($installed). Memasang akan menurunkan versi sumber ini.';
+  }
+
+  @override
   String get sourceImportManifestInvalid =>
       'Format manifest sumber tidak valid.';
 

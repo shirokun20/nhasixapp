@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../utils/source_version_utils.dart';
 
 class UpdateInfo {
   final String tagName;
@@ -92,30 +93,11 @@ class UpdateService {
 
   // Compare semantic versions
   bool _isNewerVersion(String current, String remote) {
-    try {
-      // Remove any build numbers (+11)
-      final currentClean = current.split('+').first;
-      final remoteClean = remote.split('+').first;
-
-      final List<int> currentParts =
-          currentClean.split('.').map(int.parse).toList();
-      final List<int> remoteParts =
-          remoteClean.split('.').map(int.parse).toList();
-
-      for (int i = 0; i < remoteParts.length; i++) {
-        // If current doesn't have this part (e.g. 1.0 vs 1.0.1), remote is newer
-        if (i >= currentParts.length) return true;
-
-        if (remoteParts[i] > currentParts[i]) {
-          return true;
-        } else if (remoteParts[i] < currentParts[i]) {
-          return false;
-        }
-      }
-      return false; // Equal
-    } catch (e) {
+    final result = compareSourceVersions(current, remote);
+    if (result == SourceVersionComparison.unknown) {
       _logger.w('UpdateService: Version parsing error ($current vs $remote)');
       return false;
     }
+    return result == SourceVersionComparison.newer;
   }
 }

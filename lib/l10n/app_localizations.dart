@@ -6270,6 +6270,42 @@ abstract class AppLocalizations {
   /// **'Install'**
   String get sourceImportConfirmInstall;
 
+  /// No description provided for @sourceImportConfirmUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get sourceImportConfirmUpdate;
+
+  /// No description provided for @sourceImportStatusUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get sourceImportStatusUpdate;
+
+  /// No description provided for @sourceImportStatusDowngrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Downgrade'**
+  String get sourceImportStatusDowngrade;
+
+  /// No description provided for @sourceImportStatusNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get sourceImportStatusNew;
+
+  /// No description provided for @sourceImportVersionDiff.
+  ///
+  /// In en, this message translates to:
+  /// **'{installed} → {candidate}'**
+  String sourceImportVersionDiff(String installed, String candidate);
+
+  /// No description provided for @sourceImportDowngradeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This version ({candidate}) is older than the installed version ({installed}). Installing will downgrade this source.'**
+  String sourceImportDowngradeWarning(String installed, String candidate);
+
   /// No description provided for @sourceImportManifestInvalid.
   ///
   /// In en, this message translates to:

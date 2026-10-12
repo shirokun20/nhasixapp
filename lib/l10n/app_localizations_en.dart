@@ -3640,6 +3640,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceImportConfirmInstall => 'Install';
 
   @override
+  String get sourceImportConfirmUpdate => 'Update';
+
+  @override
+  String get sourceImportStatusUpdate => 'Update';
+
+  @override
+  String get sourceImportStatusDowngrade => 'Downgrade';
+
+  @override
+  String get sourceImportStatusNew => 'New';
+
+  @override
+  String sourceImportVersionDiff(String installed, String candidate) {
+    return '$installed → $candidate';
+  }
+
+  @override
+  String sourceImportDowngradeWarning(String installed, String candidate) {
+    return 'This version ($candidate) is older than the installed version ($installed). Installing will downgrade this source.';
+  }
+
+  @override
   String get sourceImportManifestInvalid => 'Invalid source manifest format.';
 
   @override

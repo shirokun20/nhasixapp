@@ -19,8 +19,7 @@ void main() {
   late Directory tempDir;
   late RemoteConfigService service;
 
-  Future<String> readConfig(String fileName) =>
-      loadExtConfigString(fileName);
+  Future<String> readConfig(String fileName) => loadExtConfigString(fileName);
 
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -86,6 +85,19 @@ void main() {
     final report = service.getValidationReport('hitomi');
     expect(report, isNotNull);
     expect(report!.overallStatus, CompatibilityStatus.needsEngineSupport);
+  });
+  test('getInstalledVersion returns applied version and null when absent',
+      () async {
+    expect(service.getInstalledVersion('komikcast'), isNull);
+
+    await service.applySourceConfigFromJson(
+      sourceId: 'komikcast',
+      rawJson: await readConfig('komikcast-config.json'),
+      sourceLabel: 'test',
+    );
+
+    expect(service.getInstalledVersion('komikcast'),
+        service.getConfig('komikcast')?.version);
   });
 
   test('uninstallSourceConfig clears cached validation report', () async {
