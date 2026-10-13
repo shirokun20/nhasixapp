@@ -2714,6 +2714,9 @@
   "sourceImportStatusUpdate": "🔄 有更新",
   "sourceImportStatusDowngrade": "⬇️ 降级",
   "sourceImportStatusNew": "🆕 新增",
+  "sourceImportSortUpdatesFirst": "🔄 优先显示更新",
+  "sourceImportSortNameAsc": "🔤 名称 A–Z",
+  "sourceImportSortVersionDesc": "🆕 最新版本",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

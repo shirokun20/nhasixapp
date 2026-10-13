@@ -3652,6 +3652,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceImportStatusNew => '🆕 New';
 
   @override
+  String get sourceImportSortUpdatesFirst => '🔄 Updates first';
+
+  @override
+  String get sourceImportSortNameAsc => '🔤 Name A–Z';
+
+  @override
+  String get sourceImportSortVersionDesc => '🆕 Newest version';
+
+  @override
   String sourceImportVersionDiff(String installed, String candidate) {
     return '$installed → $candidate';
   }

@@ -2175,6 +2175,9 @@
   "sourceImportStatusUpdate": "🔄 Pembaruan",
   "sourceImportStatusDowngrade": "⬇️ Turun versi",
   "sourceImportStatusNew": "🆕 Baru",
+  "sourceImportSortUpdatesFirst": "🔄 Update dulu",
+  "sourceImportSortNameAsc": "🔤 Nama A–Z",
+  "sourceImportSortVersionDesc": "🆕 Versi terbaru",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

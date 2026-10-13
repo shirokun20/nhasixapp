@@ -2721,6 +2721,9 @@
   "sourceImportStatusUpdate": "🔄 Update",
   "sourceImportStatusDowngrade": "⬇️ Downgrade",
   "sourceImportStatusNew": "🆕 New",
+  "sourceImportSortUpdatesFirst": "🔄 Updates first",
+  "sourceImportSortNameAsc": "🔤 Name A–Z",
+  "sourceImportSortVersionDesc": "🆕 Newest version",
   "sourceImportVersionDiff": "{installed} → {candidate}",
   "@sourceImportVersionDiff": {
     "placeholders": {

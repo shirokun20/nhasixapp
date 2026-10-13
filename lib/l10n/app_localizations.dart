@@ -6294,6 +6294,24 @@ abstract class AppLocalizations {
   /// **'🆕 New'**
   String get sourceImportStatusNew;
 
+  /// No description provided for @sourceImportSortUpdatesFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'🔄 Updates first'**
+  String get sourceImportSortUpdatesFirst;
+
+  /// No description provided for @sourceImportSortNameAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'🔤 Name A–Z'**
+  String get sourceImportSortNameAsc;
+
+  /// No description provided for @sourceImportSortVersionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'🆕 Newest version'**
+  String get sourceImportSortVersionDesc;
+
   /// No description provided for @sourceImportVersionDiff.
   ///
   /// In en, this message translates to:

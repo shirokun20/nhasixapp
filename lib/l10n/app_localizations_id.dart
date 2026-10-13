@@ -3669,6 +3669,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get sourceImportStatusNew => '🆕 Baru';
 
   @override
+  String get sourceImportSortUpdatesFirst => '🔄 Update dulu';
+
+  @override
+  String get sourceImportSortNameAsc => '🔤 Nama A–Z';
+
+  @override
+  String get sourceImportSortVersionDesc => '🆕 Versi terbaru';
+
+  @override
   String sourceImportVersionDiff(String installed, String candidate) {
     return '$installed → $candidate';
   }

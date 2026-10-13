@@ -3553,6 +3553,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceImportStatusNew => '🆕 新增';
 
   @override
+  String get sourceImportSortUpdatesFirst => '🔄 优先显示更新';
+
+  @override
+  String get sourceImportSortNameAsc => '🔤 名称 A–Z';
+
+  @override
+  String get sourceImportSortVersionDesc => '🆕 最新版本';
+
+  @override
   String sourceImportVersionDiff(String installed, String candidate) {
     return '$installed → $candidate';
   }

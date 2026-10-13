@@ -881,6 +881,44 @@ List<_GlobalManifestEntry> _sortEntriesUpdateFirst(
       candidateVersionOf: (entry) => entry.version,
     );
 
+enum _ManifestSortMode { updatesFirst, nameAsc, versionDesc }
+
+String _manifestSortLabel(AppLocalizations l10n, _ManifestSortMode mode) {
+  return switch (mode) {
+    _ManifestSortMode.updatesFirst => l10n.sourceImportSortUpdatesFirst,
+    _ManifestSortMode.nameAsc => l10n.sourceImportSortNameAsc,
+    _ManifestSortMode.versionDesc => l10n.sourceImportSortVersionDesc,
+  };
+}
+
+List<_GlobalManifestEntry> _applyManifestSort(
+  RemoteConfigService remoteConfig,
+  List<_GlobalManifestEntry> entries,
+  _ManifestSortMode mode,
+) {
+  if (mode == _ManifestSortMode.updatesFirst) {
+    return _sortEntriesUpdateFirst(remoteConfig, entries);
+  }
+  final indexed = entries.asMap().entries.toList();
+  indexed.sort((a, b) {
+    final int rank;
+    if (mode == _ManifestSortMode.nameAsc) {
+      rank = (a.value.displayName ?? a.value.id)
+          .toLowerCase()
+          .compareTo((b.value.displayName ?? b.value.id).toLowerCase());
+    } else {
+      rank = switch (compareSourceVersions(b.value.version, a.value.version)) {
+        // newer means a.version is newer → a first.
+        SourceVersionComparison.newer => -1,
+        SourceVersionComparison.older => 1,
+        _ => 0,
+      };
+    }
+    return rank != 0 ? rank : a.key.compareTo(b.key);
+  });
+  return [for (final entry in indexed) entry.value];
+}
+
 List<({T source, SourceVersionStatus status})> _sortSourcesUpdateFirst<T>(
   RemoteConfigService remoteConfig,
   Iterable<T> sources,
@@ -939,6 +977,7 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
   }
   final selected = <_GlobalManifestEntry>{};
   var searchQuery = '';
+  var sortMode = _ManifestSortMode.updatesFirst;
   final result = await showModalBottomSheet<List<_GlobalManifestEntry>>(
     context: context,
     showDragHandle: true,
@@ -946,13 +985,14 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
     builder: (ctx) => StatefulBuilder(builder: (ctx, setModalState) {
       final theme = Theme.of(ctx);
       final query = searchQuery.trim().toLowerCase();
-      final filtered = query.isEmpty
-          ? sorted
-          : sorted.where((entry) {
+      final base = query.isEmpty
+          ? entries
+          : entries.where((entry) {
               final name = (entry.displayName ?? entry.id).toLowerCase();
               return name.contains(query) ||
                   entry.id.toLowerCase().contains(query);
             }).toList(growable: false);
+      final filtered = _applyManifestSort(remoteConfig, base, sortMode);
       return SafeArea(
         child: SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.75,
@@ -1010,6 +1050,47 @@ Future<List<_GlobalManifestEntry>> _selectGlobalManifestEntries({
                       borderSide: BorderSide.none,
                     ),
                   ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sort_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButton<_ManifestSortMode>(
+                        value: sortMode,
+                        isExpanded: true,
+                        isDense: true,
+                        underline: const SizedBox.shrink(),
+                        style: TextStyleConst.bodyMedium.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setModalState(() => sortMode = value);
+                          }
+                        },
+                        items: [
+                          for (final mode in _ManifestSortMode.values)
+                            DropdownMenuItem(
+                              value: mode,
+                              child: Text(
+                                _manifestSortLabel(
+                                  AppLocalizations.of(context)!,
+                                  mode,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
