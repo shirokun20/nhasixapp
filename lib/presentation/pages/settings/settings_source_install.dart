@@ -1,11 +1,7 @@
 part of 'settings_screen.dart';
 
-Widget _buildAvailableSourcesSection(
-    ThemeData theme,
-    AppLocalizations l10n,
-    BuildContext context,
-    Map<String, SourceHealthStatus> healthStatuses,
-    VoidCallback runHealthCheck) {
+Widget _buildSourceInstallCard(
+    ThemeData theme, AppLocalizations l10n, BuildContext context) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -56,12 +52,28 @@ Widget _buildAvailableSourcesSection(
           ),
         ),
       ], theme),
-      const SizedBox(height: 12),
-      BlocBuilder<SourceCubit, SourceState>(
-        builder: (context, srcState) {
-          final reachableCount = srcState.availableSources
-              .where(
-                  (s) => healthStatuses[s.id] == SourceHealthStatus.reachable)
+    ],
+  );
+}
+
+Widget _buildInstalledSourcesList(
+  ThemeData theme,
+  AppLocalizations l10n,
+  BuildContext context,
+  Map<String, SourceHealthStatus> healthStatuses,
+  VoidCallback runHealthCheck,
+  String searchQuery,
+) {
+  return BlocBuilder<SourceCubit, SourceState>(
+    builder: (context, srcState) {
+          final filteredSources = srcState.availableSources.where((s) {
+            if (searchQuery.isEmpty) return true;
+            final q = searchQuery.toLowerCase();
+            return s.displayName.toLowerCase().contains(q) ||
+                s.id.toLowerCase().contains(q);
+          }).toList(growable: false);
+          final reachableCount = filteredSources
+              .where((s) => healthStatuses[s.id] == SourceHealthStatus.reachable)
               .length;
           return buildSettingsCard([
             ListTile(
@@ -82,17 +94,17 @@ Widget _buildAvailableSourcesSection(
                 ),
               ),
             ),
-            if (srcState.availableSources.isNotEmpty)
+            if (filteredSources.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        '$reachableCount/${srcState.availableSources.length} sources reachable',
+                        '$reachableCount/${filteredSources.length} sources reachable',
                         style: TextStyleConst.bodySmall.copyWith(
                           color:
-                              reachableCount == srcState.availableSources.length
+                              reachableCount == filteredSources.length
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.error,
                         ),
@@ -112,20 +124,34 @@ Widget _buildAvailableSourcesSection(
                   ],
                 ),
               ),
-            if (srcState.availableSources.isEmpty)
+            if (filteredSources.isEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Text(
-                  l10n.sourceSelectorNoSourceSelected,
-                  style: TextStyleConst.bodySmall.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Column(
+                  children: [
+                    KuroMascot(
+                      mood: searchQuery.isNotEmpty
+                          ? KuroMood.cry
+                          : KuroMood.waiting,
+                      size: 96,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      searchQuery.isNotEmpty
+                          ? l10n.sourceSelectorNoResults
+                          : l10n.sourceSelectorNoSourceSelected,
+                      textAlign: TextAlign.center,
+                      style: TextStyleConst.bodySmall.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               )
             else
               ..._sortSourcesUpdateFirst(
                   getIt<RemoteConfigService>(),
-                  srcState.availableSources,
+                  filteredSources,
                   (source) => source.id).map((ranked) {
                 final source = ranked.source;
                 final isActive = srcState.activeSource?.id == source.id;
@@ -225,9 +251,7 @@ Widget _buildAvailableSourcesSection(
               }),
           ], theme);
         },
-      ),
-    ],
-  );
+      );
 }
 
 Widget _buildSourcesShortcut(

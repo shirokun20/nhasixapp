@@ -34,6 +34,7 @@ import '../../cubits/source/source_state.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
+import '../../widgets/kuro_mascot.dart';
 import 'settings_theme_widgets.dart';
 import 'settings_download_widgets.dart';
 import 'settings_privacy_widgets.dart';
