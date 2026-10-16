@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/utils/offline_content_manager.dart';
+import 'package:nhasixapp/core/utils/compact_count.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
@@ -21,6 +22,7 @@ import '../../core/utils/responsive_grid_delegate.dart';
 import '../../core/services/tag_blacklist_service.dart';
 import '../blocs/download/download_bloc.dart';
 import '../../core/config/remote_config_service.dart';
+import 'package:nhasixapp/core/config/config_models.dart';
 import '../cubits/settings/settings_cubit.dart';
 import 'content_group_card_widget.dart';
 import 'error_widget.dart';
@@ -43,6 +45,12 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
+
+  // Last loaded snapshot for the source cards. Retained so the row does not
+  // flash empty while the cubit reloads after a filter tap — the cubit emits a
+  // bare OfflineSearchLoading that carries no counts/buckets.
+  Map<String, int> _lastSourceCounts = const {};
+  List<String> _lastSourceBuckets = const [];
 
   @override
   void initState() {
@@ -98,7 +106,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
       body: Column(
         children: [
           _buildSearchBar(),
-          _buildFilterChips(),
+          _buildSourceCards(),
           Expanded(
             child: BlocListener<DownloadBloc, DownloadBlocState>(
               listenWhen: (previous, current) {
@@ -435,170 +443,350 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
     );
   }
 
-  Widget _buildFilterChips() {
+  /// Horizontal row of per-source stat cards (variant A): the four sources
+  /// with the most completed downloads, then a "view all" tile that opens a
+  /// picker sheet. Each card shows the download count and its share of the
+  /// whole offline store.
+  Widget _buildSourceCards() {
     return BlocBuilder<OfflineSearchCubit, OfflineSearchState>(
       bloc: _offlineSearchCubit,
       builder: (context, state) {
-        String? selectedSourceId;
+        final l10n = AppLocalizations.of(context)!;
+        final sourceConfigs = getIt<RemoteConfigService>().getAllSourceConfigs();
+
+        // Retain the last loaded snapshot so the cards stay put while the
+        // cubit reloads (its loading state drops all payload).
         if (state is OfflineSearchLoaded) {
-          selectedSourceId = state.selectedSourceId;
-        } else {
-          selectedSourceId = getIt<SharedPreferences>()
-              .getString('offline_selected_source_filter');
+          _lastSourceCounts = state.sourceCounts;
+          _lastSourceBuckets = state.availableSourceIds;
         }
 
-        final remoteConfig = getIt<RemoteConfigService>();
-        final sourceConfigs = remoteConfig.getAllSourceConfigs();
+        final String? selectedSourceId = state is OfflineSearchLoaded
+            ? state.selectedSourceId
+            : getIt<SharedPreferences>()
+                .getString('offline_selected_source_filter');
+        final counts = _lastSourceCounts;
+        List<String> bucketIds = _lastSourceBuckets;
 
-        // Source buckets: prefer the actual store buckets exposed by the
-        // cubit (All + per-sourceId present offline); fall back to the
-        // remote-config source list before the first load completes.
-        List<String> bucketIds;
-        if (state is OfflineSearchLoaded &&
-            state.availableSourceIds.isNotEmpty) {
-          bucketIds = state.availableSourceIds;
-        } else {
+        // Cold start: fall back to the config source list so the row is never
+        // empty before the first store load completes.
+        if (bucketIds.isEmpty) {
           bucketIds = [
             'local',
             for (final config in sourceConfigs) config.source,
           ];
         }
-        bucketIds = bucketIds.toSet().toList();
 
-        String bucketLabel(String sourceId) {
-          if (sourceId == 'local') {
-            return AppLocalizations.of(context)!.statusLocal;
-          }
-          for (final config in sourceConfigs) {
-            if (config.source == sourceId) {
-              return config.ui?.displayName ?? sourceId;
-            }
-          }
-          return sourceId;
-        }
+        // Sort by download count desc, then label for a stable order. Sources
+        // with no count (or no entry) sink to the bottom.
+        final orderedIds = bucketIds.toSet().toList()
+          ..sort((a, b) {
+            final diff = (counts[b] ?? 0).compareTo(counts[a] ?? 0);
+            if (diff != 0) return diff;
+            return _sourceLabel(l10n, sourceConfigs, a)
+                .toLowerCase()
+                .compareTo(_sourceLabel(l10n, sourceConfigs, b).toLowerCase());
+          });
 
-        Color? bucketColor(String sourceId) {
-          for (final config in sourceConfigs) {
-            if (config.source == sourceId) {
-              final themeColor = config.ui?.activeColor;
-              if (themeColor == null) return null;
-              try {
-                return Color(int.parse(themeColor.replaceFirst('#', '0xFF')));
-              } catch (e) {
-                // Fallback if color parsing fails
-                return null;
-              }
-            }
-          }
-          return null;
-        }
+        final total = counts.values.fold<int>(0, (sum, v) => sum + v);
+        const maxCards = 4;
+        final visible = orderedIds.take(maxCards).toList(growable: false);
+        final hasMore = orderedIds.length > maxCards;
 
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              _buildFilterChip(
-                context,
-                label: AppLocalizations.of(context)?.all ?? 'All',
-                isSelected: selectedSourceId == null,
-                onSelected: (selected) {
-                  if (selected) _offlineSearchCubit.filterBySource(null);
-                },
-              ),
-              ...bucketIds.map((sourceId) {
-                final chipColor = bucketColor(sourceId);
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: _buildFilterChip(
+        return SizedBox(
+          height: 132,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            itemCount: visible.length + (hasMore ? 1 : 0),
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              if (index >= visible.length) {
+                return _buildSeeAllCard(
+                  context,
+                  totalSources: orderedIds.length,
+                  onTap: () => _showAllSourcesSheet(
                     context,
-                    label: bucketLabel(sourceId),
-                    isSelected: selectedSourceId == sourceId,
-                    onSelected: (selected) {
-                      if (selected) {
-                        _offlineSearchCubit.filterBySource(sourceId);
-                      }
-                    },
-                    color: chipColor?.withValues(alpha: 0.2),
-                    selectedColor: chipColor,
-                    textColor:
-                        (selectedSourceId == sourceId && chipColor != null)
-                            ? Colors.white
-                            : null,
+                    configs: sourceConfigs,
+                    counts: counts,
+                    selectedSourceId: selectedSourceId,
+                    total: total,
                   ),
                 );
-              }),
-            ],
+              }
+              final sourceId = visible[index];
+              return _buildStatCard(
+                context,
+                sourceId: sourceId,
+                label: _sourceLabel(l10n, sourceConfigs, sourceId),
+                color: _sourceColor(sourceConfigs, sourceId) ??
+                    _fallbackSourceColor(sourceId),
+                iconPath: _sourceIconPath(sourceConfigs, sourceId),
+                count: counts[sourceId] ?? 0,
+                total: total,
+                rank: index + 1,
+                isSelected: selectedSourceId == sourceId,
+                onTap: () => _offlineSearchCubit.filterBySource(
+                  selectedSourceId == sourceId ? null : sourceId,
+                ),
+              );
+            },
           ),
         );
       },
     );
   }
 
-  Widget _buildFilterChip(
+  String _sourceLabel(
+    AppLocalizations l10n,
+    List<SourceConfig> configs,
+    String sourceId,
+  ) {
+    if (sourceId == 'local') return l10n.statusLocal;
+    for (final config in configs) {
+      if (config.source == sourceId) {
+        return config.ui?.displayName ?? sourceId;
+      }
+    }
+    return sourceId;
+  }
+
+  Color? _sourceColor(List<SourceConfig> configs, String sourceId) {
+    for (final config in configs) {
+      if (config.source != sourceId) continue;
+      final raw = config.ui?.activeColor;
+      if (raw == null) return null;
+      try {
+        return Color(int.parse(raw.replaceFirst('#', '0xFF')));
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  String? _sourceIconPath(List<SourceConfig> configs, String sourceId) {
+    for (final config in configs) {
+      if (config.source == sourceId) return config.ui?.iconPath;
+    }
+    return null;
+  }
+
+  /// Deterministic fallback accent for sources without a configured colour.
+  Color _fallbackSourceColor(String sourceId) {
+    if (sourceId == 'local') return const Color(0xFF26C6DA);
+    const palette = <Color>[
+      Color(0xFFE05A5A),
+      Color(0xFF7C5CFF),
+      Color(0xFF4FC3F7),
+      Color(0xFFFFB74D),
+      Color(0xFF81C784),
+      Color(0xFF26C6DA),
+    ];
+    final hash =
+        sourceId.codeUnits.fold<int>(0, (h, c) => (h * 31 + c) & 0x7fffffff);
+    return palette[hash % palette.length];
+  }
+
+  Widget _buildStatCard(
     BuildContext context, {
+    required String sourceId,
     required String label,
+    required Color color,
+    required String? iconPath,
+    required int count,
+    required int total,
+    required int rank,
     required bool isSelected,
-    required Function(bool) onSelected,
-    Color? color,
-    Color? selectedColor,
-    Color? textColor,
+    required VoidCallback onTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final baseColor = selectedColor ?? colorScheme.primary;
+    final pct = total <= 0 ? 0.0 : (count / total).clamp(0.0, 1.0);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onSelected(!isSelected),
-        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        splashColor: baseColor.withValues(alpha: 0.2),
-        highlightColor: baseColor.withValues(alpha: 0.1),
-        child: AnimatedContainer(
-          duration: DesignTokens.durationPageTurn,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? baseColor.withValues(alpha: 0.15)
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-            border: Border.all(
+    return SizedBox(
+      width: 150,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          child: Ink(
+            decoration: BoxDecoration(
               color: isSelected
-                  ? baseColor
-                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
-              width: isSelected ? 1.5 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: baseColor.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected) ...[
-                Icon(Icons.check_circle_rounded, size: 16, color: baseColor),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  color: isSelected ? baseColor : colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  letterSpacing: 0.5,
-                  fontSize: 12,
-                ),
+                  ? color.withValues(alpha: 0.20)
+                  : colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+              border: Border.all(
+                color: isSelected ? color : color.withValues(alpha: 0.35),
+                width: isSelected ? 1.6 : 1,
               ),
-            ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _sourceAvatarWidget(
+                        iconPath: iconPath,
+                        color: color,
+                        size: 20,
+                        letter: label.isNotEmpty ? label[0] : '?',
+                        isLocal: sourceId == 'local',
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '#$rank',
+                        style: TextStyleConst.bodySmall.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    formatCompactCount(count),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1.1,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    AppLocalizations.of(context)!.offlineDoujinLabel,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      fontSize: 10.5,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: pct,
+                      minHeight: 4,
+                      backgroundColor:
+                          colorScheme.onSurface.withValues(alpha: 0.08),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildSeeAllCard(
+    BuildContext context, {
+    required int totalSources,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 132,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.6),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.arrow_forward_rounded,
+                      color: colorScheme.primary, size: 22),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${AppLocalizations.of(context)!.viewAll} ($totalSources)',
+                    textAlign: TextAlign.center,
+                    style: TextStyleConst.bodySmall.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAllSourcesSheet(
+    BuildContext context, {
+    required List<SourceConfig> configs,
+    required Map<String, int> counts,
+    required String? selectedSourceId,
+    required int total,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ids = counts.keys.toList()
+      ..sort((a, b) {
+        final diff = (counts[b] ?? 0).compareTo(counts[a] ?? 0);
+        if (diff != 0) return diff;
+        return _sourceLabel(l10n, configs, a)
+            .toLowerCase()
+            .compareTo(_sourceLabel(l10n, configs, b).toLowerCase());
+      });
+
+    final options = ids
+        .map((id) => _SourceOption(
+              id: id,
+              label: _sourceLabel(l10n, configs, id),
+              color: _sourceColor(configs, id) ?? _fallbackSourceColor(id),
+              iconPath: _sourceIconPath(configs, id),
+              count: counts[id] ?? 0,
+              isLocal: id == 'local',
+            ))
+        .toList(growable: false);
+
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _AllSourcesSheet(
+        options: options,
+        total: total,
+        selectedSourceId: selectedSourceId,
+      ),
+    );
+
+    if (!context.mounted || choice == null) return;
+    _offlineSearchCubit
+        .filterBySource(choice == _AllSourcesSheet.allSentinel ? null : choice);
   }
 
   Widget _buildContent(OfflineSearchState state) {
@@ -1196,6 +1384,293 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
               fontWeight: FontWeight.w700,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small source avatar: the configured source icon (file/asset/network),
+/// falling back to a coloured tile with the source initial. The 'local'
+/// bucket always shows a folder.
+Widget _sourceAvatarWidget({
+  required String? iconPath,
+  required Color color,
+  required double size,
+  required String letter,
+  required bool isLocal,
+}) {
+  final radius = BorderRadius.circular(size * 0.32);
+
+  Widget fallback() {
+    if (isLocal) {
+      return Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: color, borderRadius: radius),
+        child: Icon(Icons.folder_rounded, size: size * 0.62, color: Colors.black87),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: color, borderRadius: radius),
+      child: Text(
+        letter.toUpperCase(),
+        style: TextStyle(
+          fontSize: size * 0.55,
+          fontWeight: FontWeight.w800,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  if (isLocal || iconPath == null || iconPath.isEmpty) return fallback();
+
+  final uri = Uri.tryParse(iconPath);
+  final isRemote =
+      uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+  final isFileUri = uri?.scheme == 'file';
+  final isAbsolute = iconPath.startsWith('/');
+
+  Widget image(ImageProvider provider) => ClipRRect(
+        borderRadius: radius,
+        child: Image(
+          image: provider,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback(),
+        ),
+      );
+
+  if (isFileUri || isAbsolute) {
+    return image(FileImage(File(isFileUri ? uri!.toFilePath() : iconPath)));
+  }
+  if (isRemote) return image(NetworkImage(iconPath));
+  return image(AssetImage(iconPath));
+}
+
+/// One selectable source in the "all sources" picker sheet.
+class _SourceOption {
+  const _SourceOption({
+    required this.id,
+    required this.label,
+    required this.color,
+    required this.iconPath,
+    required this.count,
+    required this.isLocal,
+  });
+
+  final String id;
+  final String label;
+  final Color color;
+  final String? iconPath;
+  final int count;
+  final bool isLocal;
+}
+
+/// Bottom sheet listing every offline source with its completed-download
+/// count, plus a search field and an "all sources" row that clears the filter.
+class _AllSourcesSheet extends StatefulWidget {
+  const _AllSourcesSheet({
+    required this.options,
+    required this.total,
+    required this.selectedSourceId,
+  });
+
+  /// Sentinel returned when the "all sources" row is tapped (clears the filter).
+  static const String allSentinel = '__all__';
+
+  final List<_SourceOption> options;
+  final int total;
+  final String? selectedSourceId;
+
+  @override
+  State<_AllSourcesSheet> createState() => _AllSourcesSheetState();
+}
+
+class _AllSourcesSheetState extends State<_AllSourcesSheet> {
+  final TextEditingController _controller = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final q = _query.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? widget.options
+        : widget.options
+            .where((o) =>
+                o.label.toLowerCase().contains(q) ||
+                o.id.toLowerCase().contains(q))
+            .toList(growable: false);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+            child: Row(
+              children: [
+                Text(
+                  l10n.allSources,
+                  style: TextStyleConst.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${l10n.nSourcesInstalled(widget.options.length)} · '
+                  '${formatCompactCount(widget.total)}',
+                  style: TextStyleConst.bodySmall.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: TextField(
+              controller: _controller,
+              onChanged: (v) => setState(() => _query = v),
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: l10n.sourceSelectorSearchHint,
+                prefixIcon: Icon(Icons.search_rounded,
+                    color: colorScheme.onSurfaceVariant),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: colorScheme.surface,
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(bottom: 12),
+              children: [
+                if (q.isEmpty)
+                  _row(
+                    context,
+                    leading: Icon(Icons.select_all_rounded,
+                        color: colorScheme.primary),
+                    title: l10n.allSources,
+                    count: widget.total,
+                    selected: widget.selectedSourceId == null,
+                    onTap: () =>
+                        Navigator.pop(context, _AllSourcesSheet.allSentinel),
+                  ),
+                ...filtered.map(
+                  (o) => _row(
+                    context,
+                    leading: _sourceAvatarWidget(
+                      iconPath: o.iconPath,
+                      color: o.color,
+                      size: 26,
+                      letter: o.label.isNotEmpty ? o.label[0] : '?',
+                      isLocal: o.isLocal,
+                    ),
+                    title: o.label,
+                    count: o.count,
+                    selected: widget.selectedSourceId == o.id,
+                    onTap: () => Navigator.pop(context, o.id),
+                  ),
+                ),
+                if (filtered.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.sourceSelectorNoResults,
+                      textAlign: TextAlign.center,
+                      style: TextStyleConst.bodyMedium.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required Widget leading,
+    required String title,
+    required int count,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      onTap: onTap,
+      leading: leading,
+      title: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyleConst.bodyMedium.copyWith(
+          fontWeight: FontWeight.w600,
+          color: selected ? colorScheme.primary : colorScheme.onSurface,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            formatCompactCount(count),
+            style: TextStyleConst.bodySmall.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (selected)
+            Icon(Icons.check_circle_rounded,
+                size: 20, color: colorScheme.primary),
         ],
       ),
     );

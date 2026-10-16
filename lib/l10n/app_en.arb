@@ -3648,6 +3648,9 @@
     }
   },
   "nSourcesInstalled": "{count} source(s) installed",
+  "viewAll": "View all",
+  "allSources": "All Sources",
+  "offlineDoujinLabel": "offline doujin",
   "@nSourcesInstalled": {
     "placeholders": {
       "count": {

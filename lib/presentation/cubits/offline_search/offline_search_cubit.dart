@@ -344,6 +344,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           ? _distinctBucketIds(searchResults
               .map((r) => (r['source_id'] as String?) ?? 'nhentai'))
           : previousBuckets;
+      final sourceCounts = await _resolveSourceCounts(loadMore);
 
       if (groupedResults.isEmpty && !loadMore) {
         emit(OfflineSearchEmpty(query: query));
@@ -367,6 +368,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         orderBy: currentOrderBy,
         descending: currentDescending,
         isListMode: _prefs.getBool(_keyIsListMode) ?? false,
+        sourceCounts: sourceCounts,
       ));
 
       logInfo(
@@ -592,6 +594,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       final availableSourceIds = effectiveSourceId == null
           ? _distinctBucketIds(downloads.map((d) => d.sourceId ?? 'nhentai'))
           : previousBuckets;
+      final sourceCounts = await _resolveSourceCounts(loadMore);
 
       if (groupedResults.isEmpty) {
         // If filtered and empty, we should still show the filtered state, not generic empty
@@ -608,6 +611,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
           isLoadingMore: false,
           selectedSourceId: effectiveSourceId,
           availableSourceIds: availableSourceIds,
+          sourceCounts: sourceCounts,
           isListMode: _prefs.getBool(_keyIsListMode) ?? false,
         ));
         return;
@@ -630,6 +634,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
         orderBy: currentOrderBy,
         descending: currentDescending,
         isListMode: _prefs.getBool(_keyIsListMode) ?? false,
+        sourceCounts: sourceCounts,
       ));
 
       logInfo(
@@ -970,6 +975,16 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (normalized.isNotEmpty) ids.add(normalized);
     }
     return ids.toList()..sort();
+  }
+
+  /// Per-source completed-download counts for the whole store. On loadMore the
+  /// previous snapshot is reused; fresh loads re-query the DB.
+  Future<Map<String, int>> _resolveSourceCounts(bool loadMore) async {
+    if (loadMore && state is OfflineSearchLoaded) {
+      final existing = (state as OfflineSearchLoaded).sourceCounts;
+      if (existing.isNotEmpty) return existing;
+    }
+    return _userDataRepository.getDownloadCountsBySource();
   }
 
   /// Enriches a window of lightweight groups starting at [startIndex]:

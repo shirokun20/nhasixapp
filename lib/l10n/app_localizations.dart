@@ -8454,6 +8454,24 @@ abstract class AppLocalizations {
   /// **'{count} source(s) installed'**
   String nSourcesInstalled(int count);
 
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get viewAll;
+
+  /// No description provided for @allSources.
+  ///
+  /// In en, this message translates to:
+  /// **'All Sources'**
+  String get allSources;
+
+  /// No description provided for @offlineDoujinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'offline doujin'**
+  String get offlineDoujinLabel;
+
   /// No description provided for @removeSourceConfirmation.
   ///
   /// In en, this message translates to:

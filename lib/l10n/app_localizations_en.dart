@@ -4944,6 +4944,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get viewAll => 'View all';
+
+  @override
+  String get allSources => 'All Sources';
+
+  @override
+  String get offlineDoujinLabel => 'offline doujin';
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return 'Remove \"$sourceId\" from local installed sources?';
   }

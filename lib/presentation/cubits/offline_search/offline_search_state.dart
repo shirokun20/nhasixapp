@@ -37,6 +37,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.isLoadingMore = false,
     this.selectedSourceId,
     this.availableSourceIds = const [],
+    this.sourceCounts = const {},
     this.orderBy = 'created_at',
     this.descending = true,
     this.isListMode = false,
@@ -62,6 +63,10 @@ class OfflineSearchLoaded extends OfflineSearchState {
   /// driving the All + per-source FilterChip row.
   final List<String> availableSourceIds;
 
+  /// Completed-download count per source id (unfiltered, whole store),
+  /// keyed by source id. Drives the per-source mini-card counts.
+  final Map<String, int> sourceCounts;
+
   // NEW: Sorting fields
   final String orderBy;
   final bool descending;
@@ -83,6 +88,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
         isLoadingMore,
         selectedSourceId,
         availableSourceIds,
+        sourceCounts,
         orderBy,
         descending,
         isListMode,
@@ -131,6 +137,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     bool? isLoadingMore,
     String? selectedSourceId,
     List<String>? availableSourceIds,
+    Map<String, int>? sourceCounts,
     String? orderBy,
     bool? descending,
     bool? isListMode,
@@ -151,6 +158,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
       selectedSourceId:
           clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
       availableSourceIds: availableSourceIds ?? this.availableSourceIds,
+      sourceCounts: sourceCounts ?? this.sourceCounts,
       orderBy: orderBy ?? this.orderBy,
       descending: descending ?? this.descending,
       isListMode: isListMode ?? this.isListMode,

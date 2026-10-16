@@ -4813,6 +4813,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get viewAll => '查看全部';
+
+  @override
+  String get allSources => '全部来源';
+
+  @override
+  String get offlineDoujinLabel => '离线同人';
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return '从本地已安装源中移除 \"$sourceId\"？';
   }

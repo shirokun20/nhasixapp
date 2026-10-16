@@ -100,6 +100,10 @@ abstract class UserDataRepository {
     String? sourceId,
   });
 
+  /// Distinct completed-download counts per source id, keyed by source id
+  /// (includes the 'local' bucket for manually imported content).
+  Future<Map<String, int>> getDownloadCountsBySource();
+
   Future<int> getTotalDownloadSize({
     DownloadState? state,
     String? sourceId,

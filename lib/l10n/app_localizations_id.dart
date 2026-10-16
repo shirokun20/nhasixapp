@@ -4963,6 +4963,15 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get viewAll => 'Lihat semua';
+
+  @override
+  String get allSources => 'Semua Sumber';
+
+  @override
+  String get offlineDoujinLabel => 'doujin offline';
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return 'Hapus \"$sourceId\" dari sumber terpasang lokal?';
   }

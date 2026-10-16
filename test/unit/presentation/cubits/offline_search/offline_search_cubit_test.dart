@@ -36,6 +36,9 @@ void main() {
     when(() => mockPrefs.setString(any(), any())).thenAnswer((_) async => true);
     when(() => mockPrefs.remove(any())).thenAnswer((_) async => true);
 
+    when(() => mockUserDataRepository.getDownloadCountsBySource())
+        .thenAnswer((_) async => const <String, int>{});
+
     cubit = OfflineSearchCubit(
       offlineContentManager: mockOfflineContentManager,
       userDataRepository: mockUserDataRepository,

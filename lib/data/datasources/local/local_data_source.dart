@@ -775,6 +775,32 @@ class LocalDataSource {
     }
   }
 
+  // Distinct completed-download counts per source id, ordered by count desc.
+  // Includes the 'local' bucket (manually imported ZIP files). Used by the
+  // offline source mini-cards.
+  Future<Map<String, int>> getDownloadCountsBySource() async {
+    try {
+      final db = await _getSafeDatabase();
+      if (db == null) return const {};
+
+      final result = await db.rawQuery(
+        "SELECT source_id, COUNT(DISTINCT id) as count FROM downloads "
+        "WHERE state = 'completed' AND source_id IS NOT NULL "
+        "GROUP BY source_id ORDER BY count DESC",
+      );
+      final counts = <String, int>{};
+      for (final row in result) {
+        final id = (row['source_id'] as String?)?.trim();
+        if (id == null || id.isEmpty) continue;
+        counts[id] = (row['count'] as int?) ?? 0;
+      }
+      return counts;
+    } catch (e) {
+      _logger.e('Error getting download counts by source: $e');
+      return const {};
+    }
+  }
+
   // Get total download size
   Future<int> getTotalDownloadSize(
       {DownloadState? state, String? sourceId}) async {
