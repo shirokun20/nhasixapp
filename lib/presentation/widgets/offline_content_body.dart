@@ -639,7 +639,7 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         ),
                       ),
                       Text(
-                        '#$rank',
+                        AppLocalizations.of(context)!.rankBadge(rank),
                         style: TextStyleConst.bodySmall.copyWith(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,

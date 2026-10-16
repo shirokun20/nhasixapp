@@ -4972,6 +4972,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get offlineDoujinLabel => 'doujin offline';
 
   @override
+  String rankBadge(int rank) {
+    return '#$rank';
+  }
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return 'Hapus \"$sourceId\" dari sumber terpasang lokal?';
   }

@@ -3651,6 +3651,14 @@
   "viewAll": "View all",
   "allSources": "All Sources",
   "offlineDoujinLabel": "offline doujin",
+  "rankBadge": "#{rank}",
+  "@rankBadge": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
   "@nSourcesInstalled": {
     "placeholders": {
       "count": {

@@ -8472,6 +8472,12 @@ abstract class AppLocalizations {
   /// **'offline doujin'**
   String get offlineDoujinLabel;
 
+  /// No description provided for @rankBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank}'**
+  String rankBadge(int rank);
+
   /// No description provided for @removeSourceConfirmation.
   ///
   /// In en, this message translates to:

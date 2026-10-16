@@ -3451,6 +3451,7 @@
   "viewAll": "查看全部",
   "allSources": "全部来源",
   "offlineDoujinLabel": "离线同人",
+  "rankBadge": "#{rank}",
   "removeSourceConfirmation": "从本地已安装源中移除 \"{sourceId}\"？",
   "installedSourcesFromZip": "从 ZIP 安装了 {count} 个源",
   "enhancedReadingExperience": "增强阅读体验",

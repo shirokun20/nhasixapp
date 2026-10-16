@@ -4822,6 +4822,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offlineDoujinLabel => '离线同人';
 
   @override
+  String rankBadge(int rank) {
+    return '#$rank';
+  }
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return '从本地已安装源中移除 \"$sourceId\"？';
   }

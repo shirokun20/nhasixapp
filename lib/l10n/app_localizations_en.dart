@@ -4953,6 +4953,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineDoujinLabel => 'offline doujin';
 
   @override
+  String rankBadge(int rank) {
+    return '#$rank';
+  }
+
+  @override
   String removeSourceConfirmation(String sourceId) {
     return 'Remove \"$sourceId\" from local installed sources?';
   }
