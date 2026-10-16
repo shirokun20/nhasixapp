@@ -38,6 +38,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     this.selectedSourceId,
     this.availableSourceIds = const [],
     this.sourceCounts = const {},
+    this.isRefreshing = false,
     this.orderBy = 'created_at',
     this.descending = true,
     this.isListMode = false,
@@ -67,6 +68,11 @@ class OfflineSearchLoaded extends OfflineSearchState {
   /// keyed by source id. Drives the per-source mini-card counts.
   final Map<String, int> sourceCounts;
 
+  /// True while a fresh (non-paginated) reload is in flight on top of a
+  /// previously loaded state. Lets the UI show a loading indicator without
+  /// discarding the source buckets/counts it already had.
+  final bool isRefreshing;
+
   // NEW: Sorting fields
   final String orderBy;
   final bool descending;
@@ -89,6 +95,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
         selectedSourceId,
         availableSourceIds,
         sourceCounts,
+        isRefreshing,
         orderBy,
         descending,
         isListMode,
@@ -138,6 +145,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
     String? selectedSourceId,
     List<String>? availableSourceIds,
     Map<String, int>? sourceCounts,
+    bool? isRefreshing,
     String? orderBy,
     bool? descending,
     bool? isListMode,
@@ -159,6 +167,7 @@ class OfflineSearchLoaded extends OfflineSearchState {
           clearSourceId ? null : (selectedSourceId ?? this.selectedSourceId),
       availableSourceIds: availableSourceIds ?? this.availableSourceIds,
       sourceCounts: sourceCounts ?? this.sourceCounts,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
       orderBy: orderBy ?? this.orderBy,
       descending: descending ?? this.descending,
       isListMode: isListMode ?? this.isListMode,

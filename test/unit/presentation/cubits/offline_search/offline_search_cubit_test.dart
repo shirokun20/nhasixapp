@@ -138,6 +138,52 @@ void main() {
     );
 
     blocTest<OfflineSearchCubit, OfflineSearchState>(
+      'filterBySource keeps source counts instead of dropping to bare loading',
+      build: () {
+        when(() => mockUserDataRepository.getAllDownloads(
+              state: DownloadState.completed,
+              limit: 10000,
+              offset: 0,
+              sourceId: any(named: 'sourceId'),
+            )).thenAnswer((_) async => tDownloadList);
+
+        when(() => mockUserDataRepository.getDownloadCountsBySource())
+            .thenAnswer((_) async => const {'nhentai': 3});
+
+        when(() => mockOfflineContentManager.getOfflineFirstImagePath(
+              any(),
+              downloadPath: any(named: 'downloadPath'),
+            )).thenAnswer((_) async => '/path/to/image.jpg');
+
+        when(() => mockUserDataRepository.getHistoryEntry(any()))
+            .thenAnswer((_) async => null);
+
+        return cubit;
+      },
+      seed: () => const OfflineSearchLoaded(
+        query: '',
+        results: [],
+        totalResults: 0,
+        availableSourceIds: ['nhentai'],
+        sourceCounts: {'nhentai': 3},
+      ),
+      act: (cubit) => cubit.filterBySource('nhentai'),
+      expect: () => [
+        // No bare OfflineSearchLoading in between: the reload keeps the
+        // payload and only flips isRefreshing.
+        isA<OfflineSearchLoaded>()
+            .having((s) => s.selectedSourceId, 'selectedSourceId', 'nhentai'),
+        isA<OfflineSearchLoaded>()
+            .having((s) => s.isRefreshing, 'isRefreshing', true)
+            .having((s) => s.sourceCounts, 'sourceCounts', {'nhentai': 3})
+            .having((s) => s.availableSourceIds, 'buckets', ['nhentai']),
+        isA<OfflineSearchLoaded>()
+            .having((s) => s.isRefreshing, 'isRefreshing', false)
+            .having((s) => s.sourceCounts, 'sourceCounts', {'nhentai': 3}),
+      ],
+    );
+
+    blocTest<OfflineSearchCubit, OfflineSearchState>(
       'loadMoreContent should append items when hasMore is true',
       build: () {
         // Mock initial state as loaded

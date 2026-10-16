@@ -26,6 +26,7 @@ import 'package:nhasixapp/core/config/config_models.dart';
 import '../cubits/settings/settings_cubit.dart';
 import 'content_group_card_widget.dart';
 import 'error_widget.dart';
+import 'kuro_mascot.dart';
 import 'offline_content_shimmer.dart';
 
 // Reusable widget that displays offline content with search and filtering
@@ -45,12 +46,6 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _isFabVisible = ValueNotifier<bool>(true);
-
-  // Last loaded snapshot for the source cards. Retained so the row does not
-  // flash empty while the cubit reloads after a filter tap — the cubit emits a
-  // bare OfflineSearchLoading that carries no counts/buckets.
-  Map<String, int> _lastSourceCounts = const {};
-  List<String> _lastSourceBuckets = const [];
 
   @override
   void initState() {
@@ -454,19 +449,15 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
         final l10n = AppLocalizations.of(context)!;
         final sourceConfigs = getIt<RemoteConfigService>().getAllSourceConfigs();
 
-        // Retain the last loaded snapshot so the cards stay put while the
-        // cubit reloads (its loading state drops all payload).
-        if (state is OfflineSearchLoaded) {
-          _lastSourceCounts = state.sourceCounts;
-          _lastSourceBuckets = state.availableSourceIds;
-        }
-
         final String? selectedSourceId = state is OfflineSearchLoaded
             ? state.selectedSourceId
             : getIt<SharedPreferences>()
                 .getString('offline_selected_source_filter');
-        final counts = _lastSourceCounts;
-        List<String> bucketIds = _lastSourceBuckets;
+        final counts = state is OfflineSearchLoaded
+            ? state.sourceCounts
+            : const <String, int>{};
+        List<String> bucketIds =
+            state is OfflineSearchLoaded ? state.availableSourceIds : const [];
 
         // Cold start: fall back to the config source list so the row is never
         // empty before the first store load completes.
@@ -792,8 +783,13 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
   Widget _buildContent(OfflineSearchState state) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (state is OfflineSearchLoading) {
-      return const OfflineContentGridShimmer();
+    if (state is OfflineSearchLoading ||
+        (state is OfflineSearchLoaded && state.isRefreshing)) {
+      return Center(
+        child: KuroLoading(
+          message: AppLocalizations.of(context)!.statusLoading,
+        ),
+      );
     }
 
     if (state is OfflineSearchError) {

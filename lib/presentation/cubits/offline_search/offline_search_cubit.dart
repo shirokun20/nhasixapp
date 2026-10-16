@@ -235,7 +235,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       } else {
         logInfo(
             'Searching offline content for: $query (source: $effectiveSourceId)');
-        emit(const OfflineSearchLoading());
+        _emitRefreshStarted();
       }
 
       // Group-level pagination: fetch all filtered rows, group in memory,
@@ -482,7 +482,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       } else {
         logInfo(
             'Loading all offline content from database (page 1) source: $effectiveSourceId');
-        emit(const OfflineSearchLoading());
+        _emitRefreshStarted();
       }
 
       // Group-level pagination: fetch all filtered rows, group in memory,
@@ -975,6 +975,23 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       if (normalized.isNotEmpty) ids.add(normalized);
     }
     return ids.toList()..sort();
+  }
+
+  /// Begins a fresh (non-paginated) load. When a loaded snapshot already
+  /// exists, its payload (source buckets/counts) is preserved and only
+  /// [OfflineSearchLoaded.isRefreshing] is set — otherwise a payload-less
+  /// loading state is emitted.
+  void _emitRefreshStarted() {
+    final current = state;
+    if (current is OfflineSearchLoaded) {
+      emit(current.copyWith(
+        isRefreshing: true,
+        results: [],
+        totalResults: 0,
+      ));
+    } else {
+      emit(const OfflineSearchLoading());
+    }
   }
 
   /// Per-source completed-download counts for the whole store. On loadMore the
