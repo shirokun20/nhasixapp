@@ -989,22 +989,10 @@ class _OfflineContentBodyState extends State<OfflineContentBody>
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(height: DesignTokens.spaceMd),
-                                Text(
+                            child: KuroLoading(
+                              message:
                                   AppLocalizations.of(context)!.loadingMore,
-                                  style: TextStyleConst.bodySmall.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
+                              size: 64,
                             ),
                           ),
                         );
