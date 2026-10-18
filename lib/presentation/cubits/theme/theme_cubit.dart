@@ -84,10 +84,21 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  // Text theme using Playfair Display (headings) + Inter (body)
+  // Text theme using Playfair Display (headings) + Inter (body).
+  // NOTE (google_fonts 9): `*TextTheme()` helpers now use material_ui's
+  // TextTheme (distinct type from flutter's), so fonts are applied per
+  // TextStyle instead — TextStyle is shared via package:flutter/widgets.
   TextTheme _googleFontsTextTheme([TextTheme? base]) {
     final b = base ?? ThemeData.light().textTheme;
-    return GoogleFonts.playfairDisplayTextTheme(b).copyWith(
+    TextStyle? playfair(TextStyle? s) =>
+        s == null ? null : GoogleFonts.playfairDisplay(textStyle: s);
+    return b.copyWith(
+      displayLarge: playfair(b.displayLarge),
+      displayMedium: playfair(b.displayMedium),
+      displaySmall: playfair(b.displaySmall),
+      headlineLarge: playfair(b.headlineLarge),
+      headlineMedium: playfair(b.headlineMedium),
+      headlineSmall: playfair(b.headlineSmall),
       titleLarge: GoogleFonts.inter(textStyle: b.titleLarge),
       titleMedium: GoogleFonts.inter(textStyle: b.titleMedium),
       titleSmall: GoogleFonts.inter(textStyle: b.titleSmall),

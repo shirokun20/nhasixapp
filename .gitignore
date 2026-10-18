@@ -34,6 +34,11 @@ migrate_working_dir/
 /build/
 **/build/
 
+# Generated code (build_runner: freezed + json_serializable) — never commit,
+# regen locally (`fvm flutter pub run build_runner build`) or via CI step "Run Build Runner"
+*.freezed.dart
+*.g.dart
+
 # Symbolication related
 app.*.symbols
 
