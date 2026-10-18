@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -35,6 +36,15 @@ class ImageCacheService {
 
   // In-memory cache for fast access with LRU eviction
   final Map<String, _CachedImageData> _memoryCache = {};
+
+  // Global gate for static animated previews: full GIF/WebP decode inflates
+  // ALL frames (hundreds of MB transient per file). Duplicate widgets + fast
+  // scrolling used to spawn one isolate per request. Same-source requests
+  // share one future; at most 2 decodes run concurrently, the rest queue.
+  static const int _maxConcurrentStaticDecodes = 2;
+  static int _activeStaticDecodes = 0;
+  static final List<Completer<void>> _staticDecodeWaiters = [];
+  static final Map<String, Future<File?>> _staticDecodeInFlight = {};
 
   // Get cached image data by URL
   // If [isStaticGif] is true, it looks for the processed static version of the GIF
@@ -98,6 +108,40 @@ class ImageCacheService {
   // This is primarily used for thumbnail surfaces where animated payloads
   // should stay lightweight and deterministic.
   Future<File?> getOrProcessStaticImage(
+    String source, {
+    Map<String, String>? headers,
+    bool isLocalFile = false,
+  }) {
+    final key = '$source|$headers|$isLocalFile';
+    return _staticDecodeInFlight.putIfAbsent(key, () async {
+      await _acquireStaticDecodeSlot();
+      try {
+        return await _processStaticImage(source,
+            headers: headers, isLocalFile: isLocalFile);
+      } finally {
+        _releaseStaticDecodeSlot();
+        _staticDecodeInFlight.remove(key);
+      }
+    });
+  }
+
+  static Future<void> _acquireStaticDecodeSlot() async {
+    while (_activeStaticDecodes >= _maxConcurrentStaticDecodes) {
+      final waiter = Completer<void>();
+      _staticDecodeWaiters.add(waiter);
+      await waiter.future;
+    }
+    _activeStaticDecodes++;
+  }
+
+  static void _releaseStaticDecodeSlot() {
+    _activeStaticDecodes--;
+    if (_staticDecodeWaiters.isNotEmpty) {
+      _staticDecodeWaiters.removeAt(0).complete();
+    }
+  }
+
+  Future<File?> _processStaticImage(
     String source, {
     Map<String, String>? headers,
     bool isLocalFile = false,
