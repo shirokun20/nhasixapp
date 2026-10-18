@@ -7,6 +7,7 @@ import 'package:nhasixapp/core/constants/colors_const.dart'
 
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
+import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
@@ -56,9 +57,20 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
-      buildWhen: (previous, current) =>
-          previous.runtimeType != current.runtimeType ||
-          previous.lastUpdated != current.lastUpdated,
+      // Scope rebuilds to THIS card's download entry: the bloc emits on
+      // every downloaded page of every content (coalesced to ~1/s), and a
+      // global lastUpdated check rebuilds all cards on each emit.
+      buildWhen: (previous, current) {
+        if (previous.runtimeType != current.runtimeType) return true;
+        DownloadStatus? entryOf(DownloadBlocState s) {
+          if (s is! DownloadLoaded) return null;
+          for (final d in s.downloads) {
+            if (d.contentId == content.id) return d;
+          }
+          return null;
+        }
+        return entryOf(previous) != entryOf(current);
+      },
       builder: (context, _) {
         return FutureBuilder<bool>(
           future: ContentDownloadCache.isDownloaded(

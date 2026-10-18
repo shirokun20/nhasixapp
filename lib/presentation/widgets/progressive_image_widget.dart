@@ -145,6 +145,34 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
   bool _imageLoadedNotified = false;
+  // Memoized static-process futures keyed by url+headers: rebuilding must
+  // reuse in-flight GIF decode work, not spawn a duplicate isolate per build.
+  Future<File?>? _gifProcessFuture;
+  String? _gifProcessKey;
+  Future<File?>? _staticProcessFuture;
+  String? _staticProcessKey;
+
+  Future<File?> _memoizedGifProcess(String url) {
+    final key = '$url|${widget.httpHeaders}';
+    if (_gifProcessKey != key) {
+      _gifProcessKey = key;
+      _gifProcessFuture = getIt<ImageCacheService>()
+          .getOrProcessStaticGif(url, widget.httpHeaders);
+    }
+    return _gifProcessFuture!;
+  }
+
+  Future<File?> _memoizedStaticProcess(String url) {
+    final key = '$url|${widget.httpHeaders}';
+    if (_staticProcessKey != key) {
+      _staticProcessKey = key;
+      _staticProcessFuture = getIt<ImageCacheService>().getOrProcessStaticImage(
+        url,
+        headers: widget.httpHeaders,
+      );
+    }
+    return _staticProcessFuture!;
+  }
 
   void _notifyImageLoaded() {
     if (_imageLoadedNotified) return;
@@ -604,8 +632,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     if (isGif) {
       // Use efficient cached/processed GIF handling
       return FutureBuilder<File?>(
-        future: getIt<ImageCacheService>()
-            .getOrProcessStaticGif(primaryUrl, widget.httpHeaders),
+        future: _memoizedGifProcess(primaryUrl),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return widget.placeholder ?? _buildPlaceholder();
@@ -710,10 +737,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
 
   Widget _buildStaticNetworkDecodeFallback(String url) {
     return FutureBuilder<File?>(
-      future: getIt<ImageCacheService>().getOrProcessStaticImage(
-        url,
-        headers: widget.httpHeaders,
-      ),
+      future: _memoizedStaticProcess(url),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return widget.placeholder ?? _buildPlaceholder();

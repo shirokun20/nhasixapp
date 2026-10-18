@@ -63,6 +63,21 @@ class AnimatedWebPView(
 
         private val failedAnimatedDecodeKeys = mutableSetOf<String>()
 
+        private const val MAX_FAILED_KEYS = 500
+
+        fun rememberFailedKey(key: String) {
+            failedAnimatedDecodeKeys.add(key)
+            while (failedAnimatedDecodeKeys.size > MAX_FAILED_KEYS) {
+                val it = failedAnimatedDecodeKeys.iterator()
+                if (it.hasNext()) {
+                    it.next()
+                    it.remove()
+                } else {
+                    break
+                }
+            }
+        }
+
         fun clearCaches() {
             drawableCache.evictAll()
             failedAnimatedDecodeKeys.clear()
@@ -192,7 +207,7 @@ class AnimatedWebPView(
                 Log.e(TAG, "loadFromFile failed: ${e.message}")
                 cacheKey?.let {
                     if (isLikelyAvifSource(it)) {
-                        failedAnimatedDecodeKeys.add(it)
+                        rememberFailedKey(it)
                     }
                 }
                 // Some OEM decoders fail to create AnimatedImageDrawable for
@@ -243,7 +258,7 @@ class AnimatedWebPView(
             } catch (e: Exception) {
                 cacheKey?.let {
                     if (isLikelyAvifSource(it)) {
-                        failedAnimatedDecodeKeys.add(it)
+                        rememberFailedKey(it)
                     }
                 }
                 if (renderStaticBitmapFromBytes(downloadedBytes)) {

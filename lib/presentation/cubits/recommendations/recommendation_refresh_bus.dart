@@ -14,8 +14,20 @@ class RecommendationRefreshBus {
 
   Stream<void> get stream => _controller.stream;
 
+  // Throttle: one signal triggers 2 full recomputes (recommended + similar
+  // sections); bursts (fav toggle, 90% crossing, download done) rescanned
+  // entire history each time. Max 1 refresh per window; recompute always
+  // covers latest state, so dropped intermediate signals are harmless.
+  static const _minInterval = Duration(seconds: 3);
+  DateTime? _lastEmit;
+
   void requestRefresh() {
-    if (!_controller.isClosed) _controller.add(null);
+    if (_controller.isClosed) return;
+    final now = DateTime.now();
+    final last = _lastEmit;
+    if (last != null && now.difference(last) < _minInterval) return;
+    _lastEmit = now;
+    _controller.add(null);
   }
 
   void dispose() {

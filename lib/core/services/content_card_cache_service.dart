@@ -21,14 +21,31 @@ class ContentDownloadCache {
   static final Map<String, Set<String>> _sourceOfflineIdsCache = {};
   static final Map<String, DateTime> _sourceOfflineIdsCacheTime = {};
   static const Duration _cacheExpiry = Duration(minutes: 5);
+  static const int _maxCacheEntries = 2000;
   static const String _ehentaiPartPrefix = '__ehpart__:';
   static const String _ehentaiChunkPrefix = '__ehchunk__:';
-
+  static void _trimCaches() {
+    // Opportunistic oldest-first trim on access: entries also expire on
+    // read, but nothing ever swept them, so unbounded browsing grew PSS.
+    while (_cache.length > _maxCacheEntries) {
+      String? oldest;
+      DateTime? oldestTime;
+      _cacheTime.forEach((k, t) {
+        if (oldestTime == null || t.isBefore(oldestTime!)) {
+          oldest = k;
+          oldestTime = t;
+        }
+      });
+      if (oldest == null) break;
+      _cache.remove(oldest);
+      _cacheTime.remove(oldest);
+    }
+  }
   static String _buildCacheKey(String contentId, String? sourceId) {
+    if (_cache.length > _maxCacheEntries) _trimCaches();
     final normalizedSource = (sourceId ?? '').trim().toLowerCase();
     return '$normalizedSource::$contentId';
   }
-
   static bool matchesDownload(
     DownloadStatus download,
     String contentId, {
@@ -314,8 +331,25 @@ class ContentReadCache {
 
   static Future<List<History>>? _recentHistoryFuture;
   static DateTime? _recentHistoryCacheTime;
+  static const int _maxCacheEntries = 2000;
+  static void _trimCaches() {
+    while (_cache.length > _maxCacheEntries) {
+      String? oldest;
+      DateTime? oldestTime;
+      _cacheTime.forEach((k, t) {
+        if (oldestTime == null || t.isBefore(oldestTime!)) {
+          oldest = k;
+          oldestTime = t;
+        }
+      });
+      if (oldest == null) break;
+      _cache.remove(oldest);
+      _cacheTime.remove(oldest);
+    }
+  }
 
   static String _buildCacheKey(String contentId, String? sourceId) {
+    if (_cache.length > _maxCacheEntries) _trimCaches();
     final normalizedSource = (sourceId ?? '').trim().toLowerCase();
     return '$normalizedSource::$contentId';
   }

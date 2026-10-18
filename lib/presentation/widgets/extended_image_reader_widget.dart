@@ -1377,7 +1377,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                       });
                     }
                   } else {
-                    _nonNativeAnimatedUrls.add(url);
+                    _boundedSetAdd(
+                        _nonNativeAnimatedUrls, url, _maxHeavyImageUrls);
                   }
                 });
               }).catchError((Object e) {

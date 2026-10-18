@@ -288,6 +288,11 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
   DownloadSettings _settings = DownloadSettings.defaultSettings();
   final Map<String, DownloadTask> _activeTasks = {};
   StreamSubscription<DownloadProgressUpdate>? _progressSubscription;
+  // Coalesce native per-page progress: animated galleries emit dozens/sec;
+  // each emit rebuilds every DownloadBloc listener + respawns image work.
+  // Min 1s between non-terminal emits per content; terminal always passes.
+  static const _progressEmitInterval = Duration(seconds: 1);
+  final Map<String, DateTime> _lastProgressEmit = {};
 
   void _initializeProgressStream() {
     _progressSubscription = _downloadManager.progressStream.listen(
@@ -295,6 +300,7 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
         _logger.d('DownloadBloc: Received progress update: $update');
 
         if (update.downloadedPages == -1) {
+          _lastProgressEmit.remove(update.contentId);
           if (update.totalPages == -1) {
             _logger.d(
                 'DownloadBloc: Received completion event for ${update.contentId}');
@@ -311,6 +317,13 @@ class DownloadBloc extends Bloc<DownloadEvent, DownloadBlocState> {
                 'DownloadBloc: Ignored unknown terminal marker for ${update.contentId}: ${update.totalPages}');
           }
         } else {
+          final now = DateTime.now();
+          final last = _lastProgressEmit[update.contentId];
+          if (last != null &&
+              now.difference(last) < _progressEmitInterval) {
+            return;
+          }
+          _lastProgressEmit[update.contentId] = now;
           add(DownloadProgressUpdateEvent(
             contentId: update.contentId,
             downloadedPages: update.downloadedPages,
