@@ -3,23 +3,28 @@
   <application>
       <activity
           android:name=".WebViewActivity"
+          android:exported="false"
           android:theme="@style/Theme.AppCompat.Light.NoActionBar"
           android:windowSoftInputMode="adjustResize"/>
-        <activity
+      <activity
           android:name=".CaptchaWebViewActivity"
+          android:exported="false"
           android:theme="@style/Theme.AppCompat.Light.NoActionBar"
           android:windowSoftInputMode="adjustResize"/>
-        <activity
+      <activity
           android:name=".VideoPlayerActivity"
+          android:exported="false"
           android:theme="@style/Theme.KuronVideoPlayer"
           android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|smallestScreenSize"
           android:windowSoftInputMode="adjustResize"/>
       <activity
           android:name=".CustomTabFallbackActivity"
+          android:exported="false"
           android:theme="@android:style/Theme.Translucent.NoTitleBar"
           android:excludeFromRecents="true"/>
       <activity
           android:name=".pdf.PdfReaderActivity"
+          android:exported="false"
           android:theme="@style/Theme.AppCompat.NoActionBar"
           android:screenOrientation="portrait"
           android:configChanges="orientation|keyboardHidden|screenSize"/>

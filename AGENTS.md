@@ -156,6 +156,15 @@ If you need to modify generated code, edit the source file and run `fvm flutter 
 
 ### Auto-Formatting
 All `.dart` files are automatically formatted using `fvm dart format` after write/edit operations.
+### Presentation Layer & Widget Logic Separation (CRITICAL)
+- **Widgets keep ONLY show-state code**: layout, animations, controllers, formatting for display, gestures, dialogs/navigation.
+- **FORBIDDEN in widget files**:
+  - Direct `getIt<T>()` in `build()` or `State` (forbidden, including read-only services). Inject dependencies via widget constructor or `context.read<T>()` / `BlocProvider`.
+  - Direct HTTP/network calls (`Dio`, `HttpClient`). Move to DataSources / Repositories.
+  - Synchronous or direct File I/O (`File.existsSync()`, `.lengthSync()`, `.readAs*Sync()`, `.writeAs*Sync()`, directory traversals). Move to async services/helpers off the UI thread.
+  - Parsing complex payloads, HTML regex scraping, crypto, checksums (`sha256`), secure storage writes. Move to Cubits / Services / DataSources.
+  - Bypassing Cubit to directly invoke domain services (e.g. `SourceAuthService`). Route user actions through the associated Cubit.
+
 
 ### Skill Source of Truth (priority order)
 1. **Claude Code**: `.claude/commands/*.md` (consolidated, authoritative)
@@ -178,6 +187,11 @@ If a task matches a listed skill, read the relevant file before editing code.
 ### Dormant Code (jangan di-revive tanpa alasan eksplisit)
 - **Rust `image_process_single` / `image_split`** (`packages/kuron_native/rust/src/lib.rs` + `rust_bridge.dart`): 0 caller dari Dart sejak rantai PDF dihapus. Re-enable hanya kalau pipeline mosaic `reader-ai-learning-mode` butuh, dan `ImageSplitter` jadi bottleneck. Prasyarat: uji FFI di isolate (`DynamicLibrary.open` per isolate) di device — lookup di-comment-out (575ebca8) karena `RustBridge` null di compute isolate.
 - **HTML parser → Rust**: sudah Putus (YAGNI), benchmark warmup+median 7×: detail nicomanga 250KB = 12ms, reader 1.1MB = 17ms, home = 1-3ms. Tidak perlu dibuka lagi tanpa data baru.
+
+### Release Verification (pelajaran 2026-10-18: crash R8 SharedPreferences)
+- **Native plugin baru/upgrade major** (paket apa pun yang punya `android/`): WAJIB `assembleProdRelease` lokal + launch smoke di device sebelum merge. Debug lolos ≠ release lolos (`minifyEnabled true` cuma di release).
+- **Keep rules**: plugin dengan Kotlin `suspend` di platform channel WAJIB dicover `android/app/proguard-rules.pro`. Gejala: `NoSuchMethodError`/`ClassNotFoundException` saat launch release.
+- **CI**: workflow `verify.yml` jalan otomatis tiap push/PR (analyze + test + assemble release tanpa upload) — jangan di-skip.
 
 ## 📦 Release Policy
 - **Ver**: `MAJOR.MINOR.PATCH+BUILD`. Update `pubspec`, `CHANGELOG.md`, `README.md`.

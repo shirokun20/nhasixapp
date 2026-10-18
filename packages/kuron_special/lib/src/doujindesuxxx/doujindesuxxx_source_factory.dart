@@ -9,10 +9,15 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:kuron_generic/kuron_generic.dart';
 import 'package:logger/logger.dart';
 
-const String _appSecret = 'dfdf72051dbfdc7d76889ebd31324e74';
+// Risk notice: Client-side secret embedded in mobile applications can still be
+// reverse-engineered or observed in network traces. Sourcing via compile-time define
+// allows rotating/omitting it from repo history without breaking existing builds.
+const String _legacyAppSecret = 'dfdf72051dbfdc7d76889ebd31324e74';
+const String _envAppSecret = String.fromEnvironment('DOUJINDESU_APP_SECRET');
+final String _appSecret =
+    _envAppSecret.isNotEmpty ? _envAppSecret : _legacyAppSecret;
 const String _salt =
     'doujindesu-scrapers-cannot-read-this-super-secret-salt-2026-v2';
-
 class DoujinDesuXxxSourceFactory implements SourceFactory {
   final Dio _dio;
   final Logger _logger;

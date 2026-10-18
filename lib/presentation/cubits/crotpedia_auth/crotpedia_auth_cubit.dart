@@ -68,6 +68,24 @@ class CrotpediaAuthCubit extends BaseCubit<CrotpediaAuthState> {
     }
   }
 
+  Future<void> loginWithRawCookies(List<String> rawCookies) async {
+    final hasSession =
+        rawCookies.any((c) => c.contains('wordpress_logged_in'));
+    if (!hasSession) {
+      if (!isClosed) emit(const CrotpediaAuthError('Login incomplete'));
+      return;
+    }
+    final sessionCookie =
+        rawCookies.firstWhere((c) => c.contains('wordpress_logged_in'));
+    final value = sessionCookie.contains('=')
+        ? sessionCookie.substring(sessionCookie.indexOf('=') + 1)
+        : '';
+    final rawParts = value.split('%7C');
+    final username =
+        rawParts.isNotEmpty ? Uri.decodeComponent(rawParts[0]) : 'User';
+    await externalLogin(username, rawCookies);
+  }
+
   Future<void> logout() async {
     // Always clear adapter even if cubit is closed
     try {

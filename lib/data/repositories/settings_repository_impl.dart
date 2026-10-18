@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:share_plus/share_plus.dart';
@@ -18,12 +19,15 @@ class SettingsRepositoryImpl implements SettingsRepository {
     required this.sharedPreferences,
     required this.nativeBackupService,
     required this.databaseHelper,
+    FlutterSecureStorage? secureStorage,
     Logger? logger,
-  }) : _logger = logger ?? Logger();
+  })  : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _logger = logger ?? Logger();
 
   final SharedPreferences sharedPreferences;
   final NativeBackupService nativeBackupService;
   final DatabaseHelper databaseHelper;
+  final FlutterSecureStorage _secureStorage;
   final Logger _logger;
 
   // Keys for SharedPreferences
@@ -35,6 +39,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String _contentFilterSettingsKey = 'content_filter_settings';
   static const String _networkSettingsKey = 'network_settings';
   static const String _proxySettingsKey = 'proxy_settings';
+  static const String _proxyPasswordKey = 'proxy_password';
   static const String _backupSettingsKey = 'backup_settings';
   static const String _advancedSettingsKey = 'advanced_settings';
   static const String _debugSettingsKey = 'debug_settings';
@@ -775,26 +780,48 @@ class SettingsRepositoryImpl implements SettingsRepository {
     try {
       _logger.d('Getting proxy settings');
 
+      String? securePassword =
+          await _secureStorage.read(key: _proxyPasswordKey);
+
       final jsonString = sharedPreferences.getString(_proxySettingsKey);
       if (jsonString != null) {
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
+
+        // One-time migration: read legacy password from prefs, save to secure storage, remove from prefs
+        if (json.containsKey('password')) {
+          final legacyPassword = json['password'] as String?;
+          if (legacyPassword != null &&
+              legacyPassword.isNotEmpty &&
+              securePassword == null) {
+            await _secureStorage.write(
+                key: _proxyPasswordKey, value: legacyPassword);
+            securePassword = legacyPassword;
+          }
+          json.remove('password');
+          await sharedPreferences.setString(
+              _proxySettingsKey, jsonEncode(json));
+        }
+
         return ProxySettings(
           enabled: json['enabled'] ?? false,
           host: json['host'],
           port: json['port'],
           username: json['username'],
-          password: json['password'],
+          password: securePassword,
           type: json['type'] ?? 'HTTP',
         );
       }
 
-      // Return default proxy settings
+      // Return default proxy settings. NOTE: persist prefs JSON only — never
+      // touch secure storage here, or a surviving keychain password (prefs
+      // lost, e.g. reinstall) would be silently destroyed on first read.
       const defaultSettings = ProxySettings(
         enabled: false,
         type: 'HTTP',
       );
 
-      await updateProxySettings(defaultSettings);
+      await sharedPreferences.setString(_proxySettingsKey,
+          jsonEncode({'enabled': false, 'type': 'HTTP'}));
       return defaultSettings;
     } catch (e, stackTrace) {
       _logger.e('Failed to get proxy settings',
@@ -811,12 +838,18 @@ class SettingsRepositoryImpl implements SettingsRepository {
     try {
       _logger.d('Updating proxy settings');
 
+      if (settings.password != null && settings.password!.isNotEmpty) {
+        await _secureStorage.write(
+            key: _proxyPasswordKey, value: settings.password!);
+      } else {
+        await _secureStorage.delete(key: _proxyPasswordKey);
+      }
+
       final json = {
         'enabled': settings.enabled,
         'host': settings.host,
         'port': settings.port,
         'username': settings.username,
-        'password': settings.password,
         'type': settings.type,
       };
 

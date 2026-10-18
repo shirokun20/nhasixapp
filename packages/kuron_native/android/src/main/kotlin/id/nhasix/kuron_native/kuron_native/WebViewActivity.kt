@@ -113,6 +113,14 @@ class WebViewActivity : AppCompatActivity() {
     private val capturedImageUrls = mutableListOf<String>()
     private val sslConsentHosts = mutableSetOf<String>()
     private var sessionTargetHost: String? = null
+    private val isAuthOrClearanceSession: Boolean
+        get() = autoCloseOnCookie != null ||
+            ssoRedirectUrl != null ||
+            successFilters.isNotEmpty() ||
+            intent.getStringExtra(EXTRA_INITIAL_COOKIE) != null ||
+            captureRequestPatterns.isNotEmpty() ||
+            allowRequestPatterns.isNotEmpty()
+
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -415,6 +423,22 @@ class WebViewActivity : AppCompatActivity() {
                     handler?.cancel()
                     return
                 }
+                if (isAuthOrClearanceSession) {
+                    android.util.Log.e("KuronNative", "SSL proceed blocked for auth/clearance session: host=$failingHost")
+                    handler?.cancel()
+                    runOnUiThread {
+                        androidx.appcompat.app.AlertDialog.Builder(this@WebViewActivity)
+                            .setTitle("Untrusted Certificate")
+                            .setMessage("The site $failingHost presented an untrusted certificate. Proceeding is disabled during login and verification sessions to prevent credential theft.")
+                            .setPositiveButton("Close") { _, _ ->
+                                finish()
+                            }
+                            .setCancelable(false)
+                            .show()
+                    }
+                    return
+                }
+
                 if (sslConsentHosts.contains(failingHost)) {
                     usedSslFallback = true
                     handler?.proceed()

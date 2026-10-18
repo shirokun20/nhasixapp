@@ -16,11 +16,18 @@ import 'package:nhasixapp/presentation/widgets/app_lock_gate.dart';
 import 'package:nhasixapp/presentation/pages/search/search_screen.dart';
 import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_screen.dart';
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
+import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
+import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
+import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart';
 import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
 import 'package:nhasixapp/presentation/pages/downloads/downloads_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_content_screen.dart';
 import 'package:nhasixapp/presentation/pages/offline/offline_series_detail_screen.dart';
+import 'package:nhasixapp/core/services/offline_series_detail_service.dart';
+import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
+import 'package:nhasixapp/presentation/cubits/source_auth/source_auth_cubit.dart';
 import 'package:nhasixapp/presentation/pages/history/history_screen.dart';
 import 'package:nhasixapp/presentation/pages/about/about_screen.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
@@ -181,6 +188,9 @@ class AppRouter {
               contentId: contentId,
               sourceId: sourceId,
               preloadedContent: preloaded,
+              detailCubit: getIt<DetailCubit>(),
+              favoriteCubitFactory: () => getIt<FavoriteCubit>(),
+              tagBlacklistService: getIt<TagBlacklistService>(),
             ),
             kind: RouteKind.forward,
           );
@@ -322,6 +332,9 @@ class AppRouter {
               sourceId:
                   sourceId ?? typedContentGroup!.representativeContent.sourceId,
               baseTitle: baseTitle ?? typedContentGroup!.baseTitle,
+              service: getIt<OfflineSeriesDetailService>(),
+              offlineSearchCubit: getIt<OfflineSearchCubit>(),
+              downloadBloc: getIt<DownloadBloc>(),
             ),
             kind: RouteKind.forward,
           );
@@ -463,7 +476,10 @@ class AppRouter {
         pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
           context,
           state,
-          SourceLoginPage(sourceId: 'crotpedia'),
+          SourceLoginPage(
+            sourceId: 'crotpedia',
+            sourceAuthCubitFactory: () => getIt<SourceAuthCubit>(),
+          ),
           kind: RouteKind.forward,
         ),
       ),
@@ -477,7 +493,10 @@ class AppRouter {
           return AppAnimations.animatedPageBuilder(
             context,
             state,
-            SourceLoginPage(sourceId: sourceId),
+            SourceLoginPage(
+              sourceId: sourceId,
+              sourceAuthCubitFactory: () => getIt<SourceAuthCubit>(),
+            ),
             kind: RouteKind.forward,
           );
         },

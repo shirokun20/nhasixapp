@@ -61,12 +61,15 @@ class KuronPdfButton extends StatelessWidget {
     return _KuronGlassContainer(
       color: Colors.red,
       onTap: () async {
-        if (File(filePath).existsSync()) {
+        final exists = await File(filePath).exists();
+        if (exists) {
           await KuronNative.instance.openPdf(filePath: filePath, title: label);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error: File not found')),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Error: File not found')),
+            );
+          }
         }
       },
       child: Row(

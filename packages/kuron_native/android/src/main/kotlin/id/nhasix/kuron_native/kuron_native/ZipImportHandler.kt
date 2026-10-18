@@ -28,6 +28,8 @@ class ZipImportHandler(private val activity: Activity) {
         const val REQUEST_CODE_PICK_ZIP = 2003
         const val REQUEST_CODE_PICK_ZIP_MULTIPLE = 2004
         private const val BUFFER_SIZE = 8192 // 8KB buffer for streaming
+        private const val MAX_ZIP_BYTES = 512L * 1024L * 1024L // 512MB cap
+        private const val MAX_ZIP_ENTRIES = 200_000 // 200k entries cap
     }
 
     private var pendingResult: MethodChannel.Result? = null
@@ -106,13 +108,18 @@ class ZipImportHandler(private val activity: Activity) {
             val buffer = ByteArrayOutputStream()
             val data = ByteArray(16384) // 16KB buffer
             var bytesRead: Int
+            var totalRead = 0L
 
             inputStream.use { input ->
                 while (input.read(data, 0, data.size).also { bytesRead = it } != -1) {
+                    totalRead += bytesRead
+                    if (totalRead > MAX_ZIP_BYTES) {
+                        result.error("ZIP_TOO_LARGE", "ZIP file exceeds maximum allowed size (512MB)", null)
+                        return
+                    }
                     buffer.write(data, 0, bytesRead)
                 }
             }
-
             result.success(buffer.toByteArray())
         } catch (e: Exception) {
             result.error("READ_FAILED", "Failed to read ZIP file: ${e.message}", null)
@@ -161,6 +168,13 @@ class ZipImportHandler(private val activity: Activity) {
                         val countZip = ZipInputStream(BufferedInputStream(countStream))
                         while (countZip.nextEntry != null) {
                             totalEntries++
+                            if (totalEntries > MAX_ZIP_ENTRIES) {
+                                countZip.close()
+                                withContext(Dispatchers.Main) {
+                                    result.error("ZIP_TOO_MANY_ENTRIES", "ZIP contains too many entries (maximum $MAX_ZIP_ENTRIES)", null)
+                                }
+                                return@launch
+                            }
                             countZip.closeEntry()
                         }
                         countZip.close()
@@ -171,6 +185,7 @@ class ZipImportHandler(private val activity: Activity) {
                 }
 
                 // Second pass: actual extraction
+                var totalExtractedBytes = 0L
                 var entry = zipStream.nextEntry
                 while (entry != null) {
                     try {
@@ -195,6 +210,10 @@ class ZipImportHandler(private val activity: Activity) {
                                     val buffer = ByteArray(BUFFER_SIZE)
                                     var bytesRead: Int
                                     while (zipStream.read(buffer).also { bytesRead = it } > 0) {
+                                        totalExtractedBytes += bytesRead
+                                        if (totalExtractedBytes > MAX_ZIP_BYTES) {
+                                            throw IllegalStateException("Extracted content exceeds maximum allowed size (512MB)")
+                                        }
                                         output.write(buffer, 0, bytesRead)
                                     }
                                 }
@@ -203,7 +222,9 @@ class ZipImportHandler(private val activity: Activity) {
 
                                 // Update progress
                                 processedEntries++
-
+                                if (processedEntries > MAX_ZIP_ENTRIES) {
+                                    throw IllegalStateException("ZIP contains too many entries (maximum $MAX_ZIP_ENTRIES)")
+                                }
                                 // Send progress to Flutter for UI display
                                 withContext(Dispatchers.Main) {
                                     methodChannel.invokeMethod("onZipExtractionProgress", mapOf(
@@ -216,9 +237,15 @@ class ZipImportHandler(private val activity: Activity) {
                             } else {
                                 // Skip non-image files but still count them
                                 processedEntries++
+                                if (processedEntries > MAX_ZIP_ENTRIES) {
+                                    throw IllegalStateException("ZIP contains too many entries (maximum $MAX_ZIP_ENTRIES)")
+                                }
                             }
                         }
                     } catch (e: Exception) {
+                        if (e is IllegalStateException && (e.message?.contains("maximum") == true)) {
+                            throw e
+                        }
                         // Log but continue with other files
                         android.util.Log.e("ZipImportHandler", "Failed to extract ${entry.name}: ${e.message}")
                     }
@@ -246,6 +273,13 @@ class ZipImportHandler(private val activity: Activity) {
                 }
 
             } catch (e: Exception) {
+                // Cap breach or failure: remove partial output so a retry
+                // starts clean instead of seeing leftovers.
+                try {
+                    File(destinationPath).listFiles()?.forEach {
+                        try { if (it.isDirectory) it.deleteRecursively() else it.delete() } catch (_: Exception) {}
+                    }
+                } catch (_: Exception) {}
                 withContext(Dispatchers.Main) {
                     result.error("EXTRACTION_FAILED", "Failed to extract ZIP: ${e.message}", e.toString())
                 }

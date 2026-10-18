@@ -4,17 +4,11 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
-import 'package:nhasixapp/core/config/remote_config_service.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
-
-import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/domain/entities/history.dart';
-import 'package:nhasixapp/domain/usecases/content/get_content_chapters_usecase.dart';
-import 'package:nhasixapp/domain/value_objects/value_objects.dart';
 
 class ChapterListBottomSheet extends StatefulWidget {
   const ChapterListBottomSheet({
@@ -38,7 +32,6 @@ class ChapterListBottomSheet extends StatefulWidget {
 
 class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   late final List<Chapter> _chapters;
-  final _getContentChaptersUseCase = getIt<GetContentChaptersUseCase>();
   String? _selectedLanguageKey;
   bool _isLoadingMore = false;
   String? _loadMoreError;
@@ -545,7 +538,7 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        if (getIt<RemoteConfigService>()
+                                        if (widget.detailCubit
                                             .isFeatureEnabled(
                                                 widget.content.sourceId,
                                                 (f) => f.download))
@@ -674,16 +667,6 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     );
   }
 
-  int _resolvePageLimit() {
-    final cfg =
-        getIt<RemoteConfigService>().getRawConfig(widget.content.sourceId);
-    final chapterCfg = (cfg?['api']?['detail']?['chapters'] as Map?) ??
-        (cfg?['api']?['chapters'] as Map?);
-    final endpoint = chapterCfg?['endpoint']?.toString() ?? '';
-    final match = RegExp(r'limit=(\d+)').firstMatch(endpoint);
-    return match != null ? int.parse(match.group(1)!) : 100;
-  }
-
   Future<void> _loadMoreChapters(String languageKey) async {
     if (_isLoadingMore) return;
     setState(() {
@@ -692,38 +675,26 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
     });
 
     try {
-      final limit = _resolvePageLimit();
-      final loadedForLang = _chapters
-          .where((c) =>
-              ChapterLanguagePresenter.normalize(c.language) ==
-              ChapterLanguagePresenter.normalize(languageKey))
-          .length;
-      final isPageSource = widget.content.sourceId == 'mangafire';
-      final next = await _getContentChaptersUseCase(
-        GetContentChaptersParams(
-          contentId: ContentId(widget.content.id),
-          sourceId: widget.content.sourceId,
-          language: languageKey,
-          page: isPageSource ? (loadedForLang ~/ limit + 1) : null,
-          offset: isPageSource ? null : loadedForLang,
-          scanGroup: widget.initialScanGroup ?? 'Chapter',
-        ),
+      final result = await widget.detailCubit.loadMoreChaptersForBottomSheet(
+        contentId: widget.content.id,
+        sourceId: widget.content.sourceId,
+        languageKey: languageKey,
+        currentChapters: _chapters,
+        scanGroup: widget.initialScanGroup,
       );
-      final existingIds = _chapters.map((chapter) => chapter.id).toSet();
-      final nextChapters = next
-          .where((chapter) => existingIds.add(chapter.id))
-          .toList(growable: false);
 
       setState(() {
-        _chapters.addAll(nextChapters);
-        if (next.length < limit) {
+        _chapters.addAll(result.newChapters);
+        if (result.isFullyLoaded) {
           _fullyLoadedLanguages.add(languageKey);
         }
       });
-      widget.detailCubit.setAllChapters(_chapters,
-          sourceId: widget.content.sourceId,
-          language: languageKey,
-          scanGroup: widget.initialScanGroup);
+      widget.detailCubit.setAllChapters(
+        _chapters,
+        sourceId: widget.content.sourceId,
+        language: languageKey,
+        scanGroup: widget.initialScanGroup,
+      );
     } catch (_) {
       setState(() => _loadMoreError = 'Retry load more');
     } finally {
@@ -763,16 +734,10 @@ class _ChapterListBottomSheetState extends State<ChapterListBottomSheet> {
   }
 
   String _languageLabel(String code) {
-    final normalized = ChapterLanguagePresenter.normalize(code);
-    if (normalized == unknownChapterLanguageKey) {
-      return AppLocalizations.of(context)!.languageLabel;
-    }
-    final languageService = getIt<LanguageService>();
-    final displayName = languageService.resolve(normalized)?.displayName ??
-        (normalized.contains('-')
-            ? languageService.displayName(normalized.split('-').first)
-            : languageService.displayName(normalized));
-    return '$displayName (${normalized.toUpperCase()})';
+    return widget.detailCubit.resolveLanguageLabel(
+      code,
+      defaultLabel: AppLocalizations.of(context)!.languageLabel,
+    );
   }
 }
 

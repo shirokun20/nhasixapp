@@ -7,25 +7,20 @@ import 'package:logger/web.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/domain/entities/entities.dart';
+import 'package:nhasixapp/presentation/cubits/comments/comments_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/core/utils/app_state_manager.dart';
-import 'package:nhasixapp/core/utils/source_url_resolver.dart';
 import 'package:nhasixapp/presentation/cubits/source/source_cubit.dart';
-import 'package:nhasixapp/core/config/remote_config_service.dart';
-import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/utils/tag_color_palette.dart';
-import 'package:nhasixapp/core/services/source_auth_service.dart';
 import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/cubits/settings/settings_cubit.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
-import 'package:kuron_core/kuron_core.dart';
 import '../../../core/utils/error_message_utils.dart';
 import '../../widgets/download_button_widget.dart';
 import '../../widgets/kuro_mascot.dart';
@@ -49,6 +44,9 @@ class DetailScreen extends StatefulWidget {
   // cover + title render instantly during the Hero flight while the rest of
   // the detail (chapters, metadata, related) loads in the background.
   final Content? preloadedContent;
+  final DetailCubit? detailCubit;
+  final FavoriteCubit Function()? favoriteCubitFactory;
+  final TagBlacklistService? tagBlacklistService;
 
   const DetailScreen({
     super.key,
@@ -56,6 +54,9 @@ class DetailScreen extends StatefulWidget {
     this.sourceId,
     this.chapterId,
     this.preloadedContent,
+    this.detailCubit,
+    this.favoriteCubitFactory,
+    this.tagBlacklistService,
   });
 
   @visibleForTesting
@@ -175,7 +176,21 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   late final DetailCubit _detailCubit;
-  late final TagBlacklistService _tagBlacklistService;
+  TagBlacklistService? _tagBlacklistService;
+
+  FavoriteCubit? _favoriteCubitCache;
+  bool _ownsFavoriteCubit = false;
+  CommentsCubit? _commentsCubitCache;
+
+  FavoriteCubit _getFavoriteCubit() {
+    final cached = _favoriteCubitCache;
+    if (cached != null) return cached;
+    if (widget.favoriteCubitFactory != null) {
+      _ownsFavoriteCubit = true;
+      return _favoriteCubitCache = widget.favoriteCubitFactory!();
+    }
+    return _favoriteCubitCache = context.read<FavoriteCubit>();
+  }
   late final DetailTagQueryResolver _tagQueryResolver;
   final ScrollController _scrollController = ScrollController();
   bool _isNavigating =
@@ -286,11 +301,10 @@ class _DetailScreenState extends State<DetailScreen> {
       contentId: widget.contentId,
       sourceId: preloadedSourceId ?? widget.sourceId ?? '',
       imageHeaders: preloadedSourceId != null && preloadedCover.isNotEmpty
-          ? getIt<ContentSourceRegistry>()
-              .getSource(preloadedSourceId)
-              ?.getImageDownloadHeaders(
-                imageUrl: preloadedCover,
-              )
+          ? _detailCubit.getImageDownloadHeaders(
+              preloadedSourceId,
+              imageUrl: preloadedCover,
+            )
           : null,
       onBack: context.pop,
       onGoOnline: () => _showGoOnlineDialog(context),
@@ -399,8 +413,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _onFavoritePressed(DetailLoaded detailState) async {
     final sourceId = detailState.content.sourceId;
-    final remoteConfig = getIt<RemoteConfigService>();
-    final favoriteEnabled = remoteConfig.isFeatureEnabled(
+    final favoriteEnabled = _detailCubit.isFeatureEnabled(
       sourceId,
       (f) => f.favorite,
     );
@@ -410,16 +423,15 @@ class _DetailScreenState extends State<DetailScreen> {
       return;
     }
 
-    final sourceAuthService = getIt<SourceAuthService>();
     final supportsOnlineFavorite =
-        sourceAuthService.supportsOnlineFavoritesWrite(sourceId);
+        _detailCubit.supportsOnlineFavorites(sourceId);
 
     if (!supportsOnlineFavorite) {
       await _detailCubit.toggleFavorite();
       return;
     }
 
-    final hasSession = await sourceAuthService.hasSession(sourceId);
+    final hasSession = await _detailCubit.hasOnlineSession(sourceId);
     if (!mounted) return;
 
     final selection = await showModalBottomSheet<String>(
@@ -494,7 +506,6 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _toggleOnlineFavorite(DetailLoaded detailState) async {
-    final sourceAuthService = getIt<SourceAuthService>();
     final sourceId = detailState.content.sourceId;
     final galleryId = int.tryParse(detailState.content.id);
     if (galleryId == null) {
@@ -510,31 +521,19 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     try {
-      final status = await sourceAuthService.checkFavorite(
+      final isNowFavorited = await _detailCubit.toggleOnlineFavorite(
         sourceId: sourceId,
         galleryId: galleryId,
       );
-
-      if (status.favorited) {
-        await sourceAuthService.removeFavorite(
-          sourceId: sourceId,
-          galleryId: galleryId,
-        );
-      } else {
-        await sourceAuthService.addFavorite(
-          sourceId: sourceId,
-          galleryId: galleryId,
-        );
-      }
 
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            status.favorited
-                ? AppLocalizations.of(context)!.removedFromFavorites
-                : AppLocalizations.of(context)!.addToFavorites,
+            isNowFavorited
+                ? AppLocalizations.of(context)!.addToFavorites
+                : AppLocalizations.of(context)!.removedFromFavorites,
           ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
@@ -571,13 +570,12 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailCubit = getIt<DetailCubit>();
+    _detailCubit = widget.detailCubit ?? context.read<DetailCubit>();
     _mangaFireCoordinator =
         DetailMangaFireCoordinator(detailCubit: _detailCubit);
     _tagQueryResolver = const DetailTagQueryResolver();
-    _tagBlacklistService = getIt<TagBlacklistService>()
-      ..addListener(_handleBlacklistChanged);
-
+    _tagBlacklistService = widget.tagBlacklistService;
+    _tagBlacklistService?.addListener(_handleBlacklistChanged);
     // Check if we need to switch source first
     if (widget.sourceId != null) {
       final sourceCubit = context.read<SourceCubit>();
@@ -656,7 +654,7 @@ class _DetailScreenState extends State<DetailScreen> {
       return;
     }
 
-    await _tagBlacklistService.syncOnlineEntries(sourceId);
+    await _tagBlacklistService?.syncOnlineEntries(sourceId);
   }
 
   void _handleBlacklistChanged() {
@@ -670,9 +668,13 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   void dispose() {
-    _tagBlacklistService.removeListener(_handleBlacklistChanged);
+    _tagBlacklistService?.removeListener(_handleBlacklistChanged);
     _mangaFireCoordinator.dispose();
     _scrollController.dispose();
+    _commentsCubitCache?.close();
+    // Only close factory-minted instances; shared context.read instances
+    // belong to their provider.
+    if (_ownsFavoriteCubit) _favoriteCubitCache?.close();
     _detailCubit.close();
     super.dispose();
   }
@@ -697,8 +699,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   .content
                   .sourceId
               : 'nhentai');
-      final rawConfig =
-          getIt<RemoteConfigService>().getRawConfig(actualSourceId);
+      final rawConfig = _detailCubit.getRawConfig(actualSourceId);
       final resolvedQuery = _tagQueryResolver.resolve(
         sourceId: actualSourceId,
         tagName: tagName,
@@ -822,11 +823,10 @@ class _DetailScreenState extends State<DetailScreen> {
       contentId: content.id,
       sourceId: content.sourceId,
       pageNumber: headerUsesFirstPage ? 1 : null,
-      imageHeaders: getIt<ContentSourceRegistry>()
-          .getSource(content.sourceId)
-          ?.getImageDownloadHeaders(
-            imageUrl: headerImageUrl,
-          ),
+      imageHeaders: _detailCubit.getImageDownloadHeaders(
+        content.sourceId,
+        imageUrl: headerImageUrl,
+      ),
       blurOverlay: shouldBlurPrimaryCover
           ? const DetailBlacklistedCoverOverlay(compact: false)
           : null,
@@ -890,8 +890,7 @@ class _DetailScreenState extends State<DetailScreen> {
       BlocSelector<DetailCubit, DetailState, bool>(
         selector: (s) => s is DetailLoaded && s.isFavorited,
         builder: (context, isFavorited) {
-          final remoteConfig = getIt<RemoteConfigService>();
-          final favoriteEnabled = remoteConfig.isFeatureEnabled(
+          final favoriteEnabled = _detailCubit.isFeatureEnabled(
             content.sourceId,
             (f) => f.favorite,
           );
@@ -1090,10 +1089,11 @@ class _DetailScreenState extends State<DetailScreen> {
         ? settingsState.preferences.blacklistedTags
         : const <String>[];
 
-    final isBlacklisted = _tagBlacklistService.isContentBlacklisted(
-      content,
-      localEntries: localBlacklistEntries,
-    );
+    final isBlacklisted = _tagBlacklistService?.isContentBlacklisted(
+          content,
+          localEntries: localBlacklistEntries,
+        ) ??
+        false;
 
     if (!isBlacklisted) {
       return const SizedBox.shrink();
@@ -1111,10 +1111,11 @@ class _DetailScreenState extends State<DetailScreen> {
       return false;
     }
 
-    return _tagBlacklistService.isContentBlacklisted(
-      content,
-      localEntries: settingsState.preferences.blacklistedTags,
-    );
+    return _tagBlacklistService?.isContentBlacklisted(
+          content,
+          localEntries: settingsState.preferences.blacklistedTags,
+        ) ??
+        false;
   }
 
   List<String> _creatorNames(Content content, String type) =>
@@ -1270,9 +1271,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildActionButtons(DetailLoaded detailState) {
     final content = detailState.content;
     // Check if chapters feature is enabled for this source
-    final remoteConfig = getIt<RemoteConfigService>();
     final hasChaptersFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.chapters);
+        _detailCubit.isFeatureEnabled(content.sourceId, (f) => f.chapters);
     final hasChapters = content.chapters?.isNotEmpty == true;
 
     Logger().i('content.sourceId: ${content.sourceId}');
@@ -1301,8 +1301,8 @@ class _DetailScreenState extends State<DetailScreen> {
             return DetailChapterSection(
               content: safeDisplayContent,
               chapterHistory: chapterHistory,
-              canDownload: getIt<RemoteConfigService>()
-                  .isFeatureEnabled(content.sourceId, (f) => f.download),
+              canDownload: _detailCubit.isFeatureEnabled(
+                  content.sourceId, (f) => f.download),
               availableLanguageKeys: content.sourceId == 'mangafire'
                   ? _mangaFireCoordinator.extractAvailableLanguageKeys(content)
                   : (() {
@@ -1398,8 +1398,8 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
 
           // Download button - conditional
-          if (getIt<RemoteConfigService>()
-              .isFeatureEnabled(content.sourceId, (f) => f.download)) ...[
+          if (_detailCubit.isFeatureEnabled(
+              content.sourceId, (f) => f.download)) ...[
             const SizedBox(width: 8),
             Expanded(
               flex: 1,
@@ -1450,17 +1450,10 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   String _formatChapterLanguageLabel(String languageCode) {
-    final normalized = ChapterLanguagePresenter.normalize(languageCode);
-    if (normalized == unknownChapterLanguageKey) {
-      return AppLocalizations.of(context)!.languageLabel;
-    }
-    final langService = getIt<LanguageService>();
-    final name = langService.resolve(normalized)?.displayName ??
-        (normalized.contains('-')
-            ? langService.displayName(normalized.split('-').first)
-            : langService.displayName(normalized));
-    final upper = normalized.toUpperCase();
-    return '$name ($upper)';
+    return _detailCubit.resolveLanguageLabel(
+      languageCode,
+      defaultLabel: AppLocalizations.of(context)!.languageLabel,
+    );
   }
 
   Widget _buildRelatedContentSection(DetailLoaded state) {
@@ -1468,9 +1461,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final relatedContent = state.relatedContent ?? [];
 
     // Check if related content feature is enabled for this source
-    final remoteConfig = getIt<RemoteConfigService>();
     final hasRelatedFeature =
-        remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.related);
+        _detailCubit.isFeatureEnabled(content.sourceId, (f) => f.related);
 
     if (!hasRelatedFeature || relatedContent.isEmpty) {
       return const SizedBox.shrink();
@@ -1481,9 +1473,10 @@ class _DetailScreenState extends State<DetailScreen> {
       items: relatedContent,
       onTap: _navigateToRelatedContent,
       shouldBlurCover: _shouldBlurCover,
-      resolveHeaders: (relatedContent) => getIt<ContentSourceRegistry>()
-          .getSource(relatedContent.sourceId)
-          ?.getImageDownloadHeaders(imageUrl: relatedContent.coverUrl),
+      resolveHeaders: (relatedContent) => _detailCubit.getImageDownloadHeaders(
+        relatedContent.sourceId,
+        imageUrl: relatedContent.coverUrl,
+      ),
     );
   }
 
@@ -1497,17 +1490,16 @@ class _DetailScreenState extends State<DetailScreen> {
     Content content, {
     List<Comment>? preloadedComments,
   }) {
-    final remoteConfig = getIt<RemoteConfigService>();
     final sourceId = content.sourceId;
 
     // 1) Feature disabled entirely — hide
-    if (!remoteConfig.isFeatureEnabled(sourceId, (f) => f.comments)) {
+    if (!_detailCubit.isFeatureEnabled(sourceId, (f) => f.comments)) {
       return const SizedBox.shrink();
     }
 
     // 2) Feature enabled but under maintenance — show banner
     final maintenance =
-        remoteConfig.getFeatureMaintenance(sourceId, 'comments');
+        _detailCubit.getFeatureMaintenance(sourceId, 'comments');
     if (maintenance != null) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
@@ -1574,10 +1566,13 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     // 3) Feature enabled and available — show normally
+    // Cache: one CommentsCubit per screen lifetime, closed in dispose.
+    _commentsCubitCache ??= _detailCubit.createCommentsCubit();
     return CommentsSectionWidget(
       contentId: content.id,
       sourceId: sourceId,
       preloadedComments: preloadedComments,
+      commentsCubit: _commentsCubitCache!,
     );
   }
 
@@ -1603,20 +1598,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   String _resolveDisplayLanguage(Content content) {
-    final langService = getIt<LanguageService>();
-    final lang = content.language.toLowerCase();
-    if (lang.isNotEmpty && lang != 'unknown') {
-      return langService.displayName(lang);
-    }
-    // Fallback: check source config for a defaultLanguage field
-    final remoteConfig = getIt<RemoteConfigService>();
-    final rawConfig = remoteConfig.getRawConfig(content.sourceId);
-    final defaultLang =
-        (rawConfig?['defaultLanguage'] as String?)?.toLowerCase();
-    if (defaultLang != null && defaultLang.isNotEmpty) {
-      return langService.displayName(defaultLang);
-    }
-    return lang;
+    return _detailCubit.resolveDisplayLanguage(content);
   }
 
   String _formatDate(DateTime date) {
@@ -1678,14 +1660,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final imageMetadata =
         currentState is DetailLoaded ? currentState.imageMetadata : null;
 
-    final rawConfig =
-        getIt<RemoteConfigService>().getRawConfig(content.sourceId);
-    final hasPagination = rawConfig != null &&
-        (((rawConfig['scraper'] as Map?)?.cast<String, dynamic>()['selectors']
-                        as Map?)
-                    ?.cast<String, dynamic>()['reader'] as Map?)
-                ?.containsKey('pagination') ==
-            true;
+    final hasPagination = _detailCubit.hasPagination(content.sourceId);
 
     final launchPayload = ReaderLaunchPayloadBuilder.build(
       content: content,
@@ -1759,12 +1734,8 @@ class _DetailScreenState extends State<DetailScreen> {
   String _buildContentUrl(Content content) {
     // Prefer config-driven canonical web URL for sharing when available.
     // This prevents sharing API detail endpoints for sources like MangaDex.
-    final configDrivenUrl = SourceUrlResolver.buildContentUrl(
-      remoteConfigService: getIt<RemoteConfigService>(),
-      sourceId: content.sourceId,
-      contentId: content.id,
-    );
-    if (configDrivenUrl.isNotEmpty) {
+    final configDrivenUrl = _detailCubit.buildContentUrl(content);
+    if (configDrivenUrl != null && configDrivenUrl.isNotEmpty) {
       return configDrivenUrl;
     }
 
@@ -1893,12 +1864,10 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _handleMenuAction(String action, Content content) {
-    final remoteConfig = getIt<RemoteConfigService>();
-
     switch (action) {
       case 'download':
         // Check feature flag before downloading
-        if (!remoteConfig.isFeatureEnabled(
+        if (!_detailCubit.isFeatureEnabled(
             content.sourceId, (f) => f.download)) {
           _showFeatureDisabledDialog('download');
           return;
@@ -1917,8 +1886,8 @@ class _DetailScreenState extends State<DetailScreen> {
   // Start download for the content
   Future<void> _startDownload(Content content) async {
     // Check if download feature is enabled
-    final remoteConfig = getIt<RemoteConfigService>();
-    if (!remoteConfig.isFeatureEnabled(content.sourceId, (f) => f.download)) {
+    if (!_detailCubit.isFeatureEnabled(
+        content.sourceId, (f) => f.download)) {
       _showFeatureDisabledDialog('download');
       return;
     }
@@ -2255,7 +2224,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   // Show manage collections sheet for a favorite item
   Future<void> _showManageCollectionsSheet(Content content) async {
-    final favoriteCubit = getIt<FavoriteCubit>();
+    final favoriteCubit = _getFavoriteCubit();
     if (favoriteCubit.state is! FavoriteLoaded) {
       await favoriteCubit.loadFavorites();
     }
@@ -2394,7 +2363,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<bool> _showCreateCollectionFromDetailDialog() async {
-    final favoriteCubit = getIt<FavoriteCubit>();
+    final favoriteCubit = _getFavoriteCubit();
     String inputName = '';
     final controller = TextEditingController();
 

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
@@ -13,18 +12,19 @@ import 'package:nhasixapp/presentation/cubits/comments/comments_state.dart';
 import 'package:nhasixapp/presentation/pages/detail/widgets/comment_item_widget.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:nhasixapp/core/services/source_auth_service.dart';
 
 class CommentsSectionWidget extends StatefulWidget {
   final String contentId;
   final String sourceId;
   final List<Comment>? preloadedComments;
+  final CommentsCubit? commentsCubit;
 
   const CommentsSectionWidget({
     super.key,
     required this.contentId,
     required this.sourceId,
     this.preloadedComments,
+    this.commentsCubit,
   });
 
   @override
@@ -37,7 +37,6 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
 
   final TextEditingController _commentController = TextEditingController();
   late final CommentsCubit _commentsCubit;
-  late final SourceAuthService _sourceAuthService;
   bool _isRefreshingComposer = true;
   bool _supportsSubmission = false;
   bool _hasSession = false;
@@ -61,8 +60,7 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
   @override
   void initState() {
     super.initState();
-    _commentsCubit = getIt<CommentsCubit>();
-    _sourceAuthService = getIt<SourceAuthService>();
+    _commentsCubit = widget.commentsCubit ?? context.read<CommentsCubit>();
     _commentController.addListener(_handleCommentChanged);
     _seedOrLoadComments();
     unawaited(_refreshComposerState());
@@ -86,7 +84,6 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
   void dispose() {
     _commentController.removeListener(_handleCommentChanged);
     _commentController.dispose();
-    _commentsCubit.close();
     super.dispose();
   }
 
@@ -111,7 +108,7 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
 
   Future<void> _refreshComposerState() async {
     final supportsSubmission =
-        _sourceAuthService.supportsCommentSubmission(widget.sourceId);
+        _commentsCubit.supportsCommentSubmission(widget.sourceId);
 
     if (!supportsSubmission) {
       if (!mounted) return;
@@ -132,9 +129,9 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
     }
 
     try {
-      final hasSession = await _sourceAuthService.hasSession(widget.sourceId);
+      final hasSession = await _commentsCubit.hasSession(widget.sourceId);
       final accountName = hasSession
-          ? await _sourceAuthService.getSessionDisplayName(widget.sourceId)
+          ? await _commentsCubit.getSessionDisplayName(widget.sourceId)
           : null;
 
       if (!mounted) return;
@@ -170,7 +167,7 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
   Future<void> _solveCaptcha() async {
     try {
       final bootstrap =
-          await _sourceAuthService.getCaptchaBootstrap(widget.sourceId);
+          await _commentsCubit.getCaptchaBootstrap(widget.sourceId);
       final provider = bootstrap.captchaProvider?.trim() ?? '';
       final siteKey = bootstrap.captchaSiteKey?.trim() ?? '';
 
@@ -248,7 +245,7 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
     });
 
     try {
-      final createdComment = await _sourceAuthService.createComment(
+      await _commentsCubit.submitComment(
         sourceId: widget.sourceId,
         galleryId: galleryId,
         body: commentBody,
@@ -257,7 +254,6 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
 
       if (!mounted) return;
 
-      _commentsCubit.prependComment(createdComment);
       _commentController.clear();
 
       setState(() {

@@ -141,5 +141,20 @@ void main() {
       expect(isLocalReaderImagePath('file:///tmp/test.webp'), isTrue);
       expect(isLocalReaderImagePath('https://ehgt.org/test/1.jpg'), isFalse);
     });
+
+    test('upgrades http:// and // to https:// in toAbsoluteRepairUrl', () {
+      expect(
+        toAbsoluteRepairUrl('http://example.com/img.jpg', 'https://example.com'),
+        'https://example.com/img.jpg',
+      );
+      expect(
+        toAbsoluteRepairUrl('//example.com/img.jpg', 'https://example.com'),
+        'https://example.com/img.jpg',
+      );
+      expect(
+        toAbsoluteRepairUrl('/path/img.jpg', 'http://example.com'),
+        'https://example.com/path/img.jpg',
+      );
+    });
   });
 }

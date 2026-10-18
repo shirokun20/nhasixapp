@@ -10,7 +10,7 @@ import '../../core/constants/design_tokens.dart';
 import '../../domain/entities/entities.dart';
 import '../blocs/download/download_bloc.dart';
 import 'content_list_widget.dart';
-import 'ehentai_download_strategy.dart';
+import '../../domain/services/ehentai_download_strategy.dart';
 import 'download_range_selector.dart';
 import 'download_settings_widget.dart';
 

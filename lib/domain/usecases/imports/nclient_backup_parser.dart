@@ -3,13 +3,21 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 
+import '../backup_zip_guard.dart';
+
 import 'nclient_backup.dart';
 
 // Pure-Dart parser for NClient V2/V3 `Backup_*.zip` / raw `Database.json`.
 // Tables Tags/GalleryTags/Bookmark/Downloads/Settings are never mapped to
 // model objects (real backup: 85k tag rows) — dropped right after decode.
 class NclientBackupParser {
+  static const int maxBackupSizeBytes = 512 * 1024 * 1024; // 512MB
+  static const int maxBackupZipEntries = 200000;
+
   NclientBackup parseBytes(Uint8List bytes, {String? fileName}) {
+    if (bytes.length > maxBackupSizeBytes) {
+      throw const FormatException('Backup file exceeds maximum allowed size (512MB)');
+    }
     final lower = (fileName ?? '').toLowerCase();
     if (lower.endsWith('.json')) return parseJson(utf8.decode(bytes));
     try {
@@ -21,8 +29,23 @@ class NclientBackupParser {
   }
 
   NclientBackup parseZip(Uint8List bytes) {
+    if (bytes.length > maxBackupSizeBytes) {
+      throw const FormatException('Backup archive exceeds maximum allowed size (512MB)');
+    }
+    // Pre-decode central-directory scan: reject zip bombs BEFORE inflate.
+    throwIfZipBomb(bytes,
+        maxEntries: maxBackupZipEntries,
+        maxUncompressed: maxBackupSizeBytes);
     final archive = ZipDecoder().decodeBytes(bytes);
+    if (archive.files.length > maxBackupZipEntries) {
+      throw const FormatException('Archive contains too many entries (exceeds limit of 200,000)');
+    }
+    var totalUncompressedSize = 0;
     for (final file in archive.files) {
+      totalUncompressedSize += file.size;
+      if (totalUncompressedSize > maxBackupSizeBytes) {
+        throw const FormatException('Archive uncompressed contents exceed maximum allowed size (512MB)');
+      }
       final name = file.name;
       if (name.startsWith('__MACOSX/') || !file.isFile) continue;
       final base = name.split('/').last.toLowerCase();

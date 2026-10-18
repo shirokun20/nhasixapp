@@ -9,7 +9,7 @@ import 'package:nhasixapp/domain/entities/entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/utils/chapter_language_presenter.dart';
 import 'package:nhasixapp/presentation/widgets/download_button_widget.dart';
-import 'package:nhasixapp/presentation/widgets/ehentai_download_strategy.dart';
+import 'package:nhasixapp/domain/services/ehentai_download_strategy.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 

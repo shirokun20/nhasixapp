@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:kuron_special/kuron_special.dart';
 import 'package:nhasixapp/core/config/remote_config_service.dart';
@@ -457,6 +460,66 @@ class SourceAuthService {
     }
 
     return base.isNotEmpty ? '$base/$value' : value;
+  }
+  Future<void> saveWebViewSession({
+    required String sourceId,
+    required List<String> cookies,
+    required String? cookieName,
+  }) async {
+    if (cookieName == null) return;
+    String? accessToken;
+    for (final c in cookies) {
+      try {
+        final parsed = Cookie.fromSetCookieValue(c);
+        if (parsed.name == cookieName) {
+          accessToken = parsed.value;
+          break;
+        }
+      } catch (e) {
+        _logger.w('Access token parse failed', error: e);
+      }
+    }
+    if (accessToken == null || accessToken.isEmpty) return;
+    final cfg = _configService.getRawConfig(sourceId);
+    if (cfg == null) return;
+    final api = cfg['api'] is Map<String, dynamic>
+        ? cfg['api'] as Map<String, dynamic>
+        : null;
+    final apiBase = api?['apiBase']?.toString() ?? '';
+    final auth = cfg['auth'] is Map<String, dynamic>
+        ? cfg['auth'] as Map<String, dynamic>
+        : null;
+    final ep = auth?['endpoints'] is Map<String, dynamic>
+        ? auth!['endpoints'] as Map<String, dynamic>
+        : null;
+    final loginEndpoint = ep?['login']?.toString() ?? '';
+    if (apiBase.isEmpty || loginEndpoint.isEmpty) return;
+    // NOTE: key intentionally shared across sources with the same
+    // apiBase|loginEndpoint (same backend account), NOT per sourceId.
+    final keySeed = '$apiBase|$loginEndpoint';
+    final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
+    const storage = FlutterSecureStorage();
+    await storage.write(
+        key: sessionKey, value: jsonEncode({'accessToken': accessToken}));
+  }
+
+  ({String url, String? autoCloseCookie, List<String>? successFilters})?
+      getLoginUrls(String sourceId) {
+    final config = _configService.getRawConfig(sourceId);
+    if (config == null) return null;
+    final auth = config['auth'] is Map<String, dynamic>
+        ? config['auth'] as Map<String, dynamic>
+        : null;
+    final webview = auth?['webviewLogin'] is Map<String, dynamic>
+        ? auth!['webviewLogin'] as Map<String, dynamic>
+        : null;
+    if (webview == null) return null;
+    final url = webview['url']?.toString().trim();
+    final cookieName = webview['autoCloseCookie']?.toString().trim();
+    final rawFilters = webview['successFilters'];
+    final filters = rawFilters is List ? rawFilters.cast<String>() : null;
+    if (url == null || url.isEmpty) return null;
+    return (url: url, autoCloseCookie: cookieName, successFilters: filters);
   }
 
   DateTime? _parseUnixSeconds(dynamic rawValue) {

@@ -1,15 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
-import 'package:kuron_special/kuron_special.dart';
-import 'package:logger/logger.dart';
-import 'package:nhasixapp/core/config/remote_config_service.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_auth/crotpedia_auth_cubit.dart';
@@ -17,10 +10,14 @@ import 'package:nhasixapp/presentation/cubits/source_auth/source_auth_cubit.dart
 
 class SourceLoginPage extends StatefulWidget {
   final String sourceId;
+  final SourceAuthCubit? sourceAuthCubit;
+  final SourceAuthCubit Function()? sourceAuthCubitFactory;
 
   const SourceLoginPage({
     super.key,
     required this.sourceId,
+    this.sourceAuthCubit,
+    this.sourceAuthCubitFactory,
   });
 
   @override
@@ -36,6 +33,10 @@ class _SourceLoginPageState extends State<SourceLoginPage>
   @override
   void initState() {
     super.initState();
+    // Ancestor-provided cubit; check once here, not on every build.
+    if (widget.sourceId == 'crotpedia') {
+      context.read<CrotpediaAuthCubit>().checkLoginStatus();
+    }
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -54,11 +55,8 @@ class _SourceLoginPageState extends State<SourceLoginPage>
   @override
   Widget build(BuildContext context) {
     if (widget.sourceId == 'crotpedia') {
-      return BlocProvider(
-        create: (_) => CrotpediaAuthCubit(
-          adapter: getIt<WebViewSessionAdapter>(),
-          logger: getIt<Logger>(),
-        )..checkLoginStatus(),
+      return BlocProvider.value(
+        value: context.read<CrotpediaAuthCubit>(),
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
@@ -105,7 +103,10 @@ class _SourceLoginPageState extends State<SourceLoginPage>
 
     // ── Default: SourceAuthCubit (nhentai etc) ──
     return BlocProvider(
-      create: (_) => getIt<SourceAuthCubit>()..initialize(widget.sourceId),
+      create: (_) => (widget.sourceAuthCubitFactory != null
+          ? widget.sourceAuthCubitFactory!()
+          : (widget.sourceAuthCubit ?? context.read<SourceAuthCubit>()))
+        ..initialize(widget.sourceId),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
@@ -440,24 +441,9 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       if (result != null && result['success'] == true) {
         final cookies =
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
-        final hasSession =
-            cookies.any((c) => c.contains('wordpress_logged_in'));
-        if (hasSession) {
-          final sessionCookie =
-              cookies.firstWhere((c) => c.contains('wordpress_logged_in'));
-          final value = sessionCookie.contains('=')
-              ? sessionCookie.substring(sessionCookie.indexOf('=') + 1)
-              : '';
-          final rawParts = value.split('%7C');
-          final username =
-              rawParts.isNotEmpty ? Uri.decodeComponent(rawParts[0]) : 'User';
-          await context
-              .read<CrotpediaAuthCubit>()
-              .externalLogin(username, cookies);
-        } else if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(AppLocalizations.of(context)!.loginIncomplete)));
-        }
+        await context
+            .read<CrotpediaAuthCubit>()
+            .loginWithRawCookies(cookies);
       }
     } catch (e) {
       if (context.mounted) {
@@ -469,7 +455,8 @@ class _SourceLoginPageState extends State<SourceLoginPage>
   }
 
   Future<void> _launchTokenLogin(BuildContext context) async {
-    final urls = _getLoginUrls(widget.sourceId);
+    final cubit = context.read<SourceAuthCubit>();
+    final urls = cubit.getLoginUrls(widget.sourceId);
     if (urls == null) return;
     try {
       final result = await KuronNative.instance.showLoginWebView(
@@ -484,11 +471,12 @@ class _SourceLoginPageState extends State<SourceLoginPage>
       if (result != null && result['success'] == true) {
         final cookies =
             (result['cookies'] as List<dynamic>?)?.cast<String>() ?? [];
-        await _saveWebViewSession(cookies, urls.autoCloseCookie);
+        await cubit.saveWebViewSession(
+          sourceId: widget.sourceId,
+          cookies: cookies,
+          cookieName: urls.autoCloseCookie,
+        );
         _justLoggedIn = true;
-        if (context.mounted) {
-          context.read<SourceAuthCubit>().initialize(widget.sourceId);
-        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -497,62 +485,6 @@ class _SourceLoginPageState extends State<SourceLoginPage>
                 AppLocalizations.of(context)!.loginFailedError(e.toString()))));
       }
     }
-  }
-
-  Future<void> _saveWebViewSession(
-      List<String> cookies, String? cookieName) async {
-    if (cookieName == null) return;
-    String? accessToken;
-    for (final c in cookies) {
-      try {
-        final parsed = Cookie.fromSetCookieValue(c);
-        if (parsed.name == cookieName) {
-          accessToken = parsed.value;
-          break;
-        }
-      } catch (e) {
-        getIt<Logger>().w('Access token parse failed', error: e);
-      }
-    }
-    if (accessToken == null || accessToken.isEmpty) return;
-    final cfg = getIt<RemoteConfigService>().getRawConfig(widget.sourceId);
-    if (cfg == null) return;
-    final api = cfg['api'] is Map<String, dynamic>
-        ? cfg['api'] as Map<String, dynamic>
-        : null;
-    final apiBase = api?['apiBase']?.toString() ?? '';
-    final auth = cfg['auth'] is Map<String, dynamic>
-        ? cfg['auth'] as Map<String, dynamic>
-        : null;
-    final ep = auth?['endpoints'] is Map<String, dynamic>
-        ? auth!['endpoints'] as Map<String, dynamic>
-        : null;
-    final loginEndpoint = ep?['login']?.toString() ?? '';
-    if (apiBase.isEmpty || loginEndpoint.isEmpty) return;
-    final keySeed = '$apiBase|$loginEndpoint';
-    final sessionKey = 'kuron_special_api_auth_${keySeed.hashCode}';
-    const storage = FlutterSecureStorage();
-    await storage.write(
-        key: sessionKey, value: jsonEncode({'accessToken': accessToken}));
-  }
-
-  ({String url, String? autoCloseCookie, List<String>? successFilters})?
-      _getLoginUrls(String sourceId) {
-    final config = getIt<RemoteConfigService>().getRawConfig(sourceId);
-    if (config == null) return null;
-    final auth = config['auth'] is Map<String, dynamic>
-        ? config['auth'] as Map<String, dynamic>
-        : null;
-    final webview = auth?['webviewLogin'] is Map<String, dynamic>
-        ? auth!['webviewLogin'] as Map<String, dynamic>
-        : null;
-    if (webview == null) return null;
-    final url = webview['url']?.toString().trim();
-    final cookieName = webview['autoCloseCookie']?.toString().trim();
-    final rawFilters = webview['successFilters'];
-    final filters = rawFilters is List ? rawFilters.cast<String>() : null;
-    if (url == null || url.isEmpty) return null;
-    return (url: url, autoCloseCookie: cookieName, successFilters: filters);
   }
 
   String _mapError(AppLocalizations l10n, String raw) {

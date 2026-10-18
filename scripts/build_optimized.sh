@@ -3,9 +3,10 @@
 set -euo pipefail
 
 # Build optimized APK dengan ukuran minimal
-# Usage: ./scripts/build_optimized.sh [release|debug]
+# Usage: [DOUJINDESU_APP_SECRET=xyz] ./scripts/build_optimized.sh [release|debug]
 #        (or from repo root: scripts/build_optimized.sh)
-
+# Example with custom app secret:
+#   DOUJINDESU_APP_SECRET="your_secret_here" ./scripts/build_optimized.sh release
 BUILD_TYPE=${1:-release}
 
 # Real IDs live in android/app/build.gradle productFlavors; the effective
@@ -77,10 +78,16 @@ if [ "${SPLIT_ABI:-false}" = "true" ]; then
 else
     echo "📦 Universal APK (single file, all ABIs)"
 fi
+DART_DEFINES=(--dart-define=cronetHttpNoPlay=true)
+if [ -n "${DOUJINDESU_APP_SECRET:-}" ]; then
+    DART_DEFINES+=(--dart-define="DOUJINDESU_APP_SECRET=$DOUJINDESU_APP_SECRET")
+    echo "🔑 Injected DOUJINDESU_APP_SECRET via --dart-define"
+fi
+
 if [ "$BUILD_TYPE" = "release" ]; then
-    $FLUTTER_CMD build apk --release --flavor "$FLAVOR" $SPLIT_ABI_FLAG --split-debug-info=build/debug-info/ --dart-define=cronetHttpNoPlay=true
+    $FLUTTER_CMD build apk --release --flavor "$FLAVOR" $SPLIT_ABI_FLAG --split-debug-info=build/debug-info/ "${DART_DEFINES[@]}"
 else
-    $FLUTTER_CMD build apk --debug --flavor "$FLAVOR" $SPLIT_ABI_FLAG --dart-define=cronetHttpNoPlay=true
+    $FLUTTER_CMD build apk --debug --flavor "$FLAVOR" $SPLIT_ABI_FLAG "${DART_DEFINES[@]}"
 fi
 
 echo ""

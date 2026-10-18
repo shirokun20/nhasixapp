@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <files-path name="kuron_files" path="." />
-    <cache-path name="kuron_cache" path="." />
-    <external-path name="kuron_external" path="." />
-    <external-files-path name="kuron_external_files" path="." />
-    <external-cache-path name="kuron_external_cache" path="." />
+    <files-path name="kuron_files_downloads" path="downloads/" />
+    <files-path name="kuron_files_images" path="images/" />
+    <files-path name="kuron_files_pdf" path="nhasix-pdf/" />
+    <cache-path name="kuron_cache_images" path="images/" />
+    <cache-path name="kuron_cache_temp" path="temp/" />
+    <external-files-path name="kuron_external_downloads" path="downloads/" />
+    <external-files-path name="kuron_external_pdf" path="nhasix-pdf/" />
+    <external-cache-path name="kuron_external_cache_images" path="images/" />
+    <external-path name="kuron_external_downloads" path="Download/" />
 </paths>

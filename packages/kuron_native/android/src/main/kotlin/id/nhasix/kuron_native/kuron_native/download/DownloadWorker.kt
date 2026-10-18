@@ -985,9 +985,10 @@ class DownloadWorker(
             }
             
             override fun loadForRequest(url: okhttp3.HttpUrl): List<okhttp3.Cookie> {
-                // Security: Only return cookies for allowed domain
+                // Security: Only return cookies for allowed domain (exact host or subdomain boundary)
                 val allowed = ALLOWED_COOKIE_DOMAINS.any { allowedDomain ->
-                    url.host.endsWith(allowedDomain)
+                    url.host.equals(allowedDomain, ignoreCase = true) ||
+                        url.host.endsWith(".$allowedDomain", ignoreCase = true)
                 }
                 if (!allowed) {
                     Log.d(TAG, "No cookies for domain: ${url.host}")

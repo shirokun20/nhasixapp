@@ -18,6 +18,7 @@ import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/recommendations/recommendation_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/recommendations/recommendation_refresh_bus.dart';
 
+import 'package:nhasixapp/core/services/offline_series_detail_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -319,6 +320,17 @@ void _setupServices() {
         logger: getIt<Logger>(),
       ),
   );
+  // Offline Series Detail Service
+  getIt.registerLazySingleton<OfflineSeriesDetailService>(
+    () => OfflineSeriesDetailService(
+      offlineManager: getIt<OfflineContentManager>(),
+      getReaderPositionUseCase: getIt<GetReaderPositionUseCase>(),
+      queueManager: getIt<PdfConversionQueueManager>(),
+      remoteConfigService: getIt<RemoteConfigService>(),
+      logger: getIt<Logger>(),
+    ),
+  );
+
 
   // Download Service - Core download logic with MediaStore support
   getIt.registerLazySingleton<DownloadService>(() => DownloadService(
@@ -1356,6 +1368,10 @@ void _setupCubits() {
         imageMetadataService: getIt<ImageMetadataService>(),
         contentSourceRegistry: getIt<ContentSourceRegistry>(),
         offlineContentManager: getIt<OfflineContentManager>(),
+        sourceAuthService: getIt<SourceAuthService>(),
+        remoteConfigService: getIt<RemoteConfigService>(),
+        languageService: getIt<LanguageService>(),
+        commentsCubitFactory: () => getIt<CommentsCubit>(),
         logger: getIt<Logger>(),
       ));
 
@@ -1464,6 +1480,7 @@ void _setupCubits() {
   // CommentsCubit
   getIt.registerFactory<CommentsCubit>(() => CommentsCubit(
         getCommentsUseCase: getIt<GetCommentsUseCase>(),
+        sourceAuthService: getIt<SourceAuthService>(),
         logger: getIt<Logger>(),
       ));
 

@@ -196,18 +196,28 @@ String? extractEhentaiImageUrlFromHtml(
 }
 
 String toAbsoluteRepairUrl(String value, String baseUrl) {
+  String resolved;
   if (value.startsWith('http://') || value.startsWith('https://')) {
-    return value;
-  }
-  if (value.startsWith('//')) {
-    return 'https:$value';
+    resolved = value;
+  } else if (value.startsWith('//')) {
+    resolved = 'https:$value';
+  } else {
+    try {
+      resolved = Uri.parse(baseUrl).resolve(value).toString();
+    } catch (_) {
+      resolved = value;
+    }
   }
 
-  try {
-    return Uri.parse(baseUrl).resolve(value).toString();
-  } catch (_) {
-    return value;
+  // Security hardening: Upgrade http:// -> https:// to avoid cleartext image transport.
+  // Note: Fallback at this resolution level is not feasible because this is a synchronous
+  // pure string resolver without network I/O. If a source host is strictly http-only,
+  // it would be blocked by Android network_security_config cleartextTrafficPermitted=false anyway.
+  if (resolved.startsWith('http://')) {
+    return 'https://${resolved.substring(7)}';
   }
+
+  return resolved;
 }
 
 String? _extensionFromContentType(String? contentType) {

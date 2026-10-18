@@ -4,7 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.LayoutRes
-import HomeWidgetGlanceWidgetReceiver
+import es.antonborri.home_widget.HomeWidgetGlanceWidgetReceiver
 import id.nhasix.app.R
 
 /**

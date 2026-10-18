@@ -14,6 +14,13 @@ import 'package:kuron_core/kuron_core.dart';
 
 import '../../../../core/utils/error_message_utils.dart';
 import '../../../domain/entities/history.dart';
+import '../../../core/config/config_models.dart';
+import '../../../core/config/remote_config_service.dart';
+import '../../../core/services/source_auth_service.dart';
+import '../../../core/services/language_service.dart';
+import '../../../core/utils/source_url_resolver.dart';
+import '../../utils/chapter_language_presenter.dart';
+import '../comments/comments_cubit.dart';
 
 part 'detail_state.dart';
 
@@ -61,6 +68,10 @@ class DetailCubit extends BaseCubit<DetailState> {
     required ImageMetadataService imageMetadataService,
     required ContentSourceRegistry contentSourceRegistry,
     required OfflineContentManager offlineContentManager,
+    SourceAuthService? sourceAuthService,
+    RemoteConfigService? remoteConfigService,
+    LanguageService? languageService,
+    CommentsCubit Function()? commentsCubitFactory,
     required super.logger,
   })  : _getContentDetailUseCase = getContentDetailUseCase,
         _getRelatedContentUseCase = getRelatedContentUseCase,
@@ -71,6 +82,10 @@ class DetailCubit extends BaseCubit<DetailState> {
         _imageMetadataService = imageMetadataService,
         _contentSourceRegistry = contentSourceRegistry,
         _offlineContentManager = offlineContentManager,
+        _sourceAuthService = sourceAuthService,
+        _remoteConfigService = remoteConfigService,
+        _languageService = languageService,
+        _commentsCubitFactory = commentsCubitFactory,
         super(
           initialState: const DetailInitial(),
         );
@@ -84,6 +99,171 @@ class DetailCubit extends BaseCubit<DetailState> {
   final ImageMetadataService _imageMetadataService;
   final ContentSourceRegistry _contentSourceRegistry;
   final OfflineContentManager _offlineContentManager;
+  final SourceAuthService? _sourceAuthService;
+  final RemoteConfigService? _remoteConfigService;
+  final LanguageService? _languageService;
+  final CommentsCubit Function()? _commentsCubitFactory;
+
+  RemoteConfigService? get remoteConfigService => _remoteConfigService;
+
+  CommentsCubit createCommentsCubit() {
+    if (_commentsCubitFactory != null) {
+      return _commentsCubitFactory();
+    }
+    throw StateError('CommentsCubit factory not configured');
+  }
+
+  bool isFeatureEnabled(
+    String sourceId,
+    bool Function(FeatureConfig) predicate,
+  ) {
+    return _remoteConfigService?.isFeatureEnabled(sourceId, predicate) ?? true;
+  }
+  MaintenanceInfo? getFeatureMaintenance(String source, String feature) {
+    return _remoteConfigService?.getFeatureMaintenance(source, feature);
+  }
+
+  Map<String, dynamic>? getRawConfig(String sourceId) {
+    return _remoteConfigService?.getRawConfig(sourceId);
+  }
+
+  bool hasPagination(String sourceId) {
+    final rawConfig = _remoteConfigService?.getRawConfig(sourceId);
+    return rawConfig != null &&
+        (((rawConfig['scraper'] as Map?)?.cast<String, dynamic>()['selectors']
+                        as Map?)
+                    ?.cast<String, dynamic>()['reader'] as Map?)
+                ?.containsKey('pagination') ==
+            true;
+  }
+
+  String? buildContentUrl(Content content) {
+    final remoteConfig = _remoteConfigService;
+    if (remoteConfig == null) return null;
+    return SourceUrlResolver.buildContentUrl(
+      remoteConfigService: remoteConfig,
+      sourceId: content.sourceId,
+      contentId: content.id,
+    );
+  }
+
+  Map<String, String>? getImageDownloadHeaders(
+    String sourceId, {
+    required String imageUrl,
+  }) {
+    return _contentSourceRegistry
+        .getSource(sourceId)
+        ?.getImageDownloadHeaders(imageUrl: imageUrl);
+  }
+
+  String resolveDisplayLanguage(Content content) {
+    final lang = content.language.toLowerCase();
+    if (lang.isNotEmpty && lang != 'unknown') {
+      return _languageService?.displayName(lang) ?? lang;
+    }
+    final rawConfig = _remoteConfigService?.getRawConfig(content.sourceId);
+    final defaultLang =
+        (rawConfig?['defaultLanguage'] as String?)?.toLowerCase();
+    if (defaultLang != null && defaultLang.isNotEmpty) {
+      return _languageService?.displayName(defaultLang) ?? defaultLang;
+    }
+    return content.language;
+  }
+
+  String resolveLanguageDisplayName(String normalized) {
+    final service = _languageService;
+    if (service == null) return normalized;
+    return service.resolve(normalized)?.displayName ??
+        (normalized.contains('-')
+            ? service.displayName(normalized.split('-').first)
+            : service.displayName(normalized));
+  }
+
+  String resolveLanguageLabel(String code, {String? defaultLabel}) {
+    final normalized = ChapterLanguagePresenter.normalize(code);
+    if (normalized == unknownChapterLanguageKey) {
+      return defaultLabel ?? 'Language';
+    }
+    final displayName = resolveLanguageDisplayName(normalized);
+    return '$displayName (${normalized.toUpperCase()})';
+  }
+
+  bool supportsOnlineFavorites(String sourceId) {
+    return _sourceAuthService?.supportsOnlineFavoritesWrite(sourceId) ?? false;
+  }
+
+  Future<bool> hasOnlineSession(String sourceId) async {
+    return await _sourceAuthService?.hasSession(sourceId) ?? false;
+  }
+
+  Future<bool> toggleOnlineFavorite({
+    required String sourceId,
+    required int galleryId,
+  }) async {
+    final authService = _sourceAuthService;
+    if (authService == null) {
+      throw StateError('SourceAuthService is not available');
+    }
+    final status = await authService.checkFavorite(
+      sourceId: sourceId,
+      galleryId: galleryId,
+    );
+    if (status.favorited) {
+      await authService.removeFavorite(
+        sourceId: sourceId,
+        galleryId: galleryId,
+      );
+      return false;
+    } else {
+      await authService.addFavorite(
+        sourceId: sourceId,
+        galleryId: galleryId,
+      );
+      return true;
+    }
+  }
+
+  int resolveChapterPageLimit(String sourceId) {
+    final cfg = _remoteConfigService?.getRawConfig(sourceId);
+    final chapterCfg = (cfg?['api']?['detail']?['chapters'] as Map?) ??
+        (cfg?['api']?['chapters'] as Map?);
+    final endpoint = chapterCfg?['endpoint']?.toString() ?? '';
+    final match = RegExp(r'limit=(\d+)').firstMatch(endpoint);
+    return match != null ? int.parse(match.group(1)!) : 100;
+  }
+
+  Future<({List<Chapter> newChapters, bool isFullyLoaded})>
+      loadMoreChaptersForBottomSheet({
+    required String contentId,
+    required String sourceId,
+    required String languageKey,
+    required List<Chapter> currentChapters,
+    String? scanGroup,
+  }) async {
+    final limit = resolveChapterPageLimit(sourceId);
+    final loadedForLang = currentChapters
+        .where((c) =>
+            ChapterLanguagePresenter.normalize(c.language) ==
+            ChapterLanguagePresenter.normalize(languageKey))
+        .length;
+    final isPageSource = sourceId == 'mangafire';
+    final next = await _getContentChaptersUseCase(
+      GetContentChaptersParams(
+        contentId: ContentId(contentId),
+        sourceId: sourceId,
+        language: languageKey,
+        page: isPageSource ? (loadedForLang ~/ limit + 1) : null,
+        offset: isPageSource ? null : loadedForLang,
+        scanGroup: scanGroup ?? 'Chapter',
+      ),
+    );
+    final existingIds = currentChapters.map((chapter) => chapter.id).toSet();
+    final nextChapters = next
+        .where((chapter) => existingIds.add(chapter.id))
+        .toList(growable: false);
+    final isFullyLoaded = next.length < limit;
+    return (newChapters: nextChapters, isFullyLoaded: isFullyLoaded);
+  }
 
   // Per-language expanded chapter lists kept outside state so they survive
   // cubit rebuilds and language switches without cross-pollution.

@@ -18,6 +18,24 @@ class SourceAuthCubit extends BaseCubit<SourceAuthState> {
     required super.logger,
   })  : _sourceAuthService = sourceAuthService,
         super(initialState: const SourceAuthState.initial());
+  ({String url, String? autoCloseCookie, List<String>? successFilters})?
+      getLoginUrls(String sourceId) {
+    return _sourceAuthService.getLoginUrls(sourceId);
+  }
+
+  Future<void> saveWebViewSession({
+    required String sourceId,
+    required List<String> cookies,
+    required String? cookieName,
+  }) async {
+    await _sourceAuthService.saveWebViewSession(
+      sourceId: sourceId,
+      cookies: cookies,
+      cookieName: cookieName,
+    );
+    await initialize(sourceId);
+  }
+
 
   Future<void> initialize(String sourceId) async {
     _emitSafe(state.copyWith(

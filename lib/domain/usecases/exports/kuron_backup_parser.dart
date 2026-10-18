@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 
+import '../backup_zip_guard.dart';
+
 import 'kuron_backup.dart';
 
 /// Entry payload name inside `KuronBackup_*.zip`.
@@ -26,9 +28,15 @@ class UnsupportedBackupVersionException implements Exception {
 /// Tolerant by design: a missing category is empty, an unreadable row counts as
 /// malformed, and only a too-new [KuronBackup.formatVersion] is fatal.
 class KuronBackupParser {
+  static const int maxBackupSizeBytes = 512 * 1024 * 1024; // 512MB
+  static const int maxBackupZipEntries = 200000;
+
   /// Accepts a backup ZIP or a raw `kuron-database.json` payload. ZIP detection
   /// is content-based so a `.json` picked from a file manager also works.
   KuronBackup parseBytes(Uint8List bytes, {String? fileName}) {
+    if (bytes.length > maxBackupSizeBytes) {
+      throw const FormatException('Backup file exceeds maximum allowed size (512MB)');
+    }
     if (!(fileName ?? '').toLowerCase().endsWith('.json')) {
       try {
         return parseJson(utf8.decode(bytes));
@@ -40,8 +48,23 @@ class KuronBackupParser {
   }
 
   KuronBackup parseZip(Uint8List bytes) {
+    if (bytes.length > maxBackupSizeBytes) {
+      throw const FormatException('Backup archive exceeds maximum allowed size (512MB)');
+    }
+    // Pre-decode central-directory scan: reject zip bombs BEFORE inflate.
+    throwIfZipBomb(bytes,
+        maxEntries: maxBackupZipEntries,
+        maxUncompressed: maxBackupSizeBytes);
     final archive = ZipDecoder().decodeBytes(bytes);
+    if (archive.files.length > maxBackupZipEntries) {
+      throw const FormatException('Archive contains too many entries (exceeds limit of 200,000)');
+    }
+    var totalUncompressedSize = 0;
     for (final file in archive.files) {
+      totalUncompressedSize += file.size;
+      if (totalUncompressedSize > maxBackupSizeBytes) {
+        throw const FormatException('Archive uncompressed contents exceed maximum allowed size (512MB)');
+      }
       if (!file.isFile) {
         continue;
       }

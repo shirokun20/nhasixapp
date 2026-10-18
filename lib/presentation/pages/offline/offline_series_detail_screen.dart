@@ -1,38 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
-import 'package:nhasixapp/core/utils/offline_content_manager.dart';
 import 'package:nhasixapp/presentation/models/content_group.dart';
-import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as p;
-import 'package:logger/logger.dart';
+import 'package:nhasixapp/core/services/offline_series_detail_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
-import 'package:nhasixapp/core/config/remote_config_service.dart';
-import 'package:nhasixapp/core/services/pdf_conversion_queue_manager.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/offline_search/offline_search_cubit.dart';
 import 'package:nhasixapp/presentation/widgets/permission_request_sheet.dart';
-import 'package:nhasixapp/domain/usecases/reader/get_reader_position_usecase.dart';
 import 'package:nhasixapp/core/utils/title_parser_utils.dart';
 
 class OfflineSeriesDetailScreen extends StatefulWidget {
   final ContentGroup? initialContentGroup;
   final String sourceId;
   final String baseTitle;
+  final OfflineSeriesDetailService? service;
+  final OfflineSearchCubit? offlineSearchCubit;
+  final DownloadBloc? downloadBloc;
 
   const OfflineSeriesDetailScreen({
     super.key,
     this.initialContentGroup,
     required this.sourceId,
     required this.baseTitle,
+    this.service,
+    this.offlineSearchCubit,
+    this.downloadBloc,
   });
 
   @override
@@ -53,7 +55,12 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   final Map<String, double> _progressMap = {};
   ContentGroup? _contentGroup;
   List<Content> _items = const [];
+  late final OfflineSeriesDetailService _service;
   late final OfflineSearchCubit _offlineSearchCubit;
+  DownloadBloc _getDownloadBloc() {
+    return widget.downloadBloc ?? context.read<DownloadBloc>();
+  }
+
   bool _didChange = false;
   bool _isResolving = false;
 
@@ -70,7 +77,10 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _offlineSearchCubit = getIt<OfflineSearchCubit>();
+    _service = widget.service ??
+        (throw StateError('OfflineSeriesDetailService is required'));
+    _offlineSearchCubit = widget.offlineSearchCubit ??
+        (throw StateError('OfflineSearchCubit is required'));
     _applyContentGroup(widget.initialContentGroup);
     if (_contentGroup == null) {
       _resolveContentGroup();
@@ -132,8 +142,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   }
 
   Future<ContentGroup?> _resolveFromOfflineStorage() async {
-    final offlineManager = getIt<OfflineContentManager>();
-    final ids = await offlineManager.getOfflineContentIds();
+    final ids = await _service.getOfflineContentIds();
     final items = <Content>[];
     final itemSizes = <String, int>{};
     double maxProgress = 0.0;
@@ -141,7 +150,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     bool isReading = false;
 
     for (final id in ids) {
-      final content = await offlineManager.createOfflineContent(id);
+      final content = await _service.createOfflineContent(id);
       if (content == null) continue;
       if (content.sourceId != widget.sourceId) continue;
       if (TitleParserUtils.getBaseTitle(content.title) != widget.baseTitle) {
@@ -149,26 +158,23 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       }
 
       items.add(content);
-      final contentPath = await offlineManager.getOfflineContentPath(id);
+      final contentPath = await _service.getOfflineContentPath(id);
       if (contentPath != null) {
-        itemSizes[id] = await _dirSize(Directory(contentPath));
+        itemSizes[id] = await _service.calculateDirectorySize(contentPath);
       }
 
       try {
-        final position = await getIt<GetReaderPositionUseCase>()(id);
-        if (position != null && position.totalPages > 0) {
-          final progress =
-              (position.currentPage / position.totalPages).clamp(0.0, 1.0);
-          if (progress > maxProgress) maxProgress = progress;
-          if (position.currentPage >= position.totalPages - 1) {
-            isRead = true;
-          } else if (position.currentPage > 1) {
-            isReading = true;
-          }
+        final state = await _service.getReadingState(id);
+        final progress = state.progress;
+        if (progress != null && progress > maxProgress) {
+          maxProgress = progress;
         }
-      } catch (_) {
-        // Ignore — non-critical progress calculation
-      }
+        if (state.isRead) {
+          isRead = true;
+        } else if (state.isReading) {
+          isReading = true;
+        }
+      } catch (_) {}
     }
 
     final uniqueItems = ContentGroup.dedupeItems(items);
@@ -186,18 +192,6 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       isRead: isRead,
       isReading: isReading,
     );
-  }
-
-  Future<int> _dirSize(Directory directory) async {
-    int size = 0;
-    try {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File) size += await entity.length();
-      }
-    } catch (_) {
-      // Ignore — non-critical directory size calculation
-    }
-    return size;
   }
 
   List<Content> get _filteredItems {
@@ -237,14 +231,11 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     final nextProgress = <String, double>{};
     for (final content in _items) {
       try {
-        final position = await getIt<GetReaderPositionUseCase>()(content.id);
-        if (position != null && position.totalPages > 0) {
-          nextProgress[content.id] =
-              (position.currentPage / position.totalPages).clamp(0.0, 1.0);
+        final progress = await _service.getReadingProgress(content.id);
+        if (progress != null) {
+          nextProgress[content.id] = progress;
         }
-      } catch (e) {
-        // Ignore error
-      }
+      } catch (_) {}
     }
 
     if (!mounted) return;
@@ -256,29 +247,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   }
 
   Future<void> _openReader(Content content) async {
-    getIt<Logger>().i(
-        '🔍 OFFLINE_READER: opening content id=${content.id} title=${content.title} imageUrls=${content.imageUrls.length} pageCount=${content.pageCount} sourceId=${content.sourceId}');
-
-    final offlineManager = getIt<OfflineContentManager>();
-    String? pdfPath;
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(content.id);
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          final pdfFile = files.cast<File?>().firstWhere(
-              (f) => f != null && f.path.toLowerCase().endsWith('.pdf'),
-              orElse: () => null);
-          pdfPath = pdfFile?.path;
-        }
-      }
-    } catch (e) {
-      getIt<Logger>().e('Error checking for PDF to open: $e');
-    }
-
+    final pdfPath = await _service.findPdfPath(content.id);
     if (!mounted) return;
 
     if (pdfPath != null) {
@@ -698,15 +667,12 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     // Get content path if possible
     String? contentPath;
     try {
-      final offlineManager = getIt<OfflineContentManager>();
       final firstImage =
-          await offlineManager.getOfflineFirstImagePath(content.id);
+          await _service.getOfflineFirstImagePath(content.id);
       if (firstImage != null) {
-        contentPath = File(firstImage).parent.path;
+        contentPath = p.dirname(firstImage);
       }
-    } catch (e) {
-      getIt<Logger>().e('Error getting content path: $e');
-    }
+    } catch (_) {}
 
     if (!parentContext.mounted) return;
 
@@ -841,11 +807,8 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
               Builder(
                 builder: (context) {
                   try {
-                    // Check feature flag
-                    final remoteConfig = getIt<RemoteConfigService>();
-                    // Offline content always has sourceId
-                    final isEnabled = remoteConfig.isFeatureEnabled(
-                        content.sourceId, (f) => f.generatePdf);
+                    final isEnabled =
+                        _service.isPdfGenerationEnabled(content.sourceId);
 
                     if (!isEnabled) return const SizedBox.shrink();
 
@@ -887,8 +850,6 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
   // Generate PDF from offline content
   Future<void> _generatePdf(BuildContext context, Content content) async {
     final l10n = AppLocalizations.of(context)!;
-    final offlineManager = getIt<OfflineContentManager>();
-    // Queue manager will handle conversion sequentially
 
     try {
       // Check permissions before starting PDF conversion
@@ -920,7 +881,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         ),
       );
 
-      final imagePaths = await offlineManager.getOfflineImageUrls(content.id);
+      final imagePaths = await _service.getOfflineImageUrls(content.id);
 
       if (imagePaths.isEmpty) {
         if (!context.mounted) return;
@@ -937,8 +898,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       }
 
       // Queue PDF conversion instead of converting immediately
-      final queueManager = getIt<PdfConversionQueueManager>();
-      await queueManager.queueConversion(
+      await _service.queuePdfConversion(
         contentId: content.id,
         title: content.title,
         imagePaths: imagePaths,
@@ -1046,7 +1006,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
         );
 
       await _offlineSearchCubit.deleteOfflineContent(content.id);
-      getIt<DownloadBloc>().add(const DownloadRefreshEvent());
+      _getDownloadBloc().add(const DownloadRefreshEvent());
       _didChange = true;
 
       if (!context.mounted) return;
@@ -1135,7 +1095,7 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
       );
 
     await _offlineSearchCubit.bulkDeleteOfflineContent(ids);
-    getIt<DownloadBloc>().add(const DownloadRefreshEvent());
+    _getDownloadBloc().add(const DownloadRefreshEvent());
     _didChange = true;
 
     if (!mounted) return;
@@ -1151,22 +1111,6 @@ class _OfflineSeriesDetailScreenState extends State<OfflineSeriesDetailScreen> {
     }
   }
 
-  Future<bool> _checkPdfExists(String contentId) async {
-    final offlineManager = getIt<OfflineContentManager>();
-    try {
-      final firstImagePath =
-          await offlineManager.getOfflineFirstImagePath(contentId);
-      if (firstImagePath != null) {
-        final contentDir = File(firstImagePath).parent.parent.path;
-        final pdfDir = Directory(p.join(contentDir, 'pdf'));
-        if (await pdfDir.exists()) {
-          final files = await pdfDir.list().toList();
-          return files.any((f) => f.path.toLowerCase().endsWith('.pdf'));
-        }
-      }
-    } catch (e) {
-      getIt<Logger>().e('Error checking PDF existence: $e');
-    }
-    return false;
-  }
+  Future<bool> _checkPdfExists(String contentId) =>
+      _service.checkPdfExists(contentId);
 }

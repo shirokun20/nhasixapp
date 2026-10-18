@@ -145,4 +145,32 @@ void main() {
     expect(dateFromMillis(null), isNull);
     expect(dateFromMillis('bogus'), isNull);
   });
+
+  test('rejects zip bomb via central-directory pre-scan', () {
+    // 1 real content byte, but central directory declares 600MB inflated.
+    // Must throw BEFORE decode (message proves pre-scan, not post-check).
+    final out = BytesBuilder();
+    void u16(int v) => out.add([v & 0xFF, (v >> 8) & 0xFF]);
+    void u32(int v) => out.add(
+        [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF]);
+    u32(0x04034b50); // local file header
+    u16(20); u16(0); u16(0); u16(0); u16(0); u32(0); u32(1); u32(1);
+    u16(1); u16(0); // name len 1, extra len 0
+    out.add([0x78, 0x00]); // name 'x' + 1 content byte
+    final centralOffset = out.length;
+    u32(0x02014b50); // central directory header
+    u16(20); u16(20); u16(0); u16(0); u16(0); u16(0); u32(0); u32(0);
+    u32(600 * 1024 * 1024); // declared uncompressed size (lie)
+    u16(1); u16(0); u16(0); u16(0); u16(0); u32(0); u32(0);
+    out.add([0x78]);
+    final centralSize = out.length - centralOffset;
+    u32(0x06054b50); // EOCD
+    u16(0); u16(0); u16(1); u16(1); u32(centralSize); u32(centralOffset);
+    u16(0);
+    expect(
+      () => parser.parseZip(out.toBytes()),
+      throwsA(isA<FormatException>().having(
+          (e) => e.message, 'message', contains('central directory'))),
+    );
+  });
 }
