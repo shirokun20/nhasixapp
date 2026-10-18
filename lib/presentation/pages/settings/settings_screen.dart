@@ -1,16 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
-import 'package:archive/archive.dart';
-import 'package:crypto/crypto.dart';
-import 'package:dio/dio.dart';
+import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kuron_core/kuron_core.dart';
-import 'package:kuron_generic/kuron_generic.dart';
 import 'package:kuron_native/kuron_native.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/constants/colors_const.dart' show AppColors;
@@ -19,12 +13,8 @@ import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
-import 'package:nhasixapp/core/config/remote_config_service.dart';
 import 'package:nhasixapp/core/network/source_health_monitor.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import '../../../domain/entities/user_preferences.dart';
-import '../../../core/utils/source_config_display_utils.dart';
 import '../../../core/utils/source_version_utils.dart';
 import '../../../core/services/tag_blacklist_service.dart';
 

@@ -8922,6 +8922,12 @@ abstract class AppLocalizations {
   /// **'{field}'**
   String chooseField(String field);
 
+  /// No description provided for @activeFilterPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Active filters'**
+  String get activeFilterPreview;
+
   /// No description provided for @tapToLoadOptions.
   ///
   /// In en, this message translates to:

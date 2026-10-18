@@ -5236,6 +5236,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get activeFilterPreview => 'Active filters';
+
+  @override
   String get tapToLoadOptions => 'Tap to load options';
 
   @override

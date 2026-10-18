@@ -3943,6 +3943,7 @@
       }
     }
   },
+  "activeFilterPreview": "Active filters",
   "tapToLoadOptions": "Tap to load options",
   "nSelectedItems": "{count} selected",
   "@nSelectedItems": {

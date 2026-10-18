@@ -2977,6 +2977,7 @@
   "yesterday": "Kemarin",
   "failedToLoadOptionsTap": "Gagal memuat opsi. Ketuk untuk mencoba lagi.",
   "chooseField": "{field}",
+  "activeFilterPreview": "Filter aktif",
   "tapToLoadOptions": "Ketuk untuk memuat opsi",
   "nSelectedItems": "{count} dipilih",
   "tapToChooseTags": "Ketuk untuk memilih tag disertakan/dikecualikan",

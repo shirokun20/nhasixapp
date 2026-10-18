@@ -158,6 +158,11 @@ import 'package:nhasixapp/core/services/legal_content_service.dart';
 import 'package:nhasixapp/core/services/source_auth_service.dart';
 import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/core/services/app_privacy_overlay_service.dart';
+import 'package:nhasixapp/core/services/source_installer_service.dart';
+import 'package:nhasixapp/data/datasources/reader_image_pipeline.dart';
+import 'package:nhasixapp/data/datasources/remote/ehentai_reader_datasource.dart';
+import 'package:nhasixapp/data/datasources/remote/search/dynamic_form_remote_option_datasource.dart';
+import 'package:nhasixapp/presentation/cubits/dynamic_form_search/dynamic_form_search_cubit.dart';
 import 'package:nhasixapp/data/repositories/app_lock_repository_impl.dart';
 import 'package:nhasixapp/domain/repositories/app_lock_repository.dart';
 import 'package:nhasixapp/core/services/cache/cache_manager.dart'
@@ -253,6 +258,22 @@ void _setupCore() {
   // Tag Data Manager
   getIt.registerLazySingleton<TagDataManager>(
       () => TagDataManager(logger: getIt<Logger>(), dio: getIt<Dio>()));
+
+  // Dynamic form remote options (Batch 3.2: search option loading)
+  getIt.registerLazySingleton<DynamicFormRemoteOptionDataSource>(
+      () => DynamicFormRemoteOptionDataSource(
+            dio: getIt<Dio>(),
+            configService: getIt<RemoteConfigService>(),
+            tagDataManager: getIt<TagDataManager>(),
+          ));
+  getIt.registerFactory<DynamicFormSearchCubit>(
+      () => DynamicFormSearchCubit(
+            remoteOptionDataSource:
+                getIt<DynamicFormRemoteOptionDataSource>(),
+            userDataRepository: getIt<UserDataRepository>(),
+            remoteConfigService: getIt<RemoteConfigService>(),
+            logger: getIt<Logger>(),
+          ));
 
   // Language Service — loads language metadata from assets/configs/languages.json
   getIt.registerLazySingleton<LanguageService>(
@@ -929,6 +950,17 @@ void _setupDataSources() {
     );
   });
 
+  // Source installer (Batch 3.3: download/verify/write off-widget)
+  getIt.registerLazySingleton<SourceInstallerService>(
+      () => SourceInstallerService(
+            dio: getIt<Dio>(),
+            remoteConfig: getIt<RemoteConfigService>(),
+            registry: getIt<ContentSourceRegistry>(),
+            resolver: getIt<SourceFactoryResolver>(),
+            genericFactory: getIt<GenericSourceFactory>(),
+            logger: getIt<Logger>(),
+          ));
+
   // Content Source Registry
   // GenericHttpSource (nhentai) registered first → primary source.
   getIt.registerLazySingleton<ContentSourceRegistry>(() {
@@ -1025,6 +1057,21 @@ void _setupRepositories() {
       () => ReaderImageRepositoryImpl(
             logger: getIt<Logger>(),
             dedup: getIt<RequestDeduplicationService>(),
+          ));
+
+  // Reader image pipeline (Batch 3.1: scraping/cache/convert off-widget)
+  getIt.registerLazySingleton<EhentaiReaderDataSource>(
+      () => EhentaiReaderDataSource(
+            dio: getIt<Dio>(),
+            logger: getIt<Logger>(),
+          ));
+  getIt.registerLazySingleton<ReaderImagePipeline>(
+      () => ReaderImagePipeline(
+            repository: getIt<ReaderImageRepository>(),
+            ehentaiDataSource: getIt<EhentaiReaderDataSource>(),
+            headerInspector: getIt<HeaderInspectorService>(),
+            offlineContentManager: getIt<OfflineContentManager>(),
+            logger: getIt<Logger>(),
           ));
 
   // Settings Repository

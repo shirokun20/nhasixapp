@@ -5099,6 +5099,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get activeFilterPreview => '活动筛选';
+
+  @override
   String get tapToLoadOptions => '点击加载选项';
 
   @override

@@ -2,26 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 import 'package:kuron_native/kuron_native.dart';
 import 'package:nhasixapp/core/utils/native_theme_helper.dart';
-// import '../../core/utils/webtoon_detector.dart';
-import '../../core/di/service_locator.dart';
-import '../../core/utils/offline_content_manager.dart';
+import '../../data/datasources/reader_image_pipeline.dart';
 import '../../core/utils/reader_image_repair_utils.dart';
-import '../../core/services/local_image_preloader.dart';
 import '../../core/utils/header_inspector.dart';
-import '../../core/services/header_inspector_service.dart';
 import '../../../domain/entities/page_image_result.dart';
 import '../../../domain/entities/reader_settings_entity.dart';
-import '../../../domain/repositories/reader_image_repository.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
-
 class ExtendedImageReaderWidget extends StatefulWidget {
   const ExtendedImageReaderWidget({
     super.key,
@@ -41,6 +33,7 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.onOpenSourcePageForRepair,
     this.onDoubleTapGesture,
     this.grayscale = false,
+    this.pipeline,
   });
 
   final String imageUrl;
@@ -70,6 +63,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
   // Whether the image should be forced to grayscale (Note theme).
   final bool grayscale;
+  // Optional pipeline service. Falls back to ReaderImagePipeline.instance.
+  final ReaderImagePipeline? pipeline;
+
 
   @override
   State<ExtendedImageReaderWidget> createState() =>
@@ -204,20 +200,11 @@ class ExtendedImageReaderWidget extends StatefulWidget {
   static bool shouldConvertTallAvifFileForTesting(
     File file, {
     required bool nativeViewAvailable,
-  }) {
-    if (!nativeViewAvailable) {
-      return false;
-    }
-    try {
-      if (!file.existsSync()) {
-        return false;
-      }
-      final avifInfo = inspectAvifHeaderForRouting(file);
-      return avifInfo.isAvif && (avifInfo.height ?? 0) > maxNativeAvifHeight;
-    } catch (_) {
-      return false;
-    }
-  }
+  }) =>
+      ReaderImagePipeline.shouldConvertTallAvifFile(
+        file,
+        nativeViewAvailable: nativeViewAvailable,
+      );
 
   /// Whether a just-converted AVIF page counts as heavy (native view +
   /// heavy-image notify). Height only decides *conversion*: a tall static
@@ -274,22 +261,8 @@ class ExtendedImageReaderWidget extends StatefulWidget {
 
 class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  static Logger get _logger => getIt<Logger>();
-  static final Dio _ehentaiResolverDio = Dio(
-    BaseOptions(
-      responseType: ResponseType.plain,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 15),
-    ),
-  );
-  static final Map<String, String> _ehentaiResolvedImageCache =
-      <String, String>{};
-  static final Map<String, DateTime> _ehentaiResolvedImageCacheTime =
-      <String, DateTime>{};
-  static final Map<String, Future<String?>> _ehentaiResolveInFlight =
-      <String, Future<String?>>{};
-  static const Duration _ehentaiResolvedImageCacheTtl = Duration(minutes: 2);
+  final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 0));
+  ReaderImagePipeline get _pipeline => widget.pipeline ?? ReaderImagePipeline.instance;
   static final Set<String> _knownBrokenLocalAvifPaths = <String>{};
   static final Set<String> _heavyImageUrls = <String>{};
   static final Set<String> _notifiedHeavyContentIds = <String>{};
@@ -318,17 +291,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  // Centralized dedup via HeaderInspectorService (singleton).
-  // Widget no longer keeps per-state pending batch — single service owns dedup+cache.
-  // ponytail: service uses compute(inspectFileHeader) + inFlight map, bounded cache 100
-  static Future<FileHeaderResult> _enqueueHeaderInspect(String path) {
-    try {
-      if (getIt.isRegistered<HeaderInspectorService>()) {
-        return getIt<HeaderInspectorService>().inspect(path);
-      }
-    } catch (_) {}
-    return Future.value(inspectFileHeader(path));
-  }
 
   // Files ≥ 10 MB get a more aggressive native target width because the
   // offline reader otherwise pays twice: thumbnail prep + animated playback.
@@ -336,7 +298,8 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       10 * 1024 * 1024; // 10 MB
 
   CancellationToken? _cancelToken;
-  CancelToken? _resolveCancelToken;
+  ReaderImageCancellation? _resolveCancellation;
+  int? _nativeImageByteSize;
 
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
@@ -411,7 +374,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   void initState() {
     super.initState();
     _cancelToken = CancellationToken();
-    _resolveCancelToken = CancelToken();
+    _resolveCancellation = _pipeline.createCancellation();
     _zoomController = AnimationController(
       duration: DesignTokens.durationPageTurn,
       vsync: this,
@@ -442,8 +405,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
           _maxCachedFilePathByUrl);
       final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
           _knownBrokenLocalAvifPaths.contains(localPath);
-      _shouldBypassLocalDecode =
-          isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
+      _shouldBypassLocalDecode = isKnownBrokenAvif;
       if (!_shouldBypassLocalDecode) {
         _awaitingNativeCheck = _shouldConvertTallAvifLocalFile(localPath);
         _preCheckLocalFileForHeavy(localPath);
@@ -473,24 +435,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // Async disk-cache check: if a cached .webp file ≥ threshold exists,
   // seed the static maps and rebuild to route straight to native.
   void _preCheckDiskCacheForHeavy() {
-    // 1. Check flutter_cache_manager (legacy cache location).
-    getCachedImageFile(widget.imageUrl).then((file) async {
+    _pipeline
+        .preCheckDiskCache(
+      imageUrl: widget.imageUrl,
+      contentId: widget.contentId,
+      pageNumber: widget.pageNumber,
+    )
+        .then((result) {
       if (!mounted) return;
-      if (file != null) {
-        await _processAndMaybeConvertHeavyFile(file.path);
-        return;
-      }
-      // 2. File not in flutter_cache_manager — check canonical location
-      // (download-first resolver stores files there, not in cache_manager).
-      final localPath = await LocalImagePreloader.getLocalImagePath(
-        widget.contentId,
-        widget.pageNumber,
-      );
-      if (localPath != null && mounted) {
-        final f = File(localPath);
-        if (f.existsSync() && f.lengthSync() > 0) {
-          await _processAndMaybeConvertHeavyFile(localPath);
-        }
+      if (result != null) {
+        _applyProcessedResult(result);
       }
     }).catchError((Object e) {
       _logger.w('[NativeWebP] Pre-check error: $e');
@@ -501,101 +455,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     });
   }
 
-  /// Shared logic: inspect a file header, convert animated AVIF→WebP or
-  /// mark heavy animated WebP, then setState to route to native view.
-  Future<void> _processAndMaybeConvertHeavyFile(String filePath) async {
-    _enqueueHeaderInspect(filePath);
-    final file = File(filePath);
-    final size = file.lengthSync();
-    final avifInfo = inspectAvifHeaderForRouting(file);
-    final shouldConvertAvis = _shouldConvertAvifToWebP(avifInfo);
-
-    if (shouldConvertAvis) {
-      _logger.i(
-        '[NativeWebP] Animated/tall AVIF detected. Converting to WebP '
-        'page=${widget.pageNumber} height=${avifInfo.height}',
-      );
-      final outputPath = buildReplacementImagePath(
-        currentImagePath: filePath,
-        extension: 'webp',
-      );
-      final convertedPath = await KuronNative.instance.convertAvifToWebP(
-        inputPath: filePath,
-        outputPath: outputPath,
-      );
-      if (convertedPath != null) {
-        final convertedFile = File(convertedPath);
-        if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
-          // In-place like _preCheckLocalFileForHeavy: delete the AVIF
-          // source. A leftover source file makes every scroll-back (new
-          // State → fresh resolve) hit it on disk and re-run this whole
-          // conversion from scratch.
-          await _deleteLocalPageFormatConflicts(
-            currentImagePath: filePath,
-            convertedPath: convertedPath,
-          );
-          await _syncOfflineMetadataForConvertedLocalPage(
-            originalLocalPath: filePath,
-            convertedLocalPath: convertedPath,
-          );
-          _applyConvertedAvifResult(
-            convertedPath: convertedPath,
-            avifInfo: avifInfo,
-          );
-          _logger.i(
-            '[NativeWebP] AVIF converted to WebP '
-            'page=${widget.pageNumber} '
-            'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
-            'out=${(convertedFile.lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB',
-          );
-          return;
-        }
-      }
-      _logger.w(
-        '[NativeWebP] AVIF conversion failed, keep existing fallback path '
-        'page=${widget.pageNumber}',
-      );
-      return;
-    }
-
-    final (:format, :width, :height) =
-        _inferNativeAnimatedCapableExtensionFromFileSync(file);
-    if (format != null) {
-      _markHeavyNativeAnimatedImage(
-        cacheKey: widget.imageUrl,
-        cachedFilePath: filePath,
-        confirmedAnimatedWebP: true,
-      );
-      if (!mounted) return;
-      final nativeSize = (width != null && height != null)
-          ? Size(width.toDouble(), height.toDouble())
-          : null;
-      setState(() {
-        _isHeavyImage = true;
-        _isConfirmedAnimatedWebP = true;
-        _cachedFilePath = filePath;
-        _awaitingNativeCheck = false;
-        if (nativeSize != null) _nativeImageSize = nativeSize;
-      });
-      updateKeepAlive();
-      _logger.i(
-        '[NativeWebP] Pre-check HIT: heavy $format from disk cache '
-        'page=${widget.pageNumber} '
-        'size=${(size / 1024 / 1024).toStringAsFixed(1)} MB',
-      );
-      _maybeNotifyHeavyImageDetected();
-      if (nativeSize != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
-          }
-        });
-      }
-    }
-  }
-
-  // Blocks the first Flutter decode for a tall AVIF (animated OR static) that
-  // the native view cannot render.
   bool _shouldConvertTallAvifLocalFile(String localPath) {
     return ExtendedImageReaderWidget.shouldConvertTallAvifFileForTesting(
       File(localPath),
@@ -603,219 +462,81 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// The original page bytes are deleted after an in-place AVIF→WebP
-  /// conversion, so a rebuilt page (continuous scroll disposes non-heavy
-  /// pages) must resolve to the converted WebP cached for this URL.
   void _seedConvertedPathFromCache(String localPath) {
     if (_staticConvertedFilePath != null) return;
-    if (File(localPath).existsSync()) return;
     final cached = _cachedFilePathByUrl[widget.imageUrl];
-    if (cached != null && cached != localPath && File(cached).existsSync()) {
+    if (cached != null && cached != localPath) {
       _staticConvertedFilePath = cached;
       _cachedFilePath = cached;
     }
   }
 
-  /// Applies a successful AVIF→WebP conversion.
-  ///
-  /// Animated (`avis`) pages keep the old routing: heavy + native view +
-  /// heavy-image notify. Tall *static* pages only store the converted path —
-  /// they are not heavy (Flutter decodes the WebP fine), so the reader stays
-  /// in webtoon mode and no notify fires.
-  void _applyConvertedAvifResult({
-    required String convertedPath,
-    required ({
-      bool isAvif,
-      bool isAvisBrand,
-      int? width,
-      int? height
-    }) avifInfo,
-  }) {
-    final markHeavy =
-        ExtendedImageReaderWidget.shouldMarkConvertedAvifHeavyForTesting(
-      isAvif: avifInfo.isAvif,
-      isAvisBrand: avifInfo.isAvisBrand,
-      height: avifInfo.height,
-    );
-
-    if (markHeavy) {
-      _markHeavyNativeAnimatedImage(
-        cacheKey: widget.imageUrl,
-        cachedFilePath: convertedPath,
-        confirmedAnimatedWebP: true,
-      );
-    }
-
-    final convertedFile = File(convertedPath);
-    final webpInfo =
-        _inferNativeAnimatedCapableExtensionFromFileSync(convertedFile);
-    final nativeSize = (webpInfo.width != null && webpInfo.height != null)
-        ? Size(webpInfo.width!.toDouble(), webpInfo.height!.toDouble())
-        : (avifInfo.width != null && avifInfo.height != null)
-            ? Size(avifInfo.width!.toDouble(), avifInfo.height!.toDouble())
-            : null;
-
-    void applyState() {
-      if (markHeavy) {
+  void _applyProcessedResult(ProcessedImageResult result) {
+    if (result.wasConverted && result.convertedPath != null) {
+      if (result.isHeavy) {
+        _markHeavyNativeAnimatedImage(
+          cacheKey: widget.imageUrl,
+          cachedFilePath: result.convertedPath!,
+          confirmedAnimatedWebP: true,
+        );
         _isHeavyImage = true;
         _isConfirmedAnimatedWebP = true;
-        _cachedFilePath = convertedPath;
+        _cachedFilePath = result.convertedPath;
       } else {
-        _staticConvertedFilePath = convertedPath;
-        // Same URL rebuild (scroll back) must find the converted file: the
-        // original `.jpg`/`.avif` bytes are deleted after conversion.
-        _boundedMapPut(_cachedFilePathByUrl, widget.imageUrl, convertedPath,
-            _maxCachedFilePathByUrl);
+        _staticConvertedFilePath = result.convertedPath;
+        _boundedMapPut(_cachedFilePathByUrl, widget.imageUrl,
+            result.convertedPath!, _maxCachedFilePathByUrl);
       }
-      _awaitingNativeCheck = false;
-      if (nativeSize != null) _nativeImageSize = nativeSize;
+    } else if (result.isHeavy) {
+      _markHeavyNativeAnimatedImage(
+        cacheKey: widget.imageUrl,
+        cachedFilePath: result.renderPath,
+        confirmedAnimatedWebP: true,
+      );
+      _isHeavyImage = true;
+      _isConfirmedAnimatedWebP = true;
+      _cachedFilePath = result.renderPath;
     }
-
-    if (!mounted) {
-      applyState();
-      return;
+    if (result.nativeImageSize != null) {
+      _nativeImageSize = result.nativeImageSize;
     }
+    if (result.imageBytes != null) {
+      _nativeImageByteSize = result.imageBytes;
+    }
+    if (result.shouldBypassLocalDecode) {
+      _shouldBypassLocalDecode = true;
+    }
+    _awaitingNativeCheck = false;
 
-    setState(applyState);
-    if (markHeavy) {
+    if (!mounted) return;
+    setState(() {});
+    if (result.isHeavy) {
       updateKeepAlive();
       _maybeNotifyHeavyImageDetected();
     }
-    if (nativeSize != null) {
+    if (result.nativeImageSize != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
+          widget.onImageLoaded
+              ?.call(widget.pageNumber, result.nativeImageSize!);
         }
       });
     }
   }
 
-  /// AVIF that must be converted to WebP before it reaches Flutter: animated
-  /// (any height — short avis sequences also fail Flutter's decoder) or tall
-  /// static AVIF, which is often mislabeled as `.jpg`/`.png`.
-  static bool _shouldConvertAvifToWebP(
-    ({bool isAvif, bool isAvisBrand, int? width, int? height}) avifInfo,
-  ) {
-    if (!avifInfo.isAvif) {
-      return false;
-    }
-    return avifInfo.isAvisBrand || (avifInfo.height ?? 0) > maxNativeAvifHeight;
-  }
-
-  // Pre-check for offline/local files so heavy animated pages can route
-  // directly to native view on first build. When a tall AVIF file (animated or
-  // static, often mislabeled as `.jpg`) is detected, the file is converted
-  // in-place to WebP, stale format conflicts are deleted and metadata updated.
   Future<void> _preCheckLocalFileForHeavy(String localPath) async {
     if (!AnimatedWebPView.isAvailable) {
       return;
     }
 
     try {
-      final file = File(localPath);
-      if (!file.existsSync()) {
-        if (_awaitingNativeCheck) {
-          setState(() => _awaitingNativeCheck = false);
-        }
-        return;
-      }
-
-      final fileSize = file.lengthSync();
-      final avifInfo = inspectAvifHeaderForRouting(file);
-      final shouldConvertTallAvif = _shouldConvertAvifToWebP(avifInfo);
-
-      if (shouldConvertTallAvif) {
-        _logger.i(
-          '[NativeWebP] Local tall AVIF detected. Converting to WebP '
-          'page=${widget.pageNumber} height=${avifInfo.height}',
-        );
-        final outputPath = buildReplacementImagePath(
-          currentImagePath: localPath,
-          extension: 'webp',
-        );
-        final convertedPath = await KuronNative.instance.convertAvifToWebP(
-          inputPath: localPath,
-          outputPath: outputPath,
-        );
-
-        if (convertedPath != null) {
-          final convertedFile = File(convertedPath);
-          if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
-            await _deleteLocalPageFormatConflicts(
-              currentImagePath: localPath,
-              convertedPath: convertedPath,
-            );
-            await _syncOfflineMetadataForConvertedLocalPage(
-              originalLocalPath: localPath,
-              convertedLocalPath: convertedPath,
-            );
-
-            _applyConvertedAvifResult(
-              convertedPath: convertedPath,
-              avifInfo: avifInfo,
-            );
-            _logger.i(
-              '[NativeWebP] Local tall AVIF converted to WebP '
-              'page=${widget.pageNumber} '
-              'src=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
-              'path=$convertedPath',
-            );
-            return;
-          }
-        }
-
-        _logger.w(
-          '[NativeWebP] Local tall AVIF conversion failed '
-          'page=${widget.pageNumber}',
-        );
-        if (mounted && _awaitingNativeCheck) {
-          setState(() => _awaitingNativeCheck = false);
-        } else {
-          _awaitingNativeCheck = false;
-        }
-        return;
-      }
-
-      final (:format, :width, :height) =
-          _inferNativeAnimatedCapableExtensionFromFileSync(file);
-      if (format == null) {
-        if (mounted && _awaitingNativeCheck) {
-          setState(() => _awaitingNativeCheck = false);
-        } else {
-          _awaitingNativeCheck = false;
-        }
-        return;
-      }
-
-      _markHeavyNativeAnimatedImage(
-        cacheKey: widget.imageUrl,
-        cachedFilePath: localPath,
-        confirmedAnimatedWebP:
-            true, // true for both webp and avif native formats
+      final result = await _pipeline.processImageFile(
+        filePath: localPath,
+        contentId: widget.contentId,
+        pageNumber: widget.pageNumber,
+        checkInvalidPayload: true,
       );
-      _isHeavyImage = true;
-      _isConfirmedAnimatedWebP = true;
-      _cachedFilePath = localPath;
-      _awaitingNativeCheck = false;
-      if (width != null && height != null) {
-        _nativeImageSize = Size(width.toDouble(), height.toDouble());
-      }
-      _logger.i(
-        '[NativeWebP] Local pre-check HIT: heavy $format '
-        'page=${widget.pageNumber} '
-        'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
-      );
-      _maybeNotifyHeavyImageDetected();
-      if (width != null && height != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            widget.onImageLoaded?.call(
-              widget.pageNumber,
-              Size(width.toDouble(), height.toDouble()),
-            );
-          }
-        });
-      }
+      _applyProcessedResult(result);
     } catch (e) {
       _logger.w('[NativeWebP] Local pre-check error: $e');
     } finally {
@@ -824,67 +545,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       } else if (_awaitingNativeCheck) {
         _awaitingNativeCheck = false;
       }
-    }
-  }
-
-  Future<void> _deleteLocalPageFormatConflicts({
-    required String currentImagePath,
-    required String convertedPath,
-  }) async {
-    final directory = Directory(path.dirname(currentImagePath));
-    if (!await directory.exists()) {
-      return;
-    }
-
-    final targetBaseName = path.basenameWithoutExtension(currentImagePath);
-    final normalizedConvertedPath = path.normalize(convertedPath);
-    final tempPath = '$convertedPath.repairing';
-    await for (final entity in directory.list()) {
-      if (entity is! File) {
-        continue;
-      }
-
-      final normalizedCandidate = path.normalize(entity.path);
-      if (normalizedCandidate == normalizedConvertedPath ||
-          normalizedCandidate == path.normalize(tempPath)) {
-        continue;
-      }
-
-      final extension = path.extension(entity.path).toLowerCase();
-      if (!kReaderRepairSupportedImageExtensions.contains(extension)) {
-        continue;
-      }
-
-      if (path.basenameWithoutExtension(entity.path) != targetBaseName) {
-        continue;
-      }
-
-      try {
-        await entity.delete();
-      } catch (e) {
-        _logger.w(
-          '[NativeWebP] Failed deleting stale local page ${entity.path}: $e',
-        );
-      }
-    }
-  }
-
-  Future<void> _syncOfflineMetadataForConvertedLocalPage({
-    required String originalLocalPath,
-    required String convertedLocalPath,
-  }) async {
-    try {
-      await getIt<OfflineContentManager>().rewriteMetadataForConvertedLocalPage(
-        contentId: widget.contentId,
-        pageNumber: widget.pageNumber,
-        originalLocalPath: originalLocalPath,
-        convertedLocalPath: convertedLocalPath,
-      );
-    } catch (e) {
-      _logger.w(
-        '[NativeWebP] Failed updating metadata for local conversion '
-        'content=${widget.contentId} page=${widget.pageNumber}: $e',
-      );
     }
   }
 
@@ -1027,10 +687,10 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
       _pageResolveFuture = null;
       _postProcessScheduledPath = null;
       _staticConvertedFilePath = null;
-      if (_resolveCancelToken != null && !_resolveCancelToken!.isCancelled) {
-        _resolveCancelToken!.cancel('Widget updated');
+      if (_resolveCancellation != null && !_resolveCancellation!.isCancelled) {
+        _resolveCancellation!.cancel('Widget updated');
       }
-      _resolveCancelToken = CancelToken();
+      _resolveCancellation = _pipeline.createCancellation();
       _prepareEhentaiResolveFuture();
       _prepareMangaFireImageFuture();
 
@@ -1042,8 +702,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
             _maxCachedFilePathByUrl);
         final isKnownBrokenAvif = localPath.toLowerCase().endsWith('.avif') &&
             _knownBrokenLocalAvifPaths.contains(localPath);
-        _shouldBypassLocalDecode =
-            isKnownBrokenAvif || _hasInvalidLocalImagePayloadSync(localPath);
+        _shouldBypassLocalDecode = isKnownBrokenAvif;
         if (!_shouldBypassLocalDecode) {
           _awaitingNativeCheck = _shouldConvertTallAvifLocalFile(localPath);
           _preCheckLocalFileForHeavy(localPath);
@@ -1076,28 +735,26 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     if (localPath.toLowerCase().endsWith('.avif')) {
       _knownBrokenLocalAvifPaths.remove(localPath);
     }
-    final shouldBypass = _hasInvalidLocalImagePayloadSync(localPath);
-
-    if (!mounted) {
-      _shouldBypassLocalDecode = shouldBypass;
-      return;
-    }
-
-    setState(() {
-      _shouldBypassLocalDecode = shouldBypass;
+    _pipeline.hasInvalidImagePayload(localPath).then((shouldBypass) {
+      if (!mounted) {
+        _shouldBypassLocalDecode = shouldBypass;
+        return;
+      }
+      setState(() {
+        _shouldBypassLocalDecode = shouldBypass;
+      });
+      if (!shouldBypass) {
+        _awaitingNativeCheck = _shouldConvertTallAvifLocalFile(localPath);
+        _preCheckLocalFileForHeavy(localPath);
+      }
     });
-
-    if (!shouldBypass) {
-      _awaitingNativeCheck = _shouldConvertTallAvifLocalFile(localPath);
-      _preCheckLocalFileForHeavy(localPath);
-    }
   }
 
   @override
   void dispose() {
     _cancelToken?.cancel();
-    if (_resolveCancelToken != null && !_resolveCancelToken!.isCancelled) {
-      _resolveCancelToken!.cancel('Widget dispose');
+    if (_resolveCancellation != null && !_resolveCancellation!.isCancelled) {
+      _resolveCancellation!.cancel('Widget dispose');
     }
     _pinchHintController.dispose();
     _zoomController.dispose();
@@ -1277,53 +934,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
               }
 
               if (!_isHeavyImage && AnimatedWebPView.isAvailable) {
-                try {
-                  final file = File(effectiveLocalPath);
-                  if (file.existsSync()) {
-                    final fileSize = file.lengthSync();
-                    final (:format, :width, :height) =
-                        _inferNativeAnimatedCapableExtensionFromFileSync(file);
-                    if (format != null) {
-                      _markHeavyNativeAnimatedImage(
-                        cacheKey: widget.imageUrl,
-                        cachedFilePath: effectiveLocalPath,
-                        confirmedAnimatedWebP: true,
-                      );
-                      final nativeSize = (width != null && height != null)
-                          ? Size(width.toDouble(), height.toDouble())
-                          : null;
-                      // loadStateChanged runs inside the build phase: never
-                      // setState synchronously here (same rule as
-                      // _schedulePostProcessResolvedFile).
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted || _isHeavyImage) return;
-                        setState(() {
-                          _isHeavyImage = true;
-                          _isConfirmedAnimatedWebP = true;
-                          _cachedFilePath = effectiveLocalPath;
-                          if (nativeSize != null) _nativeImageSize = nativeSize;
-                        });
-                        updateKeepAlive();
-                        _maybeNotifyHeavyImageDetected();
-                      });
-                      if (nativeSize != null) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            widget.onImageLoaded
-                                ?.call(widget.pageNumber, nativeSize);
-                          }
-                        });
-                      }
-                      _logger.i(
-                        '[NativeWebP] Local complete => native ($format) '
-                        'page=${widget.pageNumber} '
-                        'size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB',
-                      );
-                    }
-                  }
-                } catch (e) {
-                  _logger.w('[NativeWebP] Local file stat error: $e');
-                }
+                _schedulePostProcessResolvedFile(effectiveLocalPath);
               }
 
               return _buildCompletedImage(context, state);
@@ -1425,26 +1036,22 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   /// Resolves the page image through the unified download-first repository
-  /// (same transport as downloads: Dio source + bypass + rate-limit) and
+  /// (same transport as downloads: remote source + bypass + rate-limit) and
   /// returns a local file path on success. Returns null when the repository is
   /// unavailable or resolution failed, so the caller can fall back.
   Future<PageImageResult?> _resolvePageToFile(String url) {
-    if (getIt.isRegistered<ReaderImageRepository>()) {
-      // Reuse per-widget Dio CancelToken so dispose can abort download-first streaming
-      _resolveCancelToken ??= CancelToken();
-      if (_resolveCancelToken!.isCancelled) {
-        _resolveCancelToken = CancelToken();
-      }
-      return getIt<ReaderImageRepository>().resolvePage(
-        url: url,
-        contentId: widget.contentId,
-        pageNumber: widget.pageNumber,
-        sourceId: widget.sourceId,
-        headers: widget.httpHeaders,
-        cancelToken: _resolveCancelToken,
-      );
+    _resolveCancellation ??= _pipeline.createCancellation();
+    if (_resolveCancellation!.isCancelled) {
+      _resolveCancellation = _pipeline.createCancellation();
     }
-    return Future.value(null);
+    return _pipeline.resolvePageToFile(
+      url: url,
+      contentId: widget.contentId,
+      pageNumber: widget.pageNumber,
+      sourceId: widget.sourceId,
+      headers: widget.httpHeaders,
+      cancellation: _resolveCancellation,
+    );
   }
 
   /// Builds the reader page by resolving to a local file first (download-first).
@@ -1578,133 +1185,21 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     );
   }
 
-  /// Schedules [_postProcessResolvedFile] post-frame, never synchronously.
-  /// The method calls setState before its first await, so invoking it
-  /// directly from the FutureBuilder builder would run setState inside the
-  /// build phase (`setState() called during build`). One schedule per path:
-  /// rebuilds while the frame is pending do not queue duplicates. Normal
-  /// files (JPG/PNG) never set flags, so they never hit the spinner.
   void _schedulePostProcessResolvedFile(String path) {
     if (_postProcessScheduledPath == path) return;
     _postProcessScheduledPath = path;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isHeavyImage) return;
-      _postProcessResolvedFile(path);
+      _pipeline
+          .processImageFile(
+        filePath: path,
+        contentId: widget.contentId,
+        pageNumber: widget.pageNumber,
+      )
+          .then((result) {
+        _applyProcessedResult(result);
+      });
     });
-  }
-
-  /// Post-process a resolved local file for AVIF→WebP conversion (animated,
-  /// or tall static AVIF mislabeled as `.jpg`) and animated WebP detection.
-  /// Mirrors _preCheckDiskCacheForHeavy logic.
-  /// Fire-and-forget (no await in build); updates state via setState.
-  Future<void> _postProcessResolvedFile(String path) async {
-    final file = File(path);
-    if (!file.existsSync() || _isHeavyImage) {
-      // Never leave the reader spinning: the guard in the builders sets
-      // _awaitingNativeCheck before scheduling this call.
-      if (mounted && _awaitingNativeCheck) {
-        setState(() => _awaitingNativeCheck = false);
-      }
-      return;
-    }
-
-    _enqueueHeaderInspect(path);
-    final size = file.lengthSync();
-    final avifInfo = inspectAvifHeaderForRouting(file);
-    final shouldConvertAvis = _shouldConvertAvifToWebP(avifInfo);
-
-    if (shouldConvertAvis) {
-      // Flutter cannot decode animated AVIF, nor tall static AVIF: block
-      // rendering while converting. Only set the flag now — after confirming
-      // conversion is actually needed — so normal JPG/PNG/short static AVIF
-      // files never hit the loading spinner.
-      if (mounted && !_awaitingNativeCheck) {
-        setState(() => _awaitingNativeCheck = true);
-      }
-      _logger.i(
-        '[NativeWebP] Animated/tall AVIF detected (post-resolve). '
-        'Converting to WebP page=${widget.pageNumber} '
-        'height=${avifInfo.height}',
-      );
-      try {
-        final outputPath = buildReplacementImagePath(
-          currentImagePath: path,
-          extension: 'webp',
-        );
-        final convertedPath = await KuronNative.instance.convertAvifToWebP(
-          inputPath: path,
-          outputPath: outputPath,
-        );
-        if (convertedPath != null) {
-          final convertedFile = File(convertedPath);
-          if (convertedFile.existsSync() && convertedFile.lengthSync() > 0) {
-            // In-place: the AVIF source is deleted so the next resolve is a
-            // WebP disk hit — a leftover source re-converts on scroll-back.
-            await _deleteLocalPageFormatConflicts(
-              currentImagePath: path,
-              convertedPath: convertedPath,
-            );
-            await _syncOfflineMetadataForConvertedLocalPage(
-              originalLocalPath: path,
-              convertedLocalPath: convertedPath,
-            );
-            _applyConvertedAvifResult(
-              convertedPath: convertedPath,
-              avifInfo: avifInfo,
-            );
-            _logger.i(
-              '[NativeWebP] Avis converted to WebP '
-              'page=${widget.pageNumber} '
-              'src=${(size / 1024 / 1024).toStringAsFixed(1)} MB '
-              'out=${(convertedFile.lengthSync() / 1024 / 1024).toStringAsFixed(1)} MB',
-            );
-            return;
-          }
-        }
-      } catch (e) {
-        _logger.w('[NativeWebP] Avis conversion failed: $e');
-      }
-      // Conversion failed: unblock render so ExtendedImage can show error.
-      if (mounted && _awaitingNativeCheck) {
-        setState(() => _awaitingNativeCheck = false);
-      }
-      return;
-    }
-
-    // Non-AVIF or static AVIF: check for animated WebP (no conversion
-    // needed — ExtendedImage.file decodes WebP fine; native routing is
-    // only for performance/auto-pause).
-    final (:format, :width, :height) =
-        _inferNativeAnimatedCapableExtensionFromFileSync(file);
-    if (format != null) {
-      _markHeavyNativeAnimatedImage(
-        cacheKey: widget.imageUrl,
-        cachedFilePath: path,
-        confirmedAnimatedWebP: true,
-      );
-      final nativeSize = (width != null && height != null)
-          ? Size(width.toDouble(), height.toDouble())
-          : null;
-      if (mounted) {
-        setState(() {
-          _isHeavyImage = true;
-          _isConfirmedAnimatedWebP = true;
-          _cachedFilePath = path;
-          _awaitingNativeCheck = false;
-          if (nativeSize != null) _nativeImageSize = nativeSize;
-        });
-        updateKeepAlive();
-        _maybeNotifyHeavyImageDetected();
-        if (nativeSize != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              widget.onImageLoaded?.call(widget.pageNumber, nativeSize);
-            }
-          });
-        }
-      }
-    }
-    // Normal file (JPG/PNG/static AVIF): no flag ever set, no spinner.
   }
 
   Widget _buildStandardNetworkImage(
@@ -1842,67 +1337,49 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
                 AnimatedWebPView.isAvailable &&
                 _shouldInspectCachedFileForAnimatedWebP(url)) {
               getCachedImageFile(url).then((cacheFile) {
-                // Seed cache even if unmounted (e.g. reading mode switched mid-download).
                 if (cacheFile == null) return;
-                final fileSize = cacheFile.lengthSync();
-                _logger.d(
-                  '[NativeWebP] Cached file=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB '
-                  'page=${widget.pageNumber}',
-                );
-                final (:format, :width, :height) =
-                    _inferNativeAnimatedCapableExtensionFromFileSync(cacheFile);
-                if (format != null) {
-                  _markHeavyNativeAnimatedImage(
-                    cacheKey: widget.imageUrl,
-                    cachedFilePath: cacheFile.path,
-                    confirmedAnimatedWebP: true,
-                  );
-
-                  // 🔥 Evict from ExtendedImage memory cache so Flutter's
-                  // MultiFrameImageStreamCompleter stops decoding animated
-                  // frames on the raster thread. The native view takes over.
-                  clearMemoryImageCache(url);
-
-                  // Cancel in-flight ExtendedImage fetch + raster decode.
-                  // Guard mounted FIRST to avoid leaking a new token after dispose.
-                  _cancelToken?.cancel();
-                  if (!mounted) return;
-
-                  // A new CancellationToken is created so the native-animated
-                  // view (which reads from disk) is not affected.
-                  _cancelToken = CancellationToken();
-                  final nativeSize = (width != null && height != null)
-                      ? Size(width.toDouble(), height.toDouble())
-                      : null;
-                  setState(() {
-                    _isHeavyImage = true;
-                    _isConfirmedAnimatedWebP = true; // stops re-inspection loop
-                    _cachedFilePath = cacheFile.path;
-                    if (nativeSize != null) _nativeImageSize = nativeSize;
-                  });
-                  updateKeepAlive();
-                  _maybeNotifyHeavyImageDetected();
-                  if (nativeSize != null) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        widget.onImageLoaded
-                            ?.call(widget.pageNumber, nativeSize);
+                _pipeline
+                    .processImageFile(
+                  filePath: cacheFile.path,
+                  contentId: widget.contentId,
+                  pageNumber: widget.pageNumber,
+                )
+                    .then((result) {
+                  if (result.isHeavy || result.isConfirmedAnimatedWebP) {
+                    _markHeavyNativeAnimatedImage(
+                      cacheKey: widget.imageUrl,
+                      cachedFilePath: cacheFile.path,
+                      confirmedAnimatedWebP: true,
+                    );
+                    clearMemoryImageCache(url);
+                    _cancelToken?.cancel();
+                    if (!mounted) return;
+                    _cancelToken = CancellationToken();
+                    setState(() {
+                      _isHeavyImage = true;
+                      _isConfirmedAnimatedWebP = true;
+                      _cachedFilePath = cacheFile.path;
+                      if (result.nativeImageSize != null) {
+                        _nativeImageSize = result.nativeImageSize;
+                      }
+                      if (result.imageBytes != null) {
+                        _nativeImageByteSize = result.imageBytes;
                       }
                     });
+                    updateKeepAlive();
+                    _maybeNotifyHeavyImageDetected();
+                    if (result.nativeImageSize != null) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          widget.onImageLoaded
+                              ?.call(widget.pageNumber, result.nativeImageSize!);
+                        }
+                      });
+                    }
+                  } else {
+                    _nonNativeAnimatedUrls.add(url);
                   }
-                  _logger.i(
-                    '[NativeWebP] => AnimatedImageDrawable ($format): '
-                    'page=${widget.pageNumber} size=${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB'
-                    ' path=${cacheFile.path}',
-                  );
-                } else {
-                  _nonNativeAnimatedUrls.add(url);
-                  _logger.d(
-                    '[NativeWebP] Not a native-animated candidate '
-                    '(${(fileSize / 1024 / 1024).toStringAsFixed(1)} MB), '
-                    'keep Flutter renderer page=${widget.pageNumber}',
-                  );
-                }
+                });
               }).catchError((Object e) {
                 _logger.w('[NativeWebP] getCachedImageFile error: $e');
               });
@@ -1976,40 +1453,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   bool _shouldResolveEhentaiImageUrl(String url) {
-    if (widget.sourceId != 'ehentai') {
-      return false;
-    }
-
-    final lowered = url.toLowerCase();
-    if (lowered.startsWith('/s/') || lowered.startsWith('/fullimg/')) {
-      return true;
-    }
-
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      return false;
-    }
-
-    final host = uri.host.toLowerCase();
-    if (!(host.contains('e-hentai.org') || host.contains('exhentai.org'))) {
-      return false;
-    }
-
-    final loweredPath = uri.path.toLowerCase();
-    if (loweredPath.contains('/s/') || loweredPath.contains('/fullimg/')) {
-      return true;
-    }
-
-    return !_looksLikeDirectImagePath(loweredPath);
-  }
-
-  bool _looksLikeDirectImagePath(String path) {
-    return path.endsWith('.jpg') ||
-        path.endsWith('.jpeg') ||
-        path.endsWith('.png') ||
-        path.endsWith('.webp') ||
-        path.endsWith('.gif') ||
-        path.endsWith('.avif');
+    return _pipeline.shouldResolveEhentai(url, sourceId: widget.sourceId);
   }
 
   bool _isHeavyReaderSource() {
@@ -2030,7 +1474,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     // Always inspect after download — brand (avis vs avif/mif1) and image
     // height (≤ 4096 vs > 4096) live in the bytes, not the URL, and `.jpg` /
     // `.jpeg` / `.png` URLs can carry AVIF payloads.
-    // _inferNativeAnimatedCapableExtensionFromFileSync handles the precise check.
+    // ReaderImagePipeline handles the precise check.
     return ExtendedImageReaderWidget.shouldInspectForNativeAnimatedForTesting(
       url: url,
       sourceId: widget.sourceId ?? '',
@@ -2051,33 +1495,6 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     }
   }
 
-  // Delegate to [inspectFileHeader] — parses format, width, height from header.
-  // Width/height from `ispe` box for AVIF; null for WebP.
-  static ({String? format, int? width, int? height})
-      _inferNativeAnimatedCapableExtensionFromFileSync(File file) {
-    return inspectFileHeader(file.path);
-  }
-
-  bool _hasInvalidLocalImagePayloadSync(String localPath) {
-    RandomAccessFile? raf;
-    try {
-      final file = File(localPath);
-      if (!file.existsSync() || file.lengthSync() <= 0) {
-        return true;
-      }
-
-      final fileLength = file.lengthSync();
-      final sampleLength = fileLength < 64 ? fileLength : 64;
-      raf = file.openSync(mode: FileMode.read);
-      final bytes = raf.readSync(sampleLength);
-      return inferImageExtension(bytes: bytes) == null;
-    } catch (e) {
-      _logger.w('[LocalImage] Failed to validate local payload: $localPath');
-      return false;
-    } finally {
-      raf?.closeSync();
-    }
-  }
 
   int? _targetDecodeWidth(
     BuildContext context, {
@@ -2116,34 +1533,7 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   int? _resolveNativeAnimatedImageBytes() {
-    final candidates = <String?>[
-      _cachedFilePath,
-      _isLocalFilePath(widget.imageUrl)
-          ? _normalizeLocalPath(widget.imageUrl)
-          : null,
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate == null || candidate.isEmpty) {
-        continue;
-      }
-
-      try {
-        final file = File(candidate);
-        if (!file.existsSync()) {
-          continue;
-        }
-
-        final length = file.lengthSync();
-        if (length > 0) {
-          return length;
-        }
-      } catch (_) {
-        // Ignore stat failures and fall back to viewport-only sizing.
-      }
-    }
-
-    return null;
+    return _nativeImageByteSize;
   }
 
   Map<String, String> _buildEhentaiImageHeaders(String readerPageUrl) {
@@ -2162,67 +1552,16 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
     return headers;
   }
 
-  Future<String?> _resolveEhentaiImageUrl(String readerPageUrl) async {
-    final cached = _ehentaiResolvedImageCache[readerPageUrl];
-    final cachedAt = _ehentaiResolvedImageCacheTime[readerPageUrl];
-    if (cached != null && cached.isNotEmpty && cachedAt != null) {
-      final age = DateTime.now().difference(cachedAt);
-      if (age <= _ehentaiResolvedImageCacheTtl) {
-        return cached;
-      }
-      _invalidateEhentaiResolvedImageUrl(readerPageUrl);
-    }
-
-    final inFlight = _ehentaiResolveInFlight[readerPageUrl];
-    if (inFlight != null) {
-      return inFlight;
-    }
-
-    final resolver = _resolveEhentaiImageUrlInternal(readerPageUrl);
-    _ehentaiResolveInFlight[readerPageUrl] = resolver;
-    try {
-      return await resolver;
-    } finally {
-      await _ehentaiResolveInFlight.remove(readerPageUrl);
-    }
-  }
-
-  Future<String?> _resolveEhentaiImageUrlInternal(String readerPageUrl) async {
-    try {
-      final response = await _ehentaiResolverDio.get<dynamic>(
-        readerPageUrl,
-        options: Options(
-          responseType: ResponseType.plain,
-          headers: widget.httpHeaders,
-          followRedirects: true,
-          validateStatus: (status) => (status ?? 0) < 400,
-        ),
-      );
-
-      final html = response.data?.toString() ?? '';
-      if (html.isEmpty) {
-        return null;
-      }
-
-      final imageUrl = extractEhentaiImageUrlFromHtml(
-        html,
-        readerPageUrl,
-        rawConfig: widget.sourceRawConfig,
-      );
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        _ehentaiResolvedImageCache[readerPageUrl] = imageUrl;
-        _ehentaiResolvedImageCacheTime[readerPageUrl] = DateTime.now();
-      }
-      return imageUrl;
-    } catch (_) {
-      return null;
-    }
+  Future<String?> _resolveEhentaiImageUrl(String readerPageUrl) {
+    return _pipeline.resolveEhentaiImageUrl(
+      readerPageUrl,
+      headers: widget.httpHeaders,
+      rawConfig: widget.sourceRawConfig,
+    );
   }
 
   void _invalidateEhentaiResolvedImageUrl(String readerPageUrl) {
-    _ehentaiResolvedImageCache.remove(readerPageUrl);
-    _ehentaiResolvedImageCacheTime.remove(readerPageUrl);
-    _ehentaiResolveInFlight.remove(readerPageUrl);
+    _pipeline.invalidateEhentaiResolvedImageUrl(readerPageUrl);
   }
 
   bool _tryRefreshEhentaiResolvedImageUrl(String failedUrl) {
@@ -2329,19 +1668,15 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   }
 
   bool _shouldResolveMangaFireImageBytes(String url) {
-    return widget.sourceId == 'mangafire' && url.contains('#scrambled_');
+    return _pipeline.shouldResolveMangaFireImageBytes(url,
+        sourceId: widget.sourceId);
   }
 
-  Future<Uint8List?> _resolveMangaFireImageBytes(String url) async {
-    try {
-      return await KuronNative.instance.downloadBinary(
-        url: url,
-        headers: widget.httpHeaders ?? const <String, String>{},
-      );
-    } catch (e) {
-      _logger.w('Failed to resolve MangaFire image bytes: $e');
-      return null;
-    }
+  Future<Uint8List?> _resolveMangaFireImageBytes(String url) {
+    return _pipeline.resolveMangaFireImageBytes(
+      url,
+      headers: widget.httpHeaders,
+    );
   }
 
   // Card for a page skipped during download, with repair/redownload buttons.

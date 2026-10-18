@@ -3573,6 +3573,7 @@
   "yesterday": "昨天",
   "failedToLoadOptionsTap": "加载选项失败。点击重试。",
   "chooseField": "{field}",
+  "activeFilterPreview": "活动筛选",
   "tapToLoadOptions": "点击加载选项",
   "nSelectedItems": "已选 {count} 项",
   "tapToChooseTags": "点击选择包含/排除标签",

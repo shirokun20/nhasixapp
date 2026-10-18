@@ -5257,6 +5257,9 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get activeFilterPreview => 'Filter aktif';
+
+  @override
   String get tapToLoadOptions => 'Ketuk untuk memuat opsi';
 
   @override
