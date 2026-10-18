@@ -590,6 +590,11 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     final targetUrl = forceUrl ?? widget.networkUrl;
     final urlParts = targetUrl.split('|');
     final primaryUrl = urlParts[0];
+    // Blank URL can never load: skip CachedNetworkImage entirely so we don't
+    // park a perpetual shimmer ticker (battery + pumpAndSettle hangs).
+    if (primaryUrl.trim().isEmpty) {
+      return widget.errorWidget ?? _buildErrorWidget();
+    }
     final fallbackUrl = urlParts.length > 1 ? urlParts[1] : null;
 
     // Improved GIF detection to handle query parameters
