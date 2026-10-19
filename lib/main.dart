@@ -18,6 +18,7 @@ import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dar
 import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/core/services/analytics_service.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
+import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
@@ -193,11 +194,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: MultiBlocProviderConfig.data,
-      child: LifecycleWatcher(
-        child: BlocBuilder<ThemeCubit, ThemeState>(
-          builder: (context, themeState) {
+    // SourceInstallerService at app root: settings pushes SourceManagerScreen
+    // via raw Navigator.push (sibling route, escapes page-scoped providers),
+    // so the installer must be visible to every route, not just Settings.
+    return RepositoryProvider<SourceInstallerService>(
+      create: (_) => getIt<SourceInstallerService>(),
+      child: MultiBlocProvider(
+        providers: MultiBlocProviderConfig.data,
+        child: LifecycleWatcher(
+          child: BlocBuilder<ThemeCubit, ThemeState>(
+            builder: (context, themeState) {
             return BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
                 // Get locale from settings
@@ -268,6 +274,7 @@ class MyApp extends StatelessWidget {
               },
             );
           },
+        ),
         ),
       ),
     );
