@@ -3479,6 +3479,15 @@
       }
     }
   },
+  "chapterContinueFabResumeHint": "Kuro kept your spot on page {page}",
+  "@chapterContinueFabResumeHint": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "chapterContinueFabRestartHint": "Kuro says: let's start this chapter over!",
   "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
   "commentsCount": "Comments ({count})",
   "@commentsCount": {

@@ -2784,6 +2784,8 @@
   "blacklistMatchWarning": "Galeri ini cocok dengan aturan daftar hitam. Sampul/kartu dapat diburamkan di tampilan daftar.",
   "chapterCompleted": "Bab selesai",
   "continueFromPage": "Lanjutkan dari halaman {page}",
+  "chapterContinueFabResumeHint": "Kuro simpan posisimu di halaman {page}",
+  "chapterContinueFabRestartHint": "Kata Kuro: ayo mulai bab ini dari awal!",
   "loginRequiredForContent": "Anda harus masuk ke Crotpedia untuk melihat konten ini.",
   "commentsCount": "Komentar ({count})",
   "postComment": "Kirim Komentar",

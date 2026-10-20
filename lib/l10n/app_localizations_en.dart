@@ -4737,6 +4737,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chapterContinueFabResumeHint(int page) {
+    return 'Kuro kept your spot on page $page';
+  }
+
+  @override
+  String get chapterContinueFabRestartHint =>
+      'Kuro says: let\'s start this chapter over!';
+
+  @override
   String get loginRequiredForContent =>
       'You need to log in to Crotpedia to view this content.';
 
