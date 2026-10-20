@@ -8124,29 +8124,23 @@ abstract class AppLocalizations {
   /// **'Continue from page {page}'**
   String continueFromPage(int page);
 
-  /// No description provided for @chapterContinueFabResumeHint.
+  /// No description provided for @continueFromChapter.
   ///
   /// In en, this message translates to:
-  /// **'Kuro kept your spot on page {page}'**
-  String chapterContinueFabResumeHint(int page);
+  /// **'Continue from chapter {number}'**
+  String continueFromChapter(String number);
 
-  /// No description provided for @chapterContinueFabRestartHint.
+  /// No description provided for @continueToChapter.
   ///
   /// In en, this message translates to:
-  /// **'Kuro says: let\'s start this chapter over!'**
-  String get chapterContinueFabRestartHint;
+  /// **'Continue to chapter {number}'**
+  String continueToChapter(String number);
 
-  /// No description provided for @chapterContinueNextLabel.
+  /// No description provided for @continuePageSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Next chapter'**
-  String get chapterContinueNextLabel;
-
-  /// No description provided for @chapterContinueFabNextHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Kuro already has the next chapter ready'**
-  String get chapterContinueFabNextHint;
+  /// **'Page {page}'**
+  String continuePageSubtitle(int page);
 
   /// No description provided for @loginRequiredForContent.
   ///

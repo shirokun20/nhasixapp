@@ -23,12 +23,21 @@ class ChapterContinueTarget {
     required this.chapter,
     required this.page,
     required this.mode,
+    this.chapterNumber,
   });
 
   final Chapter chapter;
   final int page;
   final ChapterContinueMode mode;
+
+  /// Number parsed from the chapter name, for the button title.
+  final double? chapterNumber;
 }
+
+/// `3` for 3.0, `2.5` for 2.5 — chapter numbers are shown as declared.
+String formatChapterNumber(double value) => value == value.roundToDouble()
+    ? value.toInt().toString()
+    : value.toString();
 
 /// Picks what the button should open:
 /// - unfinished chapter -> that chapter, on its last page ([resume]);
@@ -61,6 +70,12 @@ ChapterContinueTarget? resolveChapterContinueTarget({
     if (totalPages > 0) page = page.clamp(1, totalPages).toInt();
     if (page < 1) page = 1;
 
+    // Number parsed from the chapter name (or its slug) for the button title.
+    final currentNumber = chapterNumberFromName(
+          known?.title ?? history.chapterTitle ?? chapterId,
+        ) ??
+        (known == null ? null : chapterNumberFromName(known.url));
+
     if (!finished) {
       return ChapterContinueTarget(
         chapter: known ??
@@ -71,16 +86,13 @@ ChapterContinueTarget? resolveChapterContinueTarget({
             ),
         page: page,
         mode: ChapterContinueMode.resume,
+        chapterNumber: currentNumber,
       );
     }
 
     // Finished: walk the series by chapter number parsed from the name, never
     // by array position (sources usually list newest-first).
     final ordered = _orderedReadableChapters(chapters);
-    final currentNumber = chapterNumberFromName(
-          known?.title ?? history.chapterTitle ?? chapterId,
-        ) ??
-        (known == null ? null : chapterNumberFromName(known.url));
 
     if (currentNumber != null) {
       for (final candidate in ordered) {
@@ -90,6 +102,7 @@ ChapterContinueTarget? resolveChapterContinueTarget({
             chapter: candidate.$1,
             page: 1,
             mode: ChapterContinueMode.nextChapter,
+            chapterNumber: number,
           );
         }
       }
@@ -100,6 +113,7 @@ ChapterContinueTarget? resolveChapterContinueTarget({
         chapter: ordered.first.$1,
         page: 1,
         mode: ChapterContinueMode.restart,
+        chapterNumber: ordered.first.$2,
       );
     }
 
@@ -113,6 +127,7 @@ ChapterContinueTarget? resolveChapterContinueTarget({
           ),
       page: 1,
       mode: ChapterContinueMode.restart,
+      chapterNumber: currentNumber,
     );
   }
 
@@ -256,7 +271,7 @@ class _ChapterContinueFabState extends State<ChapterContinueFab> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    _hint(l10n),
+                                    _subtitle(l10n),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -281,24 +296,22 @@ class _ChapterContinueFabState extends State<ChapterContinueFab> {
   }
 
   String _label(AppLocalizations l10n) {
+    final number = widget.target.chapterNumber;
     switch (widget.target.mode) {
       case ChapterContinueMode.resume:
-        return l10n.continueFromPage(widget.target.page);
+        // Unnumbered chapter names fall back to a plain "Continue".
+        return number == null
+            ? l10n.continueReading
+            : l10n.continueFromChapter(formatChapterNumber(number));
       case ChapterContinueMode.nextChapter:
-        return l10n.chapterContinueNextLabel;
+        return number == null
+            ? l10n.continueReading
+            : l10n.continueToChapter(formatChapterNumber(number));
       case ChapterContinueMode.restart:
         return l10n.readerScreenGoToFirstPage;
     }
   }
 
-  String _hint(AppLocalizations l10n) {
-    switch (widget.target.mode) {
-      case ChapterContinueMode.resume:
-        return l10n.chapterContinueFabResumeHint(widget.target.page);
-      case ChapterContinueMode.nextChapter:
-        return l10n.chapterContinueFabNextHint;
-      case ChapterContinueMode.restart:
-        return l10n.chapterContinueFabRestartHint;
-    }
-  }
+  String _subtitle(AppLocalizations l10n) =>
+      l10n.continuePageSubtitle(widget.target.page);
 }

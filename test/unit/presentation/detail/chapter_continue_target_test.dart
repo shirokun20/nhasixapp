@@ -39,6 +39,7 @@ void main() {
     expect(target!.chapter.id, 'c1');
     expect(target.page, 12);
     expect(target.mode, ChapterContinueMode.resume);
+    expect(target.chapterNumber, 1);
   });
 
   test('finished chapter continues to the next chapter by name', () {
@@ -60,6 +61,7 @@ void main() {
     expect(target!.chapter.id, 'c2');
     expect(target.page, 1);
     expect(target.mode, ChapterContinueMode.nextChapter);
+    expect(target.chapterNumber, 2);
   });
 
   test('finishing a mid-series chapter picks the next number, not the array',
@@ -96,6 +98,7 @@ void main() {
     expect(target!.chapter.id, 'c1');
     expect(target.page, 1);
     expect(target.mode, ChapterContinueMode.restart);
+    expect(target.chapterNumber, 1);
   });
 
   test('next chapter skips unreadable chapters', () {

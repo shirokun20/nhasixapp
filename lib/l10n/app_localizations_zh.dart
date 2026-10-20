@@ -4613,18 +4613,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String chapterContinueFabResumeHint(int page) {
-    return 'Kuro 帮你记住了第 $page 页';
+  String continueFromChapter(String number) {
+    return '从第 $number 章继续';
   }
 
   @override
-  String get chapterContinueFabRestartHint => 'Kuro 说：这一章从头再来吧！';
+  String continueToChapter(String number) {
+    return '继续第 $number 章';
+  }
 
   @override
-  String get chapterContinueNextLabel => '下一章';
-
-  @override
-  String get chapterContinueFabNextHint => 'Kuro 已经准备好了下一章';
+  String continuePageSubtitle(int page) {
+    return '第 $page 页';
+  }
 
   @override
   String get loginRequiredForContent => '您需要登录 Crotpedia 才能查看此内容。';

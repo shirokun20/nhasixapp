@@ -4737,20 +4737,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String chapterContinueFabResumeHint(int page) {
-    return 'Kuro kept your spot on page $page';
+  String continueFromChapter(String number) {
+    return 'Continue from chapter $number';
   }
 
   @override
-  String get chapterContinueFabRestartHint =>
-      'Kuro says: let\'s start this chapter over!';
+  String continueToChapter(String number) {
+    return 'Continue to chapter $number';
+  }
 
   @override
-  String get chapterContinueNextLabel => 'Next chapter';
-
-  @override
-  String get chapterContinueFabNextHint =>
-      'Kuro already has the next chapter ready';
+  String continuePageSubtitle(int page) {
+    return 'Page $page';
+  }
 
   @override
   String get loginRequiredForContent =>

@@ -4756,19 +4756,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String chapterContinueFabResumeHint(int page) {
-    return 'Kuro simpan posisimu di halaman $page';
+  String continueFromChapter(String number) {
+    return 'Lanjutkan dari chapter $number';
   }
 
   @override
-  String get chapterContinueFabRestartHint =>
-      'Kata Kuro: ayo mulai bab ini dari awal!';
+  String continueToChapter(String number) {
+    return 'Lanjutkan ke chapter $number';
+  }
 
   @override
-  String get chapterContinueNextLabel => 'Chapter berikutnya';
-
-  @override
-  String get chapterContinueFabNextHint => 'Kuro udah siapin lanjutannya';
+  String continuePageSubtitle(int page) {
+    return 'Halaman $page';
+  }
 
   @override
   String get loginRequiredForContent =>

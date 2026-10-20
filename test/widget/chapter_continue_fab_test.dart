@@ -9,11 +9,11 @@ import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 Chapter _chapter(String id) =>
     Chapter(id: id, title: 'Chapter $id', url: '/chapter/$id');
 
-ChapterContinueTarget _target(ChapterContinueMode mode) =>
-    ChapterContinueTarget(
+ChapterContinueTarget _target(ChapterContinueMode mode) => ChapterContinueTarget(
       chapter: _chapter('c1'),
       page: mode == ChapterContinueMode.resume ? 12 : 1,
       mode: mode,
+      chapterNumber: mode == ChapterContinueMode.nextChapter ? 2 : 1,
     );
 
 Widget _harness(Widget child) {
@@ -42,21 +42,23 @@ Future<void> _pumpFab(
 }
 
 void main() {
-  testWidgets('resume mode shows the reader mascot and page label',
+  testWidgets('resume mode shows the chapter title and page subtitle',
       (tester) async {
     await _pumpFab(tester, ChapterContinueMode.resume);
 
-    expect(find.text('Continue from page 12'), findsOneWidget);
+    expect(find.text('Continue from chapter 1'), findsOneWidget);
+    expect(find.text('Page 12'), findsOneWidget);
     expect(
       tester.widget<KuroMascot>(find.byType(KuroMascot)).mood,
       KuroMood.reader,
     );
   });
 
-  testWidgets('next-chapter mode shows the next chapter label', (tester) async {
+  testWidgets('next-chapter mode shows the next chapter title', (tester) async {
     await _pumpFab(tester, ChapterContinueMode.nextChapter);
 
-    expect(find.text('Next chapter'), findsOneWidget);
+    expect(find.text('Continue to chapter 2'), findsOneWidget);
+    expect(find.text('Page 1'), findsOneWidget);
     expect(
       tester.widget<KuroMascot>(find.byType(KuroMascot)).mood,
       KuroMood.reader,
@@ -68,6 +70,7 @@ void main() {
     await _pumpFab(tester, ChapterContinueMode.restart);
 
     expect(find.text('Go to First Page'), findsOneWidget);
+    expect(find.text('Page 1'), findsOneWidget);
     expect(
       tester.widget<KuroMascot>(find.byType(KuroMascot)).mood,
       KuroMood.happy,
@@ -78,7 +81,7 @@ void main() {
     var taps = 0;
     await _pumpFab(tester, ChapterContinueMode.resume, onTap: () => taps++);
 
-    final pill = find.text('Continue from page 12');
+    final pill = find.text('Continue from chapter 1');
     await tester.tap(pill);
     await tester.pump(const Duration(milliseconds: 16));
     expect(taps, 1);

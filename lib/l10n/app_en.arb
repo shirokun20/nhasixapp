@@ -3479,17 +3479,30 @@
       }
     }
   },
-  "chapterContinueFabResumeHint": "Kuro kept your spot on page {page}",
-  "@chapterContinueFabResumeHint": {
+  "continueFromChapter": "Continue from chapter {number}",
+  "@continueFromChapter": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "continueToChapter": "Continue to chapter {number}",
+  "@continueToChapter": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "continuePageSubtitle": "Page {page}",
+  "@continuePageSubtitle": {
     "placeholders": {
       "page": {
         "type": "int"
       }
     }
   },
-  "chapterContinueFabRestartHint": "Kuro says: let's start this chapter over!",
-  "chapterContinueNextLabel": "Next chapter",
-  "chapterContinueFabNextHint": "Kuro already has the next chapter ready",
   "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
   "commentsCount": "Comments ({count})",
   "@commentsCount": {
