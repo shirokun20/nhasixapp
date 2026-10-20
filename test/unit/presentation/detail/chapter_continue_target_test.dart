@@ -38,29 +38,81 @@ void main() {
     expect(target, isNotNull);
     expect(target!.chapter.id, 'c1');
     expect(target.page, 12);
-    expect(target.finished, isFalse);
+    expect(target.mode, ChapterContinueMode.resume);
   });
 
-  test('finished chapter restarts the series from the first chapter by name',
-      () {
+  test('finished chapter continues to the next chapter by name', () {
     final now = DateTime(2026, 10, 21, 12);
     final target = resolveChapterContinueTarget(
       chapterHistory: {
-        'c10': _history('c10', lastViewed: now, lastPage: 40, totalPages: 40),
+        'c1': _history('c1', lastViewed: now, lastPage: 20, totalPages: 20),
       },
       // Declared newest-first, exactly how most sources return them.
       chapters: [
         _chapter('c10', title: 'Chapter 10'),
-        _chapter('c10b', title: 'Chapter 2.5'),
+        _chapter('c2b', title: 'Chapter 2.5'),
         _chapter('c2', title: 'Chapter 2'),
         _chapter('c1', title: 'Chapter 1'),
       ],
     );
 
     expect(target, isNotNull);
+    expect(target!.chapter.id, 'c2');
+    expect(target.page, 1);
+    expect(target.mode, ChapterContinueMode.nextChapter);
+  });
+
+  test('finishing a mid-series chapter picks the next number, not the array',
+      () {
+    final target = resolveChapterContinueTarget(
+      chapterHistory: {
+        'c2': _history('c2',
+            lastViewed: DateTime(2026, 10, 21), lastPage: 9, totalPages: 9),
+      },
+      chapters: [
+        _chapter('c3', title: 'Chapter 3'),
+        _chapter('c2', title: 'Chapter 2'),
+        _chapter('c1', title: 'Chapter 1'),
+      ],
+    );
+
+    expect(target!.chapter.id, 'c3');
+    expect(target.mode, ChapterContinueMode.nextChapter);
+  });
+
+  test('finished last chapter restarts the series at the first chapter', () {
+    final now = DateTime(2026, 10, 21, 12);
+    final target = resolveChapterContinueTarget(
+      chapterHistory: {
+        'c10': _history('c10', lastViewed: now, lastPage: 40, totalPages: 40),
+      },
+      chapters: [
+        _chapter('c10', title: 'Chapter 10'),
+        _chapter('c1', title: 'Chapter 1'),
+        _chapter('c2', title: 'Chapter 2'),
+      ],
+    );
+
     expect(target!.chapter.id, 'c1');
     expect(target.page, 1);
-    expect(target.finished, isTrue);
+    expect(target.mode, ChapterContinueMode.restart);
+  });
+
+  test('next chapter skips unreadable chapters', () {
+    final target = resolveChapterContinueTarget(
+      chapterHistory: {
+        'c1': _history('c1',
+            lastViewed: DateTime(2026, 10, 21), lastPage: 20, totalPages: 20),
+      },
+      chapters: [
+        _chapter('c1', title: 'Chapter 1'),
+        _chapter('ext', title: 'Chapter 2', externalUrl: 'https://x.test'),
+        _chapter('c3', title: 'Chapter 3'),
+      ],
+    );
+
+    expect(target!.chapter.id, 'c3');
+    expect(target.mode, ChapterContinueMode.nextChapter);
   });
 
   test('restart skips unreadable chapters declared earliest', () {
@@ -78,6 +130,7 @@ void main() {
 
     expect(target!.chapter.id, 'c2');
     expect(target.page, 1);
+    expect(target.mode, ChapterContinueMode.restart);
   });
 
   test('restart falls back to the finished chapter when names are unnumbered',
@@ -96,6 +149,7 @@ void main() {
 
     expect(target!.chapter.id, 'prologue');
     expect(target.page, 1);
+    expect(target.mode, ChapterContinueMode.restart);
   });
 
   test('chapter numbers parse numerically, not lexically', () {

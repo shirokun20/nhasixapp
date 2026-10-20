@@ -4621,6 +4621,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chapterContinueFabRestartHint => 'Kuro 说：这一章从头再来吧！';
 
   @override
+  String get chapterContinueNextLabel => '下一章';
+
+  @override
+  String get chapterContinueFabNextHint => 'Kuro 已经准备好了下一章';
+
+  @override
   String get loginRequiredForContent => '您需要登录 Crotpedia 才能查看此内容。';
 
   @override

@@ -9,6 +9,13 @@ import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 Chapter _chapter(String id) =>
     Chapter(id: id, title: 'Chapter $id', url: '/chapter/$id');
 
+ChapterContinueTarget _target(ChapterContinueMode mode) =>
+    ChapterContinueTarget(
+      chapter: _chapter('c1'),
+      page: mode == ChapterContinueMode.resume ? 12 : 1,
+      mode: mode,
+    );
+
 Widget _harness(Widget child) {
   return MaterialApp(
     localizationsDelegates: const [
@@ -22,18 +29,22 @@ Widget _harness(Widget child) {
   );
 }
 
+Future<void> _pumpFab(
+  WidgetTester tester,
+  ChapterContinueMode mode, {
+  VoidCallback? onTap,
+}) async {
+  await tester.pumpWidget(_harness(ChapterContinueFab(
+    target: _target(mode),
+    onTap: onTap ?? () {},
+  )));
+  await tester.pump(const Duration(milliseconds: 16));
+}
+
 void main() {
   testWidgets('resume mode shows the reader mascot and page label',
       (tester) async {
-    await tester.pumpWidget(_harness(ChapterContinueFab(
-      target: ChapterContinueTarget(
-        chapter: _chapter('c1'),
-        page: 12,
-        finished: false,
-      ),
-      onTap: () {},
-    )));
-    await tester.pump(const Duration(milliseconds: 16));
+    await _pumpFab(tester, ChapterContinueMode.resume);
 
     expect(find.text('Continue from page 12'), findsOneWidget);
     expect(
@@ -42,17 +53,19 @@ void main() {
     );
   });
 
-  testWidgets('finished mode shows the happy mascot and restart label',
+  testWidgets('next-chapter mode shows the next chapter label', (tester) async {
+    await _pumpFab(tester, ChapterContinueMode.nextChapter);
+
+    expect(find.text('Next chapter'), findsOneWidget);
+    expect(
+      tester.widget<KuroMascot>(find.byType(KuroMascot)).mood,
+      KuroMood.reader,
+    );
+  });
+
+  testWidgets('restart mode shows the happy mascot and restart label',
       (tester) async {
-    await tester.pumpWidget(_harness(ChapterContinueFab(
-      target: ChapterContinueTarget(
-        chapter: _chapter('c1'),
-        page: 1,
-        finished: true,
-      ),
-      onTap: () {},
-    )));
-    await tester.pump(const Duration(milliseconds: 16));
+    await _pumpFab(tester, ChapterContinueMode.restart);
 
     expect(find.text('Go to First Page'), findsOneWidget);
     expect(
@@ -63,17 +76,9 @@ void main() {
 
   testWidgets('tap and drag still fire the callback', (tester) async {
     var taps = 0;
-    await tester.pumpWidget(_harness(ChapterContinueFab(
-      target: ChapterContinueTarget(
-        chapter: _chapter('c1'),
-        page: 3,
-        finished: false,
-      ),
-      onTap: () => taps++,
-    )));
-    await tester.pump(const Duration(milliseconds: 16));
+    await _pumpFab(tester, ChapterContinueMode.resume, onTap: () => taps++);
 
-    final pill = find.text('Continue from page 3');
+    final pill = find.text('Continue from page 12');
     await tester.tap(pill);
     await tester.pump(const Duration(milliseconds: 16));
     expect(taps, 1);

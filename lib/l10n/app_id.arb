@@ -2786,6 +2786,8 @@
   "continueFromPage": "Lanjutkan dari halaman {page}",
   "chapterContinueFabResumeHint": "Kuro simpan posisimu di halaman {page}",
   "chapterContinueFabRestartHint": "Kata Kuro: ayo mulai bab ini dari awal!",
+  "chapterContinueNextLabel": "Chapter berikutnya",
+  "chapterContinueFabNextHint": "Kuro udah siapin lanjutannya",
   "loginRequiredForContent": "Anda harus masuk ke Crotpedia untuk melihat konten ini.",
   "commentsCount": "Komentar ({count})",
   "postComment": "Kirim Komentar",

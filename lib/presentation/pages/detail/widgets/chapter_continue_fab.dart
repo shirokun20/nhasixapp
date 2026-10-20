@@ -4,23 +4,38 @@ import 'package:nhasixapp/domain/entities/history.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
 
-const double _fabWidth = 268;
-const double _fabHeight = 92;
+const double _fabWidth = 236;
+const double _fabHeight = 64;
+
+enum ChapterContinueMode {
+  /// Reopen the last-read chapter where the reader left off.
+  resume,
+
+  /// Last-read chapter is finished: open the next chapter by number.
+  nextChapter,
+
+  /// Last-read chapter is the last of the series: restart from the first.
+  restart,
+}
 
 class ChapterContinueTarget {
   const ChapterContinueTarget({
     required this.chapter,
     required this.page,
-    required this.finished,
+    required this.mode,
   });
 
   final Chapter chapter;
   final int page;
-  final bool finished;
+  final ChapterContinueMode mode;
 }
 
-/// Picks the most recently viewed chapter, skipping chapters that exist in
-/// [chapters] but are not readable in-app (external/unavailable sources).
+/// Picks what the button should open:
+/// - unfinished chapter -> that chapter, on its last page ([resume]);
+/// - finished chapter with a later chapter -> the next chapter by number;
+/// - finished last chapter -> first chapter of the series.
+/// Chapters that exist in [chapters] but are not readable in-app
+/// (external/unavailable sources) are skipped.
 ChapterContinueTarget? resolveChapterContinueTarget({
   required Map<String, History>? chapterHistory,
   required List<Chapter> chapters,
@@ -46,30 +61,58 @@ ChapterContinueTarget? resolveChapterContinueTarget({
     if (totalPages > 0) page = page.clamp(1, totalPages).toInt();
     if (page < 1) page = 1;
 
-    // A finished chapter means restarting the series: the source lists
-    // chapters newest-first more often than not, so "first" is decided by the
-    // chapter number parsed from its name, never by array position.
-    if (finished) {
-      final first = _firstChapterByNumber(chapters);
-      if (first != null) {
-        return ChapterContinueTarget(
-          chapter: first,
-          page: 1,
-          finished: true,
-        );
+    if (!finished) {
+      return ChapterContinueTarget(
+        chapter: known ??
+            Chapter(
+              id: chapterId,
+              title: history.chapterTitle ?? chapterId,
+              url: chapterId,
+            ),
+        page: page,
+        mode: ChapterContinueMode.resume,
+      );
+    }
+
+    // Finished: walk the series by chapter number parsed from the name, never
+    // by array position (sources usually list newest-first).
+    final ordered = _orderedReadableChapters(chapters);
+    final currentNumber = chapterNumberFromName(
+          known?.title ?? history.chapterTitle ?? chapterId,
+        ) ??
+        (known == null ? null : chapterNumberFromName(known.url));
+
+    if (currentNumber != null) {
+      for (final candidate in ordered) {
+        final number = candidate.$2;
+        if (number > currentNumber) {
+          return ChapterContinueTarget(
+            chapter: candidate.$1,
+            page: 1,
+            mode: ChapterContinueMode.nextChapter,
+          );
+        }
       }
     }
 
+    if (ordered.isNotEmpty) {
+      return ChapterContinueTarget(
+        chapter: ordered.first.$1,
+        page: 1,
+        mode: ChapterContinueMode.restart,
+      );
+    }
+
+    // No numbered chapter list: keep the button usable as a plain restart.
     return ChapterContinueTarget(
-      // Synthesized when the reader history outlives the loaded chapter list.
       chapter: known ??
           Chapter(
             id: chapterId,
             title: history.chapterTitle ?? chapterId,
             url: chapterId,
           ),
-      page: page,
-      finished: finished,
+      page: 1,
+      mode: ChapterContinueMode.restart,
     );
   }
 
@@ -89,20 +132,19 @@ double? chapterNumberFromName(String name) {
   return double.tryParse(raw.replaceAll(',', '.'));
 }
 
-Chapter? _firstChapterByNumber(List<Chapter> chapters) {
-  Chapter? first;
-  double? firstNumber;
+/// Readable chapters with a parsed number, ascending. Unnumbered and
+/// unreadable chapters are dropped — they cannot be ordered by name.
+List<(Chapter, double)> _orderedReadableChapters(List<Chapter> chapters) {
+  final ordered = <(Chapter, double)>[];
   for (final chapter in chapters) {
     if (!chapter.isReadableInApp) continue;
-    final number = chapterNumberFromName(chapter.title) ??
-        chapterNumberFromName(chapter.url);
+    final number =
+        chapterNumberFromName(chapter.title) ?? chapterNumberFromName(chapter.url);
     if (number == null) continue;
-    if (firstNumber == null || number < firstNumber) {
-      first = chapter;
-      firstNumber = number;
-    }
+    ordered.add((chapter, number));
   }
-  return first;
+  ordered.sort((a, b) => a.$2.compareTo(b.$2));
+  return ordered;
 }
 
 class ChapterContinueFab extends StatefulWidget {
@@ -159,53 +201,73 @@ class _ChapterContinueFabState extends State<ChapterContinueFab> {
                 onPanUpdate: (details) => setState(
                   () => _position = _clamp(position + details.delta, constraints, inset),
                 ),
-                child: Material(
-                  color: theme.colorScheme.surfaceContainerHigh,
-                  elevation: 6,
-                  borderRadius: BorderRadius.circular(20),
-                  clipBehavior: Clip.antiAlias,
-                  child: SizedBox(
-                    width: _fabWidth,
-                    height: _fabHeight,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          KuroMascot(
-                            mood: target.finished ? KuroMood.happy : KuroMood.reader,
-                            size: 48,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  target.finished
-                                      ? l10n.readerScreenGoToFirstPage
-                                      : l10n.continueFromPage(target.page),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  target.finished
-                                      ? l10n.chapterContinueFabRestartHint
-                                      : l10n.chapterContinueFabResumeHint(target.page),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary
+                            .withValues(alpha: 0.45),
+                        blurRadius: 18,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    elevation: 0,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.4,
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: _fabWidth,
+                      height: _fabHeight,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            KuroMascot(
+                              mood: target.mode == ChapterContinueMode.restart
+                                  ? KuroMood.happy
+                                  : KuroMood.reader,
+                              size: 38,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _label(l10n),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _hint(l10n),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -216,5 +278,27 @@ class _ChapterContinueFabState extends State<ChapterContinueFab> {
         );
       },
     );
+  }
+
+  String _label(AppLocalizations l10n) {
+    switch (widget.target.mode) {
+      case ChapterContinueMode.resume:
+        return l10n.continueFromPage(widget.target.page);
+      case ChapterContinueMode.nextChapter:
+        return l10n.chapterContinueNextLabel;
+      case ChapterContinueMode.restart:
+        return l10n.readerScreenGoToFirstPage;
+    }
+  }
+
+  String _hint(AppLocalizations l10n) {
+    switch (widget.target.mode) {
+      case ChapterContinueMode.resume:
+        return l10n.chapterContinueFabResumeHint(widget.target.page);
+      case ChapterContinueMode.nextChapter:
+        return l10n.chapterContinueFabNextHint;
+      case ChapterContinueMode.restart:
+        return l10n.chapterContinueFabRestartHint;
+    }
   }
 }

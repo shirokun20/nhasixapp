@@ -8136,6 +8136,18 @@ abstract class AppLocalizations {
   /// **'Kuro says: let\'s start this chapter over!'**
   String get chapterContinueFabRestartHint;
 
+  /// No description provided for @chapterContinueNextLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next chapter'**
+  String get chapterContinueNextLabel;
+
+  /// No description provided for @chapterContinueFabNextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuro already has the next chapter ready'**
+  String get chapterContinueFabNextHint;
+
   /// No description provided for @loginRequiredForContent.
   ///
   /// In en, this message translates to:

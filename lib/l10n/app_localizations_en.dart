@@ -4746,6 +4746,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Kuro says: let\'s start this chapter over!';
 
   @override
+  String get chapterContinueNextLabel => 'Next chapter';
+
+  @override
+  String get chapterContinueFabNextHint =>
+      'Kuro already has the next chapter ready';
+
+  @override
   String get loginRequiredForContent =>
       'You need to log in to Crotpedia to view this content.';
 

@@ -3395,6 +3395,8 @@
   "continueFromPage": "从第 {page} 页继续",
   "chapterContinueFabResumeHint": "Kuro 帮你记住了第 {page} 页",
   "chapterContinueFabRestartHint": "Kuro 说：这一章从头再来吧！",
+  "chapterContinueNextLabel": "下一章",
+  "chapterContinueFabNextHint": "Kuro 已经准备好了下一章",
   "loginRequiredForContent": "您需要登录 Crotpedia 才能查看此内容。",
   "commentsCount": "评论 ({count})",
   "postComment": "发布评论",

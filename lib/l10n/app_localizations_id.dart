@@ -4765,6 +4765,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Kata Kuro: ayo mulai bab ini dari awal!';
 
   @override
+  String get chapterContinueNextLabel => 'Chapter berikutnya';
+
+  @override
+  String get chapterContinueFabNextHint => 'Kuro udah siapin lanjutannya';
+
+  @override
   String get loginRequiredForContent =>
       'Anda harus masuk ke Crotpedia untuk melihat konten ini.';
 

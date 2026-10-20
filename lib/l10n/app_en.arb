@@ -3488,6 +3488,8 @@
     }
   },
   "chapterContinueFabRestartHint": "Kuro says: let's start this chapter over!",
+  "chapterContinueNextLabel": "Next chapter",
+  "chapterContinueFabNextHint": "Kuro already has the next chapter ready",
   "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
   "commentsCount": "Comments ({count})",
   "@commentsCount": {
