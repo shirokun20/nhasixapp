@@ -476,6 +476,11 @@ class ReaderTranslationCubit extends BaseCubit<ReaderTranslationState> {
     _currentPageIndex = -1;
     _currentContentId = '';
     _currentImageUrl = '';
+    _pageBytes = null;
+    _pageWidth = 0;
+    _pageHeight = 0;
+    _imageBytesApprox = 0;
+    _capturedPageSignature = '';
     // Emit Idle DIRECTLY (not via _bumpUi which re-emits the old Translated
     // state) so the overlay layer clears immediately.
     _uiVersion++;

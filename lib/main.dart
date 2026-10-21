@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -20,6 +21,7 @@ import 'package:nhasixapp/core/services/analytics_service.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
 import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
+import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
@@ -39,32 +41,8 @@ void main() async {
   // Configure Flutter ImageCache for reader workloads
   PaintingBinding.instance.imageCache.maximumSize = 200;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024;
-
-  // Initialize Performance Monitoring
-  await PerformanceMonitor.initialize();
-
-  // Initialize Analytics Service
-  final analyticsService = getIt<AnalyticsService>();
-  await analyticsService.initialize();
-
-  // Initialize History Cleanup Service
-  final historyCleanupService = getIt<HistoryCleanupService>();
-  await historyCleanupService.initialize();
-
-  // Purge expired translation cache (>30 days)
-  try {
-    final cacheRepo = getIt<TranslationCacheRepositoryImpl>();
-    await cacheRepo.purgeExpired();
-  } catch (_) {}
-
-  // Initialize App Update Service (clears cache on app updates)
-  await AppUpdateService.initialize();
-
-  // Load language metadata from assets/configs/languages.json
-  await getIt<LanguageService>().load();
-
-  // Initialize WorkManager for background downloads
-  await initializeWorkManager(isDebugMode: kDebugMode);
+  // Disable runtime fetching of fonts; fonts must be bundled as assets
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Capture cold-start notification launch payload
   try {
@@ -149,6 +127,60 @@ void main() async {
 
   runApp(MyApp(launchPayload: _pendingNotifPayload));
 }
+bool _deferredInitExecuted = false;
+
+Future<void> _deferredInit() async {
+  if (_deferredInitExecuted) return;
+  _deferredInitExecuted = true;
+
+  try {
+    await PerformanceMonitor.initialize();
+  } catch (e) {
+    Logger().w('Deferred init PerformanceMonitor error: $e');
+  }
+
+  try {
+    final analyticsService = getIt<AnalyticsService>();
+    await analyticsService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init AnalyticsService error: $e');
+  }
+
+  try {
+    final historyCleanupService = getIt<HistoryCleanupService>();
+    await historyCleanupService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init HistoryCleanupService error: $e');
+  }
+
+  try {
+    final cacheRepo = getIt<TranslationCacheRepositoryImpl>();
+    await cacheRepo.purgeExpired();
+  } catch (_) {}
+
+  try {
+    await AppUpdateService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init AppUpdateService error: $e');
+  }
+
+  try {
+    await getIt<LanguageService>().load();
+  } catch (e) {
+    Logger().w('Deferred init LanguageService error: $e');
+  }
+
+  try {
+    await initializeWorkManager(isDebugMode: kDebugMode);
+  } catch (e) {
+    Logger().w('Deferred init WorkManager error: $e');
+  }
+  try {
+    if (getIt.isRegistered<DatabaseHelper>()) {
+      await getIt<DatabaseHelper>().vacuum();
+    }
+  } catch (_) {}
+}
 
 // Navigates to content on cold-start notification tap.
 class _LaunchPayloadNavigator extends StatefulWidget {
@@ -194,6 +226,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deferredInit();
+    });
     // SourceInstallerService at app root: settings pushes SourceManagerScreen
     // via raw Navigator.push (sibling route, escapes page-scoped providers),
     // so the installer must be visible to every route, not just Settings.

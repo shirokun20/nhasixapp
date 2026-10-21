@@ -104,8 +104,8 @@ void main() {
         // Group-level pagination fetches all filtered rows at once.
         when(() => mockUserDataRepository.getAllDownloads(
               state: DownloadState.completed,
-              limit: 10000,
-              offset: 0,
+              limit: any(named: 'limit'),
+              offset: any(named: 'offset'),
               sourceId: any(named: 'sourceId'),
             )).thenAnswer((_) async => tDownloadList);
 
@@ -142,8 +142,8 @@ void main() {
       build: () {
         when(() => mockUserDataRepository.getAllDownloads(
               state: DownloadState.completed,
-              limit: 10000,
-              offset: 0,
+              limit: any(named: 'limit'),
+              offset: any(named: 'offset'),
               sourceId: any(named: 'sourceId'),
             )).thenAnswer((_) async => tDownloadList);
 
@@ -227,7 +227,7 @@ void main() {
         // Setup mocks for loadMore call
         when(() => mockUserDataRepository.getAllDownloads(
               state: DownloadState.completed,
-              limit: 10000,
+              limit: any(named: 'limit'),
               offset: any(named: 'offset'),
               sourceId: any(named: 'sourceId'),
               orderBy: any(named: 'orderBy'),
@@ -295,15 +295,20 @@ void main() {
     void stubGetAll(List<DownloadStatus> rows) {
       when(() => mockUserDataRepository.getAllDownloads(
             state: DownloadState.completed,
-            limit: 10000,
-            offset: 0,
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
             sourceId: any(named: 'sourceId'),
             orderBy: any(named: 'orderBy'),
             descending: any(named: 'descending'),
           )).thenAnswer((inv) async {
         final sid = inv.namedArguments[#sourceId] as String?;
-        if (sid == null) return rows;
-        return rows.where((r) => (r.sourceId ?? 'nhentai') == sid).toList();
+        final offset = inv.namedArguments[#offset] as int? ?? 0;
+        final limit = inv.namedArguments[#limit] as int? ?? 100;
+        final filtered = sid == null
+            ? rows
+            : rows.where((r) => (r.sourceId ?? 'nhentai') == sid).toList();
+        if (offset >= filtered.length) return [];
+        return filtered.skip(offset).take(limit).toList();
       });
     }
 
@@ -401,11 +406,16 @@ void main() {
             query: any(named: 'query'),
             state: DownloadState.completed,
             sourceId: any(named: 'sourceId'),
-            limit: 10000,
-            offset: 0,
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
             orderBy: any(named: 'orderBy'),
             descending: any(named: 'descending'),
-          )).thenAnswer((_) async => rows);
+          )).thenAnswer((inv) async {
+        final offset = inv.namedArguments[#offset] as int? ?? 0;
+        final limit = inv.namedArguments[#limit] as int? ?? 100;
+        if (offset >= rows.length) return [];
+        return rows.skip(offset).take(limit).toList();
+      });
 
       await cubit.searchOfflineContent('hit');
       var loaded = cubit.state as OfflineSearchLoaded;
@@ -467,6 +477,47 @@ void main() {
       expect(loaded.results.length, 20);
       expect(loaded.currentPage, 1);
       expect(loaded.hasMore, true);
+    });
+
+    test('loadMore fetches next window with cursor offset and caps results', () async {
+      final rows = [
+        for (var i = 0; i < 120; i++)
+          dl('item_$i', 'DistinctSeries$i Chapter 1'),
+      ];
+      stubCovers();
+      stubGetAll(rows);
+
+      await cubit.getAllOfflineContent();
+      var loaded = cubit.state as OfflineSearchLoaded;
+      expect(loaded.results.length, 20);
+
+      // Verify first fetch was offset 0, limit 100
+      verify(() => mockUserDataRepository.getAllDownloads(
+            state: DownloadState.completed,
+            limit: 100,
+            offset: 0,
+            sourceId: any(named: 'sourceId'),
+            orderBy: any(named: 'orderBy'),
+            descending: any(named: 'descending'),
+          )).called(1);
+
+      // Consume groups until batch 1 runs out (5 pages of 20 = 100 groups)
+      for (var p = 0; p < 4; p++) {
+        await cubit.loadMoreContent();
+      }
+      loaded = cubit.state as OfflineSearchLoaded;
+      expect(loaded.results.length, 100);
+
+      // Now load 6th page: triggers cursor fetch at offset 100
+      await cubit.loadMoreContent();
+      verify(() => mockUserDataRepository.getAllDownloads(
+            state: DownloadState.completed,
+            limit: 100,
+            offset: 100,
+            sourceId: any(named: 'sourceId'),
+            orderBy: any(named: 'orderBy'),
+            descending: any(named: 'descending'),
+          )).called(1);
     });
   });
 }

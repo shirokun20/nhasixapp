@@ -1,6 +1,5 @@
+import 'dart:collection';
 import 'dart:io';
-import 'dart:math';
-
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -37,7 +36,46 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   final OfflineContentManager _offlineContentManager;
   final UserDataRepository _userDataRepository;
   final SharedPreferences _prefs;
-  final Map<String, int> _sizeBytesByContentId = {};
+  final LinkedHashMap<String, int> _sizeBytesByContentId =
+      LinkedHashMap<String, int>();
+  static const int _maxSizeBytesCap = 500;
+  static const int _maxResultsCap = 2000;
+
+  // Cursor pagination state for getAllOfflineContent
+  final Map<String, String?> _allDownloadsPathById = {};
+  final List<ContentGroup> _allGroupsCache = [];
+  final Set<String> _seenGroupIds = <String>{};
+  int _consumedRowCount = 0;
+  bool _hasMoreDbRows = true;
+
+  // Cursor pagination state for searchOfflineContent
+  final Map<String, String?> _searchPathById = {};
+  final List<ContentGroup> _searchGroupsCache = [];
+  final Set<String> _seenSearchGroupIds = <String>{};
+  int _consumedSearchRowCount = 0;
+  int _consumedSearchGroupCount = 0;
+  bool _hasMoreSearchDbRows = true;
+
+  void _addSizeBytes(String key, int bytes) {
+    if (_sizeBytesByContentId.length >= _maxSizeBytesCap) {
+      _sizeBytesByContentId.remove(_sizeBytesByContentId.keys.first);
+    }
+    _sizeBytesByContentId[key] = bytes;
+  }
+
+  void _addSeenGroupId(String id) {
+    if (_seenGroupIds.length >= _maxResultsCap) {
+      _seenGroupIds.remove(_seenGroupIds.first);
+    }
+    _seenGroupIds.add(id);
+  }
+
+  void _addSeenSearchGroupId(String id) {
+    if (_seenSearchGroupIds.length >= _maxResultsCap) {
+      _seenSearchGroupIds.remove(_seenSearchGroupIds.first);
+    }
+    _seenSearchGroupIds.add(id);
+  }
 
   /// Groups consumed from the front of the full grouped list (pagination
   /// cursor). May exceed visible results when groups are dropped for
@@ -50,10 +88,8 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
   /// Groups shown per page (group-level pagination).
   static const int groupPageSize = 20;
 
-  /// Max rows fetched per load for in-memory group-then-slice. Offline
-  /// libraries are typically < 2k rows; a warning is logged when truncated.
-  static const int fetchLimit = 10000;
-
+  /// Max rows fetched per load for windowed cursor pagination.
+  static const int fetchLimit = groupPageSize * 5;
   Future<int> _getDirectorySize(Directory directory) async {
     int size = 0;
     try {
@@ -240,109 +276,128 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       // Group-level pagination: fetch all filtered rows, group in memory,
       // then slice groupPageSize groups per page. Counts are group-based.
-      final searchResults = await _userDataRepository.searchDownloads(
-        query: query,
-        state: DownloadState.completed,
-        sourceId: effectiveSourceId,
-        limit: fetchLimit,
-        offset: 0,
-        orderBy: currentOrderBy,
-        descending: currentDescending,
-      );
-
-      if (isClosed) return;
-
-      if (searchResults.length >= fetchLimit) {
-        logWarning(
-            'searchOfflineContent: rows truncated at $fetchLimit; group pages may be incomplete');
+      // Group-level cursor pagination: fetch batch from offset, group in memory,
+      // append to cache, then slice groupPageSize groups.
+      if (!loadMore) {
+        _consumedSearchRowCount = 0;
+        _consumedSearchGroupCount = 0;
+        _searchGroupsCache.clear();
+        _seenSearchGroupIds.clear();
+        _searchPathById.clear();
+        _hasMoreSearchDbRows = true;
       }
 
-      // Phase 1 (cheap, all rows): lightweight conversion + full grouping.
-      // Cover resolution and reader positions are file/DB I/O — deferred to
-      // phase 2 for the visible window only (3000+ row libraries).
-      final pathById = <String, String?>{};
-      final lightContents = <Content>[];
+      if (_searchGroupsCache.isEmpty && loadMore && state is OfflineSearchLoaded) {
+        final prevResults = (state as OfflineSearchLoaded).results;
+        _searchGroupsCache.addAll(prevResults);
+        for (final g in _searchGroupsCache) {
+          _seenSearchGroupIds.add(g.baseTitle);
+        }
+        _consumedSearchGroupCount = prevResults.length;
+      }
+
+      final neededSearchGroups = _consumedSearchGroupCount + groupPageSize;
+      if (_searchGroupsCache.length < neededSearchGroups && _hasMoreSearchDbRows) {
+        final searchResults = await _userDataRepository.searchDownloads(
+          query: query,
+          state: DownloadState.completed,
+          sourceId: effectiveSourceId,
+          limit: fetchLimit,
+          offset: _consumedSearchRowCount,
+          orderBy: currentOrderBy,
+          descending: currentDescending,
+        );
+
+        if (isClosed) return;
+        _consumedSearchRowCount += searchResults.length;
+        if (searchResults.length < fetchLimit) {
+          _hasMoreSearchDbRows = false;
+        }
+
+        final lightContents = <Content>[];
+        for (final row in searchResults) {
+          final contentId = row['id'] as String;
+          final sourceId = row['source_id'] as String? ?? 'nhentai';
+          final title = row['title'] as String? ?? contentId;
+          final fileSize = row['file_size'] as int? ?? 0;
+          final pageCount = row['total_pages'] as int? ?? 0;
+          _searchPathById[contentId] = row['download_path'] as String?;
+          _addSizeBytes(contentId, fileSize);
+
+          lightContents.add(Content(
+            sourceId: sourceId,
+            id: contentId,
+            title: title,
+            coverUrl: '',
+            tags: [],
+            artists: [],
+            characters: [],
+            parodies: [],
+            groups: [],
+            language: '',
+            pageCount: pageCount,
+            imageUrls: [],
+            uploadDate: DateTime.now(),
+            favorites: 0,
+            englishTitle: null,
+            japaneseTitle: null,
+          ));
+        }
+
+        if (lightContents.isNotEmpty) {
+          final newGroups = await _groupContent(
+            lightContents,
+            itemSizes: _sizeBytesByContentId,
+            includeReaderPositions: false,
+          );
+          for (final g in newGroups) {
+            if (!_seenSearchGroupIds.contains(g.baseTitle)) {
+              _addSeenSearchGroupId(g.baseTitle);
+              _searchGroupsCache.add(g);
+            }
+          }
+        }
+      }
       final allOfflineSizes = <String, String>{};
-      final allSizeBytes = <String, int>{};
       var totalStorageUsage = 0;
-
-      for (final row in searchResults) {
-        final contentId = row['id'] as String;
-        final sourceId = row['source_id'] as String? ?? 'nhentai';
-        final title = row['title'] as String? ?? contentId;
-        // coverUrl from DB not used - resolved per visible item in phase 2
-        final fileSize = row['file_size'] as int? ?? 0;
-        final pageCount = row['total_pages'] as int? ?? 0;
-        pathById[contentId] = row['download_path'] as String?;
-
-        lightContents.add(Content(
-          sourceId: sourceId,
-          id: contentId,
-          title: title,
-          coverUrl: '',
-          tags: [],
-          artists: [],
-          characters: [],
-          parodies: [],
-          groups: [],
-          language: '',
-          pageCount: pageCount,
-          imageUrls: [], // Empty - loaded on-demand in reader
-          uploadDate: DateTime.now(),
-          favorites: 0,
-          englishTitle: null,
-          japaneseTitle: null,
-        ));
-
-        allOfflineSizes[contentId] =
-            OfflineContentManager.formatStorageSize(fileSize);
-        allSizeBytes[contentId] = fileSize;
-        totalStorageUsage += fileSize;
+      for (final g in _searchGroupsCache) {
+        totalStorageUsage += g.totalSize;
+        for (final item in g.items) {
+          allOfflineSizes[item.id] =
+              OfflineContentManager.formatStorageSize(g.sizeForContent(item.id));
+        }
       }
 
-      if (isClosed) return;
-
-      _sizeBytesByContentId
-        ..clear()
-        ..addAll(allSizeBytes);
-
-      final List<ContentGroup> allGroups = await _groupContent(
-        lightContents,
-        itemSizes: _sizeBytesByContentId,
-        includeReaderPositions: false,
-      );
-
-      // Phase 2 (I/O, visible window only): resolve covers + reader
-      // positions. loadMore continues from the consumed cursor so visible
-      // groups are never re-resolved.
-      final startIndex = loadMore && state is OfflineSearchLoaded
-          ? max(_consumedGroupCount,
-              (state as OfflineSearchLoaded).results.length)
-          : 0;
+      final startIndex = _consumedSearchGroupCount;
       final window = await _enrichGroupWindow(
-        allGroups,
+        _searchGroupsCache,
         startIndex,
         groupPageSize,
-        downloadPathOf: (id) => pathById[id],
+        downloadPathOf: (id) => _searchPathById[id],
       );
-      _consumedGroupCount = startIndex + window.consumed;
+      _consumedSearchGroupCount = startIndex + window.consumed;
 
-      final groupedResults = loadMore && state is OfflineSearchLoaded
+      var groupedResults = loadMore && state is OfflineSearchLoaded
           ? [...(state as OfflineSearchLoaded).results, ...window.groups]
           : window.groups;
 
-      final currentPage = _consumedGroupCount == 0
-          ? 1
-          : ((_consumedGroupCount - 1) ~/ groupPageSize) + 1;
-      final totalPages =
-          allGroups.isEmpty ? 1 : ((allGroups.length - 1) ~/ groupPageSize) + 1;
-      final hasMore = _consumedGroupCount < allGroups.length;
+      if (groupedResults.length > _maxResultsCap) {
+        groupedResults =
+            groupedResults.sublist(groupedResults.length - _maxResultsCap);
+      }
 
-      // Buckets reflect the whole store: refresh on unfiltered loads,
-      // otherwise keep the previously known buckets.
+      final currentPage = _consumedSearchGroupCount == 0
+          ? 1
+          : ((_consumedSearchGroupCount - 1) ~/ groupPageSize) + 1;
+      final totalPages = _searchGroupsCache.isEmpty
+          ? 1
+          : ((_searchGroupsCache.length - 1) ~/ groupPageSize) + 1;
+      final hasMore = _consumedSearchGroupCount < _searchGroupsCache.length ||
+          _hasMoreSearchDbRows;
+
       final availableSourceIds = effectiveSourceId == null
-          ? _distinctBucketIds(searchResults
-              .map((r) => (r['source_id'] as String?) ?? 'nhentai'))
+          ? _distinctBucketIds(_searchGroupsCache
+              .map((g) => g.representativeContent.sourceId))
           : previousBuckets;
       final sourceCounts = await _resolveSourceCounts(loadMore);
 
@@ -354,7 +409,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       emit(OfflineSearchLoaded(
         query: query,
         results: groupedResults,
-        totalResults: allGroups.length,
+        totalResults: _searchGroupsCache.length,
         offlineSizes: allOfflineSizes,
         storageUsage: totalStorageUsage,
         formattedStorageUsage:
@@ -372,7 +427,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       ));
 
       logInfo(
-          'Search complete: ${groupedResults.length}/${allGroups.length} groups for "$query" (source: $effectiveSourceId) '
+          'Search complete: ${groupedResults.length}/${_searchGroupsCache.length} groups for "$query" (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;
@@ -487,112 +542,130 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
 
       // Group-level pagination: fetch all filtered rows, group in memory,
       // then slice groupPageSize groups per page. Counts are group-based.
-      final downloads = await _userDataRepository.getAllDownloads(
-        state: DownloadState.completed,
-        sourceId: effectiveSourceId,
-        limit: fetchLimit,
-        offset: 0,
-        orderBy: currentOrderBy,
-        descending: currentDescending,
-      );
-
-      if (isClosed) return;
-
-      if (downloads.length >= fetchLimit) {
-        logWarning(
-            'getAllOfflineContent: rows truncated at $fetchLimit; group pages may be incomplete');
+      // Group-level cursor pagination: fetch batch from offset, group in memory,
+      // append to cache, then slice groupPageSize groups.
+      if (!loadMore) {
+        _consumedRowCount = 0;
+        _consumedGroupCount = 0;
+        _allGroupsCache.clear();
+        _seenGroupIds.clear();
+        _allDownloadsPathById.clear();
+        _hasMoreDbRows = true;
       }
 
-      if (downloads.isEmpty && !loadMore) {
-        // Only trigger empty if NO source filter is applied.
-        // If filter is applied, just show empty (filtered) state, don't fallback to FS
-        if (effectiveSourceId == null) {
-          // Enforce DB First: Do NOT auto-scan filesystem.
-          // If DB is empty, user must explicitly trigger "Sync" or "Import".
-          logInfo('No downloads in database. Waiting for user to sync/import.');
-          emit(const OfflineSearchEmpty(query: ''));
-          return;
+      if (_allGroupsCache.isEmpty && loadMore && state is OfflineSearchLoaded) {
+        final prevResults = (state as OfflineSearchLoaded).results;
+        _allGroupsCache.addAll(prevResults);
+        for (final g in _allGroupsCache) {
+          _seenGroupIds.add(g.baseTitle);
+        }
+        _consumedGroupCount = prevResults.length;
+      }
+
+      final neededGroups = _consumedGroupCount + groupPageSize;
+      if (_allGroupsCache.length < neededGroups && _hasMoreDbRows) {
+        final downloads = await _userDataRepository.getAllDownloads(
+          state: DownloadState.completed,
+          sourceId: effectiveSourceId,
+          limit: fetchLimit,
+          offset: _consumedRowCount,
+          orderBy: currentOrderBy,
+          descending: currentDescending,
+        );
+
+        if (isClosed) return;
+        _consumedRowCount += downloads.length;
+        if (downloads.length < fetchLimit) {
+          _hasMoreDbRows = false;
+        }
+
+        if (downloads.isEmpty && !loadMore) {
+          if (effectiveSourceId == null) {
+            logInfo('No downloads in database. Waiting for user to sync/import.');
+            emit(const OfflineSearchEmpty(query: ''));
+            return;
+          }
+        }
+
+        final lightContents = <Content>[];
+        for (final download in downloads) {
+          _allDownloadsPathById[download.contentId] = download.downloadPath;
+          _addSizeBytes(download.contentId, download.fileSize);
+
+          lightContents.add(Content(
+            sourceId: download.sourceId ?? 'nhentai',
+            id: download.contentId,
+            title: download.title ?? download.contentId,
+            coverUrl: '',
+            tags: [],
+            artists: [],
+            characters: [],
+            parodies: [],
+            groups: [],
+            language: '',
+            pageCount: download.totalPages,
+            imageUrls: [],
+            uploadDate: DateTime.now(),
+            favorites: 0,
+            englishTitle: download.title,
+            japaneseTitle: null,
+          ));
+        }
+
+        if (lightContents.isNotEmpty) {
+          final newGroups = await _groupContent(
+            lightContents,
+            itemSizes: _sizeBytesByContentId,
+            includeReaderPositions: false,
+          );
+          for (final g in newGroups) {
+            if (!_seenGroupIds.contains(g.baseTitle)) {
+              _addSeenGroupId(g.baseTitle);
+              _allGroupsCache.add(g);
+            }
+          }
+        }
+      }
+      final allOfflineSizes = <String, String>{};
+      var totalStorageUsage = 0;
+      for (final g in _allGroupsCache) {
+        totalStorageUsage += g.totalSize;
+        for (final item in g.items) {
+          allOfflineSizes[item.id] =
+              OfflineContentManager.formatStorageSize(g.sizeForContent(item.id));
         }
       }
 
-      // Phase 1 (cheap, all rows): lightweight conversion + full grouping.
-      // Cover resolution and reader positions are file/DB I/O — deferred to
-      // phase 2 for the visible window only (3000+ row libraries).
-      final rowById = <String, DownloadStatus>{
-        for (final d in downloads) d.contentId: d,
-      };
-      final lightContents = <Content>[];
-      final allOfflineSizes = <String, String>{};
-      final allSizeBytes = <String, int>{};
-      var totalStorageUsage = 0;
-
-      for (final download in downloads) {
-        lightContents.add(Content(
-          sourceId: download.sourceId ?? 'nhentai',
-          id: download.contentId,
-          title: download.title ?? download.contentId,
-          coverUrl: '', // Resolved per visible item in phase 2
-          tags: [],
-          artists: [],
-          characters: [],
-          parodies: [],
-          groups: [],
-          language: '',
-          pageCount: download.totalPages,
-          imageUrls: [], // Empty - loaded on-demand in reader
-          uploadDate: DateTime.now(),
-          favorites: 0,
-          englishTitle: download.title, // Store original title
-          japaneseTitle: null,
-        ));
-
-        allOfflineSizes[download.contentId] = download.formattedFileSize;
-        allSizeBytes[download.contentId] = download.fileSize;
-        totalStorageUsage += download.fileSize;
-      }
-
-      if (isClosed) return;
-
-      _sizeBytesByContentId
-        ..clear()
-        ..addAll(allSizeBytes);
-
-      final List<ContentGroup> allGroups = await _groupContent(
-        lightContents,
-        itemSizes: _sizeBytesByContentId,
-        includeReaderPositions: false,
-      );
-
-      // Phase 2 (I/O, visible window only): resolve covers + reader
-      // positions. loadMore continues from the consumed cursor so visible
-      // groups are never re-resolved.
-      final startIndex = loadMore && state is OfflineSearchLoaded
-          ? max(_consumedGroupCount,
-              (state as OfflineSearchLoaded).results.length)
-          : 0;
+      final startIndex = _consumedGroupCount;
       final window = await _enrichGroupWindow(
-        allGroups,
+        _allGroupsCache,
         startIndex,
         groupPageSize,
-        downloadPathOf: (id) => rowById[id]?.downloadPath,
+        downloadPathOf: (id) => _allDownloadsPathById[id],
       );
       _consumedGroupCount = startIndex + window.consumed;
 
-      final groupedResults = loadMore && state is OfflineSearchLoaded
+      var groupedResults = loadMore && state is OfflineSearchLoaded
           ? [...(state as OfflineSearchLoaded).results, ...window.groups]
           : window.groups;
+
+      if (groupedResults.length > _maxResultsCap) {
+        groupedResults =
+            groupedResults.sublist(groupedResults.length - _maxResultsCap);
+      }
 
       final currentPage = _consumedGroupCount == 0
           ? 1
           : ((_consumedGroupCount - 1) ~/ groupPageSize) + 1;
-      final totalPages =
-          allGroups.isEmpty ? 1 : ((allGroups.length - 1) ~/ groupPageSize) + 1;
-      final hasMore = _consumedGroupCount < allGroups.length;
+      final totalPages = _allGroupsCache.isEmpty
+          ? 1
+          : ((_allGroupsCache.length - 1) ~/ groupPageSize) + 1;
+      final hasMore =
+          _consumedGroupCount < _allGroupsCache.length || _hasMoreDbRows;
 
-      // Buckets reflect the whole store: refresh on unfiltered loads,
-      // otherwise keep the previously known buckets.
       final availableSourceIds = effectiveSourceId == null
-          ? _distinctBucketIds(downloads.map((d) => d.sourceId ?? 'nhentai'))
+          ? _distinctBucketIds(
+              _allGroupsCache.map((g) => g.representativeContent.sourceId))
           : previousBuckets;
       final sourceCounts = await _resolveSourceCounts(loadMore);
 
@@ -620,7 +693,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       emit(OfflineSearchLoaded(
         query: '',
         results: groupedResults,
-        totalResults: allGroups.length,
+        totalResults: _allGroupsCache.length,
         offlineSizes: allOfflineSizes,
         storageUsage: totalStorageUsage,
         formattedStorageUsage:
@@ -638,7 +711,7 @@ class OfflineSearchCubit extends BaseCubit<OfflineSearchState> {
       ));
 
       logInfo(
-          'Loaded ${groupedResults.length}/${allGroups.length} groups (source: $effectiveSourceId) '
+          'Loaded ${groupedResults.length}/${_allGroupsCache.length} groups (source: $effectiveSourceId) '
           '(page $currentPage/$totalPages, hasMore: $hasMore)');
     } catch (e, stackTrace) {
       if (isClosed) return;

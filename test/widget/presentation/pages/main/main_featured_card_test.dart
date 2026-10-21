@@ -10,6 +10,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
+import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/presentation/pages/main/widgets/main_featured_card.dart';
 
 class _MockDownloadBloc extends MockBloc<DownloadEvent, DownloadBlocState>
@@ -76,6 +77,78 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('-- '), findsOneWidget);
+
+    await downloadBloc.close();
+  });
+  testWidgets('DownloadBloc emit for other content does NOT trigger card rebuild', (tester) async {
+    final downloadBloc = _MockDownloadBloc();
+    when(() => downloadBloc.state).thenReturn(const DownloadInitial());
+
+    int buildCount = 0;
+    await tester.pumpWidget(
+      BlocProvider<DownloadBloc>.value(
+        value: downloadBloc,
+        child: MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [Locale('en')],
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                buildCount++;
+                return SizedBox(
+                  width: 360,
+                  height: 160,
+                  child: MainFeaturedCard(
+                    content: Content(
+                      id: 'my-content',
+                      sourceId: 'test',
+                      title: 'My Title',
+                      coverUrl: '',
+                      tags: const [],
+                      artists: const [],
+                      characters: const [],
+                      parodies: const [],
+                      groups: const [],
+                      language: 'en',
+                      pageCount: 10,
+                      imageUrls: const [],
+                      uploadDate: DateTime(2026),
+                    ),
+                    onTap: () {},
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('My Title'), findsOneWidget);
+
+    // Now emit DownloadLoaded for an unrelated content
+    when(() => downloadBloc.state).thenReturn(DownloadLoaded(
+      downloads: const [
+        DownloadStatus(
+          contentId: 'other-content',
+          state: DownloadState.completed,
+          title: 'Other',
+          totalPages: 5,
+        ),
+      ],
+      settings: const DownloadSettings(),
+      lastUpdated: DateTime.now(),
+    ));
+
+    // Pump a frame
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(buildCount, 1);
 
     await downloadBloc.close();
   });

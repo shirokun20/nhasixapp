@@ -34,7 +34,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.onDoubleTapGesture,
     this.grayscale = false,
     this.pipeline,
+    this.isDistant = false,
   });
+  final bool isDistant;
 
   final String imageUrl;
   final String contentId;
@@ -349,7 +351,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // texture count is bounded.
   @override
   bool get wantKeepAlive {
-    if (widget.readingMode != ReadingMode.continuousScroll) return true;
+    if (widget.readingMode != ReadingMode.continuousScroll) {
+      return !widget.isDistant;
+    }
     if (!_isHeavyImage) return false;
     final visible = widget.visiblePageNotifier?.value;
     if (visible == null) return true; // before first layout, keep

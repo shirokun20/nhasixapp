@@ -131,6 +131,7 @@ flutter:
     - assets/legal/id/
     - assets/configs/
     - assets/widget/
+    - assets/fonts/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
   fonts:

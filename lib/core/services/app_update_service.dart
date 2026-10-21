@@ -12,12 +12,15 @@ class AppUpdateService {
   // Initialize the service and check for app updates
   static Future<void> initialize() async {
     try {
-      final packageInfo = await PackageInfo.fromPlatform();
+      final packageInfo = getIt.isRegistered<PackageInfo>()
+          ? getIt<PackageInfo>()
+          : await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = getIt.isRegistered<SharedPreferences>()
+          ? getIt<SharedPreferences>()
+          : await SharedPreferences.getInstance();
       final lastVersion = prefs.getString(_lastAppVersionKey);
-
       if (lastVersion == null) {
         // First time running the app
         _logger
@@ -75,7 +78,9 @@ class AppUpdateService {
   // Simulate app update for testing (changes stored version to trigger cache clearing)
   static Future<void> simulateAppUpdate() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = getIt.isRegistered<SharedPreferences>()
+          ? getIt<SharedPreferences>()
+          : await SharedPreferences.getInstance();
       const oldVersion = '0.0.0-test';
       await prefs.setString(_lastAppVersionKey, oldVersion);
       _logger.i('🎭 Simulated app update: stored version set to $oldVersion');
@@ -87,7 +92,9 @@ class AppUpdateService {
   // Get current app version
   static Future<String> getCurrentAppVersion() async {
     try {
-      final packageInfo = await PackageInfo.fromPlatform();
+      final packageInfo = getIt.isRegistered<PackageInfo>()
+          ? getIt<PackageInfo>()
+          : await PackageInfo.fromPlatform();
       return packageInfo.version;
     } catch (e) {
       _logger.e('❌ Error getting current app version: $e');
@@ -98,7 +105,9 @@ class AppUpdateService {
   // Get last saved app version
   static Future<String?> getLastAppVersion() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = getIt.isRegistered<SharedPreferences>()
+          ? getIt<SharedPreferences>()
+          : await SharedPreferences.getInstance();
       return prefs.getString(_lastAppVersionKey);
     } catch (e) {
       _logger.e('❌ Error getting last app version: $e');

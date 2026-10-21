@@ -392,12 +392,14 @@ class ContentGroupCardWidget extends StatelessWidget {
             Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
           ];
 
-    return AnimatedStatusBorderFrame(
-      colors: borderColors,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-      strokeWidth: 1.2,
-      shadowColor: readColor.withValues(alpha: 0.18),
-      child: card,
+    return RepaintBoundary(
+      child: AnimatedStatusBorderFrame(
+        colors: borderColors,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        strokeWidth: 1.2,
+        shadowColor: readColor.withValues(alpha: 0.18),
+        child: card,
+      ),
     );
   }
 
@@ -436,12 +438,14 @@ class ContentGroupCardWidget extends StatelessWidget {
             Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
           ];
 
-    return AnimatedStatusBorderFrame(
-      colors: borderColors,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-      strokeWidth: 1.2,
-      shadowColor: readColor.withValues(alpha: 0.16),
-      child: card,
+    return RepaintBoundary(
+      child: AnimatedStatusBorderFrame(
+        colors: borderColors,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+        strokeWidth: 1.2,
+        shadowColor: readColor.withValues(alpha: 0.16),
+        child: card,
+      ),
     );
   }
 

@@ -59,6 +59,21 @@ void main() {
       logger: Logger(level: Level.off),
     );
   }
+  test('resetPage clears captured pageBytes and hasPage returns false', () {
+    final cubit = makeCubit();
+    addTearDown(cubit.close);
+    cubit.capturePage(
+      imageBytes: Uint8List.fromList([1, 2, 3]),
+      imageWidth: 100,
+      imageHeight: 100,
+    );
+    expect(cubit.hasPage, isTrue);
+
+    cubit.resetPage();
+    expect(cubit.hasPage, isFalse);
+    expect(cubit.pageWidth, 0);
+    expect(cubit.pageHeight, 0);
+  });
 
   test('state machine: detecting → translating → translated', () async {
     final cubit = makeCubit();

@@ -232,7 +232,15 @@ class LocalDataSource {
     try {
       final db = await _getSafeDatabase();
       if (db == null) return [];
-      return await db.query(_recTable);
+      final threshold = DateTime.now()
+          .subtract(const Duration(days: 60))
+          .millisecondsSinceEpoch;
+      return await db.query(
+        _recTable,
+        where: 'last_recommended_at >= ?',
+        whereArgs: [threshold],
+        limit: 5000,
+      );
     } catch (e) {
       _logger.e('Error reading recommendation history: $e');
       return [];
@@ -1709,6 +1717,32 @@ class LocalDataSource {
           where: 'state = ? AND end_time < ?',
           whereArgs: ['completed', downloadThreshold]);
 
+      // Prune history older than 90 days (batch-500)
+      final historyThreshold = DateTime.now()
+          .subtract(const Duration(days: 90))
+          .millisecondsSinceEpoch;
+      batch.rawDelete('''
+        DELETE FROM history WHERE rowid IN (
+          SELECT rowid FROM history WHERE last_viewed < ? LIMIT 500
+        )
+      ''', [historyThreshold]);
+
+      // Prune reader positions older than 90 days (batch-500)
+      batch.rawDelete('''
+        DELETE FROM reader_positions WHERE rowid IN (
+          SELECT rowid FROM reader_positions WHERE last_accessed < ? LIMIT 500
+        )
+      ''', [historyThreshold]);
+
+      // Prune recommendation history older than 60 days (batch-500)
+      final recThreshold = DateTime.now()
+          .subtract(const Duration(days: 60))
+          .millisecondsSinceEpoch;
+      batch.rawDelete('''
+        DELETE FROM $_recTable WHERE rowid IN (
+          SELECT rowid FROM $_recTable WHERE last_recommended_at < ? LIMIT 500
+        )
+      ''', [recThreshold]);
       await batch.commit();
       _logger.d('Cleaned up old data');
     } catch (e) {

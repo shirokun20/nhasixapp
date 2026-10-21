@@ -138,11 +138,14 @@ class _ReaderImageViewer extends StatelessWidget {
       builder: (context, state) {
         final zoom = enableZoom ?? state.enableZoom ?? true;
         final resolvedSourceId = sourceId ?? state.content?.sourceId;
+        final currentPage = state.currentPage ?? 1;
+        final isDistant = (pageNumber - currentPage).abs() > 4;
         return RepaintBoundary(
           child: ExtendedImageReaderWidget(
             imageUrl: imageUrl,
             contentId: contentId,
             pageNumber: pageNumber,
+            isDistant: isDistant,
             readingMode: state.readingMode ?? ReadingMode.singlePage,
             sourceId: resolvedSourceId,
             sourceRawConfig: _rawConfig(resolvedSourceId),

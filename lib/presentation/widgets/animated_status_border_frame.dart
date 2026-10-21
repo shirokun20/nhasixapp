@@ -12,6 +12,7 @@ class AnimatedStatusBorderFrame extends StatefulWidget {
     this.strokeWidth = 1.6,
     this.duration = const Duration(seconds: 4),
     this.shadowColor,
+    this.animation,
   });
 
   final Widget child;
@@ -21,7 +22,7 @@ class AnimatedStatusBorderFrame extends StatefulWidget {
   final double strokeWidth;
   final Duration duration;
   final Color? shadowColor;
-
+  final Animation<double>? animation;
   @override
   State<AnimatedStatusBorderFrame> createState() =>
       _AnimatedStatusBorderFrameState();
@@ -29,19 +30,35 @@ class AnimatedStatusBorderFrame extends StatefulWidget {
 
 class _AnimatedStatusBorderFrameState extends State<AnimatedStatusBorderFrame>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  AnimationController? _controller;
+  Animation<double> get _effectiveAnimation => widget.animation ?? _controller!;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration)
-      ..forward()
-      ..repeat();
+    if (widget.animation == null) {
+      _controller = AnimationController(vsync: this, duration: widget.duration)
+        ..forward()
+        ..repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(AnimatedStatusBorderFrame oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animation != null && _controller != null) {
+      _controller!.dispose();
+      _controller = null;
+    } else if (widget.animation == null && _controller == null) {
+      _controller = AnimationController(vsync: this, duration: widget.duration)
+        ..forward()
+        ..repeat();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -62,14 +79,15 @@ class _AnimatedStatusBorderFrameState extends State<AnimatedStatusBorderFrame>
         : widget.colors;
 
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _effectiveAnimation,
       child: widget.child,
       builder: (context, child) {
         return DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius,
             gradient: SweepGradient(
-              transform: GradientRotation(_controller.value * math.pi * 2),
+              transform:
+                  GradientRotation(_effectiveAnimation.value * math.pi * 2),
               colors: colors,
             ),
             boxShadow: [

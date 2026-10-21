@@ -43,10 +43,33 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
   // rebuilds (home grid rebuilds often) so the flight works consistently.
   bool _imageReady = false;
 
+  late Future<bool> _downloadedFuture;
+  late Future<bool> _readProgressFuture;
+
+  void _resolveFutures() {
+    _downloadedFuture = ContentDownloadCache.isDownloaded(
+      content.id,
+      sourceId: content.sourceId,
+      allowFilesystemFallback: false,
+      context: context,
+    );
+    _readProgressFuture = ContentReadCache.readProgress(content)
+        .then((progress) => progress != null && progress > 0);
+  }
+
   @override
   void initState() {
     super.initState();
+    _resolveFutures();
     _imageReady = AppHeroHelper.readyCoverContentIds.contains(content.id);
+  }
+
+  @override
+  void didUpdateWidget(MainFeaturedCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content.id != widget.content.id) {
+      _resolveFutures();
+    }
   }
 
   Content get content => widget.content;
@@ -73,17 +96,11 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
       },
       builder: (context, _) {
         return FutureBuilder<bool>(
-          future: ContentDownloadCache.isDownloaded(
-            content.id,
-            sourceId: content.sourceId,
-            allowFilesystemFallback: false,
-            context: context,
-          ),
+          future: _downloadedFuture,
           builder: (context, snapshot) {
             final isDownloaded = snapshot.data ?? false;
             return FutureBuilder<bool>(
-              future: ContentReadCache.readProgress(content)
-                  .then((progress) => progress != null && progress > 0),
+              future: _readProgressFuture,
               builder: (context, readSnapshot) {
                 final isRead = readSnapshot.data ?? false;
                 final theme = Theme.of(context);
@@ -517,12 +534,14 @@ class _MainFeaturedCardState extends State<MainFeaturedCard> {
                   return innerCard;
                 }
 
-                return AnimatedStatusBorderFrame(
-                  colors: borderColors,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-                  strokeWidth: 1.2,
-                  shadowColor: borderStyle.shadowColor,
-                  child: innerCard,
+                return RepaintBoundary(
+                  child: AnimatedStatusBorderFrame(
+                    colors: borderColors,
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                    strokeWidth: 1.2,
+                    shadowColor: borderStyle.shadowColor,
+                    child: innerCard,
+                  ),
                 );
               },
             );

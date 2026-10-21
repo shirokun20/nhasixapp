@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
 import 'package:nhasixapp/core/utils/reader_image_repair_utils.dart';
+import 'package:nhasixapp/core/utils/capped_map.dart';
 
 /// Remote datasource responsible for resolving E-Hentai reader page HTML into direct image URLs.
 /// Encapsulates Dio network fetching, HTML token scraping, and timestamped in-memory caching.
@@ -27,9 +28,10 @@ class EhentaiReaderDataSource {
   final Logger _logger;
   final Duration _cacheTtl;
 
-  final Map<String, String> _imageCache = <String, String>{};
-  final Map<String, DateTime> _imageCacheTime = <String, DateTime>{};
-  final Map<String, Future<String?>> _resolveInFlight = <String, Future<String?>>{};
+  final Map<String, String> _imageCache = CappedMap<String, String>(200);
+  final Map<String, DateTime> _imageCacheTime = CappedMap<String, DateTime>(200);
+  final Map<String, Future<String?>> _resolveInFlight =
+      CappedMap<String, Future<String?>>(200);
 
   bool shouldResolve(String url, {String? sourceId}) {
     if (sourceId != 'ehentai') {

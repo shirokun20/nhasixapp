@@ -456,10 +456,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       _debounceSaveHistory(state, totalPages);
     }
 
-    if (_isHeavyPrefetchSource(state.content?.sourceId)) {
-      _evictDistantPages(estimatedPage, state.content!.imageUrls,
-          isOffline: state.isOfflineMode ?? false);
-    }
+    _evictDistantPages(estimatedPage, state.content!.imageUrls,
+        isOffline: state.isOfflineMode ?? false);
 
     if (notification.scrollDelta != null && notification.scrollDelta! > 5) {
       _debounceUIToggle(false, state);
@@ -810,6 +808,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     // Cancel all in-flight prefetch downloads (repo-path via scope token + legacy)
     if (!_scopeToken.isCancelled) _scopeToken.cancel('Reader dispose');
     _prefetchCubit.cancelAll(_scopeToken);
+    _prefetchCubit.close();
     _heavyImageBudgetTimer?.cancel();
 
     // Clear pending decode queue so orphan precacheImage tasks stop

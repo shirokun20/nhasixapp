@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:collection';
 import 'package:go_router/go_router.dart';
 
 // Types of route transitions
@@ -564,7 +565,7 @@ class AppHeroHelper {
   // Shared across all card types so featured/grid/other cards agree on the
   // same content id, otherwise a featured card would slide on first visit
   // even though a grid card loaded the same cover.
-  static final Set<String> readyCoverContentIds = <String>{};
+  static final Set<String> readyCoverContentIds = _CappedSet<String>(200);
 
   // Create a hero widget with enhanced animations
   static Widget createHero({
@@ -599,6 +600,38 @@ class AppHeroHelper {
       ),
     );
   }
+}
+class _CappedSet<E> extends SetBase<E> {
+  final int maxCapacity;
+  final LinkedHashSet<E> _inner = LinkedHashSet<E>();
+
+  _CappedSet(this.maxCapacity);
+
+  @override
+  bool add(E value) {
+    if (_inner.length >= maxCapacity && !_inner.contains(value)) {
+      _inner.remove(_inner.first);
+    }
+    return _inner.add(value);
+  }
+
+  @override
+  bool contains(Object? element) => _inner.contains(element);
+
+  @override
+  Iterator<E> get iterator => _inner.iterator;
+
+  @override
+  int get length => _inner.length;
+
+  @override
+  E? lookup(Object? element) => _inner.lookup(element);
+
+  @override
+  bool remove(Object? value) => _inner.remove(value);
+
+  @override
+  Set<E> toSet() => _inner.toSet();
 }
 
 // Mixin for widgets that need animation capabilities
