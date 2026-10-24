@@ -3,12 +3,14 @@ import FlutterMacOS
 import PDFKit
 import UniformTypeIdentifiers
 import WebKit
-
 public class KuronNativePlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "kuron_native", binaryMessenger: registrar.messenger)
     let instance = KuronNativePlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
+    let events = FlutterEventChannel(name: "kuron_native/download_progress",
+                                     binaryMessenger: registrar.messenger)
+    events.setStreamHandler(KuronDownloadEvents.shared)
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -173,9 +175,45 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
     case "runProxyWebView":
       KuronWebViewFlows.runProxy(args: args ?? [:], completion: result)
 
+    case "kuronNativeStartDownload", "kuronNativeStartDownloadV2":
+      result(KuronDownloadCenter.shared.start(args: args ?? [:]))
+
+    case "kuronNativePauseDownload":
+      if let id = args?["contentId"] as? String { KuronDownloadCenter.shared.pause(contentId: id) }
+      result(nil)
+
+    case "kuronNativeCancelDownload":
+      if let id = args?["contentId"] as? String { KuronDownloadCenter.shared.cancel(contentId: id) }
+      result(nil)
+
+    case "kuronNativeGetDownloadStatus":
+      if let id = args?["contentId"] as? String {
+        result(KuronDownloadCenter.shared.status(contentId: id))
+      } else { result(nil) }
+
+    case "kuronNativeGetDownloadedFiles":
+      if let id = args?["contentId"] as? String {
+        result(KuronDownloadCenter.shared.files(contentId: id, in: nil))
+      } else { result([] as [String]) }
+
+    case "kuronNativeGetDownloadPath":
+      if let id = args?["contentId"] as? String {
+        result(KuronDownloadCenter.shared.path(contentId: id, in: nil))
+      } else { result(nil) }
+
+    case "kuronNativeDeleteDownloadedContent":
+      KuronDownloadCenter.shared.delete(contentId: args?["contentId"] as? String ?? "",
+                                        dirPath: args?["dirPath"] as? String)
+      result(nil)
+
+    case "kuronNativeCountDownloadedFiles":
+      if let id = args?["contentId"] as? String {
+        result(KuronDownloadCenter.shared.count(contentId: id, in: nil))
+      } else { result(0) }
+
     default:
-      // kuronNativeStartDownload*, pause/cancel/status, thumbnails, bubbles,
-      // AVIF conversion: Android-only workers/views — Dart falls back.
+      // Thumbnails, bubbles, AVIF conversion: Android-only views/models —
+      // Dart falls back gracefully (verified per call-site audit).
       result(FlutterMethodNotImplemented)
     }
   }
