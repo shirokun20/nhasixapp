@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -7,6 +8,7 @@ import 'package:kuron_core/kuron_core.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nhasixapp/domain/entities/crotpedia/crotpedia_entities.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
+import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/pages/crotpedia/request_list_screen.dart';
@@ -17,13 +19,19 @@ class MockCrotpediaFeatureCubit extends MockCubit<CrotpediaFeatureState>
 
 class MockContentSource extends Mock implements ContentSource {}
 
+class MockDownloadBloc extends MockBloc<DownloadEvent, DownloadBlocState>
+    implements DownloadBloc {}
+
 void main() {
   late MockCrotpediaFeatureCubit mockCubit;
   late MockContentSource mockContentSource;
+  late MockDownloadBloc mockDownloadBloc;
 
   setUp(() {
     mockCubit = MockCrotpediaFeatureCubit();
     mockContentSource = MockContentSource();
+    mockDownloadBloc = MockDownloadBloc();
+    when(() => mockDownloadBloc.state).thenReturn(const DownloadInitial());
 
     if (GetIt.instance.isRegistered<CrotpediaFeatureCubit>()) {
       GetIt.instance.unregister<CrotpediaFeatureCubit>();
@@ -51,15 +59,18 @@ void main() {
   });
 
   Widget createWidgetUnderTest() {
-    return const MaterialApp(
-      localizationsDelegates: [
+    return MaterialApp(
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [Locale('en')],
-      home: CrotpediaRequestListScreen(),
+      supportedLocales: const [Locale('en')],
+      home: BlocProvider<DownloadBloc>.value(
+        value: mockDownloadBloc,
+        child: const CrotpediaRequestListScreen(),
+      ),
     );
   }
 
