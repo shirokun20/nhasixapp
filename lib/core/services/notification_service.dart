@@ -92,15 +92,30 @@ class NotificationService {
   Future<bool> requestNotificationPermission() async {
     final granted = await _permissionHandler.requestPermission();
 
-    _permissionGranted = granted;
+    // macOS: the generic handler always returns true (no runtime prompt
+    // there), but the OS still withholds banners until the user authorizes.
+    // Ask explicitly via the Darwin plugin so downloads/PDF can notify.
+    var effective = granted;
+    if (granted && Platform.isMacOS) {
+      final macos = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>();
+      effective = await macos?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+    _permissionGranted = effective;
 
-    if (granted && !_initialized) {
+    if (effective && !_initialized) {
       // Fresh completer for late init (previous one may be done)
       _initCompleter = Completer<void>();
       await _initializePlugin();
     }
 
-    return granted;
+    return effective;
   }
 
   // ============================================================
@@ -411,9 +426,16 @@ class NotificationService {
     try {
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
       const initSettings = InitializationSettings(
         android: androidSettings,
+        iOS: darwinSettings,
+        macOS: darwinSettings,
       );
 
       await _notificationsPlugin.initialize(

@@ -9,7 +9,7 @@ import 'package:nhasixapp/core/di/service_locator.dart';
 class DatabaseHelper {
   static const String _databaseName = 'nhasix_app.db';
   static const int _databaseVersion =
-      15; // v15: content_tags + recommendation_history for local recommendations
+      16; // v16: recommendation_history.last_recommended_at (queried but never created/written)
 
   static Database? _database;
   static final Logger _logger = getIt<Logger>();
@@ -508,6 +508,7 @@ class DatabaseHelper {
             tapped_at INTEGER,
             dismissed INTEGER NOT NULL DEFAULT 0,
             dismissed_at INTEGER,
+            last_recommended_at INTEGER,
             PRIMARY KEY (content_id, source_id)
           )
         ''');
@@ -517,6 +518,19 @@ class DatabaseHelper {
       } catch (e) {
         _logger.e('Error creating recommendation tables: $e');
         rethrow;
+      }
+    }
+
+    if (oldVersion < 16 && newVersion >= 16) {
+      // The column was queried (getRecommendationHistoryRows + prune) but
+      // never created nor written before v16. ALTER (not rethrow): an
+      // analytics column must never brick an upgrade.
+      _logger.i('Upgrading to version 16: Adding recommendation_history.last_recommended_at');
+      try {
+        await db.execute(
+            'ALTER TABLE recommendation_history ADD COLUMN last_recommended_at INTEGER');
+      } catch (e) {
+        _logger.w('v16 migration skipped (column may already exist): $e');
       }
     }
 
@@ -755,6 +769,7 @@ class DatabaseHelper {
         tapped_at INTEGER,
         dismissed INTEGER NOT NULL DEFAULT 0,
         dismissed_at INTEGER,
+        last_recommended_at INTEGER,
         PRIMARY KEY (content_id, source_id)
       )
     ''');

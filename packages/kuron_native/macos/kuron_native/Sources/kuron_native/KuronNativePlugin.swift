@@ -3,6 +3,7 @@ import FlutterMacOS
 import PDFKit
 import UniformTypeIdentifiers
 import WebKit
+
 public class KuronNativePlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "kuron_native", binaryMessenger: registrar.messenger)
@@ -29,7 +30,7 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
       guard let urlStr = s("url") ?? s("filePath"), let url = URL(string: urlStr) ?? Self.fileURL(urlStr) else {
         result(FlutterError(code: "INVALID_ARGS", message: "url is required", details: nil)); return
       }
-      NSWorkspace.shared.open(url)
+      _ = NSWorkspace.shared.open(url)
       result(nil)
 
     case "openPdf", "openAvif":
@@ -37,13 +38,13 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
         result(FlutterError(code: "INVALID_ARGS", message: "filePath is required", details: nil)); return
       }
       let url = Self.fileURL(path) ?? URL(fileURLWithPath: path)
-      NSWorkspace.shared.open(url)
+      _ = NSWorkspace.shared.open(url)
       result(nil)
 
     case "openDnsSettings":
       // No Private-DNS API on macOS; open the Network settings pane instead.
       if let url = URL(string: "x-apple.systempreferences:com.apple.Network-Settings.extension") {
-        NSWorkspace.shared.open(url)
+        _ = NSWorkspace.shared.open(url)
         result(true)
       } else {
         result(false)
@@ -89,19 +90,21 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
       guard let uri = s("contentUri") else {
         result(FlutterError(code: "INVALID_ARGS", message: "contentUri is required", details: nil)); return
       }
-      result((Self.localFileURL(uri)?.lastPathComponent) ?? (uri as NSString).lastPathComponent)
+      result(Self.localFileURL(uri)?.lastPathComponent ?? (uri as NSString).lastPathComponent)
 
     case "extractZipFile":
-      guard let uri = s("contentUri"),
-            let dest = s("destinationPath"),
+      guard let uri = s("contentUri"), let dest = s("destinationPath"),
             let src = Self.localFileURL(uri)?.path else {
         result(FlutterError(code: "INVALID_ARGS", message: "contentUri/destinationPath required", details: nil)); return
       }
       do {
         try FileManager.default.createDirectory(atPath: dest, withIntermediateDirectories: true)
         let code = Self.runUsrBin("/usr/bin/unzip", ["-o", "-q", src, "-d", dest])
-        if code == 0 { result(["outputPath": dest]) }
-        else { result(FlutterError(code: "UNZIP_FAILED", message: "unzip exited \(code)", details: nil)) }
+        if code == 0 {
+          result(["success": true, "outputPath": dest])
+        } else {
+          result(FlutterError(code: "UNZIP_FAILED", message: "unzip exited with code \(code)", details: nil))
+        }
       } catch {
         result(FlutterError(code: "UNZIP_FAILED", message: "\(error)", details: nil))
       }
@@ -116,13 +119,12 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
       WKWebsiteDataStore.default().removeData(
         ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
         modifiedSince: .distantPast) { result(nil) }
-
     case "clearAnimatedWebPCache", "cancelWebPThumbnail":
-      // In-memory Android caches; macOS keeps nothing comparable.
+      // Android in-memory caches; macOS keeps nothing comparable.
       result(nil)
 
     case "getDohProvider":
-      result(-1) // No Private-DNS API on macOS; system resolver applies.
+      result(-1)
 
     case "setDohProvider":
       result(false)
@@ -137,8 +139,7 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
       guard let urlStr = s("url"), let url = URL(string: urlStr) else {
         result(FlutterError(code: "INVALID_ARGS", message: "url is required", details: nil)); return
       }
-      Self.httpRequest(url: url,
-                       method: s("method") ?? "GET",
+      Self.httpRequest(url: url, method: s("method") ?? "GET",
                        headers: args?["headers"] as? [String: String] ?? [:],
                        body: (args?["body"] as? String)?.data(using: .utf8),
                        completion: result)
@@ -280,6 +281,7 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
     return String(cString: machine)
   }
 
+  /// Android contract: {success, pdfPath, pageCount, fileSize}.
   private static func imagesToPdf(paths: [String], outputPath: String) -> [String: Any] {
     let doc = PDFDocument()
     var count = 0
@@ -289,15 +291,13 @@ public class KuronNativePlugin: NSObject, FlutterPlugin {
       doc.insert(page, at: doc.pageCount)
       count += 1
     }
-    guard count > 0, let url = URL(string: outputPath) ?? Self.fileURL(outputPath).map({ _ in URL(fileURLWithPath: outputPath) }) else {
-      return [:]
-    }
+    guard count > 0 else { return [:] }
+    let url = URL(fileURLWithPath: outputPath)
     try? FileManager.default.createDirectory(
       at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-    if doc.write(to: url) {
-      return ["outputPath": outputPath, "pageCount": count]
-    }
-    return [:]
+    guard doc.write(to: url) else { return [:] }
+    let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
+    return ["success": true, "pdfPath": outputPath, "pageCount": count, "fileSize": fileSize]
   }
 
   private static func httpRequest(url: URL, method: String, headers: [String: String],

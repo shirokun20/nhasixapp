@@ -138,6 +138,13 @@ class _ReaderScreenState extends State<ReaderScreen>
   late ScrollController _scrollController;
   late ReaderCubit _readerCubit;
   late ReaderPrefetchCubit _prefetchCubit;
+
+  /// Desktop keyboard support: hidden hint pill until the first
+  /// hardware keypress (or tap-to-dismiss). Mobile is unaffected —
+  /// no keyboard, no focus tricks, no behavior change.
+  bool _kbHintDismissed = false;
+  bool get _isDesktop =>
+      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
   final CancelToken _scopeToken = CancelToken();
 
   // Debouncing for scroll updates
@@ -1332,17 +1339,212 @@ class _ReaderScreenState extends State<ReaderScreen>
           builder: (context, state) {
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
-              body: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 50 || constraints.maxHeight < 50) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildBody(state);
-                },
+              body: Focus(
+                autofocus: true,
+                onKeyEvent: _handleReaderKey,
+                child: Stack(
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth < 50 ||
+                            constraints.maxHeight < 50) {
+                          return const SizedBox.shrink();
+                        }
+                        return _buildBody(state);
+                      },
+                    ),
+                    if (_isDesktop && !_kbHintDismissed)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 12,
+                        child: Center(
+                          child: InkWell(
+                            onTap: _showShortcutHelp,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: Theme.of(context).dividerColor),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('\u2328 ',
+                                      style: TextStyle(fontSize: 13)),
+                                  Flexible(
+                                    child: Text(
+                                      'Keyboard aktif — ←/→ pindah halaman • ketuk untuk semua shortcut',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  InkWell(
+                                    onTap: () => setState(
+                                        () => _kbHintDismissed = true),
+                                    child: const Icon(Icons.close, size: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+
+  // ===== Desktop keyboard navigation (macOS/Windows/Linux) =====
+  // Paged modes: controllers animate. Continuous: scroll by viewport.
+  // Handler runs on every hardware key; mobile has no keyboard so this
+  // stays inert there. Editable fields consume their own keys first,
+  // so typing (where present) is never hijacked.
+  KeyEventResult _handleReaderKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.pageDown ||
+        key == LogicalKeyboardKey.space) {
+      _keyboardGo(1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.pageUp) {
+      _keyboardGo(-1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.home) {
+      _keyboardEdge(first: true);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.end) {
+      _keyboardEdge(first: false);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      Navigator.of(context).maybePop();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _dismissKbHint() {
+    if (_isDesktop && !_kbHintDismissed && mounted) {
+      setState(() => _kbHintDismissed = true);
+    }
+  }
+
+  void _keyboardGo(int direction) {
+    _dismissKbHint();
+    final mode = _readerCubit.state.readingMode ?? ReadingMode.singlePage;
+    const duration = Duration(milliseconds: 200);
+    if (mode == ReadingMode.singlePage) {
+      if (!_pageController.hasClients) return;
+      if (direction > 0) {
+        _pageController.nextPage(duration: duration, curve: Curves.easeOutCubic);
+      } else {
+        _pageController.previousPage(duration: duration, curve: Curves.easeOutCubic);
+      }
+      return;
+    }
+    if (mode == ReadingMode.verticalPage) {
+      if (!_verticalPageController.hasClients) return;
+      if (direction > 0) {
+        _verticalPageController.nextPage(duration: duration, curve: Curves.easeOutCubic);
+      } else {
+        _verticalPageController.previousPage(duration: duration, curve: Curves.easeOutCubic);
+      }
+      return;
+    }
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final target = (pos.pixels + direction * pos.viewportDimension * 0.9)
+        .clamp(0.0, pos.maxScrollExtent);
+    _scrollController.animateTo(target,
+        duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
+  }
+
+  void _keyboardEdge({required bool first}) {
+    _dismissKbHint();
+    final mode = _readerCubit.state.readingMode ?? ReadingMode.singlePage;
+    final count = _readerCubit.state.content?.imageUrls.length ?? 1;
+    if (mode == ReadingMode.singlePage) {
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(first ? 0 : count - 1);
+      }
+      return;
+    }
+    if (mode == ReadingMode.verticalPage) {
+      if (_verticalPageController.hasClients) {
+        _verticalPageController.jumpToPage(first ? 0 : count - 1);
+      }
+      return;
+    }
+    if (_scrollController.hasClients) {
+      final pos = _scrollController.position;
+      _scrollController.animateTo(first ? 0.0 : pos.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic);
+    }
+  }
+
+  void _showShortcutHelp() {
+    final theme = Theme.of(context);
+    const rows = [
+      ('\u2190 / \u2192  atau  \u2191 / \u2193', 'Pindah halaman / scroll'),
+      ('Space / PgDn / PgUp', 'Scroll cepat (continuous) / pindah halaman'),
+      ('Home / End', 'Halaman pertama / terakhir'),
+      ('Esc', 'Kembali'),
+    ];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Keyboard Shortcuts'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final r in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: RichText(
+                  text: TextSpan(
+                    style: theme.textTheme.bodyMedium,
+                    children: [
+                      TextSpan(
+                        text: '${r.$1}  ',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(text: r.$2),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Tutup'),
+          ),
+        ],
       ),
     );
   }

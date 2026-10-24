@@ -205,9 +205,13 @@ class LocalDataSource {
   Future<void> recordRecommendationShown(
     String contentId,
     String? sourceId,
-  ) =>
-      _upsertRecState(contentId, sourceId, 'shown_at',
-          DateTime.now().millisecondsSinceEpoch);
+  ) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // last_recommended_at drives the dedup window + prune queries —
+    // without it getRecommendationHistoryRows() always returns empty.
+    return _upsertRecState(contentId, sourceId, 'shown_at', now,
+        extraSet: {'last_recommended_at': now});
+  }
 
   Future<void> recordRecommendationTapped(
     String contentId,
