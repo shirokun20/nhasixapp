@@ -41,11 +41,6 @@ class MultiBlocProviderConfig {
     BlocProvider<SourceCubit>(
       create: (context) => getIt<SourceCubit>(),
     ),
-
-    BlocProvider<DetailCubit>(
-      create: (context) => getIt<DetailCubit>(),
-    ),
-
     BlocProvider<FilterDataCubit>(
       create: (context) => getIt<FilterDataCubit>(),
     ),

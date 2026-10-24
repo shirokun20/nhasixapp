@@ -35,9 +35,15 @@ class StorageSettings {
       return null;
     }
 
-    // 2. Pick Directory using Native Plugin (SAF)
-    final String? selectedDirectory =
-        await KuronNative.instance.pickDirectory();
+    // 2. Pick Directory. Native SAF picker only exists on Android
+    // (kuron_native Kotlin) — on desktop the channel throws
+    // MissingPluginException, so go straight to the in-app picker.
+    String? selectedDirectory;
+    if (Platform.isAndroid) {
+      selectedDirectory = await KuronNative.instance.pickDirectory();
+    } else {
+      selectedDirectory = '__HSH_PICKER__';
+    }
 
     if (selectedDirectory == null) {
       return null; // User canceled
@@ -149,14 +155,51 @@ class StorageSettings {
   /// Show in-app directory picker (when MANAGE_EXTERNAL_STORAGE is granted).
   /// Lets user browse filesystem and pick any writable folder.
   static Future<String?> _showDirectoryPicker(BuildContext context) async {
+    // Sandboxed macOS apps see HOME as the container
+    // (~/Library/Containers/<id>/Data). Strip that suffix to get the
+    // real home, so the picker opens the Mac's actual folders.
+    // Android keeps its storage root.
+    if (!Platform.isAndroid) {
+      final home = Platform.environment['HOME'] ?? '';
+      final realHome = RegExp(r'^(.*)/Library/Containers/[^/]+/Data$')
+          .firstMatch(home)
+          ?.group(1);
+      final candidates = [
+        if (realHome != null) '$realHome/Downloads',
+        if (home.isNotEmpty) '$home/Downloads',
+        if (realHome != null) realHome,
+        if (home.isNotEmpty) home,
+        '/',
+      ];
+      // First listable candidate wins (sandbox denies the rest).
+      // It also becomes the browse ceiling — everything under it is
+      // writable via the downloads entitlement, anything above is not.
+      String? start;
+      for (final path in candidates) {
+        try {
+          await Directory(path).list().take(1).toList();
+          start = path;
+          break;
+        } catch (e) {
+          Logger().w('📁 STORAGE_SETTINGS: cannot list $path: $e');
+        }
+      }
+      if (start == null) return null;
+      Logger().d('📁 STORAGE_SETTINGS: picker root: $start');
+      if (!context.mounted) return null;
+      return _showDirPickerRecursive(context, start, rootPath: start);
+    }
     // Start from /storage/emulated/0/
     return _showDirPickerRecursive(context, '/storage/emulated/0');
   }
 
   static Future<String?> _showDirPickerRecursive(
     BuildContext context,
-    String currentPath,
-  ) async {
+    String currentPath, {
+    // Browse ceiling: "Go up" disappears at rootPath, so desktop users
+    // can't climb into unentitled (unwritable) territory.
+    String? rootPath,
+  }) async {
     if (!context.mounted) return null;
 
     final dir = Directory(currentPath);
@@ -169,7 +212,8 @@ class StorageSettings {
 
     final subdirs = <Directory>[];
     for (final entry in entries) {
-      if (entry is Directory && !entry.path.startsWith('.')) {
+      if (entry is Directory &&
+          !entry.path.split('/').last.startsWith('.')) {
         try {
           final stat = await entry.stat();
           if (stat.type == FileSystemEntityType.directory) {
@@ -207,10 +251,11 @@ class StorageSettings {
                 ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop('__UP__'),
-            child: const Text('⬆ Go up'),
-          ),
+          if (rootPath == null || currentPath != rootPath)
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('__UP__'),
+              child: const Text('⬆ Go up'),
+            ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(currentPath),
             child: const Text('Select this folder'),
@@ -229,12 +274,12 @@ class StorageSettings {
       if (!context.mounted) return null;
       final parent = Directory(currentPath).parent.path;
       if (parent == currentPath) return null;
-      return _showDirPickerRecursive(context, parent);
+      return _showDirPickerRecursive(context, parent, rootPath: rootPath);
     }
     if (result == currentPath) return currentPath; // selected this folder
     if (!context.mounted) return null;
     // Navigate into subdirectory
-    return _showDirPickerRecursive(context, result);
+    return _showDirPickerRecursive(context, result, rootPath: rootPath);
   }
 
   // Convert content:// URI to a usable filesystem path.

@@ -206,7 +206,7 @@ class DownloadHandler(
             terminalStatesEmitted.remove(contentId)
             lastEmittedStates.remove(contentId)
             lastSpeedData.remove(contentId)
-            
+            trimTrackingMaps()
             val sourceId = call.argument<String>("sourceId") ?: "unknown"
             val imageUrls = call.argument<List<String>>("imageUrls")
                 ?: throw IllegalArgumentException("imageUrls is required")
@@ -254,6 +254,20 @@ class DownloadHandler(
             result.success(workId)
         } catch (e: Exception) {
             result.error("DOWNLOAD_ERROR", e.message, e.stackTraceToString())
+        }
+    }
+    private fun trimTrackingMaps() {
+        if (lastEmittedStates.size > 100) {
+            val toRemove = lastEmittedStates.keys().toList().take(lastEmittedStates.size - 100)
+            toRemove.forEach { lastEmittedStates.remove(it) }
+        }
+        if (terminalStatesEmitted.size > 100) {
+            val toRemove = terminalStatesEmitted.toList().take(terminalStatesEmitted.size - 100)
+            toRemove.forEach { terminalStatesEmitted.remove(it) }
+        }
+        if (lastSpeedData.size > 100) {
+            val toRemove = lastSpeedData.keys().toList().take(lastSpeedData.size - 100)
+            toRemove.forEach { lastSpeedData.remove(it) }
         }
     }
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:kuron_native/kuron_native.dart' show NativeDownloadPayload;
 
@@ -90,6 +92,10 @@ class NativeDownloadService {
           .invokeMethod('kuronNativeCancelDownload', {'contentId': contentId});
     } on PlatformException catch (e) {
       throw Exception('Failed to cancel native download: ${e.message}');
+    } on MissingPluginException {
+      // Desktop: no native worker exists, and the Dart task is already
+      // cancelled by the caller — nothing to propagate.
+      if (Platform.isAndroid || Platform.isIOS) rethrow;
     }
   }
 
@@ -99,6 +105,11 @@ class NativeDownloadService {
           .invokeMethod('kuronNativePauseDownload', {'contentId': contentId});
     } on PlatformException catch (e) {
       throw Exception('Failed to pause native download: ${e.message}');
+    } on MissingPluginException {
+      // Desktop: no native worker exists, and the Dart task is already
+      // paused by the caller — nothing to propagate. Elsewhere rethrow
+      // so real bridge failures stay visible.
+      if (Platform.isAndroid || Platform.isIOS) rethrow;
     }
   }
 

@@ -6,9 +6,10 @@ version: 0.9.28+38
 environment:
   sdk: ^3.5.4
   
-# Platform-specific builds (Android only)
+# Platform builds (Android + macOS desktop)
 platforms:
   android:
+  macos:
 
 workspace:
   - packages/kuron_core
@@ -83,6 +84,9 @@ dependencies:
   flutter_secure_storage: ^11.0.0
   local_auth: ^3.0.2
 
+  # Desktop window (macOS/Windows/Linux only; guarded by Platform in main)
+  window_manager: ^0.5.2
+
   # WebView for Cloudflare bypass
   webview_flutter: ^4.14.1
 
@@ -131,6 +135,7 @@ flutter:
     - assets/legal/id/
     - assets/configs/
     - assets/widget/
+    - assets/fonts/
     # Note: tags.json.gz (compressed) is 1.1MB vs tags.json (5MB)
 
   fonts:

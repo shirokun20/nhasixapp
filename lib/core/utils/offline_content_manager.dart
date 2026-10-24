@@ -14,6 +14,7 @@ import '../constants/app_constants.dart';
 import 'directory_utils.dart';
 import 'download_storage_utils.dart';
 import 'reader_image_repair_utils.dart';
+import 'capped_map.dart';
 
 class OfflineContentManager {
   OfflineContentManager({
@@ -31,16 +32,22 @@ class OfflineContentManager {
   static const Duration _cacheDuration = Duration(minutes: 5);
 
   // Cache for content metadata
-  final Map<String, Map<String, dynamic>> _metadataCache = {};
-  final Map<String, DateTime> _metadataCacheTime = {};
+  final Map<String, Map<String, dynamic>> _metadataCache =
+      CappedMap<String, Map<String, dynamic>>(100);
+  final Map<String, DateTime> _metadataCacheTime =
+      CappedMap<String, DateTime>(100);
   static const Duration _metadataCacheDuration = Duration(minutes: 10);
 
   // 🚀 OPTIMIZATION: Cache for content paths and image URLs to reduce I/O
-  final Map<String, String> _pathCache = {};
-  final Map<String, DateTime> _pathMissCacheTime = {};
-  final Map<String, DateTime> _pathMissLogTime = {};
-  final Map<String, List<String>> _imageUrlsCache = {};
-  final Map<String, DateTime> _imageUrlsCacheTime = {};
+  final Map<String, String> _pathCache = CappedMap<String, String>(100);
+  final Map<String, DateTime> _pathMissCacheTime =
+      CappedMap<String, DateTime>(100);
+  final Map<String, DateTime> _pathMissLogTime =
+      CappedMap<String, DateTime>(100);
+  final Map<String, List<String>> _imageUrlsCache =
+      CappedMap<String, List<String>>(100);
+  final Map<String, DateTime> _imageUrlsCacheTime =
+      CappedMap<String, DateTime>(100);
   final Map<String, Future<void>> _chapterMetadataWriteQueue = {};
 
   static const Duration _urlCacheDuration = Duration(minutes: 5);

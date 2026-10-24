@@ -11,6 +11,7 @@ class GlossaryRepositoryImpl implements GlossaryRepository {
   final SharedPreferences _prefs;
 
   static const String _key = 'glossary_entries';
+  static const int _maxGlossaryEntries = 500;
 
   @override
   Future<List<GlossaryEntry>> getAll() async {
@@ -32,6 +33,9 @@ class GlossaryRepositoryImpl implements GlossaryRepository {
     final entries = await getAll();
     entries.removeWhere((e) => e.id == entry.id);
     entries.insert(0, entry);
+    if (entries.length > _maxGlossaryEntries) {
+      entries.removeRange(_maxGlossaryEntries, entries.length);
+    }
     await _prefs.setString(
         _key, jsonEncode(entries.map((e) => e.toJson()).toList()));
   }

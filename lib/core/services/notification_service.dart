@@ -92,15 +92,42 @@ class NotificationService {
   Future<bool> requestNotificationPermission() async {
     final granted = await _permissionHandler.requestPermission();
 
-    _permissionGranted = granted;
+    // macOS: the generic handler always returns true (no runtime prompt
+    // there), but the OS still withholds banners until the user authorizes.
+    // Ask explicitly via the Darwin plugin so downloads/PDF can notify.
+    var effective = granted;
+    if (granted && Platform.isMacOS) {
+      try {
+        final macos = _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                MacOSFlutterLocalNotificationsPlugin>();
+        if (macos == null) {
+          _logger.w('NotificationService: macOS plugin impl missing, '
+              'skipping OS authorization request');
+        } else {
+          final osGranted = await macos.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          _logger.i(
+              'NotificationService: macOS OS authorization: $osGranted');
+          effective = osGranted ?? false;
+        }
+      } catch (e) {
+        // Never let the OS prompt break the in-app grant flow.
+        _logger.e('NotificationService: macOS auth request failed: $e');
+      }
+    }
+    _permissionGranted = effective;
 
-    if (granted && !_initialized) {
+    if (effective && !_initialized) {
       // Fresh completer for late init (previous one may be done)
       _initCompleter = Completer<void>();
       await _initializePlugin();
     }
 
-    return granted;
+    return effective;
   }
 
   // ============================================================
@@ -411,9 +438,16 @@ class NotificationService {
     try {
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
       const initSettings = InitializationSettings(
         android: androidSettings,
+        iOS: darwinSettings,
+        macOS: darwinSettings,
       );
 
       await _notificationsPlugin.initialize(

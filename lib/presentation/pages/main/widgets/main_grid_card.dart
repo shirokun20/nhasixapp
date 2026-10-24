@@ -8,6 +8,7 @@ import 'package:nhasixapp/core/constants/design_tokens.dart';
 import 'package:nhasixapp/core/constants/text_style_const.dart';
 import 'package:nhasixapp/presentation/widgets/animated_status_border_frame.dart';
 import 'package:nhasixapp/presentation/blocs/download/download_bloc.dart';
+import 'package:nhasixapp/domain/entities/download_status.dart';
 import 'package:nhasixapp/presentation/widgets/content_list_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:nhasixapp/presentation/widgets/kuro_mascot.dart';
@@ -43,13 +44,36 @@ class _MainGridCardState extends State<MainGridCard> {
   static final Logger _logger = getIt<Logger>();
 
   bool _imageReady = false;
+  late Future<List<bool>> _statusFutures;
+
+  Future<List<bool>> _resolveStatusFutures() {
+    return Future.wait([
+      ContentDownloadCache.isDownloaded(
+        content.id,
+        sourceId: content.sourceId,
+        allowFilesystemFallback: false,
+        context: context,
+      ),
+      ContentReadCache.readProgress(content)
+          .then((progress) => progress != null && progress > 0),
+    ]);
+  }
 
   @override
   void initState() {
     super.initState();
+    _statusFutures = _resolveStatusFutures();
     _imageReady = AppHeroHelper.readyCoverContentIds.contains(content.id);
     if (_imageReady) {
       _logger.d('🦸 [GridCard] Hero ready from cache for ${content.id}');
+    }
+  }
+
+  @override
+  void didUpdateWidget(MainGridCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content.id != widget.content.id) {
+      _statusFutures = _resolveStatusFutures();
     }
   }
 
@@ -61,21 +85,20 @@ class _MainGridCardState extends State<MainGridCard> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadBloc, DownloadBlocState>(
-      buildWhen: (previous, current) =>
-          previous.runtimeType != current.runtimeType ||
-          previous.lastUpdated != current.lastUpdated,
+      buildWhen: (previous, current) {
+        if (previous.runtimeType != current.runtimeType) return true;
+        DownloadStatus? entryOf(DownloadBlocState s) {
+          if (s is! DownloadLoaded) return null;
+          for (final d in s.downloads) {
+            if (d.contentId == content.id) return d;
+          }
+          return null;
+        }
+        return entryOf(previous) != entryOf(current);
+      },
       builder: (context, _) {
         return FutureBuilder<List<bool>>(
-          future: Future.wait([
-            ContentDownloadCache.isDownloaded(
-              content.id,
-              sourceId: content.sourceId,
-              allowFilesystemFallback: false,
-              context: context,
-            ),
-            ContentReadCache.readProgress(content)
-                .then((progress) => progress != null && progress > 0),
-          ]),
+          future: _statusFutures,
           builder: (context, snapshot) {
             final results = snapshot.data;
             final isDownloaded =

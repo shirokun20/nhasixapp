@@ -8124,6 +8124,24 @@ abstract class AppLocalizations {
   /// **'Continue from page {page}'**
   String continueFromPage(int page);
 
+  /// No description provided for @continueFromChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue from chapter {number}'**
+  String continueFromChapter(String number);
+
+  /// No description provided for @continueToChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to chapter {number}'**
+  String continueToChapter(String number);
+
+  /// No description provided for @continuePageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}'**
+  String continuePageSubtitle(int page);
+
   /// No description provided for @loginRequiredForContent.
   ///
   /// In en, this message translates to:

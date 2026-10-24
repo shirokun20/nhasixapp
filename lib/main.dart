@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nhasixapp/core/config/multi_bloc_provider_config.dart';
 import 'package:nhasixapp/core/di/service_locator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nhasixapp/core/routing/app_route.dart';
 import 'package:nhasixapp/l10n/app_localizations.dart';
 import 'package:nhasixapp/core/routing/app_router.dart';
@@ -18,7 +19,9 @@ import 'package:nhasixapp/presentation/widgets/platform_not_supported_dialog.dar
 import 'package:nhasixapp/presentation/widgets/lifecycle_watcher.dart';
 import 'package:nhasixapp/core/services/analytics_service.dart';
 import 'package:nhasixapp/core/services/history_cleanup_service.dart';
+import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:nhasixapp/data/repositories/translation_cache_repository_impl.dart';
+import 'package:nhasixapp/data/datasources/local/database_helper.dart';
 import 'package:nhasixapp/core/services/app_update_service.dart';
 import 'package:nhasixapp/core/services/language_service.dart';
 import 'package:nhasixapp/core/services/notification_service.dart';
@@ -26,6 +29,7 @@ import 'package:nhasixapp/core/services/workers/download_worker.dart';
 import 'package:nhasixapp/core/utils/notification_localizer.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'package:logger/logger.dart';
+import 'package:window_manager/window_manager.dart';
 
 // Stored cold-start notification payload, read from
 // NotificationAppLaunchDetails before runApp().
@@ -33,37 +37,31 @@ String? _pendingNotifPayload;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Desktop (macOS/Windows/Linux): ukuran awal 1440x900 sesuai frame design
+  // FigCraft, min 1024 agar layout mobile tidak remuk. Judul window TIDAK
+  // di-set di sini — ikut PRODUCT_NAME native (Kuron / Kuron Dev per flavor).
+  if (!kIsWeb &&
+      (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    try {
+      await windowManager.ensureInitialized();
+      await windowManager.waitUntilReadyToShow(
+        const WindowOptions(
+          size: Size(1440, 900),
+          minimumSize: Size(1024, 640),
+          center: true,
+        ),
+      );
+      await windowManager.show();
+      await windowManager.focus();
+    } catch (_) {}
+  }
   await setupLocator();
 
   // Configure Flutter ImageCache for reader workloads
   PaintingBinding.instance.imageCache.maximumSize = 200;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024;
-
-  // Initialize Performance Monitoring
-  await PerformanceMonitor.initialize();
-
-  // Initialize Analytics Service
-  final analyticsService = getIt<AnalyticsService>();
-  await analyticsService.initialize();
-
-  // Initialize History Cleanup Service
-  final historyCleanupService = getIt<HistoryCleanupService>();
-  await historyCleanupService.initialize();
-
-  // Purge expired translation cache (>30 days)
-  try {
-    final cacheRepo = getIt<TranslationCacheRepositoryImpl>();
-    await cacheRepo.purgeExpired();
-  } catch (_) {}
-
-  // Initialize App Update Service (clears cache on app updates)
-  await AppUpdateService.initialize();
-
-  // Load language metadata from assets/configs/languages.json
-  await getIt<LanguageService>().load();
-
-  // Initialize WorkManager for background downloads
-  await initializeWorkManager(isDebugMode: kDebugMode);
+  // Disable runtime fetching of fonts; fonts must be bundled as assets
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Capture cold-start notification launch payload
   try {
@@ -148,6 +146,60 @@ void main() async {
 
   runApp(MyApp(launchPayload: _pendingNotifPayload));
 }
+bool _deferredInitExecuted = false;
+
+Future<void> _deferredInit() async {
+  if (_deferredInitExecuted) return;
+  _deferredInitExecuted = true;
+
+  try {
+    await PerformanceMonitor.initialize();
+  } catch (e) {
+    Logger().w('Deferred init PerformanceMonitor error: $e');
+  }
+
+  try {
+    final analyticsService = getIt<AnalyticsService>();
+    await analyticsService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init AnalyticsService error: $e');
+  }
+
+  try {
+    final historyCleanupService = getIt<HistoryCleanupService>();
+    await historyCleanupService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init HistoryCleanupService error: $e');
+  }
+
+  try {
+    final cacheRepo = getIt<TranslationCacheRepositoryImpl>();
+    await cacheRepo.purgeExpired();
+  } catch (_) {}
+
+  try {
+    await AppUpdateService.initialize();
+  } catch (e) {
+    Logger().w('Deferred init AppUpdateService error: $e');
+  }
+
+  try {
+    await getIt<LanguageService>().load();
+  } catch (e) {
+    Logger().w('Deferred init LanguageService error: $e');
+  }
+
+  try {
+    await initializeWorkManager(isDebugMode: kDebugMode);
+  } catch (e) {
+    Logger().w('Deferred init WorkManager error: $e');
+  }
+  try {
+    if (getIt.isRegistered<DatabaseHelper>()) {
+      await getIt<DatabaseHelper>().vacuum();
+    }
+  } catch (_) {}
+}
 
 // Navigates to content on cold-start notification tap.
 class _LaunchPayloadNavigator extends StatefulWidget {
@@ -193,11 +245,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: MultiBlocProviderConfig.data,
-      child: LifecycleWatcher(
-        child: BlocBuilder<ThemeCubit, ThemeState>(
-          builder: (context, themeState) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deferredInit();
+    });
+    // SourceInstallerService at app root: settings pushes SourceManagerScreen
+    // via raw Navigator.push (sibling route, escapes page-scoped providers),
+    // so the installer must be visible to every route, not just Settings.
+    return RepositoryProvider<SourceInstallerService>(
+      create: (_) => getIt<SourceInstallerService>(),
+      child: MultiBlocProvider(
+        providers: MultiBlocProviderConfig.data,
+        child: LifecycleWatcher(
+          child: BlocBuilder<ThemeCubit, ThemeState>(
+            builder: (context, themeState) {
             return BlocBuilder<SettingsCubit, SettingsState>(
               builder: (context, settingsState) {
                 // Get locale from settings
@@ -268,6 +328,7 @@ class MyApp extends StatelessWidget {
               },
             );
           },
+        ),
         ),
       ),
     );

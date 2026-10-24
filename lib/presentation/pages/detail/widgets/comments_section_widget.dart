@@ -333,13 +333,22 @@ class _CommentsSectionWidgetState extends State<CommentsSectionWidget> {
   }
 }
 
-class _CommentsList extends StatelessWidget {
+class _CommentsList extends StatefulWidget {
   final List<Comment> comments;
 
   const _CommentsList({required this.comments});
 
   @override
+  State<_CommentsList> createState() => _CommentsListState();
+}
+
+class _CommentsListState extends State<_CommentsList> {
+  static const int _pageSize = 20;
+  int _visibleCount = _pageSize;
+
+  @override
   Widget build(BuildContext context) {
+    final comments = widget.comments;
     if (comments.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(24.0),
@@ -364,11 +373,15 @@ class _CommentsList extends StatelessWidget {
       );
     }
 
+    final displayComments = comments.take(_visibleCount).toList();
+    final hasMore = comments.length > _visibleCount;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             children: [
               Icon(
@@ -391,11 +404,29 @@ class _CommentsList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: comments.length,
+          itemCount: displayComments.length,
           itemBuilder: (context, index) {
-            return CommentItemWidget(comment: comments[index]);
+            return CommentItemWidget(comment: displayComments[index]);
           },
         ),
+        if (hasMore)
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Center(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _visibleCount += _pageSize;
+                  });
+                },
+                icon: const Icon(Icons.expand_more),
+                label: Text(
+                  '${AppLocalizations.of(context)?.viewAll ?? "View all"} (${comments.length - _visibleCount})',
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

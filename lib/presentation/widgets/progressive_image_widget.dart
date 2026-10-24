@@ -135,13 +135,35 @@ class ProgressiveImageWidget extends StatefulWidget {
 
 class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
   static final Logger _logger = getIt<Logger>();
-  static final Map<String, String?> _pathCache =
-      {}; // ✅ Cache for resolved paths
+  static const int _maxPathCacheSize = 500;
+  static const int _maxThumbnailModeCacheSize = 200;
+  static final Map<String, String?> _pathCache = {};
   static const int _heavyAnimatedThumbnailThresholdBytes =
       10 * 1024 * 1024; // 10 MB
   static final Map<String, _LocalThumbnailPreviewMode>
       _localThumbnailPreviewModeCache = <String, _LocalThumbnailPreviewMode>{};
 
+  static void _addToPathCache(String key, String? value) {
+    if (_pathCache.length >= _maxPathCacheSize) {
+      final keysToRemove = _pathCache.keys.take(100).toList();
+      for (final k in keysToRemove) {
+        _pathCache.remove(k);
+      }
+    }
+    _pathCache[key] = value;
+  }
+
+  static void _addToThumbnailModeCache(
+      String key, _LocalThumbnailPreviewMode mode) {
+    if (_localThumbnailPreviewModeCache.length >= _maxThumbnailModeCacheSize) {
+      final keysToRemove =
+          _localThumbnailPreviewModeCache.keys.take(50).toList();
+      for (final k in keysToRemove) {
+        _localThumbnailPreviewModeCache.remove(k);
+      }
+    }
+    _localThumbnailPreviewModeCache[key] = mode;
+  }
   String? _cachedLocalPath;
   bool _isLocalPathResolved = false;
   bool _imageLoadedNotified = false;
@@ -272,7 +294,7 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     );
 
     // ✅ Cache the result
-    _pathCache[cacheKey] = result;
+    _addToPathCache(cacheKey, result);
 
     if (kDebugMode && result != null) {
       _logger.d('✅ Local path resolved: $result');
@@ -318,8 +340,8 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
     try {
       final file = File(localPath);
       if (!await file.exists()) {
-        _localThumbnailPreviewModeCache[localPath] =
-            _LocalThumbnailPreviewMode.original;
+        _addToThumbnailModeCache(
+            localPath, _LocalThumbnailPreviewMode.original);
         return _LocalThumbnailPreviewMode.original;
       }
 
@@ -334,12 +356,12 @@ class _ProgressiveImageWidgetState extends State<ProgressiveImageWidget> {
         isAnimated: isAnimated,
       );
 
-      _localThumbnailPreviewModeCache[localPath] = mode;
+      _addToThumbnailModeCache(localPath, mode);
       return mode;
     } catch (e) {
       _logger.w('Error resolving local thumbnail preview mode: $e');
-      _localThumbnailPreviewModeCache[localPath] =
-          _LocalThumbnailPreviewMode.original;
+      _addToThumbnailModeCache(
+          localPath, _LocalThumbnailPreviewMode.original);
       return _LocalThumbnailPreviewMode.original;
     }
   }

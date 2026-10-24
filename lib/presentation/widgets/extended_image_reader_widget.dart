@@ -34,7 +34,9 @@ class ExtendedImageReaderWidget extends StatefulWidget {
     this.onDoubleTapGesture,
     this.grayscale = false,
     this.pipeline,
+    this.isDistant = false,
   });
+  final bool isDistant;
 
   final String imageUrl;
   final String contentId;
@@ -349,7 +351,9 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
   // texture count is bounded.
   @override
   bool get wantKeepAlive {
-    if (widget.readingMode != ReadingMode.continuousScroll) return true;
+    if (widget.readingMode != ReadingMode.continuousScroll) {
+      return !widget.isDistant;
+    }
     if (!_isHeavyImage) return false;
     final visible = widget.visiblePageNotifier?.value;
     if (visible == null) return true; // before first layout, keep
@@ -2276,7 +2280,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return Stack(
           alignment: Alignment.center,
           children: [
-            Center(child: imageWidget),
+            // Continuous only: force viewport width so narrow sources fill
+            // edge-to-edge inside their fixed-height box. Paged modes keep
+            // Center — forcing width there crops tall pages vertically
+            // with no scroll to recover the cut part.
+            if (widget.readingMode == ReadingMode.continuousScroll)
+              SizedBox(width: double.infinity, child: imageWidget)
+            else
+              Center(child: imageWidget),
             // Zoom level indicator (shown when zoomed in)
             if (isZoomed && widget.readingMode != ReadingMode.continuousScroll)
               Positioned(

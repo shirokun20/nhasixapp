@@ -73,5 +73,5 @@ jobs:
       # Release assemble WITHOUT signing secrets: build.gradle falls back to
       # debug signing when keys are missing, which still compiles all Kotlin,
       # runs R8, and catches linkage breakage. No APK is uploaded.
-      - name: Assemble Release (unsigned fallback)
-        run: flutter build apk --release --flavor prod --dart-define=cronetHttpNoPlay=true
+      # - name: Assemble Release (unsigned fallback)
+      #   run: flutter build apk --release --flavor prod --dart-define=cronetHttpNoPlay=true

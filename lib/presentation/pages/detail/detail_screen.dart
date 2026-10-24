@@ -26,6 +26,7 @@ import '../../widgets/download_button_widget.dart';
 import '../../widgets/kuro_mascot.dart';
 import '../../widgets/permission_request_sheet.dart';
 import 'widgets/chapter_list_bottom_sheet.dart';
+import 'widgets/chapter_continue_fab.dart';
 import 'widgets/comments_section_widget.dart';
 import 'widgets/detail_content_view.dart';
 import 'widgets/similar_content_section.dart';
@@ -267,6 +268,25 @@ class _DetailScreenState extends State<DetailScreen> {
       return Stack(
         children: [
           _buildDetailContent(state, isOfflineMode),
+          if (state is! DetailOpeningChapter)
+            Positioned.fill(
+              child: Builder(
+                builder: (context) {
+                  final target = resolveChapterContinueTarget(
+                    chapterHistory: state.chapterHistory,
+                    chapters: state.content.chapters ?? const <Chapter>[],
+                  );
+                  if (target == null) return const SizedBox.shrink();
+                  return ChapterContinueFab(
+                    target: target,
+                    onTap: () => _detailCubit.openChapter(
+                      target.chapter,
+                      initialPage: target.page,
+                    ),
+                  );
+                },
+              ),
+            ),
           if (state is DetailOpeningChapter)
             Container(
               color: Colors.black.withValues(alpha: 0.5),
@@ -780,6 +800,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     _readContent(
                       state.chapterContent,
                       forceStartFromBeginning: true,
+                      initialPage: state.initialPage,
                       parentContent: state.content, // Parent series
                       chapterData: state.chapterData, // Navigation data
                       currentChapter: state.currentChapter, // Current chapter
@@ -1650,6 +1671,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _readContent(
     Content content, {
     bool forceStartFromBeginning = false,
+    int initialPage = 1,
     Content? parentContent, // Parent series for chapter mode
     ChapterData? chapterData, // Navigation data
     Chapter? currentChapter, // Current chapter
@@ -1708,6 +1730,7 @@ class _DetailScreenState extends State<DetailScreen> {
     await AppRouter.goToReader(
       context,
       content.id,
+      page: initialPage,
       forceStartFromBeginning: forceStartFromBeginning,
       content: launchPayload.content,
       imageMetadata: launchPayload.imageMetadata,

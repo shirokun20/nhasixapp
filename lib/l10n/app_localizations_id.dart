@@ -4756,6 +4756,21 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String continueFromChapter(String number) {
+    return 'Lanjutkan dari chapter $number';
+  }
+
+  @override
+  String continueToChapter(String number) {
+    return 'Lanjutkan ke chapter $number';
+  }
+
+  @override
+  String continuePageSubtitle(int page) {
+    return 'Halaman $page';
+  }
+
+  @override
   String get loginRequiredForContent =>
       'Anda harus masuk ke Crotpedia untuk melihat konten ini.';
 

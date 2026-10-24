@@ -157,10 +157,18 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
           (limit * explorationFraction).ceil().clamp(0, limit);
       final rankedCount = (limit - exploreQuota).clamp(0, limit);
 
+      // Tagless discoveries can't be scored, but they're still related to a
+      // seed — demote them to the explore front instead of dropping them.
+      // Generic list items usually carry no tags, so dropping them deletes
+      // every non-nhentai candidate and nhentai wins by default.
+      final untagged = <Content>[];
       final scored = <_Scored>[];
       for (final candidate in pool.values) {
         final tags = _namesOf(candidate);
-        if (tags.isEmpty) continue;
+        if (tags.isEmpty) {
+          untagged.add(candidate);
+          continue;
+        }
         double best = 0;
         _Seed? contributor;
         for (final seed in seeds) {
@@ -214,12 +222,24 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
         }
       }
 
-      takeExplore(
-          explorePool.values.where((c) => !shown.contains(c.id)), limit);
-      takeExplore(explorePool.values, limit);
+      // Seed-related discoveries first, generic explore second.
+      final exploreAll = [...untagged, ...explorePool.values];
+      takeExplore(exploreAll.where((c) => !shown.contains(c.id)), limit);
+      takeExplore(exploreAll, limit);
 
-      _logger.i('Recommendations: seeds=${seeds.length} pool=${pool.length} '
-          'explore=${explorePool.length} result=${result.length}');
+      String bySource(Iterable<String> sids) {
+        final counts = <String, int>{};
+        for (final s in sids) {
+          counts[s] = (counts[s] ?? 0) + 1;
+        }
+        return counts.toString();
+      }
+
+      _logger.i('Recommendations: seeds=${seeds.length} '
+          '${bySource(seeds.map((s) => s.sourceId))} '
+          'pool=${pool.length} ${bySource(pool.values.map((c) => c.sourceId))} '
+          'untagged=${untagged.length} explore=${explorePool.length} '
+          'result=${result.length} ${bySource(result.map((r) => r.sourceId))}');
       _cached = result;
       _cachedAt = now;
       return result;
@@ -402,8 +422,14 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
       for (final f in favs) {
         if (seeds.length >= maxSeeds) break;
         final id = f['id']?.toString() ?? '';
-        final sid = f['source_id']?.toString() ?? 'nhentai';
-        if (id.isEmpty) continue;
+        final sid = f['source_id']?.toString() ?? '';
+        // Rows without a source must never be guessed as nhentai — a wrong
+        // guess routes the backfill + related fetch to the wrong source and
+        // silently biases the whole pool toward nhentai.
+        if (id.isEmpty || sid.isEmpty) {
+          _logger.d('Recommendations: skipping favorite without source: $id');
+          continue;
+        }
         if (seeds.any((s) => s.id == id && s.sourceId == sid)) continue;
         final tags = await _tagsWithBackfill(
           id: id,

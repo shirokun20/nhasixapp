@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### Performance & Memory
+- **Memory & CPU Bottleneck Remediation (openspec: `memory-bottleneck-remediation`)**:
+  - **Cold-start deferred init**: Moved 7 serial pre-`runApp` `await`s (`PerformanceMonitor`, `AnalyticsService`, `HistoryCleanupService`, `purgeExpired`, `AppUpdateService`, `LanguageService`, `initializeWorkManager`) to post-frame deferred init; reused `getIt` singletons instead of redundant platform channels.
+  - **Bundled typography**: Bundled Google Fonts Inter and Playfair Display TTF assets in `assets/fonts/` and disabled runtime HTTP font fetching (`GoogleFonts.config.allowRuntimeFetching = false`).
+  - **Offline library cursor pagination**: Replaced 10,000-row full table re-fetches with windowed cursor pagination (100 rows per batch) and capped `_sizeBytesByContentId` at 500 entries, results at 2000 groups.
+  - **Card rebuild & futures stability**: Fixed card widgets recreating futures in `build()`; scoped `DownloadBloc` `buildWhen` strictly per `contentId`.
+  - **Shared animation tickers**: Wrapped shimmer lists in `ShimmerScope` to share a single ticker across all cards; added optional external `Animation` and `RepaintBoundary` wrappers on `AnimatedStatusBorderFrame`.
+  - **Capped static caches & batch analytics**: Capped static URL/hero caches with FIFO/LRU eviction (`CappedMap`, `_CappedSet`); batched `AnalyticsService` events to eliminate per-event O(n) JSON re-encoding.
+  - **Reader lifecycle & byte hygiene**: Closed `ReaderPrefetchCubit` in `ReaderScreen.dispose()`; nulled `_pageBytes` on `resetPage()`; enabled universal distant page eviction; added `isDistant` keepAlive opt-out for paged reader modes.
+  - **Database maintenance**: Pruned `history`, `reader_positions`, and `recommendation_history` in batches of 500; added automated `vacuum()` to deferred cold-start init; capped glossary entries at 500.
+  - **Comments pagination**: Replaced shrinkWrap layout with a 20-item window and "View all" expansion.
 
 ### Added
 

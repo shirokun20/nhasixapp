@@ -135,374 +135,371 @@ class _AppDrawerContentState extends State<AppDrawerContent>
       return currentRoute.startsWith(route);
     }
 
-    return Drawer(
-      backgroundColor: Colors.transparent,
-      width: 300,
-      elevation: DesignTokens.elevationNone,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            ],
-          ),
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-          border: Border(
-            right: BorderSide(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1),
-              width: 1,
-            ),
+    final content = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          ],
+        ),
+        // Desktop pin (isDrawer:false): square right edge, no curve —
+        // a pinned panel is not an overlay sheet.
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widget.isDrawer ? 24 : 0),
+          bottomRight: Radius.circular(widget.isDrawer ? 24 : 0),
+        ),
+        border: Border(
+          right: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            width: 1,
           ),
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-          child: Column(
-            children: [
-              // 1. Premium Animated Header
-              _buildDrawerHeader(theme, l10n),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widget.isDrawer ? 24 : 0),
+          bottomRight: Radius.circular(widget.isDrawer ? 24 : 0),
+        ),
+        child: Column(
+          children: [
+            // 1. Premium Animated Header
+            _buildDrawerHeader(theme, l10n),
 
-              // 2. Scrollable Navigation Items
-              Expanded(
-                child: ListView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  children: [
-                    const SourceSelector(),
-                    SizedBox(height: DesignTokens.spaceSm),
+            // 2. Scrollable Navigation Items
+            Expanded(
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                children: [
+                  const SourceSelector(),
+                  SizedBox(height: DesignTokens.spaceSm),
 
-                    if (context.watch<SourceCubit>().state.activeSource !=
-                            null &&
-                        context
-                            .watch<SourceCubit>()
-                            .state
-                            .activeSource!
-                            .supportsAuthentication &&
-                        context.watch<SourceCubit>().state.activeSource!.id !=
-                            SourceType.crotpedia.id) ...[
-                      Builder(
-                        builder: (_) {
-                          final sourceId = context
-                              .watch<SourceCubit>()
-                              .state
-                              .activeSource!
-                              .id;
+                  if (context.watch<SourceCubit>().state.activeSource != null &&
+                      context
+                          .watch<SourceCubit>()
+                          .state
+                          .activeSource!
+                          .supportsAuthentication &&
+                      context.watch<SourceCubit>().state.activeSource!.id !=
+                          SourceType.crotpedia.id) ...[
+                    Builder(
+                      builder: (_) {
+                        final sourceId =
+                            context.watch<SourceCubit>().state.activeSource!.id;
 
-                          return FutureBuilder<_SourceAuthIdentity>(
-                            future: _loadSourceAuthIdentity(sourceId),
-                            builder: (context, snapshot) {
-                              final identity = snapshot.data;
-                              final isLoggedIn =
-                                  identity?.authenticated == true;
-                              final displayName =
-                                  identity?.displayName?.trim() ?? '';
+                        return FutureBuilder<_SourceAuthIdentity>(
+                          future: _loadSourceAuthIdentity(sourceId),
+                          builder: (context, snapshot) {
+                            final identity = snapshot.data;
+                            final isLoggedIn = identity?.authenticated == true;
+                            final displayName =
+                                identity?.displayName?.trim() ?? '';
 
-                              final label = isLoggedIn
-                                  ? (displayName.isNotEmpty
-                                      ? AppLocalizations.of(context)!
-                                          .profileWithName(displayName)
-                                      : AppLocalizations.of(context)!.profile)
-                                  : AppLocalizations.of(context)!.loginAccount;
+                            final label = isLoggedIn
+                                ? (displayName.isNotEmpty
+                                    ? AppLocalizations.of(context)!
+                                        .profileWithName(displayName)
+                                    : AppLocalizations.of(context)!.profile)
+                                : AppLocalizations.of(context)!.loginAccount;
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildSectionLabel('ACCOUNT', theme),
-                                  SizedBox(height: DesignTokens.spaceSm),
-                                  _buildNavItem(
-                                    context,
-                                    icon: isLoggedIn
-                                        ? Icons.verified_user_rounded
-                                        : Icons.account_circle_rounded,
-                                    label: label,
-                                    route:
-                                        '${AppRoute.sourceLogin}?source=$sourceId',
-                                    isSelected:
-                                        isSelected(AppRoute.sourceLogin),
-                                    theme: theme,
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                      ),
-                      SizedBox(height: DesignTokens.spaceLg),
-                    ],
-
-                    // Crotpedia specific actions
-                    if (context.watch<SourceCubit>().state.activeSource?.id ==
-                        SourceType.crotpedia.id) ...[
-                      Builder(
-                        builder: (context) {
-                          final adapter = getIt<WebViewSessionAdapter>();
-                          final isLoggedIn = adapter.isLoggedIn;
-                          final name = adapter.username;
-                          final label = isLoggedIn && name != null
-                              ? AppLocalizations.of(context)!
-                                  .accountWithName(name)
-                              : AppLocalizations.of(context)!.loginAccount;
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildSectionLabel('ACCOUNT', theme),
-                              SizedBox(height: DesignTokens.spaceSm),
-                              _buildNavItem(
-                                context,
-                                icon: isLoggedIn
-                                    ? Icons.verified_user_rounded
-                                    : Icons.account_circle_rounded,
-                                label: label,
-                                route: AppRoute.crotpediaLogin,
-                                isSelected: isSelected(AppRoute.crotpediaLogin),
-                                theme: theme,
-                              ),
-                              SizedBox(height: DesignTokens.spaceLg),
-                            ],
-                          );
-                        },
-                      ),
-
-                      // Dynamic Crotpedia Menu
-                      Builder(builder: (context) {
-                        final configService = getIt<RemoteConfigService>();
-                        final rawConfig =
-                            configService.getRawConfig('crotpedia');
-                        if (rawConfig != null) {
-                          Map<String, dynamic>? menuConfig;
-                          if (rawConfig['menuConfig'] is Map<String, dynamic>) {
-                            menuConfig =
-                                rawConfig['menuConfig'] as Map<String, dynamic>;
-                          } else if (rawConfig['featurePages']
-                              is Map<String, dynamic>) {
-                            final featurePages = rawConfig['featurePages']
-                                as Map<String, dynamic>;
-                            // Fallback: auto-build drawer menu from featurePages
-                            // so menu still appears even without legacy menuConfig.
-                            final generatedMenu = <String, dynamic>{};
-                            if (featurePages.containsKey('genreList')) {
-                              generatedMenu['genreList'] = {
-                                'enabled': true,
-                                'label': 'Genres',
-                                'icon': 'category',
-                              };
-                            }
-                            if (featurePages.containsKey('doujinList')) {
-                              generatedMenu['doujinList'] = {
-                                'enabled': true,
-                                'label': 'Doujin List',
-                                'icon': 'library_books',
-                              };
-                            }
-                            if (featurePages.containsKey('requestList')) {
-                              generatedMenu['requestList'] = {
-                                'enabled': true,
-                                'label': 'Request List',
-                                'icon': 'assignment',
-                              };
-                            }
-                            menuConfig = generatedMenu;
-                          }
-
-                          if (menuConfig == null) {
-                            return const SizedBox.shrink();
-                          }
-
-                          final List<Widget> menuItems = [];
-
-                          // Helper for icon mapping
-                          IconData getIcon(String? iconName) {
-                            switch (iconName) {
-                              case 'volunteer_activism':
-                                return Icons.volunteer_activism;
-                              case 'category':
-                                return Icons.category;
-                              case 'library_books':
-                                return Icons.library_books;
-                              case 'assignment':
-                                return Icons.assignment;
-                              default:
-                                return Icons.circle;
-                            }
-                          }
-
-                          // Helper for route mapping
-                          String getRoute(String key) {
-                            switch (key) {
-                              case 'genreList':
-                                return AppRoute.crotpediaGenreList;
-                              case 'doujinList':
-                                return AppRoute.crotpediaDoujinList;
-                              case 'requestList':
-                                return AppRoute.crotpediaRequestList;
-                              case 'donation':
-                                return AppRoute
-                                    .crotpediaDonation; // Needs handling
-                              default:
-                                return '';
-                            }
-                          }
-
-                          menuConfig.forEach((key, value) {
-                            if (value is Map<String, dynamic> &&
-                                value['enabled'] == true) {
-                              final label = value['label']?.toString() ?? '';
-                              final iconName = value['icon'] as String?;
-                              final route = getRoute(key);
-
-                              if (route.isNotEmpty) {
-                                menuItems.add(_buildNavItem(
-                                  context,
-                                  icon: getIcon(iconName),
-                                  label: label,
-                                  route: route,
-                                  isSelected: isSelected(route),
-                                  theme: theme,
-                                ));
-                              }
-                            }
-                          });
-
-                          if (menuItems.isNotEmpty) {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildSectionLabel('MENU', theme),
+                                _buildSectionLabel('ACCOUNT', theme),
                                 SizedBox(height: DesignTokens.spaceSm),
-                                ...menuItems,
-                                SizedBox(height: DesignTokens.spaceLg),
-                              ],
-                            );
-                          }
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                    ],
-
-                    _buildSectionLabel(l10n.home.toUpperCase(), theme),
-                    SizedBox(height: DesignTokens.spaceSm),
-                    _buildNavItem(
-                      context,
-                      icon: Icons.home_rounded,
-                      label: l10n.home,
-                      route: AppRoute.home,
-                      isSelected: isSelected(AppRoute.home),
-                      theme: theme,
-                    ),
-
-                    // NETWORK-AWARE MENU ITEMS: Auto-rebuild when connectivity changes
-                    BlocBuilder<NetworkCubit, NetworkState>(
-                      builder: (context, networkState) {
-                        final isOffline = networkState is! NetworkConnected;
-
-                        // Get active source ID once for all feature checks
-                        final sourceId = context
-                                .read<SourceCubit>()
-                                .state
-                                .activeSource
-                                ?.id ??
-                            'nhentai';
-                        final config = getIt<RemoteConfigService>();
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Downloaded Galleries
-                            if (config.isFeatureEnabled(
-                                sourceId, (f) => f.download))
-                              _buildNavItem(
-                                context,
-                                icon: Icons.download_rounded,
-                                label: l10n.downloadedGalleries,
-                                route: AppRoute.downloads,
-                                isSelected: isSelected(AppRoute.downloads),
-                                theme: theme,
-                              ),
-
-                            // Offline Content (Linked to Download feature)
-                            if (config.isFeatureEnabled(
-                                sourceId, (f) => f.offlineMode))
-                              _buildNavItem(
-                                context,
-                                icon: Icons.offline_bolt_rounded,
-                                label: l10n.offlineContent,
-                                route: AppRoute.offline,
-                                isSelected: isSelected(AppRoute.offline),
-                                theme: theme,
-                              ),
-
-                            // EXPLORE section (only when online)
-                            if (!isOffline) ...[
-                              SizedBox(height: DesignTokens.spaceLg),
-                              _buildSectionLabel('EXPLORE', theme),
-                              SizedBox(height: DesignTokens.spaceSm),
-
-                              // Favorite Galleries
-                              if (config.isFeatureEnabled(
-                                  sourceId, (f) => f.favorite))
                                 _buildNavItem(
                                   context,
-                                  icon: Icons.favorite_rounded,
-                                  label: l10n.favoriteGalleries,
-                                  route: AppRoute.favorites,
-                                  isSelected: isSelected(AppRoute.favorites),
+                                  icon: isLoggedIn
+                                      ? Icons.verified_user_rounded
+                                      : Icons.account_circle_rounded,
+                                  label: label,
+                                  route:
+                                      '${AppRoute.sourceLogin}?source=$sourceId',
+                                  isSelected: isSelected(AppRoute.sourceLogin),
                                   theme: theme,
                                 ),
-
-                              _buildNavItem(
-                                context,
-                                icon: Icons.history_rounded,
-                                label: l10n.viewHistory,
-                                route: AppRoute.history,
-                                isSelected: isSelected(AppRoute.history),
-                                theme: theme,
-                              ),
-                            ],
-                          ],
+                              ],
+                            );
+                          },
                         );
                       },
                     ),
                     SizedBox(height: DesignTokens.spaceLg),
-                    _buildSectionLabel('MORE', theme),
-                    SizedBox(height: DesignTokens.spaceSm),
-                    _buildNavItem(
-                      context,
-                      icon: Icons.settings_rounded,
-                      label: l10n.settings,
-                      route: AppRoute.settings,
-                      isSelected: isSelected(AppRoute.settings),
-                      theme: theme,
-                    ),
-                    _buildNavItem(
-                      context,
-                      icon: Icons.info_outline_rounded,
-                      label: l10n.about,
-                      route: AppRoute.about,
-                      isSelected: isSelected(AppRoute.about),
-                      theme: theme,
-                    ),
                   ],
-                ),
-              ),
 
-              // 3. Docked streak card (thumb zone, variant C)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
-                child: StreakCard(),
+                  // Crotpedia specific actions
+                  if (context.watch<SourceCubit>().state.activeSource?.id ==
+                      SourceType.crotpedia.id) ...[
+                    Builder(
+                      builder: (context) {
+                        final adapter = getIt<WebViewSessionAdapter>();
+                        final isLoggedIn = adapter.isLoggedIn;
+                        final name = adapter.username;
+                        final label = isLoggedIn && name != null
+                            ? AppLocalizations.of(context)!
+                                .accountWithName(name)
+                            : AppLocalizations.of(context)!.loginAccount;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionLabel('ACCOUNT', theme),
+                            SizedBox(height: DesignTokens.spaceSm),
+                            _buildNavItem(
+                              context,
+                              icon: isLoggedIn
+                                  ? Icons.verified_user_rounded
+                                  : Icons.account_circle_rounded,
+                              label: label,
+                              route: AppRoute.crotpediaLogin,
+                              isSelected: isSelected(AppRoute.crotpediaLogin),
+                              theme: theme,
+                            ),
+                            SizedBox(height: DesignTokens.spaceLg),
+                          ],
+                        );
+                      },
+                    ),
+
+                    // Dynamic Crotpedia Menu
+                    Builder(builder: (context) {
+                      final configService = getIt<RemoteConfigService>();
+                      final rawConfig = configService.getRawConfig('crotpedia');
+                      if (rawConfig != null) {
+                        Map<String, dynamic>? menuConfig;
+                        if (rawConfig['menuConfig'] is Map<String, dynamic>) {
+                          menuConfig =
+                              rawConfig['menuConfig'] as Map<String, dynamic>;
+                        } else if (rawConfig['featurePages']
+                            is Map<String, dynamic>) {
+                          final featurePages =
+                              rawConfig['featurePages'] as Map<String, dynamic>;
+                          // Fallback: auto-build drawer menu from featurePages
+                          // so menu still appears even without legacy menuConfig.
+                          final generatedMenu = <String, dynamic>{};
+                          if (featurePages.containsKey('genreList')) {
+                            generatedMenu['genreList'] = {
+                              'enabled': true,
+                              'label': 'Genres',
+                              'icon': 'category',
+                            };
+                          }
+                          if (featurePages.containsKey('doujinList')) {
+                            generatedMenu['doujinList'] = {
+                              'enabled': true,
+                              'label': 'Doujin List',
+                              'icon': 'library_books',
+                            };
+                          }
+                          if (featurePages.containsKey('requestList')) {
+                            generatedMenu['requestList'] = {
+                              'enabled': true,
+                              'label': 'Request List',
+                              'icon': 'assignment',
+                            };
+                          }
+                          menuConfig = generatedMenu;
+                        }
+
+                        if (menuConfig == null) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final List<Widget> menuItems = [];
+
+                        // Helper for icon mapping
+                        IconData getIcon(String? iconName) {
+                          switch (iconName) {
+                            case 'volunteer_activism':
+                              return Icons.volunteer_activism;
+                            case 'category':
+                              return Icons.category;
+                            case 'library_books':
+                              return Icons.library_books;
+                            case 'assignment':
+                              return Icons.assignment;
+                            default:
+                              return Icons.circle;
+                          }
+                        }
+
+                        // Helper for route mapping
+                        String getRoute(String key) {
+                          switch (key) {
+                            case 'genreList':
+                              return AppRoute.crotpediaGenreList;
+                            case 'doujinList':
+                              return AppRoute.crotpediaDoujinList;
+                            case 'requestList':
+                              return AppRoute.crotpediaRequestList;
+                            case 'donation':
+                              return AppRoute
+                                  .crotpediaDonation; // Needs handling
+                            default:
+                              return '';
+                          }
+                        }
+
+                        menuConfig.forEach((key, value) {
+                          if (value is Map<String, dynamic> &&
+                              value['enabled'] == true) {
+                            final label = value['label']?.toString() ?? '';
+                            final iconName = value['icon'] as String?;
+                            final route = getRoute(key);
+
+                            if (route.isNotEmpty) {
+                              menuItems.add(_buildNavItem(
+                                context,
+                                icon: getIcon(iconName),
+                                label: label,
+                                route: route,
+                                isSelected: isSelected(route),
+                                theme: theme,
+                              ));
+                            }
+                          }
+                        });
+
+                        if (menuItems.isNotEmpty) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionLabel('MENU', theme),
+                              SizedBox(height: DesignTokens.spaceSm),
+                              ...menuItems,
+                              SizedBox(height: DesignTokens.spaceLg),
+                            ],
+                          );
+                        }
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                  ],
+
+                  _buildSectionLabel(l10n.home.toUpperCase(), theme),
+                  SizedBox(height: DesignTokens.spaceSm),
+                  _buildNavItem(
+                    context,
+                    icon: Icons.home_rounded,
+                    label: l10n.home,
+                    route: AppRoute.home,
+                    isSelected: isSelected(AppRoute.home),
+                    theme: theme,
+                  ),
+
+                  // NETWORK-AWARE MENU ITEMS: Auto-rebuild when connectivity changes
+                  BlocBuilder<NetworkCubit, NetworkState>(
+                    builder: (context, networkState) {
+                      final isOffline = networkState is! NetworkConnected;
+
+                      // Get active source ID once for all feature checks
+                      final sourceId =
+                          context.read<SourceCubit>().state.activeSource?.id ??
+                              'nhentai';
+                      final config = getIt<RemoteConfigService>();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Downloaded Galleries
+                          if (config.isFeatureEnabled(
+                              sourceId, (f) => f.download))
+                            _buildNavItem(
+                              context,
+                              icon: Icons.download_rounded,
+                              label: l10n.downloadedGalleries,
+                              route: AppRoute.downloads,
+                              isSelected: isSelected(AppRoute.downloads),
+                              theme: theme,
+                            ),
+
+                          // Offline Content (Linked to Download feature)
+                          if (config.isFeatureEnabled(
+                              sourceId, (f) => f.offlineMode))
+                            _buildNavItem(
+                              context,
+                              icon: Icons.offline_bolt_rounded,
+                              label: l10n.offlineContent,
+                              route: AppRoute.offline,
+                              isSelected: isSelected(AppRoute.offline),
+                              theme: theme,
+                            ),
+
+                          // EXPLORE section (only when online)
+                          if (!isOffline) ...[
+                            SizedBox(height: DesignTokens.spaceLg),
+                            _buildSectionLabel('EXPLORE', theme),
+                            SizedBox(height: DesignTokens.spaceSm),
+
+                            // Favorite Galleries
+                            if (config.isFeatureEnabled(
+                                sourceId, (f) => f.favorite))
+                              _buildNavItem(
+                                context,
+                                icon: Icons.favorite_rounded,
+                                label: l10n.favoriteGalleries,
+                                route: AppRoute.favorites,
+                                isSelected: isSelected(AppRoute.favorites),
+                                theme: theme,
+                              ),
+
+                            _buildNavItem(
+                              context,
+                              icon: Icons.history_rounded,
+                              label: l10n.viewHistory,
+                              route: AppRoute.history,
+                              isSelected: isSelected(AppRoute.history),
+                              theme: theme,
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: DesignTokens.spaceLg),
+                  _buildSectionLabel('MORE', theme),
+                  SizedBox(height: DesignTokens.spaceSm),
+                  _buildNavItem(
+                    context,
+                    icon: Icons.settings_rounded,
+                    label: l10n.settings,
+                    route: AppRoute.settings,
+                    isSelected: isSelected(AppRoute.settings),
+                    theme: theme,
+                  ),
+                  _buildNavItem(
+                    context,
+                    icon: Icons.info_outline_rounded,
+                    label: l10n.about,
+                    route: AppRoute.about,
+                    isSelected: isSelected(AppRoute.about),
+                    theme: theme,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            // 3. Docked streak card (thumb zone, variant C)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: StreakCard(),
+            ),
+          ],
         ),
       ),
+    );
+
+    // Desktop pin: no Drawer wrapper at all — the M3 Drawer Material
+    // hard-codes a 16px trailing curve that no inner radius can remove.
+    if (!widget.isDrawer) return content;
+    return Drawer(
+      backgroundColor: Colors.transparent,
+      width: 300,
+      elevation: DesignTokens.elevationNone,
+      child: content,
     );
   }
 

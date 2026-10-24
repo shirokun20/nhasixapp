@@ -57,12 +57,9 @@ class PermissionHelper {
         return false;
       }
 
-      // Non-Android: use standard storage permission
-      final storageStatus = await Permission.storage.status;
-      if (storageStatus.isGranted) return true;
-
-      final result = await Permission.storage.request();
-      return result.isGranted;
+      // Desktop (macOS/Windows/Linux): no runtime storage permission model —
+      // sandbox entitlements cover file access, so there is nothing to ask.
+      return true;
     } catch (e) {
       _logger.e('Error requesting storage permission: $e');
       return false;
@@ -122,6 +119,8 @@ class PermissionHelper {
 
   // Check if storage permission is granted
   static Future<bool> hasStoragePermission() async {
+    // Desktop: no runtime storage permission model (see request above).
+    if (!Platform.isAndroid) return true;
     try {
       final storageStatus = await Permission.storage.status;
       final manageStatus = await Permission.manageExternalStorage.status;

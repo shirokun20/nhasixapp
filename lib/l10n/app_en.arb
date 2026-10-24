@@ -3479,6 +3479,30 @@
       }
     }
   },
+  "continueFromChapter": "Continue from chapter {number}",
+  "@continueFromChapter": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "continueToChapter": "Continue to chapter {number}",
+  "@continueToChapter": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "continuePageSubtitle": "Page {page}",
+  "@continuePageSubtitle": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
   "loginRequiredForContent": "You need to log in to Crotpedia to view this content.",
   "commentsCount": "Comments ({count})",
   "@commentsCount": {

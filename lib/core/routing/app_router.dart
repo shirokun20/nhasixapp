@@ -18,7 +18,6 @@ import 'package:nhasixapp/presentation/pages/content_by_tag/content_by_tag_scree
 import 'package:nhasixapp/presentation/pages/detail/detail_screen.dart';
 import 'package:nhasixapp/presentation/cubits/detail/detail_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/favorite/favorite_cubit.dart';
-import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:nhasixapp/core/services/tag_blacklist_service.dart';
 import 'package:nhasixapp/presentation/pages/filter_data/filter_data_screen.dart';
 import 'package:nhasixapp/presentation/pages/favorites/favorites_screen.dart';
@@ -361,10 +360,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppAnimations.animatedPageBuilder(
           context,
           state,
-          RepositoryProvider<SourceInstallerService>(
-            create: (_) => getIt<SourceInstallerService>(),
-            child: const SettingsScreen(),
-          ),
+          const SettingsScreen(),
           kind: RouteKind.upward,
         ),
       ),

@@ -86,9 +86,11 @@ class KuronNativePlugin :
         Thread {
             val latch = CountDownLatch(1)
             var jsResult: String? = null
+            var webViewRef: android.webkit.WebView? = null
 
             Handler(Looper.getMainLooper()).post {
                 val webView = android.webkit.WebView(context)
+                webViewRef = webView
                 with(webView.settings) {
                     javaScriptEnabled = true
                     domStorageEnabled = true
@@ -103,6 +105,7 @@ class KuronNativePlugin :
                                 ?.takeUnless { it == "null" || it.isEmpty() }
                             webView.stopLoading()
                             webView.destroy()
+                            webViewRef = null
                             latch.countDown()
                         }
                     }
@@ -110,13 +113,25 @@ class KuronNativePlugin :
                 webView.loadUrl(url)
             }
 
+            fun destroyOnMainThread() {
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        webViewRef?.stopLoading()
+                        webViewRef?.destroy()
+                        webViewRef = null
+                    } catch (_: Exception) {}
+                }
+            }
+
             try {
                 if (latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
                     result.success(jsResult)
                 } else {
+                    destroyOnMainThread()
                     result.success(null)
                 }
             } catch (e: Exception) {
+                destroyOnMainThread()
                 result.success(null)
             }
         }.start()

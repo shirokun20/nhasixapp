@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -152,8 +153,10 @@ class WebViewSessionAdapter {
 
   // Sync cache for bypass cookies per baseUrl host — used by GenericHttpSource
   // to add Cookie header to image requests without async.
-  static final Map<String, String> _cachedCookieHeaders = {};
-  static final Map<String, String> _cachedUserAgents = {};
+  static final Map<String, String> _cachedCookieHeaders =
+      _CappedMap<String, String>(50);
+  static final Map<String, String> _cachedUserAgents =
+      _CappedMap<String, String>(50);
   static String? getCachedCookieHeaderForUrl(String url) {
     try {
       final uri = Uri.parse(url);
@@ -833,4 +836,30 @@ class WebViewSessionAdapter {
     _email = null;
     _username = null;
   }
+}
+class _CappedMap<K, V> extends MapBase<K, V> {
+  final int maxCapacity;
+  final LinkedHashMap<K, V> _inner = LinkedHashMap<K, V>();
+
+  _CappedMap(this.maxCapacity);
+
+  @override
+  V? operator [](Object? key) => _inner[key];
+
+  @override
+  void operator []=(K key, V value) {
+    if (_inner.length >= maxCapacity && !_inner.containsKey(key)) {
+      _inner.remove(_inner.keys.first);
+    }
+    _inner[key] = value;
+  }
+
+  @override
+  void clear() => _inner.clear();
+
+  @override
+  Iterable<K> get keys => _inner.keys;
+
+  @override
+  V? remove(Object? key) => _inner.remove(key);
 }

@@ -23,6 +23,36 @@ class AnalyticsService {
   bool _isInitialized = false;
   bool _analyticsEnabled = false;
   DateTime? _sessionStartTime;
+  static const int _batchFlushThreshold = 50;
+  static const int _maxStoredEvents = 1000;
+  final List<Map<String, dynamic>> _inMemoryEvents = [];
+  bool _eventsLoadedFromStorage = false;
+
+  Future<void> _ensureEventsLoaded() async {
+    if (_eventsLoadedFromStorage) return;
+    _eventsLoadedFromStorage = true;
+    final existingData = _prefs.getString(_analyticsDataKey);
+    if (existingData != null) {
+      try {
+        final decoded =
+            (jsonDecode(existingData) as List).cast<Map<String, dynamic>>();
+        _inMemoryEvents.addAll(decoded);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> flushEvents() async {
+    if (!_isInitialized || _inMemoryEvents.isEmpty) return;
+    try {
+      if (_inMemoryEvents.length > _maxStoredEvents) {
+        _inMemoryEvents.removeRange(
+            0, _inMemoryEvents.length - _maxStoredEvents);
+      }
+      await _prefs.setString(_analyticsDataKey, jsonEncode(_inMemoryEvents));
+    } catch (e) {
+      _logger.e('Failed to flush analytics events: $e');
+    }
+  }
 
   // Localization callback
   String Function(String key, {Map<String, dynamic>? args})? _localize;
@@ -32,7 +62,9 @@ class AnalyticsService {
     if (_isInitialized) return;
 
     try {
-      _prefs = await SharedPreferences.getInstance();
+      _prefs = getIt.isRegistered<SharedPreferences>()
+          ? getIt<SharedPreferences>()
+          : await SharedPreferences.getInstance();
       _analyticsEnabled = _prefs.getBool(_analyticsEnabledKey) ?? false;
       _sessionStartTime = DateTime.now();
       _isInitialized = true;
@@ -128,9 +160,9 @@ class AnalyticsService {
     if (!_analyticsEnabled) return {'enabled': false};
 
     try {
+      await flushEvents();
       final analyticsData = _prefs.getString(_analyticsDataKey);
       if (analyticsData == null) return {'enabled': true, 'events': 0};
-
       final events =
           (jsonDecode(analyticsData) as List).cast<Map<String, dynamic>>();
       final now = DateTime.now();
@@ -173,8 +205,8 @@ class AnalyticsService {
     if (!_analyticsEnabled) return null;
 
     try {
-      final data = _prefs.getString(_analyticsDataKey);
-      return data;
+      await flushEvents();
+      return _prefs.getString(_analyticsDataKey);
     } catch (e) {
       _logger.e('Failed to export analytics data: $e');
       return null;
@@ -192,27 +224,12 @@ class AnalyticsService {
   // Internal method to track events
   Future<void> _trackEvent(AnalyticsEvent event) async {
     try {
-      final eventData = event.toJson();
+      await _ensureEventsLoaded();
+      _inMemoryEvents.add(event.toJson());
 
-      // Get existing events
-      final existingData = _prefs.getString(_analyticsDataKey);
-      List<Map<String, dynamic>> events = [];
-
-      if (existingData != null) {
-        events =
-            (jsonDecode(existingData) as List).cast<Map<String, dynamic>>();
+      if (_inMemoryEvents.length % _batchFlushThreshold == 0) {
+        await flushEvents();
       }
-
-      // Add new event
-      events.add(eventData);
-
-      // Keep only last 1000 events to prevent excessive storage
-      if (events.length > 1000) {
-        events = events.sublist(events.length - 1000);
-      }
-
-      // Save back to storage
-      await _prefs.setString(_analyticsDataKey, jsonEncode(events));
 
       if (kDebugMode) {
         _logger.d(_getLocalized('analyticsEventTracked',
@@ -227,6 +244,7 @@ class AnalyticsService {
   // Clear analytics data from storage
   Future<void> _clearAnalyticsData() async {
     try {
+      _inMemoryEvents.clear();
       await _prefs.remove(_analyticsDataKey);
       await _prefs.remove(_sessionDataKey);
     } catch (e) {
@@ -239,6 +257,7 @@ class AnalyticsService {
     if (_analyticsEnabled && _sessionStartTime != null) {
       final sessionDuration = DateTime.now().difference(_sessionStartTime!);
       await _trackEvent(AnalyticsEvent.sessionEnd(sessionDuration));
+      await flushEvents();
     }
     _logger.i(_getLocalized('analyticsServiceDisposed',
         fallback: 'Analytics service disposed'));

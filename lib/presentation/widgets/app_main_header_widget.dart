@@ -46,17 +46,9 @@ class AppMainHeaderWidget extends StatelessWidget
     final l10n = AppLocalizations.of(context)!;
 
     return AppBar(
-      leading: Builder(builder: (context) {
-        return IconButton(
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-          color: Theme.of(context).colorScheme.onSurface,
-          icon: const Icon(
-            Icons.menu,
-          ),
-        );
-      }),
+      // No explicit hamburger: AppBar auto-implies the drawer button when
+      // the Scaffold has a drawer (mobile) and hides it on desktop where
+      // the sidebar is permanent. Back navigation still auto-implies.
       actions: isOffline
           ? [
               // Offline Stats

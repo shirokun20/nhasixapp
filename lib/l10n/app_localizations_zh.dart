@@ -4613,6 +4613,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String continueFromChapter(String number) {
+    return '从第 $number 章继续';
+  }
+
+  @override
+  String continueToChapter(String number) {
+    return '继续第 $number 章';
+  }
+
+  @override
+  String continuePageSubtitle(int page) {
+    return '第 $page 页';
+  }
+
+  @override
   String get loginRequiredForContent => '您需要登录 Crotpedia 才能查看此内容。';
 
   @override

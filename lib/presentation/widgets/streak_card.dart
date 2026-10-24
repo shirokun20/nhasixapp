@@ -123,66 +123,91 @@ class _StreakCardState extends State<StreakCard> with WidgetsBindingObserver {
         final defaultBorder =
             kuronColors?.cardBorder ?? colorScheme.outlineVariant;
 
-        return Container(
-          padding: const EdgeInsets.all(DesignTokens.spaceLg),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
-            border: Border.all(
-              color: isCry ? AppColors.info : defaultBorder,
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+        // Compact (<240dp, e.g. desktop 240px sidebar): maskot 44 + judul
+        // lebih kecil + mood max 2 baris, biar "1 day streak" tidak patah
+        // berantakan di kolom sempit. Wide path di bawah tidak berubah.
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 240;
+            final mascotSize = compact ? 44.0 : _mascotSize;
+            final headlineStyle = compact
+                ? TextStyleConst.titleSmall.copyWith(
+                    color: colorScheme.onSurface,
+                  )
+                : TextStyleConst.contentTitle.copyWith(
+                    color: colorScheme.onSurface,
+                  );
+            return Container(
+              padding: EdgeInsets.all(
+                  compact ? DesignTokens.spaceMd : DesignTokens.spaceLg),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                border: Border.all(
+                  color: isCry ? AppColors.info : defaultBorder,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.local_fire_department_rounded,
-                          size: DesignTokens.spaceLg,
-                          color: isCry ? AppColors.info : colorScheme.primary,
-                        ),
-                        const SizedBox(width: DesignTokens.spaceXs),
-                        Text(
-                          '${state.readingStreak}',
-                          style: TextStyleConst.contentTitle.copyWith(
-                            color: isCry ? AppColors.info : colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(width: DesignTokens.spaceXs),
-                        Flexible(
-                          child: Text(
-                            l10n?.streakDaysConsecutive ?? 'hari beruntun',
-                            style: TextStyleConst.contentTitle.copyWith(
-                              color: colorScheme.onSurface,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department_rounded,
+                              size: DesignTokens.spaceLg,
+                              color: isCry
+                                  ? AppColors.info
+                                  : colorScheme.primary,
                             ),
+                            const SizedBox(width: DesignTokens.spaceXs),
+                            Text(
+                              '${state.readingStreak}',
+                              style: TextStyleConst.contentTitle.copyWith(
+                                color: isCry
+                                    ? AppColors.info
+                                    : colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: DesignTokens.spaceXs),
+                            Flexible(
+                              child: Text(
+                                l10n?.streakDaysConsecutive ?? 'hari beruntun',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: headlineStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: DesignTokens.spaceXs),
+                        Text(
+                          _moodCopy(state.mood, l10n),
+                          maxLines: compact ? 2 : null,
+                          overflow: compact
+                              ? TextOverflow.ellipsis
+                              : TextOverflow.visible,
+                          style: TextStyleConst.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: DesignTokens.spaceXs),
-                    Text(
-                      _moodCopy(state.mood, l10n),
-                      style: TextStyleConst.bodySmall.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: DesignTokens.spaceSm),
+                  KuroMascot(
+                    key: ValueKey(state.mood),
+                    mood: state.mood,
+                    size: mascotSize,
+                  ),
+                ],
               ),
-              const SizedBox(width: DesignTokens.spaceSm),
-              KuroMascot(
-                key: ValueKey(state.mood),
-                mood: state.mood,
-                size: _mascotSize,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

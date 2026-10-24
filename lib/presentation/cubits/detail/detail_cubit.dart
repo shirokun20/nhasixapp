@@ -772,7 +772,7 @@ class DetailCubit extends BaseCubit<DetailState> {
   }
 
   // Open a specific chapter
-  Future<void> openChapter(Chapter chapter) async {
+  Future<void> openChapter(Chapter chapter, {int initialPage = 1}) async {
     final currentState = state;
     if (currentState is! DetailLoaded) return;
 
@@ -905,6 +905,7 @@ class DetailCubit extends BaseCubit<DetailState> {
 
         chapterData: chapterData,
         currentChapter: chapter, // Add this field to DetailReaderReady state
+        initialPage: initialPage,
       ));
     } catch (e) {
       logger.e('Failed to open chapter: $e');

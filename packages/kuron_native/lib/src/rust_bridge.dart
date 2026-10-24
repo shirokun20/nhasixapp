@@ -250,6 +250,14 @@ class RustBridge {
         lib = DynamicLibrary.open('libkuron_rust.so');
       } else if (Platform.isIOS) {
         lib = DynamicLibrary.process();
+      } else if (Platform.isMacOS) {
+        // Bundled via Xcode Resources phase (macos/Runner/NativeLibs).
+        // dlopen by name cannot see the bundle, so resolve the absolute
+        // path from the executable: .../Contents/MacOS/<App> →
+        // .../Contents/Resources/libkuron_rust.dylib. Missing file →
+        // catch → null → Dart fallback (by design).
+        final exeDir = File(Platform.resolvedExecutable).parent.path;
+        lib = DynamicLibrary.open('$exeDir/../Resources/libkuron_rust.dylib');
       } else {
         return null;
       }

@@ -4737,6 +4737,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String continueFromChapter(String number) {
+    return 'Continue from chapter $number';
+  }
+
+  @override
+  String continueToChapter(String number) {
+    return 'Continue to chapter $number';
+  }
+
+  @override
+  String continuePageSubtitle(int page) {
+    return 'Page $page';
+  }
+
+  @override
   String get loginRequiredForContent =>
       'You need to log in to Crotpedia to view this content.';
 

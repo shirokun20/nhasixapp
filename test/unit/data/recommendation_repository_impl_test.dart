@@ -738,4 +738,66 @@ void main() {
           sourceId: any(named: 'sourceId'))).called(1);
     });
   });
+
+  group('fairness: no nhentai default', () {
+    test('favorite without source_id is skipped, never guessed as nhentai',
+        () async {
+      stubHistoryForTest([], {});
+      when(() => userData.getAllFavoritesForExport()).thenAnswer(
+        (_) async => [
+          {'id': 'fav-nosrc', 'title': 'No Source'},
+        ],
+      );
+      // Even when the detail backfill could supply tags, a sourceless
+      // favorite must not become an nhentai seed.
+      when(() => contentRepo.getContentDetail(any(),
+              sourceId: any(named: 'sourceId')))
+          .thenAnswer((_) async => _content('fav-nosrc',
+              sourceId: 'nhentai', tagNames: ['action']));
+      when(() => contentRepo.getRelatedContent(
+            contentId: any(named: 'contentId'),
+            limit: any(named: 'limit'),
+            sourceId: any(named: 'sourceId'),
+          )).thenAnswer((_) async => [
+            _content('cand', tagNames: ['action']),
+          ]);
+
+      final result = await engineForTest().getRecommendations(limit: 10);
+
+      expect(result, isEmpty);
+      verifyNever(() => contentRepo.getRelatedContent(
+            contentId: any(named: 'contentId'),
+            limit: any(named: 'limit'),
+            sourceId: any(named: 'sourceId'),
+          ));
+    });
+
+    test('tagless related candidates surface as explore, not dropped',
+        () async {
+      final now = DateTime.now();
+      stubHistoryForTest(
+        [_history('seed', lastViewed: now)],
+        {
+          'seed': {'action', 'drama'},
+        },
+      );
+      when(() => contentRepo.getRelatedContent(
+            contentId: any(named: 'contentId'),
+            limit: any(named: 'limit'),
+            sourceId: any(named: 'sourceId'),
+          )).thenAnswer((_) async => [
+            _content('tagged-cand', tagNames: ['action']),
+            _content('tagless-cand', sourceId: 'komik'),
+          ]);
+
+      final result = await engineForTest().getRecommendations(limit: 10);
+
+      final tagless =
+          result.where((r) => r.contentId == 'tagless-cand');
+      expect(tagless, isNotEmpty);
+      expect(tagless.single.score, 0);
+      expect(tagless.single.sourceId, 'komik');
+      expect(result.any((r) => r.contentId == 'tagged-cand'), isTrue);
+    });
+  });
 }

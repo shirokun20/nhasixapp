@@ -25,6 +25,7 @@ class AppScaffoldWithOffline extends StatefulWidget {
     this.bottomNavigationBar,
     this.drawer,
     this.backgroundColor,
+    this.extendBodyBehindAppBar = false,
   });
 
   final Widget body;
@@ -35,6 +36,7 @@ class AppScaffoldWithOffline extends StatefulWidget {
   final Widget? bottomNavigationBar;
   final Widget? drawer;
   final Color? backgroundColor;
+  final bool extendBodyBehindAppBar;
 
   @override
   State<AppScaffoldWithOffline> createState() => _AppScaffoldWithOfflineState();
@@ -102,6 +104,7 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                   // On large screens, hide the drawer from Scaffold (sidebar is used instead)
                   // On small screens, use the provided drawer
                   drawer: isLargeScreen ? null : widget.drawer,
+                  extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
                   // Increase drawer edge drag width to 25% of screen width for easier gesture
                   drawerEdgeDragWidth:
                       isLargeScreen ? 0 : constraints.maxWidth * 0.25,
@@ -170,21 +173,20 @@ class _AppScaffoldWithOfflineState extends State<AppScaffoldWithOffline> {
                   ),
                 );
 
-                // If large screen, wrap in Row with Sidebar
+                // Desktop pin: the same drawer widget, no Drawer wrapper
+                // (M3 hard-codes a 16px trailing curve), wrapped in a
+                // transparent Material — without it, texts inherit
+                // WidgetsApp's fallback style (double-yellow underline)
+                // for every unset decoration field.
                 if (isLargeScreen) {
                   return Row(
                     children: [
-                      Container(
-                        width: 280,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            right: BorderSide(
-                              color: Theme.of(context).dividerColor,
-                              width: 1,
-                            ),
-                          ),
+                      const SizedBox(
+                        width: 300,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: AppDrawerContent(isDrawer: false),
                         ),
-                        child: const AppDrawerContent(isDrawer: false),
                       ),
                       Expanded(child: scaffold),
                     ],
