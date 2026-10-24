@@ -35,6 +35,8 @@ import '../../../core/services/memory_budget_coordinator.dart';
 import '../../cubits/reader/reader_cubit.dart';
 import '../../cubits/reader/reader_prefetch_cubit.dart';
 import '../../cubits/theme/theme_cubit.dart';
+import '../../cubits/settings/settings_cubit.dart';
+import '../../widgets/reader_shortcut_help.dart';
 import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/error_widget.dart';
@@ -145,6 +147,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _kbHintDismissed = false;
   bool get _isDesktop =>
       Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+
   /// Tablets (and wide foldables) often pair physical keyboards, so they
   /// get the same hint chip as desktop. Phones never do.
   bool _isWideScreen(BuildContext context) =>
@@ -1341,8 +1344,19 @@ class _ReaderScreenState extends State<ReaderScreen>
                 previous.isOfflineMode != current.isOfflineMode;
           },
           builder: (context, state) {
-            final showKbHint =
-                !_kbHintDismissed && (_isDesktop || _isWideScreen(context));
+            // One-time chip: hidden after the first dismissal/keypress
+            // (persisted in settings), so it never nags every reader open.
+            // context.select is a build-safe read (no getIt/service calls).
+            final hintSeen = context.select<SettingsCubit, bool>(
+              (cubit) => cubit.state is SettingsLoaded
+                  ? (cubit.state as SettingsLoaded)
+                      .preferences
+                      .hasSeenReaderKeyboardHint
+                  : false,
+            );
+            final showKbHint = !hintSeen &&
+                !_kbHintDismissed &&
+                (_isDesktop || _isWideScreen(context));
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               body: Focus(
@@ -1392,8 +1406,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   InkWell(
-                                    onTap: () => setState(
-                                        () => _kbHintDismissed = true),
+                                    onTap: () =>
+                                        setState(() => _kbHintDismissed = true),
                                     child: const Icon(Icons.close, size: 14),
                                   ),
                                 ],
@@ -1449,8 +1463,12 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _dismissKbHint() {
-    if (_isDesktop && !_kbHintDismissed && mounted) {
+    // Session guard + persisted flag: the chip shows exactly once ever.
+    // Called from hardware keypresses and the close button (both are
+    // event handlers, so context.read is fine here).
+    if (!_kbHintDismissed && mounted) {
       setState(() => _kbHintDismissed = true);
+      context.read<SettingsCubit>().markReaderKeyboardHintSeen();
     }
   }
 
@@ -1461,18 +1479,22 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (mode == ReadingMode.singlePage) {
       if (!_pageController.hasClients) return;
       if (direction > 0) {
-        _pageController.nextPage(duration: duration, curve: Curves.easeOutCubic);
+        _pageController.nextPage(
+            duration: duration, curve: Curves.easeOutCubic);
       } else {
-        _pageController.previousPage(duration: duration, curve: Curves.easeOutCubic);
+        _pageController.previousPage(
+            duration: duration, curve: Curves.easeOutCubic);
       }
       return;
     }
     if (mode == ReadingMode.verticalPage) {
       if (!_verticalPageController.hasClients) return;
       if (direction > 0) {
-        _verticalPageController.nextPage(duration: duration, curve: Curves.easeOutCubic);
+        _verticalPageController.nextPage(
+            duration: duration, curve: Curves.easeOutCubic);
       } else {
-        _verticalPageController.previousPage(duration: duration, curve: Curves.easeOutCubic);
+        _verticalPageController.previousPage(
+            duration: duration, curve: Curves.easeOutCubic);
       }
       return;
     }
@@ -1481,7 +1503,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     final target = (pos.pixels + direction * pos.viewportDimension * 0.9)
         .clamp(0.0, pos.maxScrollExtent);
     _scrollController.animateTo(target,
-        duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic);
   }
 
   void _keyboardEdge({required bool first}) {
@@ -1509,47 +1532,10 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _showShortcutHelp() {
-    final theme = Theme.of(context);
-    const rows = [
-      ('\u2190 / \u2192  atau  \u2191 / \u2193', 'Pindah halaman / scroll'),
-      ('Space / PgDn / PgUp', 'Scroll cepat (continuous) / pindah halaman'),
-      ('Home / End', 'Halaman pertama / terakhir'),
-      ('Esc', 'Kembali'),
-    ];
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Keyboard Shortcuts'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final r in rows)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: RichText(
-                  text: TextSpan(
-                    style: theme.textTheme.bodyMedium,
-                    children: [
-                      TextSpan(
-                        text: '${r.$1}  ',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      TextSpan(text: r.$2),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
+    // Opening the cheat sheet counts as seen — the full list also lives
+    // in reader settings for later.
+    _dismissKbHint();
+    showReaderShortcutHelp(context);
   }
 
   Widget _buildBody(ReaderState state) {
