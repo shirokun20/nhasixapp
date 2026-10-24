@@ -2280,7 +2280,14 @@ class _ExtendedImageReaderWidgetState extends State<ExtendedImageReaderWidget>
         return Stack(
           alignment: Alignment.center,
           children: [
-            Center(child: imageWidget),
+            // Continuous only: force viewport width so narrow sources fill
+            // edge-to-edge inside their fixed-height box. Paged modes keep
+            // Center — forcing width there crops tall pages vertically
+            // with no scroll to recover the cut part.
+            if (widget.readingMode == ReadingMode.continuousScroll)
+              SizedBox(width: double.infinity, child: imageWidget)
+            else
+              Center(child: imageWidget),
             // Zoom level indicator (shown when zoomed in)
             if (isZoomed && widget.readingMode != ReadingMode.continuousScroll)
               Positioned(

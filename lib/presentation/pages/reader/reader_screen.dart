@@ -691,18 +691,25 @@ class _ReaderScreenState extends State<ReaderScreen>
     final sourceRules = resolveSourceImageResolutionRules(
       _getSourceRawConfig(manualContext.sourceId),
     );
-    final webViewResult = await KuronNative.instance.showLoginWebView(
-      url: manualContext.sourcePageUrl,
-      successUrlFilters: const <String>[],
-      initialCookie: manualContext.initialCookie,
-      userAgent: null,
-      backgroundColor: NativeThemeHelper.backgroundColorHex,
-      textColor: NativeThemeHelper.textColorHex,
-      domImageSelectors: sourceRules.imageSelectors,
-      domImageAttributes: sourceRules.imageAttributes,
-      domLinkSelectors: sourceRules.linkSelectors,
-      clearCookies: false,
-    );
+    Map<String, dynamic>? webViewResult;
+    try {
+      webViewResult = await KuronNative.instance.showLoginWebView(
+        url: manualContext.sourcePageUrl,
+        successUrlFilters: const <String>[],
+        initialCookie: manualContext.initialCookie,
+        userAgent: null,
+        backgroundColor: NativeThemeHelper.backgroundColorHex,
+        textColor: NativeThemeHelper.textColorHex,
+        domImageSelectors: sourceRules.imageSelectors,
+        domImageAttributes: sourceRules.imageAttributes,
+        domLinkSelectors: sourceRules.linkSelectors,
+        clearCookies: false,
+      );
+    } catch (_) {
+      // Desktop: no native WebView bridge — surfaced as a normal
+      // launch failure below instead of an unhandled async exception.
+      webViewResult = null;
+    }
 
     if (!mounted) return false;
 

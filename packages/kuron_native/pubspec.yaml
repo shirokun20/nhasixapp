@@ -42,6 +42,8 @@ flutter:
         ffiPlugin: true
         package: id.nhasix.kuron_native.kuron_native
         pluginClass: KuronNativePlugin
+      macos:
+        pluginClass: KuronNativePlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

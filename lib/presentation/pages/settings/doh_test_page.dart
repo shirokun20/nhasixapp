@@ -21,8 +21,12 @@ class _DohTestPageState extends State<DohTestPage> {
   }
 
   Future<void> _loadProvider() async {
-    final provider = await KuronNative.instance.getDohProvider();
-    setState(() => _selectedProvider = provider);
+    // Debug page only: native DNS bridge is Android-only. Stay on the
+    // default instead of throwing during init on desktop.
+    try {
+      final provider = await KuronNative.instance.getDohProvider();
+      if (mounted) setState(() => _selectedProvider = provider);
+    } catch (_) {}
   }
 
   Future<void> _testNhentai() async {
