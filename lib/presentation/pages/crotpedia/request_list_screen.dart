@@ -8,6 +8,7 @@ import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_featur
 import 'package:nhasixapp/presentation/cubits/crotpedia_feature/crotpedia_feature_state.dart';
 import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:nhasixapp/presentation/widgets/progressive_image_widget.dart';
 import 'package:kuron_core/kuron_core.dart';
@@ -22,7 +23,8 @@ class CrotpediaRequestListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<CrotpediaFeatureCubit>()..loadRequestList(),
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: AppLocalizations.of(context)!.projectRequests,
         drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.projectRequests),

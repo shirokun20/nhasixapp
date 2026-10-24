@@ -29,6 +29,7 @@ import 'package:nhasixapp/core/services/workers/download_worker.dart';
 import 'package:nhasixapp/core/utils/notification_localizer.dart';
 import 'package:nhasixapp/core/utils/performance_monitor.dart';
 import 'package:logger/logger.dart';
+import 'package:window_manager/window_manager.dart';
 
 // Stored cold-start notification payload, read from
 // NotificationAppLaunchDetails before runApp().
@@ -36,6 +37,24 @@ String? _pendingNotifPayload;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Desktop (macOS/Windows/Linux): ukuran awal 1440x900 sesuai frame design
+  // FigCraft, min 1024 agar layout mobile tidak remuk. Judul window TIDAK
+  // di-set di sini — ikut PRODUCT_NAME native (Kuron / Kuron Dev per flavor).
+  if (!kIsWeb &&
+      (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    try {
+      await windowManager.ensureInitialized();
+      await windowManager.waitUntilReadyToShow(
+        const WindowOptions(
+          size: Size(1440, 900),
+          minimumSize: Size(1024, 640),
+          center: true,
+        ),
+      );
+      await windowManager.show();
+      await windowManager.focus();
+    } catch (_) {}
+  }
   await setupLocator();
 
   // Configure Flutter ImageCache for reader workloads

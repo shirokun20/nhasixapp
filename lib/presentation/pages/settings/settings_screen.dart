@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:nhasixapp/core/services/source_installer_service.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ import '../../cubits/source/source_state.dart';
 import '../../blocs/download/download_bloc.dart';
 import '../../../core/utils/app_update_test.dart';
 import '../../widgets/app_main_drawer_widget.dart';
+import '../../widgets/app_scaffold_with_offline.dart';
 import '../../widgets/kuro_mascot.dart';
 import 'settings_theme_widgets.dart';
 import 'settings_download_widgets.dart';
@@ -72,6 +74,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _loadDnsDiagnostics() async {
+    // Private DNS channel only exists on Android (kuron_native Kotlin).
+    // Skip elsewhere instead of throwing MissingPluginException every resume.
+    if (!Platform.isAndroid) return;
     try {
       final deviceState = await KuronNative.instance.getPrivateDnsDiagnostics();
       if (mounted) {
@@ -102,7 +107,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return AppScaffoldWithOffline(
+      title: l10n.settings,
       appBar: AppBar(
         title: Text(l10n.settings),
         centerTitle: true,

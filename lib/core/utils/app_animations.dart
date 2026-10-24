@@ -247,13 +247,18 @@ class AppAnimations {
     Duration reverseDuration = popDuration,
     Curve curve = pushCurve,
   }) {
+    // Desktop (>900dp, same rule as the persistent sidebar): sidebar
+    // navigation switches sections in place — sliding pages overlap and
+    // look broken ("menimpa"). Force the tab language (crossfade, no slide).
+    // Mobile keeps its per-route kinds untouched.
+    final desktopWide = MediaQuery.sizeOf(context).width > 900;
     return createPage<T>(
       child: child,
       name: state.matchedLocation,
       key: state.pageKey, // unique per navigation event, not just per path
       arguments: state.extra,
       type: type,
-      kind: kind,
+      kind: desktopWide ? RouteKind.tab : kind,
       duration: duration,
       reverseDuration: reverseDuration,
       curve: curve,

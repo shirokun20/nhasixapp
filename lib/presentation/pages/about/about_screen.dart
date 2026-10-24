@@ -10,6 +10,7 @@ import 'package:nhasixapp/core/services/github_release_stats_service.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_cubit.dart';
 import 'package:nhasixapp/presentation/cubits/update/update_state.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/update_available_sheet.dart';
 import 'package:nhasixapp/presentation/widgets/legal_content_sheet.dart';
 import 'package:nhasixapp/core/services/legal_content_service.dart';
@@ -100,7 +101,8 @@ class _AboutContentState extends State<_AboutContent>
     final onSurfaceVariant = colorScheme.onSurfaceVariant;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return AppScaffoldWithOffline(
+      title: l10n.aboutTitle,
       appBar: AppBar(
         title: Text(
           l10n.aboutTitle,

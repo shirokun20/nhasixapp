@@ -125,56 +125,64 @@ class _SourceSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final colorScheme = theme.colorScheme;
-    return Material(
-      color: theme.scaffoldBackgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-        child: TextField(
-          controller: controller,
-          onChanged: onChanged,
-          style: TextStyleConst.bodyMedium.copyWith(
-            color: colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            hintText: l10n.sourceSelectorSearchHint,
-            hintStyle: TextStyleConst.bodyMedium.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            suffixIcon: searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      controller.clear();
-                      onChanged('');
-                    },
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
-                  )
-                : null,
-            filled: true,
-            fillColor: colorScheme.surfaceContainer,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 1.5,
+    // Fixed 72dp box: the delegate promises maxExtent == minExtent == 72,
+    // so the child must be exactly that tall — otherwise the pinned
+    // header reports layoutExtent > paintExtent (debug assert spam).
+    return SizedBox(
+      height: 72,
+      child: Material(
+        color: theme.scaffoldBackgroundColor,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              style: TextStyleConst.bodyMedium.copyWith(
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: l10n.sourceSelectorSearchHint,
+                hintStyle: TextStyleConst.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          controller.clear();
+                          onChanged('');
+                        },
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                      )
+                    : null,
+                filled: true,
+                fillColor: colorScheme.surfaceContainer,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
               ),
             ),
           ),

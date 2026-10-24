@@ -81,6 +81,10 @@ void callbackDispatcher() {
 // }
 // ```
 Future<void> initializeWorkManager({bool isDebugMode = false}) async {
+  // Workmanager hanya ada di Android/iOS. Di desktop (macOS/Windows/Linux)
+  // unduhan jalan foreground via DownloadBloc — no-op agar MissingPluginException
+  // tidak pernah dilempar ke lifecycle mixin.
+  if (!Platform.isAndroid && !Platform.isIOS) return;
   await Workmanager().initialize(
     callbackDispatcher,
   );
@@ -89,9 +93,14 @@ Future<void> initializeWorkManager({bool isDebugMode = false}) async {
 class DownloadWorkerManager {
   DownloadWorkerManager._();
 
+  /// Workmanager (Android/iOS). Di desktop semua pemanggil jadi no-op —
+  /// unduhan foreground tetap jalan via DownloadBloc + NativeDownloadService.
+  static bool get _supported => Platform.isAndroid || Platform.isIOS;
+
   // This is useful when app lifecycle changes and full details
   // aren't readily available in the UI state.
   static Future<void> scheduleResume(String contentId) async {
+    if (!_supported) return;
     final resumeState =
         await BackgroundDownloadUtils.loadResumeState(contentId);
 
@@ -134,6 +143,7 @@ class DownloadWorkerManager {
     required int totalImages,
     int currentProgress = 0,
   }) async {
+    if (!_supported) return;
     await Workmanager().registerOneOffTask(
       'download_$contentId',
       DownloadWorkerTasks.downloadContent,
@@ -159,6 +169,7 @@ class DownloadWorkerManager {
 
   // Runs every 15 minutes (minimum interval on Android)
   static Future<void> schedulePeriodicDownloadCheck() async {
+    if (!_supported) return;
     await Workmanager().registerPeriodicTask(
       'periodic_download_check',
       DownloadWorkerTasks.checkIncompleteDownloads,
@@ -171,6 +182,7 @@ class DownloadWorkerManager {
   }
 
   static Future<void> scheduleCleanup() async {
+    if (!_supported) return;
     await Workmanager().registerOneOffTask(
       'cleanup_temp_files',
       DownloadWorkerTasks.cleanupTempFiles,
@@ -184,10 +196,12 @@ class DownloadWorkerManager {
   }
 
   static Future<void> cancelDownload(String contentId) async {
+    if (!_supported) return;
     await Workmanager().cancelByUniqueName('download_$contentId');
   }
 
   static Future<void> cancelAllDownloads() async {
+    if (!_supported) return;
     await Workmanager().cancelAll();
   }
 }

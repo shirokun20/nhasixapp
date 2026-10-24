@@ -11,6 +11,7 @@ import 'package:nhasixapp/presentation/widgets/error_widget.dart';
 import 'package:nhasixapp/presentation/widgets/highlighted_text_widget.dart';
 import 'package:nhasixapp/presentation/widgets/progress_indicator_widget.dart';
 import 'package:nhasixapp/presentation/widgets/app_main_drawer_widget.dart';
+import 'package:nhasixapp/presentation/widgets/app_scaffold_with_offline.dart';
 import 'package:nhasixapp/presentation/widgets/shimmer_loading_widgets.dart';
 import 'package:kuron_core/kuron_core.dart';
 import 'package:nhasixapp/core/constants/design_tokens.dart';
@@ -25,7 +26,8 @@ class CrotpediaDoujinListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<CrotpediaFeatureCubit>()..loadDoujinList(),
-      child: Scaffold(
+      child: AppScaffoldWithOffline(
+        title: AppLocalizations.of(context)!.doujinListTitle,
         drawer: AppMainDrawerWidget(context: context),
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.doujinListTitle),
