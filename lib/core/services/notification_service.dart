@@ -97,15 +97,27 @@ class NotificationService {
     // Ask explicitly via the Darwin plugin so downloads/PDF can notify.
     var effective = granted;
     if (granted && Platform.isMacOS) {
-      final macos = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              MacOSFlutterLocalNotificationsPlugin>();
-      effective = await macos?.requestPermissions(
+      try {
+        final macos = _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                MacOSFlutterLocalNotificationsPlugin>();
+        if (macos == null) {
+          _logger.w('NotificationService: macOS plugin impl missing, '
+              'skipping OS authorization request');
+        } else {
+          final osGranted = await macos.requestPermissions(
             alert: true,
             badge: true,
             sound: true,
-          ) ??
-          false;
+          );
+          _logger.i(
+              'NotificationService: macOS OS authorization: $osGranted');
+          effective = osGranted ?? false;
+        }
+      } catch (e) {
+        // Never let the OS prompt break the in-app grant flow.
+        _logger.e('NotificationService: macOS auth request failed: $e');
+      }
     }
     _permissionGranted = effective;
 
