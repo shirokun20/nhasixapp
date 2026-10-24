@@ -72,10 +72,17 @@ class _DetailWideViewState extends State<DetailWideView> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return Column(
-      children: [
-        if (widget.isOfflineMode)
-          Container(
+    // Top safe area: keeps the bar clear of the Android status bar on
+    // tablets (edge-to-edge). No-op on macOS windowed (padding is zero).
+    return SafeArea(
+      top: true,
+      bottom: false,
+      left: false,
+      right: false,
+      child: Column(
+        children: [
+          if (widget.isOfflineMode)
+            Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: colorScheme.secondaryContainer,
@@ -184,6 +191,7 @@ class _DetailWideViewState extends State<DetailWideView> {
           ),
         ),
       ],
+    )
     );
   }
 }
@@ -311,8 +319,13 @@ class DetailWideLoadingView extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
           ),
         );
-    return Column(
-      children: [
+    return SafeArea(
+      top: true,
+      bottom: false,
+      left: false,
+      right: false,
+      child: Column(
+        children: [
         Container(
           height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -390,6 +403,7 @@ class DetailWideLoadingView extends StatelessWidget {
           ),
         ),
       ],
+    )
     );
   }
 }

@@ -240,12 +240,6 @@ class SettingsCubit extends BaseCubit<SettingsState> {
     await _updateSetting((prefs) => prefs.copyWith(maxHistoryDays: maxDays));
   }
 
-  // Mark the reader keyboard-hint chip as seen so it only ever shows once.
-  Future<void> markReaderKeyboardHintSeen() async {
-    await _updateSetting(
-        (prefs) => prefs.copyWith(hasSeenReaderKeyboardHint: true));
-  }
-
   // Update cleanup on inactivity setting
   Future<void> updateCleanupOnInactivity(bool cleanupOnInactivity) async {
     await _updateSetting(

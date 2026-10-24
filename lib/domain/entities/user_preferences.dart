@@ -68,7 +68,7 @@ class UserPreferences extends Equatable {
     this.readerAutoHideDelay = 3,
     this.readerHideOnTap = true,
     this.readerHideOnSwipe = true,
-    this.hasSeenReaderKeyboardHint = false,
+
     // History cleanup settings
     this.autoCleanupHistory = false,
     this.historyCleanupIntervalHours = 24,
@@ -117,10 +117,6 @@ class UserPreferences extends Equatable {
   final int readerAutoHideDelay; // in seconds
   final bool readerHideOnTap;
   final bool readerHideOnSwipe;
-  // True once the reader keyboard-hint chip was shown/dismissed, so it
-  // only ever appears once — the full list lives in reader settings.
-  final bool hasSeenReaderKeyboardHint;
-
   // History cleanup settings
   final bool autoCleanupHistory;
   final int historyCleanupIntervalHours; // 6, 12, 24, 48, 168 (week)
@@ -171,7 +167,6 @@ class UserPreferences extends Equatable {
         readerAutoHideDelay,
         readerHideOnTap,
         readerHideOnSwipe,
-        hasSeenReaderKeyboardHint,
         autoCleanupHistory,
         historyCleanupIntervalHours,
         maxHistoryDays,
@@ -218,7 +213,7 @@ class UserPreferences extends Equatable {
     int? readerAutoHideDelay,
     bool? readerHideOnTap,
     bool? readerHideOnSwipe,
-    bool? hasSeenReaderKeyboardHint,
+
     // History cleanup parameters
     bool? autoCleanupHistory,
     int? historyCleanupIntervalHours,
@@ -270,8 +265,7 @@ class UserPreferences extends Equatable {
       readerAutoHideDelay: readerAutoHideDelay ?? this.readerAutoHideDelay,
       readerHideOnTap: readerHideOnTap ?? this.readerHideOnTap,
       readerHideOnSwipe: readerHideOnSwipe ?? this.readerHideOnSwipe,
-      hasSeenReaderKeyboardHint:
-          hasSeenReaderKeyboardHint ?? this.hasSeenReaderKeyboardHint,
+
       // History cleanup settings
       autoCleanupHistory: autoCleanupHistory ?? this.autoCleanupHistory,
       historyCleanupIntervalHours:
@@ -400,7 +394,7 @@ class UserPreferences extends Equatable {
       'readerAutoHideDelay': readerAutoHideDelay,
       'readerHideOnTap': readerHideOnTap,
       'readerHideOnSwipe': readerHideOnSwipe,
-      'hasSeenReaderKeyboardHint': hasSeenReaderKeyboardHint,
+
       // History cleanup settings
       'autoCleanupHistory': autoCleanupHistory,
       'historyCleanupIntervalHours': historyCleanupIntervalHours,
@@ -458,8 +452,7 @@ class UserPreferences extends Equatable {
       readerAutoHideDelay: _safeParseInt(json['readerAutoHideDelay'], 3),
       readerHideOnTap: _safeParseBool(json['readerHideOnTap'], true),
       readerHideOnSwipe: _safeParseBool(json['readerHideOnSwipe'], true),
-      hasSeenReaderKeyboardHint:
-          _safeParseBool(json['hasSeenReaderKeyboardHint'], false),
+
       // History cleanup settings
       autoCleanupHistory: _safeParseBool(json['autoCleanupHistory'], false),
       historyCleanupIntervalHours:

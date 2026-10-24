@@ -35,8 +35,8 @@ import '../../../core/services/memory_budget_coordinator.dart';
 import '../../cubits/reader/reader_cubit.dart';
 import '../../cubits/reader/reader_prefetch_cubit.dart';
 import '../../cubits/theme/theme_cubit.dart';
-import '../../cubits/settings/settings_cubit.dart';
 import '../../widgets/reader_shortcut_help.dart';
+
 import '../../utils/chapter_language_presenter.dart';
 // import '../../cubits/reader/reader_state.dart';
 import '../../widgets/error_widget.dart';
@@ -141,17 +141,9 @@ class _ReaderScreenState extends State<ReaderScreen>
   late ReaderCubit _readerCubit;
   late ReaderPrefetchCubit _prefetchCubit;
 
-  /// Desktop keyboard support: hidden hint pill until the first
-  /// hardware keypress (or tap-to-dismiss). Phones are unaffected —
-  /// no keyboard, no focus tricks, no behavior change.
-  bool _kbHintDismissed = false;
-  bool get _isDesktop =>
-      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
-
-  /// Tablets (and wide foldables) often pair physical keyboards, so they
-  /// get the same hint chip as desktop. Phones never do.
-  bool _isWideScreen(BuildContext context) =>
-      MediaQuery.sizeOf(context).width > 900;
+  /// Hardware keyboard keys are handled everywhere (desktop, tablet, or
+  /// phone with a paired keyboard). The shortcut list lives in the reader
+  /// settings panel (keyboard tile).
   final CancelToken _scopeToken = CancelToken();
 
   // Debouncing for scroll updates
@@ -1344,19 +1336,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                 previous.isOfflineMode != current.isOfflineMode;
           },
           builder: (context, state) {
-            // One-time chip: hidden after the first dismissal/keypress
-            // (persisted in settings), so it never nags every reader open.
-            // context.select is a build-safe read (no getIt/service calls).
-            final hintSeen = context.select<SettingsCubit, bool>(
-              (cubit) => cubit.state is SettingsLoaded
-                  ? (cubit.state as SettingsLoaded)
-                      .preferences
-                      .hasSeenReaderKeyboardHint
-                  : false,
-            );
-            final showKbHint = !hintSeen &&
-                !_kbHintDismissed &&
-                (_isDesktop || _isWideScreen(context));
+            // No hint chip: the keyboard-shortcut info lives only in the
+            // reader settings panel (keyboard icon tile).
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               body: Focus(
@@ -1373,49 +1354,6 @@ class _ReaderScreenState extends State<ReaderScreen>
                         return _buildBody(state);
                       },
                     ),
-                    if (showKbHint)
-                      Positioned(
-                        child: Center(
-                          child: InkWell(
-                            onTap: _showShortcutHelp,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                    color: Theme.of(context).dividerColor),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text('\u2328 ',
-                                      style: TextStyle(fontSize: 13)),
-                                  Flexible(
-                                    child: Text(
-                                      'Keyboard aktif — ←/→ pindah halaman • ketuk untuk semua shortcut',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  InkWell(
-                                    onTap: () =>
-                                        setState(() => _kbHintDismissed = true),
-                                    child: const Icon(Icons.close, size: 14),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -1462,18 +1400,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     return KeyEventResult.ignored;
   }
 
-  void _dismissKbHint() {
-    // Session guard + persisted flag: the chip shows exactly once ever.
-    // Called from hardware keypresses and the close button (both are
-    // event handlers, so context.read is fine here).
-    if (!_kbHintDismissed && mounted) {
-      setState(() => _kbHintDismissed = true);
-      context.read<SettingsCubit>().markReaderKeyboardHintSeen();
-    }
-  }
-
   void _keyboardGo(int direction) {
-    _dismissKbHint();
     final mode = _readerCubit.state.readingMode ?? ReadingMode.singlePage;
     const duration = Duration(milliseconds: 200);
     if (mode == ReadingMode.singlePage) {
@@ -1508,7 +1435,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _keyboardEdge({required bool first}) {
-    _dismissKbHint();
     final mode = _readerCubit.state.readingMode ?? ReadingMode.singlePage;
     final count = _readerCubit.state.content?.imageUrls.length ?? 1;
     if (mode == ReadingMode.singlePage) {
@@ -1529,13 +1455,6 @@ class _ReaderScreenState extends State<ReaderScreen>
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic);
     }
-  }
-
-  void _showShortcutHelp() {
-    // Opening the cheat sheet counts as seen — the full list also lives
-    // in reader settings for later.
-    _dismissKbHint();
-    showReaderShortcutHelp(context);
   }
 
   Widget _buildBody(ReaderState state) {
