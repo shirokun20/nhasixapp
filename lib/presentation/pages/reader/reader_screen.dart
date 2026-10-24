@@ -140,11 +140,15 @@ class _ReaderScreenState extends State<ReaderScreen>
   late ReaderPrefetchCubit _prefetchCubit;
 
   /// Desktop keyboard support: hidden hint pill until the first
-  /// hardware keypress (or tap-to-dismiss). Mobile is unaffected —
+  /// hardware keypress (or tap-to-dismiss). Phones are unaffected —
   /// no keyboard, no focus tricks, no behavior change.
   bool _kbHintDismissed = false;
   bool get _isDesktop =>
       Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+  /// Tablets (and wide foldables) often pair physical keyboards, so they
+  /// get the same hint chip as desktop. Phones never do.
+  bool _isWideScreen(BuildContext context) =>
+      MediaQuery.sizeOf(context).width > 900;
   final CancelToken _scopeToken = CancelToken();
 
   // Debouncing for scroll updates
@@ -1337,6 +1341,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                 previous.isOfflineMode != current.isOfflineMode;
           },
           builder: (context, state) {
+            final showKbHint =
+                !_kbHintDismissed && (_isDesktop || _isWideScreen(context));
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               body: Focus(
@@ -1353,11 +1359,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                         return _buildBody(state);
                       },
                     ),
-                    if (_isDesktop && !_kbHintDismissed)
+                    if (showKbHint)
                       Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 12,
                         child: Center(
                           child: InkWell(
                             onTap: _showShortcutHelp,
